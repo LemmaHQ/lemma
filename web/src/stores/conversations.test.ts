@@ -54,7 +54,7 @@ beforeEach(async () => {
     useConversationsStore.setState({ list: [], archived: [], loaded: false });
 });
 
-it("离线时 refresh 仍能从缓存加载列表", async () => {
+it("loads cached conversations on refresh when offline", async () => {
     const db = openDb("conv-store-test");
     await db.conversations.bulkPut([
         conversationToRow(convProto("c1", 1), 5n),
@@ -70,7 +70,7 @@ it("离线时 refresh 仍能从缓存加载列表", async () => {
     expect(s.archived.map((c) => c.id)).toEqual(["c2"]);
 });
 
-it("归档后从活跃列表消失并触发补拉", async () => {
+it("removes conversation from active list on archive and triggers catch-up", async () => {
     vi.mocked(conversationClient.archiveConversation).mockResolvedValue(
         {} as never,
     );
@@ -87,7 +87,7 @@ it("归档后从活跃列表消失并触发补拉", async () => {
     expect(pullAllMock).toHaveBeenCalled();
 });
 
-it("无缓存库时 refresh 直接返回", async () => {
+it("returns immediately from refresh when cache database is unavailable", async () => {
     closeDb();
 
     await useConversationsStore.getState().refresh();
@@ -96,7 +96,7 @@ it("无缓存库时 refresh 直接返回", async () => {
     expect(syncClient.pull).not.toHaveBeenCalled();
 });
 
-it("refreshArchived 从缓存加载归档列表", async () => {
+it("loads archived list from cache on refreshArchived", async () => {
     const db = openDb("conv-store-test");
     await db.conversations.bulkPut([conversationToRow(convProto("a1", 2), 5n)]);
     pullAllMock.mockRejectedValue(new Error("offline"));
@@ -108,7 +108,7 @@ it("refreshArchived 从缓存加载归档列表", async () => {
     expect(s.archived.map((c) => c.id)).toEqual(["a1"]);
 });
 
-it("create 把新会话插到列表头并返回 id", async () => {
+it("prepends newly created conversation and returns id", async () => {
     vi.mocked(conversationClient.createConversation).mockResolvedValue({
         conversation: convProto("c9", 1),
     } as never);
@@ -123,7 +123,7 @@ it("create 把新会话插到列表头并返回 id", async () => {
     ]);
 });
 
-it("create 响应缺 conversation 抛错", async () => {
+it("throws error when create response lacks conversation", async () => {
     vi.mocked(conversationClient.createConversation).mockResolvedValue(
         {} as never,
     );
@@ -133,7 +133,7 @@ it("create 响应缺 conversation 抛错", async () => {
     );
 });
 
-it("rename 更新列表中的标题", async () => {
+it("updates title in list on rename", async () => {
     const renamed = convProto("c1", 1);
     renamed.title = "新标题";
     vi.mocked(conversationClient.renameConversation).mockResolvedValue({
@@ -146,7 +146,7 @@ it("rename 更新列表中的标题", async () => {
     expect(useConversationsStore.getState().list[0].title).toBe("新标题");
 });
 
-it("rename 响应缺 conversation 时不动列表", async () => {
+it("keeps list unchanged when rename response lacks conversation", async () => {
     vi.mocked(conversationClient.renameConversation).mockResolvedValue(
         {} as never,
     );
@@ -157,7 +157,7 @@ it("rename 响应缺 conversation 时不动列表", async () => {
     expect(useConversationsStore.getState().list[0].title).toBe("t-c1");
 });
 
-it("restore 把会话移回活跃列表", async () => {
+it("moves conversation back to active list on restore", async () => {
     vi.mocked(conversationClient.restoreConversation).mockResolvedValue({
         conversation: convProto("c1", 1),
     } as never);
@@ -173,7 +173,7 @@ it("restore 把会话移回活跃列表", async () => {
     expect(s.list.map((c) => c.id)).toEqual(["c1"]);
 });
 
-it("deleteArchived 只移除目标归档项", async () => {
+it("removes only targeted archived item on deleteArchived", async () => {
     vi.mocked(conversationClient.deleteArchived).mockResolvedValue({} as never);
     useConversationsStore.setState({
         archived: [convProto("c1", 2), convProto("c2", 2)],

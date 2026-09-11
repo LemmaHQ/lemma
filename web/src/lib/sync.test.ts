@@ -129,7 +129,7 @@ describe("sync", () => {
         vi.clearAllMocks();
     });
 
-    it("pullAll 循环分页直到 hasMore=false，游标持久化", async () => {
+    it("paginates pullAll until hasMore is false and persists cursor", async () => {
         pullMock
             .mockResolvedValueOnce(
                 pullRes({
@@ -160,7 +160,7 @@ describe("sync", () => {
         ]);
     });
 
-    it("applyPull：归档全量刷新清理彻底删除的会话及其消息", async () => {
+    it("applyPull: cleans up permanently deleted conversations and messages on archive refresh", async () => {
         await upsertConversations(db, [
             conversationToRow(convProto("a1", 2), 3n),
         ]);
@@ -190,7 +190,7 @@ describe("sync", () => {
         expect(await db.conversations.get("a2")).toBeDefined();
     });
 
-    it("applyPull：归档会话的缓存消息被清空，活跃会话不受影响", async () => {
+    it("applyPull: clears cached messages for archived conversations while keeping active intact", async () => {
         await upsertConversations(db, [
             conversationToRow(convProto("a1", 1), 3n),
             conversationToRow(convProto("live", 1), 3n),
@@ -228,7 +228,7 @@ describe("sync", () => {
         expect(await db.messages.get("m2")).toBeDefined();
     });
 
-    it("watch 连接后先补拉，hint 落后时再拉", async () => {
+    it("catches up after watch connects and pulls again when hint lags", async () => {
         let calls = 0;
         pullMock.mockImplementation(() => {
             calls += 1;
@@ -250,7 +250,7 @@ describe("sync", () => {
         expect(await db.conversations.get("c9")).toBeDefined();
     });
 
-    it("断流后指数退避重连并恢复在线", async () => {
+    it("reconnects with exponential backoff and restores online status after disconnect", async () => {
         pullMock.mockResolvedValue(pullRes({}));
         let watchCalls = 0;
         watchMock.mockImplementation(() => {
@@ -266,7 +266,7 @@ describe("sync", () => {
         expect(watchCalls).toBe(2);
     });
 
-    it("applyPull 落库增量消息行", async () => {
+    it("applyPull stores incremental message rows", async () => {
         await applyPull(
             db,
             pullRes({
@@ -281,7 +281,7 @@ describe("sync", () => {
         expect(rows[0].syncSeq).toBe("2");
     });
 
-    it("onSynced 补拉完成后回调，退订即止", async () => {
+    it("triggers onSynced callback after catch-up and stops on unsubscribe", async () => {
         pullMock.mockResolvedValue(pullRes({}));
         const cb = vi.fn();
         const off = onSynced(cb);
@@ -293,7 +293,7 @@ describe("sync", () => {
         expect(cb).toHaveBeenCalledTimes(1);
     });
 
-    it("applyPull 按活跃名单清理僵尸会话及其消息", async () => {
+    it("applyPull cleans up zombie conversations and messages by active list", async () => {
         const db = openDb("sync-test");
         await db.delete();
         await db.open();

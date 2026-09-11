@@ -24,7 +24,7 @@ describe("groupSessions", () => {
         vi.useRealTimers();
     });
 
-    it("按自然日分组且空组不出现", () => {
+    it("groups sessions by calendar day omitting empty buckets", () => {
         const now = Date.now();
         const groups = groupSessions([
             mk("a", now - 60_000),
@@ -41,7 +41,7 @@ describe("groupSessions", () => {
         expect(groups[0].items.map((s) => s.id)).toEqual(["a"]);
     });
 
-    it("组内按更新时间倒序", () => {
+    it("sorts sessions descending by updatedAtMs within each group", () => {
         const now = Date.now();
         const groups = groupSessions([
             mk("old", now - 2 * 60_000),
