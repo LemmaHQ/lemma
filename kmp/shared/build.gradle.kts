@@ -49,9 +49,11 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.serializationJson)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.multiplatform.settingsNoArg)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.multiplatform.settingsTest)
         }
     }
 }
