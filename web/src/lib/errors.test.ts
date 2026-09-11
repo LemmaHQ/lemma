@@ -15,25 +15,25 @@ function withReason(reason: ErrorReason): ConnectError {
     ]);
 }
 
-it("业务错误按 reason 映射到 i18n key", () => {
+it("maps app error reason to i18n key", () => {
     expect(errorText(withReason(ErrorReason.PROVIDER_NOT_FOUND), t)).toBe(
         "errors.providerNotFound",
     );
 });
 
 // ConnectError.message carries a "[code] " prefix by design.
-it("未知 reason 值没有映射，回退原始英文消息", () => {
+it("falls back to raw English message when reason has no mapping", () => {
     expect(errorText(withReason(999 as ErrorReason), t)).toBe(
         "[not_found] raw message",
     );
 });
 
-it("无 ErrorInfo 详情的 ConnectError 原样显示消息", () => {
+it("displays the ConnectError message as-is when no ErrorInfo detail is present", () => {
     const e = new ConnectError("network unreachable", Code.Unavailable);
     expect(errorText(e, t)).toBe("[unavailable] network unreachable");
 });
 
-it("非 ConnectError 一律 String 化", () => {
+it("stringifies non-ConnectError instances", () => {
     expect(errorText(new Error("boom"), t)).toBe("Error: boom");
     expect(errorText("plain", t)).toBe("plain");
 });

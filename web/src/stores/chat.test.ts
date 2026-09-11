@@ -58,7 +58,7 @@ beforeEach(() => {
     });
 });
 
-it("send 走通 started → delta → done", async () => {
+it("processes send stream through started, delta, and done", async () => {
     sendMessage.mockImplementation(async function* () {
         yield started("m1");
         yield delta("你");
@@ -83,7 +83,7 @@ it("send 走通 started → delta → done", async () => {
     });
 });
 
-it("断线后按已收字符数 offset 续传", async () => {
+it("resumes after disconnect with offset matching received characters", async () => {
     sendMessage.mockImplementationOnce(async function* () {
         yield started("m1");
         yield delta("你");
@@ -104,7 +104,7 @@ it("断线后按已收字符数 offset 续传", async () => {
     expect(items[1]).toMatchObject({ content: "你好", status: "done" });
 });
 
-it("abort 通知服务端并标记 aborted", async () => {
+it("notifies server on abort and marks message as aborted", async () => {
     sendMessage.mockImplementation(async function* (_req, opts) {
         yield started("m1");
         yield delta("半");
@@ -129,7 +129,7 @@ it("abort 通知服务端并标记 aborted", async () => {
     expect(useChat.getState().streaming).toBe(false);
 });
 
-it("open 加载历史并转正序", async () => {
+it("loads history on open and sorts in chronological order", async () => {
     listMessages.mockResolvedValue({
         messages: [
             {
@@ -161,7 +161,7 @@ it("open 加载历史并转正序", async () => {
     });
 });
 
-it("open 优先读本地缓存", async () => {
+it("prefers local cache on open", async () => {
     const db = openDb("chat-cache-test");
     await db.delete();
     await db.open();
@@ -190,7 +190,7 @@ it("open 优先读本地缓存", async () => {
     closeDb();
 });
 
-it("open 映射 streaming/aborted/error 状态", async () => {
+it("maps streaming, aborted, and error statuses on open", async () => {
     const msg = (id: string, status: MessageStatus) => ({
         id,
         role: "assistant",
@@ -218,7 +218,7 @@ it("open 映射 streaming/aborted/error 状态", async () => {
     ]);
 });
 
-it("syncFromCache 非流式时从缓存刷新", async () => {
+it("refreshes from cache on syncFromCache when not streaming", async () => {
     const db = openDb("chat-cache-test");
     await db.delete();
     await db.open();
@@ -255,7 +255,7 @@ it("syncFromCache 非流式时从缓存刷新", async () => {
     closeDb();
 });
 
-it("syncFromCache 流式中不动 optimistic 项", async () => {
+it("preserves optimistic item during active streaming in syncFromCache", async () => {
     useChat.setState({
         streaming: true,
         items: [
@@ -275,7 +275,7 @@ it("syncFromCache 流式中不动 optimistic 项", async () => {
     expect(useChat.getState().items.map((i) => i.id)).toEqual(["live"]);
 });
 
-it("loadMore 把更早的一页拼到前面", async () => {
+it("prepends earlier page on loadMore", async () => {
     useChat.setState({
         hasMore: true,
         items: [
@@ -315,13 +315,13 @@ it("loadMore 把更早的一页拼到前面", async () => {
     });
 });
 
-it("loadMore 无更多时直接返回", async () => {
+it("returns immediately from loadMore when hasMore is false", async () => {
     await useChat.getState().loadMore();
 
     expect(listMessages).not.toHaveBeenCalled();
 });
 
-it("send 在流式中或无会话时直接返回", async () => {
+it("returns immediately from send while streaming or without conversation", async () => {
     useChat.setState({ streaming: true });
     await useChat.getState().send("p1", "gpt-x", "你好");
     useChat.setState({ streaming: false, conversationId: null });
@@ -331,7 +331,7 @@ it("send 在流式中或无会话时直接返回", async () => {
     expect(useChat.getState().items).toHaveLength(0);
 });
 
-it("aborted 事件标记中止", async () => {
+it("marks aborted on aborted event", async () => {
     sendMessage.mockImplementation(async function* () {
         yield started("m1");
         yield ev({ case: "aborted", value: {} as never });
@@ -342,7 +342,7 @@ it("aborted 事件标记中止", async () => {
     expect(useChat.getState().items[1].status).toBe("aborted");
 });
 
-it("error 事件带出世态文案", async () => {
+it("surfaces error message on error event", async () => {
     sendMessage.mockImplementation(async function* () {
         yield started("m1");
         yield ev({
@@ -358,7 +358,7 @@ it("error 事件带出世态文案", async () => {
     expect(item.error).toBe("model exploded");
 });
 
-it("无 kind 的事件被忽略", async () => {
+it("ignores event without kind", async () => {
     sendMessage.mockImplementation(async function* () {
         yield started("m1");
         yield { event: {} } as unknown as SendMessageResponse;
@@ -370,7 +370,7 @@ it("无 kind 的事件被忽略", async () => {
     expect(useChat.getState().items[1].status).toBe("done");
 });
 
-it("首轮即失败不重试，标记 error", async () => {
+it("does not retry on initial failure and marks error", async () => {
     sendMessage.mockImplementation(
         () => throwStream(new Error("boom")) as never,
     );
@@ -383,7 +383,7 @@ it("首轮即失败不重试，标记 error", async () => {
     expect(item.error).toContain("boom");
 });
 
-it("续传三次仍失败则放弃", async () => {
+it("abandons retry after three failed resume attempts", async () => {
     vi.useFakeTimers();
     try {
         sendMessage.mockImplementation(async function* () {

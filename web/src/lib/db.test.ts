@@ -67,13 +67,13 @@ describe("db", () => {
         await db.open();
     });
 
-    it("游标默认 0，写入后读回", async () => {
+    it("defaults cursor to 0 and reads back updated value", async () => {
         expect(await getCursor(db)).toBe(0n);
         await setCursor(db, 42n);
         expect(await getCursor(db)).toBe(42n);
     });
 
-    it("LWW：低 syncSeq 不覆盖高 syncSeq", async () => {
+    it("applies LWW: does not overwrite higher syncSeq with lower syncSeq", async () => {
         await upsertConversations(db, [
             conv("c1", { title: "新", syncSeq: "5" }),
         ]);
@@ -84,7 +84,7 @@ describe("db", () => {
         expect(row?.title).toBe("新");
     });
 
-    it("消息按会话 + seq 正序", async () => {
+    it("orders messages by conversation and ascending seq", async () => {
         await upsertMessages(db, [
             msg("m2", "c1", { seq: 2 }),
             msg("m1", "c1", { seq: 1 }),
@@ -94,7 +94,7 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["m1", "m2"]);
     });
 
-    it("seq 优先于 createdAtMs（回归：同事务插入顺序颠倒）", async () => {
+    it("prioritizes seq over createdAtMs (regression: reversed insertion order in same transaction)", async () => {
         await upsertMessages(db, [
             msg("m1", "c1", { seq: 1, createdAtMs: 2000 }),
             msg("m2", "c1", { seq: 2, createdAtMs: 1000 }),
@@ -103,7 +103,7 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["m1", "m2"]);
     });
 
-    it("归档全量刷新：清掉不在新列表里的归档行", async () => {
+    it("cleans up archived rows not present in full refresh", async () => {
         await upsertConversations(db, [
             conv("a1", { status: 2, archivedAtMs: 1000 }),
             conv("a2", { status: 2, archivedAtMs: 2000 }),
@@ -115,7 +115,7 @@ describe("db", () => {
         expect(archived.map((r) => r.id)).toEqual(["a2"]);
     });
 
-    it("彻底删除：会话连同消息一起清", async () => {
+    it("deletes conversation cascade including all messages", async () => {
         await upsertConversations(db, [conv("c1")]);
         await upsertMessages(db, [msg("m1", "c1"), msg("m2", "c1")]);
         await deleteConversationCascade(db, "c1");
@@ -123,7 +123,7 @@ describe("db", () => {
         expect(await listMessages(db, "c1")).toEqual([]);
     });
 
-    it("活跃列表排除归档，按更新时间倒序", async () => {
+    it("excludes archived conversations from active list sorted descending by updatedAtMs", async () => {
         await upsertConversations(db, [
             conv("c1", { updatedAtMs: 1000 }),
             conv("c2", { updatedAtMs: 3000 }),
@@ -133,7 +133,7 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["c2", "c1"]);
     });
 
-    it("proto 转换：Timestamp 转毫秒、bigint 转字符串", () => {
+    it("converts proto Timestamp to ms and bigint to string", () => {
         const row = conversationToRow(
             {
                 $typeName: "lemma.v1.Conversation",
@@ -160,7 +160,7 @@ describe("db", () => {
         expect(row.syncSeq).toBe("9");
     });
 
-    it("LWW：消息同样拒绝低 syncSeq 回滚", async () => {
+    it("applies LWW: messages reject lower syncSeq rollback", async () => {
         await upsertMessages(db, [
             msg("m1", "c1", { content: "新", syncSeq: "5" }),
         ]);
@@ -170,7 +170,7 @@ describe("db", () => {
         expect((await db.messages.get("m1"))?.content).toBe("新");
     });
 
-    it("归档列表容忍缺失 archivedAtMs", async () => {
+    it("tolerates missing archivedAtMs in archived list", async () => {
         await upsertConversations(db, [
             conv("a1", { status: 2, archivedAtMs: null }),
             conv("a2", { status: 2, archivedAtMs: 1000 }),
@@ -179,7 +179,7 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["a2", "a1"]);
     });
 
-    it("v2 升级清空旧索引下的消息和游标", async () => {
+    it("clears messages and cursor under legacy index on v2 upgrade", async () => {
         // Simulate a cache written before the v2 re-index shipped.
         const legacy = new Dexie("lemma-upgrade-user");
         legacy.version(1).stores({
