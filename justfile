@@ -1,97 +1,125 @@
-# 默认列出所有配方
+# List all recipes
 default:
     @just --list
 
-# [proto] 契约静态检查
+# Lint contracts
+[group('proto')]
 proto-lint:
     cd proto && buf lint
 
-# [proto] 契约编译验证
+# Build contracts
+[group('proto')]
 proto-build:
     cd proto && buf build
 
-# [proto] 契约代码生成
+# Generate contract code
+[group('proto')]
 proto-gen:
     npm run gen:proto
 
-# [rust] 服务端开发服务器
+# Run the dev server
+[group('rust')]
 rust-dev:
     cargo run
 
-# [rust] 服务端构建
+# Build the workspace
+[group('rust')]
 rust-build:
     cargo build --workspace
 
-# [rust] 服务端 clippy 检查
+# Run clippy
+[group('rust')]
 rust-lint:
     cargo clippy --workspace --all-targets
 
-# [rust] 服务端测试
+# Run tests
+[group('rust')]
 rust-test:
     cargo test --workspace
 
-# [rust] 服务端代码格式化
+# Format code
+[group('rust')]
 rust-fmt:
     cargo fmt --all
 
-# [rust] 服务端代码覆盖率（终端汇总）
+# Coverage summary in the terminal
+[group('rust')]
 rust-cov:
     cargo llvm-cov --workspace --exclude lemma-server --summary-only
 
-# [rust] 服务端代码覆盖率（HTML 报告）
+# Coverage HTML report
+[group('rust')]
 rust-cov-html:
     cargo llvm-cov --workspace --exclude lemma-server --html --open
 
-# [web] 网页前端构建
+# Build for production
+[group('web')]
 web-build:
     cd web && npm run build
 
-# [web] 网页前端开发服务器
+# Run the dev server
+[group('web')]
 web-dev:
     cd web && npm run dev
 
-# [web] 网页前端测试
+# Run tests
+[group('web')]
 web-test:
     cd web && npm test
 
-# [web] 网页前端覆盖率
+# Coverage report
+[group('web')]
 web-cov:
     cd web && npm run test:cov
 
-# [web] 网页前端eslint 检查
+# Run eslint
+[group('web')]
 web-lint:
     cd web && npm run lint
 
-# [web] 网页前端代码格式化
+# Format code
+[group('web')]
 web-fmt:
     cd web && npm run format
 
-# [web] 桌面端的网页前端构建
+# Build the desktop-bundled variant
+[group('web')]
 web-build-desktop:
     cd web && npm run build:desktop
 
-# [desktop] 桌面端 eslint 检查
+# Run the dev shell
+[group('desktop')]
+desktop-dev:
+    cd desktop && npm run start
+
+# Run eslint
+[group('desktop')]
 desktop-lint:
     cd desktop && npm run lint
 
-# [desktop] 桌面端代码格式化
+# Format code
+[group('desktop')]
 desktop-fmt:
     cd desktop && npm run format
 
-# [desktop] 桌面端打包
+# Package the app
+[group('desktop')]
 desktop-package:
     just proto-gen
     just web-build-desktop
     cd desktop && npm run package
 
-# [docker] 构建镜像
+# Build the image
+[group('docker')]
 docker-build:
     docker build -t lemma:latest .
 
-# [docker] 启动完整栈
+# Start the full stack
+[group('docker')]
 docker-up:
     docker compose --profile full up -d
 
-# [docker] 停掉完整栈
+# Stop the full stack
+[group('docker')]
 docker-down:
     docker compose --profile full down
