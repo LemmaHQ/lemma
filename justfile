@@ -12,10 +12,11 @@ proto-lint:
 proto-build:
     cd proto && buf build
 
-# Generate contract code
+# Generate contract code (web TS + KMP Kotlin)
 [group('proto')]
 proto-gen:
     npm run gen:proto
+    cd proto && buf generate --template buf.gen.kmp.yaml
 
 # Run the dev server
 [group('rust')]
