@@ -1,48 +1,42 @@
 package com.lemmaos.lemma
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import kmp.shared.generated.resources.Res
-import kmp.shared.generated.resources.compose_multiplatform
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.lemmaos.lemma.navigation.Home
+import com.lemmaos.lemma.navigation.Login
+import com.lemmaos.lemma.navigation.ServerUrl
+import com.lemmaos.lemma.ui.LemmaTheme
+import com.lemmaos.lemma.ui.screens.HomeScreen
+import com.lemmaos.lemma.ui.screens.LoginScreen
+import com.lemmaos.lemma.ui.screens.ServerUrlScreen
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("点击我！")
+    LemmaTheme {
+        val navController = rememberNavController()
+        NavHost(navController = navController, startDestination = ServerUrl) {
+            composable<ServerUrl> {
+                ServerUrlScreen(
+                    onContinue = {
+                        navController.navigate(Login) {
+                            popUpTo<ServerUrl> { inclusive = true }
+                        }
+                    },
+                )
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
+            composable<Login> {
+                LoginScreen(
+                    onLogin = {
+                        navController.navigate(Home) {
+                            popUpTo<Login> { inclusive = true }
+                        }
+                    },
+                )
+            }
+            composable<Home> {
+                HomeScreen()
             }
         }
     }
