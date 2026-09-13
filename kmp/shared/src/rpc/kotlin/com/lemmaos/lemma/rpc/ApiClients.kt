@@ -10,6 +10,7 @@ import com.connectrpc.impl.ProtocolClient
 import com.connectrpc.okhttp.ConnectOkHttpClient
 import com.connectrpc.simpleTimeouts
 import com.lemmaos.gen.lemma.v1.AuthServiceClient
+import com.lemmaos.gen.lemma.v1.ChatServiceClient
 import com.lemmaos.gen.lemma.v1.ConversationServiceClient
 import com.lemmaos.lemma.data.SessionStore
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +35,7 @@ class ApiClients(serverUrl: String, session: SessionStore) {
 
     val auth = AuthServiceClient(protocolClient)
     val conversations = ConversationServiceClient(protocolClient)
+    val chat = ChatServiceClient(protocolClient)
 }
 
 private class AuthHeaderInterceptor(private val session: SessionStore) : Interceptor {

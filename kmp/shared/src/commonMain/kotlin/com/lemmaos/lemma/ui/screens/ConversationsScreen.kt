@@ -35,21 +35,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.lemmaos.lemma.domain.Conversation
+import com.lemmaos.lemma.ui.chat.ChatPane
+import com.lemmaos.lemma.ui.chat.ChatViewModel
+import com.lemmaos.lemma.ui.chat.toUiState
+import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
+import com.lemmaos.lemma.ui.conversations.groupKeyLabel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.lemmaos.lemma.domain.Conversation
-import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
-import com.lemmaos.lemma.ui.conversations.groupKeyLabel
 
 @Composable
 fun ConversationsScreen(
     conversationsViewModel: ConversationsViewModel,
+    chatViewModel: ChatViewModel?,
     onLogout: () -> Unit,
 ) {
     val list by conversationsViewModel.list.collectAsState()
@@ -169,15 +174,27 @@ fun ConversationsScreen(
                     }
                 }
             }
-
             Box(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
-                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    if (list.isEmpty()) "No conversations yet" else "Select a conversation",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                val vm = chatViewModel
+                if (vm == null || selectedId == null) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (list.isEmpty()) "No conversations yet" else "Select a conversation",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    val chatState by vm.state.collectAsState()
+                    LaunchedEffect(selectedId) { vm.open(selectedId!!) }
+                    ChatPane(
+                        state = chatState.toUiState(),
+                        onSend = { content -> vm.send(providerId = "", model = "", content = content) },
+                        onAbort = vm::abort,
+                        onLoadMore = vm::loadMore,
+                    )
+                }
             }
         }
     }

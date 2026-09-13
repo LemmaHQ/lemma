@@ -16,9 +16,11 @@ import com.lemmaos.lemma.data.ConversationRepository
 import com.lemmaos.lemma.data.ServerConfigStore
 import com.lemmaos.lemma.data.SessionStore
 import com.lemmaos.lemma.data.createAuthRepository
+import com.lemmaos.lemma.data.createChatRepository
 import com.lemmaos.lemma.data.createConversationRepository
 import com.lemmaos.lemma.ui.LemmaTheme
 import com.lemmaos.lemma.ui.auth.AuthViewModel
+import com.lemmaos.lemma.ui.chat.ChatViewModel
 import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
 import com.lemmaos.lemma.ui.screens.ConversationsScreen
 import com.lemmaos.lemma.ui.screens.LoginScreen
@@ -69,8 +71,14 @@ private fun MainContent(
     }
     LaunchedEffect(conversationRepository) { conversationsViewModel.refresh() }
 
+    val chatRepository = remember(session) {
+        createChatRepository(serverConfig, session)
+    }
+    val chatViewModel = remember(chatRepository) { ChatViewModel(chatRepository) }
+
     ConversationsScreen(
         conversationsViewModel = conversationsViewModel,
+        chatViewModel = chatViewModel,
         onLogout = onLogout,
     )
 }
