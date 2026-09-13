@@ -33,14 +33,28 @@ kotlin {
     }
 
     sourceSets {
+        named("jvmMain") { kotlin.srcDir("src/rpc/kotlin") }
+        named("androidMain") { kotlin.srcDir("src/rpc/kotlin") }
+
+        jvmMain.dependencies {
+            implementation(project(":client"))
+            implementation(libs.connect.kotlin)
+            implementation(libs.connect.kotlinOkhttp)
+            implementation(libs.connect.kotlinJavaliteExt)
+        }
         androidMain.dependencies {
+            implementation(project(":client"))
+            implementation(libs.connect.kotlin)
+            implementation(libs.connect.kotlinOkhttp)
+            implementation(libs.connect.kotlinJavaliteExt)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
+            implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
@@ -49,6 +63,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.serializationJson)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.coroutinesCore)
             implementation(libs.multiplatform.settingsNoArg)
         }
         commonTest.dependencies {
