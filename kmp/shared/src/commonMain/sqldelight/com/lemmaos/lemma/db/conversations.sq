@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    archivedAtMs INTEGER,
+    messageCount INTEGER NOT NULL,
+    createdAtMs INTEGER NOT NULL,
+    updatedAtMs INTEGER NOT NULL,
+    syncSeq INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS conversations_updated ON conversations(updatedAtMs DESC);
+
+upsertConversation:
+INSERT INTO conversations VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+    title = excluded.title,
+    status = excluded.status,
+    archivedAtMs = excluded.archivedAtMs,
+    messageCount = excluded.messageCount,
+    createdAtMs = excluded.createdAtMs,
+    updatedAtMs = excluded.updatedAtMs,
+    syncSeq = excluded.syncSeq
+WHERE excluded.syncSeq > conversations.syncSeq;
+
+listConversations:
+SELECT * FROM conversations WHERE status != 2 ORDER BY updatedAtMs DESC;
+
+listArchived:
+SELECT * FROM conversations WHERE status = 2 ORDER BY archivedAtMs DESC;
+
+getConversation:
+SELECT * FROM conversations WHERE id = ?;
+
+staleActiveIds:
+SELECT id FROM conversations WHERE status != 2 AND id NOT IN ?;
+
+staleArchivedIds:
+SELECT id FROM conversations WHERE status = 2 AND id NOT IN ?;
+
+deleteConversation:
+DELETE FROM conversations WHERE id = ?;

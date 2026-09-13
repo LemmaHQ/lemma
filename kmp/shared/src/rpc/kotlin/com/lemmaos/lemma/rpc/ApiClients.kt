@@ -12,6 +12,7 @@ import com.connectrpc.simpleTimeouts
 import com.lemmaos.gen.lemma.v1.AuthServiceClient
 import com.lemmaos.gen.lemma.v1.ChatServiceClient
 import com.lemmaos.gen.lemma.v1.ConversationServiceClient
+import com.lemmaos.gen.lemma.v1.SyncServiceClient
 import com.lemmaos.lemma.data.SessionStore
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -35,6 +36,7 @@ class ApiClients(serverUrl: String, session: SessionStore) {
 
     val auth = AuthServiceClient(protocolClient)
     val conversations = ConversationServiceClient(protocolClient)
+    val sync = SyncServiceClient(protocolClient)
     val chat = ChatServiceClient(protocolClient)
 }
 

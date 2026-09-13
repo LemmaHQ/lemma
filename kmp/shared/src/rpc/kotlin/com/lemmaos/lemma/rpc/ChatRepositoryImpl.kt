@@ -51,6 +51,7 @@ private fun randomId(): String {
 class ChatRepositoryImpl(
     private val clients: ApiClients,
     private val session: SessionStore,
+    private val cache: CacheStore? = null,
 ) : ChatRepository {
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
@@ -61,8 +62,17 @@ class ChatRepositoryImpl(
     private var streamJob: Job? = null
     private var activeMessageId: String? = null
     private var userAborted = false
-
     override suspend fun open(conversationId: String) {
+        // Prefer the local cache; fall back to a server page when offline.
+        val cached = cache?.messages(conversationId).orEmpty()
+        if (cached.isNotEmpty()) {
+            _state.value = ChatState(
+                conversationId = conversationId,
+                items = cached,
+                hasMore = false,
+            )
+            return
+        }
         val response = clients.conversations
             .listMessages(listMessagesRequest { this.conversationId = conversationId; limit = PAGE_SIZE }, emptyMap())
             .orThrowApp()

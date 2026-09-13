@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelightPlugin)
 }
 
 kotlin {
@@ -41,17 +41,20 @@ kotlin {
             implementation(libs.connect.kotlin)
             implementation(libs.connect.kotlinOkhttp)
             implementation(libs.connect.kotlinJavaliteExt)
+            implementation(libs.sqldelight.driverJvm)
         }
         androidMain.dependencies {
             implementation(project(":client"))
             implementation(libs.connect.kotlin)
             implementation(libs.connect.kotlinOkhttp)
             implementation(libs.connect.kotlinJavaliteExt)
+            implementation(libs.sqldelight.driverAndroid)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
-            implementation(libs.compose.runtime)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
             implementation(libs.compose.foundation)
             implementation(compose.material3)
             implementation(compose.materialIconsExtended)
@@ -69,6 +72,15 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.multiplatform.settingsTest)
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("LemmaDb") {
+            packageName.set("com.lemmaos.lemma.db")
+            dialect(libs.sqldelight.dialect)
         }
     }
 }

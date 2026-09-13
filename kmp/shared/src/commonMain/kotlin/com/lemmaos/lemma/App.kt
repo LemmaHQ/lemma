@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -12,12 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.lemmaos.lemma.data.ConversationRepository
+import com.lemmaos.lemma.data.AppContainer
 import com.lemmaos.lemma.data.ServerConfigStore
 import com.lemmaos.lemma.data.SessionStore
+import com.lemmaos.lemma.data.createAppContainer
 import com.lemmaos.lemma.data.createAuthRepository
-import com.lemmaos.lemma.data.createChatRepository
-import com.lemmaos.lemma.data.createConversationRepository
 import com.lemmaos.lemma.ui.LemmaTheme
 import com.lemmaos.lemma.ui.auth.AuthViewModel
 import com.lemmaos.lemma.ui.chat.ChatViewModel
@@ -40,41 +40,52 @@ fun App() {
         }
 
         val session = remember { SessionStore() }
-        val repository = remember(serverUrl) { createAuthRepository(serverConfig, session) }
-        val viewModel = remember(repository) { AuthViewModel(repository) }
-        val state by viewModel.state.collectAsState()
-        LaunchedEffect(repository) { viewModel.bootstrap() }
+        val authViewModel = remember(serverUrl) {
+            AuthViewModel(createAuthRepository(serverConfig, session))
+        }
+        val authState by authViewModel.state.collectAsState()
+        LaunchedEffect(serverUrl) { authViewModel.bootstrap() }
+
+        var container by remember { mutableStateOf<AppContainer?>(null) }
 
         when {
-            !state.ready -> LoadingScreen()
-            state.user == null -> LoginScreen(viewModel)
-            else -> MainContent(
-                session = session,
-                serverConfig = serverConfig,
-                onLogout = viewModel::logout,
-            )
+            !authState.ready -> LoadingScreen()
+            authState.user == null -> LoginScreen(authViewModel)
+            else -> {
+                val user = authState.user!!
+                if (container == null) {
+                    container = createAppContainer(serverConfig, session, user.id)
+                }
+                MainContent(
+                    container = container!!,
+                    onLogout = {
+                        container?.stopSync()
+                        container = null
+                        authViewModel.logout()
+                    },
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun MainContent(
-    session: SessionStore,
-    serverConfig: ServerConfigStore,
+    container: AppContainer,
     onLogout: () -> Unit,
 ) {
-    val conversationRepository = remember(session) {
-        createConversationRepository(serverConfig, session)
+    val conversationsViewModel = remember(container) {
+        ConversationsViewModel(container.conversationRepository)
     }
-    val conversationsViewModel = remember(conversationRepository) {
-        ConversationsViewModel(conversationRepository)
-    }
-    LaunchedEffect(conversationRepository) { conversationsViewModel.refresh() }
+    val chatViewModel = remember(container) { ChatViewModel(container.chatRepository) }
 
-    val chatRepository = remember(session) {
-        createChatRepository(serverConfig, session)
+    LaunchedEffect(container) {
+        container.startSync()
+        conversationsViewModel.refresh()
     }
-    val chatViewModel = remember(chatRepository) { ChatViewModel(chatRepository) }
+    DisposableEffect(container) {
+        onDispose { container.stopSync() }
+    }
 
     ConversationsScreen(
         conversationsViewModel = conversationsViewModel,

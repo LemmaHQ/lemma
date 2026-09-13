@@ -10,6 +10,7 @@ import com.lemmaos.gen.lemma.v1.restoreConversationRequest
 import com.lemmaos.lemma.data.ConversationRepository
 import com.lemmaos.lemma.data.SessionStore
 import com.lemmaos.lemma.domain.Conversation
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class ConversationRepositoryImpl(
     private val clients: ApiClients,
     private val session: SessionStore,
+    private val cache: CacheStore? = null,
 ) : ConversationRepository {
 
     private val _list = MutableStateFlow<List<Conversation>>(emptyList())
@@ -24,19 +26,31 @@ class ConversationRepositoryImpl(
 
     private val _archived = MutableStateFlow<List<Conversation>>(emptyList())
     override val archived: StateFlow<List<Conversation>> = _archived.asStateFlow()
-
     override suspend fun refresh() {
-        _list.value = clients.conversations
-            .listConversations(listConversationsRequest {}, emptyMap())
-            .orThrowApp()
-            .conversationsList
-            .map { it.toDomain() }
-        _archived.value = clients.conversations
-            .listArchived(listArchivedRequest {}, emptyMap())
-            .orThrowApp()
-            .conversationsList
-            .map { it.toDomain() }
+        // Cache first: render instantly, then converge with the server. On
+        // failure the cached view still stands (offline-first).
+        cache?.let {
+            _list.value = it.conversations()
+            _archived.value = it.archivedConversations()
+        }
+        try {
+            _list.value = clients.conversations
+                .listConversations(listConversationsRequest {}, emptyMap())
+                .orThrowApp()
+                .conversationsList
+                .map { it.toDomain() }
+            _archived.value = clients.conversations
+                .listArchived(listArchivedRequest {}, emptyMap())
+                .orThrowApp()
+                .conversationsList
+                .map { it.toDomain() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Offline: keep the cached view.
+        }
     }
+
 
     override suspend fun create(): String {
         val conversation = clients.conversations
