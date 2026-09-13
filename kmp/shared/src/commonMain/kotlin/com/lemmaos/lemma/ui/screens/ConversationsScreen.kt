@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -56,6 +57,7 @@ fun ConversationsScreen(
     conversationsViewModel: ConversationsViewModel,
     chatViewModel: ChatViewModel?,
     onLogout: () -> Unit,
+    onOpenProviders: () -> Unit = {},
 ) {
     val list by conversationsViewModel.list.collectAsState()
     val archived by conversationsViewModel.archived.collectAsState()
@@ -82,6 +84,9 @@ fun ConversationsScreen(
                     if (!showArchived) {
                         IconButton(onClick = { conversationsViewModel.create {} }) {
                             Icon(Icons.Filled.Add, contentDescription = "New conversation")
+                        }
+                        IconButton(onClick = onOpenProviders) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Providers")
                         }
                     }
                     IconButton(onClick = onLogout) {

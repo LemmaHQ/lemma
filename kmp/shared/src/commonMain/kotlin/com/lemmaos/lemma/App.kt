@@ -20,9 +20,11 @@ import com.lemmaos.lemma.data.createAppContainer
 import com.lemmaos.lemma.data.createAuthRepository
 import com.lemmaos.lemma.ui.LemmaTheme
 import com.lemmaos.lemma.ui.auth.AuthViewModel
+import com.lemmaos.lemma.ui.providers.ProvidersViewModel
 import com.lemmaos.lemma.ui.chat.ChatViewModel
 import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
 import com.lemmaos.lemma.ui.screens.ConversationsScreen
+import com.lemmaos.lemma.ui.screens.ProvidersScreen
 import com.lemmaos.lemma.ui.screens.LoginScreen
 import com.lemmaos.lemma.ui.screens.ServerUrlScreen
 
@@ -87,11 +89,24 @@ private fun MainContent(
         onDispose { container.stopSync() }
     }
 
-    ConversationsScreen(
-        conversationsViewModel = conversationsViewModel,
-        chatViewModel = chatViewModel,
-        onLogout = onLogout,
-    )
+    var showProviders by remember { mutableStateOf(false) }
+    if (showProviders) {
+        val providersViewModel = remember(container) {
+            ProvidersViewModel(container.providerRepository)
+        }
+        LaunchedEffect(container) { providersViewModel.refresh() }
+        ProvidersScreen(
+            viewModel = providersViewModel,
+            onBack = { showProviders = false },
+        )
+    } else {
+        ConversationsScreen(
+            conversationsViewModel = conversationsViewModel,
+            chatViewModel = chatViewModel,
+            onLogout = onLogout,
+            onOpenProviders = { showProviders = true },
+        )
+    }
 }
 
 @Composable
