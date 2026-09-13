@@ -9,6 +9,8 @@ import com.lemmaos.lemma.rpc.ConversationRepositoryImpl
 import com.lemmaos.lemma.data.ProviderRepository
 import com.lemmaos.lemma.rpc.ProviderRepositoryImpl
 import com.lemmaos.lemma.rpc.SyncEngine
+import com.lemmaos.lemma.data.StorageRepository
+import com.lemmaos.lemma.rpc.StorageRepositoryImpl
 
 class AppContainerImpl(
     serverConfig: ServerConfigStore,
@@ -29,6 +31,7 @@ class AppContainerImpl(
         ConversationRepositoryImpl(clients, session, cache)
     override val providerRepository: ProviderRepository = ProviderRepositoryImpl(clients, session)
     override val chatRepository: ChatRepository = ChatRepositoryImpl(clients, session, cache)
+    override val storageRepository: StorageRepository = StorageRepositoryImpl(clients, session)
 
     override fun startSync() {
         syncEngine.start()

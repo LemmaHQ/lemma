@@ -25,6 +25,8 @@ import com.lemmaos.lemma.ui.chat.ChatViewModel
 import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
 import com.lemmaos.lemma.ui.screens.ConversationsScreen
 import com.lemmaos.lemma.ui.screens.ProvidersScreen
+import com.lemmaos.lemma.ui.screens.StorageScreen
+import com.lemmaos.lemma.ui.storage.StorageViewModel
 import com.lemmaos.lemma.ui.screens.LoginScreen
 import com.lemmaos.lemma.ui.screens.ServerUrlScreen
 
@@ -89,22 +91,34 @@ private fun MainContent(
         onDispose { container.stopSync() }
     }
 
-    var showProviders by remember { mutableStateOf(false) }
-    if (showProviders) {
-        val providersViewModel = remember(container) {
-            ProvidersViewModel(container.providerRepository)
+    var settingsSection by remember { mutableStateOf<String?>(null) }
+    when (settingsSection) {
+        "providers" -> {
+            val providersViewModel = remember(container) {
+                ProvidersViewModel(container.providerRepository)
+            }
+            LaunchedEffect(container) { providersViewModel.refresh() }
+            ProvidersScreen(
+                viewModel = providersViewModel,
+                onBack = { settingsSection = null },
+            )
         }
-        LaunchedEffect(container) { providersViewModel.refresh() }
-        ProvidersScreen(
-            viewModel = providersViewModel,
-            onBack = { showProviders = false },
-        )
-    } else {
-        ConversationsScreen(
+        "storage" -> {
+            val storageViewModel = remember(container) {
+                StorageViewModel(container.storageRepository)
+            }
+            LaunchedEffect(container) { storageViewModel.refresh() }
+            StorageScreen(
+                viewModel = storageViewModel,
+                onBack = { settingsSection = null },
+            )
+        }
+        else -> ConversationsScreen(
             conversationsViewModel = conversationsViewModel,
             chatViewModel = chatViewModel,
             onLogout = onLogout,
-            onOpenProviders = { showProviders = true },
+            onOpenProviders = { settingsSection = "providers" },
+            onOpenStorage = { settingsSection = "storage" },
         )
     }
 }

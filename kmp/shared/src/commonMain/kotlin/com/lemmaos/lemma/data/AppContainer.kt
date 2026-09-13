@@ -5,6 +5,7 @@ interface AppContainer {
     val conversationRepository: ConversationRepository
     val chatRepository: ChatRepository
     val providerRepository: ProviderRepository
+    val storageRepository: StorageRepository
 
     fun startSync()
 

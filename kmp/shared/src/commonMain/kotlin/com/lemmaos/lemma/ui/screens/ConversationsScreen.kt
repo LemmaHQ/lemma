@@ -58,6 +58,7 @@ fun ConversationsScreen(
     chatViewModel: ChatViewModel?,
     onLogout: () -> Unit,
     onOpenProviders: () -> Unit = {},
+    onOpenStorage: () -> Unit = {},
 ) {
     val list by conversationsViewModel.list.collectAsState()
     val archived by conversationsViewModel.archived.collectAsState()
@@ -85,8 +86,27 @@ fun ConversationsScreen(
                         IconButton(onClick = { conversationsViewModel.create {} }) {
                             Icon(Icons.Filled.Add, contentDescription = "New conversation")
                         }
-                        IconButton(onClick = onOpenProviders) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Providers")
+                        var settingsOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { settingsOpen = true }) {
+                                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                            }
+                            DropdownMenu(expanded = settingsOpen, onDismissRequest = { settingsOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Providers") },
+                                    onClick = {
+                                        settingsOpen = false
+                                        onOpenProviders()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Archive storage") },
+                                    onClick = {
+                                        settingsOpen = false
+                                        onOpenStorage()
+                                    },
+                                )
+                            }
                         }
                     }
                     IconButton(onClick = onLogout) {
