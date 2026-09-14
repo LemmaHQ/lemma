@@ -1,7 +1,7 @@
 package com.lemmaos.lemma.lib
 
 import com.lemmaos.lemma.domain.Conversation
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime

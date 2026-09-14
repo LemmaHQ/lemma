@@ -35,7 +35,7 @@ fun ModelPicker(
         Row {
             Text(selection?.model ?: I18n.t("chat.selectModel"))
             IconButton(onClick = { open = true }) {
-                Icon(Icons.Filled.ExpandMore, contentDescription = "Choose model")
+                Icon(Icons.Filled.ExpandMore, contentDescription = I18n.t("chat.chooseModel"))
             }
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

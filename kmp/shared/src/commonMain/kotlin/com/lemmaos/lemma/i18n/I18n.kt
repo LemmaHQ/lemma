@@ -1,5 +1,8 @@
 package com.lemmaos.lemma.i18n
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.russhwolf.settings.Settings
 
 enum class Language {
@@ -9,7 +12,8 @@ enum class Language {
 
 private const val KEY_LANGUAGE = "language"
 object I18n {
-    var current: Language = load()
+    // Backed by Compose state so every t() call site recomposes on a language switch.
+    var current: Language by mutableStateOf(load())
         private set
 
     fun setLanguage(value: Language) {
@@ -28,6 +32,9 @@ object I18n {
         Language.EN -> EN[key] ?: key
         Language.ZH -> ZH[key] ?: EN[key] ?: key
     }
+
+    fun t(key: String, vararg args: Pair<String, String>): String =
+        args.fold(t(key)) { acc, (name, value) -> acc.replace("{$name}", value) }
 }
 
 private val EN = mapOf(
@@ -102,6 +109,39 @@ private val EN = mapOf(
     "storage.deleteTitle" to "Delete storage configuration?",
     "storage.deleteBody" to
         "Archived conversations still referencing this storage will block the deletion. Restore or delete them first.",
+    "chat.chooseModel" to "Choose model",
+    "conversations.settings" to "Settings",
+    "errors.unspecified" to "Something went wrong. Please try again.",
+    "errors.credentialsInvalid" to "Incorrect username or password.",
+    "errors.usernameTaken" to "Username or email is already taken.",
+    "errors.signupFieldsRequired" to
+        "Username and email are required; password must be at least 8 characters.",
+    "errors.loginTargetRequired" to "Provide exactly one of username or email.",
+    "errors.tokenInvalid" to "Your session has expired. Please sign in again.",
+    "errors.userNotFound" to "User not found.",
+    "errors.providerFieldsRequired" to "Name, base URL and API key are required.",
+    "errors.providerKindInvalid" to "Invalid provider type.",
+    "errors.providerNotFound" to "Provider not found.",
+    "errors.providerDisabled" to "This provider is disabled.",
+    "errors.idInvalid" to "Invalid ID.",
+    "errors.titleRequired" to "Title is required.",
+    "errors.conversationNotFound" to "Conversation not found.",
+    "errors.conversationNotActive" to "Conversation not found or already archived.",
+    "errors.conversationNotArchived" to "Conversation not found or not archived.",
+    "errors.archivedConversationNotFound" to "Archived conversation not found.",
+    "errors.messageNotFound" to "Message not found.",
+    "errors.notAssistantMessage" to "Only assistant messages support this action.",
+    "errors.contentRequired" to "Message content is required.",
+    "errors.modelRequired" to "Please select a model.",
+    "errors.storageEndpointRequired" to "Endpoint is required.",
+    "errors.storageBucketRequired" to "Bucket is required.",
+    "errors.storageAccessKeyRequired" to "Access key ID is required.",
+    "errors.storageSecretKeyRequired" to "Secret access key is required.",
+    "errors.storageNotConfigured" to "Archive storage is not configured.",
+    "errors.migrationNotPending" to "There is no pending migration.",
+    "errors.storageHasArchives" to
+        "Cannot delete: archived conversations still reference this storage. Restore or delete them first.",
+    "errors.bucketNotFound" to "Bucket {bucket} does not exist. Create it on the backend first.",
 )
 
 private val ZH = mapOf(
@@ -175,4 +215,35 @@ private val ZH = mapOf(
     "storage.migrate" to "开始迁移",
     "storage.deleteTitle" to "删除存储配置？",
     "storage.deleteBody" to "仍有归档会话引用此存储时将阻止删除。请先恢复或删除它们。",
+    "chat.chooseModel" to "选择模型",
+    "conversations.settings" to "设置",
+    "errors.unspecified" to "操作失败，请重试。",
+    "errors.credentialsInvalid" to "用户名或密码错误。",
+    "errors.usernameTaken" to "用户名或邮箱已被占用。",
+    "errors.signupFieldsRequired" to "请填写用户名和邮箱，密码至少 8 位。",
+    "errors.loginTargetRequired" to "登录须且仅须提供用户名或邮箱之一。",
+    "errors.tokenInvalid" to "登录状态已失效，请重新登录。",
+    "errors.userNotFound" to "用户不存在。",
+    "errors.providerFieldsRequired" to "请填写名称、Base URL 和 API key。",
+    "errors.providerKindInvalid" to "无效的供应商类型。",
+    "errors.providerNotFound" to "供应商不存在。",
+    "errors.providerDisabled" to "该供应商已禁用。",
+    "errors.idInvalid" to "无效的 ID。",
+    "errors.titleRequired" to "标题不能为空。",
+    "errors.conversationNotFound" to "会话不存在。",
+    "errors.conversationNotActive" to "会话不存在或已归档。",
+    "errors.conversationNotArchived" to "会话不存在或未归档。",
+    "errors.archivedConversationNotFound" to "归档会话不存在。",
+    "errors.messageNotFound" to "消息不存在。",
+    "errors.notAssistantMessage" to "仅 assistant 消息支持此操作。",
+    "errors.contentRequired" to "消息内容不能为空。",
+    "errors.modelRequired" to "请选择一个模型。",
+    "errors.storageEndpointRequired" to "请填写 Endpoint。",
+    "errors.storageBucketRequired" to "请填写桶名。",
+    "errors.storageAccessKeyRequired" to "请填写 Access Key ID。",
+    "errors.storageSecretKeyRequired" to "请填写 Secret Access Key。",
+    "errors.storageNotConfigured" to "尚未配置归档存储。",
+    "errors.migrationNotPending" to "没有待迁移的任务。",
+    "errors.storageHasArchives" to "无法删除：仍有归档会话引用此存储。请先恢复或删除它们。",
+    "errors.bucketNotFound" to "桶 {bucket} 不存在，请先在后端创建。",
 )

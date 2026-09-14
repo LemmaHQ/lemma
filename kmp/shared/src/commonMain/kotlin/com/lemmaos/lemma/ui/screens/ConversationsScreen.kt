@@ -1,5 +1,6 @@
 package com.lemmaos.lemma.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +20,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material3.AlertDialog
@@ -52,7 +54,9 @@ import com.lemmaos.lemma.ui.chat.ModelChoice
 import com.lemmaos.lemma.ui.conversations.groupKeyLabel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.lemmaos.lemma.ui.LocalLemmaColors
 import com.lemmaos.lemma.i18n.I18n
+import com.lemmaos.lemma.i18n.Language
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -63,6 +67,7 @@ fun ConversationsScreen(
     modelChoice: ModelChoice?,
     onSelectModel: (ModelChoice) -> Unit,
     onLogout: () -> Unit,
+    onToggleLanguage: () -> Unit = {},
     onOpenProviders: () -> Unit = {},
     onOpenStorage: () -> Unit = {},
 ) {
@@ -77,7 +82,8 @@ fun ConversationsScreen(
     Scaffold { padding ->
         Row(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
-                modifier = Modifier.width(280.dp).fillMaxHeight(),
+                modifier = Modifier.width(280.dp).fillMaxHeight()
+                    .background(LocalLemmaColors.current.sidebar),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -95,7 +101,7 @@ fun ConversationsScreen(
                         var settingsOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { settingsOpen = true }) {
-                                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                                Icon(Icons.Filled.Settings, contentDescription = I18n.t("conversations.settings"))
                             }
                             DropdownMenu(expanded = settingsOpen, onDismissRequest = { settingsOpen = false }) {
                                 DropdownMenuItem(
@@ -112,11 +118,21 @@ fun ConversationsScreen(
                                         onOpenStorage()
                                     },
                                 )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(if (I18n.current == Language.EN) "中文" else "English")
+                                    },
+                                    leadingIcon = { Icon(Icons.Filled.Language, null) },
+                                    onClick = {
+                                        settingsOpen = false
+                                        onToggleLanguage()
+                                    },
+                                )
                             }
                         }
                     }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Filled.Logout, contentDescription = I18n.t("conversations.signOut"))
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = I18n.t("conversations.signOut"))
                     }
                 }
 

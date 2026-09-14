@@ -54,18 +54,15 @@ fun App() {
         LaunchedEffect(serverUrl) { authViewModel.bootstrap() }
 
         var container by remember { mutableStateOf<AppContainer?>(null) }
-        var languageTick by remember { mutableStateOf(0) }
+        val toggleLanguage = {
+            I18n.setLanguage(if (I18n.current == Language.EN) Language.ZH else Language.EN)
+        }
 
         when {
             !authState.ready -> LoadingScreen()
             authState.user == null -> LoginScreen(
                 viewModel = authViewModel,
-                onToggleLanguage = {
-                    I18n.setLanguage(
-                        if (I18n.current == Language.EN) Language.ZH else Language.EN,
-                    )
-                    languageTick += 1
-                },
+                onToggleLanguage = toggleLanguage,
             )
             else -> {
                 val user = authState.user!!
@@ -74,6 +71,7 @@ fun App() {
                 }
                 MainContent(
                     container = container!!,
+                    onToggleLanguage = toggleLanguage,
                     onLogout = {
                         container?.stopSync()
                         container = null
@@ -88,6 +86,7 @@ fun App() {
 @Composable
 private fun MainContent(
     container: AppContainer,
+    onToggleLanguage: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val conversationsViewModel = remember(container) {
@@ -134,6 +133,7 @@ private fun MainContent(
                 modelChoice = modelChoice,
                 onSelectModel = { modelChoice = it },
                 onLogout = onLogout,
+                onToggleLanguage = onToggleLanguage,
                 onOpenProviders = { settingsSection = "providers" },
                 onOpenStorage = { settingsSection = "storage" },
             )

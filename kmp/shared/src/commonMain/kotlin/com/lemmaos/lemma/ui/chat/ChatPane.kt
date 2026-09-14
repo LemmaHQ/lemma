@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lemmaos.lemma.domain.ChatMessage
 import com.lemmaos.lemma.domain.MessageStatusKind
+import androidx.compose.foundation.background
+import com.lemmaos.lemma.ui.LocalLemmaColors
 import com.lemmaos.lemma.i18n.I18n
 import com.lemmaos.lemma.domain.Provider
 
@@ -87,7 +89,9 @@ fun ChatPane(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth()
+                .background(LocalLemmaColors.current.composer)
+                .padding(12.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
             ModelPicker(
