@@ -12,11 +12,10 @@ proto-lint:
 proto-build:
     cd proto && buf build
 
-# Generate contract code (web TS + KMP Kotlin)
+# Generate contract code (web TS)
 [group('proto')]
 proto-gen:
     npm run gen:proto
-    cd proto && buf generate --template buf.gen.kmp.yaml
 
 # Run the dev server
 [group('rust')]
@@ -109,31 +108,6 @@ desktop-package:
     just proto-gen
     just web-build-desktop
     cd desktop && npm run package
-
-# Compile every target
-[group('kmp')]
-kmp-build:
-    cd kmp && ./gradlew assemble
-
-# Run tests
-[group('kmp')]
-kmp-test:
-    cd kmp && ./gradlew jvmTest
-
-# Run the desktop app
-[group('kmp')]
-kmp-desktop:
-    cd kmp && ./gradlew :desktopApp:run
-
-# Build the debug APK
-[group('kmp')]
-kmp-android:
-    cd kmp && ./gradlew :androidApp:assembleDebug
-
-# Build the native desktop installer for the current OS
-[group('kmp')]
-kmp-package:
-    cd kmp && ./gradlew :desktopApp:packageDistributionForCurrentOS
 
 # Build the image
 [group('docker')]

@@ -1,6 +1,6 @@
 # Lemma — 技术设计文档（v0）
 
-> 对应 PRD：`docs/prd/v0-prd.md` | 版本：v0.8 | 状态：评审中
+> 对应 PRD：`docs/prd/v0-prd.md` | 版本：v0.9 | 状态：评审中
 >
 > 本文档只描述粗粒度架构与关键技术选型；各领域设计在实现推进到对应阶段时再逐节填写，填写前不预设实现细节。
 > 文档只保留当前状态，历史变更由 git 提交记录承载。
@@ -12,7 +12,7 @@ graph LR
     subgraph 客户端
         W[Web 端<br>React + connect-es]
         D[桌面端<br>Electron + connect-es]
-        M[移动端<br>Flutter / KMP+CMP 评估中]
+        M[移动端<br>KMP + CMP + connect-kotlin]
     end
     subgraph 自部署服务器
         S[后端服务<br>Rust / axum + connect-rust]
@@ -40,14 +40,14 @@ graph LR
 
 | 领域          | 选择                                                                     | 说明                                                                               |
 | ------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| RPC 框架      | Connect RPC（connect-rust / connect-es / 移动端随选型：connect-dart 或 connect-kotlin）                | 一份 proto 契约驱动三端；connect-rust 尚 pre-1.0，退路 tonic + tonic-web，契约不变 |
+| RPC 框架      | Connect RPC（connect-rust / connect-es / connect-kotlin）                | 一份 proto 契约驱动三端；connect-rust 尚 pre-1.0，退路 tonic + tonic-web，契约不变 |
 | 后端          | Rust + axum + tokio + sqlx                                               | —                                                                                  |
 | 数据库        | ParadeDB（PostgreSQL，含 pgvector / pg_search）                          | 为未来 RAG 预留                                                                    |
 | 认证          | JWT access token（短寿命）+ refresh token（存库、轮换）；argon2 密码哈希 | 无状态校验 + 可吊销                                                                |
 | 对象存储      | aws-sdk-s3（自定义 endpoint）                                            | AWS S3 / R2 / MinIO 一套代码通吃                                                   |
-| Web / 桌面    | React（Vite）+ Electron                                             | Zustand 状态、Dexie 离线缓存、shadcn/ui + Tailwind v4；桌面端内置 Web 构建产物 + 版本握手；壳技术 Electron 为基线、与 Flutter/CMP 原型对比后定案                              |
+| Web / 桌面    | React（Vite）+ Electron                                             | Zustand 状态、Dexie 离线缓存、shadcn/ui + Tailwind v4；桌面端为 Electron 壳，内置 Web 构建产物 + 版本握手                              |
 | 前端分发      | Web 构建产物双路分发                                               | 嵌后端二进制与 API 同源（浏览器场景免 CORS、版本天然一致）；同一产物打包进桌面端，握手防版本错配                                       |
-| 移动端        | 待定：Flutter 或 KMP+CMP                                              | 各做最小原型实测对比后定案；connect-dart 官方全平台；connect-kotlin 覆盖 Android/JVM（CMP 的 Android 与桌面端可用），iOS（Kotlin/Native）暂不支持、上游 KMP 转换进行中（connect-kotlin#498，仅 JVM target）——当前只做 Android 故不构成阻塞；缓存选型随实现定                                         |
+| 移动端        | KMP + CMP（当前仅 Android target）                                    | Android 上即 Jetpack Compose，可直接用 Android 生态；模块按 commonMain / androidMain 划分为 iOS 预留。connect-kotlin 覆盖 Android/JVM，iOS（Kotlin/Native）暂不支持、上游 KMP 转换进行中（connect-kotlin#498）——当前只做 Android 故不构成阻塞；UI 不复用 Web 端，视觉 token 对齐 DESIGN.md、交互按手机形态设计；缓存选型随实现定 |
 | 国际化 / 主题 | react-i18next（中英双语）；明 / 暗 / 跟随系统                            | 跟随浏览器/系统，可切换、持久化                                                    |
 
 ## 3. Monorepo 布局
@@ -65,8 +65,8 @@ lemma/
 ├── proto/                   # 契约唯一事实源（buf 管理）
 │   └── lemma/v1/
 ├── web/                     # React Web 端（Vite）
-├── desktop/                 # Electron 壳（基线方案），内置 web/ 构建产物（M3）
-├── mobile/                  # 移动端（M4，Flutter / KMP+CMP 对比评估中）
+├── desktop/                 # Electron 壳，内置 web/ 构建产物（M3）
+├── android/                 # KMP + CMP 移动端，独立 Gradle 根（M4）
 ├── deploy/                  # 部署编排（server + db）+ .env.example（M5）
 └── docs/
 ```
@@ -75,7 +75,7 @@ lemma/
 
 - Rust：`crates/proto/build.rs` 编译期经 connectrpc-build 生成到 OUT_DIR，`cargo build` 自动重生成
 - TS：`just proto-gen` 经 buf + 本地 protoc-gen-es 插件生成到 `web/src/gen/`
-- 移动端：随选型定案接入对应生成链（Flutter 走 protoc-gen-dart + connect-dart；KMP 走 connect-kotlin），同样不入 git
+- 移动端：buf 远程插件（protocolbuffers/java + protocolbuffers/kotlin + connectrpc/kotlin，均 lite）生成到 `android/` 的 Gradle build 目录，同样不入 git
 - 契约变更后：`just proto-lint && just proto-build && just proto-gen && cargo build` 全绿再提交
 
 ## 4. 后端架构
@@ -135,7 +135,7 @@ React 19 + Vite + Tailwind v4 + shadcn（Radix 组件），状态用 zustand，�
 
 性能：三个路由页 + Markdown 渲染（MessageContent）各自懒加载拆包；生产构建由 rust-embed 嵌进服务端二进制，单文件部署。
 
-**桌面端**（M3，壳技术 Electron 为基线、与 Flutter/CMP 原型对比后定案）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。托盘、快捷键、自动更新等壳能力随 M3 推进补充。
+**桌面端**（M3，Electron）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。托盘、快捷键、自动更新等壳能力随 M3 推进补充。
 
 ## 8. 部署
 

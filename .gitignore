@@ -25,16 +25,6 @@ desktop/out/
 desktop/.vite/
 desktop/web-dist/
 
-# Android / KMP
-*.iml
-kmp/.gradle/
-kmp/.kotlin/
-kmp/**/build/
-kmp/local.properties
-kmp/captures/
-kmp/.externalNativeBuild/
-kmp/.cxx/
-
 # 环境变量与密钥
 .env
 .env.*
@@ -44,6 +34,7 @@ kmp/.cxx/
 .vscode/*
 !.vscode/extensions.json
 .idea
+*.iml
 *.suo
 *.ntvs*
 *.njsproj
