@@ -8,6 +8,7 @@ import com.lemmaos.lemma.lib.GroupKey
 import com.lemmaos.lemma.lib.SessionGroup
 import com.lemmaos.lemma.lib.groupSessions
 import com.lemmaos.lemma.ui.errorText
+import com.lemmaos.lemma.i18n.I18n
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -68,8 +69,8 @@ class ConversationsViewModel(
 }
 
 fun groupKeyLabel(key: GroupKey): String = when (key) {
-    GroupKey.TODAY -> "Today"
-    GroupKey.YESTERDAY -> "Yesterday"
-    GroupKey.LAST_7_DAYS -> "Last 7 days"
-    GroupKey.EARLIER -> "Earlier"
+    GroupKey.TODAY -> I18n.t("group.today")
+    GroupKey.YESTERDAY -> I18n.t("group.yesterday")
+    GroupKey.LAST_7_DAYS -> I18n.t("group.last7Days")
+    GroupKey.EARLIER -> I18n.t("group.earlier")
 }

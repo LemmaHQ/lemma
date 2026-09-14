@@ -24,6 +24,9 @@ import com.lemmaos.lemma.ui.providers.ProvidersViewModel
 import com.lemmaos.lemma.ui.chat.ChatViewModel
 import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
 import com.lemmaos.lemma.ui.screens.ConversationsScreen
+import com.lemmaos.lemma.ui.chat.ModelChoice
+import com.lemmaos.lemma.i18n.I18n
+import com.lemmaos.lemma.i18n.Language
 import com.lemmaos.lemma.ui.screens.ProvidersScreen
 import com.lemmaos.lemma.ui.screens.StorageScreen
 import com.lemmaos.lemma.ui.storage.StorageViewModel
@@ -51,10 +54,19 @@ fun App() {
         LaunchedEffect(serverUrl) { authViewModel.bootstrap() }
 
         var container by remember { mutableStateOf<AppContainer?>(null) }
+        var languageTick by remember { mutableStateOf(0) }
 
         when {
             !authState.ready -> LoadingScreen()
-            authState.user == null -> LoginScreen(authViewModel)
+            authState.user == null -> LoginScreen(
+                viewModel = authViewModel,
+                onToggleLanguage = {
+                    I18n.setLanguage(
+                        if (I18n.current == Language.EN) Language.ZH else Language.EN,
+                    )
+                    languageTick += 1
+                },
+            )
             else -> {
                 val user = authState.user!!
                 if (container == null) {
@@ -82,22 +94,22 @@ private fun MainContent(
         ConversationsViewModel(container.conversationRepository)
     }
     val chatViewModel = remember(container) { ChatViewModel(container.chatRepository) }
+    val providersViewModel = remember(container) {
+        ProvidersViewModel(container.providerRepository)
+    }
+    var modelChoice by remember(container) { mutableStateOf<ModelChoice?>(null) }
 
     LaunchedEffect(container) {
         container.startSync()
         conversationsViewModel.refresh()
+        providersViewModel.refresh()
     }
     DisposableEffect(container) {
         onDispose { container.stopSync() }
     }
-
     var settingsSection by remember { mutableStateOf<String?>(null) }
     when (settingsSection) {
         "providers" -> {
-            val providersViewModel = remember(container) {
-                ProvidersViewModel(container.providerRepository)
-            }
-            LaunchedEffect(container) { providersViewModel.refresh() }
             ProvidersScreen(
                 viewModel = providersViewModel,
                 onBack = { settingsSection = null },
@@ -113,13 +125,19 @@ private fun MainContent(
                 onBack = { settingsSection = null },
             )
         }
-        else -> ConversationsScreen(
-            conversationsViewModel = conversationsViewModel,
-            chatViewModel = chatViewModel,
-            onLogout = onLogout,
-            onOpenProviders = { settingsSection = "providers" },
-            onOpenStorage = { settingsSection = "storage" },
-        )
+        else -> {
+            val providers by providersViewModel.list.collectAsState()
+            ConversationsScreen(
+                conversationsViewModel = conversationsViewModel,
+                chatViewModel = chatViewModel,
+                providers = providers,
+                modelChoice = modelChoice,
+                onSelectModel = { modelChoice = it },
+                onLogout = onLogout,
+                onOpenProviders = { settingsSection = "providers" },
+                onOpenStorage = { settingsSection = "storage" },
+            )
+        }
     }
 }
 

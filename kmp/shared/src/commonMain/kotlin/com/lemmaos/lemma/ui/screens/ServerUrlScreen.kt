@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lemmaos.lemma.data.ServerConfigStore
+import com.lemmaos.lemma.i18n.I18n
 import com.lemmaos.lemma.data.normalizeServerUrl
 
 @Composable
@@ -37,7 +38,7 @@ fun ServerUrlScreen(store: ServerConfigStore, onContinue: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("Connect to a server", style = MaterialTheme.typography.headlineSmall)
+            Text(I18n.t("serverUrl.title"), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = input,
@@ -45,10 +46,10 @@ fun ServerUrlScreen(store: ServerConfigStore, onContinue: () -> Unit) {
                     input = it
                     error = false
                 },
-                label = { Text("Server URL") },
+                label = { Text(I18n.t("serverUrl.field")) },
                 placeholder = { Text("http://127.0.0.1:1025") },
                 isError = error,
-                supportingText = if (error) ({ Text("Enter a valid http(s) URL") }) else null,
+                supportingText = if (error) ({ Text(I18n.t("serverUrl.error")) }) else null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -69,7 +70,7 @@ fun ServerUrlScreen(store: ServerConfigStore, onContinue: () -> Unit) {
                 },
                 enabled = input.isNotBlank(),
             ) {
-                Text("Continue")
+                Text(I18n.t("serverUrl.continue"))
             }
         }
     }

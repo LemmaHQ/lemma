@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.lemmaos.lemma.data.StoragePatch
+import com.lemmaos.lemma.i18n.I18n
 import com.lemmaos.lemma.ui.storage.StorageViewModel
 
 @Composable
@@ -84,7 +85,7 @@ fun StorageScreen(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                 }
-                Text("Archive storage", style = MaterialTheme.typography.titleMedium)
+                Text(I18n.t("storage.title"), style = MaterialTheme.typography.titleMedium)
             }
 
             uiState.error?.let {
@@ -106,7 +107,7 @@ fun StorageScreen(
 
             if (config == null) {
                 Text(
-                    "Not configured. Archives are stored in place on the server.",
+                    I18n.t("storage.notConfigured"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -116,7 +117,7 @@ fun StorageScreen(
             OutlinedTextField(
                 value = endpoint,
                 onValueChange = { endpoint = it },
-                label = { Text("Endpoint") },
+                label = { Text(I18n.t("storage.endpoint")) },
                 placeholder = { Text("http://127.0.0.1:9000") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -125,7 +126,7 @@ fun StorageScreen(
             OutlinedTextField(
                 value = region,
                 onValueChange = { region = it },
-                label = { Text("Region") },
+                label = { Text(I18n.t("storage.region")) },
                 placeholder = { Text("us-east-1") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -134,7 +135,7 @@ fun StorageScreen(
             OutlinedTextField(
                 value = bucket,
                 onValueChange = { bucket = it },
-                label = { Text("Bucket (must already exist)") },
+                label = { Text(I18n.t("storage.bucket")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -143,7 +144,7 @@ fun StorageScreen(
                 value = accessKey,
                 onValueChange = { accessKey = it },
                 label = {
-                    Text(if (config != null) "Access key ID (leave blank to keep)" else "Access key ID")
+                    Text(if (config != null) I18n.t("storage.accessKeyKeep") else I18n.t("storage.accessKey"))
                 },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
@@ -154,7 +155,7 @@ fun StorageScreen(
                 value = secretKey,
                 onValueChange = { secretKey = it },
                 label = {
-                    Text(if (config != null) "Secret access key (leave blank to keep)" else "Secret access key")
+                    Text(if (config != null) I18n.t("storage.secretKeyKeep") else I18n.t("storage.secretKey"))
                 },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
@@ -173,20 +174,20 @@ fun StorageScreen(
                             strokeWidth = 2.dp,
                         )
                     }
-                    Text("Save")
+                    Text(I18n.t("storage.save"))
                 }
                 OutlinedButton(
                     onClick = { viewModel.test(patch) },
                     enabled = !uiState.busy && canSave,
                 ) {
-                    Text("Test connection")
+                    Text(I18n.t("storage.test"))
                 }
                 if (config != null) {
                     TextButton(
                         onClick = { deleteConfirm = true },
                         enabled = !uiState.busy,
                     ) {
-                        Text("Delete")
+                        Text(I18n.t("storage.delete"))
                     }
                 }
             }
@@ -194,7 +195,7 @@ fun StorageScreen(
             config?.let { cfg ->
                 if (cfg.pendingMigration) {
                     Spacer(Modifier.height(24.dp))
-                    Text("Pending migration", style = MaterialTheme.typography.titleSmall)
+                    Text(I18n.t("storage.pending"), style = MaterialTheme.typography.titleSmall)
                     progress?.let { p ->
                         LinearProgressIndicator(
                             progress = { if (p.total > 0) p.done.toFloat() / p.total else 0f },
@@ -214,7 +215,7 @@ fun StorageScreen(
                     }
                     if (!uiState.migrating) {
                         TextButton(onClick = viewModel::migrate) {
-                            Text("Start migration")
+                            Text(I18n.t("storage.migrate"))
                         }
                     }
                 }
@@ -225,21 +226,18 @@ fun StorageScreen(
     if (deleteConfirm) {
         AlertDialog(
             onDismissRequest = { deleteConfirm = false },
-            title = { Text("Delete storage configuration?") },
+            title = { Text(I18n.t("storage.deleteTitle")) },
             text = {
-                Text(
-                    "Archived conversations still referencing this storage will block " +
-                        "the deletion. Restore or delete them first.",
-                )
+                Text(I18n.t("storage.deleteBody"))
             },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.delete()
                     deleteConfirm = false
-                }) { Text("Delete") }
+                }) { Text(I18n.t("storage.delete")) }
             },
             dismissButton = {
-                TextButton(onClick = { deleteConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { deleteConfirm = false }) { Text(I18n.t("providers.cancel")) }
             },
         )
     }

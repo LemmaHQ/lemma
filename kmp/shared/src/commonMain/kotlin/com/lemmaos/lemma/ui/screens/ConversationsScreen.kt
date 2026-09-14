@@ -47,15 +47,21 @@ import com.lemmaos.lemma.ui.chat.ChatPane
 import com.lemmaos.lemma.ui.chat.ChatViewModel
 import com.lemmaos.lemma.ui.chat.toUiState
 import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
+import com.lemmaos.lemma.domain.Provider
+import com.lemmaos.lemma.ui.chat.ModelChoice
 import com.lemmaos.lemma.ui.conversations.groupKeyLabel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.lemmaos.lemma.i18n.I18n
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun ConversationsScreen(
     conversationsViewModel: ConversationsViewModel,
     chatViewModel: ChatViewModel?,
+    providers: List<Provider>,
+    modelChoice: ModelChoice?,
+    onSelectModel: (ModelChoice) -> Unit,
     onLogout: () -> Unit,
     onOpenProviders: () -> Unit = {},
     onOpenStorage: () -> Unit = {},
@@ -78,13 +84,13 @@ fun ConversationsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        if (showArchived) "Archived" else "Conversations",
+                        if (showArchived) I18n.t("conversations.archivedTitle") else I18n.t("conversations.title"),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                     )
                     if (!showArchived) {
                         IconButton(onClick = { conversationsViewModel.create {} }) {
-                            Icon(Icons.Filled.Add, contentDescription = "New conversation")
+                            Icon(Icons.Filled.Add, contentDescription = I18n.t("conversations.new"))
                         }
                         var settingsOpen by remember { mutableStateOf(false) }
                         Box {
@@ -93,14 +99,14 @@ fun ConversationsScreen(
                             }
                             DropdownMenu(expanded = settingsOpen, onDismissRequest = { settingsOpen = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("Providers") },
+                                    text = { Text(I18n.t("providers.title")) },
                                     onClick = {
                                         settingsOpen = false
                                         onOpenProviders()
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Archive storage") },
+                                    text = { Text(I18n.t("storage.title")) },
                                     onClick = {
                                         settingsOpen = false
                                         onOpenStorage()
@@ -110,14 +116,14 @@ fun ConversationsScreen(
                         }
                     }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Filled.Logout, contentDescription = "Sign out")
+                        Icon(Icons.Filled.Logout, contentDescription = I18n.t("conversations.signOut"))
                     }
                 }
 
                 Row(modifier = Modifier.padding(horizontal = 12.dp)) {
-                    FilterTab("Active", !showArchived) { showArchived = false }
+                    FilterTab(I18n.t("conversations.active"), !showArchived) { showArchived = false }
                     Spacer(Modifier.width(8.dp))
-                    FilterTab("Archived", showArchived) { showArchived = true }
+                    FilterTab(I18n.t("conversations.archived"), showArchived) { showArchived = true }
                 }
 
                 uiState.error?.let {
@@ -138,7 +144,7 @@ fun ConversationsScreen(
                                 onClick = {},
                                 actions = {
                                     DropdownMenuItem(
-                                        text = { Text("Restore") },
+                                        text = { Text(I18n.t("conversations.restore")) },
                                         leadingIcon = { Icon(Icons.Filled.RestoreFromTrash, null) },
                                         onClick = {
                                             conversationsViewModel.restore(conversation.id)
@@ -146,7 +152,7 @@ fun ConversationsScreen(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Delete permanently") },
+                                        text = { Text(I18n.t("conversations.delete")) },
                                         leadingIcon = { Icon(Icons.Filled.Delete, null) },
                                         onClick = {
                                             conversationsViewModel.deleteArchived(conversation.id)
@@ -177,7 +183,7 @@ fun ConversationsScreen(
                                     onClick = { selectedId = conversation.id },
                                     actions = {
                                         DropdownMenuItem(
-                                            text = { Text("Rename") },
+                                            text = { Text(I18n.t("conversations.rename")) },
                                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
                                             onClick = {
                                                 renameTarget = conversation
@@ -185,7 +191,7 @@ fun ConversationsScreen(
                                             },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Archive") },
+                                            text = { Text(I18n.t("conversations.archive")) },
                                             leadingIcon = { Icon(Icons.Filled.Archive, null) },
                                             onClick = {
                                                 conversationsViewModel.archive(conversation.id)
@@ -206,7 +212,7 @@ fun ConversationsScreen(
                 if (vm == null || selectedId == null) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            if (list.isEmpty()) "No conversations yet" else "Select a conversation",
+                            if (list.isEmpty()) I18n.t("conversations.empty") else I18n.t("conversations.select"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -215,7 +221,16 @@ fun ConversationsScreen(
                     LaunchedEffect(selectedId) { vm.open(selectedId!!) }
                     ChatPane(
                         state = chatState.toUiState(),
-                        onSend = { content -> vm.send(providerId = "", model = "", content = content) },
+                        modelChoice = modelChoice,
+                        providers = providers,
+                        onSelectModel = onSelectModel,
+                        onSend = { content ->
+                            vm.send(
+                                providerId = modelChoice?.providerId.orEmpty(),
+                                model = modelChoice?.model.orEmpty(),
+                                content = content,
+                            )
+                        },
                         onAbort = vm::abort,
                         onLoadMore = vm::loadMore,
                     )
@@ -266,7 +281,7 @@ private fun ConversationRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            conversation.title.ifBlank { "Untitled" },
+            conversation.title.ifBlank { I18n.t("conversations.untitled") },
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             color = if (selected) {
@@ -298,7 +313,7 @@ private fun RenameDialog(
     var title by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename conversation") },
+        title = { Text(I18n.t("conversations.renameTitle")) },
         text = {
             OutlinedTextField(
                 value = title,
@@ -308,11 +323,11 @@ private fun RenameDialog(
         },
         confirmButton = {
             Button(onClick = { onConfirm(title.trim()) }, enabled = title.isNotBlank()) {
-                Text("Rename")
+                Text(I18n.t("conversations.rename"))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(I18n.t("providers.cancel")) }
         },
     )
 }

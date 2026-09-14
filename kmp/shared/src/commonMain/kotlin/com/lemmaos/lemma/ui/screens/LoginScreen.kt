@@ -28,10 +28,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.lemmaos.lemma.i18n.I18n
 import com.lemmaos.lemma.ui.auth.AuthViewModel
+import androidx.compose.foundation.layout.Box
+import com.lemmaos.lemma.i18n.Language
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel) {
+fun LoginScreen(viewModel: AuthViewModel, onToggleLanguage: () -> Unit) {
     val state by viewModel.state.collectAsState()
     var signUpMode by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
@@ -46,15 +49,22 @@ fun LoginScreen(viewModel: AuthViewModel) {
     }
 
     Scaffold { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text("Self-hosted AI Chat", style = MaterialTheme.typography.headlineSmall)
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            TextButton(
+                onClick = onToggleLanguage,
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+            ) {
+                Text(if (I18n.current == Language.EN) "中文" else "English")
+            }
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+            Text(I18n.t("auth.headline"), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Sign in or create an account to continue.",
+                I18n.t("auth.subtitle"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -64,7 +74,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") },
+                    label = { Text(I18n.t("auth.username")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -72,7 +82,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Email") },
+                    label = { Text(I18n.t("auth.email")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
@@ -81,7 +91,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 OutlinedTextField(
                     value = identifier,
                     onValueChange = { identifier = it },
-                    label = { Text("Username or email") },
+                    label = { Text(I18n.t("auth.identifier")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -90,7 +100,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(I18n.t("auth.password")) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
@@ -124,12 +134,13 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 if (state.busy) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
-                    Text(if (signUpMode) "Create account" else "Sign in")
+                    Text(if (signUpMode) I18n.t("auth.signUp") else I18n.t("auth.signIn"))
                 }
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = { signUpMode = !signUpMode }) {
-                Text(if (signUpMode) "Already have an account? Sign in" else "Create an account")
+                Text(if (signUpMode) I18n.t("auth.toSignIn") else I18n.t("auth.toSignUp"))
+            }
             }
         }
     }

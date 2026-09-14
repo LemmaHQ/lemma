@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.lemmaos.lemma.data.NewProvider
 import com.lemmaos.lemma.data.ProviderPatch
 import com.lemmaos.lemma.domain.Provider
+import com.lemmaos.lemma.i18n.I18n
 import com.lemmaos.lemma.ui.providers.ProvidersViewModel
 
 private val KINDS = listOf("openai" to 1, "anthropic" to 2, "gemini" to 3)
@@ -65,9 +66,9 @@ fun ProvidersScreen(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                 }
-                Text("Providers", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(I18n.t("providers.title"), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 IconButton(onClick = { createOpen = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add provider")
+                    Icon(Icons.Filled.Add, contentDescription = I18n.t("providers.add"))
                 }
             }
 
@@ -87,7 +88,7 @@ fun ProvidersScreen(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
-                        "No providers configured",
+                        I18n.t("providers.empty"),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -175,10 +176,10 @@ private fun ProviderRow(
         }
         Checkbox(checked = provider.enabled, onCheckedChange = null)
         IconButton(onClick = onEdit) {
-            Icon(Icons.Filled.Edit, contentDescription = "Edit provider")
+            Icon(Icons.Filled.Edit, contentDescription = I18n.t("providers.edit"))
         }
         IconButton(onClick = onDelete) {
-            Icon(Icons.Filled.Delete, contentDescription = "Delete provider")
+            Icon(Icons.Filled.Delete, contentDescription = I18n.t("providers.delete"))
         }
     }
 }
@@ -213,7 +214,7 @@ private fun ProviderEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Add provider" else "Edit provider") },
+        title = { Text(if (initial == null) I18n.t("providers.add") else I18n.t("providers.edit")) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -229,14 +230,14 @@ private fun ProviderEditorDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(I18n.t("providers.name")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = baseUrl,
                     onValueChange = { baseUrl = it },
-                    label = { Text("Base URL") },
+                    label = { Text(I18n.t("providers.baseUrl")) },
                     placeholder = { Text("https://api.openai.com/v1") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -244,21 +245,21 @@ private fun ProviderEditorDialog(
                 OutlinedTextField(
                     value = apiKey,
                     onValueChange = { apiKey = it },
-                    label = { Text(if (initial == null) "API key" else "API key (leave blank to keep)") },
+                    label = { Text(if (initial == null) I18n.t("providers.apiKey") else I18n.t("providers.apiKeyKeep")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = apiPath,
                     onValueChange = { apiPath = it },
-                    label = { Text("API path (optional)") },
+                    label = { Text(I18n.t("providers.apiPath")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = modelsPath,
                     onValueChange = { modelsPath = it },
-                    label = { Text("Models path (optional)") },
+                    label = { Text(I18n.t("providers.modelsPath")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -282,7 +283,7 @@ private fun ProviderEditorDialog(
                             )
                             Spacer(Modifier.width(8.dp))
                         }
-                        Text("Fetch models")
+                        Text(I18n.t("providers.fetchModels"))
                     }
                 }
                 OutlinedTextField(
@@ -291,7 +292,7 @@ private fun ProviderEditorDialog(
                         modelsText = it
                         models = it.lines().map { line -> line.trim() }.filter { it.isNotEmpty() }
                     },
-                    label = { Text("Models (one per line)") },
+                    label = { Text(I18n.t("providers.models")) },
                     modifier = Modifier.fillMaxWidth().height(120.dp),
                 )
             }
@@ -315,11 +316,11 @@ private fun ProviderEditorDialog(
                 enabled = !busy && name.isNotBlank() && baseUrl.isNotBlank() &&
                     (initial != null || apiKey.isNotBlank()),
             ) {
-                Text("Save")
+                Text(I18n.t("providers.save"))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(I18n.t("providers.cancel")) }
         },
     )
 }

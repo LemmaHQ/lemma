@@ -34,10 +34,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lemmaos.lemma.domain.ChatMessage
 import com.lemmaos.lemma.domain.MessageStatusKind
+import com.lemmaos.lemma.i18n.I18n
+import com.lemmaos.lemma.domain.Provider
 
 @Composable
 fun ChatPane(
     state: ChatUiState,
+    modelChoice: ModelChoice?,
+    providers: List<Provider>,
+    onSelectModel: (ModelChoice) -> Unit,
     onSend: (String) -> Unit,
     onAbort: () -> Unit,
     onLoadMore: () -> Unit,
@@ -57,7 +62,7 @@ fun ChatPane(
                 onClick = onLoadMore,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
-                Text("Load earlier messages")
+                Text(I18n.t("chat.loadMore"))
             }
         }
 
@@ -85,10 +90,16 @@ fun ChatPane(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
+            ModelPicker(
+                providers = providers,
+                selection = modelChoice,
+                onSelect = onSelectModel,
+            )
+            Spacer(Modifier.width(8.dp))
             OutlinedTextField(
                 value = input,
                 onValueChange = { input = it },
-                placeholder = { Text("Message") },
+                placeholder = { Text(I18n.t("chat.message")) },
                 modifier = Modifier.weight(1f),
                 maxLines = 6,
                 enabled = !state.streaming,
@@ -96,20 +107,20 @@ fun ChatPane(
             Spacer(Modifier.width(8.dp))
             if (state.streaming) {
                 IconButton(onClick = onAbort) {
-                    Icon(Icons.Filled.Stop, contentDescription = "Stop generating")
+                    Icon(Icons.Filled.Stop, contentDescription = I18n.t("chat.stop"))
                 }
             } else {
                 IconButton(
                     onClick = {
                         val text = input.trim()
-                        if (text.isNotEmpty()) {
+                        if (text.isNotEmpty() && modelChoice != null) {
                             input = ""
                             onSend(text)
                         }
                     },
-                    enabled = input.isNotBlank(),
+                    enabled = input.isNotBlank() && modelChoice != null,
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = I18n.t("chat.send"))
                 }
             }
         }
