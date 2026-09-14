@@ -57,12 +57,12 @@ For any character that has a special escape sequence (`\b`, `\n`, `\r`, `\t`, `\
 
 For the remaining non-ASCII characters, either the actual Unicode character (e.g., `∞`) or the equivalent Unicode escape (e.g., `\u221e`) is used. The choice depends only on which makes the code **easier to read and understand.** Unicode escapes are discouraged for printable characters at any location and are strongly discouraged outside of string literals and comments.
 
-| **Example** | **Discussion** |
-| --- | --- |
-| `val unitAbbrev = "μs"` | Best: perfectly clear even without a comment. |
-| `val unitAbbrev = "\u03bcs" // μs` | Poor: there’s no reason to use an escape with a printable character. |
-| `val unitAbbrev = "\u03bcs"` | Poor: the reader has no idea what this is. |
-| `return "\ufeff" + content` | Good: use escapes for non-printable characters, and comment if necessary. |
+| **Example**                        | **Discussion**                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `val unitAbbrev = "μs"`            | Best: perfectly clear even without a comment.                             |
+| `val unitAbbrev = "\u03bcs" // μs` | Poor: there’s no reason to use an escape with a printable character.      |
+| `val unitAbbrev = "\u03bcs"`       | Poor: the reader has no idea what this is.                                |
+| `return "\ufeff" + content`        | Good: use escapes for non-printable characters, and comment if necessary. |
 
 ### Structure
 
@@ -733,13 +733,13 @@ Beginning with the prose form of the name:
 
 Note that the casing of the original words is almost entirely disregarded.
 
-| **Prose form** | **Correct** | **Incorrect** |
-| --- | --- | --- |
-| "XML Http Request" | `XmlHttpRequest` | `XMLHTTPRequest` |
-| "new customer ID" | `newCustomerId` | `newCustomerID` |
-| "inner stopwatch" | `innerStopwatch` | `innerStopWatch` |
+| **Prose form**         | **Correct**         | **Incorrect**       |
+| ---------------------- | ------------------- | ------------------- |
+| "XML Http Request"     | `XmlHttpRequest`    | `XMLHTTPRequest`    |
+| "new customer ID"      | `newCustomerId`     | `newCustomerID`     |
+| "inner stopwatch"      | `innerStopwatch`    | `innerStopWatch`    |
 | "supports IPv6 on iOS" | `supportsIpv6OnIos` | `supportsIPv6OnIOS` |
-| "YouTube importer" | `YouTubeImporter` | `YoutubeImporter`* |
+| "YouTube importer"     | `YouTubeImporter`   | `YoutubeImporter`*  |
 
 (* Acceptable, but not recommended.)
 
