@@ -1,49 +1,149 @@
 package com.lemmaos.lemma
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import kmp.shared.generated.resources.Res
-import kmp.shared.generated.resources.compose_multiplatform
+import com.lemmaos.lemma.data.AppContainer
+import com.lemmaos.lemma.data.ServerConfigStore
+import com.lemmaos.lemma.data.SessionStore
+import com.lemmaos.lemma.data.createAppContainer
+import com.lemmaos.lemma.data.createAuthRepository
+import com.lemmaos.lemma.ui.LemmaTheme
+import com.lemmaos.lemma.ui.auth.AuthViewModel
+import com.lemmaos.lemma.ui.providers.ProvidersViewModel
+import com.lemmaos.lemma.ui.chat.ChatViewModel
+import com.lemmaos.lemma.ui.conversations.ConversationsViewModel
+import com.lemmaos.lemma.ui.screens.ConversationsScreen
+import com.lemmaos.lemma.ui.chat.ModelChoice
+import com.lemmaos.lemma.i18n.I18n
+import com.lemmaos.lemma.i18n.Language
+import com.lemmaos.lemma.ui.screens.ProvidersScreen
+import com.lemmaos.lemma.ui.screens.StorageScreen
+import com.lemmaos.lemma.ui.storage.StorageViewModel
+import com.lemmaos.lemma.ui.screens.LoginScreen
+import com.lemmaos.lemma.ui.screens.ServerUrlScreen
 
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("点击我！")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    LemmaTheme {
+        val serverConfig = remember { ServerConfigStore() }
+        var serverUrl by remember { mutableStateOf(serverConfig.serverUrl) }
+        if (serverUrl == null) {
+            ServerUrlScreen(
+                store = serverConfig,
+                onContinue = { serverUrl = serverConfig.serverUrl },
+            )
+            return@LemmaTheme
+        }
+
+        val session = remember { SessionStore() }
+        val authViewModel = remember(serverUrl) {
+            AuthViewModel(createAuthRepository(serverConfig, session))
+        }
+        val authState by authViewModel.state.collectAsState()
+        LaunchedEffect(serverUrl) { authViewModel.bootstrap() }
+
+        var container by remember { mutableStateOf<AppContainer?>(null) }
+        val toggleLanguage = {
+            I18n.setLanguage(if (I18n.current == Language.EN) Language.ZH else Language.EN)
+        }
+
+        when {
+            !authState.ready -> LoadingScreen()
+            authState.user == null -> LoginScreen(
+                viewModel = authViewModel,
+                onToggleLanguage = toggleLanguage,
+            )
+            else -> {
+                val user = authState.user!!
+                if (container == null) {
+                    container = createAppContainer(serverConfig, session, user.id)
                 }
+                MainContent(
+                    container = container!!,
+                    onToggleLanguage = toggleLanguage,
+                    onLogout = {
+                        container?.stopSync()
+                        container = null
+                        authViewModel.logout()
+                    },
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun MainContent(
+    container: AppContainer,
+    onToggleLanguage: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    val conversationsViewModel = remember(container) {
+        ConversationsViewModel(container.conversationRepository)
+    }
+    val chatViewModel = remember(container) { ChatViewModel(container.chatRepository) }
+    val providersViewModel = remember(container) {
+        ProvidersViewModel(container.providerRepository)
+    }
+    var modelChoice by remember(container) { mutableStateOf<ModelChoice?>(null) }
+
+    LaunchedEffect(container) {
+        container.startSync()
+        conversationsViewModel.refresh()
+        providersViewModel.refresh()
+    }
+    DisposableEffect(container) {
+        onDispose { container.stopSync() }
+    }
+    var settingsSection by remember { mutableStateOf<String?>(null) }
+    when (settingsSection) {
+        "providers" -> {
+            ProvidersScreen(
+                viewModel = providersViewModel,
+                onBack = { settingsSection = null },
+            )
+        }
+        "storage" -> {
+            val storageViewModel = remember(container) {
+                StorageViewModel(container.storageRepository)
+            }
+            LaunchedEffect(container) { storageViewModel.refresh() }
+            StorageScreen(
+                viewModel = storageViewModel,
+                onBack = { settingsSection = null },
+            )
+        }
+        else -> {
+            val providers by providersViewModel.list.collectAsState()
+            ConversationsScreen(
+                conversationsViewModel = conversationsViewModel,
+                chatViewModel = chatViewModel,
+                providers = providers,
+                modelChoice = modelChoice,
+                onSelectModel = { modelChoice = it },
+                onLogout = onLogout,
+                onToggleLanguage = onToggleLanguage,
+                onOpenProviders = { settingsSection = "providers" },
+                onOpenStorage = { settingsSection = "storage" },
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
     }
 }
