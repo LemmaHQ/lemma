@@ -122,19 +122,19 @@ typography:
     fontSize: 14px
     fontWeight: 400
     lineHeight: 1.60
-    letterSpacing: 0
+    letterSpacing: 0px
   caption:
     fontFamily: Sarasa UI SC
     fontSize: 12px
     fontWeight: 400
     lineHeight: 1.40
-    letterSpacing: 0
+    letterSpacing: 0px
   button:
     fontFamily: Sarasa UI SC
     fontSize: 14px
     fontWeight: 500
     lineHeight: 1.20
-    letterSpacing: 0
+    letterSpacing: 0px
   eyebrow:
     fontFamily: Sarasa UI SC
     fontSize: 13px
@@ -146,13 +146,13 @@ typography:
     fontSize: 13px
     fontWeight: 400
     lineHeight: 1.50
-    letterSpacing: 0
+    letterSpacing: 0px
   mono-sm:
     fontFamily: Maple Mono NF CN
     fontSize: 12px
     fontWeight: 400
     lineHeight: 1.40
-    letterSpacing: 0
+    letterSpacing: 0px
 
 rounded:
   xs: 4px
@@ -195,8 +195,13 @@ components:
     padding: 8px 16px
     border: "{colors.border}"
   button-ghost:
-    backgroundColor: transparent
     textColor: "{colors.foreground}"
+    typography: "{typography.button}"
+    rounded: "{rounded.md}"
+    padding: 8px 16px
+  button-ghost-hover:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.accent-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
     padding: 8px 16px
@@ -207,12 +212,17 @@ components:
     rounded: "{rounded.md}"
     padding: 8px 16px
   text-input:
-    backgroundColor: transparent
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 8px 12px
     border: "{colors.input}"
+  text-input-focus:
+    textColor: "{colors.foreground}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
+    padding: 8px 12px
+    border: "{colors.ring}"
   card:
     backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
@@ -248,12 +258,29 @@ components:
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
     width: 260px
+    border: "{colors.sidebar-border}"
   sidebar-session-row:
-    backgroundColor: transparent
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 6px 12px
+  sidebar-session-row-active:
+    backgroundColor: "{colors.sidebar-accent}"
+    textColor: "{colors.sidebar-foreground}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
+    padding: 6px 12px
+  settings-nav-item:
+    textColor: "{colors.sidebar-foreground}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
+    padding: 6px 8px
+  settings-nav-item-active:
+    backgroundColor: "{colors.sidebar-accent}"
+    textColor: "{colors.sidebar-accent-foreground}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
+    padding: 6px 8px
   message-bubble-user:
     backgroundColor: "{colors.muted}"
     textColor: "{colors.foreground}"
@@ -261,7 +288,6 @@ components:
     rounded: "{rounded.xl}"
     padding: 10px 16px
   message-assistant:
-    backgroundColor: transparent
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
   composer:
@@ -272,7 +298,6 @@ components:
     padding: 12px
     border: "{colors.input}"
   model-switcher:
-    backgroundColor: transparent
     textColor: "{colors.muted-foreground}"
     typography: "{typography.mono-sm}"
     rounded: "{rounded.md}"
@@ -290,6 +315,9 @@ components:
     rounded: "{rounded.md}"
     padding: 8px 12px
     border: "{colors.warning-border}"
+  status-success:
+    textColor: "{colors.success}"
+    typography: "{typography.body-sm}"
   auth-card:
     backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
@@ -305,7 +333,7 @@ Lemma is a self-hosted AI chat workbench with three theme states (light / dark /
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Light mode is all solid color — near-white canvas #fdfbfd, faintly warm sidebar #fcf8fb, pure white composer. Dark mode is a **pure black sidebar #000000 plus a vertical gradient canvas** (bottom `{colors.dark-canvas-from}` #0e0d0f → top `{colors.dark-canvas-to}` #1c1e1b, fixed to the viewport), composer #252528. Hierarchy comes from surface roles + hairline borders; shadows are reserved for overlays.
 
-The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. The focus ring has no standalone value: it is derived from primary via `color-mix`; hovers use opacity modifiers (`primary/90`); swapping the primary cascades everywhere automatically. The only semantic color today is `{colors.destructive}`; warning / success are TBD (decided when the amber migration banner is adopted).
+The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: `theme.css` derives it as `color-mix(in srgb, var(--primary) 40%, transparent)` and the front matter records the flattened result #60b1ff66. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
@@ -326,7 +354,7 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 ### Brand & Accent
 - **Sky Blue** (`{colors.primary}`): The single chromatic accent #60b1ff — primary buttons, focus rings, link emphasis. Shared by both themes.
 - **On Primary** (`{colors.primary-foreground}`): Dark ink #0b1220 on the primary color, for contrast. Shared by both themes.
-- **Ring** (`{colors.ring}`): Focus ring with no standalone value — derived from primary via `color-mix` at 40% opacity, follows the primary automatically.
+- **Ring** (`{colors.ring}`): Focus ring, derived in `theme.css` via `color-mix` at 40% opacity so it tracks the primary automatically; the front matter records the flattened #60b1ff66 because the format carries values, not expressions.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
@@ -472,7 +500,7 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 - Background `{colors.background}`, 1px `{colors.border}` border; hover fills `{colors.accent}`.
 
 **`button-ghost`** — Borderless action for dense toolbars and icon buttons.
-- Transparent; hover fills `{colors.accent}`. Icon buttons (copy, regenerate, collapse) are the same recipe, square or round.
+- Transparent at rest; hover is the `button-ghost-hover` variant — `{colors.accent}` fill, `{colors.accent-foreground}` text — and `button-outline` hovers with the same pair. Icon buttons (copy, regenerate, collapse) are the same recipe, square or round.
 
 **`button-destructive`** — Danger actions (delete provider, delete storage).
 - Background `{colors.destructive}`, text `{colors.destructive-foreground}`; hover `destructive/90`.
@@ -481,7 +509,7 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 
 **`text-input`** — Hairline field: transparent background, 1px `{colors.input}` border. Textareas share the recipe.
 - Type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px; placeholder in `{colors.muted-foreground}`.
-- Focus keeps the surface; the 3px `{colors.ring}` ring carries the state — no separate focus color exists.
+- Focus keeps the surface: the `text-input-focus` variant swaps the edge to a 3px `{colors.ring}` ring. Buttons, selects, switches, tabs, and textareas focus through that same ring.
 
 ### Overlays
 
@@ -503,11 +531,15 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 ### Sidebar
 
 **`sidebar`** — The session rail, a dedicated surface zone.
-- Background `{colors.sidebar}`, text `{colors.sidebar-foreground}`, width 260px; group headers in `{typography.caption}` + `{colors.muted-foreground}`.
+- Background `{colors.sidebar}`, text `{colors.sidebar-foreground}`, width 260px; group headers in `{typography.caption}` + `{colors.muted-foreground}`. The footer strip is separated by a hairline `{colors.sidebar-border}`, the only edge the rail draws.
 
 **`sidebar-session-row`** — One conversation in the list.
-- Transparent, rounded `{rounded.md}`, padding 6px 12px; hover tints `accent/60`; the active row fills `{colors.sidebar-accent}` and bumps to weight 500.
+- Transparent at rest, rounded `{rounded.md}`, padding 6px 12px; hover tints `accent/60`. The open conversation is the `sidebar-session-row-active` variant — `{colors.sidebar-accent}` fill, weight bumped to 500, text unchanged.
 - Inline actions (rename / archive) fade in on hover — the row stays text-pure at rest.
+
+**`settings-nav-item`** — One row in the settings rail, the sidebar pattern at a tighter padding.
+- Text `{colors.sidebar-foreground}`, rounded `{rounded.md}`, padding 6px 8px; hover tints `accent/60`.
+- The selected row is `settings-nav-item-active`: `{colors.sidebar-accent}` fill with `{colors.sidebar-accent-foreground}` text — the one place that foreground pair is used.
 
 ### Messages
 
@@ -534,7 +566,11 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 ### Feedback
 
 **`banner-warning`** — Inline warning banner (pending migration notice).
-- Background/border `{colors.warning}` (TBD — currently hard-coded amber-50/300/900), type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px.
+- Background `{colors.warning-soft}`, 1px `{colors.warning-border}`, text `{colors.warning}`, type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px.
+- The three values are amber palette steps — 50 / 300 / 700 in light, 950 / 800 / 400 in dark — which is why they stay hex while the neutrals are oklch.
+
+**`status-success`** — Inline confirmation line (storage migrated, connection tested).
+- Text `{colors.success}` at `{typography.body-sm}`; the terser connection-test variant drops to `{typography.caption}`. Success is text-only — there is no filled success banner.
 
 ### Auth
 
@@ -555,7 +591,7 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 
 ### Don't
 
-- Don't hard-code raw color values in components — the amber migration banner is the known violation, pending adoption of `{colors.warning}`.
+- Don't hard-code raw color values in components — every surface, the migration banner included, now resolves through a semantic token.
 - Don't introduce a second chromatic accent.
 - Don't add drop shadows outside overlays (popover / dropdown / tooltip).
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
@@ -593,8 +629,8 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 1. Focus on ONE component at a time and reference it by its `components:` token name.
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `composer`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
-4. Run `npx @google/design.md lint DESIGN.md` after edits — 0 errors required. Warning baseline (by design): unreferenced `dark-*` / display tokens, the `border` sub-token, transparent-background contrast false positives.
-5. The front matter carries values only — no YAML comments. Interaction states (hover / pressed / active), derivations, and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
+4. Run `npx @google/design.md lint DESIGN.md` after edits — 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `border` sub-tokens (the spec has no border-color property yet). A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
+5. The front matter carries values only — no YAML comments, and a transparent rest state is expressed by omitting `backgroundColor`, never by a literal `transparent`. Interaction states (hover / pressed / active), derivations, and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
 6. Raw values live only in `theme.css`; this document mirrors the code, never the reverse.
 7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
 
