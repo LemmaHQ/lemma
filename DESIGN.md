@@ -6,7 +6,7 @@ description: "Lemma's design system: a three-state (light / dark / system) self-
 colors:
   primary: "#60b1ff"
   primary-foreground: "#0b1220"
-  ring: "#60b1ff66"
+  ring: "color-mix(in srgb, #60b1ff 40%, transparent)"
   warning: "#b45309"
   warning-soft: "#fffbeb"
   warning-border: "#fcd34d"
@@ -193,7 +193,7 @@ components:
     typography: "{typography.button}"
     rounded: "{rounded.md}"
     padding: 8px 16px
-    border: "{colors.border}"
+    borderColor: "{colors.border}"
   button-ghost:
     textColor: "{colors.foreground}"
     typography: "{typography.button}"
@@ -216,27 +216,27 @@ components:
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 8px 12px
-    border: "{colors.input}"
+    borderColor: "{colors.input}"
   text-input-focus:
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 8px 12px
-    border: "{colors.ring}"
+    borderColor: "{colors.ring}"
   card:
     backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.xl}"
     padding: 24px
-    border: "{colors.border}"
+    borderColor: "{colors.border}"
   popover:
     backgroundColor: "{colors.popover}"
     textColor: "{colors.popover-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 4px
-    border: "{colors.border}"
+    borderColor: "{colors.border}"
   tooltip:
     backgroundColor: "{colors.foreground}"
     textColor: "{colors.background}"
@@ -258,7 +258,7 @@ components:
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
     width: 260px
-    border: "{colors.sidebar-border}"
+    borderColor: "{colors.sidebar-border}"
   sidebar-session-row:
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
@@ -296,7 +296,7 @@ components:
     typography: "{typography.body-sm}"
     rounded: "{rounded.xl}"
     padding: 12px
-    border: "{colors.input}"
+    borderColor: "{colors.input}"
   model-switcher:
     textColor: "{colors.muted-foreground}"
     typography: "{typography.mono-sm}"
@@ -307,14 +307,14 @@ components:
     typography: "{typography.mono}"
     rounded: "{rounded.md}"
     padding: 16px
-    border: "{colors.code-border}"
+    borderColor: "{colors.code-border}"
   banner-warning:
     backgroundColor: "{colors.warning-soft}"
     textColor: "{colors.warning}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 8px 12px
-    border: "{colors.warning-border}"
+    borderColor: "{colors.warning-border}"
   status-success:
     textColor: "{colors.success}"
     typography: "{typography.body-sm}"
@@ -324,7 +324,7 @@ components:
     typography: "{typography.body-sm}"
     rounded: "{rounded.xl}"
     padding: 32px
-    border: "{colors.border}"
+    borderColor: "{colors.border}"
 ---
 
 ## Overview
@@ -333,7 +333,7 @@ Lemma is a self-hosted AI chat workbench with three theme states (light / dark /
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Light mode is all solid color — near-white canvas #fdfbfd, faintly warm sidebar #fcf8fb, pure white composer. Dark mode is a **pure black sidebar #000000 plus a vertical gradient canvas** (bottom `{colors.dark-canvas-from}` #0e0d0f → top `{colors.dark-canvas-to}` #1c1e1b, fixed to the viewport), composer #252528. Hierarchy comes from surface roles + hairline borders; shadows are reserved for overlays.
 
-The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: `theme.css` derives it as `color-mix(in srgb, var(--primary) 40%, transparent)` and the front matter records the flattened result #60b1ff66. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
+The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: `theme.css` derives it as `color-mix(in srgb, var(--primary) 40%, transparent)`, and the front matter carries that same derivation because the spec accepts `color-mix(in srgb, ...)` as a color value. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
@@ -354,7 +354,7 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 ### Brand & Accent
 - **Sky Blue** (`{colors.primary}`): The single chromatic accent #60b1ff — primary buttons, focus rings, link emphasis. Shared by both themes.
 - **On Primary** (`{colors.primary-foreground}`): Dark ink #0b1220 on the primary color, for contrast. Shared by both themes.
-- **Ring** (`{colors.ring}`): Focus ring, derived in `theme.css` via `color-mix` at 40% opacity so it tracks the primary automatically; the front matter records the flattened #60b1ff66 because the format carries values, not expressions.
+- **Ring** (`{colors.ring}`): Focus ring, derived via `color-mix` at 40% opacity so it tracks the primary automatically. The derivation is written out in both `theme.css` and the front matter rather than snapshotted as a literal; `designmd export` flattens it to #60b1ff66 for consumers that need a plain value.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
@@ -431,6 +431,7 @@ One sans family spans display to body; the family change is silent, hierarchy co
 - **Base unit**: 4px — identical to Tailwind's scale, so every token maps 1:1 to a utility (`{spacing.md}` 16px = `p-4`).
 - **Tokens (front matter)**: `{spacing.xxs}` 4px · `{spacing.xs}` 8px · `{spacing.sm}` 12px · `{spacing.md}` 16px · `{spacing.lg}` 24px · `{spacing.xl}` 32px · `{spacing.xxl}` 48px · `{spacing.section}` 96px.
 - Component conventions: buttons pad 8px 16px (h-9); form inputs 8px 12px; card interiors `{spacing.lg}` 24px; auth card `{spacing.xl}` 32px; composer `{spacing.sm}` 12px.
+- The two-value paddings are CSS shorthand. The spec types `padding` as a single `Dimension`, so this is a deliberate extension: the reference linter accepts it, and collapsing each pair to one number would throw away the vertical/horizontal split that gives buttons and inputs their h-9 geometry.
 - `{spacing.section}` 96px is reserved for landing pages — currently unused in the app.
 
 ### Grid & Container
@@ -629,8 +630,8 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 1. Focus on ONE component at a time and reference it by its `components:` token name.
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `composer`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
-4. Run `npx @google/design.md lint DESIGN.md` after edits — 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `border` sub-tokens (the spec has no border-color property yet). A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
-5. The front matter carries values only — no YAML comments, and a transparent rest state is expressed by omitting `backgroundColor`, never by a literal `transparent`. Interaction states (hover / pressed / active), derivations, and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
+4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning. A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
+5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
 6. Raw values live only in `theme.css`; this document mirrors the code, never the reverse.
 7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
 
