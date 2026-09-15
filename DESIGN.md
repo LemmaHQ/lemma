@@ -3,14 +3,12 @@ version: alpha
 name: Lemma
 description: "Lemma's design system: a three-state (light / dark / system) self-hosted AI chat workbench. Sky blue #60b1ff is the single chromatic accent, with the focus ring derived from it and hovers expressed as opacity. Surfaces are role-based (canvas / sidebar / composer / card / popover) with hairline borders; shadows belong to overlays only. Dark mode pairs a pure-black sidebar with a viewport-fixed vertical gradient canvas. Fonts are self-hosted: Sarasa UI SC for UI text (CJK included) and Maple Mono NF CN for code (Nerd Font icons render). The rhythm is a workbench — 260px session sidebar, centered max-w-3xl conversation column, bottom composer."
 
-# Canonical flat schema: unprefixed tokens = light theme (mirrors :root in theme.css),
-# dark-* = dark override (mirrors `[data-theme="dark"]`). theme.css is the source of truth.
 colors:
   primary: "#60b1ff"
   primary-foreground: "#0b1220"
-  ring: "#60b1ff66"            # derived: color-mix(in srgb, primary 40%, transparent)
-  warning: "#b45309"           # strong: banner text / icon
-  warning-soft: "#fffbeb"      # banner background
+  ring: "#60b1ff66"
+  warning: "#b45309"
+  warning-soft: "#fffbeb"
   warning-border: "#fcd34d"
   success: "#27a644"
   background: "#fdfbfd"
@@ -70,7 +68,6 @@ colors:
   dark-warning-border: "#92400e"
   dark-success: "#3fb950"
 
-# Font metadata (weights, fallbacks, self-hosting) lives in the Typography chapter
 typography:
   display-xl:
     fontFamily: Sarasa UI SC
@@ -177,119 +174,114 @@ spacing:
   xxl: 48px
   section: 96px
 
-# Component recipes. Reference convention: unprefixed color tokens are
-# theme-adaptive (dark-* holds the dark override); states (hover/pressed)
-# fold into comments, never separate tokens
 components:
-  # ---- primitives ----
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px             # h-9; hover: primary/90; focus: 3px ring
+    padding: 8px 16px
   button-secondary:
     backgroundColor: "{colors.secondary}"
     textColor: "{colors.secondary-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px             # hover: secondary/80
+    padding: 8px 16px
   button-outline:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
     padding: 8px 16px
-    border: "{colors.border}"     # hover: bg accent
+    border: "{colors.border}"
   button-ghost:
     backgroundColor: transparent
     textColor: "{colors.foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px             # hover: bg accent; icon buttons share this recipe
+    padding: 8px 16px
   button-destructive:
     backgroundColor: "{colors.destructive}"
     textColor: "{colors.destructive-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px             # hover: destructive/90
+    padding: 8px 16px
   text-input:
-    backgroundColor: transparent  # hairline style: transparent bg + thin border (textarea identical)
+    backgroundColor: transparent
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 8px 12px
-    border: "{colors.input}"      # placeholder: muted-foreground; focus: ring
+    border: "{colors.input}"
   card:
     backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
     typography: "{typography.body-sm}"
-    rounded: "{rounded.xl}"       # currently 14px, becomes 16px once code aligns with template radii
+    rounded: "{rounded.xl}"
     padding: 24px
     border: "{colors.border}"
   popover:
-    backgroundColor: "{colors.popover}"   # shared by dropdown-menu / select overlays
+    backgroundColor: "{colors.popover}"
     textColor: "{colors.popover-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: 4px
-    border: "{colors.border}"     # only overlays may use shadow-md; everything else stays flat
+    border: "{colors.border}"
   tooltip:
-    backgroundColor: "{colors.foreground}"  # inverse-color mini overlay
+    backgroundColor: "{colors.foreground}"
     textColor: "{colors.background}"
     typography: "{typography.caption}"
     rounded: "{rounded.md}"
     padding: 6px 12px
   switch:
-    backgroundColor: "{colors.input}"     # off state; on state: primary
+    backgroundColor: "{colors.input}"
     rounded: "{rounded.full}"
-    height: 18px                          # 16px round thumb
+    height: 18px
   tabs:
-    backgroundColor: "{colors.muted}"     # track; selected: background + shadow-xs
+    backgroundColor: "{colors.muted}"
     textColor: "{colors.muted-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.lg}"
-    padding: 4px                          # selected text: foreground
-  # ---- product components ----
+    padding: 4px
   sidebar:
     backgroundColor: "{colors.sidebar}"
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
-    width: 260px                          # group headers: caption + muted-foreground
+    width: 260px
   sidebar-session-row:
-    backgroundColor: transparent  # hover: accent/60; active: sidebar-accent + weight 500
+    backgroundColor: transparent
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
-    padding: 6px 12px             # inline action buttons fade in on hover (rename/archive)
+    padding: 6px 12px
   message-bubble-user:
     backgroundColor: "{colors.muted}"
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
-    rounded: "{rounded.xl}"       # right-aligned, max-width 75%
+    rounded: "{rounded.xl}"
     padding: 10px 16px
   message-assistant:
-    backgroundColor: transparent  # no bubble: 28px round inverse avatar + plain flow
+    backgroundColor: transparent
     textColor: "{colors.foreground}"
-    typography: "{typography.body-sm}"    # errors: destructive; source/stop notices: caption + muted-foreground
+    typography: "{typography.body-sm}"
   composer:
     backgroundColor: "{colors.composer}"
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
-    rounded: "{rounded.xl}"       # 16px
+    rounded: "{rounded.xl}"
     padding: 12px
-    border: "{colors.input}"      # 32px round inverse send button (bg-foreground); input area transparent, borderless
+    border: "{colors.input}"
   model-switcher:
-    backgroundColor: transparent  # ghost trigger + popover overlay
+    backgroundColor: transparent
     textColor: "{colors.muted-foreground}"
-    typography: "{typography.mono-sm}"    # model IDs in mono
+    typography: "{typography.mono-sm}"
     rounded: "{rounded.md}"
   code-block:
-    backgroundColor: "{colors.code}"      # currently overlaid at 60% opacity
+    backgroundColor: "{colors.code}"
     textColor: "{colors.code-foreground}"
     typography: "{typography.mono}"
     rounded: "{rounded.md}"
-    padding: 16px                 # inline code same family, padding 2px 4px
+    padding: 16px
     border: "{colors.code-border}"
   banner-warning:
     backgroundColor: "{colors.warning-soft}"
@@ -299,7 +291,7 @@ components:
     padding: 8px 12px
     border: "{colors.warning-border}"
   auth-card:
-    backgroundColor: "{colors.card}"      # centered card on the login/signup page
+    backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.xl}"
@@ -602,7 +594,7 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `composer`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
 4. Run `npx @google/design.md lint DESIGN.md` after edits — 0 errors required. Warning baseline (by design): unreferenced `dark-*` / display tokens, the `border` sub-token, transparent-background contrast false positives.
-5. Add new component variants as separate entries; interaction states (hover / pressed) fold into comments.
+5. The front matter carries values only — no YAML comments. Interaction states (hover / pressed / active), derivations, and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
 6. Raw values live only in `theme.css`; this document mirrors the code, never the reverse.
 7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
 
