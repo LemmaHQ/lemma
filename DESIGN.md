@@ -329,11 +329,11 @@ components:
 
 ## Overview
 
-Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`; raw values live exclusively in `theme.css`, with both theme sets registered in the colors block of this document.
+Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document and generated down into `theme.css`.
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Light mode is all solid color — near-white canvas #fdfbfd, faintly warm sidebar #fcf8fb, pure white composer. Dark mode is a **pure black sidebar #000000 plus a vertical gradient canvas** (bottom `{colors.dark-canvas-from}` #0e0d0f → top `{colors.dark-canvas-to}` #1c1e1b, fixed to the viewport), composer #252528. Hierarchy comes from surface roles + hairline borders; shadows are reserved for overlays.
 
-The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: `theme.css` derives it as `color-mix(in srgb, var(--primary) 40%, transparent)`, and the front matter carries that same derivation because the spec accepts `color-mix(in srgb, ...)` as a color value. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
+The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: the front matter carries the derivation `color-mix(in srgb, #60b1ff 40%, transparent)`, which the spec accepts as a color value, and generation re-points it at `var(--primary)` so the cascade stays live in CSS. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
@@ -349,12 +349,12 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 
 ## Colors
 
-> Raw values live only in `theme.css`; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix — mirroring `:root` / `[data-theme="dark"]` in `theme.css`.
+> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and generation maps them onto `:root` / `[data-theme="dark"]` in `theme.css`.
 
 ### Brand & Accent
 - **Sky Blue** (`{colors.primary}`): The single chromatic accent #60b1ff — primary buttons, focus rings, link emphasis. Shared by both themes.
 - **On Primary** (`{colors.primary-foreground}`): Dark ink #0b1220 on the primary color, for contrast. Shared by both themes.
-- **Ring** (`{colors.ring}`): Focus ring, derived via `color-mix` at 40% opacity so it tracks the primary automatically. The derivation is written out in both `theme.css` and the front matter rather than snapshotted as a literal; `designmd export` flattens it to #60b1ff66 for consumers that need a plain value.
+- **Ring** (`{colors.ring}`): Focus ring, derived via `color-mix` at 40% opacity so it tracks the primary automatically. The derivation is authored rather than snapshotted; the primary is repeated as a hex literal because a `{colors.primary}` reference nested inside a color function is a lint error. `designmd export` flattens the whole thing to #60b1ff66 for consumers that need a plain value.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
@@ -478,7 +478,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 | `{rounded.pill}` | 9999px | Status pills                                                        |
 | `{rounded.full}` | 9999px | Avatars, switch, round icon buttons (send / stop)                   |
 
-Code currently derives radii from a 10px base (card at 14px); aligning the code to this scale is a pending change tracked outside this document.
+`theme.css` derives the ladder from a single `--radius: 0.75rem` base, so all six steps resolve to exactly these values.
 
 ### Iconography & Avatars
 
@@ -582,7 +582,7 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 
 ### Do
 
-- Reference **semantic tokens only** — raw values live exclusively in `theme.css`.
+- Reference **semantic tokens only** — a component never inlines a raw value.
 - Reserve `{colors.primary}` sky blue for system-level emphasis: primary buttons, focus ring, link emphasis.
 - Use **surface roles** for hierarchy — canvas, card, popover, plus the dedicated sidebar and composer zones.
 - Pair display weight 600 with body weight 400 — resist 700+ display weights.
@@ -592,7 +592,7 @@ Code currently derives radii from a 10px base (card at 14px); aligning the code 
 
 ### Don't
 
-- Don't hard-code raw color values in components — every surface, the migration banner included, now resolves through a semantic token.
+- Don't hard-code raw color values in components, and don't edit generated token blocks in `theme.css` — every surface, the migration banner included, resolves through a semantic token authored here.
 - Don't introduce a second chromatic accent.
 - Don't add drop shadows outside overlays (popover / dropdown / tooltip).
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
@@ -632,7 +632,7 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
 4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning. A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
 5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
-6. Raw values live only in `theme.css`; this document mirrors the code, never the reverse.
+6. This document is the source of truth for every front-end design value. `theme.css` consumes it: the token blocks are generated by `just design-gen`, so a value changes here first and the code follows. Never hand-edit a generated block.
 7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
 
 ## Known Gaps
