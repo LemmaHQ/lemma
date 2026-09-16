@@ -1,5 +1,16 @@
 :root {
     color-scheme: dark;
+    --background: #151615;
+    --foreground: #e3e5e8;
+    --card: #1d1f23;
+    --muted-foreground: #91959d;
+    --accent: #292b30;
+    --border: #2e3035;
+    --input: #35383d;
+    --ring: #60b1ff66;
+    --warning: #fbbf24;
+    --warning-soft: #451a03;
+    --warning-border: #92400e;
 }
 
 * {
@@ -12,8 +23,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #151615;
-    color: #e6e6e4;
+    background: var(--background);
+    color: var(--foreground);
     font-family:
         system-ui,
         -apple-system,
@@ -25,8 +36,8 @@ body {
 .card {
     width: 380px;
     padding: 32px;
-    background: #1c1e1b;
-    border: 1px solid #2a2c29;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 16px;
     -webkit-app-region: no-drag;
 }
@@ -40,7 +51,7 @@ h1 {
 .desc {
     margin: 0 0 20px;
     font-size: 14px;
-    color: #8f918c;
+    color: var(--muted-foreground);
 }
 
 .reason {
@@ -48,9 +59,9 @@ h1 {
     padding: 8px 12px;
     border-radius: 8px;
     font-size: 13px;
-    color: #fbbf24;
-    background: #451a03;
-    border: 1px solid #92400e;
+    color: var(--warning);
+    background: var(--warning-soft);
+    border: 1px solid var(--warning-border);
 }
 
 form {
@@ -63,30 +74,30 @@ input {
     padding: 8px 12px;
     font-size: 14px;
     color: inherit;
-    background: #151615;
-    border: 1px solid #2a2c29;
+    background: var(--background);
+    border: 1px solid var(--input);
     border-radius: 8px;
     outline: none;
 }
 
 input:focus {
-    border-color: #60b1ff;
-    box-shadow: 0 0 0 3px #60b1ff33;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px var(--ring);
 }
 
 button {
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 500;
-    color: #151615;
-    background: #e6e6e4;
+    color: var(--background);
+    background: var(--foreground);
     border: none;
     border-radius: 8px;
     cursor: pointer;
 }
 
 button:hover {
-    background: #ffffff;
+    background: color-mix(in srgb, var(--foreground) 90%, transparent);
 }
 
 button:disabled {
@@ -95,13 +106,13 @@ button:disabled {
 }
 
 button.secondary {
-    color: #e6e6e4;
+    color: var(--foreground);
     background: transparent;
-    border: 1px solid #2a2c29;
+    border: 1px solid var(--border);
 }
 
 button.secondary:hover {
-    background: #2a2c29;
+    background: var(--accent);
 }
 
 .server-url {
@@ -110,9 +121,9 @@ button.secondary:hover {
     border-radius: 8px;
     font-size: 13px;
     word-break: break-all;
-    color: #8f918c;
-    background: #151615;
-    border: 1px solid #2a2c29;
+    color: var(--muted-foreground);
+    background: var(--background);
+    border: 1px solid var(--border);
 }
 
 .actions {
