@@ -44,7 +44,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 生成物不入 git，先重新生成（web/src/gen 已被 prettier/eslint 忽略）
+      # Generated code is not committed; regenerate it first.
+      # web/src/gen is excluded from prettier/eslint.
       - name: Generate proto code
         run: npm run gen:proto
 

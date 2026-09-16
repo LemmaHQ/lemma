@@ -30,8 +30,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # lemma-server 用 RustEmbed 内嵌 web/dist（gitignore 的构建产物），
-  # 先构建真实前端产物，clippy/test 经 artifact 取回
+  # lemma-server embeds web/dist (a gitignored build artifact) via RustEmbed,
+  # so the real frontend is built first; clippy/test fetch it via artifact.
   web-dist:
     name: Web dist
     runs-on: ubuntu-latest

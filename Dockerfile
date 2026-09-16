@@ -1,4 +1,4 @@
-# 阶段 1：前端（proto 生成 + vite 构建）
+# Stage 1: frontend (proto generation + vite build).
 FROM node:26-bookworm-slim AS web-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -11,7 +11,7 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 RUN cd proto && buf generate
 RUN cd web && npm run build
 
-# 阶段 2：Rust 构建
+# Stage 2: Rust build.
 FROM rust:1-bookworm AS builder
 WORKDIR /app
 RUN apt-get update \
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/app/target \
     cargo build --release -p lemma-server \
     && cp target/release/lemma-server /app/lemma-server
 
-# 阶段 3：运行时（单二进制镜像）
+# Stage 3: runtime (single-binary image).
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
