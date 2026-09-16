@@ -49,7 +49,7 @@ jobs:
         uses: actions/setup-node@v7
 
       - name: Lint DESIGN.md
-        run: npx -y @google/design.md lint DESIGN.md
+        run: npx -y -p @google/design.md designmd lint DESIGN.md
 
   check:
     name: check
