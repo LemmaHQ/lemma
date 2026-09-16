@@ -6,62 +6,62 @@ description: "Lemma's design system: a three-state (light / dark / system) self-
 colors:
   primary: "#60b1ff"
   primary-foreground: "#0b1220"
-  ring: "color-mix(in srgb, #60b1ff 40%, transparent)"
+  ring: "#60b1ff66"
   warning: "#b45309"
   warning-soft: "#fffbeb"
   warning-border: "#fcd34d"
   success: "#27a644"
   background: "#fdfbfd"
-  foreground: "oklch(0.21 0.01 260)"
-  card: "oklch(1 0 0)"
-  card-foreground: "oklch(0.21 0.01 260)"
-  popover: "oklch(1 0 0)"
-  popover-foreground: "oklch(0.21 0.01 260)"
-  secondary: "oklch(0.96 0.003 260)"
-  secondary-foreground: "oklch(0.3 0.01 260)"
-  muted: "oklch(0.965 0.003 260)"
-  muted-foreground: "oklch(0.5 0.012 260)"
-  accent: "oklch(0.955 0.005 262)"
-  accent-foreground: "oklch(0.28 0.02 262)"
-  destructive: "oklch(0.55 0.18 25)"
-  destructive-foreground: "oklch(0.98 0 0)"
-  border: "oklch(0.91 0.005 260)"
-  input: "oklch(0.91 0.005 260)"
+  foreground: "#16181d"
+  card: "#ffffff"
+  card-foreground: "#16181d"
+  popover: "#ffffff"
+  popover-foreground: "#16181d"
+  secondary: "#f0f2f4"
+  secondary-foreground: "#2b2e33"
+  muted: "#f2f3f5"
+  muted-foreground: "#5f636a"
+  accent: "#eef0f4"
+  accent-foreground: "#232933"
+  destructive: "#c53637"
+  destructive-foreground: "#f8f8f8"
+  border: "#dfe1e5"
+  input: "#dfe1e5"
   sidebar: "#fcf8fb"
-  sidebar-foreground: "oklch(0.21 0.01 260)"
-  sidebar-border: "oklch(0.91 0.005 260)"
-  sidebar-accent: "oklch(0.965 0.002 95)"
-  sidebar-accent-foreground: "oklch(0.28 0.02 262)"
-  code: "oklch(0.96 0.004 260)"
-  code-foreground: "oklch(0.28 0.02 260)"
-  code-border: "oklch(0.91 0.005 260)"
+  sidebar-foreground: "#16181d"
+  sidebar-border: "#dfe1e5"
+  sidebar-accent: "#f4f3f2"
+  sidebar-accent-foreground: "#232933"
+  code: "#f0f2f4"
+  code-foreground: "#232933"
+  code-border: "#dfe1e5"
   composer: "#ffffff"
   dark-canvas-from: "#0e0d0f"
   dark-canvas-to: "#1c1e1b"
   dark-background: "#151615"
-  dark-foreground: "oklch(0.92 0.005 260)"
-  dark-card: "oklch(0.24 0.008 260)"
-  dark-card-foreground: "oklch(0.92 0.005 260)"
-  dark-popover: "oklch(0.24 0.008 260)"
-  dark-popover-foreground: "oklch(0.92 0.005 260)"
-  dark-secondary: "oklch(0.27 0.009 260)"
-  dark-secondary-foreground: "oklch(0.85 0.005 260)"
-  dark-muted: "oklch(0.26 0.008 260)"
-  dark-muted-foreground: "oklch(0.67 0.012 260)"
-  dark-accent: "oklch(0.29 0.01 262)"
-  dark-accent-foreground: "oklch(0.92 0.01 262)"
-  dark-destructive: "oklch(0.62 0.17 25)"
-  dark-destructive-foreground: "oklch(0.97 0 0)"
-  dark-border: "oklch(0.31 0.009 260)"
-  dark-input: "oklch(0.34 0.01 260)"
+  dark-foreground: "#e3e5e8"
+  dark-card: "#1d1f23"
+  dark-card-foreground: "#e3e5e8"
+  dark-popover: "#1d1f23"
+  dark-popover-foreground: "#e3e5e8"
+  dark-secondary: "#24272b"
+  dark-secondary-foreground: "#ccced1"
+  dark-muted: "#222428"
+  dark-muted-foreground: "#91959d"
+  dark-accent: "#292b30"
+  dark-accent-foreground: "#e1e5eb"
+  dark-destructive: "#da534f"
+  dark-destructive-foreground: "#f5f5f5"
+  dark-border: "#2e3035"
+  dark-input: "#35383d"
   dark-sidebar: "#000000"
-  dark-sidebar-foreground: "oklch(0.92 0.005 260)"
-  dark-sidebar-border: "oklch(0.31 0.009 260)"
-  dark-sidebar-accent: "oklch(0.26 0.01 262)"
-  dark-sidebar-accent-foreground: "oklch(0.92 0.01 262)"
-  dark-code: "oklch(0.25 0.008 260)"
-  dark-code-foreground: "oklch(0.87 0.01 260)"
-  dark-code-border: "oklch(0.31 0.009 260)"
+  dark-sidebar-foreground: "#e3e5e8"
+  dark-sidebar-border: "#2e3035"
+  dark-sidebar-accent: "#212429"
+  dark-sidebar-accent-foreground: "#e1e5eb"
+  dark-code: "#1f2226"
+  dark-code-foreground: "#d0d4db"
+  dark-code-border: "#2e3035"
   dark-composer: "#252528"
   dark-warning: "#fbbf24"
   dark-warning-soft: "#451a03"
@@ -180,48 +180,56 @@ components:
     textColor: "{colors.primary-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
   button-secondary:
     backgroundColor: "{colors.secondary}"
     textColor: "{colors.secondary-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
   button-outline:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
     borderColor: "{colors.border}"
   button-ghost:
     textColor: "{colors.foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
   button-ghost-hover:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.accent-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
   button-destructive:
     backgroundColor: "{colors.destructive}"
     textColor: "{colors.destructive-foreground}"
     typography: "{typography.button}"
     rounded: "{rounded.md}"
-    padding: 8px 16px
+    height: 36px
+    padding: 16px
   text-input:
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
-    padding: 8px 12px
+    height: 36px
+    padding: 12px
     borderColor: "{colors.input}"
   text-input-focus:
     textColor: "{colors.foreground}"
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
-    padding: 8px 12px
+    height: 36px
+    padding: 12px
     borderColor: "{colors.ring}"
   card:
     backgroundColor: "{colors.card}"
@@ -329,11 +337,11 @@ components:
 
 ## Overview
 
-Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document and generated down into `theme.css`.
+Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document; `theme.css` mirrors them value for value.
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Light mode is all solid color — near-white canvas #fdfbfd, faintly warm sidebar #fcf8fb, pure white composer. Dark mode is a **pure black sidebar #000000 plus a vertical gradient canvas** (bottom `{colors.dark-canvas-from}` #0e0d0f → top `{colors.dark-canvas-to}` #1c1e1b, fixed to the viewport), composer #252528. Hierarchy comes from surface roles + hairline borders; shadows are reserved for overlays.
 
-The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is not authored on its own: the front matter carries the derivation `color-mix(in srgb, #60b1ff 40%, transparent)`, which the spec accepts as a color value, and generation re-points it at `var(--primary)` so the cascade stays live in CSS. Hovers are opacity modifiers (`primary/90`), so swapping the primary cascades everywhere automatically. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
+The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is the primary at 40% alpha, #60b1ff66, stored flat: change the primary and re-derive the ring in the same edit. Hovers are opacity modifiers (`primary/90`), so they follow the primary without a token of their own. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
@@ -349,12 +357,12 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 
 ## Colors
 
-> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and generation maps them onto `:root` / `[data-theme="dark"]` in `theme.css`.
+> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and `theme.css` mirrors them as `:root` / `[data-theme="dark"]`. Every value is an sRGB hex literal — the spec's `hex` color form — so the front matter round-trips through Stitch and `designmd export` unchanged. The neutrals were tuned in oklch and flattened here, which is why they carry digits like #16181d rather than round greys.
 
 ### Brand & Accent
 - **Sky Blue** (`{colors.primary}`): The single chromatic accent #60b1ff — primary buttons, focus rings, link emphasis. Shared by both themes.
 - **On Primary** (`{colors.primary-foreground}`): Dark ink #0b1220 on the primary color, for contrast. Shared by both themes.
-- **Ring** (`{colors.ring}`): Focus ring, derived via `color-mix` at 40% opacity so it tracks the primary automatically. The derivation is authored rather than snapshotted; the primary is repeated as a hex literal because a `{colors.primary}` reference nested inside a color function is a lint error. `designmd export` flattens the whole thing to #60b1ff66 for consumers that need a plain value.
+- **Ring** (`{colors.ring}`): Focus ring — the primary at 40% alpha, #60b1ff66. Stored as a flat 8-digit hex rather than a `color-mix` expression so every consumer reads the same value; when the primary changes, the ring is re-derived in the same edit.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
@@ -430,8 +438,8 @@ One sans family spans display to body; the family change is silent, hierarchy co
 
 - **Base unit**: 4px — identical to Tailwind's scale, so every token maps 1:1 to a utility (`{spacing.md}` 16px = `p-4`).
 - **Tokens (front matter)**: `{spacing.xxs}` 4px · `{spacing.xs}` 8px · `{spacing.sm}` 12px · `{spacing.md}` 16px · `{spacing.lg}` 24px · `{spacing.xl}` 32px · `{spacing.xxl}` 48px · `{spacing.section}` 96px.
-- Component conventions: buttons pad 8px 16px (h-9); form inputs 8px 12px; card interiors `{spacing.lg}` 24px; auth card `{spacing.xl}` 32px; composer `{spacing.sm}` 12px.
-- The two-value paddings are CSS shorthand. The spec types `padding` as a single `Dimension`, so this is a deliberate extension: the reference linter accepts it, and collapsing each pair to one number would throw away the vertical/horizontal split that gives buttons and inputs their h-9 geometry.
+- Component conventions: buttons are 36px tall with 16px horizontal padding; form inputs 36px tall with 12px; card interiors `{spacing.lg}` 24px; auth card `{spacing.xl}` 32px; composer `{spacing.sm}` 12px.
+- Fixed-height components (buttons, inputs) declare `height` plus a single `padding`, which is their horizontal inset — vertical centering comes from the height, not from padding. Content-height components (rows, bubbles, tooltip, banner) keep a two-value `padding`: CSS shorthand, `vertical horizontal`. The spec types `padding` as one `Dimension`, so the pairs are a deliberate extension the reference linter accepts; collapsing them to one number would lose the split that makes a row denser than it is wide.
 - `{spacing.section}` 96px is reserved for landing pages — currently unused in the app.
 
 ### Grid & Container
@@ -491,8 +499,8 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 ### Buttons
 
 **`button-primary`** — Sky-blue CTA. Used sparingly: sign in, save changes, send-level actions.
-- Background `{colors.primary}`, text `{colors.primary-foreground}`, type `{typography.button}`, padding 8px 16px, rounded `{rounded.md}`.
-- Hover is an opacity modifier (`primary/90`); focus is the derived 3px `{colors.ring}`.
+- Background `{colors.primary}`, text `{colors.primary-foreground}`, type `{typography.button}`, 36px tall with 16px horizontal padding, rounded `{rounded.md}`.
+- Hover is an opacity modifier (`primary/90`); focus is the 3px `{colors.ring}`.
 
 **`button-secondary`** — Quiet filled button for secondary actions.
 - Background `{colors.secondary}`, text `{colors.secondary-foreground}`; hover `secondary/80`.
@@ -509,7 +517,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 ### Forms
 
 **`text-input`** — Hairline field: transparent background, 1px `{colors.input}` border. Textareas share the recipe.
-- Type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px; placeholder in `{colors.muted-foreground}`.
+- Type `{typography.body-sm}`, rounded `{rounded.md}`, 36px tall with 12px horizontal padding; placeholder in `{colors.muted-foreground}`.
 - Focus keeps the surface: the `text-input-focus` variant swaps the edge to a 3px `{colors.ring}` ring. Buttons, selects, switches, tabs, and textareas focus through that same ring.
 
 ### Overlays
@@ -568,7 +576,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 
 **`banner-warning`** — Inline warning banner (pending migration notice).
 - Background `{colors.warning-soft}`, 1px `{colors.warning-border}`, text `{colors.warning}`, type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px.
-- The three values are amber palette steps — 50 / 300 / 700 in light, 950 / 800 / 400 in dark — which is why they stay hex while the neutrals are oklch.
+- The three values are amber palette steps — 50 / 300 / 700 in light, 950 / 800 / 400 in dark — lifted from Tailwind's amber ramp rather than tuned like the neutrals.
 
 **`status-success`** — Inline confirmation line (storage migrated, connection tested).
 - Text `{colors.success}` at `{typography.body-sm}`; the terser connection-test variant drops to `{typography.caption}`. Success is text-only — there is no filled success banner.
@@ -587,12 +595,12 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 - Use **surface roles** for hierarchy — canvas, card, popover, plus the dedicated sidebar and composer zones.
 - Pair display weight 600 with body weight 400 — resist 700+ display weights.
 - Apply negative letter-spacing on display sizes only.
-- Derive the focus ring from primary (`color-mix`); express hover as opacity modifiers — swapping the primary cascades everywhere automatically.
+- Keep the focus ring at the primary's 40% alpha and express hover as opacity modifiers — the primary changes in one place and both follow.
 - Compose buttons and inputs at `{rounded.md}` 8px corners; reserve `{rounded.full}` for avatars, switch, and round icon buttons (send / stop).
 
 ### Don't
 
-- Don't hard-code raw color values in components, and don't edit generated token blocks in `theme.css` — every surface, the migration banner included, resolves through a semantic token authored here.
+- Don't hard-code raw color values in components — every surface, the migration banner included, resolves through a semantic token authored here and mirrored in `theme.css`.
 - Don't introduce a second chromatic accent.
 - Don't add drop shadows outside overlays (popover / dropdown / tooltip).
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
@@ -632,7 +640,7 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
 4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning. A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
 5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
-6. This document is the source of truth for every front-end design value. `theme.css` consumes it: the token blocks are generated by `just design-gen`, so a value changes here first and the code follows. Never hand-edit a generated block.
+6. This document is the source of truth for every front-end design value. `theme.css` mirrors it by hand today: change the value here first, then the matching `--var` in `:root` / `[data-theme="dark"]`, keeping the two byte-identical. Colors are hex literals — do not reintroduce `oklch()` or `color-mix()` into the front matter. A generator is the planned replacement for the hand mirror.
 7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
 
 ## Known Gaps
