@@ -4,7 +4,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY web/package.json web/package.json
 RUN npm ci
-RUN npm install -g @bufbuild/buf
+COPY mise.toml ./
+RUN BUF_VERSION=$(sed -nE 's/^[ "]*(buf)[ "]*= *"([^"]+)".*/\2/p' mise.toml) \
+    && npm install -g "@bufbuild/buf@$BUF_VERSION"
 COPY proto ./proto
 COPY web ./web
 ENV PATH="/app/node_modules/.bin:$PATH"
@@ -14,10 +16,12 @@ RUN cd web && npm run build
 # Stage 2: Rust build.
 FROM rust:1-bookworm AS builder
 WORKDIR /app
+COPY mise.toml ./
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl unzip \
     && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://github.com/protocolbuffers/protobuf/releases/download/v36.0/protoc-36.0-linux-x86_64.zip -o /tmp/protoc.zip \
+    && PROTOC_VERSION=$(sed -nE 's/^[ "]*(protobuf)[ "]*= *"([^"]+)".*/\2/p' mise.toml) \
+    && curl -fsSL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" -o /tmp/protoc.zip \
     && unzip -q /tmp/protoc.zip -d /usr/local \
     && rm /tmp/protoc.zip
 COPY Cargo.toml Cargo.lock ./
