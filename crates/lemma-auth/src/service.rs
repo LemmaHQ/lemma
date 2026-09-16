@@ -11,6 +11,7 @@ use lemma_proto::lemma::v1::{
     SignUpResponse, User,
 };
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::jwt::ACCESS_TOKEN_TTL_SECS;
@@ -24,12 +25,12 @@ const REFRESH_TTL_DAYS: i64 = 30;
 /// Connect handler implementing the AuthService RPCs.
 pub struct AuthService {
     pool: PgPool,
-    secret: String,
+    secret: Arc<str>,
 }
 
 impl AuthService {
     /// Creates the handler. `secret` signs and verifies access tokens.
-    pub fn new(pool: PgPool, secret: impl Into<String>) -> Self {
+    pub fn new(pool: PgPool, secret: impl Into<Arc<str>>) -> Self {
         Self {
             pool,
             secret: secret.into(),

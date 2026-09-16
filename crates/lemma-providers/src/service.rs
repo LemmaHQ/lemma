@@ -11,6 +11,7 @@ use lemma_proto::lemma::v1::{
     ListProvidersResponse, Provider, ProviderKind, UpdateProviderResponse,
 };
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::fetch_models;
@@ -22,13 +23,17 @@ use lemma_crypto::{derive_key, mask, open, seal};
 /// derives the key that seals provider API keys at rest.
 pub struct ProviderService {
     pool: PgPool,
-    jwt_secret: String,
-    secret_key: String,
+    jwt_secret: Arc<str>,
+    secret_key: Arc<str>,
 }
 
 impl ProviderService {
     /// Creates the handler.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<String>, secret_key: impl Into<String>) -> Self {
+    pub fn new(
+        pool: PgPool,
+        jwt_secret: impl Into<Arc<str>>,
+        secret_key: impl Into<Arc<str>>,
+    ) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),

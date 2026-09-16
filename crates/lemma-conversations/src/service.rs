@@ -18,6 +18,7 @@ use lemma_proto::lemma::v1::{
     RestoreConversationResponse,
 };
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::store;
@@ -32,13 +33,13 @@ const MAX_PAGE_LIMIT: i32 = 100;
 /// messages stay in place.
 pub struct ConversationService<S: ArchiveSource> {
     pool: PgPool,
-    jwt_secret: String,
+    jwt_secret: Arc<str>,
     archive: S,
 }
 
 impl<S: ArchiveSource> ConversationService<S> {
     /// Creates the handler with the given archive source.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<String>, archive: S) -> Self {
+    pub fn new(pool: PgPool, jwt_secret: impl Into<Arc<str>>, archive: S) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),

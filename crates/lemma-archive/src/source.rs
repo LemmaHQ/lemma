@@ -26,13 +26,13 @@ pub trait ArchiveSource: Send + Sync + 'static {
 /// credentials on each call so config edits take effect immediately.
 pub struct DbArchiveSource {
     pool: PgPool,
-    secret_key: String,
+    secret_key: Arc<str>,
 }
 
 impl DbArchiveSource {
     /// Creates the source. `secret_key` derives the key that opens the
     /// sealed credentials stored in s3_configs.
-    pub fn new(pool: PgPool, secret_key: impl Into<String>) -> Self {
+    pub fn new(pool: PgPool, secret_key: impl Into<Arc<str>>) -> Self {
         Self {
             pool,
             secret_key: secret_key.into(),

@@ -14,6 +14,7 @@ use lemma_proto::lemma::v1::{
 };
 use lemma_proto::{app_error, app_error_with};
 use sqlx::PgPool;
+use std::sync::Arc;
 
 use crate::store::{self, UpsertS3Config};
 use crate::{ArchiveError, ArchiveStore, S3ArchiveStore, S3Config};
@@ -47,13 +48,17 @@ impl From<&DbS3Config> for MigrationFrom {
 /// key that seals storage credentials at rest.
 pub struct StorageService {
     pool: PgPool,
-    jwt_secret: String,
-    secret_key: String,
+    jwt_secret: Arc<str>,
+    secret_key: Arc<str>,
 }
 
 impl StorageService {
     /// Creates the handler.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<String>, secret_key: impl Into<String>) -> Self {
+    pub fn new(
+        pool: PgPool,
+        jwt_secret: impl Into<Arc<str>>,
+        secret_key: impl Into<Arc<str>>,
+    ) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),

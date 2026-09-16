@@ -15,6 +15,7 @@ use lemma_proto::lemma::v1::{
     SyncMessage, WatchHeartbeat, WatchHint, WatchResponse,
 };
 use sqlx::PgPool;
+use std::sync::Arc;
 
 use crate::store;
 
@@ -25,12 +26,12 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(15);
 /// Connect handler implementing the SyncService RPCs.
 pub struct SyncService {
     pool: PgPool,
-    jwt_secret: String,
+    jwt_secret: Arc<str>,
 }
 
 impl SyncService {
     /// Creates the handler.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<String>) -> Self {
+    pub fn new(pool: PgPool, jwt_secret: impl Into<Arc<str>>) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),

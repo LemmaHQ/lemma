@@ -31,8 +31,8 @@ const FLUSH_BYTES: usize = 2048;
 /// Connect handler implementing the ChatService RPCs.
 pub struct ChatService {
     pool: PgPool,
-    jwt_secret: String,
-    secret_key: String,
+    jwt_secret: Arc<str>,
+    secret_key: Arc<str>,
     adapter: Arc<dyn LlmAdapter>,
     registry: StreamRegistry,
 }
@@ -41,8 +41,8 @@ impl ChatService {
     /// Creates the handler with the given LLM adapter.
     pub fn new(
         pool: PgPool,
-        jwt_secret: impl Into<String>,
-        secret_key: impl Into<String>,
+        jwt_secret: impl Into<Arc<str>>,
+        secret_key: impl Into<Arc<str>>,
         adapter: Arc<dyn LlmAdapter>,
     ) -> Self {
         Self {
