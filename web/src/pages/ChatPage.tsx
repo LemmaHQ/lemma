@@ -189,6 +189,7 @@ export default function ChatPage() {
         return null;
     }, [chat.items]);
 
+    const activeSession = summaries.find((s) => s.id === activeId);
     return (
         <div className="flex h-dvh bg-sidebar text-foreground">
             <div
@@ -223,12 +224,34 @@ export default function ChatPage() {
                 )}
             >
                 <div className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
-                    {sidebarCollapsed && (
+                    {activeId !== null && (
+                        <div className="glass absolute inset-x-0 top-0 z-20 flex h-12 items-center justify-start border-b border-border/80 px-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                                {sidebarCollapsed && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        className="size-8 text-muted-foreground"
+                                        onClick={() => toggleSidebar(false)}
+                                        aria-label={t("sidebar.expand")}
+                                        title={t("sidebar.expand")}
+                                    >
+                                        <PanelLeft className="size-4" />
+                                    </Button>
+                                )}
+                                <span className="truncate text-sm font-medium text-foreground">
+                                    {activeSession?.title ||
+                                        t("sidebar.newChat")}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    {activeId === null && sidebarCollapsed && (
                         <div className="absolute left-3 top-3 z-10">
                             <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                className="size-8 rounded-lg border border-border bg-background text-muted-foreground"
+                                className="glass size-8 rounded-lg border border-border text-muted-foreground"
                                 onClick={() => toggleSidebar(false)}
                                 aria-label={t("sidebar.expand")}
                                 title={t("sidebar.expand")}
@@ -245,29 +268,36 @@ export default function ChatPage() {
                         />
                     ) : (
                         <>
-                            <div
-                                ref={scrollRef}
-                                className="flex-1 overflow-y-auto"
-                            >
-                                {chat.items.length === 0 ? (
-                                    <EmptyState
-                                        onPickSuggestion={handlePickSuggestion}
-                                    />
-                                ) : (
-                                    <div className="max-w-3xl mx-auto w-full px-6 pt-10 pb-6 space-y-8">
-                                        {chat.items.map((m) => (
-                                            <MessageItem
-                                                key={m.id}
-                                                message={m}
-                                                source={sourceOf(m)}
-                                                canRegenerate={
-                                                    m.id === lastAssistantId
-                                                }
-                                                onRegenerate={handleRegenerate}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                            <div className="relative flex-1 min-h-0">
+                                <div
+                                    ref={scrollRef}
+                                    className="h-full overflow-y-auto"
+                                >
+                                    {chat.items.length === 0 ? (
+                                        <EmptyState
+                                            onPickSuggestion={
+                                                handlePickSuggestion
+                                            }
+                                        />
+                                    ) : (
+                                        <div className="max-w-3xl mx-auto w-full px-6 pt-16 pb-6 space-y-8">
+                                            {chat.items.map((m) => (
+                                                <MessageItem
+                                                    key={m.id}
+                                                    message={m}
+                                                    source={sourceOf(m)}
+                                                    canRegenerate={
+                                                        m.id === lastAssistantId
+                                                    }
+                                                    onRegenerate={
+                                                        handleRegenerate
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
                             </div>
                             <ChatComposer
                                 value={draft}

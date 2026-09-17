@@ -42,7 +42,7 @@ export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
                 <p className="text-center text-headline font-semibold mb-8">
                     {t("common.appName")}
                 </p>
-                <div className="rounded-xl border border-input bg-composer p-4">
+                <div className="glass rounded-xl border border-border p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
                     <Textarea
                         ref={textareaRef}
                         value={value}
