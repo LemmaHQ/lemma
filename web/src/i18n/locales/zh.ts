@@ -148,6 +148,8 @@ export default {
         aiProviders: "AI 供应商",
         themeLabel: "主题",
         themeDesc: "选择浅色、深色或跟随系统。",
+        languageLabel: "语言",
+        languageDesc: "选择界面语言。",
         groupData: "数据",
         storage: "存储",
     },

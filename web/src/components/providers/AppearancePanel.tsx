@@ -5,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useThemePreference } from "@/lib/theme";
 
 export function AppearancePanel() {
-    const { t } = useTranslation();
+    const { i18n, t } = useTranslation();
     const [preference, select] = useThemePreference();
 
     return (
@@ -54,6 +54,34 @@ export function AppearancePanel() {
                     >
                         <Monitor className="size-4" />
                         {t("theme.system")}
+                    </ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+            <div className="flex items-center justify-between gap-6 border-t border-border py-4">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                        {t("settings.languageLabel")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        {t("settings.languageDesc")}
+                    </p>
+                </div>
+                <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={i18n.language.startsWith("zh") ? "zh" : "en"}
+                    onValueChange={(value) => {
+                        if (value === "zh" || value === "en") {
+                            void i18n.changeLanguage(value);
+                        }
+                    }}
+                    aria-label={t("settings.languageLabel")}
+                >
+                    <ToggleGroupItem value="zh" aria-label="中文">
+                        中文
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="en" aria-label="English">
+                        English
                     </ToggleGroupItem>
                 </ToggleGroup>
             </div>

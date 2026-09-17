@@ -153,6 +153,8 @@ export default {
         aiProviders: "AI Providers",
         themeLabel: "Theme",
         themeDesc: "Choose light, dark, or follow the system.",
+        languageLabel: "Language",
+        languageDesc: "Choose the interface language.",
         groupData: "Data",
         storage: "Storage",
     },
