@@ -2207,6 +2207,7 @@ dependencies = [
  "lemma-providers",
  "lemma-sync",
  "rust-embed",
+ "sqlx",
  "tokio",
  "tower-http 0.7.1",
 ]
