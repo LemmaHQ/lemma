@@ -4,8 +4,11 @@
     "version": "0.1.0",
     "type": "module",
     "scripts": {
+        "predev": "node ../web/scripts/gen-tokens.mjs",
         "dev": "vite",
+        "prebuild": "node ../web/scripts/gen-tokens.mjs",
         "build": "tsc -b && vite build",
+        "prebuild:desktop": "node ../web/scripts/gen-tokens.mjs",
         "build:desktop": "tsc -b && vite build --base=./ --outDir ../desktop/web-dist --emptyOutDir",
         "lint": "eslint .",
         "preview": "vite preview",

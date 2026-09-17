@@ -1,10 +1,3 @@
-/*
- * Design tokens, mirrored byte-for-byte from DESIGN.md at the repo root:
- * DESIGN.md is the source of truth, this file follows it. Raw values are ONLY
- * allowed here; everything else consumes the semantic Tailwind classes below
- * (bg-background, text-muted-foreground, bg-sidebar, bg-code, ...).
- */
-
 /* 自托管字体：src/assets/fonts，OFL 许可同目录。Sarasa 无 Medium，SemiBold 同时注册 500/600 */
 @font-face {
     font-family: "Sarasa UI SC";
@@ -28,13 +21,6 @@
     src: url("../assets/fonts/SarasaUiSC-SemiBold.woff2") format("woff2");
 }
 @font-face {
-    font-family: "Sarasa UI SC";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url("../assets/fonts/SarasaUiSC-Bold.woff2") format("woff2");
-}
-@font-face {
     font-family: "Maple Mono NF CN";
     font-style: normal;
     font-weight: 400;
@@ -50,38 +36,6 @@
 }
 
 :root {
-    --background: #fdfbfd;
-    --foreground: #16181d;
-    --card: #ffffff;
-    --card-foreground: #16181d;
-    --popover: #ffffff;
-    --popover-foreground: #16181d;
-    --primary: #60b1ff;
-    --primary-foreground: #0b1220;
-    --secondary: #f0f2f4;
-    --secondary-foreground: #2b2e33;
-    --muted: #f2f3f5;
-    --muted-foreground: #5f636a;
-    --accent: #eef0f4;
-    --accent-foreground: #232933;
-    --destructive: #c53637;
-    --destructive-foreground: #f8f8f8;
-    --warning: #b45309;
-    --warning-soft: #fffbeb;
-    --warning-border: #fcd34d;
-    --success: #27a644;
-    --border: #dfe1e5;
-    --input: #dfe1e5;
-    --ring: #60b1ff66;
-    --sidebar: #fcf8fb;
-    --sidebar-foreground: #16181d;
-    --sidebar-border: #dfe1e5;
-    --sidebar-accent: #f4f3f2;
-    --sidebar-accent-foreground: #232933;
-    --code: #f0f2f4;
-    --code-foreground: #232933;
-    --code-border: #dfe1e5;
-    --composer: #ffffff;
     /* Scrollbar thumbs derive from foreground so they follow the theme. */
     --scrollbar-thumb: color-mix(in srgb, var(--foreground) 18%, transparent);
     --scrollbar-thumb-hover: color-mix(
@@ -91,76 +45,8 @@
     );
 }
 
-[data-theme="dark"] {
-    --canvas-from: #0e0d0f;
-    --canvas-to: #1c1e1b;
-    --background: #151615;
-    --foreground: #e3e5e8;
-    --card: #1d1f23;
-    --card-foreground: #e3e5e8;
-    --popover: #1d1f23;
-    --popover-foreground: #e3e5e8;
-    --secondary: #24272b;
-    --secondary-foreground: #ccced1;
-    --muted: #222428;
-    --muted-foreground: #91959d;
-    --accent: #292b30;
-    --accent-foreground: #e1e5eb;
-    --destructive: #da534f;
-    --destructive-foreground: #f5f5f5;
-    --warning: #fbbf24;
-    --warning-soft: #451a03;
-    --warning-border: #92400e;
-    --success: #3fb950;
-    --border: #2e3035;
-    --input: #35383d;
-    --sidebar: #000000;
-    --sidebar-foreground: #e3e5e8;
-    --sidebar-border: #2e3035;
-    --sidebar-accent: #212429;
-    --sidebar-accent-foreground: #e1e5eb;
-    --code: #1f2226;
-    --code-foreground: #d0d4db;
-    --code-border: #2e3035;
-    --composer: #252528;
-}
-
 @theme inline {
-    /* semantic color mapping → bg-background / text-muted-foreground / ... */
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-warning: var(--warning);
-    --color-warning-soft: var(--warning-soft);
-    --color-warning-border: var(--warning-border);
-    --color-success: var(--success);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-code: var(--code);
-    --color-code-foreground: var(--code-foreground);
-    --color-code-border: var(--code-border);
-    --color-composer: var(--composer);
-
-    /* typography */
+    /* typography fonts */
     --font-sans:
         "Sarasa UI SC", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
         Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
@@ -168,24 +54,6 @@
     --font-mono:
         "Maple Mono NF CN", ui-monospace, "SF Mono", SFMono-Regular, Menlo,
         Consolas, "Liberation Mono", monospace;
-    --text-sm: 0.875rem;
-    --text-sm--line-height: 1.6;
-    /* 阶梯落码：页面主标题 / 卡片标题（值见 DESIGN.md typography） */
-    --text-headline: 1.75rem;
-    --text-headline--line-height: 1.2;
-    --text-headline--letter-spacing: -0.025em;
-    --text-card-title: 1.375rem;
-    --text-card-title--line-height: 1.25;
-    --text-card-title--letter-spacing: -0.018em;
-
-    /* radius（对齐 DESIGN.md 阶梯：xs 4 / sm 6 / md 8 / lg 12 / xl 16 / xxl 24） */
-    --radius: 0.75rem;
-    --radius-xxl: calc(var(--radius) + 12px);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 4px);
-    --radius-sm: calc(var(--radius) - 6px);
-    --radius-xs: calc(var(--radius) - 8px);
 
     /* shadows — extremely restrained: popovers/dropdowns only */
     --shadow-md: 0 4px 12px -2px #11161f14, 0 2px 4px -2px #11161f0d;

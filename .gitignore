@@ -17,8 +17,9 @@ lerna-debug.log*
 dist
 dist-ssr
 *.local
-# proto 生成的 TS 代码
+# 生成代码与 Token
 web/src/gen
+web/src/styles/tokens.css
 
 # Desktop（Electron Forge）
 desktop/out/

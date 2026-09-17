@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --workspaces=false
 
+      - name: Generate design tokens
+        run: node web/scripts/gen-tokens.mjs
+
       - name: Lint DESIGN.md
         run: npx designmd lint DESIGN.md
 

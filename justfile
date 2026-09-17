@@ -54,6 +54,11 @@ rust-cov:
 rust-cov-html:
     cargo llvm-cov --workspace --exclude lemma-server --html --open
 
+# Generate design tokens (DESIGN.md -> tokens.css)
+[group('web')]
+web-gen-tokens:
+    npm run gen:tokens
+
 # Build for production
 [group('web')]
 [working-directory: 'web']
