@@ -69,15 +69,7 @@
     }
 }
 
-/* 主区域画布：亮色实色；暗色纵向渐变（fixed 锚视口，面板内部滚动不拉伸） */
-.app-canvas {
-    background-color: var(--background);
-}
-[data-theme="dark"] .app-canvas {
-    background-image: linear-gradient(
-        to top,
-        var(--canvas-from),
-        var(--canvas-to)
-    );
-    background-attachment: fixed;
+.glass {
+    background-color: var(--glass);
+    backdrop-filter: blur(20px) saturate(1.5);
 }

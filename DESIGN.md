@@ -1,72 +1,77 @@
 ---
 version: alpha
 name: Lemma
-description: "Lemma's design system: a three-state (light / dark / system) self-hosted AI chat workbench. Sky blue #60b1ff is the single chromatic accent, with the focus ring derived from it and hovers expressed as opacity. Surfaces are role-based (canvas / sidebar / composer / card / popover) with hairline borders; shadows belong to overlays only. Dark mode pairs a pure-black sidebar with a viewport-fixed vertical gradient canvas. Fonts are self-hosted: Sarasa UI SC for UI text (CJK included) and Maple Mono NF CN for code (Nerd Font icons render). The rhythm is a workbench — 260px session sidebar, centered max-w-3xl conversation column, bottom composer."
+description: "Lemma's design system: a three-state (light / dark / system) self-hosted AI chat workbench. Kimi-style blue #1783ff is the single chromatic accent, with the focus ring derived from it and hovers expressed as opacity. Surfaces are flat in both themes; hierarchy comes from black/white alpha tiers (labels, fills, separators) rather than solid shade ladders. Glass surfaces are a translucent primary background with a hairline border. Fonts are self-hosted: Sarasa UI SC for UI text (CJK included) and Maple Mono NF CN for code (Nerd Font icons render). The rhythm is a workbench — 260px session sidebar, centered max-w-3xl conversation column, bottom composer."
 
 colors:
-  primary: "#60b1ff"
-  primary-foreground: "#0b1220"
-  ring: "#60b1ff66"
-  warning: "#b45309"
-  warning-soft: "#fffbeb"
-  warning-border: "#fcd34d"
-  success: "#27a644"
-  background: "#fdfbfd"
-  foreground: "#16181d"
+  primary: "#1783ff"
+  primary-foreground: "#ffffff"
+  ring: "#1783ff66"
+  warning: "#ff9500"
+  warning-soft: "#ff95001a"
+  warning-border: "#ff950066"
+  success: "#16c456"
+  background: "#ffffff"
+  foreground: "#000000e6"
+  tertiary-foreground: "#00000073"
+  glass: "#ffffffd6"
   card: "#ffffff"
-  card-foreground: "#16181d"
+  card-foreground: "#000000e6"
   popover: "#ffffff"
-  popover-foreground: "#16181d"
-  secondary: "#f0f2f4"
-  secondary-foreground: "#2b2e33"
-  muted: "#f2f3f5"
-  muted-foreground: "#5f636a"
-  accent: "#eef0f4"
-  accent-foreground: "#232933"
-  destructive: "#c53637"
-  destructive-foreground: "#f8f8f8"
-  border: "#dfe1e5"
-  input: "#dfe1e5"
-  sidebar: "#fcf8fb"
-  sidebar-foreground: "#16181d"
-  sidebar-border: "#dfe1e5"
-  sidebar-accent: "#f4f3f2"
-  sidebar-accent-foreground: "#232933"
-  code: "#f0f2f4"
-  code-foreground: "#232933"
-  code-border: "#dfe1e5"
+  popover-foreground: "#000000e6"
+  secondary: "#0000000d"
+  secondary-foreground: "#000000e6"
+  muted: "#00000008"
+  muted-foreground: "#00000099"
+  accent: "#0000000d"
+  accent-foreground: "#000000e6"
+  destructive: "#ff3849"
+  destructive-foreground: "#ffffff"
+  border: "#00000021"
+  input: "#00000021"
+  sidebar: "#f5f5f5"
+  sidebar-foreground: "#000000e6"
+  sidebar-border: "#00000021"
+  sidebar-accent: "#0000000f"
+  sidebar-accent-foreground: "#000000e6"
+  code: "#f5f5f5"
+  code-foreground: "#000000e6"
+  code-border: "#00000021"
   composer: "#ffffff"
-  dark-canvas-from: "#0e0d0f"
-  dark-canvas-to: "#1c1e1b"
-  dark-background: "#151615"
-  dark-foreground: "#e3e5e8"
-  dark-card: "#1d1f23"
-  dark-card-foreground: "#e3e5e8"
-  dark-popover: "#1d1f23"
-  dark-popover-foreground: "#e3e5e8"
-  dark-secondary: "#24272b"
-  dark-secondary-foreground: "#ccced1"
-  dark-muted: "#222428"
-  dark-muted-foreground: "#91959d"
-  dark-accent: "#292b30"
-  dark-accent-foreground: "#e1e5eb"
-  dark-destructive: "#da534f"
-  dark-destructive-foreground: "#f5f5f5"
-  dark-border: "#2e3035"
-  dark-input: "#35383d"
-  dark-sidebar: "#000000"
-  dark-sidebar-foreground: "#e3e5e8"
-  dark-sidebar-border: "#2e3035"
-  dark-sidebar-accent: "#212429"
-  dark-sidebar-accent-foreground: "#e1e5eb"
-  dark-code: "#1f2226"
-  dark-code-foreground: "#d0d4db"
-  dark-code-border: "#2e3035"
-  dark-composer: "#252528"
-  dark-warning: "#fbbf24"
-  dark-warning-soft: "#451a03"
-  dark-warning-border: "#92400e"
-  dark-success: "#3fb950"
+  dark-primary: "#1a88ff"
+  dark-primary-foreground: "#ffffff"
+  dark-ring: "#1a88ff66"
+  dark-background: "#121212"
+  dark-foreground: "#ffffffd6"
+  dark-tertiary-foreground: "#ffffff6b"
+  dark-glass: "#121212d6"
+  dark-card: "#1f1f1f"
+  dark-card-foreground: "#ffffffd6"
+  dark-popover: "#1f1f1f"
+  dark-popover-foreground: "#ffffffd6"
+  dark-secondary: "#ffffff1a"
+  dark-secondary-foreground: "#ffffffd6"
+  dark-muted: "#ffffff0d"
+  dark-muted-foreground: "#ffffff8f"
+  dark-accent: "#ffffff1a"
+  dark-accent-foreground: "#ffffffd6"
+  dark-destructive: "#ff4756"
+  dark-destructive-foreground: "#ffffff"
+  dark-border: "#ffffff1f"
+  dark-input: "#ffffff1f"
+  dark-sidebar: "#1f1f1f"
+  dark-sidebar-foreground: "#ffffffd6"
+  dark-sidebar-border: "#ffffff1f"
+  dark-sidebar-accent: "#ffffff14"
+  dark-sidebar-accent-foreground: "#ffffffd6"
+  dark-code: "#1f1f1f"
+  dark-code-foreground: "#ffffffd6"
+  dark-code-border: "#ffffff1f"
+  dark-composer: "#1f1f1f"
+  dark-warning: "#ff9f0a"
+  dark-warning-soft: "#ff9f0a1a"
+  dark-warning-border: "#ff9f0a66"
+  dark-success: "#32ff7d"
 
 typography:
   display-xl:
@@ -173,6 +178,24 @@ spacing:
   xl: 32px
   xxl: 48px
   section: 96px
+
+motion:
+  duration:
+    micro: 60ms
+    fast: 120ms
+    normal: 200ms
+    slow: 300ms
+    popover: 140ms
+    dialog: 180ms
+    dialog-exit: 135ms
+    panel: 240ms
+    list: 180ms
+  easing:
+    standard: cubic-bezier(0.4, 0, 0.2, 1)
+    out: cubic-bezier(0, 0, 0.2, 1)
+    in: cubic-bezier(0.4, 0, 1, 1)
+    motion-out: cubic-bezier(0.23, 1, 0.32, 1)
+    panel: cubic-bezier(0.32, 0.72, 0, 1)
 
 components:
   button-primary:
@@ -337,19 +360,20 @@ components:
 
 ## Overview
 
-Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document; `theme.css` mirrors them value for value.
+Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document; `web/scripts/gen-tokens.mjs` generates `web/src/styles/tokens.css` from it on every build.
 
-Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Light mode is all solid color — near-white canvas #fdfbfd, faintly warm sidebar #fcf8fb, pure white composer. Dark mode is a **pure black sidebar #000000 plus a vertical gradient canvas** (bottom `{colors.dark-canvas-from}` #0e0d0f → top `{colors.dark-canvas-to}` #1c1e1b, fixed to the viewport), composer #252528. Hierarchy comes from surface roles + hairline borders; shadows are reserved for overlays.
+Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.composer}` input zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Both themes are fully flat — hierarchy comes from **alpha tiers on pure black/white**, not from solid shade ladders: labels at 90/60/45% (dark 84/56/42%), fills at 3~25% (dark 5~25%), separators at 13% (dark 12%), stored as 8-digit hex. Light mode is a pure-white canvas with a `#f5f5f5` sidebar; dark mode is a `#121212` canvas with a `#1f1f1f` sidebar; zones divide by hairline separators, and shadows are reserved for overlays. `{colors.glass}` is the single translucent surface — the primary background at 84% alpha with a hairline border — reserved for floating chrome (top bars, overlays); the web layer adds `backdrop-filter`, other platforms render it as the same translucent solid.
 
-The single chromatic accent is sky blue `{colors.primary}` #60b1ff — primary buttons, focus rings, link emphasis — topped with dark ink text `{colors.primary-foreground}` #0b1220 for contrast. `{colors.ring}` is the primary at 40% alpha, #60b1ff66, stored flat: change the primary and re-derive the ring in the same edit. Hovers are opacity modifiers (`primary/90`), so they follow the primary without a token of their own. Three semantic colors are live: `{colors.destructive}`, `{colors.warning}` (with `warning-soft` / `warning-border`), and `{colors.success}`.
+The single chromatic accent is Kimi-style blue `{colors.primary}` #1783ff (dark #1a88ff) — primary buttons, focus rings, link emphasis — topped with white text `{colors.primary-foreground}` for contrast. `{colors.ring}` is the primary at 40% alpha, stored flat: change the primary and re-derive the ring in the same edit. Hovers are opacity modifiers (`primary/90`), so they follow the primary without a token of their own. Three semantic colors are live: `{colors.destructive}` #ff3849, `{colors.warning}` #ff9500 (with `warning-soft` 10%-alpha fill and `warning-border`), and `{colors.success}` #16c456 — each brightened slightly in dark mode for contrast on #121212.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
 The page rhythm is a **workbench, not a marketing narrative**: a 260px session sidebar on the left, the conversation flow in the middle (user messages right-aligned in `{colors.muted}` bubbles; assistant messages as inverse round avatar + plain flow), and the composer at the bottom (`{colors.composer}` panel + inverse round send button), with the content column capped at max-w-3xl. The language serves long reading and typing sessions, not presentation.
 
 **Key Characteristics:**
-- **Three-state theme** — solid light / gradient dark / follow system; semantic tokens defined once, valued per theme.
-- **Single sky-blue accent** `{colors.primary}` #60b1ff — derived focus ring, opacity hovers, no second chromatic color.
+- **Three-state theme** — flat light / flat dark / follow system; semantic tokens defined once, valued per theme.
+- **Single blue accent** `{colors.primary}` #1783ff — derived focus ring, opacity hovers, no second chromatic color.
+- **Alpha-tier neutrals** — labels, fills and separators are black/white at fixed alpha steps, so both themes share one hierarchy.
 - **Role-based surfaces** + hairline borders; components stay flat, shadows only on overlays.
 - **Dual self-hosted fonts** — Sarasa UI SC + Maple Mono NF CN; CJK is a first-class citizen.
 - **Workbench rhythm** — sidebar + conversation flow + composer; content column max-w-3xl.
@@ -357,28 +381,29 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 
 ## Colors
 
-> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and `theme.css` mirrors them as `:root` / `[data-theme="dark"]`. Every value is an sRGB hex literal — the spec's `hex` color form — so the front matter round-trips through Stitch and `designmd export` unchanged. The neutrals were tuned in oklch and flattened here, which is why they carry digits like #16181d rather than round greys.
+> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and `web/src/styles/tokens.css` is generated from them by `web/scripts/gen-tokens.mjs` as `:root` / `[data-theme="dark"]`. Every value is an sRGB hex literal — 8-digit hex expresses the alpha tiers — so the front matter round-trips through Stitch and `designmd export` unchanged.
 
 ### Brand & Accent
-- **Sky Blue** (`{colors.primary}`): The single chromatic accent #60b1ff — primary buttons, focus rings, link emphasis. Shared by both themes.
-- **On Primary** (`{colors.primary-foreground}`): Dark ink #0b1220 on the primary color, for contrast. Shared by both themes.
-- **Ring** (`{colors.ring}`): Focus ring — the primary at 40% alpha, #60b1ff66. Stored as a flat 8-digit hex rather than a `color-mix` expression so every consumer reads the same value; when the primary changes, the ring is re-derived in the same edit.
+- **Primary Blue** (`{colors.primary}`): The single chromatic accent #1783ff (dark #1a88ff) — primary buttons, focus rings, link emphasis.
+- **On Primary** (`{colors.primary-foreground}`): White text on the primary color, for contrast.
+- **Ring** (`{colors.ring}`): Focus ring — the primary at 40% alpha. Stored as a flat 8-digit hex rather than a `color-mix` expression so every consumer reads the same value; when the primary changes, the ring is re-derived in the same edit.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
-- **Background** (`{colors.background}`): Main canvas. Solid #fdfbfd in light; #151615 in dark as the gradient's midpoint fallback.
-- **Canvas From / To** (`{colors.dark-canvas-from}` / `{colors.dark-canvas-to}`): Dark-only — the two ends of the main-area vertical gradient (bottom #0e0d0f → top #1c1e1b), anchored to the viewport via `background-attachment: fixed` so inner panel scrolling never stretches it.
-- **Sidebar** (`{colors.sidebar}`): Sidebar zone. Faintly warm #fcf8fb in light; pure black #000000 in dark.
-- **Composer** (`{colors.composer}`): Input-area panel. #ffffff in light; #252528 in dark.
-- **Card / Popover** (`{colors.card}` / `{colors.popover}`): Panels and overlays. Both pure white in light; both first-step charcoal in dark.
-- **Secondary / Muted / Accent**: The fill trio — secondary button background, subdued fill (user bubble), hover-state background.
+- **Background** (`{colors.background}`): Main canvas. Flat #ffffff in light; flat #121212 in dark.
+- **Sidebar** (`{colors.sidebar}`): Sidebar zone, one shade step below the canvas: #f5f5f5 in light; #1f1f1f in dark.
+- **Composer** (`{colors.composer}`): Input-area panel. #ffffff in light; #1f1f1f in dark.
+- **Card / Popover** (`{colors.card}` / `{colors.popover}`): Panels and overlays. Both pure white in light; both #1f1f1f in dark.
+- **Glass** (`{colors.glass}`): Floating chrome (top bars, overlays) — the primary background at 84% alpha (#ffffffd6 / #121212d6) with a hairline border. Web adds `backdrop-filter: blur(20px)`; other platforms render the same translucent solid.
+- **Secondary / Muted / Accent**: The fill trio — black at 5%/3%/5% alpha (white at 10%/5%/10% in dark) — secondary button background, subdued fill (user bubble), hover-state background.
 - **Code** (`{colors.code}` + `{colors.code-border}`): Code block background and border; blocks overlay the canvas at 60% opacity.
 
 ### Text
-- **Foreground** (`{colors.foreground}`): All headlines and primary body text.
-- **Muted Foreground** (`{colors.muted-foreground}`): Secondary text — captions, meta info, group headers, placeholders.
+- **Foreground** (`{colors.foreground}`): All headlines and primary body text — black 90% alpha, white 84% in dark.
+- **Muted Foreground** (`{colors.muted-foreground}`): Secondary text — captions, meta info, group headers, placeholders — black 60% / white 56%.
+- **Tertiary Foreground** (`{colors.tertiary-foreground}`): Hints and disabled-adjacent text — black 45% / white 42%.
 - Every surface ships a matching text token with the same suffix (`card-foreground`, `sidebar-foreground`, `code-foreground`, ...).
-- **Two text levels are deliberate**: finer hierarchy is carried by font weight (400/500/600), not by additional grays.
+- **Three text levels are deliberate**: finer hierarchy is carried by font weight (400/500/600), not by additional grays.
 
 ### Border
 - **Border** (`{colors.border}`): Default hairline on cards and dividers.
@@ -467,9 +492,8 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 
 ### Decorative Depth
 
-- **The dark canvas gradient** (`{colors.dark-canvas-from}` → `{colors.dark-canvas-to}`) is the single atmospheric element — anchored to the viewport, calm, non-interactive.
 - **Streaming cursor** — the pulsing caret on in-flight assistant messages is the only motion used as depth.
-- No product screenshots, no edge highlights, no spotlight cards.
+- No gradients, no product screenshots, no edge highlights, no spotlight cards.
 
 ## Shapes
 
@@ -486,7 +510,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 | `{rounded.pill}` | 9999px | Status pills                                                        |
 | `{rounded.full}` | 9999px | Avatars, switch, round icon buttons (send / stop)                   |
 
-`theme.css` derives the ladder from a single `--radius: 0.75rem` base, so all six steps resolve to exactly these values.
+The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention) plus one `--radius-*` token per step, so all six steps resolve to exactly these values.
 
 ### Iconography & Avatars
 
@@ -591,7 +615,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 ### Do
 
 - Reference **semantic tokens only** — a component never inlines a raw value.
-- Reserve `{colors.primary}` sky blue for system-level emphasis: primary buttons, focus ring, link emphasis.
+- Reserve `{colors.primary}` blue for system-level emphasis: primary buttons, focus ring, link emphasis.
 - Use **surface roles** for hierarchy — canvas, card, popover, plus the dedicated sidebar and composer zones.
 - Pair display weight 600 with body weight 400 — resist 700+ display weights.
 - Apply negative letter-spacing on display sizes only.
@@ -600,7 +624,7 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 
 ### Don't
 
-- Don't hard-code raw color values in components — every surface, the migration banner included, resolves through a semantic token authored here and mirrored in `theme.css`.
+- Don't hard-code raw color values in components — every surface, the migration banner included, resolves through a semantic token authored here and generated into `tokens.css`.
 - Don't introduce a second chromatic accent.
 - Don't add drop shadows outside overlays (popover / dropdown / tooltip).
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
@@ -638,14 +662,15 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 1. Focus on ONE component at a time and reference it by its `components:` token name.
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `composer`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
-4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 41 warnings in exactly two buckets: 31 unreferenced `dark-*` colors (the dark set mirrors the light set by name, so components reference the light token and the theme swaps underneath) and 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning. A warning outside those two buckets is a regression — most often an orphaned token or a real contrast failure.
+4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 56 warnings in exactly three buckets: 36 orphaned tokens (the `dark-*` set mirrors the light set by name, so components reference the light token and the theme swaps underneath; `glass` / `tertiary-foreground` are consumed by the hand-written layer, not by `components:`), 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning, and 9 contrast pairs — seven are alpha-compositing artifacts (the linter compares translucent fills against translucent text at face value instead of compositing over the page background, the same blind spot as the `transparent` case in rule 5) and two are accepted sub-AA brand pairs (white on #1783ff primary and on #ff3849 destructive, both shipped as-is by the reference design). A warning outside those three buckets is a regression — most often an orphaned token or a real contrast failure. The `motion` section is not a recognized schema key and earns one info-level `token-like-ignored` notice; our own generator consumes it.
 5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
-6. This document is the source of truth for every front-end design value. `theme.css` mirrors it by hand today: change the value here first, then the matching `--var` in `:root` / `[data-theme="dark"]`, keeping the two byte-identical; the Electron setup page (`desktop/src/setup.css`) carries the same dark values in its own `:root`. Colors are hex literals — do not reintroduce `oklch()` or `color-mix()` into the front matter. A generator is the planned replacement for the hand mirror.
-7. Treat sky blue as scarce: primary buttons, focus ring, link emphasis.
+6. This document is the source of truth for every front-end design value. Change the value here, then run the generator (`npm run gen:tokens` — it also fires automatically via npm pre-hooks on dev/build); `web/src/styles/tokens.css` is a build artifact and never edited by hand. The Electron setup page (`desktop/src/setup.css`) carries the same dark values in its own `:root` and must be updated in the same edit. Colors are hex literals — alpha tiers use 8-digit hex; do not reintroduce `oklch()` or `color-mix()` into the front matter.
+7. Treat blue as scarce: primary buttons, focus ring, link emphasis.
 
 ## Known Gaps
 
 - Form-field validation styling (`aria-invalid` rings exist in the primitives) is not designed into any flow yet.
 - Mobile layout (<768px) is not adapted — sidebar and composer need a dedicated treatment.
-- Open follow-ups from the color refactor: text shade calibration, chat bubble / avatar review, whether the login page joins the dark gradient.
+- Open follow-ups from the color refactor: text shade calibration, chat bubble / avatar review.
+- Glass surfaces (`{colors.glass}`) currently render as a true blur only on web; other platforms fall back to the translucent solid.
 - The mono font is not subset — the first code block on a slow network may swap in late.

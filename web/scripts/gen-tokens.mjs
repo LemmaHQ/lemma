@@ -83,10 +83,21 @@ function generateTokensCss(data) {
         radiusTokens.push(`    --radius-${name}: ${val};`);
     }
 
+    const motion = data.motion || {};
+    const motionTokens = [];
+    for (const [name, val] of Object.entries(motion.duration || {})) {
+        motionTokens.push(`    --motion-${name}: ${val};`);
+    }
+    for (const [name, val] of Object.entries(motion.easing || {})) {
+        motionTokens.push(`    --ease-${name}: ${val};`);
+    }
+
     return `/* Generated from DESIGN.md by web/scripts/gen-tokens.mjs. Do not edit manually. */
 
 :root {
 ${lightColors.join("\n")}
+
+${motionTokens.join("\n")}
 }
 
 [data-theme="dark"] {
