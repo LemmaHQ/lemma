@@ -14,7 +14,7 @@
         "email": "wanzhao_ysy@qq.com"
     },
     "devDependencies": {
-        "@bufbuild/protoc-gen-es": "^2.14.1"
+        "@bufbuild/protoc-gen-es": "^2.15.0"
     },
     "allowScripts": {
         "electron-winstaller@5.4.4": true,
