@@ -8,6 +8,7 @@ import {
 } from "@/components/chat/ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface HomeViewProps {
     onSubmit: (text: string) => void;
@@ -71,7 +72,12 @@ export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
                         />
                         <Button
                             size="icon"
-                            className="size-8 rounded-full bg-foreground text-background hover:bg-foreground/85"
+                            className={cn(
+                                "size-8 rounded-full",
+                                canSend
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                    : "bg-secondary text-muted-foreground",
+                            )}
                             onClick={submit}
                             disabled={!canSend}
                             aria-label={t("chat.send")}
