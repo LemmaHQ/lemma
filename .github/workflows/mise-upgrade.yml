@@ -37,6 +37,11 @@ jobs:
       - name: Bump pinned versions
         run: mise upgrade --bump node just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-binstall
 
+      - name: Sync Dockerfile node base image
+        run: |
+          NODE_VERSION=$(sed -nE 's/^[ "]*(node)[ "]*= *"([^"]+)".*/\2/p' mise.toml)
+          sed -i -E "s/^(ARG NODE_VERSION=).*/\1${NODE_VERSION}/" Dockerfile
+
       - name: Open update PR
         uses: peter-evans/create-pull-request@v8
         with:
@@ -49,4 +54,4 @@ jobs:
             Bumps tool versions pinned in `mise.toml` to latest.
 
             Local mise, CI mise-action, and the Dockerfile all read this single file.
-            For a node major bump, sync the Dockerfile base image tag before merging.
+            The Dockerfile `ARG NODE_VERSION` default is synced automatically in this PR.
