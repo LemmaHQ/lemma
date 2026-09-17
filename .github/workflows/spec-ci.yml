@@ -50,8 +50,11 @@ jobs:
         with:
           install_args: node
 
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
       - name: Lint DESIGN.md
-        run: npx -y -p @google/design.md designmd lint DESIGN.md
+        run: npx designmd lint DESIGN.md
 
   check:
     name: check
