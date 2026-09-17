@@ -4,13 +4,15 @@ default:
 
 # Lint contracts
 [group('proto')]
+[working-directory: 'proto']
 proto-lint:
-    cd proto && buf lint
+    buf lint
 
 # Build contracts
 [group('proto')]
+[working-directory: 'proto']
 proto-build:
-    cd proto && buf build
+    buf build
 
 # Generate contract code (web TS)
 [group('proto')]
@@ -54,60 +56,71 @@ rust-cov-html:
 
 # Build for production
 [group('web')]
+[working-directory: 'web']
 web-build:
-    cd web && npm run build
+    npm run build
 
 # Run the dev server
 [group('web')]
+[working-directory: 'web']
 web-dev:
-    cd web && npm run dev
+    npm run dev
 
 # Run tests
 [group('web')]
+[working-directory: 'web']
 web-test:
-    cd web && npm test
+    npm test
 
 # Coverage report
 [group('web')]
+[working-directory: 'web']
 web-cov:
-    cd web && npm run test:cov
+    npm run test:cov
 
 # Run eslint
 [group('web')]
+[working-directory: 'web']
 web-lint:
-    cd web && npm run lint
+    npm run lint
 
 # Format code
 [group('web')]
+[working-directory: 'web']
 web-fmt:
-    cd web && npm run format
+    npm run format
 
 # Build the desktop-bundled variant
 [group('web')]
+[working-directory: 'web']
 web-build-desktop:
-    cd web && npm run build:desktop
+    npm run build:desktop
 
 # Run the dev shell
 [group('desktop')]
+[working-directory: 'desktop']
 desktop-dev:
-    cd desktop && npm run start
+    npm run start
 
 # Run eslint
 [group('desktop')]
+[working-directory: 'desktop']
 desktop-lint:
-    cd desktop && npm run lint
+    npm run lint
 
 # Format code
 [group('desktop')]
+[working-directory: 'desktop']
 desktop-fmt:
-    cd desktop && npm run format
+    npm run format
 
 # Package the app
 [group('desktop')]
+[working-directory: 'desktop']
 desktop-package:
     just proto-gen
     just web-build-desktop
-    cd desktop && npm run package
+    npm run package
 
 # Build the image
 [group('docker')]
