@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Pre-install Rust components
+        run: rustup component add rustfmt clippy llvm-tools-preview
+
       - name: Install cargo-binstall
         uses: jdx/mise-action@v4
         with:
