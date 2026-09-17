@@ -38,7 +38,7 @@ jobs:
         run: mise upgrade --bump node just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-binstall
 
       - name: Open update PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.MISE_UPGRADE_PAT }}
           branch: chore/mise-upgrade
