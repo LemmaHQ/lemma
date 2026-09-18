@@ -61,3 +61,9 @@ Thumbs.db
 lcov.info
 web/coverage/
 web/junit.xml
+
+# Mobile / Gradle
+.gradle/
+.kotlin/
+**/build/
+local.properties

@@ -4,13 +4,13 @@ default:
 
 # Lint contracts
 [group('proto')]
-[working-directory: 'proto']
+[working-directory('proto')]
 proto-lint:
     buf lint
 
 # Build contracts
 [group('proto')]
-[working-directory: 'proto']
+[working-directory('proto')]
 proto-build:
     buf build
 
@@ -61,67 +61,67 @@ web-gen-tokens:
 
 # Build for production
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-build:
     npm run build
 
 # Run the dev server
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-dev:
     npm run dev
 
 # Run tests
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-test:
     npm test
 
 # Coverage report
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-cov:
     npm run test:cov
 
 # Run eslint
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-lint:
     npm run lint
 
 # Format code
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-fmt:
     npm run format
 
 # Build the desktop-bundled variant
 [group('web')]
-[working-directory: 'web']
+[working-directory('web')]
 web-build-desktop:
     npm run build:desktop
 
 # Run the dev shell
 [group('desktop')]
-[working-directory: 'desktop']
+[working-directory('desktop')]
 desktop-dev:
     npm run start
 
 # Run eslint
 [group('desktop')]
-[working-directory: 'desktop']
+[working-directory('desktop')]
 desktop-lint:
     npm run lint
 
 # Format code
 [group('desktop')]
-[working-directory: 'desktop']
+[working-directory('desktop')]
 desktop-fmt:
     npm run format
 
 # Package the app
 [group('desktop')]
-[working-directory: 'desktop']
+[working-directory('desktop')]
 desktop-package:
     just proto-gen
     just web-build-desktop
@@ -141,3 +141,13 @@ docker-up:
 [group('docker')]
 docker-down:
     docker compose --profile full down
+
+# Assemble debug APK
+[group('mobile')]
+mobile-android-build:
+    ./gradlew :mobile:androidApp:assembleDebug
+
+# Run unit tests
+[group('mobile')]
+mobile-android-test:
+    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testDebugUnitTest
