@@ -73,7 +73,7 @@
 
 ## GitHub 与项目管理
 
-- 仓库 `LemmaOS/lemma` 与项目板均为 public：issue、PR、提交信息一律按公开发布规范写
+- 仓库 `LemmaHQ/lemma` 与项目板均为 public：issue、PR、提交信息一律按公开发布规范写
 - 待办 / feature list 走 org project「Lemma Product 2026」：建 issue 挂进板，卡片用 Status 流转
 - issue 内容只描述问题本身，不出现内部代号（C2、M3 这类），正文能省则省；关闭前把正文补成完整描述（方案 + 关联提交）
 - 项目板只当 feature list 用，不做日期排期；Roadmap / Iteration 字段是刻意删的，别再加回；自定义字段仅保留 Size 与 Estimate

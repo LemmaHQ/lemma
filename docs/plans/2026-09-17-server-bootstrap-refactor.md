@@ -1,6 +1,6 @@
 # Server Bootstrap 重构计划
 
-追踪 issue: LemmaOS/lemma#61
+追踪 issue: LemmaHQ/lemma#61
 
 ## 目标
 
