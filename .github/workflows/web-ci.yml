@@ -51,6 +51,11 @@ jobs:
       - name: Generate proto code
         run: npm run gen:proto
 
+      # tokens.css is generated from DESIGN.md and gitignored; eslint's
+      # tailwindcss plugin resolves it via cssConfigPath during lint.
+      - name: Generate design tokens
+        run: npm run gen:tokens
+
       - name: Format check
         run: npm run format:check -w web
 
