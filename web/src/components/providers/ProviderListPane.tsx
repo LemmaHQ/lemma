@@ -51,7 +51,7 @@ function ProviderGroup({
                         onClick={() => onSelect(provider.id)}
                         aria-pressed={provider.id === selectedId}
                         className={cn(
-                            "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                            "flex w-full items-center gap-2.5 rounded-md p-2 text-left text-sm transition-colors",
                             provider.id === selectedId
                                 ? "bg-accent"
                                 : "hover:bg-accent/60",
@@ -95,10 +95,10 @@ export function ProviderListPane({
     const disabledProviders = filtered.filter((p) => !p.enabled);
 
     return (
-        <section className="flex w-[260px] shrink-0 flex-col rounded-lg border border-border bg-background">
+        <section className="flex w-65 shrink-0 flex-col rounded-lg border border-border bg-background">
             <div className="flex items-center gap-2 p-3">
                 <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}

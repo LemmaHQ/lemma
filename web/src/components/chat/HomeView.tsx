@@ -37,9 +37,9 @@ export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
     };
 
     return (
-        <div className="flex-1 grid place-items-center px-6">
+        <div className="grid flex-1 place-items-center px-6">
             <div className="w-full max-w-2xl">
-                <p className="text-center text-headline font-semibold mb-8">
+                <p className="mb-8 text-center text-headline font-semibold">
                     {t("common.appName")}
                 </p>
                 <div className="glass rounded-xl border border-border p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
@@ -63,7 +63,7 @@ export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
                         }}
                         placeholder={t("chat.inputPlaceholder")}
                         aria-label={t("chat.inputPlaceholder")}
-                        className="min-h-[64px] max-h-48 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 px-1"
+                        className="max-h-48 min-h-16 resize-none border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
                     />
                     <div className="mt-2 flex items-center justify-between">
                         <ModelSwitcher

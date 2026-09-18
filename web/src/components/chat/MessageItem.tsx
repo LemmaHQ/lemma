@@ -27,7 +27,7 @@ export function MessageItem({
     if (message.role === "user") {
         return (
             <div className="flex justify-end">
-                <div className="max-w-[75%] rounded-xl bg-muted px-4 py-2.5 text-sm whitespace-pre-wrap break-words">
+                <div className="max-w-[75%] rounded-xl bg-muted px-4 py-2.5 text-sm wrap-break-word whitespace-pre-wrap">
                     {message.content}
                 </div>
             </div>
@@ -47,13 +47,13 @@ export function MessageItem({
 
     return (
         <div className="flex gap-3">
-            <div className="size-7 shrink-0 rounded-full bg-foreground text-background grid place-items-center">
+            <div className="grid size-7 shrink-0 place-items-center rounded-full bg-foreground text-background">
                 <Sparkles className="size-3.5" />
             </div>
             <div className="min-w-0 flex-1">
                 <MessageContent content={message.content} />
                 {streaming && (
-                    <span className="mt-1 inline-block h-4 w-[7px] animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
+                    <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
                 )}
                 {message.status === "error" && message.error && (
                     <p className="mt-2 text-sm text-destructive">

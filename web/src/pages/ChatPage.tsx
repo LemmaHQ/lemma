@@ -196,9 +196,7 @@ export default function ChatPage() {
                 aria-hidden={sidebarCollapsed}
                 className={cn(
                     "shrink-0 overflow-hidden transition-all duration-200 ease-out",
-                    sidebarCollapsed
-                        ? "w-0 opacity-0"
-                        : "w-[260px] opacity-100",
+                    sidebarCollapsed ? "w-0 opacity-0" : "w-65 opacity-100",
                 )}
             >
                 <AppSidebar
@@ -226,7 +224,7 @@ export default function ChatPage() {
                 <div className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
                     {activeId !== null && (
                         <div className="glass absolute inset-x-0 top-0 z-20 flex h-12 items-center justify-start border-b border-border/80 px-3">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex min-w-0 items-center gap-2">
                                 {sidebarCollapsed && (
                                     <Button
                                         variant="ghost"
@@ -247,7 +245,7 @@ export default function ChatPage() {
                         </div>
                     )}
                     {activeId === null && sidebarCollapsed && (
-                        <div className="absolute left-3 top-3 z-10">
+                        <div className="absolute top-3 left-3 z-10">
                             <Button
                                 variant="ghost"
                                 size="icon-sm"
@@ -268,7 +266,7 @@ export default function ChatPage() {
                         />
                     ) : (
                         <>
-                            <div className="relative flex-1 min-h-0">
+                            <div className="relative min-h-0 flex-1">
                                 <div
                                     ref={scrollRef}
                                     className="h-full overflow-y-auto"
@@ -280,7 +278,7 @@ export default function ChatPage() {
                                             }
                                         />
                                     ) : (
-                                        <div className="max-w-3xl mx-auto w-full px-6 pt-16 pb-6 space-y-8">
+                                        <div className="mx-auto w-full max-w-3xl space-y-8 px-6 pt-16 pb-6">
                                             {chat.items.map((m) => (
                                                 <MessageItem
                                                     key={m.id}
@@ -297,7 +295,7 @@ export default function ChatPage() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
+                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-background to-transparent" />
                             </div>
                             <ChatComposer
                                 value={draft}

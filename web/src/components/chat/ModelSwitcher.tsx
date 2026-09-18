@@ -38,7 +38,7 @@ export function ModelSwitcher({ selection, onSelect }: ModelSwitcherProps) {
                     title={t("chat.selectModel")}
                     disabled={enabled.length === 0}
                 >
-                    <span className="font-mono truncate max-w-56">
+                    <span className="max-w-56 truncate font-mono">
                         {selection ? selection.model : t("chat.noProvider")}
                     </span>
                     <ChevronDown className="size-3" />

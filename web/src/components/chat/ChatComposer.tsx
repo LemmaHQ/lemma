@@ -49,7 +49,7 @@ export function ChatComposer({
 
     return (
         <div className="px-6 pb-6">
-            <div className="glass max-w-3xl mx-auto rounded-xl border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
+            <div className="glass mx-auto max-w-3xl rounded-xl border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
                 <Textarea
                     ref={textareaRef}
                     value={value}
@@ -70,7 +70,7 @@ export function ChatComposer({
                     }}
                     placeholder={t("chat.inputPlaceholder")}
                     aria-label={t("chat.inputPlaceholder")}
-                    className="min-h-[52px] max-h-40 resize-none border-0 bg-transparent focus-visible:ring-0 px-4 pt-3.5 shadow-none"
+                    className="max-h-40 min-h-13 resize-none border-0 bg-transparent px-4 pt-3.5 shadow-none focus-visible:ring-0"
                 />
                 <div className="flex items-center justify-between px-3 pb-2.5">
                     <ModelSwitcher selection={model} onSelect={onModelChange} />
@@ -104,7 +104,7 @@ export function ChatComposer({
                     </div>
                 </div>
             </div>
-            <p className="max-w-3xl mx-auto text-center text-xs text-muted-foreground pt-2">
+            <p className="mx-auto max-w-3xl pt-2 text-center text-xs text-muted-foreground">
                 {model ? model.model : t("chat.noProvider")} ·{" "}
                 {t("chat.disclaimer")}
             </p>

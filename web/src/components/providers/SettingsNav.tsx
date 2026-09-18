@@ -1,7 +1,7 @@
-import { Link, NavLink } from "react-router";
-import { useTranslation } from "react-i18next";
-import { ArrowLeft, Bot, Database, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ArrowLeft, Bot, Database, Palette } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Link, NavLink } from "react-router";
 
 interface NavItemProps {
     icon: React.ComponentType<{ className?: string }>;
@@ -48,7 +48,7 @@ function NavGroup({
 export function SettingsNav() {
     const { t } = useTranslation();
     return (
-        <aside className="flex w-[220px] shrink-0 flex-col bg-transparent p-3">
+        <aside className="flex w-55 shrink-0 flex-col bg-transparent p-3">
             <div className="flex items-center gap-2 px-1 pb-2">
                 <Link
                     to="/"

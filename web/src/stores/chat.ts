@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
-import i18n from "@/i18n";
 import type { ChatEvent } from "@/gen/lemma/v1/chat_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
+import i18n from "@/i18n";
 import { chatClient, conversationClient } from "@/lib/clients";
 import { getDb, listMessages, type MessageRow } from "@/lib/db";
 import { errorText } from "@/lib/errors";

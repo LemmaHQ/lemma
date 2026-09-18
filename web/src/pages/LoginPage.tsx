@@ -13,12 +13,12 @@ export default function LoginPage() {
     if (user) return <Navigate to="/" replace />;
 
     return (
-        <div className="relative min-h-dvh grid place-items-center bg-background px-4">
-            <div className="absolute right-4 top-4 flex items-center gap-1">
+        <div className="relative grid min-h-dvh place-items-center bg-background px-4">
+            <div className="absolute top-4 right-4 flex items-center gap-1">
                 <LanguageToggle />
                 <ThemeToggle />
             </div>
-            <div className="flex w-full max-w-[380px] flex-col items-center gap-4">
+            <div className="flex w-full max-w-95 flex-col items-center gap-4">
                 <AuthCard />
                 <p className="text-center text-xs text-muted-foreground">
                     {t("auth.selfHostedNote")}

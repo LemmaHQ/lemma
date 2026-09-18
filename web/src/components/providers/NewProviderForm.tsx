@@ -147,7 +147,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                                     ? t("providers.hideApiKey")
                                     : t("providers.showApiKey")
                             }
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {showKey ? (
                                 <EyeOff className="size-4" />

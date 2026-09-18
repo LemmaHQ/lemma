@@ -64,7 +64,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
             </div>
             <pre
                 ref={codeRef}
-                className="overflow-x-auto bg-code/60 p-4 font-mono text-[0.8125rem] leading-relaxed text-code-foreground"
+                className="overflow-x-auto bg-code/60 p-4 font-mono text-eyebrow leading-relaxed text-code-foreground"
             >
                 {children}
             </pre>
@@ -122,7 +122,7 @@ export function MessageContent({ content }: MessageContentProps) {
     // The arbitrary variant styles inline code while leaving fenced blocks
     // to CodeBlock.
     return (
-        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.8125rem] [&_:not(pre)>code]:text-code-foreground">
+        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-eyebrow [&_:not(pre)>code]:text-code-foreground">
             <ReactMarkdown
                 rehypePlugins={rehypePlugins}
                 components={components}

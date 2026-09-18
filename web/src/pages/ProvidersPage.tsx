@@ -9,8 +9,8 @@ import {
 } from "@/components/providers/NewProviderForm";
 import { ProviderDetail } from "@/components/providers/ProviderDetail";
 import { ProviderListPane } from "@/components/providers/ProviderListPane";
-import { StoragePanel } from "@/components/providers/StoragePanel";
 import { SettingsNav } from "@/components/providers/SettingsNav";
+import { StoragePanel } from "@/components/providers/StoragePanel";
 import { useProviders } from "@/hooks/useProviders";
 import { parseSettingsSection } from "@/lib/settingsSection";
 

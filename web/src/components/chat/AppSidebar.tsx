@@ -106,7 +106,7 @@ function SessionRow({
                 }
             }}
             className={cn(
-                "group flex w-full cursor-pointer items-center rounded-md px-3 py-1.5 text-sm truncate hover:bg-accent/60 transition-colors",
+                "group flex w-full cursor-pointer items-center truncate rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/60",
                 active && "bg-sidebar-accent font-medium",
             )}
         >
@@ -154,7 +154,7 @@ function ArchivedRow({
 }) {
     const { t } = useTranslation();
     return (
-        <div className="group flex w-full items-center rounded-md px-3 py-1.5 text-sm truncate hover:bg-accent/60 transition-colors">
+        <div className="group flex w-full items-center truncate rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/60">
             <span className="flex-1 truncate text-left text-muted-foreground">
                 {session.title || t("sidebar.newChat")}
             </span>
@@ -201,7 +201,7 @@ export function AppSidebar({
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
 
     return (
-        <aside className="h-full w-[260px] shrink-0 bg-transparent text-sidebar-foreground flex flex-col">
+        <aside className="flex h-full w-65 shrink-0 flex-col bg-transparent text-sidebar-foreground">
             <div className="flex items-center justify-between px-3 pt-4">
                 <p className="text-sm font-semibold">{t("common.appName")}</p>
                 <Button
@@ -220,7 +220,7 @@ export function AppSidebar({
                 <button
                     type="button"
                     onClick={onGoHome}
-                    className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3.5 h-9 text-sm hover:bg-accent transition-colors"
+                    className="flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-sm transition-colors hover:bg-accent"
                 >
                     <Plus className="size-4" />
                     {t("sidebar.newChat")}
@@ -230,7 +230,7 @@ export function AppSidebar({
             <div className="flex-1 overflow-y-auto px-2 pb-3">
                 {groups.map((group) => (
                     <div key={group.key}>
-                        <p className="text-xs text-muted-foreground px-3 pt-4 pb-1">
+                        <p className="px-3 pt-4 pb-1 text-xs text-muted-foreground">
                             {t(`sessions.${group.key}`)}
                         </p>
                         <div className="space-y-0.5">
@@ -270,14 +270,14 @@ export function AppSidebar({
                 )}
             </div>
 
-            <div className="border-t border-sidebar-border p-3 flex items-center gap-2">
+            <div className="flex items-center gap-2 border-t border-sidebar-border p-3">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
                             type="button"
-                            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 hover:bg-sidebar-accent transition-colors"
+                            className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 transition-colors hover:bg-sidebar-accent"
                         >
-                            <span className="size-7 shrink-0 rounded-full bg-muted grid place-items-center text-xs">
+                            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs">
                                 {username.charAt(0)}
                             </span>
                             <span className="flex-1 truncate text-left text-sm">
@@ -291,7 +291,7 @@ export function AppSidebar({
                         side="top"
                         className="w-56"
                     >
-                        <div className="px-2 py-2">
+                        <div className="p-2">
                             <p className="text-sm font-medium">{username}</p>
                         </div>
                         <DropdownMenuSeparator />
