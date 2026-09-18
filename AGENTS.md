@@ -78,7 +78,7 @@
 - issue 内容只描述问题本身，不出现内部代号（C2、M3 这类），正文能省则省；关闭前把正文补成完整描述（方案 + 关联提交）
 - 项目板只当 feature list 用，不做日期排期；Roadmap / Iteration 字段是刻意删的，别再加回；自定义字段仅保留 Size 与 Estimate
 - 分支合并一律 merge commit，禁止 rebase；开启 delete_branch_on_merge；不对 main 开阻断性保护（Require PR / status checks / Lock branch）
-- dependabot：cargo 与 npm 独立分组 minor+patch、major 单审、daily 调度；CI 验证通过且确认 changelog 后合入
+- dependabot:cargo、npm 与 gradle 独立分组 minor+patch、major 单审、daily 调度;CI 验证通过且确认 changelog 后合入
 - gh project 操作：`item-edit` 必须带 `--project-id`；字段设值用 `--single-select-option-id`；Status 选项映射 Backlog f75ad846 / Ready 08afe404 / In progress 47fc9ee4 / In review 4cc61d42 / Done 98236657；issue 标题在 project 里是滞后快照，重命名必须改 issue 实体；关闭 issue 自动流转 Done
 
 ## 协作约定
