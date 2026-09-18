@@ -150,4 +150,4 @@ mobile-android-build:
 # Run unit tests
 [group('mobile')]
 mobile-android-test:
-    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testDebugUnitTest
+    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest
