@@ -31,9 +31,18 @@ kotlin {
     }
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.compose.uiTooling)
+        androidMain {
+            kotlin.srcDir("build/generated/source/bufgen")
+            dependencies {
+                implementation(libs.compose.uiToolingPreview)
+                implementation(libs.compose.uiTooling)
+                implementation(libs.connect.kotlin)
+                implementation(libs.connect.kotlin.okhttp)
+                implementation(libs.connect.kotlin.javalite.ext)
+                implementation(libs.okhttp)
+                implementation(libs.protobuf.javalite)
+                implementation(libs.protobuf.kotlin.lite)
+            }
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
