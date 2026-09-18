@@ -14,11 +14,10 @@ proto-lint:
 proto-build:
     buf build
 
-# Generate contract code (web TS)
+# Generate contract code (web TS + mobile Kotlin)
 [group('proto')]
 proto-gen:
     npm run gen:proto
-
 # Run the dev server
 [group('rust')]
 rust-dev:

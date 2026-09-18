@@ -1,7 +1,24 @@
 version: v2
 clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: java_multiple_files
+      value: true
+    - file_option: java_package_prefix
+      value: dev.lemmahq.gen
 plugins:
-    - local: protoc-gen-es
-      out: ../web/src/gen
-      opt:
-          - target=ts
+  - remote: buf.build/bufbuild/es
+    out: ../web/src/gen
+    opt:
+      - target=ts
+  - remote: buf.build/protocolbuffers/java
+    out: ../mobile/shared/build/generated/source/bufgen
+    opt:
+      - lite
+  - remote: buf.build/protocolbuffers/kotlin
+    out: ../mobile/shared/build/generated/source/bufgen
+    opt:
+      - lite
+  - remote: buf.build/connectrpc/kotlin
+    out: ../mobile/shared/build/generated/source/bufgen
