@@ -368,13 +368,13 @@ The single chromatic accent is Kimi-style blue `{colors.primary}` #1783ff (dark 
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
-The page rhythm is a **workbench, not a marketing narrative**: a 260px session sidebar on the left, the conversation flow in the middle (user messages right-aligned in `{colors.muted}` bubbles; assistant messages as inverse round avatar + plain flow), and the composer at the bottom (`{colors.composer}` panel + inverse round send button), with the content column capped at max-w-3xl. The language serves long reading and typing sessions, not presentation.
+The page rhythm is a **workbench, not a marketing narrative**: a 260px session sidebar on the left, the conversation flow in the middle (user messages right-aligned in `{colors.muted}` bubbles; assistant messages as inverse round avatar + plain flow), and the composer at the bottom (`{colors.composer}` panel + round send button that arms to `{colors.primary}` once text is present), with the content column capped at max-w-3xl. The language serves long reading and typing sessions, not presentation.
 
 **Key Characteristics:**
 - **Three-state theme** — flat light / flat dark / follow system; semantic tokens defined once, valued per theme.
 - **Single blue accent** `{colors.primary}` #1783ff — derived focus ring, opacity hovers, no second chromatic color.
 - **Alpha-tier neutrals** — labels, fills and separators are black/white at fixed alpha steps, so both themes share one hierarchy.
-- **Role-based surfaces** + hairline borders; components stay flat, shadows only on overlays.
+- **Role-based surfaces** + hairline borders; components stay flat, shadows only on overlays and the composer card.
 - **Dual self-hosted fonts** — Sarasa UI SC + Maple Mono NF CN; CJK is a first-class citizen.
 - **Workbench rhythm** — sidebar + conversation flow + composer; content column max-w-3xl.
 - Radius ladder 4/6/8/12/16/24px — 8px for buttons and inputs, 16px for cards and bubbles.
@@ -488,7 +488,7 @@ Density serves long reading and typing sessions. Separation comes from **surface
 | 3 (overlay)    | `{colors.popover}` background, 1px `{colors.border}`, shadow-md | Dropdown menus, selects, tooltips           |
 | 4 (focus ring) | 3px `{colors.ring}`, derived from primary                       | Focused input, focused button               |
 
-Depth is carried by surface roles + hairline borders. Components stay flat; drop shadows are granted to overlays only. The focus ring is the highest attention layer.
+Depth is carried by surface roles + hairline borders. Components stay flat; drop shadows are granted to overlays only, plus one exception — the composer card's `shadow-composer`. The focus ring is the highest attention layer.
 
 ### Decorative Depth
 
@@ -522,7 +522,7 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 ### Buttons
 
-**`button-primary`** — Sky-blue CTA. Used sparingly: sign in, save changes, send-level actions.
+**`button-primary`** — Sky-blue CTA. Used sparingly: sign in, save changes, and the send button's armed state.
 - Background `{colors.primary}`, text `{colors.primary-foreground}`, type `{typography.button}`, 36px tall with 16px horizontal padding, rounded `{rounded.md}`.
 - Hover is an opacity modifier (`primary/90`); focus is the 3px `{colors.ring}`.
 
@@ -548,7 +548,7 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 **`popover`** — Floating panel shared by dropdown menus and selects.
 - Background `{colors.popover}`, 1px `{colors.border}`, rounded `{rounded.md}`, padding 4px.
-- The only component family allowed a drop shadow (shadow-md); everything else stays flat.
+- The only component family allowed a drop shadow (shadow-md) besides the composer card; everything else stays flat.
 
 **`tooltip`** — Inverse mini overlay.
 - Background `{colors.foreground}`, text `{colors.background}`, type `{typography.caption}`, padding 6px 12px.
@@ -586,7 +586,8 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 **`composer`** — The input panel, its own surface token.
 - Background `{colors.composer}`, 1px `{colors.input}` border, rounded `{rounded.xl}`, padding 12px; the textarea inside is transparent and borderless.
-- The send button is a 32px round **inverse** button (`{colors.foreground}` on `{colors.background}`), not primary — blue is reserved for system-level emphasis.
+- The card carries `shadow-composer` — a soft ambient lift (`0 8px 30px` black at 12% alpha; dark `0 12px 40px` black at 60%) — so the composer floats above the scrolling transcript. It is the only non-overlay shadow in the system.
+- The send button is a 32px round state-driven button: empty composer rests on `{colors.secondary}` with a `{colors.muted-foreground}` icon; once text is present it arms to `{colors.primary}` with a `{colors.primary-foreground}` icon, hover as `primary/90`. Sending is the composer's primary action, so the armed state earns the blue — the one sanctioned in-app use beyond system-level emphasis.
 
 **`model-switcher`** — Ghost trigger + popover overlay.
 - Model IDs render in `{typography.mono-sm}` — machine text in machine type.
@@ -626,7 +627,7 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 - Don't hard-code raw color values in components — every surface, the migration banner included, resolves through a semantic token authored here and generated into `tokens.css`.
 - Don't introduce a second chromatic accent.
-- Don't add drop shadows outside overlays (popover / dropdown / tooltip).
+- Don't add drop shadows outside overlays (popover / dropdown / tooltip) and the composer card's `shadow-composer`.
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
 - Don't load fonts from a CDN — both families are self-hosted woff2.
 - Don't add more text grays — finer hierarchy comes from weight (400 / 500 / 600), not new shades.
