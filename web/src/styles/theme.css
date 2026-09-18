@@ -43,6 +43,15 @@
         var(--foreground) 32%,
         transparent
     );
+    --shadow-composer: 0 8px 30px #0000001f;
+}
+
+[data-theme="dark"] {
+    --shadow-composer: 0 12px 40px #00000099;
+}
+
+@utility shadow-composer {
+    box-shadow: var(--shadow-composer);
 }
 
 @theme inline {
@@ -55,7 +64,7 @@
         "Maple Mono NF CN", ui-monospace, "SF Mono", SFMono-Regular, Menlo,
         Consolas, "Liberation Mono", monospace;
 
-    /* shadows — extremely restrained: popovers/dropdowns only */
+    /* shadows — extremely restrained: overlays, plus the composer card lift */
     --shadow-md: 0 4px 12px -2px #11161f14, 0 2px 4px -2px #11161f0d;
     --shadow-xs: 0 1px 2px 0 #11161f0d;
 }
