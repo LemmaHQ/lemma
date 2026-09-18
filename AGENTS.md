@@ -51,6 +51,7 @@
 - 异步 trait 统一 RPITIT + Send 范式（`fn f(..) -> impl Future<Output=T> + Send`）；实现侧优先 async fn
 - proto 结构构造一律 `..Default::default()` 收尾；枚举断言直接比对变体（`assert_eq!(r.x.status, MessageStatus::X)`），禁止 `.into()`（双 PartialEq 歧义）
 - 前端单测只覆盖纯逻辑模块（stores/lib），node 环境；Mock 隔离模块边界；涉及日期用 `vi.setSystemTime` 锁时间防午夜 flake
+- Tailwind 类名规范由 eslint-plugin-tailwindcss 全库强制（v4 规范名、类名顺序、4px 网格换算）；已知盲区：no-unnecessary-arbitrary-value 只换算 `--spacing` 的整数倍，`w-[7px]`→`w-1.75` 这类分数倍只有 VS Code 语言服务器能提示，看到提示可直接采纳
 - aws-sdk-s3 必须 `default-features = false`（阻断遗留 rustls）；HeadBucket 判桶缺失用 `is_not_found()`；403 等异常经 `meta().code()` / `meta().message()` 提取
 - 连接拓扑两套不可混用：容器内 S3 走 `http://rustfs:9000`、DB 走 `@lemma-database:5432`；宿主机一律 `127.0.0.1`
 
