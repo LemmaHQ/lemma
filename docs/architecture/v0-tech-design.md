@@ -22,7 +22,7 @@ graph LR
         P1[OpenAI Compatible API]
         P2[Anthropic API]
         P3[Gemini API]
-        S3[(S3 兼容对象存储<br>R2 / MinIO / AWS)]
+        S3[(S3 兼容对象存储<br>RustFS / R2 / AWS)]
     end
     W & D & M -- HTTPS / Connect RPC（含服务端流） --> S
     S --> DB
@@ -55,25 +55,34 @@ graph LR
 ```
 lemma/
 ├── Cargo.toml               # Rust workspace 根
-├── justfile                 # 统一任务入口（proto lint/build/gen）
-├── package.json             # npm workspace 根（web 及未来的 desktop）
+├── justfile                 # 统一任务入口
+├── package.json             # npm workspace 根（web、desktop）
+├── mise.toml                # 工具链版本唯一事实源
 ├── docker-compose.yml       # 开发环境编排（数据库）
+├── settings.gradle.kts      # Gradle 根（Android 构建挂在仓库根）
+├── gradle/                  # wrapper + 版本目录
 ├── crates/
-│   ├── server/              # bin：入口 + 全部业务逻辑
-│   ├── db/                  # lib：连接池、实体、查询、迁移
-│   └── proto/               # lib：proto 编译期生成（connectrpc-build）
+│   ├── lemma-server/        # bin：入口 + 服务装配
+│   ├── lemma-db/            # lib：连接池、迁移、共享实体
+│   ├── lemma-proto/         # lib：proto 编译期生成（connectrpc-build）
+│   ├── lemma-auth/          # users/tokens 领域
+│   ├── lemma-providers/     # providers 领域
+│   ├── lemma-conversations/ # conversations 领域
+│   ├── lemma-chat/          # 聊天编排
+│   ├── lemma-sync/          # 同步协议
+│   ├── lemma-archive/       # S3 归档
+│   └── lemma-crypto/        # 凭证密封
 ├── proto/                   # 契约唯一事实源（buf 管理）
 │   └── lemma/v1/
 ├── web/                     # React Web 端（Vite）
-├── desktop/                 # Electron 壳，内置 web/ 构建产物（M3）
-├── android/                 # KMP + CMP 移动端，独立 Gradle 根（M4）
-├── deploy/                  # 部署编排（server + db）+ .env.example（M5）
+├── desktop/                 # Electron 壳，内置 web/ 构建产物
+├── android/                 # KMP + CMP Android 模块（:android:app / :android:shared）
 └── docs/
 ```
 
 **多端代码生成管线**（Rust / TS / 移动端均从 `proto/` 生成，均不入 git）：
 
-- Rust：`crates/proto/build.rs` 编译期经 connectrpc-build 生成到 OUT_DIR，`cargo build` 自动重生成
+- Rust：`crates/lemma-proto/build.rs` 编译期经 connectrpc-build 生成到 OUT_DIR，`cargo build` 自动重生成
 - TS：`just proto-gen` 经 buf + 本地 protoc-gen-es 插件生成到 `web/src/gen/`
 - 移动端：buf 远程插件（protocolbuffers/java + protocolbuffers/kotlin + connectrpc/kotlin，均 lite）生成到 `android/` 的 Gradle build 目录，同样不入 git
 - 契约变更后：`just proto-lint && just proto-build && just proto-gen && cargo build` 全绿再提交
@@ -91,7 +100,7 @@ lemma/
 - `Pull(after)` → 增量条目（每条带自己的 `syncSeq`）+ 活跃/归档两份全量名单；客户端持游标循环分页直到 `hasMore=false`，游标持久化在本地。
 - `Watch()` 常驻服务端流：数据变更发 `hint{syncSeq}`，另有心跳；客户端发现 hint 的 syncSeq 领先本地游标就发起一次 Pull。
 - 无删除墓碑：归档是状态翻转（出现在增量里）；两份全量名单负责对账——彻底删除通过归档名单 diff 发现（在旧缓存里、不在新列表里 ⇒ 级联清掉），活跃名单之外的 active 行视为僵尸（跨账号污染/重建残留），同样级联清掉。
-- 归档存储：归档时消息搬进 S3 兼容对象存储（MinIO/R2 等），PG 只留会话元数据（`archive_key` 指向对象）。写入两阶段保一致：先 PUT 对象（幂等），再 PG 事务标记归档 + 删消息，中途失败只留下无害孤儿对象。恢复在同一事务里从对象读回消息重插（保留原 seq/时间戳，sync_seq 走新值成为增量），提交后尽力删对象；彻底删除先查 `archive_key`、PG 删完再尽力删对象。对象是带版本的 JSON 信封（`archives/<conversation_id>.json`），由 `lemma-archive` crate 的 `ArchiveStore` trait 抽象（S3 与内存两实现，后者供测试）。存储配置按用户存 `s3_configs` 表（凭证 AES-GCM 密封、设置页维护、运行时生效），未配置时降级为旧行为：消息留在 PG 不外搬；换后端（endpoint/bucket 变更）且有存量归档时，保存旧配置快照并由 MigrateArchives 流式逐对象复制到新后端（幂等可重跑）。
+- 归档存储：归档时消息搬进 S3 兼容对象存储（RustFS / MinIO / R2 等），PG 只留会话元数据（`archive_key` 指向对象）。写入两阶段保一致：先 PUT 对象（幂等），再 PG 事务标记归档 + 删消息，中途失败只留下无害孤儿对象。恢复在同一事务里从对象读回消息重插（保留原 seq/时间戳，sync_seq 走新值成为增量），提交后尽力删对象；彻底删除先查 `archive_key`、PG 删完再尽力删对象。对象是带版本的 JSON 信封（`archives/<conversation_id>.json`），由 `lemma-archive` crate 的 `ArchiveStore` trait 抽象（S3 与内存两实现，后者供测试）。存储配置按用户存 `s3_configs` 表（凭证 AES-GCM 密封、设置页维护、运行时生效），未配置时降级为旧行为：消息留在 PG 不外搬；换后端（endpoint/bucket 变更）且有存量归档时，保存旧配置快照并由 MigrateArchives 流式逐对象复制到新后端（幂等可重跑）。
 - 冲突语义是 LWW：同一条目只接受 syncSeq 更大的版本。
 
 **客户端缓存**（web）：IndexedDB（Dexie），每个用户一个库 `lemma-<userId>`，登出不清、切号换库。三张表：conversations、messages（复合索引 `[conversationId+seq]`，seq 为会话内单调序号）、meta（存同步游标）。proto 实体拍平成行：Timestamp 转毫秒、bigint 转字符串（IndexedDB 索引不支持 bigint）。归档会话本地不留消息缓存：每次 Pull 按归档名单清空，恢复后随增量自动拉回。桌面端复用同一 web 构建与缓存层，断网浏览能力同源获得。
@@ -100,7 +109,7 @@ lemma/
 
 ## 6. 接口设计
 
-契约放 `proto/lemma/v1/`，正式定义以 proto 为准（已定稿部分 buf STANDARD 通过；SystemService 随 M3 新增）：
+契约放 `proto/lemma/v1/`，正式定义以 proto 为准（已定稿部分 buf STANDARD 通过；SystemService 待新增）：
 
 | 服务                | 职责                                                           |
 | ------------------- | -------------------------------------------------------------- |
@@ -109,7 +118,7 @@ lemma/
 | ConversationService | 会话/消息管理、归档、解档、归档列表、彻底删除                  |
 | ChatService         | 发消息（服务端流）、中断、续传（服务端流，按字符 offset 重放） |
 | SyncService         | 增量 Pull（游标 + 循环分页）+ 常驻 Watch 流（提示 + 心跳）     |
-| SystemService       | 服务器版本与客户端兼容区间查询（客户端启动握手；随 M3 定稿）   |
+| SystemService       | 服务器版本与客户端兼容区间查询（客户端启动握手；待定稿）       |
 
 约定：认证走 `Authorization: Bearer` 请求头；所有数据按当前用户做归属校验；响应一律独立命名的 XxxResponse 包裹，不复用实体消息；实体不带协议字段（sync_seq 等只出现在对应协议载荷中）。
 
@@ -135,7 +144,7 @@ React 19 + Vite + Tailwind v4 + shadcn（Radix 组件），状态用 zustand，�
 
 性能：三个路由页 + Markdown 渲染（MessageContent）各自懒加载拆包；生产构建由 rust-embed 嵌进服务端二进制，单文件部署。
 
-**桌面端**（M3，Electron）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。托盘、快捷键、自动更新等壳能力随 M3 推进补充。
+**桌面端**（Electron）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。托盘、快捷键、自动更新等壳能力后续补充。
 
 ## 8. 部署
 
