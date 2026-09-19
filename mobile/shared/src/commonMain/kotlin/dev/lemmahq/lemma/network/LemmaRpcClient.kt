@@ -15,15 +15,21 @@ import dev.lemmahq.gen.lemma.v1.ConversationServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
 import dev.lemmahq.gen.lemma.v1.StorageServiceClient
 import dev.lemmahq.gen.lemma.v1.SyncServiceClient
+import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 
 class LemmaRpcClient(
     val host: String,
-    private val tokenProvider: () -> String? = { null }
+    private val tokenProvider: () -> String? = { null },
+    private val settingsRepository: SettingsRepository? = null
 ) {
     private val okHttpClient = ConnectOkHttpClient.configureClient(
-        OkHttpClient.Builder()
+        OkHttpClient.Builder().apply {
+            if (settingsRepository != null) {
+                authenticator(TokenAuthenticator(host, settingsRepository))
+            }
+        }
     ).build()
 
     private val authInterceptor: (ProtocolClientConfig) -> Interceptor = {
