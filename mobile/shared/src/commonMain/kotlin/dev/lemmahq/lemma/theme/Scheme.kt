@@ -29,8 +29,8 @@ data class LemmaColorScheme(
 )
 
 val LightLemmaColorScheme = LemmaColorScheme(
-    primary = LemmaColors.KMBlueLight,
-    primaryHover = LemmaColors.KMBlueHoverLight,
+    primary = LemmaColors.PrimaryLight,
+    primaryHover = LemmaColors.PrimaryHoverLight,
     background = LemmaColors.BgPrimaryLight,
     backgroundSecondary = LemmaColors.BgSecondaryLight,
     backgroundGroup = LemmaColors.BgGroupLight,
@@ -42,7 +42,7 @@ val LightLemmaColorScheme = LemmaColorScheme(
     fill2 = LemmaColors.F2Light,
     fill3 = LemmaColors.F3Light,
     separator = LemmaColors.SeparatorLight,
-    userBubble = LemmaColors.KMBlueLight,
+    userBubble = LemmaColors.PrimaryLight,
     userBubbleText = LemmaColors.White,
     assistantBubble = LemmaColors.BubbleGrayLight,
     assistantBubbleText = LemmaColors.LabelsPrimaryLight,
@@ -53,8 +53,8 @@ val LightLemmaColorScheme = LemmaColorScheme(
 )
 
 val DarkLemmaColorScheme = LemmaColorScheme(
-    primary = LemmaColors.KMBlueDark,
-    primaryHover = LemmaColors.KMBlueHoverDark,
+    primary = LemmaColors.PrimaryDark,
+    primaryHover = LemmaColors.PrimaryHoverDark,
     background = LemmaColors.BgPrimaryDark,
     backgroundSecondary = LemmaColors.BgSecondaryDark,
     backgroundGroup = LemmaColors.BgGroupDark,
@@ -66,7 +66,7 @@ val DarkLemmaColorScheme = LemmaColorScheme(
     fill2 = LemmaColors.F2Dark,
     fill3 = LemmaColors.F3Dark,
     separator = LemmaColors.SeparatorDark,
-    userBubble = LemmaColors.KMBlueDark,
+    userBubble = LemmaColors.PrimaryDark,
     userBubbleText = LemmaColors.White,
     assistantBubble = LemmaColors.BubbleGrayDark,
     assistantBubbleText = LemmaColors.LabelsPrimaryDark,

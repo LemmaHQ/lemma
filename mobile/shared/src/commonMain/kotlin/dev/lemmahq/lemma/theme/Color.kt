@@ -3,10 +3,10 @@ package dev.lemmahq.lemma.theme
 import androidx.compose.ui.graphics.Color
 
 object LemmaColors {
-    val KMBlueLight = Color(0xFF1783FF)
-    val KMBlueDark = Color(0xFF1A88FF)
-    val KMBlueHoverLight = Color(0xFF167FF7)
-    val KMBlueHoverDark = Color(0xFF258EFF)
+    val PrimaryLight = Color(0xFF1783FF)
+    val PrimaryDark = Color(0xFF1A88FF)
+    val PrimaryHoverLight = Color(0xFF167FF7)
+    val PrimaryHoverDark = Color(0xFF258EFF)
 
     val RedLight = Color(0xFFFF3849)
     val RedDark = Color(0xFFFF4756)

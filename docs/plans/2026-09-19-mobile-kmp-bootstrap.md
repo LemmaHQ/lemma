@@ -74,7 +74,7 @@ Proto 生成物：`mobile/shared/build/generated/source/bufgen/`（buf 远程插
 - 品牌色：Light `0xFF1783FF` / Dark `0xFF1A88FF`
 - Labels 梯度：Primary `0xE6000000`/`0xD6FFFFFF`，Secondary `0x99`/`0x8F`，Tertiary `0x73`/`0x6B`，Quaternary `0x45`/`0x47`
 - 背景：Primary `0xFFFFFFFF`/`0xFF121212`，Secondary `0xFFF5F5F5`/`0xFF1F1F1F`
-- AI 气泡 `0xFFF5F5F5`/`0xFF292929`；用户气泡 KMBlue + 纯白文字
+- AI 气泡 `0xFFF5F5F5`/`0xFF292929`；用户气泡 Primary + 纯白文字
 - 圆角：Bubble 16dp，Input 24dp，Card 12dp
 
 ---
