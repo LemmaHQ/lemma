@@ -3,11 +3,11 @@ node = "26.9.0"
 java = "temurin-25"
 "just" = "1.58.0"
 "buf" = "1.73.0"
-"protobuf" = "36.1"
+protobuf = "36.2"
 "cargo:cargo-binstall" = "1.23.0"
 "cargo:sqlx-cli" = { version = "0.9.0", default-features = false, features = [
     "postgres",
     "rustls",
 ] }
 "cargo:cargo-llvm-cov" = "0.9.1"
-"cargo:cargo-nextest" = "0.9.144"
+"cargo:cargo-nextest" = "0.9.145"
