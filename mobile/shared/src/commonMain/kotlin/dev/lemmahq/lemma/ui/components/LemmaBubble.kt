@@ -37,10 +37,16 @@ fun LemmaBubble(
             .background(backgroundColor)
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
-        Text(
-            text = text,
-            color = textColor,
-            style = LemmaTheme.typography.bodyLarge
-        )
+        if (role == LemmaBubbleRole.Assistant) {
+            LemmaMarkdown(
+                content = text
+            )
+        } else {
+            Text(
+                text = text,
+                color = textColor,
+                style = LemmaTheme.typography.bodyLarge
+            )
+        }
     }
 }

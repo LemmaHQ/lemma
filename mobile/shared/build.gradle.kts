@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -35,6 +36,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.sqldelight.android.driver)
         }
         commonMain {
             kotlin.srcDir("build/generated/source/bufgen")
@@ -55,11 +57,23 @@ kotlin {
                 implementation(libs.okhttp)
                 implementation(libs.protobuf.javalite)
                 implementation(libs.protobuf.kotlin.lite)
+                implementation(libs.markdown.renderer)
+                implementation(libs.markdown.renderer.m3)
+                implementation(libs.sqldelight.coroutines)
             }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.multiplatform.settings.test)
+            implementation(libs.sqldelight.sqlite.driver)
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("LemmaDatabase") {
+            packageName.set("dev.lemmahq.lemma.db")
         }
     }
 }
