@@ -67,3 +67,4 @@ web/junit.xml
 .kotlin/
 **/build/
 local.properties
+mise.local.toml
