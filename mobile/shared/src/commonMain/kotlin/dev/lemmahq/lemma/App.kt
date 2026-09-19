@@ -10,14 +10,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import dev.lemmahq.lemma.data.DefaultSettingsRepository
+import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
+import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.auth.AuthScreen
 import dev.lemmahq.lemma.ui.chat.MainChatScreen
 import dev.lemmahq.lemma.ui.setup.SetupScreen
-
 @Composable
-fun App() {
+fun App(
+    localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() }
+) {
     val settingsRepository = remember { DefaultSettingsRepository() }
     var currentServerUrl by remember { mutableStateOf(settingsRepository.getServerUrl()) }
     var currentAccessToken by remember { mutableStateOf(settingsRepository.getAccessToken()) }
@@ -27,7 +30,8 @@ fun App() {
         if (!currentServerUrl.isNullOrBlank()) {
             LemmaRpcClient(
                 host = currentServerUrl.orEmpty(),
-                tokenProvider = { settingsRepository.getAccessToken() }
+                tokenProvider = { settingsRepository.getAccessToken() },
+                settingsRepository = settingsRepository
             )
         } else {
             null
@@ -68,7 +72,8 @@ fun App() {
                         onLogout = {
                             settingsRepository.clearAuth()
                             currentAccessToken = null
-                        }
+                        },
+                        localChatRepository = localChatRepository
                     )
                 }
             }

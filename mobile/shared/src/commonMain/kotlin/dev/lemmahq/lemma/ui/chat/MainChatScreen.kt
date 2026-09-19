@@ -42,7 +42,11 @@ import dev.lemmahq.gen.lemma.v1.listConversationsRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
 import dev.lemmahq.gen.lemma.v1.listProvidersRequest
 import dev.lemmahq.gen.lemma.v1.sendMessageRequest
+import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
+import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.network.LemmaRpcClient
+import dev.lemmahq.lemma.network.SyncCoordinator
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaBubble
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
@@ -50,7 +54,6 @@ import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import dev.lemmahq.lemma.ui.components.LemmaInput
 import kotlinx.coroutines.launch
-
 data class UiMessage(
     val id: String,
     val role: LemmaBubbleRole,
@@ -61,11 +64,14 @@ data class UiMessage(
 fun MainChatScreen(
     rpcClient: LemmaRpcClient,
     onLogout: () -> Unit,
+    localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
     modifier: Modifier = Modifier
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val syncCoordinator = remember(rpcClient, localChatRepository) { SyncCoordinator(rpcClient, localChatRepository) }
+
 
     val conversations = remember { mutableStateListOf<Conversation>() }
     var currentConversation by remember { mutableStateOf<Conversation?>(null) }
@@ -76,8 +82,24 @@ fun MainChatScreen(
 
     var selectedProviderId by remember { mutableStateOf("") }
     var selectedModel by remember { mutableStateOf("") }
+    var bannerErrorMessage by remember { mutableStateOf<String?>(null) }
+    var lastFailedText by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        val cached = localChatRepository.getConversations()
+        if (cached.isNotEmpty() && conversations.isEmpty()) {
+            val restored = cached.map { c ->
+                dev.lemmahq.gen.lemma.v1.conversation {
+                    this.id = c.id
+                    this.title = c.title
+                }
+            }
+            conversations.addAll(restored)
+            if (currentConversation == null) {
+                currentConversation = restored.first()
+            }
+        }
+
         isLoadingConversations = true
         try {
             when (val provRes = rpcClient.provider.listProviders(listProvidersRequest {}, emptyMap())) {
@@ -91,15 +113,21 @@ fun MainChatScreen(
                 is ResponseMessage.Failure -> {}
             }
 
-            when (val convRes = rpcClient.conversation.listConversations(listConversationsRequest {}, emptyMap())) {
-                is ResponseMessage.Success -> {
-                    conversations.clear()
-                    conversations.addAll(convRes.message.conversationsList)
-                    if (currentConversation == null && conversations.isNotEmpty()) {
-                        currentConversation = conversations.first()
+            syncCoordinator.syncAll()
+
+            val updatedCached = localChatRepository.getConversations()
+            if (updatedCached.isNotEmpty()) {
+                conversations.clear()
+                val list = updatedCached.map { c ->
+                    dev.lemmahq.gen.lemma.v1.conversation {
+                        this.id = c.id
+                        this.title = c.title
                     }
                 }
-                is ResponseMessage.Failure -> {}
+                conversations.addAll(list)
+                if (currentConversation == null) {
+                    currentConversation = list.first()
+                }
             }
         } finally {
             isLoadingConversations = false
@@ -108,17 +136,43 @@ fun MainChatScreen(
 
     LaunchedEffect(currentConversation?.id) {
         val convId = currentConversation?.id ?: return@LaunchedEffect
-        messages.clear()
+        val cachedMsgs = localChatRepository.getMessages(convId)
+        if (cachedMsgs.isNotEmpty()) {
+            messages.clear()
+            messages.addAll(cachedMsgs.map { m ->
+                UiMessage(
+                    id = m.id,
+                    role = if (m.role == 1L) LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
+                    text = m.content
+                )
+            })
+        } else {
+            messages.clear()
+        }
+
         when (val msgRes = rpcClient.conversation.listMessages(listMessagesRequest { conversationId = convId }, emptyMap())) {
             is ResponseMessage.Success -> {
-                val list = msgRes.message.messagesList.map {
+                val serverMsgs = msgRes.message.messagesList
+                val list = serverMsgs.map {
                     UiMessage(
                         id = it.id,
                         role = if (it.role == "user") LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
                         text = it.content
                     )
                 }
+                messages.clear()
                 messages.addAll(list)
+                for (m in serverMsgs) {
+                    localChatRepository.saveMessage(
+                        id = m.id,
+                        conversationId = convId,
+                        role = if (m.role == "user") 1L else 2L,
+                        content = m.content,
+                        status = m.statusValue.toLong(),
+                        createdAt = m.createdAt.seconds,
+                        updatedAt = m.updatedAt.seconds
+                    )
+                }
             }
             is ResponseMessage.Failure -> {}
         }
@@ -312,7 +366,45 @@ fun MainChatScreen(
                     }
                 }
             }
-
+            if (bannerErrorMessage != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(LemmaTheme.colors.danger.copy(alpha = 0.12f))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = bannerErrorMessage.orEmpty(),
+                        style = LemmaTheme.typography.bodyMedium,
+                        color = LemmaTheme.colors.danger,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (lastFailedText != null && !isStreaming) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Retry",
+                            style = LemmaTheme.typography.bodyMedium,
+                            color = LemmaTheme.colors.primary,
+                            modifier = Modifier.clickable {
+                                inputText = lastFailedText.orEmpty()
+                                bannerErrorMessage = null
+                                lastFailedText = null
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "✕",
+                        style = LemmaTheme.typography.bodyMedium,
+                        color = LemmaTheme.colors.textSecondary,
+                        modifier = Modifier.clickable {
+                            bannerErrorMessage = null
+                        }
+                    )
+                }
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -344,6 +436,15 @@ fun MainChatScreen(
 
                             messages.add(UiMessage(id = userMsgId, role = LemmaBubbleRole.User, text = text))
                             messages.add(UiMessage(id = aiMsgId, role = LemmaBubbleRole.Assistant, text = ""))
+                            localChatRepository.saveMessage(
+                                id = userMsgId,
+                                conversationId = conv.id,
+                                role = 1L,
+                                content = text,
+                                status = 0L,
+                                createdAt = 0L,
+                                updatedAt = 0L
+                            )
 
                             isStreaming = true
 
@@ -367,6 +468,19 @@ fun MainChatScreen(
                                             messages[lastIdx] = old.copy(text = old.text + delta)
                                         }
                                     } else if (event.hasDone()) {
+                                        val lastIdx = messages.indexOfLast { it.id == aiMsgId }
+                                        if (lastIdx >= 0) {
+                                            val aiText = messages[lastIdx].text
+                                            localChatRepository.saveMessage(
+                                                id = aiMsgId,
+                                                conversationId = conv.id,
+                                                role = 2L,
+                                                content = aiText,
+                                                status = 2L,
+                                                createdAt = 0L,
+                                                updatedAt = 0L
+                                            )
+                                        }
                                         break
                                     } else if (event.hasError()) {
                                         val err = event.error.message
@@ -379,10 +493,13 @@ fun MainChatScreen(
                                     }
                                 }
                             } catch (e: Exception) {
+                                val formattedError = ErrorFormatter.format(e)
+                                bannerErrorMessage = formattedError
+                                lastFailedText = text
                                 val lastIdx = messages.indexOfLast { it.id == aiMsgId }
                                 if (lastIdx >= 0) {
                                     val old = messages[lastIdx]
-                                    messages[lastIdx] = old.copy(text = old.text + "\n[Network Error: ${e.message}]")
+                                    messages[lastIdx] = old.copy(text = old.text + if (old.text.isBlank()) "[Failed: $formattedError]" else "\n\n[Interrupted: $formattedError]")
                                 }
                             } finally {
                                 isStreaming = false
