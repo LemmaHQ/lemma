@@ -66,7 +66,8 @@ pub fn router(service: Arc<AuthService>) -> Router {
 }
 ```
 
-与现状的差异：现在是一个 connect Router 聚合六个服务、单一 axum service 被六个前缀共享；重构后每模块一个单服务 connect Router。**对外路径不变，行为等价。**
+与现状的差异：现在是一个 connect Router 聚合六个服务、单一 axum service 被六个前缀共享；重构后每模块一个单服务 connect Router。
+**对外路径不变，行为等价。**
 
 web fallback 与 CORS 属顶层关注点，留在 main.rs。
 

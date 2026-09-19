@@ -15,6 +15,7 @@
 - Rust：文档注释用 `///`，`//!` 只用于模块 / crate 级文档；doc comment 写在 attribute 之前
 - TypeScript：`/** JSDoc */` 只写给调用者的文档，实现注释用 `//`（多行也用多个 `//`，不用 `/* */` 块）；JSDoc 不写类型注解；`@param` / `@return` 只在有增量信息时写
 - TODO 统一 `TODO(标识): 描述` 格式
+- Markdown 文档按句点换行（one sentence per line），不按列宽硬折行：diff 干净、评审可锚定到句。例外：`DESIGN.md`（受 designmd lint 约束）与 `docs/style-guide/`（vendored 上游指南，保持与上游可对照）
 - 尽量不写注释：能用命名、类型、结构或断言表达的就不要注释；有专门"解释位"的格式（DESIGN.md 的 YAML 前置块 → 正文章节，proto → 字段注释，函数 → doc comment）把解释放到那个位置，不在数据里夹注释、不画分组横幅
 
 ## Git 提交习惯
