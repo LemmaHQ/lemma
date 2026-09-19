@@ -10,7 +10,8 @@
 2. web 同步换肤:一份 DESIGN.md,两端共用,不设平台分支。
 3. 删除暗色画布渐变(`dark-canvas-from`/`dark-canvas-to`),设计系统回归全扁平。
 4. 毛玻璃只做语义层:DESIGN.md 定义 glass = 主背景 × 84% alpha + 发丝边框;web 手写层用 `backdrop-filter` 实现,Android v1 用半透明实色,Kyant backdrop 留作 KMP 评估项。
-5. 字体:Android UI 拉丁用 MiSans(官方渠道获取,子集化授权待核实),代码用 MapleMono TTF;web 字体不动。本条属 KMP 阶段,本计划不执行。
+5. 字体:Android UI 拉丁用 MiSans(官方渠道获取,子集化授权待核实),代码用 MapleMono TTF;web 字体不动。
+   本条属 KMP 阶段,本计划不执行。
 6. 其余 Kimi token 体系(Labels/Fills/Separators 透明度梯度、功能色、动效梯度)整体采纳。
 
 ## DESIGN.md 改动

@@ -7,11 +7,15 @@ on:
     paths:
       - "proto/**"
       - "DESIGN.md"
+      - "docs/features/**"
+      - "scripts/check-features.mjs"
       - ".github/workflows/spec-ci.yml"
   pull_request:
     paths:
       - "proto/**"
       - "DESIGN.md"
+      - "docs/features/**"
+      - "scripts/check-features.mjs"
       - ".github/workflows/spec-ci.yml"
 
 concurrency:
@@ -59,18 +63,37 @@ jobs:
       - name: Lint DESIGN.md
         run: npx designmd lint DESIGN.md
 
+  features:
+    name: Features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Validate feature catalog
+        run: node scripts/check-features.mjs
+
   check:
     name: check
     runs-on: ubuntu-latest
     needs:
       - proto
       - design
+      - features
     if: ${{ always() }}
     steps:
       - name: Verify required jobs
         run: |
           if [ "${{ needs.proto.result }}" != "success" ] || \
-             [ "${{ needs.design.result }}" != "success" ]; then
+             [ "${{ needs.design.result }}" != "success" ] || \
+             [ "${{ needs.features.result }}" != "success" ]; then
             echo "Spec CI failed"
             exit 1
           fi

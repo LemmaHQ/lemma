@@ -57,7 +57,8 @@
 
 括号内为等值 8 位 hex(alpha 经四舍五入;原生 colors.xml 实测值 `#e5000000`/`#d6ffffff`,0.9 被截断为 0xE5)。
 
-这是整个系统最关键的手法:**文字颜色不用独立色板,而用黑/白的透明度梯度**。收益是文字在任何底色上自动调和(尤其暗色下观感统一),且 hover/active 只需微调透明度(Primary-hover: light `#252525`、dark 白 84.8%)。
+这是整个系统最关键的手法:**文字颜色不用独立色板,而用黑/白的透明度梯度**。
+收益是文字在任何底色上自动调和(尤其暗色下观感统一),且 hover/active 只需微调透明度(Primary-hover: light `#252525`、dark 白 84.8%)。
 
 ### 2.4 Fills(填充层级)
 
@@ -68,7 +69,8 @@
 | F3 | 黑 15% | 白 18% |
 | F4 | 黑 25% | 白 25% |
 
-用于卡片填充、输入框底、tag 底等"不喧宾夺主的容器"。交互三态梯度规律:hover ≈ base +3~5 个百分点,active 再 +2~5。
+用于卡片填充、输入框底、tag 底等"不喧宾夺主的容器"。
+交互三态梯度规律:hover ≈ base +3~5 个百分点,active 再 +2~5。
 
 ### 2.5 Separators / MaskBg / Others
 
@@ -108,7 +110,8 @@
 | Geist Mono | Regular / Italic | OFL | 代码块 |
 | Pixelify Sans | Regular | OFL | 装饰性像素字(彩蛋/品牌化场景) |
 
-CJK 部分未内置中文字体资产,推断走系统字体回退(CSS font stack:`Inter, -apple-system, "SF Pro Text", "Segoe UI", Roboto, ...`)。注:资产不可直接搬运,需从官方渠道另行获取。
+CJK 部分未内置中文字体资产,推断走系统字体回退(CSS font stack:`Inter, -apple-system, "SF Pro Text", "Segoe UI", Roboto, ...`)。
+注:资产不可直接搬运,需从官方渠道另行获取。
 
 ### 3.2 字阶(markdown 内容渲染)
 

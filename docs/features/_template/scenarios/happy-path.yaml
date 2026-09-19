@@ -1,0 +1,7 @@
+name: Happy path
+given:
+  - <precondition>
+when:
+  - <action>
+then:
+  - <expected outcome>

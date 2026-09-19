@@ -93,19 +93,29 @@ lemma/
 
 ## 5. 数据与同步
 
-**权威在服务端**。PostgreSQL 里 conversations/messages 每行带 `sync_seq`，取自一个全局序列；所有 UPDATE 必须显式 `sync_seq = nextval('sync_seq')`（列默认值只作用于 INSERT），保证任何变更都能被增量同步看见。
+**权威在服务端**。
+PostgreSQL 里 conversations/messages 每行带 `sync_seq`，取自一个全局序列；所有 UPDATE 必须显式 `sync_seq = nextval('sync_seq')`（列默认值只作用于 INSERT），保证任何变更都能被增量同步看见。
 
 **同步协议**（SyncService）：
 
 - `Pull(after)` → 增量条目（每条带自己的 `syncSeq`）+ 活跃/归档两份全量名单；客户端持游标循环分页直到 `hasMore=false`，游标持久化在本地。
 - `Watch()` 常驻服务端流：数据变更发 `hint{syncSeq}`，另有心跳；客户端发现 hint 的 syncSeq 领先本地游标就发起一次 Pull。
 - 无删除墓碑：归档是状态翻转（出现在增量里）；两份全量名单负责对账——彻底删除通过归档名单 diff 发现（在旧缓存里、不在新列表里 ⇒ 级联清掉），活跃名单之外的 active 行视为僵尸（跨账号污染/重建残留），同样级联清掉。
-- 归档存储：归档时消息搬进 S3 兼容对象存储（RustFS / MinIO / R2 等），PG 只留会话元数据（`archive_key` 指向对象）。写入两阶段保一致：先 PUT 对象（幂等），再 PG 事务标记归档 + 删消息，中途失败只留下无害孤儿对象。恢复在同一事务里从对象读回消息重插（保留原 seq/时间戳，sync_seq 走新值成为增量），提交后尽力删对象；彻底删除先查 `archive_key`、PG 删完再尽力删对象。对象是带版本的 JSON 信封（`archives/<conversation_id>.json`），由 `lemma-archive` crate 的 `ArchiveStore` trait 抽象（S3 与内存两实现，后者供测试）。存储配置按用户存 `s3_configs` 表（凭证 AES-GCM 密封、设置页维护、运行时生效），未配置时降级为旧行为：消息留在 PG 不外搬；换后端（endpoint/bucket 变更）且有存量归档时，保存旧配置快照并由 MigrateArchives 流式逐对象复制到新后端（幂等可重跑）。
+- 归档存储：归档时消息搬进 S3 兼容对象存储（RustFS / MinIO / R2 等），PG 只留会话元数据（`archive_key` 指向对象）。
+  写入两阶段保一致：先 PUT 对象（幂等），再 PG 事务标记归档 + 删消息，中途失败只留下无害孤儿对象。
+  恢复在同一事务里从对象读回消息重插（保留原 seq/时间戳，sync_seq 走新值成为增量），提交后尽力删对象；彻底删除先查 `archive_key`、PG 删完再尽力删对象。
+  对象是带版本的 JSON 信封（`archives/<conversation_id>.json`），由 `lemma-archive` crate 的 `ArchiveStore` trait 抽象（S3 与内存两实现，后者供测试）。
+  存储配置按用户存 `s3_configs` 表（凭证 AES-GCM 密封、设置页维护、运行时生效），未配置时降级为旧行为：消息留在 PG 不外搬；换后端（endpoint/bucket 变更）且有存量归档时，保存旧配置快照并由 MigrateArchives 流式逐对象复制到新后端（幂等可重跑）。
 - 冲突语义是 LWW：同一条目只接受 syncSeq 更大的版本。
 
-**客户端缓存**（web）：IndexedDB（Dexie），每个用户一个库 `lemma-<userId>`，登出不清、切号换库。三张表：conversations、messages（复合索引 `[conversationId+seq]`，seq 为会话内单调序号）、meta（存同步游标）。proto 实体拍平成行：Timestamp 转毫秒、bigint 转字符串（IndexedDB 索引不支持 bigint）。归档会话本地不留消息缓存：每次 Pull 按归档名单清空，恢复后随增量自动拉回。桌面端复用同一 web 构建与缓存层，断网浏览能力同源获得。
+**客户端缓存**（web）：IndexedDB（Dexie），每个用户一个库 `lemma-<userId>`，登出不清、切号换库。
+三张表：conversations、messages（复合索引 `[conversationId+seq]`，seq 为会话内单调序号）、meta（存同步游标）。
+proto 实体拍平成行：Timestamp 转毫秒、bigint 转字符串（IndexedDB 索引不支持 bigint）。
+归档会话本地不留消息缓存：每次 Pull 按归档名单清空，恢复后随增量自动拉回。
+桌面端复用同一 web 构建与缓存层，断网浏览能力同源获得。
 
-**同步引擎**（`web/src/lib/sync.ts`）：`pullAll` 游标循环补拉、并发调用合并成同一次；`watchLoop` 连上先补拉再消费 hint，断流后指数退避重连（1s 起步、封顶 30s），Pull 失败也走同一个重连循环，不另开重试路径。引擎不反向 import stores，补拉完成后通过 `onSynced` 监听器通知上层回灌。
+**同步引擎**（`web/src/lib/sync.ts`）：`pullAll` 游标循环补拉、并发调用合并成同一次；`watchLoop` 连上先补拉再消费 hint，断流后指数退避重连（1s 起步、封顶 30s），Pull 失败也走同一个重连循环，不另开重试路径。
+引擎不反向 import stores，补拉完成后通过 `onSynced` 监听器通知上层回灌。
 
 ## 6. 接口设计
 
@@ -122,7 +132,8 @@ lemma/
 
 约定：认证走 `Authorization: Bearer` 请求头；所有数据按当前用户做归属校验；响应一律独立命名的 XxxResponse 包裹，不复用实体消息；实体不带协议字段（sync_seq 等只出现在对应协议载荷中）。
 
-错误分两轨：**业务错误**（可预期、面向用户）走 `lemma_proto::app_error`——错误码进 `errors.proto` 的 ErrorReason 闭集，`ErrorInfo`（含 i18n 插值 attrs）随 ConnectError.details 下发，传输码维持既有语义；前端 `lib/errors.ts` 按 reason 查 `errors.*` i18n 文案（Record 穷举，漏译编译期即报）。**运维错误**（db、密封、上游异常）保持 internal + 英文原文，不带码也永不本地化；流内错误（ChatError.message、迁移帧 error）同属此类。
+错误分两轨：**业务错误**（可预期、面向用户）走 `lemma_proto::app_error`——错误码进 `errors.proto` 的 ErrorReason 闭集，`ErrorInfo`（含 i18n 插值 attrs）随 ConnectError.details 下发，传输码维持既有语义；前端 `lib/errors.ts` 按 reason 查 `errors.*` i18n 文案（Record 穷举，漏译编译期即报）。
+**运维错误**（db、密封、上游异常）保持 internal + 英文原文，不带码也永不本地化；流内错误（ChatError.message、迁移帧 error）同属此类。
 
 ## 7. 客户端架构
 
@@ -144,7 +155,10 @@ React 19 + Vite + Tailwind v4 + shadcn（Radix 组件），状态用 zustand，�
 
 性能：三个路由页 + Markdown 渲染（MessageContent）各自懒加载拆包；生产构建由 rust-embed 嵌进服务端二进制，单文件部署。
 
-**桌面端**（Electron）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。托盘、快捷键、自动更新等壳能力后续补充。
+**桌面端**（Electron）：renderer 为内置的 web 构建产物（本地加载，启动无白屏、断网可浏览缓存），服务器地址首启输入并本地持久化；连接失败 / 版本不兼容落到本地错误页（与首启地址页同一载体）。
+启动时经 SystemService 做版本握手，服务器版本不在兼容区间则引导升级。
+壳加载本地产物后跨源访问服务器 API，CORS 放行与握手一并设计；transport baseUrl 由硬编码 `/` 改为可配置。
+托盘、快捷键、自动更新等壳能力后续补充。
 
 ## 8. 部署
 
