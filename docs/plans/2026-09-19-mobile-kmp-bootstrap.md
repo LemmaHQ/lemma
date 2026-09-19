@@ -1,82 +1,95 @@
 # 2026-09-19 移动端 KMP (Android) 客户端实施计划
 
-## 1. 目标与范围
+## 0. 当前状态总览（2026-09-19 更新）
 
-基于仓库现有的 Android 骨架工程（`mobile/shared` 与 `mobile/androidApp`），遵循 `DESIGN.md` 与 `docs/plans/2026-09-17-kimi-design-extraction.md` 中的 Kimi 3.1.0 视觉真值规范，分阶段搭建完整的 Lemma 移动客户端。
+```
+[M1 视觉基础]     已完成  theme/ 全套 Token + 原子组件 + DesignShowcase
+[M2 通信契约]     已完成  buf 远程插件双端合流 + Connect-Kotlin RPC 客户端
+[M3 存储与状态]   部分完成 multiplatform-settings 已接入（ServerUrl/Token）；
+                          SQLDelight 本地会话缓存未做
+[M4 核心屏幕]     大部分完成 SetupScreen / AuthScreen / MainChatScreen
+                          （会话抽屉、新建会话、流式打字机）已真机联调；
+                          Markdown 渲染与断网兜底未做
+```
 
-### 首期目标（Milestone 1: 视觉基础与 Design System）
-- 将 `DESIGN.md` 中定义的色彩体系（KMBlue、透明度文本 Labels、背景层级、Fills）完整映射至 Compose Multiplatform 主题系统；
-- 搭建排版比例系统（Typography）与形状系统（Shapes）；
-- 封装高频原子组件：气泡容器、按钮、卡片容器、输入底栏；
-- 在 Android 真机上跑通静态 Showcase 预览，支持浅色/深色主题无缝切换。
-
-### 后续规划（Milestone 2 - 4）
-- **Milestone 2（通信契约）**：基于 Connect-Kotlin 与 `proto/` 契约构建强类型网络层与认证拦截；
-- **Milestone 3（存储与状态）**：SQLDelight 本地会话缓存、设置持久化与导航状态管理；
-- **Milestone 4（核心屏幕）**：连接服务器引导页、登录页、主会话流（流式打字效果与自适应输入框）。
+真机调试链路已打通：校园网 AP 隔离场景用 `adb reverse tcp:1025 tcp:1025`，
+手机连 `http://127.0.0.1:1025` 经 USB 直达宿主机 Rust 服务端。
 
 ---
 
-## 2. 首期工程结构规划 (`mobile/shared`)
+## 1. 目标与范围
 
-在 `mobile/shared/src/commonMain/kotlin/dev/lemmahq/lemma/` 下组织：
+基于 `mobile/shared` + `mobile/androidApp` 骨架，遵循 `DESIGN.md` 与
+`docs/plans/2026-09-17-kimi-design-extraction.md` 的 Kimi 视觉真值，
+搭建完整 Lemma Android 客户端。KMP 仅含 Android 目标（CMP 全端方案已废弃）。
+
+---
+
+## 2. 工程结构（已实现）
 
 ```
 mobile/shared/src/commonMain/kotlin/dev/lemmahq/lemma/
-├── theme/
-│   ├── Color.kt             # 基础调色板 (KMBlue, Red, Green, Labels 梯度, Fills 梯度)
-│   ├── Scheme.kt            # LemmaColorScheme 接口及 Light/Dark 配色实例
-│   ├── Typography.kt        # 字体排版系统
-│   ├── Shape.kt             # 圆角规范 (Bubble 16dp, Input 24dp, Card 12dp)
-│   └── Theme.kt             # LemmaTheme 包装与 CompositionLocal 提供器
+├── theme/                  # Color / Scheme / Typography / Shape / Theme
+├── data/                   # SettingsRepository（multiplatform-settings）
+├── network/                # LemmaRpcClient（Connect-Kotlin + OkHttp）
 ├── ui/
-│   ├── components/
-│   │   ├── LemmaButton.kt   # 统一交互按钮 (Primary, Secondary, Ghost)
-│   │   ├── LemmaBubble.kt   # 消息气泡卡片 (用户蓝底白字, AI 气泡灰底)
-│   │   ├── LemmaCard.kt     # 分组列表卡片容器
-│   │   └── LemmaInput.kt    # 胶囊式自适应聊天输入底栏
-│   └── showcase/
-│       └── DesignShowcase.kt# 用于真机与预览的 Token 及组件效果陈列页
-└── App.kt                   # 接入 LemmaTheme 并展示 Showcase
+│   ├── components/         # LemmaButton / LemmaBubble / LemmaCard / LemmaInput / LemmaTextField
+│   ├── showcase/           # DesignShowcase
+│   ├── setup/              # SetupScreen（服务器连接 + 连通性探测）
+│   ├── auth/               # AuthScreen（登录/注册切换、Change server）
+│   └── chat/               # MainChatScreen（抽屉会话列表 + 流式聊天）
+└── App.kt                  # 三段式导航状态机（Setup → Auth → Chat）
 ```
 
----
-
-## 3. 设计 Token 映射规则 (对齐 DESIGN.md / Kimi 提取)
-
-### 3.1 色彩系统
-- **品牌色**：
-  - Light: `Color(0xFF1783FF)`
-  - Dark: `Color(0xFF1A88FF)`
-- **文字透明度层级 (核心手法)**：
-  - `Labels-Primary`: Light `Color(0xE6000000)` / Dark `Color(0xD6FFFFFF)`
-  - `Labels-Secondary`: Light `Color(0x99000000)` / Dark `Color(0x8FFFFFFF)`
-  - `Labels-Tertiary`: Light `Color(0x73000000)` / Dark `Color(0x6BFFFFFF)`
-  - `Labels-Quaternary`: Light `Color(0x45000000)` / Dark `Color(0x47FFFFFF)`
-- **背景层级**：
-  - `Bg-Primary`: Light `Color(0xFFFFFFFF)` / Dark `Color(0xFF121212)`
-  - `Bg-Secondary`: Light `Color(0xFFF5F5F5)` / Dark `Color(0xFF1F1F1F)`
-  - `Bg-Group`: Light `Color(0xFFFFFFFF)` / Dark `Color(0xFF1F1F1F)`
-- **气泡底色**：
-  - AI 气泡: Light `Color(0xFFF5F5F5)` / Dark `Color(0xFF292929)`
-  - 用户气泡: `KMBlue` (文字采用纯白 `Color(0xFFFFFFFF)`)
+Proto 生成物：`mobile/shared/build/generated/source/bufgen/`（buf 远程插件：
+protocolbuffers/java + protocolbuffers/kotlin + connectrpc/kotlin，全部 lite）。
 
 ---
 
-## 4. 实施步骤与验收清单
+## 3. 已沉淀的构建坑（接续必读）
 
-| 步骤 | 操作内容 | 验证与验收方式 |
+1. **Java codegen 必须显式进 javac**：`com.android.kotlin.multiplatform.library`
+   插件默认不编译 Java。`mobile/shared/build.gradle.kts` 已有两处关键配置，
+   删除即复现 `NoClassDefFoundError: LoginRequest`：
+   - `kotlin { android { withJava() } }`
+   - `androidComponents { onVariants { it.sources.java?.addStaticSourceDirectory("build/generated/source/bufgen") } }`
+2. `protocolbuffers/kotlin` 不是独立插件，生成的 Kotlin DSL 依赖 java
+   插件产出的 `GeneratedMessageLite` 基类，两个插件缺一不可。
+3. 该插件是**单变体架构**：没有 `assembleDebug`/`assembleRelease`，
+   模块任务用 `:mobile:shared:assemble`；打 APK 用 `:mobile:androidApp:assembleDebug`。
+4. **Apply Changes（小闪电）无法热加载新增类**：proto 契约变更后必须完整
+   Run 重装，或 `adb install -r mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`。
+5. 闪退排查：`adb logcat -d -s AndroidRuntime:E`，帧率/输入法系统日志全是噪声。
+
+---
+
+## 4. 下一步工作（按优先级）
+
+| 步骤 | 内容 | 验收 |
 |---|---|---|
-| **Step 1** | 创建 `theme/` 目录并实现 Color, Scheme, Typography, Shape, Theme | `./gradlew :mobile:shared:compileKotlinJvm` 编译通过 |
-| **Step 2** | 实现核心原子组件 (`LemmaButton`, `LemmaBubble`, `LemmaInput`) | 单元组件逻辑无报错 |
-| **Step 3** | 编写 `DesignShowcase` 界面并在 `App.kt` 中挂载展示 | `./gradlew :mobile:androidApp:assembleDebug` 打包成功 |
-| **Step 4** | 真机 / 模拟器渲染核验 | 检查浅色与深色模式下对比度、圆角及组件观感 |
+| **N1** | 真机回归：Setup → 登录/注册 → 发消息收流式回复全链路 | 无闪退，打字机逐字渲染 |
+| **N2** | AI 气泡 Markdown 渲染（代码块、列表、粗体），选型 multiplatform-markdown-renderer 或自绘 | 常见 GFM 元素真机观感正常 |
+| **N3** | 网络异常兜底：连接失败/流中断的错误提示与重试入口 | 断网发消息有可见错误而非卡死 |
+| **N4** | Token 刷新：accessToken 过期时用 refreshToken 静默续期（拦截器） | 过期后操作不跳登录页 |
+| **N5** | SQLDelight 会话/消息本地缓存，离线可看历史 | 杀进程重进会话列表秒开 |
+| **N6** | 消息持久化同步：对齐 web 端 sync_seq 语义 | 多端消息一致 |
 
 ---
 
-## 5. 约束与原则 (严格遵循 AGENTS.md)
+## 5. 设计 Token 映射规则（已定稿，勿改）
 
-1. **4 空格缩进**，代码中严格**零注释**；
-2. **纯 Hex 颜色规范**，禁止使用 `oklch()` 等不兼容格式；
-3. **分阶段推进**：首期仅交付 Design System 与静态 Showcase，不引入复杂未定型网络或数据库依赖，保证每次提交干净原子；
-4. 未获用户显式许可前，不执行任何 git commit。
+- 品牌色：Light `0xFF1783FF` / Dark `0xFF1A88FF`
+- Labels 梯度：Primary `0xE6000000`/`0xD6FFFFFF`，Secondary `0x99`/`0x8F`，
+  Tertiary `0x73`/`0x6B`，Quaternary `0x45`/`0x47`
+- 背景：Primary `0xFFFFFFFF`/`0xFF121212`，Secondary `0xFFF5F5F5`/`0xFF1F1F1F`
+- AI 气泡 `0xFFF5F5F5`/`0xFF292929`；用户气泡 KMBlue + 纯白文字
+- 圆角：Bubble 16dp，Input 24dp，Card 12dp
+
+---
+
+## 6. 约束与原则（严格遵循 AGENTS.md）
+
+1. 4 空格缩进，代码严格零注释；
+2. 纯 Hex 颜色，禁止 `oklch()`；
+3. 原子提交，未获用户显式许可不执行 git commit；
+4. proto 契约变更后走完整 lint → 生成 → 构建，并完整重装 APK（见第 3 节坑 4）。
