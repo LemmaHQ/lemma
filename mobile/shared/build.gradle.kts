@@ -20,6 +20,7 @@ kotlin {
        androidResources {
            enable = true
        }
+       withJava()
        withHostTest {
            isIncludeAndroidResources = true
        }
@@ -31,11 +32,23 @@ kotlin {
     }
 
     sourceSets {
-        androidMain {
+        androidMain.dependencies {
+            implementation(libs.compose.uiToolingPreview)
+            implementation(libs.compose.uiTooling)
+        }
+        commonMain {
             kotlin.srcDir("build/generated/source/bufgen")
             dependencies {
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
+                implementation(libs.compose.ui)
+                implementation(libs.compose.components.resources)
                 implementation(libs.compose.uiToolingPreview)
-                implementation(libs.compose.uiTooling)
+                implementation(libs.androidx.lifecycle.viewmodelCompose)
+                implementation(libs.androidx.lifecycle.runtimeCompose)
+                implementation(libs.multiplatform.settings)
+                implementation(libs.multiplatform.settings.no.arg)
                 implementation(libs.connect.kotlin)
                 implementation(libs.connect.kotlin.okhttp)
                 implementation(libs.connect.kotlin.javalite.ext)
@@ -44,22 +57,19 @@ kotlin {
                 implementation(libs.protobuf.kotlin.lite)
             }
         }
-        commonMain.dependencies {
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.multiplatform.settings.test)
         }
     }
 }
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+}
+
+androidComponents {
+    onVariants {
+        it.sources.java?.addStaticSourceDirectory("build/generated/source/bufgen")
+    }
 }
