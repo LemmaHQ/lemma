@@ -1,0 +1,12 @@
+id: _template
+title: Feature Title
+status: draft
+owners: [core]
+clients:
+  web:
+    status: planned
+  desktop:
+    status: inherited
+    inherits: web
+  android:
+    status: planned

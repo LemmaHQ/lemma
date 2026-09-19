@@ -53,6 +53,11 @@ rust-cov:
 rust-cov-html:
     cargo llvm-cov --workspace --exclude lemma-server --html --open
 
+# Validate the feature catalog
+[group('features')]
+check-features:
+    npm run check:features
+
 # Generate design tokens (DESIGN.md -> tokens.css)
 [group('web')]
 web-gen-tokens:
