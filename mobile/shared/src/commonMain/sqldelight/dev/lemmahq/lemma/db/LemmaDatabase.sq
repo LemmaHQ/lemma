@@ -1,0 +1,56 @@
+CREATE TABLE cached_conversation (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    sync_seq INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE cached_message (
+    id TEXT NOT NULL PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    role INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    sync_seq INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE sync_state (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    last_cursor INTEGER NOT NULL DEFAULT 0
+);
+
+getCursor:
+SELECT last_cursor FROM sync_state WHERE id = 1;
+
+setCursor:
+INSERT OR REPLACE INTO sync_state(id, last_cursor) VALUES (1, ?);
+
+selectAllConversations:
+SELECT * FROM cached_conversation ORDER BY updated_at DESC;
+
+insertOrReplaceConversation:
+INSERT OR REPLACE INTO cached_conversation(id, title, status, created_at, updated_at, sync_seq)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteConversation:
+DELETE FROM cached_conversation WHERE id = ?;
+
+deleteMessagesByConversation:
+DELETE FROM cached_message WHERE conversation_id = ?;
+
+pruneConversationsNotIn:
+DELETE FROM cached_conversation WHERE id NOT IN ?;
+
+pruneMessagesNotIn:
+DELETE FROM cached_message WHERE conversation_id NOT IN ?;
+
+selectMessagesByConversation:
+SELECT * FROM cached_message WHERE conversation_id = ? ORDER BY created_at ASC;
+
+insertOrReplaceMessage:
+INSERT OR REPLACE INTO cached_message(id, conversation_id, role, content, status, created_at, updated_at, sync_seq)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
