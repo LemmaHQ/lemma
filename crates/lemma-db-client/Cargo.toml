@@ -8,7 +8,7 @@ futures.workspace = true
 lemma-adapter.workspace = true
 lemma-agent.workspace = true
 lemma-tools.workspace = true
-lemma-trace.workspace = true
+lemma-core.workspace = true
 parking_lot.workspace = true
 rusqlite = { version = "0.38.0", features = ["bundled", "bundled-full"] }
 serde.workspace = true

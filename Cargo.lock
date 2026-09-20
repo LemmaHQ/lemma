@@ -2087,7 +2087,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "futures",
- "lemma-trace",
+ "lemma-core",
  "parking_lot",
  "reqwest",
  "serde",
@@ -2101,7 +2101,7 @@ version = "0.1.0"
 dependencies = [
  "futures",
  "lemma-adapter",
- "lemma-trace",
+ "lemma-core",
  "parking_lot",
  "serde",
  "serde_json",
@@ -2167,11 +2167,11 @@ dependencies = [
  "lemma-adapter",
  "lemma-auth",
  "lemma-conversations",
+ "lemma-core",
  "lemma-crypto",
  "lemma-db-server",
  "lemma-proto",
  "lemma-providers",
- "lemma-trace",
  "serde",
  "serde_json",
  "sqlx",
@@ -2198,6 +2198,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-core"
+version = "0.1.0"
+dependencies = [
+ "lemma-proto",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lemma-crypto"
 version = "0.1.0"
 dependencies = [
@@ -2213,8 +2222,8 @@ dependencies = [
  "futures",
  "lemma-adapter",
  "lemma-agent",
+ "lemma-core",
  "lemma-tools",
- "lemma-trace",
  "parking_lot",
  "rusqlite",
  "serde",
@@ -2319,19 +2328,10 @@ name = "lemma-tools"
 version = "0.1.0"
 dependencies = [
  "futures",
- "lemma-trace",
  "parking_lot",
  "serde",
  "serde_json",
  "tokio",
-]
-
-[[package]]
-name = "lemma-trace"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]

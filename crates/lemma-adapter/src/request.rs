@@ -1,4 +1,4 @@
-use lemma_trace::{ContentBlock, Message};
+use lemma_core::{ContentBlock, Message};
 
 /// Vendor family selecting the wire protocol of a chat request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

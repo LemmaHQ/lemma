@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use futures::Stream;
-use lemma_trace::StreamEvent;
+use lemma_core::StreamEvent;
 
 use crate::error::ProviderError;
 use crate::request::ChatRequest;

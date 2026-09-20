@@ -2,7 +2,7 @@
 //!
 //! This crate contains the core execution loop that drives conversations,
 //! invokes providers, and handles branching navigation. It depends only on
-//! `lemma-trace`, `lemma-adapter`, and abstract traits like [`TraceStore`].
+//! `lemma-core`, `lemma-adapter`, and abstract traits like [`TraceStore`].
 
 mod error;
 mod loop_core;

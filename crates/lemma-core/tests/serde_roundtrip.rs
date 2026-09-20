@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, missing_docs)]
 
-use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent, ToolCall, Usage};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent, ToolCall, Usage};
 
 #[test]
 fn message_roundtrip_preserves_structure() {

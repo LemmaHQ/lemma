@@ -62,7 +62,7 @@ impl SessionTree {
 pub fn build_context_path(
     entries: &[StoredMessage],
     leaf_id: Uuid,
-) -> Result<Vec<lemma_trace::Message>, AgentError> {
+) -> Result<Vec<lemma_core::Message>, AgentError> {
     let tree = SessionTree::from_entries(entries.to_vec());
     let path = tree.get_path(leaf_id)?;
     Ok(path.into_iter().map(|s| s.message.clone()).collect())
@@ -72,7 +72,7 @@ pub fn build_context_path(
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use lemma_trace::{ContentBlock, Message, TextContent};
+    use lemma_core::{ContentBlock, Message, TextContent};
 
     fn dummy_msg(id: Uuid, parent_id: Option<Uuid>, text: &str) -> StoredMessage {
         StoredMessage {

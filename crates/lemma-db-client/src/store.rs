@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use lemma_agent::{BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore};
-use lemma_trace::{ContentBlock, Message};
+use lemma_core::{ContentBlock, Message};
 use parking_lot::Mutex;
 use rusqlite::{Connection, params};
 use uuid::Uuid;

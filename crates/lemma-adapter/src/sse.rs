@@ -9,7 +9,7 @@
 use std::pin::Pin;
 
 use futures::{Stream, StreamExt, stream};
-use lemma_trace::{StopReason, StreamEvent, Usage};
+use lemma_core::{StopReason, StreamEvent, Usage};
 
 use crate::error::ProviderError;
 use crate::provider::BoxEventStream;

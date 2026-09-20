@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use futures::StreamExt;
 use lemma_adapter::{ChatRequest, Provider, ProviderKind};
-use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use uuid::Uuid;
 
 use crate::error::AgentError;

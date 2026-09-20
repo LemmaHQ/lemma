@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use lemma_trace::{StopReason, StreamEvent, Usage};
+use lemma_core::{StopReason, StreamEvent, Usage};
 use serde::Deserialize;
 
 use crate::error::ProviderError;

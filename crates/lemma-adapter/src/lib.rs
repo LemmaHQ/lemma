@@ -2,7 +2,7 @@
 //! formats.
 //!
 //! Adapters translate canonical [`ChatRequest`] values into vendor payloads
-//! and vendor streams back into [`StreamEvent`]s from `lemma-trace`. HTTP
+//! and vendor streams back into [`StreamEvent`]s from `lemma-core`. HTTP
 //! goes through the injectable [`HttpTransport`] so hosts (server, desktop
 //! sidecar, mobile) can supply their own networking stack.
 

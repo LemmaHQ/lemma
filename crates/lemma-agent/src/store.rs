@@ -35,7 +35,7 @@ pub struct StoredMessage {
     /// Parent message ID in the conversation tree.
     pub parent_id: Option<Uuid>,
     /// Canonical trace message body.
-    pub message: lemma_trace::Message,
+    pub message: lemma_core::Message,
     /// Created timestamp in Unix epoch milliseconds.
     pub created_at: i64,
 }

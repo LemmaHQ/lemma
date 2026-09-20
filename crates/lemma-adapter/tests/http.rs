@@ -13,7 +13,7 @@ use lemma_adapter::{
     AnthropicMessages, ChatRequest, DispatchProvider, GeminiGenerate, OpenAiCompatible, Provider,
     ProviderKind,
 };
-use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use parking_lot::Mutex;
 
 #[derive(Default)]

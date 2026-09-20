@@ -5,7 +5,7 @@ use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, Provid
 use lemma_agent::{
     AgentConfig, AgentLoop, BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore,
 };
-use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use parking_lot::Mutex;
 use std::sync::Arc;
 use uuid::Uuid;

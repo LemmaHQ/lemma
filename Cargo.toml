@@ -11,7 +11,7 @@ members = [
     "crates/lemma-sync",
     "crates/lemma-archive",
     "crates/lemma-crypto",
-    "crates/lemma-trace",
+    "crates/lemma-core",
     "crates/lemma-adapter",
     "crates/lemma-agent",
     "crates/lemma-tools",
@@ -58,7 +58,7 @@ lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }
 lemma-sync = { path = "crates/lemma-sync" }
 lemma-tools = { path = "crates/lemma-tools" }
-lemma-trace = { path = "crates/lemma-trace" }
+lemma-core = { path = "crates/lemma-core" }
 parking_lot = "0.12.5"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }

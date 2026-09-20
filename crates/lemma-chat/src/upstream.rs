@@ -5,9 +5,9 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt};
 use lemma_adapter::{BoxEventStream, ProviderError, ProviderKind};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent, Usage};
 use lemma_db_server::entity::{Message as DbMessage, TokenUsage};
 use lemma_proto::lemma::v1::ProviderKind as ProtoProviderKind;
-use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent, Usage};
 
 /// One upstream generation event as the chat service consumes it.
 #[derive(Debug)]

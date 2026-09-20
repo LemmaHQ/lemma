@@ -14,6 +14,7 @@ use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, Provid
 use lemma_auth::{sign_access_token, users};
 use lemma_chat::ChatService;
 use lemma_chat::store;
+use lemma_core::{StopReason, StreamEvent, Usage};
 use lemma_crypto::{derive_key, seal};
 use lemma_proto::lemma::v1::__buffa::oneof::chat_event::Kind;
 use lemma_proto::lemma::v1::ChatService as ChatServiceRpc;
@@ -22,7 +23,6 @@ use lemma_proto::lemma::v1::{
     ResumeStreamResponse, SendMessageRequest, SendMessageResponse,
 };
 use lemma_providers::providers::{self, NewProvider};
-use lemma_trace::{StopReason, StreamEvent, Usage};
 use sqlx::PgPool;
 use uuid::Uuid;
 

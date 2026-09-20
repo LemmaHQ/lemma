@@ -1,8 +1,8 @@
 #![allow(clippy::unwrap_used, missing_docs)]
 
 use lemma_agent::{StoredMessage, TraceStore};
+use lemma_core::{ContentBlock, Message, StopReason, TextContent};
 use lemma_db_client::SqliteTraceStore;
-use lemma_trace::{ContentBlock, Message, StopReason, TextContent};
 use uuid::Uuid;
 
 #[tokio::test]

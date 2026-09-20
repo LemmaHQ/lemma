@@ -6,7 +6,7 @@ version.workspace = true
 [dependencies]
 futures.workspace = true
 lemma-adapter.workspace = true
-lemma-trace.workspace = true
+lemma-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
