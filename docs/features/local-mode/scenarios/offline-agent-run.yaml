@@ -1,0 +1,10 @@
+name: Full agent run without a server
+given:
+  - no server is configured
+  - a provider API key is stored locally
+when:
+  - the user sends a message that triggers tool calls
+then:
+  - the agent streams the response and executes the tools in the local workspace
+  - the full trace is persisted in the local database
+  - the trace survives a process restart

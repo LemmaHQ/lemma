@@ -1,0 +1,15 @@
+id: local-mode
+title: Local Mode
+status: in-progress
+owners: [core]
+clients:
+  web:
+    status: n/a
+  desktop:
+    status: in-progress
+    tracking: 65
+  android:
+    status: in-progress
+    tracking: 65
+links:
+  plan: docs/plans/2026-09-20-portable-agent-core.md

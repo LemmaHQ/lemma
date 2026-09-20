@@ -1,0 +1,10 @@
+name: Offline work reconciles after reconnect
+given:
+  - a server is configured
+  - the client worked offline and produced new trace entries in a synced conversation
+when:
+  - connectivity returns
+then:
+  - the client pushes its outbox and pulls remote changes by sync cursor
+  - server-echoed entries replace their local pending counterparts by message id
+  - no entry is duplicated or lost
