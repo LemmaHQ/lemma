@@ -1,7 +1,7 @@
 [package]
 version.workspace = true
 edition.workspace = true
-name = "lemma-db"
+name = "lemma-db-server"
 
 [dependencies]
 chrono.workspace = true

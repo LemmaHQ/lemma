@@ -1,6 +1,6 @@
 //! Queries for chat-time reads and writes on the messages table.
 
-use lemma_db::entity::{Message, TokenUsage};
+use lemma_db_server::entity::{Message, TokenUsage};
 use sqlx::types::Json;
 use uuid::Uuid;
 

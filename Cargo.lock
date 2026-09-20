@@ -2122,7 +2122,7 @@ dependencies = [
  "http 1.5.0",
  "lemma-auth",
  "lemma-crypto",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "serde",
  "serde_json",
@@ -2144,7 +2144,7 @@ dependencies = [
  "hex",
  "http 1.5.0",
  "jsonwebtoken",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "rand 0.10.2",
  "serde",
@@ -2168,7 +2168,7 @@ dependencies = [
  "lemma-auth",
  "lemma-conversations",
  "lemma-crypto",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "lemma-providers",
  "lemma-trace",
@@ -2191,7 +2191,7 @@ dependencies = [
  "http 1.5.0",
  "lemma-archive",
  "lemma-auth",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "sqlx",
  "uuid",
@@ -2207,7 +2207,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-db"
+name = "lemma-db-client"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "lemma-adapter",
+ "lemma-agent",
+ "lemma-tools",
+ "lemma-trace",
+ "parking_lot",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-db-server"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -2244,7 +2262,7 @@ dependencies = [
  "http 1.5.0",
  "lemma-auth",
  "lemma-crypto",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "reqwest",
  "serde",
@@ -2266,7 +2284,7 @@ dependencies = [
  "lemma-auth",
  "lemma-chat",
  "lemma-conversations",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "lemma-providers",
  "lemma-sync",
@@ -2274,24 +2292,6 @@ dependencies = [
  "sqlx",
  "tokio",
  "tower-http 0.7.1",
-]
-
-[[package]]
-name = "lemma-store-sqlite"
-version = "0.1.0"
-dependencies = [
- "futures",
- "lemma-adapter",
- "lemma-agent",
- "lemma-tools",
- "lemma-trace",
- "parking_lot",
- "rusqlite",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "uuid",
 ]
 
 [[package]]
@@ -2307,7 +2307,7 @@ dependencies = [
  "lemma-auth",
  "lemma-chat",
  "lemma-conversations",
- "lemma-db",
+ "lemma-db-server",
  "lemma-proto",
  "sqlx",
  "tokio",

@@ -1,6 +1,6 @@
 //! Queries for the conversations and messages tables.
 
-use lemma_db::entity::{Conversation, Message};
+use lemma_db_server::entity::{Conversation, Message};
 use uuid::Uuid;
 
 /// Creates an empty conversation and returns it.

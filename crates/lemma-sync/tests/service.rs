@@ -62,7 +62,7 @@ async fn pull(
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_assembles_changes_and_archived(pool: PgPool) {
     let (uid, token) = new_user_token(&pool, "alice").await;
     let svc = SyncService::new(pool.clone(), JWT_SECRET);
@@ -94,7 +94,7 @@ async fn pull_assembles_changes_and_archived(pool: PgPool) {
     assert_eq!(r2.next_after, r.next_after);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_paginates_without_loss(pool: PgPool) {
     let (uid, token) = new_user_token(&pool, "alice").await;
     let svc = SyncService::new(pool.clone(), JWT_SECRET);
@@ -123,7 +123,7 @@ async fn pull_paginates_without_loss(pool: PgPool) {
     assert_eq!(seen.len(), 501);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn watch_emits_initial_hint(pool: PgPool) {
     let (_uid, token) = new_user_token(&pool, "alice").await;
     let svc = SyncService::new(pool.clone(), JWT_SECRET);
@@ -151,7 +151,7 @@ async fn watch_emits_initial_hint(pool: PgPool) {
     ));
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_truncation_boundary_uses_min_across_tables(pool: PgPool) {
     let (uid, token) = new_user_token(&pool, "alice").await;
     let svc = SyncService::new(pool.clone(), JWT_SECRET);
@@ -213,7 +213,7 @@ async fn pull_truncation_boundary_uses_min_across_tables(pool: PgPool) {
     assert_eq!(msg_ids.len(), 501);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_msg_only_truncation_paginates(pool: PgPool) {
     let (uid, token) = new_user_token(&pool, "alice").await;
     let svc = SyncService::new(pool.clone(), JWT_SECRET);

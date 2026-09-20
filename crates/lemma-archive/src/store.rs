@@ -1,6 +1,6 @@
 //! Queries for the s3_configs table.
 
-use lemma_db::entity::S3Config;
+use lemma_db_server::entity::S3Config;
 use sqlx::types::Json;
 use uuid::Uuid;
 

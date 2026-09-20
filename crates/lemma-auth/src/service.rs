@@ -4,7 +4,7 @@ use crate::{tokens, users};
 use buffa_types::google::protobuf::Timestamp;
 use chrono::{Duration, Utc};
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_db::entity::User as DbUser;
+use lemma_db_server::entity::User as DbUser;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AuthTokens, ErrorReason, LoginResponse, LogoutResponse, MeResponse, RefreshResponse, Role,

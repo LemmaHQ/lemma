@@ -19,7 +19,7 @@ lemma-tools       Tool 定义/注册/审批策略 + ExecEnv trait（工作区沙
                   + 内建工具（read/write/shell/query_history）+ MCP 客户端（rmcp）+ Skill 加载
 lemma-agent       编排循环：Context 组装 → Provider 流 → 工具调度 → 轨迹追加
                   依赖 TraceStore trait，不感知具体数据库与宿主
-lemma-store-sqlite 本地存储实现：rusqlite + WAL + FTS5，desktop/android 共用
+lemma-db-client   本地存储实现：rusqlite + WAL + FTS5，desktop/android 共用
 lemma-server      ConnectRPC 门面 + auth + 密钥密封 + S3 归档（纯装配层）
 ```
 
@@ -52,7 +52,7 @@ lemma-server      ConnectRPC 门面 + auth + 密钥密封 + S3 归档（纯装�
 | P2 | 新建 `lemma-provider`，迁移 adapter/registry，接口升级为 StreamEvent；`lemma-chat` 改调新接口 | 现有 chat 集成测试（直调 handler）全绿 |
 | P3 | 新建 `lemma-agent`，剥离编排循环；抽 TraceStore trait，Postgres 实现落 lemma-conversations/lemma-sync；server 退化为门面 | 全量测试绿 + 手工完成一次完整对话 |
 | P4 | 新建 `lemma-tools`：ExecEnv trait + 最小内建工具 + 审批策略骨架 | server 态工具调用闭环测试 |
-| P5 | `lemma-store-sqlite` + desktop sidecar 嵌入核心 + query_history；feature `local-mode` 转 in-progress | 无服务端完成带工具的完整对话；杀进程重进历史完好 |
+| P5 | `lemma-db-client` + desktop sidecar 嵌入核心 + query_history；feature `local-mode` 转 in-progress | 无服务端完成带工具的完整对话；杀进程重进历史完好 |
 | P6 | android 经 UniFFI 嵌入核心 + 平台沙盒 ExecEnv（SAF 作用域工作区） | 真机离线跑通 agent 会话 |
 
 schema 变更集中在 P3–P5：`messages.parent_id`、`conversations.leaf_id`、`conversations.sync_mode`、本地库 outbox/FTS5 建表。

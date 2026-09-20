@@ -1,7 +1,7 @@
 //! Queries backing sync pull: everything with a `sync_seq` greater than
 //! the client's cursor, in sequence order.
 
-use lemma_db::entity::{Conversation, Message};
+use lemma_db_server::entity::{Conversation, Message};
 use uuid::Uuid;
 
 /// Pulls a user's conversations changed after the given sync cursor.

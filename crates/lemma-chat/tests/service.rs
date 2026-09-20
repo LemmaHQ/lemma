@@ -248,7 +248,7 @@ async fn insert_orphan_streaming(pool: &PgPool, conv: Uuid, content: &str) -> Uu
     id
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_streams_deltas_and_finalizes(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -297,7 +297,7 @@ async fn send_streams_deltas_and_finalizes(pool: PgPool) {
     assert_eq!(msg.token_usage.unwrap().0.total, 3);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_idempotent_replay_skips_upstream(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let adapter = Arc::new(FakeAdapter::new(Script::Done(vec!["好".into()])));
@@ -352,7 +352,7 @@ async fn send_idempotent_replay_skips_upstream(pool: PgPool) {
     assert_eq!(count, 1);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn abort_mid_stream_keeps_partial(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -390,7 +390,7 @@ async fn abort_mid_stream_keeps_partial(pool: PgPool) {
     abort(&svc, &f.token, &message_id).await.unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_replays_from_char_offset(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -421,7 +421,7 @@ async fn resume_replays_from_char_offset(pool: PgPool) {
     assert!(matches!(kind_of(revent_of(&events[1])), Kind::Done(_)));
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_adapter_failure_marks_error(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -454,7 +454,7 @@ async fn send_adapter_failure_marks_error(pool: PgPool) {
     assert_eq!(msg.status, "error");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_rejects_foreign_conversation(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let other = fixture(&pool, "erin").await;
@@ -478,7 +478,7 @@ async fn send_rejects_foreign_conversation(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::NotFound);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_live_stream_replays_snapshot_then_follows(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -515,7 +515,7 @@ async fn resume_live_stream_replays_snapshot_then_follows(pool: PgPool) {
     assert!(matches!(kind_of(revent_of(&aborted)), Kind::Aborted(_)));
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_after_abort_replays_from_db(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -546,7 +546,7 @@ async fn resume_after_abort_replays_from_db(pool: PgPool) {
     assert!(matches!(kind_of(revent_of(&events[1])), Kind::Aborted(_)));
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_orphan_streaming_marks_aborted(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -575,7 +575,7 @@ async fn resume_orphan_streaming_marks_aborted(pool: PgPool) {
     assert_eq!(status, "aborted");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_rejects_bad_requests(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -631,7 +631,7 @@ async fn send_rejects_bad_requests(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn send_rejects_missing_provider(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -659,7 +659,7 @@ async fn send_rejects_missing_provider(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_and_abort_reject_missing_message(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(
@@ -682,7 +682,7 @@ async fn resume_and_abort_reject_missing_message(pool: PgPool) {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn resume_and_abort_reject_malformed_id(pool: PgPool) {
     let f = fixture(&pool, "alice").await;
     let svc = ChatService::new(

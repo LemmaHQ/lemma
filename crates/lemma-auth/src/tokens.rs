@@ -1,7 +1,7 @@
 //! Queries for the refresh_tokens table.
 
 use chrono::{DateTime, Utc};
-use lemma_db::entity::RefreshToken;
+use lemma_db_server::entity::RefreshToken;
 use uuid::Uuid;
 
 /// Inserts a refresh token row and returns it.

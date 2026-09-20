@@ -1,7 +1,7 @@
 //! The JSON envelope format for archived conversations.
 
 use chrono::{DateTime, Utc};
-use lemma_db::entity::{Message, TokenUsage};
+use lemma_db_server::entity::{Message, TokenUsage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

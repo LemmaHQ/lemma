@@ -9,7 +9,7 @@ use connectrpc::{
 };
 use futures::stream;
 use lemma_auth::require_user;
-use lemma_db::entity::{Conversation as DbConversation, Message as DbMessage};
+use lemma_db_server::entity::{Conversation as DbConversation, Message as DbMessage};
 use lemma_proto::lemma::v1::{
     Conversation, ConversationStatus, Message, MessageStatus, PullResponse, SyncConversation,
     SyncMessage, WatchHeartbeat, WatchHint, WatchResponse,

@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "crates/lemma-server",
-    "crates/lemma-db",
+    "crates/lemma-db-client",
+    "crates/lemma-db-server",
     "crates/lemma-proto",
     "crates/lemma-auth",
     "crates/lemma-providers",
@@ -13,7 +14,6 @@ members = [
     "crates/lemma-trace",
     "crates/lemma-adapter",
     "crates/lemma-agent",
-    "crates/lemma-store-sqlite",
     "crates/lemma-tools",
 ]
 resolver = "2"
@@ -52,10 +52,10 @@ lemma-auth = { path = "crates/lemma-auth" }
 lemma-chat = { path = "crates/lemma-chat" }
 lemma-conversations = { path = "crates/lemma-conversations" }
 lemma-crypto = { path = "crates/lemma-crypto" }
-lemma-db = { path = "crates/lemma-db" }
+lemma-db-client = { path = "crates/lemma-db-client" }
+lemma-db-server = { path = "crates/lemma-db-server" }
 lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }
-lemma-store-sqlite = { path = "crates/lemma-store-sqlite" }
 lemma-sync = { path = "crates/lemma-sync" }
 lemma-tools = { path = "crates/lemma-tools" }
 lemma-trace = { path = "crates/lemma-trace" }

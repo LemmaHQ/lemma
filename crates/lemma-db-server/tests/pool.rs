@@ -17,14 +17,16 @@ async fn connect_and_migrate_against_fresh_database() {
     let url = base_url();
     let db = format!("lemma_db_test_{}", uuid::Uuid::new_v4().simple());
 
-    let admin = lemma_db::connect(&url).await.unwrap();
+    let admin = lemma_db_server::connect(&url).await.unwrap();
     sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {db}")))
         .execute(&admin)
         .await
         .unwrap();
 
-    let pool = lemma_db::connect(&fresh_db_url(&url, &db)).await.unwrap();
-    lemma_db::migrate(&pool).await.unwrap();
+    let pool = lemma_db_server::connect(&fresh_db_url(&url, &db))
+        .await
+        .unwrap();
+    lemma_db_server::migrate(&pool).await.unwrap();
     let row = sqlx::query("SELECT count(*) FROM conversations")
         .fetch_one(&pool)
         .await
@@ -41,7 +43,7 @@ async fn connect_and_migrate_against_fresh_database() {
 #[tokio::test]
 async fn connect_rejects_unreachable_database() {
     assert!(
-        lemma_db::connect("postgres://127.0.0.1:5433/postgres")
+        lemma_db_server::connect("postgres://127.0.0.1:5433/postgres")
             .await
             .is_err()
     );

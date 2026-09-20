@@ -11,7 +11,7 @@ use dashmap::DashMap;
 use tokio::sync::{Notify, broadcast};
 use uuid::Uuid;
 
-use lemma_db::entity::TokenUsage;
+use lemma_db_server::entity::TokenUsage;
 
 /// An event broadcast to the subscribers of a live stream.
 #[derive(Debug, Clone)]

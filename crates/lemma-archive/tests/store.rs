@@ -30,7 +30,7 @@ fn upsert_cfg<'a>(
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn upsert_replaces_same_user_row(pool: PgPool) {
     let user = new_user(&pool).await;
     let first = store::upsert(&pool, &upsert_cfg(user, "http://old:9000", "b1", None))
@@ -45,7 +45,7 @@ async fn upsert_replaces_same_user_row(pool: PgPool) {
     assert_eq!(second.bucket, "b2");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn clear_migration_wipes_snapshot(pool: PgPool) {
     let user = new_user(&pool).await;
     let snapshot = serde_json::json!({
@@ -70,7 +70,7 @@ async fn clear_migration_wipes_snapshot(pool: PgPool) {
     assert!(!store::clear_migration(&pool, user).await.unwrap());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_by_user_removes_config(pool: PgPool) {
     let user = new_user(&pool).await;
     store::upsert(&pool, &upsert_cfg(user, "http://x:9000", "b", None))
@@ -82,7 +82,7 @@ async fn delete_by_user_removes_config(pool: PgPool) {
     assert!(!store::delete_by_user(&pool, user).await.unwrap());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_keys_scoped_and_filtered(pool: PgPool) {
     let user = new_user(&pool).await;
     let other = new_user(&pool).await;

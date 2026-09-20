@@ -139,7 +139,7 @@ async fn seed_archived(pool: &PgPool, user: Uuid, key: &str) {
     .unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn first_save_masks_secrets(pool: PgPool) {
     let s = svc(&pool);
     let (_, token) = new_user(&pool).await;
@@ -162,7 +162,7 @@ async fn first_save_masks_secrets(pool: PgPool) {
     assert_eq!(saved.config.secret_key, "wJa****beef");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn first_save_requires_core_fields(pool: PgPool) {
     let s = svc(&pool);
     let (_, token) = new_user(&pool).await;
@@ -188,7 +188,7 @@ async fn first_save_requires_core_fields(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn patch_keeps_unset_fields_and_secrets(pool: PgPool) {
     let s = svc(&pool);
     let (user, token) = new_user(&pool).await;
@@ -217,7 +217,7 @@ async fn patch_keeps_unset_fields_and_secrets(pool: PgPool) {
     assert_eq!(open(&key, &row.secret_key).unwrap(), "sk-old-key-12345");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn backend_change_snapshots_and_counts(pool: PgPool) {
     let s = svc(&pool);
     let (user, token) = new_user(&pool).await;
@@ -266,7 +266,7 @@ async fn backend_change_snapshots_and_counts(pool: PgPool) {
     assert!(!saved.config.pending_migration);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_guarded_by_archives(pool: PgPool) {
     let s = svc(&pool);
     let (user, token) = new_user(&pool).await;
@@ -318,7 +318,7 @@ async fn delete_guarded_by_archives(pool: PgPool) {
     assert!(get(&s, &t2).await.config.as_option().is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn test_validation_paths(pool: PgPool) {
     let s = svc(&pool);
     let (_, token) = new_user(&pool).await;
@@ -339,7 +339,7 @@ async fn test_validation_paths(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn migrate_requires_config_and_snapshot(pool: PgPool) {
     let s = svc(&pool);
     let (_, token) = new_user(&pool).await;
@@ -410,7 +410,7 @@ async fn copy_objects_error_propagates() {
     assert!(err.0.contains("sink down"));
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn handlers_require_bearer(pool: PgPool) {
     let svc = svc(&pool);
     use lemma_proto::lemma::v1;

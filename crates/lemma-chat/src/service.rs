@@ -9,7 +9,7 @@ use connectrpc::{
 };
 use futures::{StreamExt, stream};
 use lemma_auth::require_user;
-use lemma_db::entity::{Message as DbMessage, TokenUsage as DbTokenUsage};
+use lemma_db_server::entity::{Message as DbMessage, TokenUsage as DbTokenUsage};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AbortMessageResponse, ChatAborted, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted,

@@ -26,7 +26,7 @@ fn new_provider(uid: Uuid, name: &str) -> NewProvider<'_> {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_scoped_to_owner(pool: PgPool) {
     let u1 = new_user(&pool, "alice").await;
     let u2 = new_user(&pool, "erin").await;
@@ -43,7 +43,7 @@ async fn list_scoped_to_owner(pool: PgPool) {
     assert_eq!(providers::list_by_user(&pool, u2).await.unwrap().len(), 1);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn find_by_id_and_user_isolation(pool: PgPool) {
     let u1 = new_user(&pool, "alice").await;
     let u2 = new_user(&pool, "erin").await;
@@ -64,7 +64,7 @@ async fn find_by_id_and_user_isolation(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn update_partial_keeps_other_fields(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let models = vec!["m1".to_string(), "m2".to_string()];
@@ -97,7 +97,7 @@ async fn update_partial_keeps_other_fields(pool: PgPool) {
     assert_eq!(updated.api_key, p.api_key);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn update_wrong_user_returns_none(pool: PgPool) {
     let u1 = new_user(&pool, "alice").await;
     let u2 = new_user(&pool, "erin").await;
@@ -118,7 +118,7 @@ async fn update_wrong_user_returns_none(pool: PgPool) {
     assert!(patched.is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_once_then_misses(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let p = providers::insert(&pool, &new_provider(uid, "p"))

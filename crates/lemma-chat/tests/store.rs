@@ -2,7 +2,7 @@
 
 use lemma_auth::users;
 use lemma_chat::store;
-use lemma_db::entity::TokenUsage;
+use lemma_db_server::entity::TokenUsage;
 use lemma_providers::providers::{self, NewProvider};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -36,7 +36,7 @@ async fn new_fixture(pool: &PgPool, name: &str) -> (Uuid, Uuid, Uuid) {
     (uid, pid, cid)
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn placeholder_then_finalize_roundtrip(pool: PgPool) {
     let (_uid, pid, cid) = new_fixture(&pool, "alice").await;
     store::insert_user_message(&pool, cid, "你好")
@@ -68,7 +68,7 @@ async fn placeholder_then_finalize_roundtrip(pool: PgPool) {
     assert_eq!(found.id, a.id);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn client_msg_id_unique_per_conversation(pool: PgPool) {
     let (_uid, pid, cid) = new_fixture(&pool, "alice").await;
     store::insert_assistant_placeholder(&pool, cid, pid, "gpt-x", Some("dup"))
@@ -88,7 +88,7 @@ async fn client_msg_id_unique_per_conversation(pool: PgPool) {
         .unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_context_excludes_streaming_and_orders(pool: PgPool) {
     let (_uid, pid, cid) = new_fixture(&pool, "alice").await;
     store::insert_user_message(&pool, cid, "q1").await.unwrap();
@@ -109,7 +109,7 @@ async fn list_context_excludes_streaming_and_orders(pool: PgPool) {
     assert_eq!(pairs, [("user", "q1"), ("assistant", "a1"), ("user", "q2")]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn flush_and_abort_keep_partial(pool: PgPool) {
     let (_uid, pid, cid) = new_fixture(&pool, "alice").await;
     let a = store::insert_assistant_placeholder(&pool, cid, pid, "gpt-x", None)
@@ -132,7 +132,7 @@ async fn flush_and_abort_keep_partial(pool: PgPool) {
     assert!(aborted.sync_seq > sync_after_flush);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn find_by_id_and_user_enforces_ownership(pool: PgPool) {
     let (_uid, pid, cid) = new_fixture(&pool, "alice").await;
     let a = store::insert_assistant_placeholder(&pool, cid, pid, "gpt-x", None)
