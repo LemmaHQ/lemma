@@ -19,9 +19,11 @@ use sqlx::PgPool;
 use tokio_stream::wrappers::BroadcastStream;
 use uuid::Uuid;
 
-use crate::adapter::{AdapterEvent, BoxEventStream, ChatMessage, ChatRequest, LlmAdapter};
+use lemma_adapter::Provider;
+
 use crate::registry::{StreamEvent, StreamHandle, StreamRegistry, StreamStatus};
 use crate::store;
+use crate::upstream::{BoxUpstreamStream, UpstreamEvent};
 
 /// Throttles mid-stream content persistence: at most every 500 ms or
 /// every 2 KiB of new text, whichever comes first.
@@ -33,23 +35,23 @@ pub struct ChatService {
     pool: PgPool,
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
-    adapter: Arc<dyn LlmAdapter>,
+    provider: Arc<dyn Provider>,
     registry: StreamRegistry,
 }
 
 impl ChatService {
-    /// Creates the handler with the given LLM adapter.
+    /// Creates the handler with the given LLM provider.
     pub fn new(
         pool: PgPool,
         jwt_secret: impl Into<Arc<str>>,
         secret_key: impl Into<Arc<str>>,
-        adapter: Arc<dyn LlmAdapter>,
+        provider: Arc<dyn Provider>,
     ) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),
             secret_key: secret_key.into(),
-            adapter,
+            provider,
             registry: StreamRegistry::new(),
         }
     }
@@ -206,24 +208,17 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
         let history = store::list_context(&self.pool, conversation_id)
             .await
             .map_err(map_db)?;
-        let messages = history
-            .iter()
-            .map(|m| ChatMessage {
-                role: m.role.clone(),
-                content: m.content.clone(),
-            })
-            .collect();
-        let chat_req = ChatRequest {
-            kind: lemma_providers::kind_to_proto(&provider.kind),
+        let chat_req = lemma_adapter::ChatRequest {
+            kind: crate::upstream::kind_of(lemma_providers::kind_to_proto(&provider.kind)),
             base_url: provider.base_url.clone(),
             api_path: provider.api_path.clone(),
             api_key,
             model: request.model.to_owned(),
-            messages,
+            messages: crate::upstream::to_trace_messages(&history),
         };
         let started = started_response(assistant.id, client_msg_id);
 
-        let upstream = match self.adapter.stream_chat(chat_req).await {
+        let upstream = match self.provider.stream(chat_req).await {
             Ok(s) => s,
             // The upstream call never started: report in-band as an error
             // event so the client still gets ChatStarted first.
@@ -246,7 +241,7 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
             self.registry.clone(),
             Arc::clone(&handle),
             assistant.id,
-            upstream,
+            crate::upstream::bridge(upstream),
         ));
         drop(handle);
 
@@ -319,7 +314,7 @@ async fn drive(
     registry: StreamRegistry,
     handle: Arc<StreamHandle>,
     message_id: Uuid,
-    mut upstream: BoxEventStream,
+    mut upstream: BoxUpstreamStream,
 ) {
     let mut pending_bytes = 0usize;
     let mut last_flush = Instant::now();
@@ -332,7 +327,7 @@ async fn drive(
                 break;
             }
             item = upstream.next() => match item {
-                Some(Ok(AdapterEvent::Delta(d))) => {
+                Some(Ok(UpstreamEvent::Delta(d))) => {
                     pending_bytes += d.len();
                     handle.push_delta(&d);
                     if pending_bytes >= FLUSH_BYTES || last_flush.elapsed() >= FLUSH_INTERVAL {
@@ -343,7 +338,7 @@ async fn drive(
                         }
                     }
                 }
-                Some(Ok(AdapterEvent::Done(usage))) => {
+                Some(Ok(UpstreamEvent::Done(usage))) => {
                     let content = handle.content();
                     let _ = store::finalize(&pool, message_id, &content, usage.clone()).await;
                     handle.finish(usage);

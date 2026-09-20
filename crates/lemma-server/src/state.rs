@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use lemma_adapter::{DispatchProvider, Provider};
 use lemma_auth::AuthService;
 use lemma_chat::ChatService;
-use lemma_chat::adapter::{DispatchAdapter, LlmAdapter};
 use lemma_conversations::ConversationService;
 use lemma_providers::ProviderService;
 use lemma_sync::SyncService;
@@ -25,7 +25,7 @@ impl AppState {
         let pool = lemma_db::connect(&config.database_url).await?;
         lemma_db::migrate(&pool).await?;
 
-        let adapter: Arc<dyn LlmAdapter> = Arc::new(DispatchAdapter::new());
+        let provider: Arc<dyn Provider> = Arc::new(DispatchProvider::new());
         Ok(Self {
             auth: Arc::new(AuthService::new(pool.clone(), config.jwt_secret.clone())),
             providers: Arc::new(ProviderService::new(
@@ -47,7 +47,7 @@ impl AppState {
                 pool.clone(),
                 config.jwt_secret.clone(),
                 config.secret_key.clone(),
-                adapter,
+                provider,
             )),
             sync: Arc::new(SyncService::new(pool.clone(), config.jwt_secret.clone())),
             pool,

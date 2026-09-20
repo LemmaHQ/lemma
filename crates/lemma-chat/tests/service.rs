@@ -10,14 +10,11 @@ use connectrpc::{
 };
 use futures::{StreamExt, stream};
 use http::HeaderMap;
+use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, ProviderError};
 use lemma_auth::{sign_access_token, users};
 use lemma_chat::ChatService;
-use lemma_chat::adapter::{
-    AdapterError, AdapterEvent, BoxChatFuture, BoxEventStream, ChatRequest, LlmAdapter,
-};
 use lemma_chat::store;
 use lemma_crypto::{derive_key, seal};
-use lemma_db::entity::TokenUsage;
 use lemma_proto::lemma::v1::__buffa::oneof::chat_event::Kind;
 use lemma_proto::lemma::v1::ChatService as ChatServiceRpc;
 use lemma_proto::lemma::v1::{
@@ -25,6 +22,7 @@ use lemma_proto::lemma::v1::{
     ResumeStreamResponse, SendMessageRequest, SendMessageResponse,
 };
 use lemma_providers::providers::{self, NewProvider};
+use lemma_trace::{StopReason, StreamEvent, Usage};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -51,32 +49,36 @@ impl FakeAdapter {
     }
 }
 
-impl LlmAdapter for FakeAdapter {
-    fn stream_chat(&self, _req: ChatRequest) -> BoxChatFuture {
+impl Provider for FakeAdapter {
+    fn stream(&self, _req: ChatRequest) -> BoxChatFuture {
         self.calls.fetch_add(1, Ordering::SeqCst);
         match &self.script {
             Script::Fail(m) => {
                 let m = m.clone();
-                Box::pin(async move { Err(AdapterError { message: m }) })
+                Box::pin(async move { Err(ProviderError { message: m }) })
             }
             script => {
                 let s: BoxEventStream = match script {
                     Script::Done(deltas) => {
-                        let mut items: Vec<Result<AdapterEvent, AdapterError>> = deltas
+                        let mut items: Vec<Result<StreamEvent, ProviderError>> = deltas
                             .iter()
-                            .map(|d| Ok(AdapterEvent::Delta(d.clone())))
+                            .map(|d| Ok(StreamEvent::TextDelta { delta: d.clone() }))
                             .collect();
-                        items.push(Ok(AdapterEvent::Done(Some(TokenUsage {
-                            prompt: 1,
-                            completion: 2,
-                            total: 3,
-                        }))));
+                        items.push(Ok(StreamEvent::Done {
+                            stop_reason: StopReason::Stop,
+                            usage: Some(Usage {
+                                input: 1,
+                                output: 2,
+                                cache_read: None,
+                                cache_write: None,
+                            }),
+                        }));
                         Box::pin(stream::iter(items))
                     }
                     Script::Hang(d) => Box::pin(
                         stream::once({
                             let d = d.clone();
-                            async move { Ok(AdapterEvent::Delta(d)) }
+                            async move { Ok(StreamEvent::TextDelta { delta: d }) }
                         })
                         .chain(stream::pending()),
                     ),

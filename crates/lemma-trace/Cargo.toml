@@ -1,0 +1,11 @@
+[package]
+name = "lemma-trace"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

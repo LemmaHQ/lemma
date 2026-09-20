@@ -14,9 +14,10 @@ lemma-auth.workspace = true
 lemma-conversations.workspace = true
 lemma-crypto.workspace = true
 lemma-db.workspace = true
+lemma-adapter.workspace = true
 lemma-proto.workspace = true
 lemma-providers.workspace = true
-reqwest.workspace = true
+lemma-trace.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
@@ -25,7 +26,6 @@ tokio-stream.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-axum.workspace = true
 http.workspace = true
 
 [lints]

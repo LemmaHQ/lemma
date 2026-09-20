@@ -1,0 +1,19 @@
+[package]
+name = "lemma-adapter"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+futures.workspace = true
+lemma-trace.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+parking_lot.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

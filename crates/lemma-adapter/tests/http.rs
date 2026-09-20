@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, missing_docs)]
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::Router;
 use axum::body::Body;
@@ -9,11 +9,12 @@ use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use futures::StreamExt;
-use lemma_chat::adapter::{
-    AdapterEvent, AnthropicMessages, ChatMessage, ChatRequest, DispatchAdapter, GeminiGenerate,
-    LlmAdapter, OpenAiCompatible,
+use lemma_adapter::{
+    AnthropicMessages, ChatRequest, DispatchProvider, GeminiGenerate, OpenAiCompatible, Provider,
+    ProviderKind,
 };
-use lemma_proto::lemma::v1::ProviderKind;
+use lemma_trace::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
+use parking_lot::Mutex;
 
 #[derive(Default)]
 struct Hits {
@@ -42,7 +43,7 @@ async fn upstream(State(hits): State<SharedHits>, req: Request<Body>) -> Respons
     let bytes = axum::body::to_bytes(req.into_body(), usize::MAX)
         .await
         .unwrap();
-    *hits.lock().unwrap() = Some(Hits {
+    *hits.lock() = Some(Hits {
         method,
         path: path.clone(),
         bearer: h(&headers, "authorization"),
@@ -59,7 +60,7 @@ async fn upstream(State(hits): State<SharedHits>, req: Request<Body>) -> Respons
         concat(&[
             "data: {\"choices\":[{\"delta\":{\"content\":\"你\"}}]}\n\n",
             "data: {\"choices\":[{\"delta\":{\"content\":\"好\"}}]}\n\n",
-            "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":3,\"total_tokens\":15}}\n\n",
+            "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":3}}\n\n",
             "data: [DONE]\n\n",
         ])
     } else if path.contains("/messages") {
@@ -74,7 +75,7 @@ async fn upstream(State(hits): State<SharedHits>, req: Request<Body>) -> Respons
         concat(&[
             "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"你\"}]}}]}\n\n",
             "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"好\"}]}}]}\n\n",
-            "data: {\"candidates\":[],\"usageMetadata\":{\"promptTokenCount\":7,\"candidatesTokenCount\":8,\"totalTokenCount\":15}}\n\n",
+            "data: {\"candidates\":[],\"usageMetadata\":{\"promptTokenCount\":7,\"candidatesTokenCount\":8}}\n\n",
         ])
     };
     ([(header::CONTENT_TYPE, "text/event-stream")], sse).into_response()
@@ -97,6 +98,12 @@ async fn spawn_fake() -> (String, SharedHits) {
     (format!("http://{addr}"), hits)
 }
 
+fn text(s: &str) -> ContentBlock {
+    ContentBlock::Text(TextContent {
+        text: s.to_string(),
+    })
+}
+
 fn chat_request(kind: ProviderKind, base: &str, api_path: &str, model: &str) -> ChatRequest {
     ChatRequest {
         kind,
@@ -105,21 +112,21 @@ fn chat_request(kind: ProviderKind, base: &str, api_path: &str, model: &str) -> 
         api_key: "sk-live-123456".into(),
         model: model.into(),
         messages: vec![
-            ChatMessage {
-                role: "user".into(),
-                content: "hi".into(),
+            Message::User {
+                content: vec![text("hi")],
             },
-            ChatMessage {
-                role: "assistant".into(),
-                content: "yo".into(),
+            Message::Assistant {
+                content: vec![text("yo")],
+                stop_reason: StopReason::Stop,
+                usage: None,
             },
         ],
     }
 }
 
-async fn collect(adapter: &dyn LlmAdapter, req: ChatRequest) -> Vec<AdapterEvent> {
-    adapter
-        .stream_chat(req)
+async fn collect(provider: &dyn Provider, req: ChatRequest) -> Vec<StreamEvent> {
+    provider
+        .stream(req)
         .await
         .unwrap()
         .map(|r| r.unwrap())
@@ -128,7 +135,19 @@ async fn collect(adapter: &dyn LlmAdapter, req: ChatRequest) -> Vec<AdapterEvent
 }
 
 fn take_hits(hits: &SharedHits) -> Hits {
-    hits.lock().unwrap().take().unwrap()
+    hits.lock().take().unwrap()
+}
+
+fn assert_text_lifecycle(events: &[StreamEvent], expected_total: i64) {
+    assert_eq!(events.len(), 6, "got: {events:?}");
+    assert!(matches!(&events[0], StreamEvent::Start));
+    assert!(matches!(&events[1], StreamEvent::TextStart));
+    assert!(matches!(&events[2], StreamEvent::TextDelta { delta } if delta == "你"));
+    assert!(matches!(&events[3], StreamEvent::TextDelta { delta } if delta == "好"));
+    assert!(matches!(&events[4], StreamEvent::TextEnd));
+    assert!(
+        matches!(&events[5], StreamEvent::Done { stop_reason: StopReason::Stop, usage: Some(u) } if u.input + u.output == expected_total)
+    );
 }
 
 #[tokio::test]
@@ -136,14 +155,11 @@ async fn openai_streams_over_http() {
     let (base, hits) = spawn_fake().await;
     let events = collect(
         &OpenAiCompatible::new(),
-        chat_request(ProviderKind::Openai, &base, "", "gpt-x"),
+        chat_request(ProviderKind::OpenAiCompatible, &base, "", "gpt-x"),
     )
     .await;
 
-    assert_eq!(events.len(), 3);
-    assert!(matches!(&events[0], AdapterEvent::Delta(d) if d == "你"));
-    assert!(matches!(&events[1], AdapterEvent::Delta(d) if d == "好"));
-    assert!(matches!(&events[2], AdapterEvent::Done(Some(u)) if u.total == 15));
+    assert_text_lifecycle(&events, 15);
 
     let hit = take_hits(&hits);
     assert_eq!(hit.method, "POST");
@@ -163,10 +179,7 @@ async fn anthropic_streams_over_http() {
     )
     .await;
 
-    assert_eq!(events.len(), 3);
-    assert!(matches!(&events[0], AdapterEvent::Delta(d) if d == "你"));
-    assert!(matches!(&events[1], AdapterEvent::Delta(d) if d == "好"));
-    assert!(matches!(&events[2], AdapterEvent::Done(Some(u)) if u.total == 15));
+    assert_text_lifecycle(&events, 15);
 
     let hit = take_hits(&hits);
     assert_eq!(hit.path, "/messages");
@@ -184,10 +197,7 @@ async fn gemini_streams_over_http_and_model_in_path() {
     )
     .await;
 
-    assert_eq!(events.len(), 3);
-    assert!(matches!(&events[0], AdapterEvent::Delta(d) if d == "你"));
-    assert!(matches!(&events[1], AdapterEvent::Delta(d) if d == "好"));
-    assert!(matches!(&events[2], AdapterEvent::Done(Some(u)) if u.total == 15));
+    assert_text_lifecycle(&events, 15);
 
     let hit = take_hits(&hits);
     assert_eq!(hit.path, "/models/gemini-x:streamGenerateContent");
@@ -197,10 +207,15 @@ async fn gemini_streams_over_http_and_model_in_path() {
 }
 
 #[tokio::test]
-async fn upstream_error_maps_to_adapter_error() {
+async fn upstream_error_maps_to_provider_error() {
     let (base, _hits) = spawn_fake().await;
     let err = OpenAiCompatible::new()
-        .stream_chat(chat_request(ProviderKind::Openai, &base, "/fail", "gpt-x"))
+        .stream(chat_request(
+            ProviderKind::OpenAiCompatible,
+            &base,
+            "/fail",
+            "gpt-x",
+        ))
         .await
         .err()
         .unwrap();
@@ -216,12 +231,12 @@ async fn upstream_error_maps_to_adapter_error() {
 async fn dispatch_routes_by_kind() {
     let (base, hits) = spawn_fake().await;
     let events = collect(
-        &DispatchAdapter::new(),
+        &DispatchProvider::new(),
         chat_request(ProviderKind::Gemini, &base, "", "gemini-x"),
     )
     .await;
 
-    assert_eq!(events.len(), 3);
+    assert_eq!(events.len(), 6);
     let hit = take_hits(&hits);
     assert!(hit.path.contains("streamGenerateContent"));
 }
