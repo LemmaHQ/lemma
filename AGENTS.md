@@ -41,12 +41,13 @@
 
 ## 代码约定
 
-- `lemma-db` 只是存储内核（连接池、迁移、共享实体）；领域查询住在各领域 crate（users/tokens → lemma-auth，providers → lemma-providers，conversations → lemma-conversations，s3 配置 → lemma-archive）
+- `lemma-db-server` 只是服务端 Postgres 存储内核（连接池、迁移、共享实体）；领域查询住在各领域 crate（users/tokens → lemma-auth，providers → lemma-providers，conversations → lemma-conversations，s3 配置 → lemma-archive）；客户端本地存储使用 `lemma-db-client`（SQLite WAL + FTS5）
+- 跨端共享核心（`lemma-core`、`lemma-adapter`、`lemma-agent`、`lemma-tools`）保持无状态与零平台绑定：`lemma-core` 承载规范数据类型（仅依赖 `lemma-proto`，零 I/O）；`lemma-adapter` 负责 LLM 协议双向转换；`lemma-agent` 负责执行循环与会话树；`lemma-tools` 抽象沙盒环境 `ExecEnv`
 - 入库凭证一律 lemma-crypto 密封、出库脱敏回显；前端密钥框不回填脱敏串（留空=保持）——回填值被保存会当成真密钥重新密封，密钥静默损坏
 - S3 桶必须预先存在，测试连接只探测不建桶——自动建桶是刻意删掉的，别再加回
 - conversations/messages 表的所有 UPDATE 必须显式 `sync_seq = nextval('sync_seq')`（列默认值只作用于 INSERT）
 - 业务错误（非 internal 的 ConnectError）一律走 `lemma_proto::app_error`：错误码进 `errors.proto` 闭集、英文文案兜底，前端按码出 i18n；internal 运维错误保持英文原文、不带码也永不本地化
-- 集成测试用 `#[sqlx::test]`（每测试独立临时库）；跨 crate 测试带 `migrations = "../lemma-db/migrations"`
+- 集成测试用 `#[sqlx::test]`（每测试独立临时库）；跨 crate 测试带 `migrations = "../lemma-db-server/migrations"`
 - 测试直调 handler（ServiceRequest / RequestContext），不起 HTTP 服务
 - sqlx 动态 SQL 必须 `sqlx::raw_sql(AssertSqlSafe(...))` 显式标记逃生门
 - 异步 trait 统一 RPITIT + Send 范式（`fn f(..) -> impl Future<Output=T> + Send`）；实现侧优先 async fn
