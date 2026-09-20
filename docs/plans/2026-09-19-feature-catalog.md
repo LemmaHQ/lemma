@@ -32,7 +32,7 @@ docs/
 ## 各文件职责
 
 | 文件 | 职责 | 变化频率 |
-|---|---|---|
+| --- | --- | --- |
 | `feature.yaml` | 唯一事实源：id、status、各端 status/since/inherits、关联 proto/issue | 低频，改动走 PR |
 | `spec.md` | 行为契约（WHAT）。稳定后视为契约，不含实现细节 | 低频 |
 | `design.md` | 当前实现方案（HOW）。允许过时，不维护历史 | 中频 |

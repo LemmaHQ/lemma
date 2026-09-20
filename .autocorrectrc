@@ -1,0 +1,17 @@
+rules:
+    space-bracket: 1
+    space-punctuation: 1
+
+fileTypes:
+    markdown:
+        - "*.md"
+
+ignores:
+    - ".git/**"
+    - "**/node_modules/**"
+    - "docs/style-guide/**"
+    - "DESIGN.md"
+    - "target/**"
+    - "**/build/**"
+    - "web/src/gen/**"
+    - "package-lock.json"

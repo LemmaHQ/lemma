@@ -9,7 +9,10 @@
     "scripts": {
         "gen:proto": "cd proto && buf generate",
         "gen:tokens": "node web/scripts/gen-tokens.mjs",
-        "check:features": "node scripts/check-features.mjs"
+        "check:features": "node scripts/check-features.mjs",
+        "lint:md": "markdownlint-cli2",
+        "lint:cn": "autocorrect --lint",
+        "lint:docs": "markdownlint-cli2 && autocorrect --lint"
     },
     "author": {
         "name": "wanzhao-ysy",
@@ -17,7 +20,9 @@
     },
     "devDependencies": {
         "@google/design.md": "^0.4.0",
+        "autocorrect-node": "^2.14.0",
         "gray-matter": "4.0.3",
+        "markdownlint-cli2": "^0.23.3",
         "yaml": "^2.8.1"
     },
     "allowScripts": {

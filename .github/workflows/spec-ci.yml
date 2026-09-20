@@ -7,14 +7,20 @@ on:
     paths:
       - "proto/**"
       - "DESIGN.md"
-      - "docs/features/**"
+      - "docs/**"
+      - "*.md"
+      - ".markdownlint*"
+      - ".autocorrect*"
       - "scripts/check-features.mjs"
       - ".github/workflows/spec-ci.yml"
   pull_request:
     paths:
       - "proto/**"
       - "DESIGN.md"
-      - "docs/features/**"
+      - "docs/**"
+      - "*.md"
+      - ".markdownlint*"
+      - ".autocorrect*"
       - "scripts/check-features.mjs"
       - ".github/workflows/spec-ci.yml"
 
@@ -80,6 +86,23 @@ jobs:
       - name: Validate feature catalog
         run: node scripts/check-features.mjs
 
+  docs-lint:
+    name: Docs Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Lint docs formatting
+        run: npm run lint:docs
+
   check:
     name: check
     runs-on: ubuntu-latest
@@ -87,13 +110,15 @@ jobs:
       - proto
       - design
       - features
+      - docs-lint
     if: ${{ always() }}
     steps:
       - name: Verify required jobs
         run: |
           if [ "${{ needs.proto.result }}" != "success" ] || \
              [ "${{ needs.design.result }}" != "success" ] || \
-             [ "${{ needs.features.result }}" != "success" ]; then
+             [ "${{ needs.features.result }}" != "success" ] || \
+             [ "${{ needs.docs-lint.result }}" != "success" ]; then
             echo "Spec CI failed"
             exit 1
           fi

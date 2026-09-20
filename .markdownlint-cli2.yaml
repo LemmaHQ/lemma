@@ -1,0 +1,19 @@
+config:
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD033: false
+  MD040: false
+  MD041: true
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - ".git/**"
+  - "**/node_modules/**"
+  - "docs/style-guide/**"
+  - "DESIGN.md"
+  - "target/**"
+  - "**/build/**"
+  - "web/src/gen/**"

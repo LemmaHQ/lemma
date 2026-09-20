@@ -155,3 +155,8 @@ mobile-android-build:
 [group('mobile')]
 mobile-android-test:
     ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest
+
+# Lint documentation formatting (markdownlint + autocorrect)
+[group('docs')]
+docs-lint:
+    npm run lint:docs

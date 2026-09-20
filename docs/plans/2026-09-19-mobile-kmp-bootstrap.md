@@ -59,7 +59,7 @@ Proto 生成物：`mobile/shared/build/generated/source/bufgen/`（buf 远程插
 ## 4. 下一步工作（按优先级）
 
 | 步骤 | 内容 | 验收 |
-|---|---|---|
+| --- | --- | --- |
 | **N1** | 真机回归：Setup → 登录/注册 → 发消息收流式回复全链路 | 无闪退，打字机逐字渲染 |
 | **N2** | AI 气泡 Markdown 渲染（代码块、列表、粗体），选型 multiplatform-markdown-renderer 或自绘 | 常见 GFM 元素真机观感正常 |
 | **N3** | 网络异常兜底：连接失败/流中断的错误提示与重试入口 | 断网发消息有可见错误而非卡死 |
