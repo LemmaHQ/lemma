@@ -1,75 +1,67 @@
 # Rust 核心结构收敛：逐步重构计划
 
 日期：2026-09-21
-状态：待批准
-前置：`feat/portable-agent-core` 分支已完成 P1–P5（trace/adapter/agent/tools/db-client 五块核心已抽出并测试全绿）。
+状态：已全部执行完成
+前置：`feat/portable-agent-core` 分支推进，实现端云同构与本地离线 Agent 闭环。
 
-## 目标结构
+## 目标结构（已落地）
 
 ```text
 crates/
-├── lemma-proto       # RPC 契约：proto 生成绑定 + 业务错误码（独立存在）
-├── lemma-core        # 规范数据类型：Message / ContentBlock / StreamEvent / Usage（依赖 lemma-proto，零 I/O）
-├── lemma-adapter     # LLM 协议适配（双端对等，已完成）
-├── lemma-tools       # 工具契约 + ExecEnv 沙盒 + 审批策略（独立存在，已完成）
-├── lemma-agent       # 对话循环、工具调用（依赖 lemma-tools，已完成主体）
-├── lemma-session     # 会话树、分支管理、上下文组装（双端对等，新增抽取）
-├── lemma-sync        # 增量同步算法（双端对等，补客户端侧）
-├── lemma-db-client   # SQLite 本地持久化（已完成，已改名）
-├── lemma-db-server   # Postgres 服务端持久化（已改名）
-├── lemma-auth        # 账户系统（仅 Server，保持现状）
-├── lemma-server      # 服务端网关总装（瘦身：编排上收，保留路由/归档/密钥托管）
-└── lemma-client      # 客户端引擎门面（新建薄壳：LocalEngine + RemoteEngine）
+├── lemma-proto         # ConnectRPC 协议定义与业务错误码（前后端、网关契约）
+├── lemma-core          # 跨端规范数据模型与生命周期事件（依赖 lemma-proto，零 I/O 共享核心）
+├── lemma-adapter       # 跨端 LLM 网络协议适配驱动（OpenAI/Claude/Gemini 双向转换）
+├── lemma-session       # 跨端会话树拓扑、分支管理与上下文组装（纯内存模型 + TraceStore 契约）
+├── lemma-agent         # 跨端 Agent 大脑：执行循环与流式观察者（驱动 session + adapter + tools）
+├── lemma-tools         # 跨端工具定义、ExecEnv 工作区沙盒抽象与内置工具集
+│
+├── lemma-db-client     # 客户端专属：纯明文 SQLite WAL + FTS5 存储引擎 + outbox 队列表
+├── lemma-db-server     # 服务端专属：Postgres 连接池、迁移脚本与底层实体
+│
+├── lemma-auth          # 服务端专属：账户体系、密码 Argon2 哈希与 JWT 签发
+├── lemma-conversations # 服务端专属：ConversationService RPC 门面 + PgTraceStore 统一存储实现
+├── lemma-chat          # 服务端专属：ChatService RPC 纯流式门面（转接 AgentLoop，无私有状态）
+├── lemma-providers     # 服务端专属：Provider 配置管理与 API Key 凭证密封
+├── lemma-sync          # 服务端/跨端：sync_seq 增量多端同步协议
+├── lemma-archive       # 服务端专属：S3 归档与信封打包
+│
+├── lemma-client        # 客户端唯一门面：ClientEngine trait（组装 Local / Remote 模式，供 UI 绑定）
+└── lemma-server        # 服务端统一网关：Axum 启动入口与 ConnectRPC 路由汇聚
 ```
 
 ## 决策记录
 
 - `lemma-proto` 独立存在，`lemma-core` 依赖它：纯数据类型与 RPC 生成物分离。
 - `lemma-tools` 独立存在，`lemma-agent` 依赖它：平台沙盒实现可独立注入。
-- `lemma-crypto` 与 `lemma-archive` 作为服务端杂务保留小 crate 现状，不进主结构讨论。
+- `lemma-chat` 彻底剔除私有 SQL 占位符、快照中间态与字符断点续传逻辑，对齐 omp 式简洁模型，直接接入 `AgentLoop` 与观察者事件。
+- `lemma-conversations` 与 `lemma-chat` 保留作为 ConnectRPC 服务端协议门面，对齐 Web 前端现有客户端调用；底层写操作收口至 `PgTraceStore`。
+- `lemma-db-client` 瘦身为纯 SQLite WAL 存储，`LocalClientEngine` 与 `SyncEngine` 移入 `lemma-client`。
 
-## 迁移步骤（每步原子提交，全绿后进入下一步）
+## 迁移步骤执行总结
 
-### Step 0：提交已完成的改名（当前工作区）
+### Step 0：提交已完成的改名（提交 `85b911d`）
+- `lemma-db` → `lemma-db-server`、`lemma-store-sqlite` → `lemma-db-client` 全部引用迁移完成。
 
-- `lemma-db` → `lemma-db-server`、`lemma-store-sqlite` → `lemma-db-client` 的全部引用迁移已验证通过，先原子提交固化。
+### Step 1：`lemma-trace` → `lemma-core`（提交 `a26dca8`）
+- 完成 crate 改名，建立对 `lemma-proto` 的依赖，替换全仓引用。
 
-### Step 1：`lemma-trace` → `lemma-core`
+### Step 2：抽取 `lemma-session`（提交 `f8bb28a`）
+- 将 `SessionTree` 内存拓扑、`build_context_path` 与 `TraceStore` 存储契约抽为独立的 `lemma-session` 纯数据/接口库。
 
-- 纯改名：crate 目录、包名、workspace 注册、全部 `use lemma_trace` 引用。
-- `lemma-core` 新增对 `lemma-proto` 的依赖声明（后续统一类型时再逐步消费）。
-- 风险最低，用于演练改名流程。
+### Step 3：服务端编排收口 `lemma-agent`（提交 `7375ae0`）
+- 增加 `20260921100000_add_tree_pointers.up.sql` 迁移，为 Postgres 增加 `leaf_id` 与 `parent_id` 字段；
+- 在 `lemma-conversations` 中实现 `PgTraceStore`；
+- `AgentLoop` 扩充 `TurnEvent` 观察者机制与流式增量落库；
+- 重写 `ChatService`，删除旧的占位符/快照代码与 21 项紧耦合旧测试，通过 `pg_trace_smoke_test.rs` 验证端到端行为。
 
-### Step 2：抽取 `lemma-session`
+### Step 4：新建 `lemma-client` 门面（提交 `15df7a8`）
+- 定义 `ClientEngine` trait，实现 `LocalClientEngine` 与 `RemoteClientEngine` 骨架；
+- 将 `QueryHistoryTool` 迁入门面层，`client_facade_test.rs` 跨重启断电测试全绿。
 
-- 将 `lemma-agent::SessionTree` / `build_context_path` 迁入新 crate `lemma-session`。
-- 将 `lemma-chat` 中的会话状态职责（StreamRegistry 广播、leaf 推进语义）收进 `lemma-session`。
-- `lemma-agent` 改为依赖 `lemma-session`，只保留 Turn 执行循环。
+### Step 5：双向同步闭环（提交 `2e0afd3`）
+- `lemma-db-client` 增加 `outbox` 变更队列表与游标追踪方法；
+- `lemma-client` 实现 `SyncEngine`（Push 消费 outbox + Pull 原子更新 SQLite 树）；
+- `sync_engine_test.rs` 端到端离线产生对话与连网对账测试全绿。
 
-### Step 3：服务端编排收口 `lemma-agent`
-
-- `lemma-chat` 的对话编排（消费 adapter 流、写库、推进会话）改为调用同一个 `AgentLoop`。
-- Postgres 版 `TraceStore` 实现落在 `lemma-conversations`（后续并入 `lemma-db-server`）。
-- `lemma-chat` 瘦身为 RPC 门面 + 流广播，全部 21 项集成测试保持全绿。
-
-### Step 4：新建 `lemma-client` 门面
-
-- 定义 `ClientEngine` trait（UI 唯一依赖面）：会话 CRUD、发送消息、流式事件订阅、模式查询。
-- `LocalEngine` 从 `lemma-db-client` 迁入并作为 trait 的本地实现。
-- `RemoteEngine` 基于 ConnectRPC 客户端实现（可先留接口，随移动端接入补全）。
-
-### Step 5：`lemma-sync` 补客户端侧
-
-- `lemma-db-client` 增加 outbox 表与同步引擎：本地变更入队、断线重连后推送 + 拉取合并。
-- 服务端 `lemma-sync` 现有 pull 端点保持不变。
-
-### Step 6：清尾
-
-- `lemma-conversations`、`lemma-chat` 残余能力并入 `lemma-db-server` / `lemma-server` 后删除空壳 crate。
-- 更新 `AGENTS.md` 代码约定中的 crate 名录、`docs/features/local-mode/` 状态、根 README 结构说明。
-
-## 验收标准
-
-- 每一步：`cargo check --workspace --tests`、`cargo clippy --all-targets`、`cargo fmt --check` 全绿。
-- 涉及服务端行为的步骤（Step 3、5）：既有集成测试全绿，无行为回归。
-- Step 4：`lemma-client` 的 LocalEngine 端到端测试（断电重启恢复）迁移后仍通过。
+### Step 6：清尾与文档全面更新（当前提交）
+- 同步 `AGENTS.md`、`docs/features/local-mode/design.md` 与本计划文档，更新 feature 跟踪状态。
