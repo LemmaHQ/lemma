@@ -6,14 +6,12 @@ name = "lemma-chat"
 [dependencies]
 buffa.workspace = true
 buffa-types.workspace = true
-chrono.workspace = true
 connectrpc.workspace = true
 futures.workspace = true
 lemma-auth.workspace = true
 lemma-agent.workspace = true
 lemma-conversations.workspace = true
 lemma-crypto.workspace = true
-lemma-db-server.workspace = true
 lemma-adapter.workspace = true
 lemma-proto.workspace = true
 lemma-providers.workspace = true

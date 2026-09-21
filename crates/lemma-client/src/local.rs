@@ -32,6 +32,9 @@ impl LocalClientEngine {
         tools.register(Arc::new(ReadFileTool));
         tools.register(Arc::new(WriteFileTool));
         tools.register(Arc::new(BashTool));
+        tools.register(Arc::new(crate::query_tool::QueryHistoryTool::new(
+            store.clone(),
+        )));
 
         Ok(Self {
             agent,
