@@ -31,3 +31,12 @@ impl From<lemma_adapter::ProviderError> for AgentError {
         Self::Provider(err.message)
     }
 }
+
+impl From<lemma_session::SessionError> for AgentError {
+    fn from(err: lemma_session::SessionError) -> Self {
+        match err {
+            lemma_session::SessionError::Store(e) => Self::Store(e),
+            lemma_session::SessionError::NotFound(e) => Self::NotFound(e),
+        }
+    }
+}

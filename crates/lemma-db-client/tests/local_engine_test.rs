@@ -4,9 +4,10 @@ use std::sync::Arc;
 
 use futures::stream;
 use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, ProviderKind};
-use lemma_agent::{AgentConfig, TraceStore};
+use lemma_agent::AgentConfig;
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use lemma_db_client::LocalEngine;
+use lemma_session::TraceStore;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
 

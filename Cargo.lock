@@ -2102,6 +2102,7 @@ dependencies = [
  "futures",
  "lemma-adapter",
  "lemma-core",
+ "lemma-session",
  "parking_lot",
  "serde",
  "serde_json",
@@ -2223,6 +2224,7 @@ dependencies = [
  "lemma-adapter",
  "lemma-agent",
  "lemma-core",
+ "lemma-session",
  "lemma-tools",
  "parking_lot",
  "rusqlite",
@@ -2301,6 +2303,15 @@ dependencies = [
  "sqlx",
  "tokio",
  "tower-http 0.7.1",
+]
+
+[[package]]
+name = "lemma-session"
+version = "0.1.0"
+dependencies = [
+ "lemma-core",
+ "serde",
+ "uuid",
 ]
 
 [[package]]

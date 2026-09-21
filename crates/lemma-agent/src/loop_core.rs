@@ -3,11 +3,10 @@ use std::sync::Arc;
 use futures::StreamExt;
 use lemma_adapter::{ChatRequest, Provider, ProviderKind};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
+use lemma_session::{StoredMessage, TraceStore, build_context_path};
 use uuid::Uuid;
 
 use crate::error::AgentError;
-use crate::store::{StoredMessage, TraceStore};
-use crate::tree::build_context_path;
 
 /// Runtime parameters passed to an agent step execution.
 #[derive(Clone)]

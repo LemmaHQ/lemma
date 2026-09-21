@@ -3,10 +3,10 @@ use std::pin::Pin;
 
 use uuid::Uuid;
 
-use crate::error::AgentError;
+use crate::error::SessionError;
 
 /// Future returned by asynchronous trace store operations.
-pub type BoxStoreFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + Send + 'a>>;
+pub type BoxStoreFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, SessionError>> + Send + 'a>>;
 
 /// Metadata describing a conversation session.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

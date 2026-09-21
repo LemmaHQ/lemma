@@ -32,7 +32,7 @@ impl From<serde_json::Error> for SqliteStoreError {
     }
 }
 
-impl From<SqliteStoreError> for lemma_agent::AgentError {
+impl From<SqliteStoreError> for lemma_session::SessionError {
     fn from(err: SqliteStoreError) -> Self {
         Self::Store(err.to_string())
     }

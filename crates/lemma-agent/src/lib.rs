@@ -1,15 +1,12 @@
-//! Platform-agnostic agent orchestration core and conversation tree model.
+//! Platform-agnostic agent orchestration core.
 //!
-//! This crate contains the core execution loop that drives conversations,
-//! invokes providers, and handles branching navigation. It depends only on
-//! `lemma-core`, `lemma-adapter`, and abstract traits like [`TraceStore`].
+//! This crate contains the core execution loop that drives conversations
+//! and invokes providers. Session tree topology and persistence contracts
+//! live in `lemma-session`; this crate depends only on `lemma-core`,
+//! `lemma-adapter`, and `lemma-session`.
 
 mod error;
 mod loop_core;
-mod store;
-mod tree;
 
 pub use error::AgentError;
 pub use loop_core::{AgentConfig, AgentLoop};
-pub use store::{BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore};
-pub use tree::{SessionTree, build_context_path};

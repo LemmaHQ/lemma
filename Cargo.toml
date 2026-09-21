@@ -14,6 +14,7 @@ members = [
     "crates/lemma-core",
     "crates/lemma-adapter",
     "crates/lemma-agent",
+    "crates/lemma-session",
     "crates/lemma-tools",
 ]
 resolver = "2"
@@ -56,6 +57,7 @@ lemma-db-client = { path = "crates/lemma-db-client" }
 lemma-db-server = { path = "crates/lemma-db-server" }
 lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }
+lemma-session = { path = "crates/lemma-session" }
 lemma-sync = { path = "crates/lemma-sync" }
 lemma-tools = { path = "crates/lemma-tools" }
 lemma-core = { path = "crates/lemma-core" }

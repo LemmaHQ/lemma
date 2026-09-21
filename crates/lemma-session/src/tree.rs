@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
-use crate::error::AgentError;
+use crate::error::SessionError;
 use crate::store::StoredMessage;
 
 /// In-memory graph projection of a conversation tree.
@@ -40,7 +40,7 @@ impl SessionTree {
 
     /// Traverses parent pointers from `leaf_id` back to the root,
     /// returning messages in chronological order (root to leaf).
-    pub fn get_path(&self, leaf_id: Uuid) -> Result<Vec<&StoredMessage>, AgentError> {
+    pub fn get_path(&self, leaf_id: Uuid) -> Result<Vec<&StoredMessage>, SessionError> {
         let mut path = Vec::new();
         let mut current = Some(leaf_id);
 
@@ -48,7 +48,7 @@ impl SessionTree {
             let msg = self
                 .entries
                 .get(&id)
-                .ok_or_else(|| AgentError::NotFound(format!("node {id} missing in tree")))?;
+                .ok_or_else(|| SessionError::NotFound(format!("node {id} missing in tree")))?;
             path.push(msg);
             current = msg.parent_id;
         }
@@ -62,7 +62,7 @@ impl SessionTree {
 pub fn build_context_path(
     entries: &[StoredMessage],
     leaf_id: Uuid,
-) -> Result<Vec<lemma_core::Message>, AgentError> {
+) -> Result<Vec<lemma_core::Message>, SessionError> {
     let tree = SessionTree::from_entries(entries.to_vec());
     let path = tree.get_path(leaf_id)?;
     Ok(path.into_iter().map(|s| s.message.clone()).collect())
@@ -77,7 +77,7 @@ mod tests {
     fn dummy_msg(id: Uuid, parent_id: Option<Uuid>, text: &str) -> StoredMessage {
         StoredMessage {
             id,
-            conversation_id: Uuid::nil(),
+            conversation_id: Uuid::new_v4(),
             parent_id,
             message: Message::User {
                 content: vec![ContentBlock::Text(TextContent {
