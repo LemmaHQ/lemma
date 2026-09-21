@@ -333,3 +333,30 @@ where
     .fetch_optional(executor)
     .await
 }
+/// Helper used by tests to seed user messages into a conversation.
+pub async fn insert_test_user_message<'e, E>(
+    executor: E,
+    conversation_id: Uuid,
+    content: &str,
+) -> sqlx::Result<Message>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
+    sqlx::query_as::<_, Message>(
+        r#"
+        INSERT INTO messages (
+            conversation_id, role, content, status, seq, sync_seq, created_at, updated_at
+        )
+        VALUES (
+            $1, 'user', $2, 'done',
+            COALESCE((SELECT MAX(seq) + 1 FROM messages WHERE conversation_id = $1), 1),
+            nextval('sync_seq'), NOW(), NOW()
+        )
+        RETURNING *
+        "#,
+    )
+    .bind(conversation_id)
+    .bind(content)
+    .fetch_one(executor)
+    .await
+}

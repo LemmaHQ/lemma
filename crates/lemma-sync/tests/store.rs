@@ -39,10 +39,10 @@ async fn pull_messages_scoped_to_owner(pool: PgPool) {
     let u2 = new_user(&pool, "erin").await;
     let c1 = lemma_conversations::store::insert(&pool, u1).await.unwrap();
     let c2 = lemma_conversations::store::insert(&pool, u2).await.unwrap();
-    lemma_chat::store::insert_user_message(&pool, c1.id, "alice 的消息")
+    lemma_conversations::store::insert_test_user_message(&pool, c1.id, "alice 的消息")
         .await
         .unwrap();
-    lemma_chat::store::insert_user_message(&pool, c2.id, "erin 的消息")
+    lemma_conversations::store::insert_test_user_message(&pool, c2.id, "erin 的消息")
         .await
         .unwrap();
 

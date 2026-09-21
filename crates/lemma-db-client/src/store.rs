@@ -223,7 +223,49 @@ impl TraceStore for SqliteTraceStore {
             Ok(())
         })
     }
+    fn update_message<'a>(
+        &'a self,
+        id: Uuid,
+        message: lemma_core::Message,
+    ) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            let json_str = serde_json::to_string(&message).map_err(SqliteStoreError::from)?;
+            let text_extract = match &message {
+                Message::User { content } | Message::Assistant { content, .. } => content
+                    .iter()
+                    .filter_map(|b| match b {
+                        ContentBlock::Text(t) => Some(t.text.as_str()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                _ => String::new(),
+            };
 
+            let conn = self.conn.lock();
+            conn.execute(
+                r#"
+                UPDATE messages
+                SET content_json = ?1
+                WHERE id = ?2
+                "#,
+                params![json_str, id.to_string()],
+            )
+            .map_err(SqliteStoreError::from)?;
+
+            if !text_extract.is_empty() {
+                let _ = conn.execute(
+                    r#"
+                    INSERT INTO messages_fts (message_id, conversation_id, text_content)
+                    SELECT id, conversation_id, ?1 FROM messages WHERE id = ?2
+                    "#,
+                    params![text_extract, id.to_string()],
+                );
+            }
+
+            Ok(())
+        })
+    }
     fn list_messages<'a>(
         &'a self,
         conversation_id: Uuid,

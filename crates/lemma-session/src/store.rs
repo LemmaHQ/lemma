@@ -59,6 +59,13 @@ pub trait TraceStore: Send + Sync {
     /// Updates the active leaf pointer of a conversation.
     fn update_leaf<'a>(&'a self, id: Uuid, leaf_id: Uuid) -> BoxStoreFuture<'a, ()>;
 
+    /// Updates the message payload of an existing entry.
+    fn update_message<'a>(
+        &'a self,
+        id: Uuid,
+        message: lemma_core::Message,
+    ) -> BoxStoreFuture<'a, ()>;
+
     /// Appends a new message node into the tree.
     fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()>;
 

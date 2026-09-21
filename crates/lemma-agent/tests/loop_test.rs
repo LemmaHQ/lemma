@@ -56,7 +56,19 @@ impl TraceStore for MemoryStore {
             Ok(())
         })
     }
-
+    fn update_message<'a>(
+        &'a self,
+        id: Uuid,
+        message: lemma_core::Message,
+    ) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            let mut list = self.messages.lock();
+            if let Some(entry) = list.iter_mut().find(|m| m.id == id) {
+                entry.message = message;
+            }
+            Ok(())
+        })
+    }
     fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
             self.messages.lock().push(entry);

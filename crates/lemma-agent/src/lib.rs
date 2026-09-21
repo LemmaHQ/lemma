@@ -9,4 +9,4 @@ mod error;
 mod loop_core;
 
 pub use error::AgentError;
-pub use loop_core::{AgentConfig, AgentLoop};
+pub use loop_core::{AgentConfig, AgentLoop, BoxTurnObserver, TurnEvent};

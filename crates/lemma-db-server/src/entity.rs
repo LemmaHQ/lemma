@@ -76,6 +76,7 @@ pub struct Conversation {
     pub id: Uuid,
     pub user_id: Uuid,
     pub title: String,
+    pub leaf_id: Option<Uuid>,
     pub status: String,
     pub archived_at: Option<DateTime<Utc>>,
     /// S3 object key of the archived payload, set when archived.
@@ -100,6 +101,7 @@ pub struct TokenUsage {
 pub struct Message {
     pub id: Uuid,
     pub conversation_id: Uuid,
+    pub parent_id: Option<Uuid>,
     pub role: String,
     pub content: String,
     pub provider_id: Option<Uuid>,

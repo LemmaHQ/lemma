@@ -70,7 +70,7 @@ async fn pull_assembles_changes_and_archived(pool: PgPool) {
     let c = lemma_conversations::store::insert(&pool, uid)
         .await
         .unwrap();
-    lemma_chat::store::insert_user_message(&pool, c.id, "hi")
+    lemma_conversations::store::insert_test_user_message(&pool, c.id, "hi")
         .await
         .unwrap();
     let archived = lemma_conversations::store::insert(&pool, uid)
