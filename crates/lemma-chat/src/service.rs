@@ -14,9 +14,8 @@ use lemma_conversations::PgTraceStore;
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted,
-    ErrorReason, ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage,
-    chat_event,
+    AbortMessageResponse, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted, ErrorReason,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, chat_event,
 };
 use sqlx::PgPool;
 use tokio::sync::mpsc;
@@ -68,14 +67,11 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
             return Err(app_error(ErrorReason::ERROR_REASON_MODEL_REQUIRED));
         }
 
-        let provider = lemma_providers::providers::find_by_id_and_user(
-            &self.pool,
-            provider_id,
-            user_id,
-        )
-        .await
-        .map_err(map_db)?
-        .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
+        let provider =
+            lemma_providers::providers::find_by_id_and_user(&self.pool, provider_id, user_id)
+                .await
+                .map_err(map_db)?
+                .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
 
         let master_key = lemma_crypto::derive_key(&self.secret_key);
         let api_key = lemma_crypto::open(&master_key, &provider.api_key)
@@ -187,14 +183,16 @@ fn delta_event(text: String) -> ChatEvent {
 fn done_event(usage: Option<lemma_core::Usage>) -> ChatEvent {
     ChatEvent {
         kind: Some(chat_event::Kind::Done(Box::new(ChatDone {
-            usage: usage.map(|u| {
-                MessageField::some(TokenUsage {
-                    prompt_tokens: u.input as i32,
-                    completion_tokens: u.output as i32,
-                    total_tokens: (u.input + u.output) as i32,
-                    ..Default::default()
+            usage: usage
+                .map(|u| {
+                    MessageField::some(TokenUsage {
+                        prompt_tokens: u.input as i32,
+                        completion_tokens: u.output as i32,
+                        total_tokens: (u.input + u.output) as i32,
+                        ..Default::default()
+                    })
                 })
-            }).unwrap_or_default(),
+                .unwrap_or_default(),
             ..Default::default()
         }))),
         ..Default::default()

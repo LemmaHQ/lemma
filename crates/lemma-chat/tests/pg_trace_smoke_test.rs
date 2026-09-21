@@ -58,7 +58,10 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     .await
     .unwrap();
 
-    let store = Arc::new(lemma_conversations::PgTraceStore::new(pool.clone(), user_id));
+    let store = Arc::new(lemma_conversations::PgTraceStore::new(
+        pool.clone(),
+        user_id,
+    ));
     let provider = Arc::new(MockEchoProvider);
     let agent = AgentLoop::new(store.clone(), provider);
 
@@ -97,11 +100,18 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
 
     assert_eq!(reply, "echo: Hello from PgTraceStore");
 
-    // Verify events received in order: UserAppended -> Delta -> AssistantDone
-    let events = events_collected.lock();
-    assert!(events.len() >= 3);
-    assert!(matches!(&events[0], TurnEvent::UserAppended { .. }));
-    assert!(matches!(&events[events.len() - 1], TurnEvent::AssistantDone { .. }));
+    // Drop lock before next async call
+    let (event_count, first_is_user, last_is_asst) = {
+        let events = events_collected.lock();
+        (
+            events.len(),
+            matches!(&events[0], TurnEvent::UserAppended { .. }),
+            matches!(&events[events.len() - 1], TurnEvent::AssistantDone { .. }),
+        )
+    };
+    assert!(event_count >= 3);
+    assert!(first_is_user);
+    assert!(last_is_asst);
 
     // Verify messages persisted in PostgreSQL and linked via parent_id
     let messages = store.list_messages(conv_id).await.unwrap();

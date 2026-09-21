@@ -5,9 +5,8 @@ use std::sync::Arc;
 use futures::stream;
 use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, ProviderKind};
 use lemma_agent::AgentConfig;
+use lemma_client::{ClientEngine, EngineMode, LocalClientEngine};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
-use lemma_db_client::LocalEngine;
-use lemma_session::TraceStore;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
 
@@ -44,21 +43,24 @@ impl Provider for MockEchoProvider {
 }
 
 #[tokio::test]
-async fn local_engine_end_to_end_persists_across_reopen() {
+async fn client_facade_local_mode_persists_across_reopen() {
     let tmp = NamedTempFile::new().unwrap();
     let db_path = tmp.path().to_path_buf();
     let conv_id = Uuid::new_v4();
 
-    // 1. First run: open engine, run a turn
+    // 1. First run: open engine facade, run a turn through ClientEngine trait
     {
         let provider = Arc::new(MockEchoProvider);
-        let engine = LocalEngine::open(&db_path, provider).unwrap();
+        let engine = LocalClientEngine::open(&db_path, provider).unwrap();
+        assert_eq!(engine.mode(), EngineMode::Local);
 
-        engine
-            .store
-            .create_conversation(conv_id, "Offline Project".to_string(), true)
+        let meta = engine
+            .create_conversation(conv_id, "Offline Project".to_string())
             .await
             .unwrap();
+        assert_eq!(meta.title, "Offline Project");
+        assert!(meta.local_only);
+        assert_eq!(meta.leaf_id, None);
 
         let config = AgentConfig {
             kind: ProviderKind::OpenAiCompatible,
@@ -75,34 +77,28 @@ async fn local_engine_end_to_end_persists_across_reopen() {
         };
 
         let (_asst_id, reply) = engine
-            .agent
-            .run_turn(conv_id, user_msg, None, config)
+            .run_turn(conv_id, user_msg, None, config, None)
             .await
             .unwrap();
 
         assert_eq!(reply, "local reply to: Refactor this function");
     }
 
-    // 2. Second run: simulate app restart, reopen same SQLite file
+    // 2. Second run: simulate app restart, reopen same SQLite file through facade
     {
         let provider = Arc::new(MockEchoProvider);
-        let engine = LocalEngine::open(&db_path, provider).unwrap();
+        let engine = LocalClientEngine::open(&db_path, provider).unwrap();
 
-        let meta = engine
-            .store
-            .get_conversation(conv_id)
-            .await
-            .unwrap()
-            .unwrap();
+        let meta = engine.get_conversation(conv_id).await.unwrap().unwrap();
         assert_eq!(meta.title, "Offline Project");
         assert!(meta.local_only);
         assert!(meta.leaf_id.is_some());
 
-        let messages = engine.store.list_messages(conv_id).await.unwrap();
+        let messages = engine.list_messages(conv_id).await.unwrap();
         assert_eq!(messages.len(), 2); // 1 User + 1 Assistant
 
-        // Verify FTS search survives restart (both User prompt and Assistant echo contain "Refactor")
-        let results = engine.store.search_history("Refactor", 5).unwrap();
+        // Verify FTS search survives restart
+        let results = engine.store().search_history("Refactor", 5).unwrap();
         assert_eq!(results.len(), 2);
     }
 }

@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
+use lemma_db_client::SqliteTraceStore;
 use lemma_tools::{BoxToolFuture, Tool, ToolError, ToolSpec};
-
-use crate::store::SqliteTraceStore;
 
 /// Tool enabling the agent to search its own past conversation history via FTS5.
 pub struct QueryHistoryTool {
