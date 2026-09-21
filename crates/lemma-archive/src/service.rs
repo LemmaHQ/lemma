@@ -7,7 +7,7 @@ use connectrpc::{
 };
 use lemma_auth::require_user;
 use lemma_crypto::{derive_key, mask, open, seal};
-use lemma_db::entity::S3Config as DbS3Config;
+use lemma_db_server::entity::S3Config as DbS3Config;
 use lemma_proto::lemma::v1::{
     DeleteStorageConfigResponse, ErrorReason, GetStorageConfigResponse, MigrateArchivesResponse,
     StorageConfig, TestStorageConfigResponse, UpdateStorageConfigResponse,

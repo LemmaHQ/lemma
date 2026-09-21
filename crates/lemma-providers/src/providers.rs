@@ -1,6 +1,6 @@
 //! Queries for the providers table.
 
-use lemma_db::entity::Provider;
+use lemma_db_server::entity::Provider;
 use sqlx::QueryBuilder;
 use sqlx::types::Json;
 use uuid::Uuid;

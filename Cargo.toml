@@ -1,7 +1,9 @@
 [workspace]
 members = [
+    "crates/lemma-client",
     "crates/lemma-server",
-    "crates/lemma-db",
+    "crates/lemma-db-client",
+    "crates/lemma-db-server",
     "crates/lemma-proto",
     "crates/lemma-auth",
     "crates/lemma-providers",
@@ -10,6 +12,11 @@ members = [
     "crates/lemma-sync",
     "crates/lemma-archive",
     "crates/lemma-crypto",
+    "crates/lemma-core",
+    "crates/lemma-adapter",
+    "crates/lemma-agent",
+    "crates/lemma-session",
+    "crates/lemma-tools",
 ]
 resolver = "2"
 
@@ -40,15 +47,23 @@ futures = "0.3.34"
 hex = "0.4.3"
 http = "1.5.0"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
+lemma-adapter = { path = "crates/lemma-adapter" }
+lemma-agent = { path = "crates/lemma-agent" }
 lemma-archive = { path = "crates/lemma-archive" }
 lemma-auth = { path = "crates/lemma-auth" }
 lemma-chat = { path = "crates/lemma-chat" }
 lemma-conversations = { path = "crates/lemma-conversations" }
+lemma-client = { path = "crates/lemma-client" }
 lemma-crypto = { path = "crates/lemma-crypto" }
-lemma-db = { path = "crates/lemma-db" }
+lemma-db-client = { path = "crates/lemma-db-client" }
+lemma-db-server = { path = "crates/lemma-db-server" }
 lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }
+lemma-session = { path = "crates/lemma-session" }
 lemma-sync = { path = "crates/lemma-sync" }
+lemma-tools = { path = "crates/lemma-tools" }
+lemma-core = { path = "crates/lemma-core" }
+parking_lot = "0.12.5"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 rust-embed = { version = "8.12.0", features = ["mime-guess"] }

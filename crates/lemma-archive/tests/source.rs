@@ -35,13 +35,13 @@ async fn upsert_sealed_config(pool: &PgPool, user_id: Uuid, sealing_secret: &str
     .unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn store_for_returns_none_without_config(pool: PgPool) {
     let source = DbArchiveSource::new(pool, SECRET);
     assert!(source.store_for(Uuid::new_v4()).await.unwrap().is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn store_for_resolves_store_with_unsealed_credentials(pool: PgPool) {
     let user = new_user(&pool).await;
     upsert_sealed_config(&pool, user, SECRET).await;
@@ -50,7 +50,7 @@ async fn store_for_resolves_store_with_unsealed_credentials(pool: PgPool) {
     assert!(source.store_for(user).await.unwrap().is_some());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn store_for_fails_when_master_key_does_not_match(pool: PgPool) {
     let user = new_user(&pool).await;
     upsert_sealed_config(&pool, user, "other-secret").await;

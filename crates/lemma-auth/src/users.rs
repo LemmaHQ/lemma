@@ -1,6 +1,6 @@
 //! Queries for the users table.
 
-use lemma_db::entity::User;
+use lemma_db_server::entity::User;
 
 /// Inserts a user and returns it. The very first user becomes the owner;
 /// everyone after that is normal.

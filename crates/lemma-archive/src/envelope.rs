@@ -1,7 +1,7 @@
 //! The JSON envelope format for archived conversations.
 
 use chrono::{DateTime, Utc};
-use lemma_db::entity::{Message, TokenUsage};
+use lemma_db_server::entity::{Message, TokenUsage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -87,6 +87,7 @@ pub fn messages_from_envelope(envelope: &ArchiveEnvelope) -> Result<Vec<Message>
                     .map_err(|e| ArchiveError(format!("bad message id: {e}")))?,
                 conversation_id: Uuid::parse_str(&envelope.conversation_id)
                     .map_err(|e| ArchiveError(format!("bad conversation id: {e}")))?,
+                parent_id: None,
                 role: m.role.clone(),
                 content: m.content.clone(),
                 provider_id: m

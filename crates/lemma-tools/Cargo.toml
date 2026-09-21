@@ -1,0 +1,16 @@
+[package]
+name = "lemma-tools"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+parking_lot.workspace = true
+
+[lints]
+workspace = true

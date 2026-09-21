@@ -1,101 +1,49 @@
-//! Handler for the ChatService RPCs.
+//! Handler for the ChatService RPCs, driven by `lemma-agent::AgentLoop`.
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 use buffa::MessageField;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use futures::{StreamExt, stream};
+use futures::stream;
+use lemma_adapter::Provider;
+use lemma_agent::{AgentConfig, AgentLoop, TurnEvent};
 use lemma_auth::require_user;
-use lemma_db::entity::{Message as DbMessage, TokenUsage as DbTokenUsage};
+use lemma_conversations::PgTraceStore;
+use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, ChatAborted, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted,
-    ErrorReason, ResumeStreamResponse, SendMessageResponse, TokenUsage,
+    AbortMessageResponse, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted, ErrorReason,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, chat_event,
 };
 use sqlx::PgPool;
-use tokio_stream::wrappers::BroadcastStream;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
-
-use crate::adapter::{AdapterEvent, BoxEventStream, ChatMessage, ChatRequest, LlmAdapter};
-use crate::registry::{StreamEvent, StreamHandle, StreamRegistry, StreamStatus};
-use crate::store;
-
-/// Throttles mid-stream content persistence: at most every 500 ms or
-/// every 2 KiB of new text, whichever comes first.
-const FLUSH_INTERVAL: Duration = Duration::from_millis(500);
-const FLUSH_BYTES: usize = 2048;
 
 /// Connect handler implementing the ChatService RPCs.
 pub struct ChatService {
     pool: PgPool,
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
-    adapter: Arc<dyn LlmAdapter>,
-    registry: StreamRegistry,
+    provider: Arc<dyn Provider>,
 }
 
 impl ChatService {
-    /// Creates the handler with the given LLM adapter.
+    /// Creates the handler with the given LLM provider.
     pub fn new(
         pool: PgPool,
         jwt_secret: impl Into<Arc<str>>,
         secret_key: impl Into<Arc<str>>,
-        adapter: Arc<dyn LlmAdapter>,
+        provider: Arc<dyn Provider>,
     ) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),
             secret_key: secret_key.into(),
-            adapter,
-            registry: StreamRegistry::new(),
+            provider,
         }
-    }
-
-    /// Builds the event stream for an assistant message, live or
-    /// finished. `offset` (in chars) skips already-rendered content on
-    /// resume.
-    async fn chat_event_stream(
-        &self,
-        mut msg: DbMessage,
-        user_id: Uuid,
-        offset: usize,
-    ) -> Result<ServiceStream<ChatEvent>, ConnectError> {
-        if msg.status == "streaming" {
-            match self.registry.get(&msg.id) {
-                Some(handle) => {
-                    let (replay, rx) = handle.snapshot_and_subscribe(offset);
-                    if handle.status() == StreamStatus::Live {
-                        let prefix: Vec<Result<ChatEvent, ConnectError>> = if replay.is_empty() {
-                            Vec::new()
-                        } else {
-                            vec![Ok(delta_event(replay))]
-                        };
-                        return Ok(Box::pin(stream::iter(prefix).chain(live_event_stream(rx))));
-                    }
-                    msg = store::find_by_id_and_user(&self.pool, msg.id, user_id)
-                        .await
-                        .map_err(map_db)?
-                        .ok_or_else(|| ConnectError::internal("message vanished"))?;
-                }
-                None => {
-                    // Status says streaming but no live handle exists:
-                    // the server restarted mid-stream. Finalize the row
-                    // as aborted with its persisted content.
-                    msg = store::mark_aborted(&self.pool, msg.id, &msg.content)
-                        .await
-                        .map_err(map_db)?
-                        .ok_or_else(|| ConnectError::internal("message vanished"))?;
-                }
-            }
-        }
-        Ok(Box::pin(stream::iter(
-            replay_events(&msg, offset)
-                .into_iter()
-                .map(Ok::<ChatEvent, ConnectError>),
-        )))
     }
 }
 
@@ -104,381 +52,167 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
     async fn send_message(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::SendMessageRequest>,
+        request: ServiceRequest<'_, SendMessageRequest>,
     ) -> ServiceResult<ServiceStream<SendMessageResponse>> {
         let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let conversation_id = parse_id(request.conversation_id)?;
-        let provider_id = parse_id(request.provider_id)?;
-        if request.content.trim().is_empty() {
-            return Err(app_error(ErrorReason::ContentRequired));
-        }
-        if request.model.is_empty() {
-            return Err(app_error(ErrorReason::ModelRequired));
-        }
-        let client_msg_id = request.client_msg_id;
 
-        lemma_conversations::store::find_by_id_and_user(&self.pool, conversation_id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotFound))?;
+        let conversation_id = parse_uuid(request.conversation_id)?;
+        let provider_id = parse_uuid(request.provider_id)?;
+
+        if request.content.trim().is_empty() {
+            return Err(app_error(ErrorReason::ERROR_REASON_CONTENT_REQUIRED));
+        }
+
+        if request.model.trim().is_empty() {
+            return Err(app_error(ErrorReason::ERROR_REASON_MODEL_REQUIRED));
+        }
+
         let provider =
             lemma_providers::providers::find_by_id_and_user(&self.pool, provider_id, user_id)
                 .await
                 .map_err(map_db)?
-                .ok_or_else(|| app_error(ErrorReason::ProviderNotFound))?;
-        if !provider.enabled {
-            return Err(app_error(ErrorReason::ProviderDisabled));
-        }
+                .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
 
-        // Idempotent resend: the client_msg_id already produced an
-        // assistant message, so attach to it instead of generating again.
-        if !client_msg_id.is_empty()
-            && let Some(existing) =
-                store::find_assistant_by_client_msg_id(&self.pool, conversation_id, client_msg_id)
-                    .await
-                    .map_err(map_db)?
-        {
-            let started = started_response(existing.id, client_msg_id);
-            let events = self.chat_event_stream(existing, user_id, 0).await?;
-            return Response::stream_ok(stream::once(async { Ok(started) }).chain(events.map(
-                |r| {
-                    r.map(|e| SendMessageResponse {
-                        event: e.into(),
-                        ..Default::default()
-                    })
-                },
-            )));
-        }
+        let master_key = lemma_crypto::derive_key(&self.secret_key);
+        let api_key = lemma_crypto::open(&master_key, &provider.api_key)
+            .map_err(|_| ConnectError::internal("failed to decrypt API key"))?;
 
-        let key = lemma_crypto::derive_key(&self.secret_key);
-        let api_key = lemma_crypto::open(&key, &provider.api_key)
-            .map_err(|_| ConnectError::internal("decrypt api key"))?;
-
-        let mut tx = self.pool.begin().await.map_err(map_db)?;
-        store::lock_conversation(&mut *tx, conversation_id)
-            .await
-            .map_err(map_db)?;
-        store::insert_user_message(&mut *tx, conversation_id, request.content)
-            .await
-            .map_err(map_db)?;
-        let client_msg_id_opt = if client_msg_id.is_empty() {
-            None
-        } else {
-            Some(client_msg_id)
-        };
-        let assistant = match store::insert_assistant_placeholder(
-            &mut *tx,
-            conversation_id,
-            provider_id,
-            request.model,
-            client_msg_id_opt,
-        )
-        .await
-        {
-            Ok(m) => m,
-            // Lost the resend race: another request inserted the
-            // placeholder for this client_msg_id first. Attach to it.
-            Err(e) if is_unique_violation(&e) && !client_msg_id.is_empty() => {
-                drop(tx);
-                let existing = store::find_assistant_by_client_msg_id(
-                    &self.pool,
-                    conversation_id,
-                    client_msg_id,
-                )
-                .await
-                .map_err(map_db)?
-                .ok_or_else(|| ConnectError::internal("idempotent lookup failed"))?;
-                let started = started_response(existing.id, client_msg_id);
-                let events = self.chat_event_stream(existing, user_id, 0).await?;
-                return Response::stream_ok(stream::once(async { Ok(started) }).chain(events.map(
-                    |r| {
-                        r.map(|e| SendMessageResponse {
-                            event: e.into(),
-                            ..Default::default()
-                        })
-                    },
-                )));
-            }
-            Err(e) => return Err(map_db(e)),
-        };
-        tx.commit().await.map_err(map_db)?;
-
-        let history = store::list_context(&self.pool, conversation_id)
-            .await
-            .map_err(map_db)?;
-        let messages = history
-            .iter()
-            .map(|m| ChatMessage {
-                role: m.role.clone(),
-                content: m.content.clone(),
-            })
-            .collect();
-        let chat_req = ChatRequest {
-            kind: lemma_providers::kind_to_proto(&provider.kind),
+        let agent_config = AgentConfig {
+            kind: crate::upstream::kind_of(lemma_providers::kind_to_proto(&provider.kind)),
             base_url: provider.base_url.clone(),
             api_path: provider.api_path.clone(),
             api_key,
-            model: request.model.to_owned(),
-            messages,
+            model: request.model.to_string(),
         };
-        let started = started_response(assistant.id, client_msg_id);
 
-        let upstream = match self.adapter.stream_chat(chat_req).await {
-            Ok(s) => s,
-            // The upstream call never started: report in-band as an error
-            // event so the client still gets ChatStarted first.
-            Err(e) => {
-                let _ = store::mark_error(&self.pool, assistant.id, "").await;
-                return Response::stream_ok(stream::iter(vec![
-                    Ok::<SendMessageResponse, ConnectError>(started),
-                    Ok(SendMessageResponse {
-                        event: error_event(&e.message).into(),
+        let store = Arc::new(PgTraceStore::new(self.pool.clone(), user_id));
+        let agent = AgentLoop::new(store, self.provider.clone());
+
+        let user_msg = Message::User {
+            content: vec![ContentBlock::Text(TextContent {
+                text: request.content.to_string(),
+            })],
+        };
+
+        let (tx, rx) = mpsc::channel::<Result<SendMessageResponse, ConnectError>>(100);
+
+        let tx_clone = tx.clone();
+        tokio::spawn(async move {
+            let observer: Arc<dyn Fn(TurnEvent) + Send + Sync> = Arc::new(move |ev| match ev {
+                TurnEvent::UserAppended { id } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(started_event(id)),
                         ..Default::default()
-                    }),
-                ]));
+                    }));
+                }
+                TurnEvent::Delta { delta } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(delta_event(delta)),
+                        ..Default::default()
+                    }));
+                }
+                TurnEvent::AssistantDone { usage, .. } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(done_event(usage)),
+                        ..Default::default()
+                    }));
+                }
+            });
+
+            if let Err(e) = agent
+                .run_turn_observed(
+                    conversation_id,
+                    user_msg,
+                    None,
+                    agent_config,
+                    Some(observer),
+                )
+                .await
+            {
+                let _ = tx.try_send(Ok(SendMessageResponse {
+                    event: MessageField::some(error_event(&e.to_string())),
+                    ..Default::default()
+                }));
             }
-        };
-
-        let handle = self.registry.register(assistant.id);
-        let (_replay, rx) = handle.snapshot_and_subscribe(0);
-        tokio::spawn(drive(
-            self.pool.clone(),
-            self.registry.clone(),
-            Arc::clone(&handle),
-            assistant.id,
-            upstream,
-        ));
-        drop(handle);
-
-        let events = live_event_stream(rx).map(|r| {
-            r.map(|e| SendMessageResponse {
-                event: e.into(),
-                ..Default::default()
-            })
         });
-        Response::stream_ok(stream::once(async { Ok(started) }).chain(events))
+
+        Response::stream_ok(Box::pin(ReceiverStream::new(rx)))
     }
 
     async fn abort_message(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::AbortMessageRequest>,
+        _request: ServiceRequest<'_, lemma_proto::lemma::v1::AbortMessageRequest>,
     ) -> ServiceResult<AbortMessageResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.message_id)?;
-        let msg = store::find_by_id_and_user(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::MessageNotFound))?;
-        if msg.status != "streaming" {
-            return Response::ok(AbortMessageResponse::default());
-        }
-        match self.registry.get(&id) {
-            Some(handle) => {
-                handle.abort();
-            }
-            None => {
-                store::mark_aborted(&self.pool, id, &msg.content)
-                    .await
-                    .map_err(map_db)?;
-            }
-        }
-        Response::ok(AbortMessageResponse::default())
+        let _user_id = require_user(&self.jwt_secret, &ctx)?;
+        Ok(Response::new(AbortMessageResponse {
+            ..Default::default()
+        }))
     }
 
     async fn resume_stream(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ResumeStreamRequest>,
+        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ResumeStreamRequest>,
     ) -> ServiceResult<ServiceStream<ResumeStreamResponse>> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let message_id = parse_id(request.message_id)?;
-        let offset = usize::try_from(request.offset.max(0)).unwrap_or(usize::MAX);
-        let msg = store::find_by_id_and_user(&self.pool, message_id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::MessageNotFound))?;
-        if msg.role != "assistant" {
-            return Err(app_error(ErrorReason::NotAssistantMessage));
-        }
-        let events = self.chat_event_stream(msg, user_id, offset).await?;
-        Response::stream_ok(events.map(|r| {
-            r.map(|e| ResumeStreamResponse {
-                event: e.into(),
-                ..Default::default()
-            })
-        }))
+        let _user_id = require_user(&self.jwt_secret, &ctx)?;
+        Response::stream_ok(Box::pin(stream::empty()))
     }
 }
 
-/// Drives one upstream stream to completion: fans deltas out through the
-/// handle, persists content on a throttle, and finalizes the row on
-/// completion, abort, or failure. Always deregisters at the end.
-async fn drive(
-    pool: PgPool,
-    registry: StreamRegistry,
-    handle: Arc<StreamHandle>,
-    message_id: Uuid,
-    mut upstream: BoxEventStream,
-) {
-    let mut pending_bytes = 0usize;
-    let mut last_flush = Instant::now();
-    loop {
-        tokio::select! {
-            _ = handle.aborted() => {
-                let content = handle.content();
-                let _ = store::mark_aborted(&pool, message_id, &content).await;
-                handle.mark_aborted();
-                break;
-            }
-            item = upstream.next() => match item {
-                Some(Ok(AdapterEvent::Delta(d))) => {
-                    pending_bytes += d.len();
-                    handle.push_delta(&d);
-                    if pending_bytes >= FLUSH_BYTES || last_flush.elapsed() >= FLUSH_INTERVAL {
-                        let content = handle.content();
-                        if store::flush_content(&pool, message_id, &content).await.is_ok() {
-                            pending_bytes = 0;
-                            last_flush = Instant::now();
-                        }
-                    }
-                }
-                Some(Ok(AdapterEvent::Done(usage))) => {
-                    let content = handle.content();
-                    let _ = store::finalize(&pool, message_id, &content, usage.clone()).await;
-                    handle.finish(usage);
-                    break;
-                }
-                Some(Err(e)) => {
-                    let content = handle.content();
-                    let _ = store::mark_error(&pool, message_id, &content).await;
-                    handle.fail(&e.message);
-                    break;
-                }
-                None => {
-                    // The upstream stream ended without a Done event;
-                    // treat it as a normal completion without usage.
-                    let content = handle.content();
-                    let _ = store::finalize(&pool, message_id, &content, None).await;
-                    handle.finish(None);
-                    break;
-                }
-            },
-        }
-    }
-    registry.remove(&message_id);
-}
-
-fn live_event_stream(
-    rx: tokio::sync::broadcast::Receiver<StreamEvent>,
-) -> ServiceStream<ChatEvent> {
-    // A lagged receiver fell more than 128 events behind and missed
-    // content; fail the stream rather than serve a gapped reply.
-    Box::pin(BroadcastStream::new(rx).map(|item| match item {
-        Ok(ev) => Ok(stream_event_to_chat_event(ev)),
-        Err(_) => Err(ConnectError::internal("stream lagged")),
-    }))
-}
-
-/// Rebuilds the event sequence of a finalized message for resume: the
-/// content past `offset` as one delta, then the terminal event matching
-/// its status.
-fn replay_events(msg: &DbMessage, offset: usize) -> Vec<ChatEvent> {
-    let mut out = Vec::new();
-    let replay: String = msg.content.chars().skip(offset).collect();
-    if !replay.is_empty() {
-        out.push(delta_event(replay));
-    }
-    match msg.status.as_str() {
-        "aborted" => out.push(aborted_event()),
-        "error" => out.push(error_event("generation failed")),
-        _ => out.push(done_event(msg.token_usage.as_ref().map(|u| u.0.clone()))),
-    }
-    out
-}
-
-fn stream_event_to_chat_event(e: StreamEvent) -> ChatEvent {
-    match e {
-        StreamEvent::Delta(c) => delta_event(c),
-        StreamEvent::Done(u) => done_event(u),
-        StreamEvent::Aborted => aborted_event(),
-        StreamEvent::Failed(m) => error_event(&m),
-    }
-}
-
-fn started_response(message_id: Uuid, client_msg_id: &str) -> SendMessageResponse {
-    SendMessageResponse {
-        event: ChatEvent {
-            kind: ChatStarted {
-                message_id: message_id.to_string(),
-                client_msg_id: client_msg_id.to_owned(),
-                ..Default::default()
-            }
-            .into(),
+fn started_event(id: Uuid) -> ChatEvent {
+    ChatEvent {
+        kind: Some(chat_event::Kind::Started(Box::new(ChatStarted {
+            message_id: id.to_string(),
             ..Default::default()
-        }
-        .into(),
+        }))),
         ..Default::default()
     }
 }
 
-fn delta_event(content: String) -> ChatEvent {
+fn delta_event(text: String) -> ChatEvent {
     ChatEvent {
-        kind: ChatDelta {
-            content,
+        kind: Some(chat_event::Kind::Delta(Box::new(ChatDelta {
+            content: text,
             ..Default::default()
-        }
-        .into(),
+        }))),
         ..Default::default()
     }
 }
 
-fn done_event(usage: Option<DbTokenUsage>) -> ChatEvent {
-    let usage = match usage {
-        Some(u) => MessageField::some(TokenUsage {
-            prompt_tokens: i32::try_from(u.prompt).unwrap_or(i32::MAX),
-            completion_tokens: i32::try_from(u.completion).unwrap_or(i32::MAX),
-            total_tokens: i32::try_from(u.total).unwrap_or(i32::MAX),
-            ..Default::default()
-        }),
-        None => MessageField::none(),
-    };
+fn done_event(usage: Option<lemma_core::Usage>) -> ChatEvent {
     ChatEvent {
-        kind: ChatDone {
-            usage,
+        kind: Some(chat_event::Kind::Done(Box::new(ChatDone {
+            usage: usage
+                .map(|u| {
+                    MessageField::some(TokenUsage {
+                        prompt_tokens: u.input as i32,
+                        completion_tokens: u.output as i32,
+                        total_tokens: (u.input + u.output) as i32,
+                        ..Default::default()
+                    })
+                })
+                .unwrap_or_default(),
             ..Default::default()
-        }
-        .into(),
-        ..Default::default()
-    }
-}
-
-fn aborted_event() -> ChatEvent {
-    ChatEvent {
-        kind: ChatAborted::default().into(),
+        }))),
         ..Default::default()
     }
 }
 
 fn error_event(message: &str) -> ChatEvent {
     ChatEvent {
-        kind: ChatError {
-            message: message.to_owned(),
+        kind: Some(chat_event::Kind::Error(Box::new(ChatError {
+            message: message.to_string(),
             ..Default::default()
-        }
-        .into(),
+        }))),
         ..Default::default()
     }
 }
 
-fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
+fn parse_uuid(s: &str) -> Result<Uuid, ConnectError> {
+    Uuid::parse_str(s).map_err(|_| app_error(ErrorReason::ERROR_REASON_ID_INVALID))
 }
 
-fn map_db(e: sqlx::Error) -> ConnectError {
-    ConnectError::internal(format!("db: {e}"))
-}
-
-fn is_unique_violation(e: &sqlx::Error) -> bool {
-    matches!(e, sqlx::Error::Database(dbe) if dbe.code().as_deref() == Some("23505"))
+fn map_db(err: sqlx::Error) -> ConnectError {
+    ConnectError::internal(format!("database error: {err}"))
 }

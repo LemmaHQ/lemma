@@ -12,7 +12,7 @@ async fn new_user(pool: &PgPool, name: &str) -> Uuid {
         .id
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_respects_cursor_and_order(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let c1 = lemma_conversations::store::insert(&pool, uid)
@@ -33,16 +33,16 @@ async fn pull_respects_cursor_and_order(pool: PgPool) {
     assert_eq!(all[1].title, "新标题");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn pull_messages_scoped_to_owner(pool: PgPool) {
     let u1 = new_user(&pool, "alice").await;
     let u2 = new_user(&pool, "erin").await;
     let c1 = lemma_conversations::store::insert(&pool, u1).await.unwrap();
     let c2 = lemma_conversations::store::insert(&pool, u2).await.unwrap();
-    lemma_chat::store::insert_user_message(&pool, c1.id, "alice 的消息")
+    lemma_conversations::store::insert_test_user_message(&pool, c1.id, "alice 的消息")
         .await
         .unwrap();
-    lemma_chat::store::insert_user_message(&pool, c2.id, "erin 的消息")
+    lemma_conversations::store::insert_test_user_message(&pool, c2.id, "erin 的消息")
         .await
         .unwrap();
 
@@ -51,7 +51,7 @@ async fn pull_messages_scoped_to_owner(pool: PgPool) {
     assert_eq!(msgs[0].content, "alice 的消息");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn head_sync_seq_tracks_latest_change(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let c = lemma_conversations::store::insert(&pool, uid)

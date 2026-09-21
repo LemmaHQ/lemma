@@ -265,7 +265,7 @@ async fn insert_msg(pool: &PgPool, conv: Uuid, seq: i64, status: &str, model: Op
     .unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn create_and_list(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, token) = new_user(&pool).await;
@@ -274,7 +274,7 @@ async fn create_and_list(pool: PgPool) {
     assert_eq!(list_active_count(&svc, &token).await, 1);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn rename_not_found_and_cross_user(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, alice) = new_user(&pool).await;
@@ -294,7 +294,7 @@ async fn rename_not_found_and_cross_user(pool: PgPool) {
     assert_eq!(ok.conversation.title, "我的会话");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_restore_flow(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, token) = new_user(&pool).await;
@@ -333,7 +333,7 @@ async fn archive_restore_flow(pool: PgPool) {
     assert_eq!(list_archived_count(&svc, &token).await, 0);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_messages_isolated(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, alice) = new_user(&pool).await;
@@ -366,7 +366,7 @@ async fn list_messages_isolated(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::NotFound);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_moves_content_to_store(pool: PgPool) {
     let store = Arc::new(MemoryArchiveStore::new());
     let svc = svc_with_store(&pool, store.clone());
@@ -385,7 +385,7 @@ async fn archive_moves_content_to_store(pool: PgPool) {
     assert_eq!(list_archived_count(&svc, &token).await, 1);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn restore_reinserts_content_in_order(pool: PgPool) {
     let store = Arc::new(MemoryArchiveStore::new());
     let svc = svc_with_store(&pool, store.clone());
@@ -401,7 +401,7 @@ async fn restore_reinserts_content_in_order(pool: PgPool) {
     assert!(store.get(&key).await.unwrap().is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn restore_legacy_in_place_archive_keeps_messages(pool: PgPool) {
     let store = Arc::new(MemoryArchiveStore::new());
     let svc = svc_with_store(&pool, store.clone());
@@ -422,7 +422,7 @@ async fn restore_legacy_in_place_archive_keeps_messages(pool: PgPool) {
     assert_eq!(message_contents(&pool, &id).await, ["旧"]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_archived_removes_object(pool: PgPool) {
     let store = Arc::new(MemoryArchiveStore::new());
     let svc = svc_with_store(&pool, store.clone());
@@ -439,7 +439,7 @@ async fn delete_archived_removes_object(pool: PgPool) {
     assert_eq!(list_archived_count(&svc, &token).await, 0);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn degrade_mode_keeps_content_in_pg(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, token) = new_user(&pool).await;
@@ -451,7 +451,7 @@ async fn degrade_mode_keeps_content_in_pg(pool: PgPool) {
     assert_eq!(message_contents(&pool, &id).await, ["留"]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_messages_maps_statuses_and_fields(pool: PgPool) {
     let svc = svc_no_store(&pool);
     let (_, token) = new_user(&pool).await;
@@ -518,7 +518,7 @@ impl lemma_archive::ArchiveSource for FailingSource {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_store_failure_maps_internal_and_rolls_back(pool: PgPool) {
     let svc = ConversationService::new(pool.clone(), SECRET, FailingSource);
     let (_, token) = new_user(&pool).await;
@@ -567,7 +567,7 @@ async fn archive_generic<S: lemma_archive::ArchiveSource>(
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_and_restore_require_matching_status(pool: PgPool) {
     let (_uid, token) = new_user(&pool).await;
     let svc = svc_no_store(&pool);
@@ -592,7 +592,7 @@ async fn archive_and_restore_require_matching_status(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn malformed_ids_rejected(pool: PgPool) {
     let (_uid, token) = new_user(&pool).await;
     let svc = svc_no_store(&pool);
@@ -611,7 +611,7 @@ async fn malformed_ids_rejected(pool: PgPool) {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn handlers_require_bearer(pool: PgPool) {
     let svc = svc_no_store(&pool);
     use lemma_proto::lemma::v1;

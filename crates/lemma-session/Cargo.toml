@@ -1,0 +1,12 @@
+[package]
+name = "lemma-session"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+lemma-core.workspace = true
+serde.workspace = true
+uuid = { workspace = true, features = ["serde"] }
+
+[lints]
+workspace = true

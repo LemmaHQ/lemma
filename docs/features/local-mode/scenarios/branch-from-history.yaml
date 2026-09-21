@@ -1,0 +1,9 @@
+name: Branch from an earlier trace entry
+given:
+  - a conversation with several completed turns
+when:
+  - the user jumps to an earlier entry and sends a new message
+then:
+  - the new entry is appended under the selected entry as its parent
+  - the abandoned path remains readable in the history
+  - the next provider call replays context along the new active path

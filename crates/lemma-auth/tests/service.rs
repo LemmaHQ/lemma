@@ -147,7 +147,7 @@ async fn me(
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn signup_first_owner_second_normal(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let r1 = signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -160,7 +160,7 @@ async fn signup_first_owner_second_normal(pool: PgPool) {
     assert_eq!(r2.user.role, Role::Normal);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn signup_duplicate_username_rejected(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -173,7 +173,7 @@ async fn signup_duplicate_username_rejected(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn login_ok_and_wrong_password(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -185,7 +185,7 @@ async fn login_ok_and_wrong_password(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::Unauthenticated);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn login_requires_exactly_one_identifier(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let err = login(&svc, "alice", "alice@example.com", PASSWORD)
@@ -195,7 +195,7 @@ async fn login_requires_exactly_one_identifier(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn refresh_replay_revokes_whole_chain(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let tokens = signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -217,7 +217,7 @@ async fn refresh_replay_revokes_whole_chain(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::Unauthenticated);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn logout_is_idempotent(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     logout(&svc, "nonexistent").await.unwrap();
@@ -231,7 +231,7 @@ async fn logout_is_idempotent(pool: PgPool) {
     logout(&svc, &tokens).await.unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn me_requires_valid_bearer(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let access = signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -250,7 +250,7 @@ async fn me_requires_valid_bearer(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::Unauthenticated);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn me_after_user_deleted_returns_not_found(pool: PgPool) {
     let svc = AuthService::new(pool.clone(), SECRET);
     let signed = signup(&svc, "alice", "alice@example.com", PASSWORD)
@@ -271,7 +271,7 @@ async fn me_after_user_deleted_returns_not_found(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn refresh_rejects_unknown_token(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let err = refresh(&svc, "never-issued").await.err().unwrap();
@@ -282,7 +282,7 @@ async fn refresh_rejects_unknown_token(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn token_with_non_uuid_subject_rejected(pool: PgPool) {
     let svc = AuthService::new(pool, SECRET);
     let claims = lemma_auth::Claims {

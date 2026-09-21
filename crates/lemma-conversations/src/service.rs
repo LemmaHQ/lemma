@@ -9,7 +9,7 @@ use lemma_archive::{
     messages_from_envelope, object_key, serialize_envelope,
 };
 use lemma_auth::require_user;
-use lemma_db::entity::{Conversation as DbConversation, Message as DbMessage};
+use lemma_db_server::entity::{Conversation as DbConversation, Message as DbMessage};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     ArchiveConversationResponse, Conversation, ConversationStatus, CreateConversationResponse,

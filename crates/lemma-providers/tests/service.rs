@@ -204,7 +204,7 @@ async fn fetch_models(
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_requires_bearer(pool: PgPool) {
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
     let err = list(&svc, RequestContext::new(HeaderMap::new()))
@@ -214,7 +214,7 @@ async fn list_requires_bearer(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::Unauthenticated);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_empty_for_fresh_user(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -222,7 +222,7 @@ async fn list_empty_for_fresh_user(pool: PgPool) {
     assert!(r.providers.is_empty());
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn create_masks_response_and_seals_in_db(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool.clone(), SECRET, KEY_SECRET);
@@ -237,7 +237,7 @@ async fn create_masks_response_and_seals_in_db(pool: PgPool) {
     assert_eq!(plain, "sk-abcdef123456");
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn create_rejects_missing_fields(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -264,7 +264,7 @@ async fn create_rejects_missing_fields(pool: PgPool) {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn update_renames_and_blank_key_keeps_sealed(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool.clone(), SECRET, KEY_SECRET);
@@ -294,7 +294,7 @@ async fn update_renames_and_blank_key_keeps_sealed(pool: PgPool) {
     assert_eq!(sealed_before, sealed_after);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn update_rejects_other_owner_and_bad_id(pool: PgPool) {
     let u1 = new_user(&pool, "alice").await;
     let u2 = new_user(&pool, "erin").await;
@@ -334,7 +334,7 @@ async fn update_rejects_other_owner_and_bad_id(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_once_then_not_found(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -365,7 +365,7 @@ async fn delete_once_then_not_found(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::NotFound);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn delete_rejects_malformed_id(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -388,7 +388,7 @@ async fn delete_rejects_malformed_id(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_masks_keys_and_garbage_falls_back(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool.clone(), SECRET, KEY_SECRET);
@@ -426,7 +426,7 @@ async fn list_masks_keys_and_garbage_falls_back(pool: PgPool) {
     );
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn fetch_models_temp_credentials_openai(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -449,7 +449,7 @@ async fn fetch_models_temp_credentials_openai(pool: PgPool) {
     assert_eq!(h.bearer, vec!["Bearer sk-tmp-123456".to_string()]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn fetch_models_saved_provider_decrypts_key(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool.clone(), SECRET, KEY_SECRET);
@@ -484,7 +484,7 @@ async fn fetch_models_saved_provider_decrypts_key(pool: PgPool) {
     assert_eq!(h.x_api_key, vec!["sk-anthropic-987654321".to_string()]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn fetch_models_gemini_strips_prefix_and_custom_path(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
@@ -508,7 +508,7 @@ async fn fetch_models_gemini_strips_prefix_and_custom_path(pool: PgPool) {
     assert_eq!(h.goog_key, vec!["goog-key-123456".to_string()]);
 }
 
-#[sqlx::test(migrations = "../lemma-db/migrations")]
+#[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn fetch_models_maps_errors_and_bad_id(pool: PgPool) {
     let uid = new_user(&pool, "alice").await;
     let svc = ProviderService::new(pool, SECRET, KEY_SECRET);
