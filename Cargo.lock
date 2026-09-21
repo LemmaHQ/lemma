@@ -2172,6 +2172,7 @@ dependencies = [
  "lemma-session",
  "lemma-tools",
  "parking_lot",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",

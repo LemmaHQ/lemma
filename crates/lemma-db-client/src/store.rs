@@ -66,6 +66,97 @@ impl SqliteTraceStore {
         }
         Ok(results)
     }
+
+    /// Exposes the underlying SQLite connection for atomic batch application.
+    pub fn conn_handle(&self) -> Arc<parking_lot::Mutex<rusqlite::Connection>> {
+        self.conn.clone()
+    }
+
+    /// Gets the current local synchronization cursor.
+    pub fn get_sync_cursor(&self) -> Result<i64, SqliteStoreError> {
+        let conn = self.conn.lock();
+        let cursor: i64 = conn.query_row(
+            "SELECT last_sync_seq FROM sync_state WHERE id = 1",
+            [],
+            |r| r.get(0),
+        )?;
+        Ok(cursor)
+    }
+
+    /// Advances the local synchronization cursor.
+    pub fn update_sync_cursor(&self, seq: i64) -> Result<(), SqliteStoreError> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "UPDATE sync_state SET last_sync_seq = MAX(last_sync_seq, ?1), updated_at = 0 WHERE id = 1",
+            params![seq],
+        )?;
+        Ok(())
+    }
+
+    /// Returns up to `limit` pending outbox items in FIFO order.
+    pub fn list_outbox(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<crate::outbox::OutboxItem>, SqliteStoreError> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT id, entity_type, entity_id, payload_json, created_at
+            FROM outbox
+            ORDER BY id ASC
+            LIMIT ?1
+            "#,
+        )?;
+
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            let id: i64 = row.get(0)?;
+            let entity_type: String = row.get(1)?;
+            let entity_id_str: String = row.get(2)?;
+            let payload_json: String = row.get(3)?;
+            let created_at: i64 = row.get(4)?;
+            Ok((id, entity_type, entity_id_str, payload_json, created_at))
+        })?;
+
+        let mut items = Vec::new();
+        for r in rows {
+            let (id, entity_type, entity_id_str, payload_json, created_at) = r?;
+            if let Ok(entity_id) = Uuid::parse_str(&entity_id_str) {
+                items.push(crate::outbox::OutboxItem {
+                    id,
+                    entity_type,
+                    entity_id,
+                    payload_json,
+                    created_at,
+                });
+            }
+        }
+        Ok(items)
+    }
+
+    /// Clears processed items from the outbox up to `max_id`.
+    pub fn ack_outbox(&self, max_id: i64) -> Result<(), SqliteStoreError> {
+        let conn = self.conn.lock();
+        conn.execute("DELETE FROM outbox WHERE id <= ?1", params![max_id])?;
+        Ok(())
+    }
+
+    /// Adds an item directly to the outbox.
+    pub fn enqueue_outbox(
+        &self,
+        entity_type: &str,
+        entity_id: Uuid,
+        payload_json: &str,
+    ) -> Result<(), SqliteStoreError> {
+        let conn = self.conn.lock();
+        conn.execute(
+            r#"
+            INSERT INTO outbox (entity_type, entity_id, payload_json, created_at)
+            VALUES (?1, ?2, ?3, 0)
+            "#,
+            params![entity_type, entity_id.to_string(), payload_json],
+        )?;
+        Ok(())
+    }
 }
 
 impl TraceStore for SqliteTraceStore {
@@ -92,6 +183,16 @@ impl TraceStore for SqliteTraceStore {
                 ],
             )
             .map_err(SqliteStoreError::from)?;
+
+            if !local_only {
+                let _ = conn.execute(
+                    r#"
+                    INSERT INTO outbox (entity_type, entity_id, payload_json, created_at)
+                    VALUES ('conversation', ?1, ?2, ?3)
+                    "#,
+                    params![id.to_string(), title, now],
+                );
+            }
 
             Ok(ConversationMeta {
                 id,
@@ -205,6 +306,21 @@ impl TraceStore for SqliteTraceStore {
                 ],
             )
             .map_err(SqliteStoreError::from)?;
+
+            let _ = conn.execute(
+                r#"
+                INSERT INTO outbox (entity_type, entity_id, payload_json, created_at)
+                SELECT 'message', ?1, ?2, ?3
+                FROM conversations
+                WHERE id = ?4 AND local_only = 0
+                "#,
+                params![
+                    entry.id.to_string(),
+                    json_str,
+                    entry.created_at,
+                    entry.conversation_id.to_string()
+                ],
+            );
 
             if !text_extract.is_empty() {
                 let _ = conn.execute(

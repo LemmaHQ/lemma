@@ -9,9 +9,11 @@ mod error;
 mod local;
 mod query_tool;
 mod remote;
+mod sync;
 
 pub use engine::{BoxClientFuture, ClientEngine, EngineMode};
 pub use error::ClientError;
 pub use local::LocalClientEngine;
 pub use query_tool::QueryHistoryTool;
 pub use remote::RemoteClientEngine;
+pub use sync::SyncEngine;

@@ -12,6 +12,7 @@ lemma-db-client.workspace = true
 lemma-proto.workspace = true
 lemma-session.workspace = true
 lemma-tools.workspace = true
+rusqlite = { version = "0.38.0", features = ["bundled", "bundled-full"] }
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
