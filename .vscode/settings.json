@@ -4,7 +4,7 @@
     "i18n-ally.enabledParsers": ["json"],
     "i18n-ally.sourceLanguage": "en",
     "i18n-ally.displayLanguage": "zh",
-    "i18n-ally.sortKeys": true,
+    "i18n-ally.sortKeys": false,
     "i18n-ally.indent": 4,
     "i18n-ally.tabStyle": "space",
     "eslint.validate": [
@@ -12,5 +12,6 @@
         "javascriptreact",
         "typescript",
         "typescriptreact"
-    ]
+    ],
+    "i18n-ally.keystyle": "nested"
 }
