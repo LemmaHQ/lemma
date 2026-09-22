@@ -8,12 +8,12 @@ import {
     type ConversationStatus,
 } from "@/gen/lemma/v1/conversation_pb";
 import { conversationClient } from "@/data/rpc/clients";
+import { getDb } from "@/data/cache/database";
 import {
     type ConversationRow,
-    getDb,
     listArchived,
     listConversations,
-} from "@/data/cache/database";
+} from "@/data/cache/records";
 import { pullAll } from "@/data/sync/engine";
 
 interface ConversationsState {

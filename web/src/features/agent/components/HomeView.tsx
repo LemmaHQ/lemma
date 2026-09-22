@@ -2,14 +2,19 @@ import { ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ModelSwitcher, type ModelSelection } from "./ModelSwitcher";
+import { ModelSwitcher } from "./ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type {
+    ModelOption,
+    ModelSelection,
+} from "@/features/agent/useModelSelection";
 import { cn } from "@/lib/utils";
 
 interface HomeViewProps {
     onSubmit: (text: string) => void;
     model: ModelSelection | null;
+    modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
 }
 
@@ -19,7 +24,12 @@ function autosize(el: HTMLTextAreaElement | null) {
     el.style.height = `${el.scrollHeight}px`;
 }
 
-export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
+export function HomeView({
+    onSubmit,
+    model,
+    modelOptions,
+    onModelChange,
+}: HomeViewProps) {
     const { t } = useTranslation();
     const [value, setValue] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -65,6 +75,7 @@ export function HomeView({ onSubmit, model, onModelChange }: HomeViewProps) {
                     <div className="mt-2 flex items-center justify-between">
                         <ModelSwitcher
                             selection={model}
+                            options={modelOptions}
                             onSelect={onModelChange}
                         />
                         <Button

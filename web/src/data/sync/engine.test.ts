@@ -7,17 +7,15 @@ vi.mock("@/data/rpc/clients", () => ({
 
 import type { PullResponse, WatchResponse } from "@/gen/lemma/v1/sync_pb";
 import { syncClient } from "@/data/rpc/clients";
+import { closeDb, type LemmaDb, openDb } from "@/data/cache/database";
 import {
-    closeDb,
     conversationToRow,
     getCursor,
-    type LemmaDb,
     listMessages,
     messageToRow,
-    openDb,
     upsertConversations,
     upsertMessages,
-} from "@/data/cache/database";
+} from "@/data/cache/records";
 import {
     applyPull,
     onSynced,

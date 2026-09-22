@@ -2,9 +2,13 @@ import { ArrowUp, Square } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ModelSwitcher, type ModelSelection } from "./ModelSwitcher";
+import { ModelSwitcher } from "./ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type {
+    ModelOption,
+    ModelSelection,
+} from "@/features/agent/useModelSelection";
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
@@ -14,6 +18,7 @@ interface ChatComposerProps {
     onStop: () => void;
     streaming: boolean;
     model: ModelSelection | null;
+    modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
     inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
@@ -31,6 +36,7 @@ export function ChatComposer({
     onStop,
     streaming,
     model,
+    modelOptions,
     onModelChange,
     inputRef,
 }: ChatComposerProps) {
@@ -70,7 +76,11 @@ export function ChatComposer({
                     className="max-h-40 min-h-13 resize-none border-0 bg-transparent px-4 pt-3.5 shadow-none focus-visible:ring-0"
                 />
                 <div className="flex items-center justify-between px-3 pb-2.5">
-                    <ModelSwitcher selection={model} onSelect={onModelChange} />
+                    <ModelSwitcher
+                        selection={model}
+                        options={modelOptions}
+                        onSelect={onModelChange}
+                    />
                     <div className="flex items-center gap-1">
                         {streaming ? (
                             <Button

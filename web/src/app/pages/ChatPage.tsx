@@ -6,23 +6,18 @@ import { useNavigate, useParams } from "react-router";
 
 import { AppSidebar } from "@/app/shell/AppSidebar";
 import { ChatComposer } from "@/features/agent/components/ChatComposer";
-import { EmptyState } from "@/features/agent/components/EmptyState";
 import { HomeView } from "@/features/agent/components/HomeView";
-import { MessageItem } from "@/features/agent/components/MessageItem";
-import { type ModelSelection } from "@/features/agent/components/ModelSwitcher";
+import { MessageList } from "@/features/agent/components/MessageList";
+import { useModelSelection } from "@/features/agent/useModelSelection";
 import { Button } from "@/components/ui/button";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
-import {
-    type AgentItem,
-    useChat as useChatStore,
-} from "@/features/agent/store";
+import { useChat as useChatStore } from "@/features/agent/store";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
-const MODEL_KEY = "lemma.model";
 
 function toSummary(c: Conversation): SessionSummary {
     return {
@@ -46,7 +41,6 @@ export default function ChatPage() {
     );
     const [draft, setDraft] = useState("");
 
-    const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const toggleSidebar = (collapsed: boolean) => {
@@ -54,51 +48,12 @@ export default function ChatPage() {
         localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
     };
 
-    const enabledProviders = useMemo(
-        () =>
-            providersStore.list.filter((p) => p.enabled && p.models.length > 0),
-        [providersStore.list],
-    );
-
-    const [stored, setStored] = useState<ModelSelection | null>(() => {
-        try {
-            const raw = localStorage.getItem(MODEL_KEY);
-            const parsed = raw ? (JSON.parse(raw) as ModelSelection) : null;
-            return parsed?.providerId && parsed?.model ? parsed : null;
-        } catch {
-            return null;
-        }
-    });
-
-    const model = useMemo(() => {
-        if (
-            stored &&
-            enabledProviders.some(
-                (p) =>
-                    p.id === stored.providerId &&
-                    p.models.includes(stored.model),
-            )
-        ) {
-            return stored;
-        }
-        const first = enabledProviders[0];
-        return first ? { providerId: first.id, model: first.models[0] } : null;
-    }, [stored, enabledProviders]);
-
-    const selectModel = (selection: ModelSelection) => {
-        localStorage.setItem(MODEL_KEY, JSON.stringify(selection));
-        setStored(selection);
-    };
+    const { model, options: modelOptions, selectModel } = useModelSelection();
 
     const openConversation = useChatStore((s) => s.open);
     useEffect(() => {
         if (activeId) void openConversation(activeId);
     }, [activeId, openConversation]);
-
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
-    }, [chat.items, activeId]);
 
     const sendText = async (text: string) => {
         if (!model || chat.streaming) return;
@@ -178,19 +133,6 @@ export default function ChatPage() {
         return map;
     }, [providersStore.list]);
 
-    const sourceOf = (m: AgentItem) => {
-        if (!m.model) return undefined;
-        const name = providerNameById.get(m.providerId);
-        return name ? `${name} · ${m.model}` : m.model;
-    };
-
-    const lastAssistantId = useMemo(() => {
-        for (let i = chat.items.length - 1; i >= 0; i--) {
-            if (chat.items[i].role === "assistant") return chat.items[i].id;
-        }
-        return null;
-    }, [chat.items]);
-
     const activeSession = summaries.find((s) => s.id === activeId);
     return (
         <div className="flex h-dvh bg-sidebar text-foreground">
@@ -264,41 +206,18 @@ export default function ChatPage() {
                         <HomeView
                             onSubmit={(text) => void sendText(text)}
                             model={model}
+                            modelOptions={modelOptions}
                             onModelChange={selectModel}
                         />
                     ) : (
                         <>
-                            <div className="relative min-h-0 flex-1">
-                                <div
-                                    ref={scrollRef}
-                                    className="h-full overflow-y-auto"
-                                >
-                                    {chat.items.length === 0 ? (
-                                        <EmptyState
-                                            onPickSuggestion={
-                                                handlePickSuggestion
-                                            }
-                                        />
-                                    ) : (
-                                        <div className="mx-auto w-full max-w-3xl space-y-8 px-6 pt-16 pb-6">
-                                            {chat.items.map((m) => (
-                                                <MessageItem
-                                                    key={m.id}
-                                                    message={m}
-                                                    source={sourceOf(m)}
-                                                    canRegenerate={
-                                                        m.id === lastAssistantId
-                                                    }
-                                                    onRegenerate={
-                                                        handleRegenerate
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-background to-transparent" />
-                            </div>
+                            <MessageList
+                                items={chat.items}
+                                resetKey={activeId}
+                                providerNameById={providerNameById}
+                                onPickSuggestion={handlePickSuggestion}
+                                onRegenerate={handleRegenerate}
+                            />
                             <ChatComposer
                                 value={draft}
                                 onChange={setDraft}
@@ -306,6 +225,7 @@ export default function ChatPage() {
                                 onStop={handleStop}
                                 streaming={chat.streaming}
                                 model={model}
+                                modelOptions={modelOptions}
                                 onModelChange={selectModel}
                                 inputRef={inputRef}
                             />

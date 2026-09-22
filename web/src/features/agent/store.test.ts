@@ -19,7 +19,8 @@ import type {
 } from "@/gen/lemma/v1/chat_pb";
 import { MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import { chatClient, conversationClient } from "@/data/rpc/clients";
-import { closeDb, openDb, upsertMessages } from "@/data/cache/database";
+import { closeDb, openDb } from "@/data/cache/database";
+import { upsertMessages } from "@/data/cache/records";
 import { useChat } from "./store";
 
 const sendMessage = vi.mocked(chatClient.sendMessage);

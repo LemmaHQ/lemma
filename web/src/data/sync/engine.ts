@@ -1,19 +1,18 @@
 import type { PullResponse } from "@/gen/lemma/v1/sync_pb";
 import { syncClient } from "@/data/rpc/clients";
+import { getDb, type LemmaDb } from "@/data/cache/database";
 import {
     conversationToRow,
     deleteConversationCascade,
     deleteMessagesOf,
     getCursor,
-    getDb,
-    type LemmaDb,
     messageToRow,
     pruneActiveExcept,
     replaceArchived,
     setCursor,
     upsertConversations,
     upsertMessages,
-} from "@/data/cache/database";
+} from "@/data/cache/records";
 import { useSyncStatus } from "@/data/sync/status";
 
 const BACKOFF_START_MS = 1000;

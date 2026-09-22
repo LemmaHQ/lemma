@@ -2,23 +2,21 @@ import "fake-indexeddb/auto";
 import Dexie from "dexie";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { closeDb, LemmaDb, openDb } from "@/data/cache/database";
 import {
-    closeDb,
     conversationToRow,
     deleteConversationCascade,
     getCursor,
-    LemmaDb,
     listArchived,
     listConversations,
     listMessages,
-    openDb,
     replaceArchived,
     setCursor,
     upsertConversations,
     upsertMessages,
     type ConversationRow,
     type MessageRow,
-} from "@/data/cache/database";
+} from "@/data/cache/records";
 
 function conv(
     id: string,

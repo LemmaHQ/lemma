@@ -4,7 +4,8 @@ import type { ChatEvent } from "@/gen/lemma/v1/chat_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import i18n from "@/i18n";
 import { chatClient, conversationClient } from "@/data/rpc/clients";
-import { getDb, listMessages, type MessageRow } from "@/data/cache/database";
+import { getDb } from "@/data/cache/database";
+import { listMessages, type MessageRow } from "@/data/cache/records";
 import { errorText } from "@/data/rpc/errors";
 import { pullAll } from "@/data/sync/engine";
 

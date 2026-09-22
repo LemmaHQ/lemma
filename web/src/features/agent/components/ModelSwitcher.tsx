@@ -8,25 +8,24 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useProviders } from "@/features/providers/useProviders";
+import type {
+    ModelOption,
+    ModelSelection,
+} from "@/features/agent/useModelSelection";
 import { cn } from "@/lib/utils";
-
-export interface ModelSelection {
-    providerId: string;
-    model: string;
-}
 
 interface ModelSwitcherProps {
     selection: ModelSelection | null;
+    options: ModelOption[];
     onSelect: (selection: ModelSelection) => void;
 }
 
-export function ModelSwitcher({ selection, onSelect }: ModelSwitcherProps) {
+export function ModelSwitcher({
+    selection,
+    options,
+    onSelect,
+}: ModelSwitcherProps) {
     const { t } = useTranslation();
-    const providers = useProviders();
-    const enabled = providers.list.filter(
-        (p) => p.enabled && p.models.length > 0,
-    );
 
     return (
         <DropdownMenu>
@@ -36,7 +35,7 @@ export function ModelSwitcher({ selection, onSelect }: ModelSwitcherProps) {
                     className="h-7 px-2 text-xs text-muted-foreground"
                     aria-label={t("chat.selectModel")}
                     title={t("chat.selectModel")}
-                    disabled={enabled.length === 0}
+                    disabled={options.length === 0}
                 >
                     <span className="max-w-56 truncate font-mono">
                         {selection ? selection.model : t("chat.noProvider")}
@@ -45,24 +44,25 @@ export function ModelSwitcher({ selection, onSelect }: ModelSwitcherProps) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-                {enabled.flatMap((p) =>
-                    p.models.map((m) => (
-                        <DropdownMenuItem
-                            key={`${p.id}/${m}`}
-                            onClick={() =>
-                                onSelect({ providerId: p.id, model: m })
-                            }
-                            className={cn(
-                                "font-mono text-xs",
-                                selection?.providerId === p.id &&
-                                    selection.model === m &&
-                                    "bg-accent",
-                            )}
-                        >
-                            {p.name} · {m}
-                        </DropdownMenuItem>
-                    )),
-                )}
+                {options.map((o) => (
+                    <DropdownMenuItem
+                        key={`${o.providerId}/${o.model}`}
+                        onClick={() =>
+                            onSelect({
+                                providerId: o.providerId,
+                                model: o.model,
+                            })
+                        }
+                        className={cn(
+                            "font-mono text-xs",
+                            selection?.providerId === o.providerId &&
+                                selection.model === o.model &&
+                                "bg-accent",
+                        )}
+                    >
+                        {o.providerName} · {o.model}
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );

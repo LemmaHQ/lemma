@@ -10,7 +10,8 @@ import {
     type ConversationStatus,
 } from "@/gen/lemma/v1/conversation_pb";
 import { conversationClient, syncClient } from "@/data/rpc/clients";
-import { closeDb, conversationToRow, openDb } from "@/data/cache/database";
+import { closeDb, openDb } from "@/data/cache/database";
+import { conversationToRow } from "@/data/cache/records";
 import { pullAll } from "@/data/sync/engine";
 import { useConversationsStore } from "./store";
 
