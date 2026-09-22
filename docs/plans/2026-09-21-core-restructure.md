@@ -40,28 +40,35 @@ crates/
 ## 迁移步骤执行总结
 
 ### Step 0：提交已完成的改名（提交 `85b911d`）
+
 - `lemma-db` → `lemma-db-server`、`lemma-store-sqlite` → `lemma-db-client` 全部引用迁移完成。
 
 ### Step 1：`lemma-trace` → `lemma-core`（提交 `a26dca8`）
+
 - 完成 crate 改名，建立对 `lemma-proto` 的依赖，替换全仓引用。
 
 ### Step 2：抽取 `lemma-session`（提交 `f8bb28a`）
+
 - 将 `SessionTree` 内存拓扑、`build_context_path` 与 `TraceStore` 存储契约抽为独立的 `lemma-session` 纯数据/接口库。
 
 ### Step 3：服务端编排收口 `lemma-agent`（提交 `7375ae0`）
+
 - 增加 `20260921100000_add_tree_pointers.up.sql` 迁移，为 Postgres 增加 `leaf_id` 与 `parent_id` 字段；
 - 在 `lemma-conversations` 中实现 `PgTraceStore`；
 - `AgentLoop` 扩充 `TurnEvent` 观察者机制与流式增量落库；
 - 重写 `ChatService`，删除旧的占位符/快照代码与 21 项紧耦合旧测试，通过 `pg_trace_smoke_test.rs` 验证端到端行为。
 
 ### Step 4：新建 `lemma-client` 门面（提交 `15df7a8`）
+
 - 定义 `ClientEngine` trait，实现 `LocalClientEngine` 与 `RemoteClientEngine` 骨架；
 - 将 `QueryHistoryTool` 迁入门面层，`client_facade_test.rs` 跨重启断电测试全绿。
 
 ### Step 5：双向同步闭环（提交 `2e0afd3`）
+
 - `lemma-db-client` 增加 `outbox` 变更队列表与游标追踪方法；
 - `lemma-client` 实现 `SyncEngine`（Push 消费 outbox + Pull 原子更新 SQLite 树）；
 - `sync_engine_test.rs` 端到端离线产生对话与连网对账测试全绿。
 
 ### Step 6：清尾与文档全面更新（当前提交）
+
 - 同步 `AGENTS.md`、`docs/features/local-mode/design.md` 与本计划文档，更新 feature 跟踪状态。
