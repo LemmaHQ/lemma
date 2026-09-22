@@ -1,12 +1,13 @@
 import { ConnectError } from "@connectrpc/connect";
-import type { TFunction } from "i18next";
+import type { ParseKeys, TFunction } from "i18next";
 
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
 // Maps every business error reason (the closed set in errors.proto) to its
 // i18n key. The Record type makes the mapping exhaustive: adding a proto
-// reason without a translation here fails compilation.
-const reasonKeys: Record<ErrorReason, string> = {
+// reason without a translation here fails compilation. ParseKeys additionally
+// rejects keys absent from the en locale resources.
+const reasonKeys: Record<ErrorReason, ParseKeys> = {
     [ErrorReason.UNSPECIFIED]: "errors.unspecified",
     [ErrorReason.CREDENTIALS_INVALID]: "errors.credentialsInvalid",
     [ErrorReason.USERNAME_TAKEN]: "errors.usernameTaken",
@@ -51,7 +52,15 @@ export function errorText(e: unknown, t: TFunction): string {
         const info = e.findDetails(ErrorInfoSchema)[0];
         const key = info ? reasonKeys[info.reason] : undefined;
         if (info && key) {
-            return t(key, info.attrs);
+            // Keys are statically checked above, but at this call site `key`
+            // is the full union: i18next v26's literal-typed interpolation
+            // options cannot express `t(unionKey, arbitraryAttrs)`, so the
+            // cast relaxes the lookup exactly at that seam.
+            const render = t as (
+                key: string,
+                options?: Record<string, string>,
+            ) => string;
+            return render(key, info.attrs);
         }
         return e.message;
     }
