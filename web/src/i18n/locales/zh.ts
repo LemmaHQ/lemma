@@ -71,6 +71,7 @@ export default {
         send: "发送",
         stop: "停止生成",
         selectModel: "选择模型",
+        noProvider: "暂无供应商",
         disclaimer: "AI 可能出错，请核实重要信息。",
         copy: "复制",
         copied: "已复制",

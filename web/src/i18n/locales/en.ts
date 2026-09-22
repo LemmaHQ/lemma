@@ -74,6 +74,7 @@ export default {
         send: "Send",
         stop: "Stop generating",
         selectModel: "Select model",
+        noProvider: "No provider",
         disclaimer: "AI can make mistakes. Verify important information.",
         copy: "Copy",
         copied: "Copied",
