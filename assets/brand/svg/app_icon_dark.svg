@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <defs>
+        <radialGradient id="darkGlow" cx="50%" cy="15%" r="85%">
+            <stop offset="0%" stop-color="#222322"/>
+            <stop offset="100%" stop-color="#121312"/>
+        </radialGradient>
+        <filter id="darkShadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.4"/>
+        </filter>
+    </defs>
+    <rect x="24" y="24" width="464" height="464" rx="104" fill="url(#darkGlow)" stroke="#ffffff1c" stroke-width="2" filter="url(#darkShadow)"/>
+    <g transform="translate(148.05, 384.00) scale(3.7622)">
+        <path fill="#f5f5f5" d="M53.997509-25.205479H52.204234C51.407223-15.342466 50.11208-2.590286 33.075965-2.590286H23.81071C19.825654-2.590286 19.626401-3.088418 19.626401-6.475716V-60.871731C19.626401-64.458281 19.825654-65.454545 27.39726-65.454545H29.589041V-68.044832C25.504359-67.845579 20.722291-67.845579 16.637609-67.845579C13.549191-67.845579 7.970112-67.845579 5.080946-68.044832V-65.454545C11.955168-65.454545 13.051059-65.454545 13.051059-60.971357V-7.073474C13.051059-2.590286 11.955168-2.590286 5.080946-2.590286V0H51.606476L53.997509-25.205479Z"/>
+    </g>
+    <circle cx="396" cy="116" r="10" fill="#1783ff"/>
+</svg>
