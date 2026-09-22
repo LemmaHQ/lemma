@@ -18,7 +18,7 @@ import { useConversationsStore } from "@/features/conversations/store";
 
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
-const ProvidersPage = lazy(() => import("@/pages/ProvidersPage"));
+const SettingsPage = lazy(() => import("@/app/pages/settings/SettingsPage"));
 
 function Loading() {
     const { t } = useTranslation();
@@ -92,7 +92,7 @@ export default function App() {
                             />
                             <Route
                                 path="/settings/:section"
-                                element={<ProvidersPage />}
+                                element={<SettingsPage />}
                             />
                         </Route>
                         <Route path="*" element={<Navigate to="/" replace />} />

@@ -2,10 +2,7 @@ import { ArrowUp, Square } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-    ModelSwitcher,
-    type ModelSelection,
-} from "./ModelSwitcher";
+import { ModelSwitcher, type ModelSelection } from "./ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";

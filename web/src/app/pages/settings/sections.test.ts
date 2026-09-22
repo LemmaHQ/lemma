@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { parseSettingsSection, SETTINGS_SECTIONS } from "./settingsSection";
+import { parseSettingsSection, SETTINGS_SECTIONS } from "./sections";
 
 it("parses valid section identifiers", () => {
     for (const section of SETTINGS_SECTIONS) {

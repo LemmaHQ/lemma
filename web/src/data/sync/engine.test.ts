@@ -18,7 +18,13 @@ import {
     upsertConversations,
     upsertMessages,
 } from "@/data/cache/database";
-import { applyPull, onSynced, pullAll, startSync, stopSync } from "@/data/sync/engine";
+import {
+    applyPull,
+    onSynced,
+    pullAll,
+    startSync,
+    stopSync,
+} from "@/data/sync/engine";
 import { useSyncStatus } from "@/data/sync/status";
 
 const pullMock = syncClient.pull as unknown as ReturnType<typeof vi.fn>;

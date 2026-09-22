@@ -31,7 +31,10 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { groupSessions, type SessionSummary } from "@/features/conversations/grouping";
+import {
+    groupSessions,
+    type SessionSummary,
+} from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/store";
 

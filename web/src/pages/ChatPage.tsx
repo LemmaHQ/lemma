@@ -16,7 +16,10 @@ import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
-import { type AgentItem, useChat as useChatStore } from "@/features/agent/store";
+import {
+    type AgentItem,
+    useChat as useChatStore,
+} from "@/features/agent/store";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 const MODEL_KEY = "lemma.model";
