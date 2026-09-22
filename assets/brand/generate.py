@@ -340,7 +340,7 @@ svg_assets[
 
 for filename, content in svg_assets.items():
     dest = os.path.join(SVG_DIR, filename)
-    with open(dest, "w", encoding="utf-8") as f:
+    with open(dest, "w", encoding="utf-8", newline="") as f:
         f.write(content.strip())
 
 work_dir.cleanup()
