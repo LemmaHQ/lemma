@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
-import { AppSidebar } from "@/components/chat/AppSidebar";
+import { AppSidebar } from "@/app/shell/AppSidebar";
 import { ChatComposer } from "@/features/agent/components/ChatComposer";
 import { EmptyState } from "@/features/agent/components/EmptyState";
 import { HomeView } from "@/features/agent/components/HomeView";
