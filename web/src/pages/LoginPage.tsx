@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 
-import { AuthCard } from "@/components/auth/AuthCard";
-import { LanguageToggle } from "@/components/LanguageToggle";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { useAuth } from "@/stores/auth";
+import { AuthCard } from "@/features/auth/AuthCard";
+import { LanguageToggle } from "@/features/preferences/LanguageToggle";
+import { ThemeToggle } from "@/features/preferences/ThemeToggle";
+import { useAuth } from "@/features/auth/store";
 
 export default function LoginPage() {
     const { t } = useTranslation();

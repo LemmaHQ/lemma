@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { beforeEach, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/data/rpc/clients", () => ({
     chatClient: {
         sendMessage: vi.fn(),
         resumeStream: vi.fn(),
@@ -18,9 +18,9 @@ import type {
     SendMessageResponse,
 } from "@/gen/lemma/v1/chat_pb";
 import { MessageStatus } from "@/gen/lemma/v1/conversation_pb";
-import { chatClient, conversationClient } from "@/lib/clients";
-import { closeDb, openDb, upsertMessages } from "@/lib/db";
-import { useChat } from "./chat";
+import { chatClient, conversationClient } from "@/data/rpc/clients";
+import { closeDb, openDb, upsertMessages } from "@/data/cache/database";
+import { useChat } from "./store";
 
 const sendMessage = vi.mocked(chatClient.sendMessage);
 const resumeStream = vi.mocked(chatClient.resumeStream);

@@ -13,8 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { errorText } from "@/lib/errors";
-import { useAuth } from "@/stores/auth";
+import { errorText } from "@/data/rpc/errors";
+import { useAuth } from "@/features/auth/store";
 
 export function AuthCard() {
     const { t } = useTranslation();

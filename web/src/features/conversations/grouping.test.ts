@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { groupSessions, type SessionSummary } from "./sessionGrouping";
+import { groupSessions, type SessionSummary } from "./grouping";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

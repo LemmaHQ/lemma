@@ -7,14 +7,14 @@ import {
     ConversationSchema,
     type ConversationStatus,
 } from "@/gen/lemma/v1/conversation_pb";
-import { conversationClient } from "@/lib/clients";
+import { conversationClient } from "@/data/rpc/clients";
 import {
     type ConversationRow,
     getDb,
     listArchived,
     listConversations,
-} from "@/lib/db";
-import { pullAll } from "@/lib/sync";
+} from "@/data/cache/database";
+import { pullAll } from "@/data/sync/engine";
 
 interface ConversationsState {
     list: Conversation[];

@@ -5,19 +5,18 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
 import { AppSidebar } from "@/components/chat/AppSidebar";
-import { ChatComposer } from "@/components/chat/ChatComposer";
-import { EmptyState } from "@/components/chat/EmptyState";
-import { HomeView } from "@/components/chat/HomeView";
-import { MessageItem } from "@/components/chat/MessageItem";
-import { type ModelSelection } from "@/components/chat/ModelSwitcher";
+import { ChatComposer } from "@/features/agent/components/ChatComposer";
+import { EmptyState } from "@/features/agent/components/EmptyState";
+import { HomeView } from "@/features/agent/components/HomeView";
+import { MessageItem } from "@/features/agent/components/MessageItem";
+import { type ModelSelection } from "@/features/agent/components/ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
-import { useChat } from "@/hooks/useChat";
-import { useConversations } from "@/hooks/useConversations";
-import { useProviders } from "@/hooks/useProviders";
-import type { SessionSummary } from "@/lib/sessionGrouping";
+import { useConversations } from "@/features/conversations/useConversations";
+import { useProviders } from "@/features/providers/useProviders";
+import type { SessionSummary } from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
-import { type ChatItem, useChat as useChatStore } from "@/stores/chat";
+import { type AgentItem, useChat as useChatStore } from "@/features/agent/store";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 const MODEL_KEY = "lemma.model";
@@ -34,7 +33,7 @@ function toSummary(c: Conversation): SessionSummary {
 export default function ChatPage() {
     const { t } = useTranslation();
     const conversations = useConversations();
-    const chat = useChat();
+    const chat = useChatStore();
     const providersStore = useProviders();
     const navigate = useNavigate();
 
@@ -176,7 +175,7 @@ export default function ChatPage() {
         return map;
     }, [providersStore.list]);
 
-    const sourceOf = (m: ChatItem) => {
+    const sourceOf = (m: AgentItem) => {
         if (!m.model) return undefined;
         const name = providerNameById.get(m.providerId);
         return name ? `${name} · ${m.model}` : m.model;

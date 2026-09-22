@@ -2,16 +2,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
 
-import { AppearancePanel } from "@/components/providers/AppearancePanel";
+import { AppearancePanel } from "@/features/preferences/AppearancePanel";
 import {
     NewProviderForm,
     type NewProviderData,
-} from "@/components/providers/NewProviderForm";
-import { ProviderDetail } from "@/components/providers/ProviderDetail";
-import { ProviderListPane } from "@/components/providers/ProviderListPane";
+} from "@/features/providers/components/NewProviderForm";
+import { ProviderDetail } from "@/features/providers/components/ProviderDetail";
+import { ProviderListPane } from "@/features/providers/components/ProviderListPane";
 import { SettingsNav } from "@/components/providers/SettingsNav";
-import { StoragePanel } from "@/components/providers/StoragePanel";
-import { useProviders } from "@/hooks/useProviders";
+import { StoragePanel } from "@/features/storage/StoragePanel";
+import { useProviders } from "@/features/providers/useProviders";
 import { parseSettingsSection } from "@/lib/settingsSection";
 
 export default function ProvidersPage() {

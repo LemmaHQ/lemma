@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { storageClient } from "@/lib/clients";
-import { errorText } from "@/lib/errors";
+import { storageClient } from "@/data/rpc/clients";
+import { errorText } from "@/data/rpc/errors";
 
 type Progress = { done: number; total: number; skipped: number };
 

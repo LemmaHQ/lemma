@@ -2,12 +2,12 @@ import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { MessageContent } from "@/components/chat/MessageContent";
+import { MessageContent } from "./MessageContent";
 import { Button } from "@/components/ui/button";
-import type { ChatItem } from "@/stores/chat";
+import type { AgentItem } from "@/features/agent/store";
 
 interface MessageItemProps {
-    message: ChatItem;
+    message: AgentItem;
     source?: string;
     canRegenerate?: boolean;
     onRegenerate?: (id: string) => void;

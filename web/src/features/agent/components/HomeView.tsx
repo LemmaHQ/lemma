@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
     ModelSwitcher,
     type ModelSelection,
-} from "@/components/chat/ModelSwitcher";
+} from "./ModelSwitcher";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";

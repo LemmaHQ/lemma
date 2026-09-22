@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useProviders } from "@/hooks/useProviders";
+import { useProviders } from "@/features/providers/useProviders";
 import { cn } from "@/lib/utils";
 
 export interface ModelSelection {

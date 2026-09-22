@@ -18,7 +18,7 @@ import {
     upsertMessages,
     type ConversationRow,
     type MessageRow,
-} from "@/lib/db";
+} from "@/data/cache/database";
 
 function conv(
     id: string,

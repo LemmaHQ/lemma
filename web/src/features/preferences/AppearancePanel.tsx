@@ -2,7 +2,7 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useThemePreference } from "@/lib/theme";
+import { useThemePreference } from "@/features/preferences/theme";
 
 export function AppearancePanel() {
     const { i18n, t } = useTranslation();

@@ -13,7 +13,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useThemePreference } from "@/lib/theme";
+import { useThemePreference } from "@/features/preferences/theme";
 
 export function ThemeToggle() {
     const { t } = useTranslation();

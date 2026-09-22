@@ -14,9 +14,9 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { LanguageToggle } from "@/components/LanguageToggle";
+import { LanguageToggle } from "@/features/preferences/LanguageToggle";
 import { SyncIndicator } from "@/components/SyncIndicator";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/features/preferences/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
     Collapsible,
@@ -31,9 +31,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { groupSessions, type SessionSummary } from "@/lib/sessionGrouping";
+import { groupSessions, type SessionSummary } from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/stores/auth";
+import { useAuth } from "@/features/auth/store";
 
 interface AppSidebarProps {
     sessions: SessionSummary[];

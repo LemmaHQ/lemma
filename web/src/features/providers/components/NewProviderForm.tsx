@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
-import { errorText } from "@/lib/errors";
+import { errorText } from "@/data/rpc/errors";
 
 export interface NewProviderData {
     kind: ProviderKind;

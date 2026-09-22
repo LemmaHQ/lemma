@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { useConversationsStore } from "@/stores/conversations";
+import { useConversationsStore } from "@/features/conversations/store";
 
 export function useConversations() {
     const store = useConversationsStore();

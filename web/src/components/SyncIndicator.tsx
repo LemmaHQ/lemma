@@ -1,7 +1,7 @@
 import { WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useSyncStatus } from "@/stores/sync";
+import { useSyncStatus } from "@/data/sync/status";
 
 export function SyncIndicator() {
     const { t } = useTranslation();

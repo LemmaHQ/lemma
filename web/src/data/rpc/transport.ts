@@ -3,13 +3,13 @@ import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { AuthService } from "@/gen/lemma/v1/auth_pb";
-import { appPath, resolveBaseUrl } from "./server-url";
+import { appPath, resolveBaseUrl } from "@/platform/environment";
 import {
     clearTokens,
     getAccessToken,
     getRefreshToken,
     setTokens,
-} from "./session";
+} from "@/data/credentials";
 
 // The refresh call bypasses the interceptor below, or a 401 from refresh
 // itself would trigger another refresh.

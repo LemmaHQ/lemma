@@ -1,13 +1,13 @@
 import { create } from "zustand";
 
 import type { User } from "@/gen/lemma/v1/auth_pb";
-import { authClient } from "@/lib/clients";
+import { authClient } from "@/data/rpc/clients";
 import {
     clearTokens,
     getAccessToken,
     getRefreshToken,
     setTokens,
-} from "@/lib/session";
+} from "@/data/credentials";
 
 interface AuthState {
     user: User | null;

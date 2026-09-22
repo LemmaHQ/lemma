@@ -10,11 +10,11 @@ import {
 } from "react-router";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/stores/auth";
-import { useChat } from "@/stores/chat";
-import { closeDb, openDb } from "./lib/db";
-import { onSynced, startSync, stopSync } from "./lib/sync";
-import { useConversationsStore } from "./stores/conversations";
+import { useAuth } from "@/features/auth/store";
+import { useChat } from "@/features/agent/store";
+import { closeDb, openDb } from "@/data/cache/database";
+import { onSynced, startSync, stopSync } from "@/data/sync/engine";
+import { useConversationsStore } from "@/features/conversations/store";
 
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));

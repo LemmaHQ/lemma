@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
-import { errorText } from "@/lib/errors";
+import { errorText } from "@/data/rpc/errors";
 import { cn } from "@/lib/utils";
 
 function FieldRow({

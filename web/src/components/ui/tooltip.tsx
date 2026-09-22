@@ -3,7 +3,7 @@
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as React from "react";
 
-import { isDesktop } from "@/lib/server-url";
+import { isDesktop } from "@/platform/environment";
 import { cn } from "@/lib/utils";
 
 function TooltipProvider({

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { isDesktop, resolveBaseUrl } from "@/lib/server-url";
+import { isDesktop, resolveBaseUrl } from "@/platform/environment";
 
 describe("resolveBaseUrl", () => {
     beforeEach(() => {

@@ -9,14 +9,14 @@ import {
     ConversationSchema,
     type ConversationStatus,
 } from "@/gen/lemma/v1/conversation_pb";
-import { conversationClient, syncClient } from "@/lib/clients";
-import { closeDb, conversationToRow, openDb } from "@/lib/db";
-import { pullAll } from "@/lib/sync";
-import { useConversationsStore } from "./conversations";
+import { conversationClient, syncClient } from "@/data/rpc/clients";
+import { closeDb, conversationToRow, openDb } from "@/data/cache/database";
+import { pullAll } from "@/data/sync/engine";
+import { useConversationsStore } from "./store";
 
 const pullAllMock = vi.mocked(pullAll);
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/data/rpc/clients", () => ({
     conversationClient: {
         listConversations: vi.fn(),
         listArchived: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock("@/lib/clients", () => ({
 // The store kicks pullAll fire-and-forget after every action; mocking the
 // sync module boundary keeps those floating pulls from bleeding into the
 // next test.
-vi.mock("@/lib/sync", () => ({ pullAll: vi.fn() }));
+vi.mock("@/data/sync/engine", () => ({ pullAll: vi.fn() }));
 
 function convProto(id: string, status: number): Conversation {
     return create(ConversationSchema, {

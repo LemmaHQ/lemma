@@ -1,5 +1,5 @@
 import type { PullResponse } from "@/gen/lemma/v1/sync_pb";
-import { syncClient } from "@/lib/clients";
+import { syncClient } from "@/data/rpc/clients";
 import {
     conversationToRow,
     deleteConversationCascade,
@@ -13,8 +13,8 @@ import {
     setCursor,
     upsertConversations,
     upsertMessages,
-} from "@/lib/db";
-import { useSyncStatus } from "@/stores/sync";
+} from "@/data/cache/database";
+import { useSyncStatus } from "@/data/sync/status";
 
 const BACKOFF_START_MS = 1000;
 const BACKOFF_MAX_MS = 30000;

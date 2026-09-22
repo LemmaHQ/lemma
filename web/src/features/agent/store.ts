@@ -3,12 +3,12 @@ import { create } from "zustand";
 import type { ChatEvent } from "@/gen/lemma/v1/chat_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import i18n from "@/i18n";
-import { chatClient, conversationClient } from "@/lib/clients";
-import { getDb, listMessages, type MessageRow } from "@/lib/db";
-import { errorText } from "@/lib/errors";
-import { pullAll } from "@/lib/sync";
+import { chatClient, conversationClient } from "@/data/rpc/clients";
+import { getDb, listMessages, type MessageRow } from "@/data/cache/database";
+import { errorText } from "@/data/rpc/errors";
+import { pullAll } from "@/data/sync/engine";
 
-export interface ChatItem {
+export interface AgentItem {
     id: string;
     role: "user" | "assistant";
     content: string;
@@ -21,7 +21,7 @@ export interface ChatItem {
 
 interface ChatState {
     conversationId: string | null;
-    items: ChatItem[];
+    items: AgentItem[];
     streaming: boolean;
     hasMore: boolean;
     open: (conversationId: string) => Promise<void>;
@@ -45,7 +45,7 @@ const charLen = (s: string) => Array.from(s).length;
 const PAGE_SIZE = 50;
 const MAX_RESUME = 3;
 
-function statusFromProto(s: MessageStatus): ChatItem["status"] {
+function statusFromProto(s: MessageStatus): AgentItem["status"] {
     switch (s) {
         case MessageStatus.STREAMING:
             return "streaming";
@@ -58,7 +58,7 @@ function statusFromProto(s: MessageStatus): ChatItem["status"] {
     }
 }
 
-function protoToItem(m: Message): ChatItem {
+function protoToItem(m: Message): AgentItem {
     return {
         id: m.id,
         role: m.role === "user" ? "user" : "assistant",
@@ -69,7 +69,7 @@ function protoToItem(m: Message): ChatItem {
     };
 }
 
-function rowToItem(m: MessageRow): ChatItem {
+function rowToItem(m: MessageRow): AgentItem {
     return {
         id: m.id,
         role: m.role === "user" ? "user" : "assistant",
@@ -173,7 +173,7 @@ export const useChat = create<ChatState>()((set, get) => ({
             ],
         }));
 
-        const updateAi = (patch: Partial<ChatItem>) =>
+        const updateAi = (patch: Partial<AgentItem>) =>
             set((s) => ({
                 items: s.items.map((it) =>
                     it.id === aiTempId ? { ...it, ...patch } : it,

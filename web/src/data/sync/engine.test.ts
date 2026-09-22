@@ -1,12 +1,12 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/clients", () => ({
+vi.mock("@/data/rpc/clients", () => ({
     syncClient: { pull: vi.fn(), watch: vi.fn() },
 }));
 
 import type { PullResponse, WatchResponse } from "@/gen/lemma/v1/sync_pb";
-import { syncClient } from "@/lib/clients";
+import { syncClient } from "@/data/rpc/clients";
 import {
     closeDb,
     conversationToRow,
@@ -17,9 +17,9 @@ import {
     openDb,
     upsertConversations,
     upsertMessages,
-} from "@/lib/db";
-import { applyPull, onSynced, pullAll, startSync, stopSync } from "@/lib/sync";
-import { useSyncStatus } from "@/stores/sync";
+} from "@/data/cache/database";
+import { applyPull, onSynced, pullAll, startSync, stopSync } from "@/data/sync/engine";
+import { useSyncStatus } from "@/data/sync/status";
 
 const pullMock = syncClient.pull as unknown as ReturnType<typeof vi.fn>;
 const watchMock = syncClient.watch as unknown as ReturnType<typeof vi.fn>;
