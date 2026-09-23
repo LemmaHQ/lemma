@@ -1,5 +1,5 @@
 [tools]
-node = "26.9.0"
+node = "26.10.0"
 java = "temurin-25"
 "just" = "1.58.0"
 "buf" = "1.73.0"
@@ -10,4 +10,4 @@ protobuf = "36.2"
     "rustls",
 ] }
 "cargo:cargo-llvm-cov" = "0.9.1"
-"cargo:cargo-nextest" = "0.9.145"
+"cargo:cargo-nextest" = "0.9.146"
