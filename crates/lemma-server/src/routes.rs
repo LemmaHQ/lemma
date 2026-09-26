@@ -3,7 +3,6 @@ mod chat;
 mod conversations;
 mod providers;
 mod storage;
-mod sync;
 
 use axum::Router;
 
@@ -16,5 +15,4 @@ pub fn router(state: &AppState) -> Router {
         .merge(conversations::router(state.conversations.clone()))
         .merge(providers::router(state.providers.clone()))
         .merge(storage::router(state.storage.clone()))
-        .merge(sync::router(state.sync.clone()))
 }

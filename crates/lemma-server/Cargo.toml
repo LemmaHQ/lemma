@@ -15,7 +15,6 @@ lemma-db-server.workspace = true
 lemma-proto.workspace = true
 lemma-adapter.workspace = true
 lemma-providers.workspace = true
-lemma-sync.workspace = true
 rust-embed.workspace = true
 sqlx.workspace = true
 tokio.workspace = true

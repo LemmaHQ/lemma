@@ -5,7 +5,6 @@ use lemma_auth::AuthService;
 use lemma_chat::ChatService;
 use lemma_conversations::ConversationService;
 use lemma_providers::ProviderService;
-use lemma_sync::SyncService;
 use sqlx::PgPool;
 
 use crate::config::Config;
@@ -17,7 +16,6 @@ pub struct AppState {
     pub storage: Arc<lemma_archive::StorageService>,
     pub conversations: Arc<ConversationService<lemma_archive::DbArchiveSource>>,
     pub chat: Arc<ChatService>,
-    pub sync: Arc<SyncService>,
 }
 
 impl AppState {
@@ -49,7 +47,6 @@ impl AppState {
                 config.secret_key.clone(),
                 provider,
             )),
-            sync: Arc::new(SyncService::new(pool.clone(), config.jwt_secret.clone())),
             pool,
         })
     }

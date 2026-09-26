@@ -9,7 +9,6 @@ members = [
     "crates/lemma-providers",
     "crates/lemma-conversations",
     "crates/lemma-chat",
-    "crates/lemma-sync",
     "crates/lemma-archive",
     "crates/lemma-crypto",
     "crates/lemma-core",
@@ -60,7 +59,6 @@ lemma-db-server = { path = "crates/lemma-db-server" }
 lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }
 lemma-session = { path = "crates/lemma-session" }
-lemma-sync = { path = "crates/lemma-sync" }
 lemma-tools = { path = "crates/lemma-tools" }
 lemma-core = { path = "crates/lemma-core" }
 parking_lot = "0.12.5"
