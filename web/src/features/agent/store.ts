@@ -1,13 +1,12 @@
 import { create } from "zustand";
 
+import { getDb } from "@/data/cache/database";
+import { listMessages, type MessageRow } from "@/data/cache/records";
+import { chatClient, conversationClient } from "@/data/rpc/clients";
+import { errorText } from "@/data/rpc/errors";
 import type { ChatEvent } from "@/gen/lemma/v1/chat_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import i18n from "@/i18n";
-import { chatClient, conversationClient } from "@/data/rpc/clients";
-import { getDb } from "@/data/cache/database";
-import { listMessages, type MessageRow } from "@/data/cache/records";
-import { errorText } from "@/data/rpc/errors";
-import { pullAll } from "@/data/sync/engine";
 
 export interface AgentItem {
     id: string;
@@ -264,7 +263,6 @@ export const useChat = create<ChatState>()((set, get) => ({
             set({ streaming: false });
             // The server has persisted the final message state; pull so the
             // cache converges right away instead of waiting for a hint.
-            void pullAll().catch(() => {});
         }
     },
 

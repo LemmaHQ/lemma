@@ -2,19 +2,18 @@ import { create as createMessage } from "@bufbuild/protobuf";
 import { type Timestamp, TimestampSchema } from "@bufbuild/protobuf/wkt";
 import { create } from "zustand";
 
-import {
-    type Conversation,
-    ConversationSchema,
-    type ConversationStatus,
-} from "@/gen/lemma/v1/conversation_pb";
-import { conversationClient } from "@/data/rpc/clients";
 import { getDb } from "@/data/cache/database";
 import {
     type ConversationRow,
     listArchived,
     listConversations,
 } from "@/data/cache/records";
-import { pullAll } from "@/data/sync/engine";
+import { conversationClient } from "@/data/rpc/clients";
+import {
+    type Conversation,
+    ConversationSchema,
+    type ConversationStatus,
+} from "@/gen/lemma/v1/conversation_pb";
 
 interface ConversationsState {
     list: Conversation[];
@@ -71,15 +70,13 @@ export const useConversationsStore = create<ConversationsState>()(
         },
 
         refresh: async () => {
-            // Render the cache immediately, then converge it in the
-            // background; every mutation below ends with the same kick.
-            await get().hydrateFromCache();
-            void pullAll().catch(() => {});
+            const res = await conversationClient.listConversations({});
+            set({ list: res.conversations, loaded: true });
         },
 
         refreshArchived: async () => {
-            await get().hydrateFromCache();
-            void pullAll().catch(() => {});
+            const res = await conversationClient.listArchived({});
+            set({ archived: res.conversations });
         },
 
         create: async () => {
@@ -87,7 +84,6 @@ export const useConversationsStore = create<ConversationsState>()(
             if (!res.conversation)
                 throw new Error("no conversation in response");
             set((s) => ({ list: [res.conversation!, ...s.list] }));
-            void pullAll().catch(() => {});
             return res.conversation.id;
         },
 
@@ -100,7 +96,6 @@ export const useConversationsStore = create<ConversationsState>()(
             set((s) => ({
                 list: s.list.map((c) => (c.id === id ? res.conversation! : c)),
             }));
-            void pullAll().catch(() => {});
         },
 
         archive: async (id) => {
@@ -112,7 +107,6 @@ export const useConversationsStore = create<ConversationsState>()(
                 list: s.list.filter((c) => c.id !== id),
                 archived: item ? [item, ...s.archived] : s.archived,
             }));
-            void pullAll().catch(() => {});
         },
 
         restore: async (id) => {
@@ -121,7 +115,6 @@ export const useConversationsStore = create<ConversationsState>()(
                 archived: s.archived.filter((c) => c.id !== id),
                 list: res.conversation ? [res.conversation, ...s.list] : s.list,
             }));
-            void pullAll().catch(() => {});
         },
 
         deleteArchived: async (id) => {
@@ -129,7 +122,6 @@ export const useConversationsStore = create<ConversationsState>()(
             set((s) => ({
                 archived: s.archived.filter((c) => c.id !== id),
             }));
-            void pullAll().catch(() => {});
         },
     }),
 );
