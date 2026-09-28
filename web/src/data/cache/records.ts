@@ -5,9 +5,8 @@ import type { Conversation, Message } from "@/gen/lemma/v1/conversation_pb";
 import type { LemmaDb } from "./database";
 
 /**
- * Cached conversation: the proto entity flattened plus sync metadata.
- * Timestamps are epoch millis and syncSeq is a string, since neither
- * IndexedDB keys nor JSON can hold a bigint.
+ * Cached conversation: the proto entity flattened.
+ * Timestamps are epoch millis, since IndexedDB keys cannot hold a bigint.
  */
 export interface ConversationRow {
     id: string;
@@ -18,7 +17,6 @@ export interface ConversationRow {
     messageCount: number;
     createdAtMs: number;
     updatedAtMs: number;
-    syncSeq: string;
 }
 
 /** Cached message; same flattening rules as ConversationRow. */
@@ -32,9 +30,6 @@ export interface MessageRow {
     // MessageStatus enum value, kept as a number.
     status: number;
     createdAtMs: number;
-    // Per-conversation monotonic sequence number (insertion order).
-    seq: number;
-    syncSeq: string;
 }
 
 export interface MetaRow {
@@ -45,14 +40,8 @@ export interface MetaRow {
 const ms = (ts: Conversation["updatedAt"]): number =>
     ts ? timestampDate(ts).getTime() : 0;
 
-/**
- * Flattens a proto Conversation into a cache row, stamped with the sync
- * sequence the entity arrived with.
- */
-export function conversationToRow(
-    c: Conversation,
-    syncSeq: bigint,
-): ConversationRow {
+/** Flattens a proto Conversation into a cache row. */
+export function conversationToRow(c: Conversation): ConversationRow {
     return {
         id: c.id,
         title: c.title,
@@ -61,12 +50,11 @@ export function conversationToRow(
         messageCount: c.messageCount,
         createdAtMs: ms(c.createdAt),
         updatedAtMs: ms(c.updatedAt),
-        syncSeq: syncSeq.toString(),
     };
 }
 
 /** Flattens a proto Message like conversationToRow. */
-export function messageToRow(m: Message, syncSeq: bigint): MessageRow {
+export function messageToRow(m: Message): MessageRow {
     return {
         id: m.id,
         conversationId: m.conversationId,
@@ -75,22 +63,8 @@ export function messageToRow(m: Message, syncSeq: bigint): MessageRow {
         providerId: m.providerId,
         model: m.model,
         status: m.status,
-        seq: Number(m.seq ?? 0n),
         createdAtMs: ms(m.createdAt),
-        syncSeq: syncSeq.toString(),
     };
-}
-
-const CURSOR_KEY = "cursor";
-
-/** The highest sync_seq applied to this cache so far. */
-export async function getCursor(db: LemmaDb): Promise<bigint> {
-    const row = await db.meta.get(CURSOR_KEY);
-    return row ? BigInt(row.value) : 0n;
-}
-
-export async function setCursor(db: LemmaDb, seq: bigint): Promise<void> {
-    await db.meta.put({ key: CURSOR_KEY, value: seq.toString() });
 }
 
 /** Active conversations, most recently updated first. */
@@ -112,51 +86,31 @@ export async function listArchived(db: LemmaDb): Promise<ConversationRow[]> {
         .sort((a, b) => (b.archivedAtMs ?? 0) - (a.archivedAtMs ?? 0));
 }
 
-/** All cached messages of a conversation, in seq order. */
+/** All cached messages of a conversation, oldest first. */
 export async function listMessages(
     db: LemmaDb,
     conversationId: string,
 ): Promise<MessageRow[]> {
-    // The compound-index range covers exactly this conversation's seq span.
+    // The compound index covers exactly this conversation's rows in
+    // (createdAtMs, id) order, matching the server's ordering key.
     return db.messages
-        .where("[conversationId+seq]")
+        .where("[conversationId+createdAtMs]")
         .between([conversationId, 0], [conversationId, Infinity])
         .toArray();
 }
 
-/**
- * Last-write-wins upsert: an incoming row is skipped when the cached row
- * has a higher syncSeq, so a stale pull page cannot roll back newer data.
- * Equal syncSeq still overwrites, letting a re-pulled page heal a row that
- * a previous write missed.
- */
 export async function upsertConversations(
     db: LemmaDb,
     rows: ConversationRow[],
 ): Promise<void> {
-    await db.transaction("rw", db.conversations, async () => {
-        for (const row of rows) {
-            const existing = await db.conversations.get(row.id);
-            if (existing && BigInt(existing.syncSeq) > BigInt(row.syncSeq))
-                continue;
-            await db.conversations.put(row);
-        }
-    });
+    await db.conversations.bulkPut(rows);
 }
 
-/** Last-write-wins upsert, same rule as upsertConversations. */
 export async function upsertMessages(
     db: LemmaDb,
     rows: MessageRow[],
 ): Promise<void> {
-    await db.transaction("rw", db.messages, async () => {
-        for (const row of rows) {
-            const existing = await db.messages.get(row.id);
-            if (existing && BigInt(existing.syncSeq) > BigInt(row.syncSeq))
-                continue;
-            await db.messages.put(row);
-        }
-    });
+    await db.messages.bulkPut(rows);
 }
 
 /**
@@ -174,12 +128,7 @@ export async function replaceArchived(
             .filter((r) => r.status === 2 && !keep.has(r.id))
             .toArray();
         await db.conversations.bulkDelete(stale.map((r) => r.id));
-        for (const row of rows) {
-            const existing = await db.conversations.get(row.id);
-            if (existing && BigInt(existing.syncSeq) > BigInt(row.syncSeq))
-                continue;
-            await db.conversations.put(row);
-        }
+        await db.conversations.bulkPut(rows);
         return stale.map((r) => r.id);
     });
 }

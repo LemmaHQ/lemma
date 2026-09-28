@@ -92,12 +92,16 @@ export const useChat = create<ChatState>()((set, get) => ({
         const db = getDb();
         if (db) {
             const rows = await listMessages(db, conversationId);
-            set({
-                conversationId,
-                items: rows.map(rowToItem),
-                hasMore: false,
-            });
-            return;
+            // The cache has no production writer since the sync removal;
+            // an empty cache means "not cached yet", not "no messages".
+            if (rows.length > 0) {
+                set({
+                    conversationId,
+                    items: rows.map(rowToItem),
+                    hasMore: false,
+                });
+                return;
+            }
         }
         const res = await conversationClient.listMessages({
             conversationId,

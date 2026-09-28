@@ -176,8 +176,6 @@ it("prefers local cache on open", async () => {
             model: "",
             status: MessageStatus.DONE,
             createdAtMs: 1,
-            seq: 1,
-            syncSeq: "1",
         },
     ]);
 
@@ -233,8 +231,6 @@ it("refreshes from cache on syncFromCache when not streaming", async () => {
             model: "",
             status: MessageStatus.DONE,
             createdAtMs: 1,
-            seq: 1,
-            syncSeq: "1",
         },
     ]);
     useChat.setState({

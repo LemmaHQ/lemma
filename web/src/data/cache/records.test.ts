@@ -1,22 +1,27 @@
 import "fake-indexeddb/auto";
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import Dexie from "dexie";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { closeDb, LemmaDb, openDb } from "@/data/cache/database";
 import {
     conversationToRow,
     deleteConversationCascade,
-    getCursor,
     listArchived,
     listConversations,
     listMessages,
+    messageToRow,
     replaceArchived,
-    setCursor,
     upsertConversations,
     upsertMessages,
     type ConversationRow,
     type MessageRow,
 } from "@/data/cache/records";
+import {
+    ConversationSchema,
+    MessageSchema,
+} from "@/gen/lemma/v1/conversation_pb";
 
 function conv(
     id: string,
@@ -24,13 +29,12 @@ function conv(
 ): ConversationRow {
     return {
         id,
-        title: id,
-        status: 1,
+        title: "t",
+        status: 0,
         archivedAtMs: null,
         messageCount: 0,
         createdAtMs: 1000,
         updatedAtMs: 1000,
-        syncSeq: "1",
         ...over,
     };
 }
@@ -44,13 +48,11 @@ function msg(
         id,
         conversationId: convId,
         role: "user",
-        content: id,
+        content: "c",
         providerId: "",
         model: "",
-        status: 4,
+        status: 2,
         createdAtMs: 1000,
-        seq: 0,
-        syncSeq: "1",
         ...over,
     };
 }
@@ -59,46 +61,32 @@ describe("db", () => {
     let db: LemmaDb;
 
     beforeEach(async () => {
-        closeDb();
-        db = openDb("test-user");
+        db = openDb("records-test");
         await db.delete();
         await db.open();
     });
 
-    it("defaults cursor to 0 and reads back updated value", async () => {
-        expect(await getCursor(db)).toBe(0n);
-        await setCursor(db, 42n);
-        expect(await getCursor(db)).toBe(42n);
+    afterEach(() => {
+        closeDb();
     });
 
-    it("applies LWW: does not overwrite higher syncSeq with lower syncSeq", async () => {
-        await upsertConversations(db, [
-            conv("c1", { title: "新", syncSeq: "5" }),
-        ]);
-        await upsertConversations(db, [
-            conv("c1", { title: "旧", syncSeq: "3" }),
-        ]);
-        const row = await db.conversations.get("c1");
-        expect(row?.title).toBe("新");
-    });
-
-    it("orders messages by conversation and ascending seq", async () => {
+    it("orders messages by conversation and ascending (createdAtMs, id)", async () => {
         await upsertMessages(db, [
-            msg("m2", "c1", { seq: 2 }),
-            msg("m1", "c1", { seq: 1 }),
-            msg("m3", "c2", { seq: 1 }),
+            msg("m2", "c1", { createdAtMs: 2 }),
+            msg("m1", "c1", { createdAtMs: 1 }),
+            msg("m3", "c2", { createdAtMs: 1 }),
         ]);
         const rows = await listMessages(db, "c1");
         expect(rows.map((r) => r.id)).toEqual(["m1", "m2"]);
     });
 
-    it("prioritizes seq over createdAtMs (regression: reversed insertion order in same transaction)", async () => {
+    it("breaks createdAtMs ties by id", async () => {
         await upsertMessages(db, [
-            msg("m1", "c1", { seq: 1, createdAtMs: 2000 }),
-            msg("m2", "c1", { seq: 2, createdAtMs: 1000 }),
+            msg("m-b", "c1", { createdAtMs: 5 }),
+            msg("m-a", "c1", { createdAtMs: 5 }),
         ]);
         const rows = await listMessages(db, "c1");
-        expect(rows.map((r) => r.id)).toEqual(["m1", "m2"]);
+        expect(rows.map((r) => r.id)).toEqual(["m-a", "m-b"]);
     });
 
     it("cleans up archived rows not present in full refresh", async () => {
@@ -107,7 +95,7 @@ describe("db", () => {
             conv("a2", { status: 2, archivedAtMs: 2000 }),
         ]);
         await replaceArchived(db, [
-            conv("a2", { status: 2, archivedAtMs: 2000, syncSeq: "2" }),
+            conv("a2", { status: 2, archivedAtMs: 2000 }),
         ]);
         const archived = await listArchived(db);
         expect(archived.map((r) => r.id)).toEqual(["a2"]);
@@ -131,72 +119,59 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["c2", "c1"]);
     });
 
-    it("converts proto Timestamp to ms and bigint to string", () => {
-        const row = conversationToRow(
-            {
-                $typeName: "lemma.v1.Conversation",
+    it("converts proto timestamps to epoch millis", () => {
+        const convRow = conversationToRow(
+            create(ConversationSchema, {
                 id: "c1",
                 title: "t",
                 status: 1,
-                archivedAt: undefined,
                 messageCount: 3,
-                createdAt: {
-                    $typeName: "google.protobuf.Timestamp",
-                    seconds: 1700000000n,
-                    nanos: 0,
-                },
-                updatedAt: {
-                    $typeName: "google.protobuf.Timestamp",
-                    seconds: 1700000001n,
-                    nanos: 0,
-                },
-            },
-            9n,
+                createdAt: timestampFromDate(new Date(1700000001000)),
+                updatedAt: timestampFromDate(new Date(1700000002000)),
+            }),
         );
-        expect(row.createdAtMs).toBe(1700000000000);
-        expect(row.updatedAtMs).toBe(1700000001000);
-        expect(row.syncSeq).toBe("9");
-    });
+        expect(convRow.createdAtMs).toBe(1700000001000);
+        expect(convRow.updatedAtMs).toBe(1700000002000);
 
-    it("applies LWW: messages reject lower syncSeq rollback", async () => {
-        await upsertMessages(db, [
-            msg("m1", "c1", { content: "新", syncSeq: "5" }),
-        ]);
-        await upsertMessages(db, [
-            msg("m1", "c1", { content: "旧", syncSeq: "3" }),
-        ]);
-        expect((await db.messages.get("m1"))?.content).toBe("新");
+        const msgRow = messageToRow(
+            create(MessageSchema, {
+                id: "m1",
+                conversationId: "c1",
+                role: "user",
+                content: "hi",
+                status: 2,
+                createdAt: timestampFromDate(new Date(1700000003000)),
+            }),
+        );
+        expect(msgRow.createdAtMs).toBe(1700000003000);
+        expect(msgRow.content).toBe("hi");
     });
 
     it("tolerates missing archivedAtMs in archived list", async () => {
         await upsertConversations(db, [
             conv("a1", { status: 2, archivedAtMs: null }),
-            conv("a2", { status: 2, archivedAtMs: 1000 }),
+            conv("a2", { status: 2, archivedAtMs: 2000 }),
         ]);
         const rows = await listArchived(db);
         expect(rows.map((r) => r.id)).toEqual(["a2", "a1"]);
     });
 
-    it("clears messages and cursor under legacy index on v2 upgrade", async () => {
-        // Simulate a cache written before the v2 re-index shipped.
-        const legacy = new Dexie("lemma-upgrade-user");
-        legacy.version(1).stores({
+    it("clears messages cached under the seq index on v3 upgrade", async () => {
+        closeDb();
+        const legacy = new Dexie("lemma-records-upgrade-test");
+        legacy.version(2).stores({
             conversations: "id, updatedAtMs",
-            messages: "id, [conversationId+createdAtMs]",
+            messages: "id, [conversationId+seq]",
             meta: "key",
         });
         await legacy.open();
         await legacy
             .table("messages")
-            .put({ id: "m1", conversationId: "c1", createdAtMs: 1 });
-        await legacy.table("meta").put({ key: "cursor", value: "9" });
+            .put({ id: "m1", conversationId: "c1", seq: 1, createdAtMs: 1 });
         legacy.close();
 
-        const upgraded = openDb("upgrade-user");
-        await upgraded.open();
-        expect(await upgraded.messages.count()).toBe(0);
-        expect(await getCursor(upgraded)).toBe(0n);
-        closeDb();
-        await Dexie.delete("lemma-upgrade-user");
+        db = openDb("records-upgrade-test");
+        await db.open();
+        expect(await db.messages.count()).toBe(0);
     });
 });
