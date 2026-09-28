@@ -72,6 +72,7 @@ pub fn build_context_path(
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+    use crate::store::MessageStatus;
     use lemma_core::{ContentBlock, Message, TextContent};
 
     fn dummy_msg(id: Uuid, parent_id: Option<Uuid>, text: &str) -> StoredMessage {
@@ -84,6 +85,10 @@ mod tests {
                     text: text.to_string(),
                 })],
             },
+            status: MessageStatus::Done,
+            model: None,
+            provider_id: None,
+            started_at: 0,
             created_at: 0,
         }
     }

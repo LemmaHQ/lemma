@@ -11,7 +11,7 @@ use crate::ArchiveError;
 #[derive(Serialize, Deserialize)]
 #[allow(missing_docs)]
 pub struct ArchiveEnvelope {
-    /// Envelope schema version; currently 1.
+    /// Envelope schema version; currently 2.
     pub version: u32,
     pub conversation_id: String,
     pub archived_at: DateTime<Utc>,
@@ -24,40 +24,46 @@ pub struct ArchiveEnvelope {
 #[allow(missing_docs)]
 pub struct ArchivedMessage {
     pub id: String,
+    pub parent_id: Option<String>,
     pub role: String,
-    pub content: String,
+    pub content_json: serde_json::Value,
     pub provider_id: Option<String>,
     pub model: Option<String>,
     pub client_msg_id: Option<String>,
     pub status: String,
     pub token_usage: Option<TokenUsage>,
-    pub seq: i64,
+    pub started_at: Option<DateTime<Utc>>,
+    pub first_token_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-/// Builds a version-1 envelope from a conversation's messages.
+/// Builds a version-2 envelope from a conversation's messages.
 pub fn envelope_from_messages(
     conversation_id: Uuid,
     archived_at: DateTime<Utc>,
     messages: &[Message],
 ) -> ArchiveEnvelope {
     ArchiveEnvelope {
-        version: 1,
+        version: 2,
         conversation_id: conversation_id.to_string(),
         archived_at,
         messages: messages
             .iter()
             .map(|m| ArchivedMessage {
                 id: m.id.to_string(),
+                parent_id: m.parent_id.map(|p| p.to_string()),
                 role: m.role.clone(),
-                content: m.content.clone(),
+                content_json: m.content_json.0.clone(),
                 provider_id: m.provider_id.map(|p| p.to_string()),
                 model: m.model.clone(),
                 client_msg_id: m.client_msg_id.clone(),
                 status: m.status.clone(),
                 token_usage: m.token_usage.clone().map(|j| j.0),
-                seq: m.seq,
+                started_at: m.started_at,
+                first_token_at: m.first_token_at,
+                finished_at: m.finished_at,
                 created_at: m.created_at,
                 updated_at: m.updated_at,
             })
@@ -72,11 +78,18 @@ pub fn serialize_envelope(envelope: &ArchiveEnvelope) -> Result<Vec<u8>, Archive
 
 /// Parses an envelope from JSON bytes.
 pub fn deserialize_envelope(bytes: &[u8]) -> Result<ArchiveEnvelope, ArchiveError> {
-    serde_json::from_slice(bytes).map_err(|e| ArchiveError(format!("deserialize: {e}")))
+    let envelope: ArchiveEnvelope =
+        serde_json::from_slice(bytes).map_err(|e| ArchiveError(format!("deserialize: {e}")))?;
+    if envelope.version != 2 {
+        return Err(ArchiveError(format!(
+            "unsupported envelope version: {}",
+            envelope.version
+        )));
+    }
+    Ok(envelope)
 }
 
-/// Converts an envelope back into message rows. The `sync_seq` field is a
-/// zero placeholder; reinsertion draws a fresh sequence value.
+/// Converts an envelope back into message rows.
 pub fn messages_from_envelope(envelope: &ArchiveEnvelope) -> Result<Vec<Message>, ArchiveError> {
     envelope
         .messages
@@ -87,9 +100,9 @@ pub fn messages_from_envelope(envelope: &ArchiveEnvelope) -> Result<Vec<Message>
                     .map_err(|e| ArchiveError(format!("bad message id: {e}")))?,
                 conversation_id: Uuid::parse_str(&envelope.conversation_id)
                     .map_err(|e| ArchiveError(format!("bad conversation id: {e}")))?,
-                parent_id: None,
+                parent_id: m.parent_id.as_deref().and_then(|p| Uuid::parse_str(p).ok()),
                 role: m.role.clone(),
-                content: m.content.clone(),
+                content_json: sqlx::types::Json(m.content_json.clone()),
                 provider_id: m
                     .provider_id
                     .as_deref()
@@ -98,8 +111,9 @@ pub fn messages_from_envelope(envelope: &ArchiveEnvelope) -> Result<Vec<Message>
                 client_msg_id: m.client_msg_id.clone(),
                 status: m.status.clone(),
                 token_usage: m.token_usage.clone().map(sqlx::types::Json),
-                seq: m.seq,
-                sync_seq: 0,
+                started_at: m.started_at,
+                first_token_at: m.first_token_at,
+                finished_at: m.finished_at,
                 created_at: m.created_at,
                 updated_at: m.updated_at,
             })

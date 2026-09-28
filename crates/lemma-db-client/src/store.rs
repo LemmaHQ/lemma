@@ -1,14 +1,17 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use lemma_core::{ContentBlock, Message};
-use lemma_session::{BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore};
+use lemma_core::Message;
+use lemma_session::{
+    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, StoredMessage,
+    TraceStore,
+};
 use parking_lot::Mutex;
 use rusqlite::{Connection, params};
 use uuid::Uuid;
 
 use crate::error::SqliteStoreError;
-use crate::schema::init_schema;
+use crate::schema::{SCHEMA_VERSION, init_schema};
 
 /// Thread-safe SQLite trace store implementation.
 pub struct SqliteTraceStore {
@@ -17,8 +20,12 @@ pub struct SqliteTraceStore {
 
 impl SqliteTraceStore {
     /// Opens an existing SQLite database file or creates it with initial schema.
+    /// A database whose schema version does not match is dropped and rebuilt.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, SqliteStoreError> {
         let conn = Connection::open(path)?;
+        if schema_version(&conn)? != SCHEMA_VERSION {
+            conn.execute_batch("DROP TABLE IF EXISTS messages_fts; DROP TABLE IF EXISTS messages; DROP TABLE IF EXISTS conversations; PRAGMA user_version = 0;")?;
+        }
         init_schema(&conn)?;
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
@@ -73,6 +80,56 @@ impl SqliteTraceStore {
     }
 }
 
+fn schema_version(conn: &Connection) -> Result<i64, SqliteStoreError> {
+    conn.query_row("PRAGMA user_version", [], |row| row.get(0))
+        .map_err(SqliteStoreError::from)
+}
+
+fn status_str(status: MessageStatus) -> &'static str {
+    match status {
+        MessageStatus::Streaming => "streaming",
+        MessageStatus::Done => "done",
+        MessageStatus::Aborted => "aborted",
+        MessageStatus::Error => "error",
+    }
+}
+
+fn status_parse(status: &str) -> MessageStatus {
+    match status {
+        "streaming" => MessageStatus::Streaming,
+        "aborted" => MessageStatus::Aborted,
+        "error" => MessageStatus::Error,
+        _ => MessageStatus::Done,
+    }
+}
+
+fn meta_from_row(
+    id_str: String,
+    title: String,
+    leaf_str: Option<String>,
+    local_only_int: i32,
+    last_model_json: Option<String>,
+    created_at: i64,
+    updated_at: i64,
+) -> Result<ConversationMeta, SqliteStoreError> {
+    let conv_id =
+        Uuid::parse_str(&id_str).map_err(|e| SqliteStoreError::Database(e.to_string()))?;
+    let leaf_id = leaf_str.and_then(|s| Uuid::parse_str(&s).ok());
+    let last_model = match last_model_json {
+        Some(json) => Some(serde_json::from_str(&json)?),
+        None => None,
+    };
+    Ok(ConversationMeta {
+        id: conv_id,
+        title,
+        leaf_id,
+        local_only: local_only_int == 1,
+        last_model,
+        created_at,
+        updated_at,
+    })
+}
+
 impl TraceStore for SqliteTraceStore {
     fn create_conversation<'a>(
         &'a self,
@@ -85,8 +142,8 @@ impl TraceStore for SqliteTraceStore {
             let now = 0i64;
             conn.execute(
                 r#"
-                INSERT INTO conversations (id, title, leaf_id, local_only, created_at, updated_at)
-                VALUES (?1, ?2, NULL, ?3, ?4, ?5)
+                INSERT INTO conversations (id, title, leaf_id, local_only, last_model, created_at, updated_at)
+                VALUES (?1, ?2, NULL, ?3, NULL, ?4, ?5)
                 "#,
                 params![
                     id.to_string(),
@@ -103,6 +160,7 @@ impl TraceStore for SqliteTraceStore {
                 title,
                 leaf_id: None,
                 local_only,
+                last_model: None,
                 created_at: now,
                 updated_at: now,
             })
@@ -115,7 +173,7 @@ impl TraceStore for SqliteTraceStore {
             let mut stmt = conn
                 .prepare(
                     r#"
-                    SELECT id, title, leaf_id, local_only, created_at, updated_at
+                    SELECT id, title, leaf_id, local_only, last_model, created_at, updated_at
                     FROM conversations
                     WHERE id = ?1
                     "#,
@@ -128,36 +186,43 @@ impl TraceStore for SqliteTraceStore {
                     let title: String = row.get(1)?;
                     let leaf_str: Option<String> = row.get(2)?;
                     let local_only_int: i32 = row.get(3)?;
-                    let created_at: i64 = row.get(4)?;
-                    let updated_at: i64 = row.get(5)?;
+                    let last_model_json: Option<String> = row.get(4)?;
+                    let created_at: i64 = row.get(5)?;
+                    let updated_at: i64 = row.get(6)?;
                     Ok((
                         id_str,
                         title,
                         leaf_str,
                         local_only_int,
+                        last_model_json,
                         created_at,
                         updated_at,
                     ))
                 })
                 .map_err(SqliteStoreError::from)?;
 
-            if let Some(res) = rows.next() {
-                let (id_str, title, leaf_str, local_only_int, created_at, updated_at) =
-                    res.map_err(SqliteStoreError::from)?;
-                let conv_id = Uuid::parse_str(&id_str)
-                    .map_err(|e| SqliteStoreError::Database(e.to_string()))?;
-                let leaf_id = leaf_str.and_then(|s| Uuid::parse_str(&s).ok());
-
-                Ok(Some(ConversationMeta {
-                    id: conv_id,
-                    title,
-                    leaf_id,
-                    local_only: local_only_int == 1,
-                    created_at,
-                    updated_at,
-                }))
-            } else {
-                Ok(None)
+            match rows.next() {
+                Some(res) => {
+                    let (
+                        id_str,
+                        title,
+                        leaf_str,
+                        local_only_int,
+                        last_model_json,
+                        created_at,
+                        updated_at,
+                    ) = res.map_err(SqliteStoreError::from)?;
+                    Ok(Some(meta_from_row(
+                        id_str,
+                        title,
+                        leaf_str,
+                        local_only_int,
+                        last_model_json,
+                        created_at,
+                        updated_at,
+                    )?))
+                }
+                None => Ok(None),
             }
         })
     }
@@ -178,34 +243,104 @@ impl TraceStore for SqliteTraceStore {
         })
     }
 
-    fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
+    fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
-            let json_str = serde_json::to_string(&entry.message).map_err(SqliteStoreError::from)?;
-
-            // Extract plain text for FTS5 index
-            let text_extract = match &entry.message {
-                Message::User { content } | Message::Assistant { content, .. } => content
-                    .iter()
-                    .filter_map(|b| match b {
-                        ContentBlock::Text(t) => Some(t.text.as_str()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" "),
-                _ => String::new(),
+            let json_str =
+                serde_json::to_string(&update.message).map_err(SqliteStoreError::from)?;
+            let usage = match &update.message {
+                Message::Assistant { usage, .. } => *usage,
+                _ => None,
             };
+            let usage_str = match usage {
+                Some(u) => Some(serde_json::to_string(&u).map_err(SqliteStoreError::from)?),
+                None => None,
+            };
+            let text_extract = update.message.visible_text();
 
             let conn = self.conn.lock();
             conn.execute(
                 r#"
-                INSERT INTO messages (id, conversation_id, parent_id, content_json, created_at)
-                VALUES (?1, ?2, ?3, ?4, ?5)
+                UPDATE messages
+                SET content_json = ?1, status = ?2, token_usage = ?3,
+                    first_token_at = ?4, finished_at = ?5
+                WHERE id = ?6
+                "#,
+                params![
+                    json_str,
+                    status_str(update.status),
+                    usage_str,
+                    update.first_token_at,
+                    update.finished_at,
+                    id.to_string()
+                ],
+            )
+            .map_err(SqliteStoreError::from)?;
+
+            if !text_extract.is_empty() {
+                let _ = conn.execute(
+                    r#"
+                    INSERT INTO messages_fts (message_id, conversation_id, text_content)
+                    SELECT id, conversation_id, ?1 FROM messages WHERE id = ?2
+                    "#,
+                    params![text_extract, id.to_string()],
+                );
+            }
+
+            Ok(())
+        })
+    }
+
+    fn update_conversation_model<'a>(
+        &'a self,
+        id: Uuid,
+        last_model: LastModel,
+    ) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            let json = serde_json::to_string(&last_model).map_err(SqliteStoreError::from)?;
+            let conn = self.conn.lock();
+            conn.execute(
+                r#"
+                UPDATE conversations
+                SET last_model = ?1
+                WHERE id = ?2
+                "#,
+                params![json, id.to_string()],
+            )
+            .map_err(SqliteStoreError::from)?;
+            Ok(())
+        })
+    }
+
+    fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            let json_str = serde_json::to_string(&entry.message).map_err(SqliteStoreError::from)?;
+            let usage = match &entry.message {
+                Message::Assistant { usage, .. } => *usage,
+                _ => None,
+            };
+            let usage_str = match usage {
+                Some(u) => Some(serde_json::to_string(&u).map_err(SqliteStoreError::from)?),
+                None => None,
+            };
+            let text_extract = entry.message.visible_text();
+
+            let conn = self.conn.lock();
+            conn.execute(
+                r#"
+                INSERT INTO messages (id, conversation_id, parent_id, content_json, status, model,
+                                      provider_id, token_usage, started_at, first_token_at, finished_at, created_at)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, NULL, ?10)
                 "#,
                 params![
                     entry.id.to_string(),
                     entry.conversation_id.to_string(),
                     entry.parent_id.map(|p| p.to_string()),
                     json_str,
+                    status_str(entry.status),
+                    entry.model,
+                    entry.provider_id.map(|p| p.to_string()),
+                    usage_str,
+                    entry.started_at,
                     entry.created_at
                 ],
             )
@@ -228,49 +363,7 @@ impl TraceStore for SqliteTraceStore {
             Ok(())
         })
     }
-    fn update_message<'a>(
-        &'a self,
-        id: Uuid,
-        message: lemma_core::Message,
-    ) -> BoxStoreFuture<'a, ()> {
-        Box::pin(async move {
-            let json_str = serde_json::to_string(&message).map_err(SqliteStoreError::from)?;
-            let text_extract = match &message {
-                Message::User { content } | Message::Assistant { content, .. } => content
-                    .iter()
-                    .filter_map(|b| match b {
-                        ContentBlock::Text(t) => Some(t.text.as_str()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" "),
-                _ => String::new(),
-            };
 
-            let conn = self.conn.lock();
-            conn.execute(
-                r#"
-                UPDATE messages
-                SET content_json = ?1
-                WHERE id = ?2
-                "#,
-                params![json_str, id.to_string()],
-            )
-            .map_err(SqliteStoreError::from)?;
-
-            if !text_extract.is_empty() {
-                let _ = conn.execute(
-                    r#"
-                    INSERT INTO messages_fts (message_id, conversation_id, text_content)
-                    SELECT id, conversation_id, ?1 FROM messages WHERE id = ?2
-                    "#,
-                    params![text_extract, id.to_string()],
-                );
-            }
-
-            Ok(())
-        })
-    }
     fn list_messages<'a>(
         &'a self,
         conversation_id: Uuid,
@@ -280,10 +373,10 @@ impl TraceStore for SqliteTraceStore {
             let mut stmt = conn
                 .prepare(
                     r#"
-                    SELECT id, conversation_id, parent_id, content_json, created_at
+                    SELECT id, conversation_id, parent_id, content_json, status, model, provider_id, started_at, created_at
                     FROM messages
                     WHERE conversation_id = ?1
-                    ORDER BY created_at ASC
+                    ORDER BY created_at ASC, id ASC
                     "#,
                 )
                 .map_err(SqliteStoreError::from)?;
@@ -294,15 +387,38 @@ impl TraceStore for SqliteTraceStore {
                     let conv_str: String = row.get(1)?;
                     let parent_str: Option<String> = row.get(2)?;
                     let json_str: String = row.get(3)?;
-                    let created_at: i64 = row.get(4)?;
-                    Ok((id_str, conv_str, parent_str, json_str, created_at))
+                    let status: String = row.get(4)?;
+                    let model: Option<String> = row.get(5)?;
+                    let provider_str: Option<String> = row.get(6)?;
+                    let started_at: i64 = row.get(7)?;
+                    let created_at: i64 = row.get(8)?;
+                    Ok((
+                        id_str,
+                        conv_str,
+                        parent_str,
+                        json_str,
+                        status,
+                        model,
+                        provider_str,
+                        started_at,
+                        created_at,
+                    ))
                 })
                 .map_err(SqliteStoreError::from)?;
 
             let mut list = Vec::new();
             for r in rows {
-                let (id_str, conv_str, parent_str, json_str, created_at) =
-                    r.map_err(SqliteStoreError::from)?;
+                let (
+                    id_str,
+                    conv_str,
+                    parent_str,
+                    json_str,
+                    status,
+                    model,
+                    provider_str,
+                    started_at,
+                    created_at,
+                ) = r.map_err(SqliteStoreError::from)?;
 
                 let id = Uuid::parse_str(&id_str)
                     .map_err(|e| SqliteStoreError::Database(e.to_string()))?;
@@ -317,6 +433,10 @@ impl TraceStore for SqliteTraceStore {
                     conversation_id: conv_id,
                     parent_id,
                     message,
+                    status: status_parse(&status),
+                    model,
+                    provider_id: provider_str.and_then(|s| Uuid::parse_str(&s).ok()),
+                    started_at,
                     created_at,
                 });
             }

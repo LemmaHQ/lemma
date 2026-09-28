@@ -30,6 +30,10 @@ async fn sqlite_store_persists_conversations_and_branches() {
                     text: "How does the SQLite storage work?".to_string(),
                 })],
             },
+            status: lemma_session::MessageStatus::Done,
+            model: None,
+            provider_id: None,
+            started_at: 10,
             created_at: 10,
         })
         .await
@@ -51,6 +55,10 @@ async fn sqlite_store_persists_conversations_and_branches() {
                 stop_reason: StopReason::Stop,
                 usage: None,
             },
+            status: lemma_session::MessageStatus::Done,
+            model: None,
+            provider_id: None,
+            started_at: 20,
             created_at: 20,
         })
         .await

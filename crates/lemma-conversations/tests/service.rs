@@ -186,12 +186,16 @@ async fn seed_messages(pool: &PgPool, conv: &str, contents: &[&str]) {
     let conv = Uuid::parse_str(conv).unwrap();
     for (i, content) in contents.iter().enumerate() {
         sqlx::query(
-            "INSERT INTO messages (id, conversation_id, role, content, seq) VALUES ($1, $2, 'user', $3, $4)",
+            "INSERT INTO messages (id, conversation_id, role, content_json, created_at)
+             VALUES ($1, $2, 'user', $3::jsonb, now() - make_interval(secs => $4))",
         )
         .bind(Uuid::new_v4())
         .bind(conv)
-        .bind(content)
-        .bind(i as i64 + 1)
+        .bind(
+            serde_json::json!({"role":"user","content":[{"type":"text","text":content}]})
+                .to_string(),
+        )
+        .bind(contents.len() as i64 - i as i64)
         .execute(pool)
         .await
         .unwrap();
@@ -199,11 +203,16 @@ async fn seed_messages(pool: &PgPool, conv: &str, contents: &[&str]) {
 }
 
 async fn message_contents(pool: &PgPool, conv: &str) -> Vec<String> {
-    sqlx::query_scalar("SELECT content FROM messages WHERE conversation_id = $1 ORDER BY seq")
-        .bind(Uuid::parse_str(conv).unwrap())
-        .fetch_all(pool)
-        .await
-        .unwrap()
+    let rows: Vec<serde_json::Value> = sqlx::query_scalar(
+        "SELECT content_json FROM messages WHERE conversation_id = $1 ORDER BY created_at, id",
+    )
+    .bind(Uuid::parse_str(conv).unwrap())
+    .fetch_all(pool)
+    .await
+    .unwrap();
+    rows.into_iter()
+        .map(|v| v["content"][0]["text"].as_str().unwrap().to_string())
+        .collect()
 }
 
 async fn rename(
@@ -251,15 +260,18 @@ async fn list_messages(
 #[allow(clippy::too_many_arguments)]
 async fn insert_msg(pool: &PgPool, conv: Uuid, seq: i64, status: &str, model: Option<&str>) {
     sqlx::query(
-        "INSERT INTO messages (id, conversation_id, role, content, status, model, seq)
-         VALUES ($1, $2, 'assistant', $3, $4, $5, $6)",
+        "INSERT INTO messages (id, conversation_id, role, content_json, status, model, created_at)
+         VALUES ($1, $2, 'assistant', $3::jsonb, $4, $5, now() - make_interval(secs => $6))",
     )
     .bind(Uuid::new_v4())
     .bind(conv)
-    .bind(format!("c{seq}"))
+    .bind(
+        serde_json::json!({"role":"assistant","content":[{"type":"text","text":format!("c{seq}")}],"stop_reason":"stop"})
+            .to_string(),
+    )
     .bind(status)
     .bind(model)
-    .bind(seq)
+    .bind(10 - seq)
     .execute(pool)
     .await
     .unwrap();
@@ -381,7 +393,10 @@ async fn archive_moves_content_to_store(pool: PgPool) {
     let bytes = store.get(&key).await.unwrap().unwrap();
     let envelope = lemma_archive::deserialize_envelope(&bytes).unwrap();
     assert_eq!(envelope.messages.len(), 3);
-    assert_eq!(envelope.messages[0].content, "一");
+    assert_eq!(
+        envelope.messages[0].content_json["content"][0]["text"],
+        "一"
+    );
     assert_eq!(list_archived_count(&svc, &token).await, 1);
 }
 
@@ -409,13 +424,11 @@ async fn restore_legacy_in_place_archive_keeps_messages(pool: PgPool) {
     let id = create(&svc, &token).await.conversation.id.clone();
     seed_messages(&pool, &id, &["旧"]).await;
 
-    sqlx::query(
-        "UPDATE conversations SET status = 'archived', archived_at = now(), sync_seq = nextval('sync_seq') WHERE id = $1",
-    )
-    .bind(Uuid::parse_str(&id).unwrap())
-    .execute(&pool)
-    .await
-    .unwrap();
+    sqlx::query("UPDATE conversations SET status = 'archived', archived_at = now() WHERE id = $1")
+        .bind(Uuid::parse_str(&id).unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
 
     restore(&svc, &token, &id).await.unwrap();
 
@@ -470,7 +483,7 @@ async fn list_messages_maps_statuses_and_fields(pool: PgPool) {
     assert_eq!(r.messages[2].model, "gpt-x");
     assert_eq!(r.messages[0].model, "");
     assert_eq!(r.messages[0].content, "c4");
-    assert_eq!(r.messages[3].seq, 1);
+    assert_eq!(r.messages[3].content, "c1");
     assert!(!r.has_more);
 
     let msg = lemma_proto::lemma::v1::ListMessagesRequest {

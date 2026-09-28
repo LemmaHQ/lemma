@@ -2,6 +2,10 @@ use rusqlite::Connection;
 
 use crate::error::SqliteStoreError;
 
+/// Schema version recorded in `PRAGMA user_version`; a mismatch on open
+/// drops and rebuilds the database.
+pub(crate) const SCHEMA_VERSION: i64 = 1;
+
 /// Initializes the plaintext SQLite schema, WAL mode, FTS5 index.
 pub(crate) fn init_schema(conn: &Connection) -> Result<(), SqliteStoreError> {
     conn.execute_batch(
@@ -15,6 +19,7 @@ pub(crate) fn init_schema(conn: &Connection) -> Result<(), SqliteStoreError> {
             title TEXT NOT NULL,
             leaf_id TEXT,
             local_only INTEGER NOT NULL DEFAULT 0,
+            last_model TEXT,
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         );
@@ -24,6 +29,13 @@ pub(crate) fn init_schema(conn: &Connection) -> Result<(), SqliteStoreError> {
             conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
             parent_id TEXT,
             content_json TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'done',
+            model TEXT,
+            provider_id TEXT,
+            token_usage TEXT,
+            started_at INTEGER NOT NULL DEFAULT 0,
+            first_token_at INTEGER,
+            finished_at INTEGER,
             created_at INTEGER NOT NULL
         );
 
@@ -38,5 +50,6 @@ pub(crate) fn init_schema(conn: &Connection) -> Result<(), SqliteStoreError> {
 
         "#,
     )?;
+    conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     Ok(())
 }

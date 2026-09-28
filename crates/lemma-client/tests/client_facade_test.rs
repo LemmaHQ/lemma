@@ -68,6 +68,8 @@ async fn client_facade_local_mode_persists_across_reopen() {
             api_path: "".to_string(),
             api_key: "offline".to_string(),
             model: "local-coder".to_string(),
+            provider_id: Uuid::new_v4(),
+            thinking_effort: None,
         };
 
         let user_msg = Message::User {

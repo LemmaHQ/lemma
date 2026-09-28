@@ -4,7 +4,9 @@ use futures::stream;
 use lemma_adapter::{BoxChatFuture, BoxEventStream, ChatRequest, Provider, ProviderKind};
 use lemma_agent::{AgentConfig, AgentLoop};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
-use lemma_session::{BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore};
+use lemma_session::{
+    BoxStoreFuture, ConversationMeta, LastModel, MessageUpdate, StoredMessage, TraceStore,
+};
 use parking_lot::Mutex;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -36,6 +38,7 @@ impl TraceStore for MemoryStore {
                 title,
                 leaf_id: None,
                 local_only,
+                last_model: None,
                 created_at: 0,
                 updated_at: 0,
             };
@@ -56,15 +59,24 @@ impl TraceStore for MemoryStore {
             Ok(())
         })
     }
-    fn update_message<'a>(
-        &'a self,
-        id: Uuid,
-        message: lemma_core::Message,
-    ) -> BoxStoreFuture<'a, ()> {
+    fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
             let mut list = self.messages.lock();
             if let Some(entry) = list.iter_mut().find(|m| m.id == id) {
-                entry.message = message;
+                entry.message = update.message;
+                entry.status = update.status;
+            }
+            Ok(())
+        })
+    }
+    fn update_conversation_model<'a>(
+        &'a self,
+        id: Uuid,
+        last_model: LastModel,
+    ) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            if let Some(c) = self.conversations.lock().get_mut(&id) {
+                c.last_model = Some(last_model);
             }
             Ok(())
         })
@@ -143,6 +155,8 @@ async fn agent_loop_executes_turn_and_maintains_leaf() {
         api_path: "".to_string(),
         api_key: "key".to_string(),
         model: "m1".to_string(),
+        provider_id: Uuid::new_v4(),
+        thinking_effort: None,
     };
 
     let user_msg = Message::User {

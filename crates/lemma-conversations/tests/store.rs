@@ -16,9 +16,9 @@ async fn new_user(pool: &PgPool) -> Uuid {
 async fn seed_message(pool: &PgPool, conv: Uuid, offset_secs: f64) {
     sqlx::query(
         r#"
-        INSERT INTO messages (id, conversation_id, role, content, created_at, seq)
-        VALUES ($1, $2, 'user', 'm', now() - make_interval(secs => $3),
-                (SELECT COALESCE(MAX(seq), 0) + 1 FROM messages WHERE conversation_id = $2))
+        INSERT INTO messages (id, conversation_id, role, content_json, created_at)
+        VALUES ($1, $2, 'user', '{"role":"user","content":[{"type":"text","text":"m"}]}',
+                now() - make_interval(secs => $3))
         "#,
     )
     .bind(Uuid::new_v4())
@@ -36,19 +36,6 @@ async fn create_defaults(pool: PgPool) {
     assert_eq!(c.title, "");
     assert_eq!(c.status, "active");
     assert!(c.archived_at.is_none());
-    assert!(c.sync_seq > 0);
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn rename_bumps_sync_seq(pool: PgPool) {
-    let uid = new_user(&pool).await;
-    let c = store::insert(&pool, uid).await.unwrap();
-    let renamed = store::rename(&pool, c.id, uid, "new title")
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(renamed.title, "new title");
-    assert!(renamed.sync_seq > c.sync_seq);
 }
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]

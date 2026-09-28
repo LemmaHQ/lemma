@@ -83,6 +83,8 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
             api_path: provider.api_path.clone(),
             api_key,
             model: request.model.to_string(),
+            provider_id: provider.id,
+            thinking_effort: None,
         };
 
         let store = Arc::new(PgTraceStore::new(self.pool.clone(), user_id));
@@ -97,11 +99,12 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
         let (tx, rx) = mpsc::channel::<Result<SendMessageResponse, ConnectError>>(100);
 
         let tx_clone = tx.clone();
+        let client_msg_id = request.client_msg_id.to_string();
         tokio::spawn(async move {
             let observer: Arc<dyn Fn(TurnEvent) + Send + Sync> = Arc::new(move |ev| match ev {
                 TurnEvent::UserAppended { id } => {
                     let _ = tx_clone.try_send(Ok(SendMessageResponse {
-                        event: MessageField::some(started_event(id)),
+                        event: MessageField::some(started_event(id, client_msg_id.clone())),
                         ..Default::default()
                     }));
                 }
@@ -160,10 +163,11 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
     }
 }
 
-fn started_event(id: Uuid) -> ChatEvent {
+fn started_event(id: Uuid, client_msg_id: String) -> ChatEvent {
     ChatEvent {
         kind: Some(chat_event::Kind::Started(Box::new(ChatStarted {
             message_id: id.to_string(),
+            client_msg_id,
             ..Default::default()
         }))),
         ..Default::default()

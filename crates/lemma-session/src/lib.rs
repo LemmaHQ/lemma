@@ -5,10 +5,14 @@
 //! Zero I/O and zero runtime bindings: hosts (server, desktop, mobile)
 //! supply concrete store implementations.
 
+pub mod compliance;
 mod error;
 mod store;
 mod tree;
 
 pub use error::SessionError;
-pub use store::{BoxStoreFuture, ConversationMeta, StoredMessage, TraceStore};
+pub use store::{
+    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, StoredMessage,
+    TraceStore,
+};
 pub use tree::{SessionTree, build_context_path};

@@ -14,6 +14,7 @@ lemma-core.workspace = true
 lemma-db-server.workspace = true
 lemma-proto.workspace = true
 lemma-session.workspace = true
+serde_json.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
 

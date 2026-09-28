@@ -1,7 +1,7 @@
 # 消息存储结构重设计（含同步系统切除）
 
 日期：2026-09-27
-状态：待批准
+状态：已完成（2026-09-28，Phase 0 + Phase 1 全步骤验收通过）
 前置：契约盘点、Rust 核心盘点、oh-my-pi / deepseek-harness 参考对照均已完成；项目无生产数据，允许 breaking change；中间状态允许不可运行。
 
 ## 背景
@@ -43,16 +43,23 @@
 
 - 清空 `crates/lemma-db-server/migrations/`，编写单一 init 迁移：users / refresh_tokens / providers / s3_configs 维持现状语义；conversations 新增 `last_model` JSONB、移除 `sync_seq`；messages 按决策 3 重建档案列、移除 `seq` 与 `sync_seq`。
 - 同步更新 `DbMessage` / `DbConversation` 实体结构。
+- 时间列默认值统一 `clock_timestamp()`，避免同事务插入行时间戳并列，保证 `(created_at, id)` 排序语义。
+- `ArchiveEnvelope` version bump 至 2，`deserialize_envelope` 解析时校验版本。
+- Phase 0 收尾（审核补发现）：清除 `lemma-conversations/src/store.rs` 中 `sync_seq = nextval('sync_seq')` 的 SQL 残留与 `tests/store.rs` 的 `sync_seq` 断言；测试按决策先删除不迁移。
 
 ### Step 2：TraceStore 契约演进
 
 - `lemma-session`：StoredMessage 扩展档案元数据（status / model / usage / 三时刻），ConversationMeta 增加 `last_model`。
 - 建立两端共享的合规测试套件：写入 - 读取保真往返、状态生命周期、树链完整性、last_model 刷新。
+- 定死三时刻写回签名（`update_message` 扩参或新方法，本步决定），保证 `first_token_at` / `finished_at` 可落库。
 
 ### Step 3：PgTraceStore 保真化
 
 - `content_json` 整存整取，废除文本压扁与 ToolResult 降级。
 - 写入档案元数据；status 按决策 7 流转。
+- `list_messages` 游标由 `seq` 自连接改为 `(created_at, id)` keyset；`trace_store` 的 `ORDER BY seq` 同改。
+- `message_to_proto` 过渡映射：`content_json` 抽 text 块拼接为 proto `content`（有损、契约不动）；proto `seq` 填 0 视为 deprecated，随契约计划删除。
+- 检查点：本步结束 `cargo check --workspace` 与 `cargo test --workspace` 回绿。
 
 ### Step 4：SqliteTraceStore 对齐
 

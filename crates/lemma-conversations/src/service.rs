@@ -73,7 +73,9 @@ fn message_to_proto(m: &DbMessage) -> Message {
         id: m.id.to_string(),
         conversation_id: m.conversation_id.to_string(),
         role: m.role.clone(),
-        content: m.content.clone(),
+        content: serde_json::from_value::<lemma_core::Message>(m.content_json.0.clone())
+            .map(|msg| msg.visible_text())
+            .unwrap_or_default(),
         provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
         model: m.model.clone().unwrap_or_default(),
         status: match m.status.as_str() {
@@ -87,7 +89,7 @@ fn message_to_proto(m: &DbMessage) -> Message {
         .into(),
         created_at: Timestamp::from(m.created_at).into(),
         updated_at: Timestamp::from(m.updated_at).into(),
-        seq: m.seq,
+        seq: 0,
         ..Default::default()
     }
 }

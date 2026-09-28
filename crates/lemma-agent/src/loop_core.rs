@@ -3,10 +3,18 @@ use std::sync::Arc;
 use futures::StreamExt;
 use lemma_adapter::{ChatRequest, Provider, ProviderKind};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent, Usage};
-use lemma_session::{StoredMessage, TraceStore, build_context_path};
+use lemma_session::{
+    LastModel, MessageStatus, MessageUpdate, StoredMessage, TraceStore, build_context_path,
+};
 use uuid::Uuid;
 
 use crate::error::AgentError;
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as i64)
+}
 
 /// Events emitted during an observed turn execution.
 #[derive(Debug, Clone)]
@@ -48,6 +56,10 @@ pub struct AgentConfig {
     pub api_key: String,
     /// Target model identifier.
     pub model: String,
+    /// Provider row the turn is dispatched to.
+    pub provider_id: Uuid,
+    /// Reasoning effort level, when the model exposes one.
+    pub thinking_effort: Option<String>,
 }
 
 /// The core execution engine.
@@ -106,12 +118,17 @@ impl AgentLoop {
         let user_parent_id = parent_id_override.or(meta.leaf_id);
 
         let user_msg_id = Uuid::new_v4();
+        let now = now_ms();
         let user_entry = StoredMessage {
             id: user_msg_id,
             conversation_id,
             parent_id: user_parent_id,
             message: user_message,
-            created_at: 0,
+            status: MessageStatus::Done,
+            model: None,
+            provider_id: None,
+            started_at: now,
+            created_at: now,
         };
 
         self.store.append_message(user_entry).await?;
@@ -135,16 +152,31 @@ impl AgentLoop {
             usage: None,
         };
 
+        let started_at = now_ms();
         let assistant_entry = StoredMessage {
             id: assistant_msg_id,
             conversation_id,
             parent_id: Some(user_msg_id),
             message: initial_assistant_msg,
-            created_at: 0,
+            status: MessageStatus::Streaming,
+            model: Some(config.model.clone()),
+            provider_id: Some(config.provider_id),
+            started_at,
+            created_at: started_at,
         };
         self.store.append_message(assistant_entry).await?;
         self.store
             .update_leaf(conversation_id, assistant_msg_id)
+            .await?;
+        self.store
+            .update_conversation_model(
+                conversation_id,
+                LastModel {
+                    provider_id: config.provider_id,
+                    model: config.model.clone(),
+                    thinking_effort: config.thinking_effort.clone(),
+                },
+            )
             .await?;
 
         // 4. Dispatch to provider.
@@ -160,17 +192,23 @@ impl AgentLoop {
         let mut stream = self.provider.stream(req).await?;
         let mut full_text = String::new();
         let mut final_usage = None;
+        let mut final_stop = StopReason::Stop;
+        let mut first_token_at: Option<i64> = None;
 
         while let Some(ev_res) = stream.next().await {
             let ev = ev_res?;
             match ev {
                 StreamEvent::TextDelta { delta } => {
+                    if first_token_at.is_none() {
+                        first_token_at = Some(now_ms());
+                    }
                     full_text.push_str(&delta);
                     if let Some(obs) = &observer {
                         obs(TurnEvent::Delta { delta });
                     }
                 }
-                StreamEvent::Done { usage, .. } => {
+                StreamEvent::Done { stop_reason, usage } => {
+                    final_stop = stop_reason;
                     final_usage = usage;
                 }
                 _ => {}
@@ -182,12 +220,20 @@ impl AgentLoop {
             content: vec![ContentBlock::Text(TextContent {
                 text: full_text.clone(),
             })],
-            stop_reason: StopReason::Stop,
+            stop_reason: final_stop,
             usage: final_usage,
         };
 
         self.store
-            .update_message(assistant_msg_id, final_assistant_msg)
+            .update_message(
+                assistant_msg_id,
+                MessageUpdate {
+                    message: final_assistant_msg,
+                    status: MessageStatus::Done,
+                    first_token_at,
+                    finished_at: now_ms(),
+                },
+            )
             .await?;
 
         if let Some(obs) = &observer {

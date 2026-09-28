@@ -55,3 +55,14 @@ pub struct ImageContent {
     /// embedded in the trace.
     pub blob_ref: String,
 }
+
+impl ContentBlock {
+    /// The visible text of a text block; other block kinds carry no
+    /// user-facing prose.
+    pub fn plain_text(&self) -> Option<&str> {
+        match self {
+            Self::Text(t) => Some(&t.text),
+            _ => None,
+        }
+    }
+}

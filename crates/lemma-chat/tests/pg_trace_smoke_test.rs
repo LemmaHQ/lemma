@@ -58,6 +58,19 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     .await
     .unwrap();
 
+    let provider_id = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO providers (id, user_id, kind, name, base_url, api_key, models, created_at, updated_at)
+        VALUES ($1, $2, 'openai_compatible', 'mock', 'http://mock', 'k', '[]', NOW(), NOW())
+        "#,
+    )
+    .bind(provider_id)
+    .bind(user_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+
     let store = Arc::new(lemma_conversations::PgTraceStore::new(
         pool.clone(),
         user_id,
@@ -79,6 +92,8 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
         api_path: "".to_string(),
         api_key: "k".to_string(),
         model: "m".to_string(),
+        provider_id,
+        thinking_effort: None,
     };
 
     let user_msg = Message::User {
@@ -94,7 +109,7 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     });
 
     let (asst_id, reply) = agent
-        .run_turn_observed(conv_id, user_msg, None, config, Some(observer))
+        .run_turn_observed(conv_id, user_msg, None, config.clone(), Some(observer))
         .await
         .unwrap();
 
@@ -122,4 +137,17 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     // Verify leaf pointer advanced to assistant message in DB
     let updated_conv = store.get_conversation(conv_id).await.unwrap().unwrap();
     assert_eq!(updated_conv.leaf_id, Some(asst_id));
+
+    // Archive metadata written by the turn: model selection and lifecycle.
+    let refreshed = store.get_conversation(conv_id).await.unwrap().unwrap();
+    let last_model = refreshed.last_model.unwrap();
+    assert_eq!(last_model.provider_id, config.provider_id);
+    assert_eq!(last_model.model, "m");
+
+    let assistant = &messages[1];
+    assert_eq!(assistant.status, lemma_session::MessageStatus::Done);
+    assert_eq!(assistant.model.as_deref(), Some("m"));
+    assert_eq!(assistant.provider_id, Some(config.provider_id));
+    assert!(assistant.started_at > 0);
+    assert!(messages[0].status == lemma_session::MessageStatus::Done);
 }

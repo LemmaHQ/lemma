@@ -75,7 +75,7 @@ where
     sqlx::query_as::<_, Conversation>(
         r#"
         UPDATE conversations
-        SET title = $3, sync_seq = nextval('sync_seq'), updated_at = now()
+        SET title = $3, updated_at = now()
         WHERE id = $1 AND user_id = $2
         RETURNING *
         "#,
@@ -104,7 +104,6 @@ where
         SET status = 'archived',
             archived_at = now(),
             message_count = (SELECT count(*) FROM messages WHERE conversation_id = $1),
-            sync_seq = nextval('sync_seq'),
             updated_at = now()
         WHERE id = $1 AND user_id = $2 AND status = 'active'
         RETURNING *
@@ -131,7 +130,7 @@ where
         r#"
         UPDATE conversations
         SET status = 'active', archived_at = NULL, message_count = NULL,
-            sync_seq = nextval('sync_seq'), updated_at = now()
+            updated_at = now()
         WHERE id = $1 AND user_id = $2 AND status = 'archived'
         RETURNING *
         "#,
@@ -169,15 +168,15 @@ where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let rows: Vec<Message> = if let Some(before) = before_id {
-        // The self-join resolves before_id to its seq in the same
-        // conversation, so the cursor cannot page across conversations.
+        // The self-join resolves before_id to its ordering position in the
+        // same conversation, so the cursor cannot page across conversations.
         sqlx::query_as::<_, Message>(
             r#"
             SELECT m.* FROM messages m
             JOIN messages b ON b.id = $2 AND b.conversation_id = $1
             WHERE m.conversation_id = $1
-              AND m.seq < b.seq
-            ORDER BY m.seq DESC
+              AND (m.created_at, m.id) < (b.created_at, b.id)
+            ORDER BY m.created_at DESC, m.id DESC
             LIMIT $3
             "#,
         )
@@ -188,7 +187,7 @@ where
         .await?
     } else {
         sqlx::query_as::<_, Message>(
-            "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY seq DESC LIMIT $2",
+            "SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2",
         )
         .bind(conversation_id)
         .bind(limit + 1)
@@ -239,7 +238,7 @@ pub async fn list_all_messages(
     conn: &mut sqlx::PgConnection,
     conversation_id: Uuid,
 ) -> sqlx::Result<Vec<Message>> {
-    sqlx::query_as("SELECT * FROM messages WHERE conversation_id = $1 ORDER BY seq")
+    sqlx::query_as("SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at, id")
         .bind(conversation_id)
         .fetch_all(conn)
         .await
@@ -257,7 +256,7 @@ pub async fn mark_archived_with_key(
         UPDATE conversations
         SET status = 'archived', archived_at = now(),
             message_count = (SELECT count(*) FROM messages WHERE conversation_id = $1),
-            archive_key = $2, sync_seq = nextval('sync_seq'), updated_at = now()
+            archive_key = $2, updated_at = now()
         WHERE id = $1
         RETURNING *
         "#,
@@ -282,8 +281,7 @@ pub async fn delete_all_messages(
 }
 
 /// Reinserts messages recovered from an archive, preserving their ids and
-/// seq. `sync_seq` is intentionally not bound: the INSERT default draws a
-/// fresh sequence value.
+/// ordering timestamps.
 pub async fn insert_restored(
     conn: &mut sqlx::PgConnection,
     messages: &[Message],
@@ -291,21 +289,25 @@ pub async fn insert_restored(
     for m in messages {
         sqlx::query(
             r#"
-            INSERT INTO messages (id, conversation_id, role, content, provider_id, model,
-                                  client_msg_id, status, token_usage, seq, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO messages (id, conversation_id, parent_id, role, content_json, provider_id,
+                                  model, client_msg_id, status, token_usage, started_at,
+                                  first_token_at, finished_at, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             "#,
         )
         .bind(m.id)
         .bind(m.conversation_id)
+        .bind(m.parent_id)
         .bind(&m.role)
-        .bind(&m.content)
+        .bind(&m.content_json)
         .bind(m.provider_id)
         .bind(&m.model)
         .bind(&m.client_msg_id)
         .bind(&m.status)
         .bind(&m.token_usage)
-        .bind(m.seq)
+        .bind(m.started_at)
+        .bind(m.first_token_at)
+        .bind(m.finished_at)
         .bind(m.created_at)
         .bind(m.updated_at)
         .execute(&mut *conn)
@@ -331,32 +333,5 @@ where
     .bind(id)
     .bind(user_id)
     .fetch_optional(executor)
-    .await
-}
-/// Helper used by tests to seed user messages into a conversation.
-pub async fn insert_test_user_message<'e, E>(
-    executor: E,
-    conversation_id: Uuid,
-    content: &str,
-) -> sqlx::Result<Message>
-where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
-{
-    sqlx::query_as::<_, Message>(
-        r#"
-        INSERT INTO messages (
-            conversation_id, role, content, status, seq, sync_seq, created_at, updated_at
-        )
-        VALUES (
-            $1, 'user', $2, 'done',
-            COALESCE((SELECT MAX(seq) + 1 FROM messages WHERE conversation_id = $1), 1),
-            nextval('sync_seq'), NOW(), NOW()
-        )
-        RETURNING *
-        "#,
-    )
-    .bind(conversation_id)
-    .bind(content)
-    .fetch_one(executor)
     .await
 }

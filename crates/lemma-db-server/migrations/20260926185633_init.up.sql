@@ -1,18 +1,14 @@
--- 全局单调递增序列：所有变更的绝对时序依据
-CREATE SEQUENCE sync_seq;
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'normal',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
--- 首个注册用户为 owner，防并发竞态
 CREATE UNIQUE INDEX users_owner_unique ON users (role)
 WHERE role = 'owner';
--- 轮换链：replaced_by 指向新 token，revoked_at 记吊销
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -20,11 +16,10 @@ CREATE TABLE refresh_tokens (
     label TEXT,
     replaced_by UUID REFERENCES refresh_tokens(id),
     revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     expires_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX ON refresh_tokens (user_id);
--- api_key 加密存储；models 为 JSONB 数组；不参与 sync_seq 流
 CREATE TABLE providers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -33,39 +28,58 @@ CREATE TABLE providers (
     base_url TEXT NOT NULL,
     api_key TEXT NOT NULL,
     models JSONB NOT NULL,
+    api_path TEXT NOT NULL DEFAULT '',
+    models_path TEXT NOT NULL DEFAULT '',
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX ON providers (user_id);
--- status: active | archived；title 空串，默认名由客户端按 locale 渲染
+CREATE TABLE s3_configs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL,
+    region TEXT NOT NULL,
+    bucket TEXT NOT NULL,
+    access_key TEXT NOT NULL,
+    secret_key TEXT NOT NULL,
+    migration_from JSONB,
+    migrated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'active',
+    leaf_id UUID,
+    last_model JSONB,
     archived_at TIMESTAMPTZ,
     archive_key TEXT,
     message_count INTEGER,
-    sync_seq BIGINT NOT NULL DEFAULT nextval('sync_seq'),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
-CREATE INDEX ON conversations (user_id, sync_seq);
--- role: user | assistant | system；status: streaming | done | aborted | error
+CREATE INDEX ON conversations (user_id);
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    parent_id UUID,
     role TEXT NOT NULL,
-    content TEXT NOT NULL,
-    provider_id UUID REFERENCES providers(id),
+    content_json JSONB NOT NULL,
+    client_msg_id TEXT,
     model TEXT,
+    provider_id UUID REFERENCES providers(id),
     status TEXT NOT NULL DEFAULT 'done',
     token_usage JSONB,
-    sync_seq BIGINT NOT NULL DEFAULT nextval('sync_seq'),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    started_at TIMESTAMPTZ,
+    first_token_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
--- 三列索引支撑 (created_at, id) keyset 分页
 CREATE INDEX ON messages (conversation_id, created_at, id);
-CREATE INDEX ON messages (sync_seq);
+CREATE INDEX idx_messages_parent_id ON messages (parent_id);
+CREATE UNIQUE INDEX messages_client_msg_id_unique ON messages (conversation_id, client_msg_id)
+WHERE client_msg_id IS NOT NULL;

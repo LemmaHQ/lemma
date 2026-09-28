@@ -2195,6 +2195,7 @@ dependencies = [
  "lemma-db-server",
  "lemma-proto",
  "lemma-session",
+ "serde_json",
  "sqlx",
  "uuid",
 ]
@@ -2308,6 +2309,7 @@ version = "0.1.0"
 dependencies = [
  "lemma-core",
  "serde",
+ "serde_json",
  "uuid",
 ]
 

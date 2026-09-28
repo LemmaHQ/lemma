@@ -1,6 +1,13 @@
-use lemma_core::{ContentBlock, Message, StopReason, TextContent};
-use lemma_db_server::entity::{Conversation as DbConversation, Message as DbMessage};
-use lemma_session::{BoxStoreFuture, ConversationMeta, SessionError, StoredMessage, TraceStore};
+use chrono::{DateTime, Utc};
+use lemma_core::Message;
+use lemma_db_server::entity::{
+    Conversation as DbConversation, LastModel as DbLastModel, Message as DbMessage,
+    TokenUsage as DbTokenUsage,
+};
+use lemma_session::{
+    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, SessionError,
+    StoredMessage, TraceStore,
+};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -15,6 +22,60 @@ impl PgTraceStore {
     pub fn new(pool: PgPool, user_id: Uuid) -> Self {
         Self { pool, user_id }
     }
+}
+
+fn meta_from_row(row: DbConversation) -> ConversationMeta {
+    ConversationMeta {
+        id: row.id,
+        title: row.title,
+        leaf_id: row.leaf_id,
+        local_only: false,
+        last_model: row.last_model.map(|j| LastModel {
+            provider_id: j.0.provider_id,
+            model: j.0.model,
+            thinking_effort: j.0.thinking_effort,
+        }),
+        created_at: row.created_at.timestamp_millis(),
+        updated_at: row.updated_at.timestamp_millis(),
+    }
+}
+
+fn status_str(status: MessageStatus) -> &'static str {
+    match status {
+        MessageStatus::Streaming => "streaming",
+        MessageStatus::Done => "done",
+        MessageStatus::Aborted => "aborted",
+        MessageStatus::Error => "error",
+    }
+}
+
+fn status_parse(status: &str) -> MessageStatus {
+    match status {
+        "streaming" => MessageStatus::Streaming,
+        "aborted" => MessageStatus::Aborted,
+        "error" => MessageStatus::Error,
+        _ => MessageStatus::Done,
+    }
+}
+
+fn ms_to_dt(ms: i64) -> DateTime<Utc> {
+    DateTime::from_timestamp_millis(ms).unwrap_or(DateTime::UNIX_EPOCH)
+}
+
+fn stored_from_row(r: DbMessage) -> Result<StoredMessage, SessionError> {
+    let message: Message = serde_json::from_value(r.content_json.0)
+        .map_err(|e| SessionError::Store(format!("bad content_json: {e}")))?;
+    Ok(StoredMessage {
+        id: r.id,
+        conversation_id: r.conversation_id,
+        parent_id: r.parent_id,
+        message,
+        status: status_parse(&r.status),
+        model: r.model,
+        provider_id: r.provider_id,
+        started_at: r.started_at.map_or(0, |t| t.timestamp_millis()),
+        created_at: r.created_at.timestamp_millis(),
+    })
 }
 
 impl TraceStore for PgTraceStore {
@@ -34,19 +95,14 @@ impl TraceStore for PgTraceStore {
             )
             .bind(id)
             .bind(self.user_id)
-            .bind(title.clone())
+            .bind(title)
             .fetch_one(&self.pool)
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
 
-            Ok(ConversationMeta {
-                id: row.id,
-                title: row.title,
-                leaf_id: row.leaf_id,
-                local_only,
-                created_at: row.created_at.timestamp_millis(),
-                updated_at: row.updated_at.timestamp_millis(),
-            })
+            let mut meta = meta_from_row(row);
+            meta.local_only = local_only;
+            Ok(meta)
         })
     }
 
@@ -64,14 +120,7 @@ impl TraceStore for PgTraceStore {
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
 
-            Ok(opt.map(|row| ConversationMeta {
-                id: row.id,
-                title: row.title,
-                leaf_id: row.leaf_id,
-                local_only: false,
-                created_at: row.created_at.timestamp_millis(),
-                updated_at: row.updated_at.timestamp_millis(),
-            }))
+            Ok(opt.map(meta_from_row))
         })
     }
 
@@ -80,7 +129,7 @@ impl TraceStore for PgTraceStore {
             sqlx::query(
                 r#"
                 UPDATE conversations
-                SET leaf_id = $1, updated_at = NOW(), sync_seq = nextval('sync_seq')
+                SET leaf_id = $1, updated_at = NOW()
                 WHERE id = $2 AND user_id = $3
                 "#,
             )
@@ -95,33 +144,64 @@ impl TraceStore for PgTraceStore {
         })
     }
 
-    fn update_message<'a>(
-        &'a self,
-        id: Uuid,
-        message: lemma_core::Message,
-    ) -> BoxStoreFuture<'a, ()> {
+    fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
-            let text = match &message {
-                Message::User { content } | Message::Assistant { content, .. } => content
-                    .iter()
-                    .filter_map(|b| match b {
-                        ContentBlock::Text(t) => Some(t.text.as_str()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" "),
-                _ => String::new(),
+            let usage = match &update.message {
+                Message::Assistant { usage, .. } => *usage,
+                _ => None,
             };
+            let content = serde_json::to_value(&update.message)
+                .map_err(|e| SessionError::Store(format!("serialize message: {e}")))?;
 
             sqlx::query(
                 r#"
                 UPDATE messages
-                SET content = $1, status = 'done', updated_at = NOW(), sync_seq = nextval('sync_seq')
-                WHERE id = $2
+                SET content_json = $1, status = $2, token_usage = $3,
+                    first_token_at = $4, finished_at = $5, updated_at = NOW()
+                WHERE id = $6
                 "#,
             )
-            .bind(text)
+            .bind(sqlx::types::Json(content))
+            .bind(status_str(update.status))
+            .bind(usage.map(|u| {
+                sqlx::types::Json(DbTokenUsage {
+                    input: u.input,
+                    output: u.output,
+                    cache_read: u.cache_read,
+                    cache_write: u.cache_write,
+                })
+            }))
+            .bind(update.first_token_at.map(ms_to_dt))
+            .bind(ms_to_dt(update.finished_at))
             .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SessionError::Store(e.to_string()))?;
+
+            Ok(())
+        })
+    }
+
+    fn update_conversation_model<'a>(
+        &'a self,
+        id: Uuid,
+        last_model: LastModel,
+    ) -> BoxStoreFuture<'a, ()> {
+        Box::pin(async move {
+            sqlx::query(
+                r#"
+                UPDATE conversations
+                SET last_model = $1, updated_at = NOW()
+                WHERE id = $2 AND user_id = $3
+                "#,
+            )
+            .bind(sqlx::types::Json(DbLastModel {
+                provider_id: last_model.provider_id,
+                model: last_model.model,
+                thinking_effort: last_model.thinking_effort,
+            }))
+            .bind(id)
+            .bind(self.user_id)
             .execute(&self.pool)
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
@@ -132,47 +212,40 @@ impl TraceStore for PgTraceStore {
 
     fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
-            let (role, text) = match &entry.message {
-                Message::User { content } => {
-                    let t = content
-                        .iter()
-                        .filter_map(|b| match b {
-                            ContentBlock::Text(t) => Some(t.text.as_str()),
-                            _ => None,
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" ");
-                    ("user", t)
-                }
-                Message::Assistant { content, .. } => {
-                    let t = content
-                        .iter()
-                        .filter_map(|b| match b {
-                            ContentBlock::Text(t) => Some(t.text.as_str()),
-                            _ => None,
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" ");
-                    ("assistant", t)
-                }
-                _ => ("system", String::new()),
+            let (role, usage) = match &entry.message {
+                Message::User { .. } => ("user", None),
+                Message::Assistant { usage, .. } => ("assistant", *usage),
+                Message::ToolResult { .. } => ("tool", None),
             };
+            let content = serde_json::to_value(&entry.message)
+                .map_err(|e| SessionError::Store(format!("serialize message: {e}")))?;
+            let created = ms_to_dt(entry.created_at);
 
             sqlx::query(
                 r#"
-                INSERT INTO messages (id, conversation_id, parent_id, role, content, status, seq, sync_seq, created_at, updated_at)
-                VALUES (
-                    $1, $2, $3, $4, $5, 'done',
-                    COALESCE((SELECT MAX(seq) + 1 FROM messages WHERE conversation_id = $2), 1),
-                    nextval('sync_seq'), NOW(), NOW()
-                )
+                INSERT INTO messages (id, conversation_id, parent_id, role, content_json, model,
+                                      provider_id, status, token_usage, started_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
                 "#,
             )
             .bind(entry.id)
             .bind(entry.conversation_id)
             .bind(entry.parent_id)
             .bind(role)
-            .bind(text)
+            .bind(sqlx::types::Json(content))
+            .bind(&entry.model)
+            .bind(entry.provider_id)
+            .bind(status_str(entry.status))
+            .bind(usage.map(|u| {
+                sqlx::types::Json(DbTokenUsage {
+                    input: u.input,
+                    output: u.output,
+                    cache_read: u.cache_read,
+                    cache_write: u.cache_write,
+                })
+            }))
+            .bind(ms_to_dt(entry.started_at))
+            .bind(created)
             .execute(&self.pool)
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
@@ -190,7 +263,7 @@ impl TraceStore for PgTraceStore {
                 r#"
                 SELECT * FROM messages
                 WHERE conversation_id = $1
-                ORDER BY seq ASC
+                ORDER BY created_at, id
                 "#,
             )
             .bind(conversation_id)
@@ -198,35 +271,7 @@ impl TraceStore for PgTraceStore {
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
 
-            let entries = rows
-                .into_iter()
-                .map(|r| {
-                    let block = ContentBlock::Text(TextContent {
-                        text: r.content.clone(),
-                    });
-                    let message = if r.role == "user" {
-                        Message::User {
-                            content: vec![block],
-                        }
-                    } else {
-                        Message::Assistant {
-                            content: vec![block],
-                            stop_reason: StopReason::Stop,
-                            usage: None,
-                        }
-                    };
-
-                    StoredMessage {
-                        id: r.id,
-                        conversation_id: r.conversation_id,
-                        parent_id: r.parent_id,
-                        message,
-                        created_at: r.created_at.timestamp_millis(),
-                    }
-                })
-                .collect();
-
-            Ok(entries)
+            rows.into_iter().map(stored_from_row).collect()
         })
     }
 }

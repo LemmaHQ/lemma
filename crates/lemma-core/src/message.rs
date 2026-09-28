@@ -51,6 +51,25 @@ pub enum Message {
 }
 
 impl Message {
+    /// Content blocks of any message variant.
+    pub fn content(&self) -> &[ContentBlock] {
+        match self {
+            Self::User { content }
+            | Self::Assistant { content, .. }
+            | Self::ToolResult { content, .. } => content,
+        }
+    }
+
+    /// Visible text of the message: text blocks joined by spaces. Lossy
+    /// projection for flat-text consumers (search index, legacy contracts).
+    pub fn visible_text(&self) -> String {
+        self.content()
+            .iter()
+            .filter_map(|b| b.plain_text())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
     /// Collects every tool call contained in an assistant message.
     pub fn tool_calls(&self) -> Vec<&ToolCall> {
         match self {

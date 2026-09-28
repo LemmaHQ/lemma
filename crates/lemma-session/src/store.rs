@@ -19,10 +19,24 @@ pub struct ConversationMeta {
     pub leaf_id: Option<Uuid>,
     /// Whether this conversation is restricted to local-only mode.
     pub local_only: bool,
+    /// Model last used in this conversation; `None` before the first turn.
+    pub last_model: Option<LastModel>,
     /// Unix timestamp of creation.
     pub created_at: i64,
     /// Unix timestamp of latest update.
     pub updated_at: i64,
+}
+
+/// The model selection last used in a conversation, restored when the
+/// conversation is reopened.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct LastModel {
+    /// Provider the turn was dispatched to.
+    pub provider_id: Uuid,
+    /// Model identifier as configured on the provider.
+    pub model: String,
+    /// Reasoning effort level, when the model exposes one.
+    pub thinking_effort: Option<String>,
 }
 
 /// A persisted trace entry within a conversation session tree.
@@ -36,8 +50,44 @@ pub struct StoredMessage {
     pub parent_id: Option<Uuid>,
     /// Canonical trace message body.
     pub message: lemma_core::Message,
+    /// Lifecycle status of the entry.
+    pub status: MessageStatus,
+    /// Provider row the message was dispatched to, when known.
+    pub provider_id: Option<Uuid>,
+    /// Model identifier that produced the entry, when known.
+    pub model: Option<String>,
+    /// Turn start timestamp in Unix epoch milliseconds.
+    pub started_at: i64,
     /// Created timestamp in Unix epoch milliseconds.
     pub created_at: i64,
+}
+
+/// Lifecycle status of a stored message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MessageStatus {
+    /// Generation in progress; the row is a placeholder.
+    Streaming,
+    /// Generation completed normally.
+    Done,
+    /// Generation cancelled by the user.
+    Aborted,
+    /// Generation failed.
+    Error,
+}
+
+/// Finalization payload applied to a placeholder message when its
+/// generation settles.
+#[derive(Debug, Clone)]
+pub struct MessageUpdate {
+    /// Final canonical message body.
+    pub message: lemma_core::Message,
+    /// Terminal lifecycle status.
+    pub status: MessageStatus,
+    /// First-token timestamp in Unix epoch milliseconds.
+    pub first_token_at: Option<i64>,
+    /// Turn end timestamp in Unix epoch milliseconds.
+    pub finished_at: i64,
 }
 
 /// Trait abstracting conversation persistence.
@@ -59,11 +109,15 @@ pub trait TraceStore: Send + Sync {
     /// Updates the active leaf pointer of a conversation.
     fn update_leaf<'a>(&'a self, id: Uuid, leaf_id: Uuid) -> BoxStoreFuture<'a, ()>;
 
-    /// Updates the message payload of an existing entry.
-    fn update_message<'a>(
+    /// Finalizes a placeholder message with its settled body, status and
+    /// timing marks.
+    fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()>;
+
+    /// Records the model selection used by a turn on the conversation.
+    fn update_conversation_model<'a>(
         &'a self,
         id: Uuid,
-        message: lemma_core::Message,
+        last_model: LastModel,
     ) -> BoxStoreFuture<'a, ()>;
 
     /// Appends a new message node into the tree.

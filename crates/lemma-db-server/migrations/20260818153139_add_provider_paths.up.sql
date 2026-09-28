@@ -1,4 +1,0 @@
-ALTER TABLE providers
-ADD COLUMN api_path TEXT NOT NULL DEFAULT '';
-ALTER TABLE providers
-ADD COLUMN models_path TEXT NOT NULL DEFAULT '';
