@@ -1,5 +1,5 @@
 # Stage 1: frontend (proto generation + vite build).
-ARG NODE_VERSION=26.9.0
+ARG NODE_VERSION=26.10.0
 FROM node:${NODE_VERSION}-bookworm-slim AS web-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
