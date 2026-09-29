@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use axum::Router;
-use lemma_archive::DbArchiveSource;
 use lemma_conversations::ConversationService;
 
-pub fn router(service: Arc<ConversationService<DbArchiveSource>>) -> Router {
+pub fn router(service: Arc<ConversationService>) -> Router {
     let connect = connectrpc::Router::new()
         .add_service(service)
         .into_axum_service();

@@ -1,6 +1,5 @@
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS conversations;
-DROP TABLE IF EXISTS s3_configs;
 DROP TABLE IF EXISTS providers;
 DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS users;

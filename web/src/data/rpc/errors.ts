@@ -30,16 +30,6 @@ const reasonKeys: Record<ErrorReason, ParseKeys> = {
     [ErrorReason.NOT_ASSISTANT_MESSAGE]: "errors.notAssistantMessage",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
-    [ErrorReason.STORAGE_ENDPOINT_REQUIRED]: "errors.storageEndpointRequired",
-    [ErrorReason.STORAGE_BUCKET_REQUIRED]: "errors.storageBucketRequired",
-    [ErrorReason.STORAGE_ACCESS_KEY_REQUIRED]:
-        "errors.storageAccessKeyRequired",
-    [ErrorReason.STORAGE_SECRET_KEY_REQUIRED]:
-        "errors.storageSecretKeyRequired",
-    [ErrorReason.STORAGE_NOT_CONFIGURED]: "errors.storageNotConfigured",
-    [ErrorReason.MIGRATION_NOT_PENDING]: "errors.migrationNotPending",
-    [ErrorReason.STORAGE_HAS_ARCHIVES]: "errors.storageHasArchives",
-    [ErrorReason.BUCKET_NOT_FOUND]: "errors.bucketNotFound",
 };
 
 /**

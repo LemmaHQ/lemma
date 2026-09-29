@@ -4,58 +4,17 @@ use buffa::Message;
 use connectrpc::{CodecFormat, Encodable, JsonSerialize};
 use connectrpc::{ErrorCode, HasMessageView, RequestContext, ServiceRequest};
 use http::HeaderMap;
-use lemma_archive::MemoryArchiveStore;
-use lemma_archive::{ArchiveError, ArchiveStore, object_key};
 use lemma_auth::{sign_access_token, users};
 use lemma_conversations::ConversationService;
 use lemma_proto::lemma::v1::ConversationService as ConversationServiceRpc;
 use lemma_proto::lemma::v1::MessageStatus;
 use sqlx::PgPool;
-use std::future::Future;
-use std::sync::Arc;
 use uuid::Uuid;
 
-type Svc = ConversationService<TestSource>;
+type Svc = ConversationService;
 
-struct TestSource {
-    enabled: bool,
-    store: Arc<MemoryArchiveStore>,
-}
-
-impl lemma_archive::ArchiveSource for TestSource {
-    type Store = MemoryArchiveStore;
-
-    fn store_for(
-        &self,
-        _user_id: Uuid,
-    ) -> impl Future<Output = Result<Option<Arc<MemoryArchiveStore>>, lemma_archive::ArchiveError>> + Send
-    {
-        let store = self.store.clone();
-        let enabled = self.enabled;
-        async move { Ok(enabled.then_some(store)) }
-    }
-}
-
-fn svc_no_store(pool: &PgPool) -> Svc {
-    ConversationService::new(
-        pool.clone(),
-        SECRET,
-        TestSource {
-            enabled: false,
-            store: Arc::new(MemoryArchiveStore::new()),
-        },
-    )
-}
-
-fn svc_with_store(pool: &PgPool, store: Arc<MemoryArchiveStore>) -> Svc {
-    ConversationService::new(
-        pool.clone(),
-        SECRET,
-        TestSource {
-            enabled: true,
-            store,
-        },
-    )
+fn svc(pool: &PgPool) -> Svc {
+    ConversationService::new(pool.clone(), SECRET)
 }
 
 const SECRET: &str = "test-secret";
@@ -279,7 +238,7 @@ async fn insert_msg(pool: &PgPool, conv: Uuid, seq: i64, status: &str, model: Op
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn create_and_list(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let (_, token) = new_user(&pool).await;
     let created = create(&svc, &token).await;
     assert_eq!(created.conversation.title, "");
@@ -288,7 +247,7 @@ async fn create_and_list(pool: PgPool) {
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn rename_not_found_and_cross_user(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let (_, alice) = new_user(&pool).await;
     let (_, erin) = new_user(&pool).await;
     let id = create(&svc, &alice).await.conversation.id.clone();
@@ -308,7 +267,7 @@ async fn rename_not_found_and_cross_user(pool: PgPool) {
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_restore_flow(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let (_, token) = new_user(&pool).await;
     let id = create(&svc, &token).await.conversation.id.clone();
 
@@ -347,7 +306,7 @@ async fn archive_restore_flow(pool: PgPool) {
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_messages_isolated(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let (_, alice) = new_user(&pool).await;
     let (_, erin) = new_user(&pool).await;
     let id = create(&svc, &alice).await.conversation.id.clone();
@@ -379,82 +338,8 @@ async fn list_messages_isolated(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn archive_moves_content_to_store(pool: PgPool) {
-    let store = Arc::new(MemoryArchiveStore::new());
-    let svc = svc_with_store(&pool, store.clone());
-    let (_, token) = new_user(&pool).await;
-    let id = create(&svc, &token).await.conversation.id.clone();
-    seed_messages(&pool, &id, &["一", "二", "三"]).await;
-
-    archive(&svc, &token, &id).await.unwrap();
-
-    assert!(message_contents(&pool, &id).await.is_empty());
-    let key = object_key(Uuid::parse_str(&id).unwrap());
-    let bytes = store.get(&key).await.unwrap().unwrap();
-    let envelope = lemma_archive::deserialize_envelope(&bytes).unwrap();
-    assert_eq!(envelope.messages.len(), 3);
-    assert_eq!(
-        envelope.messages[0].content_json["content"][0]["text"],
-        "一"
-    );
-    assert_eq!(list_archived_count(&svc, &token).await, 1);
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn restore_reinserts_content_in_order(pool: PgPool) {
-    let store = Arc::new(MemoryArchiveStore::new());
-    let svc = svc_with_store(&pool, store.clone());
-    let (_, token) = new_user(&pool).await;
-    let id = create(&svc, &token).await.conversation.id.clone();
-    seed_messages(&pool, &id, &["一", "二", "三"]).await;
-    archive(&svc, &token, &id).await.unwrap();
-
-    restore(&svc, &token, &id).await.unwrap();
-
-    assert_eq!(message_contents(&pool, &id).await, ["一", "二", "三"]);
-    let key = object_key(Uuid::parse_str(&id).unwrap());
-    assert!(store.get(&key).await.unwrap().is_none());
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn restore_legacy_in_place_archive_keeps_messages(pool: PgPool) {
-    let store = Arc::new(MemoryArchiveStore::new());
-    let svc = svc_with_store(&pool, store.clone());
-    let (_, token) = new_user(&pool).await;
-    let id = create(&svc, &token).await.conversation.id.clone();
-    seed_messages(&pool, &id, &["旧"]).await;
-
-    sqlx::query("UPDATE conversations SET status = 'archived', archived_at = now() WHERE id = $1")
-        .bind(Uuid::parse_str(&id).unwrap())
-        .execute(&pool)
-        .await
-        .unwrap();
-
-    restore(&svc, &token, &id).await.unwrap();
-
-    assert_eq!(message_contents(&pool, &id).await, ["旧"]);
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn delete_archived_removes_object(pool: PgPool) {
-    let store = Arc::new(MemoryArchiveStore::new());
-    let svc = svc_with_store(&pool, store.clone());
-    let (_, token) = new_user(&pool).await;
-    let id = create(&svc, &token).await.conversation.id.clone();
-    seed_messages(&pool, &id, &["x"]).await;
-    archive(&svc, &token, &id).await.unwrap();
-    let key = object_key(Uuid::parse_str(&id).unwrap());
-    assert!(store.get(&key).await.unwrap().is_some());
-
-    delete_archived(&svc, &token, &id).await.unwrap();
-
-    assert!(store.get(&key).await.unwrap().is_none());
-    assert_eq!(list_archived_count(&svc, &token).await, 0);
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn degrade_mode_keeps_content_in_pg(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+async fn archive_keeps_content_in_pg(pool: PgPool) {
+    let svc = svc(&pool);
     let (_, token) = new_user(&pool).await;
     let id = create(&svc, &token).await.conversation.id.clone();
     seed_messages(&pool, &id, &["留"]).await;
@@ -466,7 +351,7 @@ async fn degrade_mode_keeps_content_in_pg(pool: PgPool) {
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn list_messages_maps_statuses_and_fields(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let (_, token) = new_user(&pool).await;
     let id = create(&svc, &token).await.conversation.id.clone();
     let conv = Uuid::parse_str(&id).unwrap();
@@ -504,86 +389,10 @@ async fn list_messages_maps_statuses_and_fields(pool: PgPool) {
     assert_eq!(err.code, ErrorCode::InvalidArgument);
 }
 
-struct FailingStore;
-
-impl ArchiveStore for FailingStore {
-    async fn put(&self, _key: &str, _content: &[u8]) -> Result<(), ArchiveError> {
-        Err(ArchiveError("s3 down".into()))
-    }
-    async fn get(&self, _key: &str) -> Result<Option<Vec<u8>>, ArchiveError> {
-        Err(ArchiveError("s3 down".into()))
-    }
-    async fn delete(&self, _key: &str) -> Result<(), ArchiveError> {
-        Err(ArchiveError("s3 down".into()))
-    }
-}
-
-struct FailingSource;
-
-impl lemma_archive::ArchiveSource for FailingSource {
-    type Store = FailingStore;
-
-    async fn store_for(
-        &self,
-        _user_id: Uuid,
-    ) -> Result<Option<Arc<FailingStore>>, lemma_archive::ArchiveError> {
-        Ok(Some(Arc::new(FailingStore)))
-    }
-}
-
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
-async fn archive_store_failure_maps_internal_and_rolls_back(pool: PgPool) {
-    let svc = ConversationService::new(pool.clone(), SECRET, FailingSource);
-    let (_, token) = new_user(&pool).await;
-    let msg = lemma_proto::lemma::v1::CreateConversationRequest::default();
-    let bytes = msg.encode_to_bytes();
-    let view = lemma_proto::lemma::v1::CreateConversationRequest::decode_view(&bytes).unwrap();
-    let created = svc
-        .create_conversation(
-            bearer_ctx(&token),
-            ServiceRequest::from_parts(&view, &bytes),
-        )
-        .await
-        .unwrap();
-    let id = owned_body(&created.body).conversation.id.clone();
-    seed_messages(&pool, &id, &["一"]).await;
-
-    let err = archive_generic(&svc, &token, &id).await.err().unwrap();
-    assert_eq!(err.code, ErrorCode::Internal);
-
-    let status: String = sqlx::query_scalar("SELECT status FROM conversations WHERE id = $1")
-        .bind(Uuid::parse_str(&id).unwrap())
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(status, "active");
-    assert_eq!(message_contents(&pool, &id).await, ["一"]);
-}
-
-async fn archive_generic<S: lemma_archive::ArchiveSource>(
-    svc: &ConversationService<S>,
-    token: &str,
-    id: &str,
-) -> Result<lemma_proto::lemma::v1::ArchiveConversationResponse, connectrpc::ConnectError> {
-    let msg = lemma_proto::lemma::v1::ArchiveConversationRequest {
-        id: id.into(),
-        ..Default::default()
-    };
-    let bytes = msg.encode_to_bytes();
-    let view = lemma_proto::lemma::v1::ArchiveConversationRequest::decode_view(&bytes).unwrap();
-    match svc
-        .archive_conversation(bearer_ctx(token), ServiceRequest::from_parts(&view, &bytes))
-        .await
-    {
-        Ok(resp) => Ok(owned_body(&resp.body)),
-        Err(e) => Err(e),
-    }
-}
-
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn archive_and_restore_require_matching_status(pool: PgPool) {
     let (_uid, token) = new_user(&pool).await;
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     let active = create(&svc, &token).await.conversation.id.clone();
 
     let err = restore(&svc, &token, &active).await.err().unwrap();
@@ -608,7 +417,7 @@ async fn archive_and_restore_require_matching_status(pool: PgPool) {
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn malformed_ids_rejected(pool: PgPool) {
     let (_uid, token) = new_user(&pool).await;
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
 
     for err in [
         rename(&svc, &token, "nope", "t").await.err().unwrap(),
@@ -626,7 +435,7 @@ async fn malformed_ids_rejected(pool: PgPool) {
 
 #[sqlx::test(migrations = "../lemma-db-server/migrations")]
 async fn handlers_require_bearer(pool: PgPool) {
-    let svc = svc_no_store(&pool);
+    let svc = svc(&pool);
     use lemma_proto::lemma::v1;
 
     macro_rules! unauth {

@@ -48,7 +48,6 @@ async fn archive_sets_metadata_and_guards(pool: PgPool) {
     let archived = store::archive(&pool, c.id, uid).await.unwrap().unwrap();
     assert_eq!(archived.status, "archived");
     assert!(archived.archived_at.is_some());
-    assert_eq!(archived.message_count, Some(2));
 
     assert!(store::archive(&pool, c.id, uid).await.unwrap().is_none());
 }
@@ -62,7 +61,6 @@ async fn restore_reactivates_and_guards(pool: PgPool) {
     let restored = store::restore(&pool, c.id, uid).await.unwrap().unwrap();
     assert_eq!(restored.status, "active");
     assert!(restored.archived_at.is_none());
-    assert!(restored.message_count.is_none());
 
     assert!(store::restore(&pool, c.id, uid).await.unwrap().is_none());
 }

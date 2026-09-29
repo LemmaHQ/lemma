@@ -22,9 +22,7 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         | ErrorReason::ConversationNotActive
         | ErrorReason::ConversationNotArchived
         | ErrorReason::ArchivedConversationNotFound
-        | ErrorReason::MessageNotFound
-        | ErrorReason::BucketNotFound => ErrorCode::NotFound,
-        ErrorReason::StorageHasArchives => ErrorCode::FailedPrecondition,
+        | ErrorReason::MessageNotFound => ErrorCode::NotFound,
         // Any reason not listed above maps to InvalidArgument by default.
         _ => ErrorCode::InvalidArgument,
     }
@@ -54,16 +52,6 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::NotAssistantMessage => "not an assistant message",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
-        ErrorReason::StorageEndpointRequired => "endpoint required",
-        ErrorReason::StorageBucketRequired => "bucket required",
-        ErrorReason::StorageAccessKeyRequired => "access_key required",
-        ErrorReason::StorageSecretKeyRequired => "secret_key required",
-        ErrorReason::StorageNotConfigured => "storage not configured",
-        ErrorReason::MigrationNotPending => "no pending migration",
-        ErrorReason::StorageHasArchives => {
-            "archived conversations still reference this storage; restore or delete them first"
-        }
-        ErrorReason::BucketNotFound => "bucket not found",
         ErrorReason::Unspecified => "unspecified error reason",
     }
 }

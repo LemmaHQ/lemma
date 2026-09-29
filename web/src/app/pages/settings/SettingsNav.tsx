@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Bot, Database, Palette } from "lucide-react";
+import { ArrowLeft, Bot, Palette } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink } from "react-router";
 
@@ -74,13 +74,6 @@ export function SettingsNav() {
                         icon={Bot}
                         label={t("settings.aiProviders")}
                         to="/settings/providers"
-                    />
-                </NavGroup>
-                <NavGroup label={t("settings.groupData")}>
-                    <NavItem
-                        icon={Database}
-                        label={t("settings.storage")}
-                        to="/settings/storage"
                     />
                 </NavGroup>
             </nav>

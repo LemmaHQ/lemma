@@ -13,8 +13,7 @@ pub struct AppState {
     pub pool: PgPool,
     pub auth: Arc<AuthService>,
     pub providers: Arc<ProviderService>,
-    pub storage: Arc<lemma_archive::StorageService>,
-    pub conversations: Arc<ConversationService<lemma_archive::DbArchiveSource>>,
+    pub conversations: Arc<ConversationService>,
     pub chat: Arc<ChatService>,
 }
 
@@ -31,15 +30,9 @@ impl AppState {
                 config.jwt_secret.clone(),
                 config.secret_key.clone(),
             )),
-            storage: Arc::new(lemma_archive::StorageService::new(
-                pool.clone(),
-                config.jwt_secret.clone(),
-                config.secret_key.clone(),
-            )),
             conversations: Arc::new(ConversationService::new(
                 pool.clone(),
                 config.jwt_secret.clone(),
-                lemma_archive::DbArchiveSource::new(pool.clone(), config.secret_key.clone()),
             )),
             chat: Arc::new(ChatService::new(
                 pool.clone(),

@@ -13,7 +13,6 @@ import dev.lemmahq.gen.lemma.v1.AuthServiceClient
 import dev.lemmahq.gen.lemma.v1.ChatServiceClient
 import dev.lemmahq.gen.lemma.v1.ConversationServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
-import dev.lemmahq.gen.lemma.v1.StorageServiceClient
 import dev.lemmahq.gen.lemma.v1.SyncServiceClient
 import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +80,5 @@ class LemmaRpcClient(
     val chat = ChatServiceClient(protocolClient)
     val conversation = ConversationServiceClient(protocolClient)
     val provider = ProviderServiceClient(protocolClient)
-    val storage = StorageServiceClient(protocolClient)
     val sync = SyncServiceClient(protocolClient)
 }

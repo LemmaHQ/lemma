@@ -8,7 +8,6 @@ const mk = (id: string, updatedAtMs: number): SessionSummary => ({
     id,
     title: id,
     updatedAtMs,
-    messageCount: 0,
 });
 
 describe("groupSessions", () => {

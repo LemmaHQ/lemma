@@ -2,12 +2,7 @@
 
 use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
-use chrono::Utc;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_archive::{
-    ArchiveError, ArchiveSource, ArchiveStore, deserialize_envelope, envelope_from_messages,
-    messages_from_envelope, object_key, serialize_envelope,
-};
 use lemma_auth::require_user;
 use lemma_db_server::entity::{Conversation as DbConversation, Message as DbMessage};
 use lemma_proto::app_error;
@@ -28,22 +23,18 @@ const MAX_PAGE_LIMIT: i32 = 100;
 
 /// Connect handler implementing the ConversationService RPCs.
 ///
-/// The archive backend is per-user: when the user has no S3 storage
-/// configured, archiving degrades to a database-only status flip and the
-/// messages stay in place.
-pub struct ConversationService<S: ArchiveSource> {
+/// Archiving is a database-only status flip; messages stay in place.
+pub struct ConversationService {
     pool: PgPool,
     jwt_secret: Arc<str>,
-    archive: S,
 }
 
-impl<S: ArchiveSource> ConversationService<S> {
-    /// Creates the handler with the given archive source.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<Arc<str>>, archive: S) -> Self {
+impl ConversationService {
+    /// Creates the handler.
+    pub fn new(pool: PgPool, jwt_secret: impl Into<Arc<str>>) -> Self {
         Self {
             pool,
             jwt_secret: jwt_secret.into(),
-            archive,
         }
     }
 }
@@ -61,7 +52,6 @@ fn conversation_to_proto(c: &DbConversation) -> Conversation {
             Some(t) => MessageField::some(Timestamp::from(t)),
             None => MessageField::none(),
         },
-        message_count: c.message_count.unwrap_or(0),
         created_at: Timestamp::from(c.created_at).into(),
         updated_at: Timestamp::from(c.updated_at).into(),
         ..Default::default()
@@ -98,16 +88,12 @@ fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
     Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
 }
 
-fn map_archive(e: ArchiveError) -> ConnectError {
-    ConnectError::internal(format!("{e}"))
-}
-
 fn map_db(e: sqlx::Error) -> ConnectError {
     ConnectError::internal(format!("db: {e}"))
 }
 
 #[allow(refining_impl_trait)]
-impl<S: ArchiveSource> lemma_proto::lemma::v1::ConversationService for ConversationService<S> {
+impl lemma_proto::lemma::v1::ConversationService for ConversationService {
     async fn list_conversations(
         &self,
         ctx: RequestContext,
@@ -196,41 +182,10 @@ impl<S: ArchiveSource> lemma_proto::lemma::v1::ConversationService for Conversat
     ) -> ServiceResult<ArchiveConversationResponse> {
         let user_id = require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
-        let store = self.archive.store_for(user_id).await.map_err(map_archive)?;
-        let mut tx = self.pool.begin().await.map_err(map_db)?;
-        if store::lock_active(&mut tx, id, user_id)
+        let conversation = store::archive(&self.pool, id, user_id)
             .await
             .map_err(map_db)?
-            .is_none()
-        {
-            return Err(app_error(ErrorReason::ConversationNotActive));
-        }
-
-        let conversation = if let Some(archive) = store {
-            // Upload before mutating the database: if the put fails, the
-            // transaction rolls back and nothing changes.
-            let messages = store::list_all_messages(&mut tx, id)
-                .await
-                .map_err(map_db)?;
-            let envelope = envelope_from_messages(id, Utc::now(), &messages);
-            let bytes = serialize_envelope(&envelope).map_err(map_archive)?;
-            let key = object_key(id);
-            archive.put(&key, &bytes).await.map_err(map_archive)?;
-            let c = store::mark_archived_with_key(&mut tx, id, &key)
-                .await
-                .map_err(map_db)?;
-            store::delete_all_messages(&mut tx, id)
-                .await
-                .map_err(map_db)?;
-            c
-        } else {
-            store::archive(&mut *tx, id, user_id)
-                .await
-                .map_err(map_db)?
-                .ok_or_else(|| app_error(ErrorReason::ConversationNotActive))?
-        };
-        tx.commit().await.map_err(map_db)?;
-
+            .ok_or_else(|| app_error(ErrorReason::ConversationNotActive))?;
         Response::ok(ArchiveConversationResponse {
             conversation: conversation_to_proto(&conversation).into(),
             ..Default::default()
@@ -244,39 +199,10 @@ impl<S: ArchiveSource> lemma_proto::lemma::v1::ConversationService for Conversat
     ) -> ServiceResult<RestoreConversationResponse> {
         let user_id = require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
-        let store = self.archive.store_for(user_id).await.map_err(map_archive)?;
-        let mut tx = self.pool.begin().await.map_err(map_db)?;
-        let locked = store::lock_archived(&mut tx, id, user_id)
-            .await
-            .map_err(map_db)?;
-        let key = locked
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotArchived))?
-            .archive_key;
-
-        if let (Some(archive), Some(key)) = (store.as_ref(), key.as_deref()) {
-            let bytes = archive
-                .get(key)
-                .await
-                .map_err(map_archive)?
-                .ok_or_else(|| ConnectError::internal("archive object missing"))?;
-            let envelope = deserialize_envelope(&bytes).map_err(map_archive)?;
-            let messages = messages_from_envelope(&envelope).map_err(map_archive)?;
-            store::insert_restored(&mut tx, &messages)
-                .await
-                .map_err(map_db)?;
-        }
-        let conversation = store::restore(&mut *tx, id, user_id)
+        let conversation = store::restore(&self.pool, id, user_id)
             .await
             .map_err(map_db)?
             .ok_or_else(|| app_error(ErrorReason::ConversationNotArchived))?;
-        tx.commit().await.map_err(map_db)?;
-
-        if let (Some(archive), Some(key)) = (store.as_ref(), key.as_deref()) {
-            // Post-commit cleanup: a failed delete leaves an orphan
-            // object, not an inconsistency, so it is best-effort.
-            let _ = archive.delete(key).await;
-        }
-
         Response::ok(RestoreConversationResponse {
             conversation: conversation_to_proto(&conversation).into(),
             ..Default::default()
@@ -305,22 +231,11 @@ impl<S: ArchiveSource> lemma_proto::lemma::v1::ConversationService for Conversat
     ) -> ServiceResult<DeleteArchivedResponse> {
         let user_id = require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
-        let store = self.archive.store_for(user_id).await.map_err(map_archive)?;
-        let key = store::find_archive_key(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?;
-        if key.is_none() {
-            return Err(app_error(ErrorReason::ArchivedConversationNotFound));
-        }
         let deleted = store::delete_archived(&self.pool, id, user_id)
             .await
             .map_err(map_db)?;
         if !deleted {
             return Err(app_error(ErrorReason::ArchivedConversationNotFound));
-        }
-        if let (Some(archive), Some(key)) = (store.as_ref(), key.flatten().as_deref()) {
-            // Best-effort cleanup; the row is already gone.
-            let _ = archive.delete(key).await;
         }
         Response::ok(DeleteArchivedResponse::default())
     }

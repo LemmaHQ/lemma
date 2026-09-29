@@ -24,7 +24,6 @@ function toSummary(c: Conversation): SessionSummary {
         id: c.id,
         title: c.title,
         updatedAtMs: c.updatedAt ? timestampDate(c.updatedAt).getTime() : 0,
-        messageCount: c.messageCount,
     };
 }
 

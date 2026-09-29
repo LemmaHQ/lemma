@@ -24,12 +24,10 @@ message Conversation {
   string id = 1;
   string title = 2;
   ConversationStatus status = 3;
-  // 归档元数据（仅 archived 时有值）
+  // 归档时间（仅 archived 时有值）
   google.protobuf.Timestamp archived_at = 4;
-  int32 message_count = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
-  // 会话内单调递增序号（插入顺序），展示排序以此为准
 }
 
 // sync_seq 为所有变更的绝对时序依据
@@ -114,9 +112,9 @@ service ConversationService {
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
   rpc RenameConversation(RenameConversationRequest) returns (RenameConversationResponse);
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
-  // 归档：置状态、导出 S3、清热数据
+  // 归档：置状态，消息原地保留
   rpc ArchiveConversation(ArchiveConversationRequest) returns (ArchiveConversationResponse);
-  // 解档：从 S3 恢复消息，回到活跃列表
+  // 解档：回到活跃列表
   rpc RestoreConversation(RestoreConversationRequest) returns (RestoreConversationResponse);
   // 归档元数据全量
   rpc ListArchived(ListArchivedRequest) returns (ListArchivedResponse);

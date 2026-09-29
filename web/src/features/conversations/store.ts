@@ -43,7 +43,6 @@ function rowToConversation(r: ConversationRow): Conversation {
         status: r.status as ConversationStatus,
         archivedAt:
             r.archivedAtMs === null ? undefined : toTimestamp(r.archivedAtMs),
-        messageCount: r.messageCount,
         createdAt: toTimestamp(r.createdAtMs),
         updatedAt: toTimestamp(r.updatedAtMs),
     });

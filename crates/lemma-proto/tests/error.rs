@@ -28,11 +28,14 @@ fn app_error_carries_code_message_and_detail() {
 
 #[test]
 fn attrs_survive_roundtrip() {
-    let e = app_error_with(ErrorReason::BucketNotFound, &[("bucket", "lemma")]);
+    let e = app_error_with(ErrorReason::ConversationNotFound, &[("id", "abc")]);
     assert_eq!(e.code, ErrorCode::NotFound);
     let info = error_info(&e);
-    assert_eq!(info.reason.as_known(), Some(ErrorReason::BucketNotFound));
-    assert_eq!(info.attrs["bucket"], "lemma");
+    assert_eq!(
+        info.reason.as_known(),
+        Some(ErrorReason::ConversationNotFound)
+    );
+    assert_eq!(info.attrs["id"], "abc");
 }
 
 #[test]
@@ -46,8 +49,8 @@ fn transport_codes_match_business_semantics() {
         ErrorCode::Unauthenticated
     );
     assert_eq!(
-        app_error(ErrorReason::StorageHasArchives).code,
-        ErrorCode::FailedPrecondition
+        app_error(ErrorReason::ConversationNotFound).code,
+        ErrorCode::NotFound
     );
     assert_eq!(
         app_error(ErrorReason::UsernameTaken).code,
@@ -57,10 +60,10 @@ fn transport_codes_match_business_semantics() {
 
 #[test]
 fn error_reason_decodes_from_detail() {
-    let e = app_error(ErrorReason::StorageHasArchives);
+    let e = app_error(ErrorReason::ConversationNotArchived);
     assert_eq!(
         lemma_proto::error_reason(&e),
-        Some(ErrorReason::StorageHasArchives)
+        Some(ErrorReason::ConversationNotArchived)
     );
     assert_eq!(
         lemma_proto::error_reason(&connectrpc::ConnectError::internal("db: boom")),

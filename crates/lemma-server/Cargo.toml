@@ -7,7 +7,6 @@ name = "lemma-server"
 axum.workspace = true
 connectrpc.workspace = true
 dotenvy.workspace = true
-lemma-archive.workspace = true
 lemma-auth.workspace = true
 lemma-chat.workspace = true
 lemma-conversations.workspace = true

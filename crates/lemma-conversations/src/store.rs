@@ -87,9 +87,8 @@ where
     .await
 }
 
-/// Archives an active conversation without touching its messages,
-/// snapshotting the message count. Returns `None` unless the conversation
-/// is currently active.
+/// Archives an active conversation without touching its messages.
+/// Returns `None` unless the conversation is currently active.
 pub async fn archive<'e, E>(
     executor: E,
     id: Uuid,
@@ -103,7 +102,6 @@ where
         UPDATE conversations
         SET status = 'archived',
             archived_at = now(),
-            message_count = (SELECT count(*) FROM messages WHERE conversation_id = $1),
             updated_at = now()
         WHERE id = $1 AND user_id = $2 AND status = 'active'
         RETURNING *
@@ -129,7 +127,7 @@ where
     sqlx::query_as::<_, Conversation>(
         r#"
         UPDATE conversations
-        SET status = 'active', archived_at = NULL, message_count = NULL,
+        SET status = 'active', archived_at = NULL,
             updated_at = now()
         WHERE id = $1 AND user_id = $2 AND status = 'archived'
         RETURNING *
@@ -201,137 +199,4 @@ where
         rows
     };
     Ok((messages, has_more))
-}
-
-/// Locks an active conversation row for update inside a transaction.
-pub async fn lock_active(
-    conn: &mut sqlx::PgConnection,
-    id: Uuid,
-    user_id: Uuid,
-) -> sqlx::Result<Option<Conversation>> {
-    sqlx::query_as(
-        "SELECT * FROM conversations WHERE id = $1 AND user_id = $2 AND status = 'active' FOR UPDATE",
-    )
-    .bind(id)
-    .bind(user_id)
-    .fetch_optional(conn)
-    .await
-}
-
-/// Locks an archived conversation row for update inside a transaction.
-pub async fn lock_archived(
-    conn: &mut sqlx::PgConnection,
-    id: Uuid,
-    user_id: Uuid,
-) -> sqlx::Result<Option<Conversation>> {
-    sqlx::query_as(
-        "SELECT * FROM conversations WHERE id = $1 AND user_id = $2 AND status = 'archived' FOR UPDATE",
-    )
-    .bind(id)
-    .bind(user_id)
-    .fetch_optional(conn)
-    .await
-}
-
-/// Lists all of a conversation's messages in seq order, for archiving.
-pub async fn list_all_messages(
-    conn: &mut sqlx::PgConnection,
-    conversation_id: Uuid,
-) -> sqlx::Result<Vec<Message>> {
-    sqlx::query_as("SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at, id")
-        .bind(conversation_id)
-        .fetch_all(conn)
-        .await
-}
-
-/// Marks a locked conversation archived with its S3 object key,
-/// snapshotting the message count.
-pub async fn mark_archived_with_key(
-    conn: &mut sqlx::PgConnection,
-    id: Uuid,
-    key: &str,
-) -> sqlx::Result<Conversation> {
-    sqlx::query_as(
-        r#"
-        UPDATE conversations
-        SET status = 'archived', archived_at = now(),
-            message_count = (SELECT count(*) FROM messages WHERE conversation_id = $1),
-            archive_key = $2, updated_at = now()
-        WHERE id = $1
-        RETURNING *
-        "#,
-    )
-    .bind(id)
-    .bind(key)
-    .fetch_one(conn)
-    .await
-}
-
-/// Deletes all of a conversation's messages, after they are safely in
-/// the archive.
-pub async fn delete_all_messages(
-    conn: &mut sqlx::PgConnection,
-    conversation_id: Uuid,
-) -> sqlx::Result<u64> {
-    sqlx::query("DELETE FROM messages WHERE conversation_id = $1")
-        .bind(conversation_id)
-        .execute(conn)
-        .await
-        .map(|r| r.rows_affected())
-}
-
-/// Reinserts messages recovered from an archive, preserving their ids and
-/// ordering timestamps.
-pub async fn insert_restored(
-    conn: &mut sqlx::PgConnection,
-    messages: &[Message],
-) -> sqlx::Result<()> {
-    for m in messages {
-        sqlx::query(
-            r#"
-            INSERT INTO messages (id, conversation_id, parent_id, role, content_json, provider_id,
-                                  model, client_msg_id, status, token_usage, started_at,
-                                  first_token_at, finished_at, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-            "#,
-        )
-        .bind(m.id)
-        .bind(m.conversation_id)
-        .bind(m.parent_id)
-        .bind(&m.role)
-        .bind(&m.content_json)
-        .bind(m.provider_id)
-        .bind(&m.model)
-        .bind(&m.client_msg_id)
-        .bind(&m.status)
-        .bind(&m.token_usage)
-        .bind(m.started_at)
-        .bind(m.first_token_at)
-        .bind(m.finished_at)
-        .bind(m.created_at)
-        .bind(m.updated_at)
-        .execute(&mut *conn)
-        .await?;
-    }
-    Ok(())
-}
-
-/// Returns the archive key of an archived conversation. The outer `None`
-/// means the conversation is missing or not archived; the inner `None`
-/// means it was archived in place without an S3 object.
-pub async fn find_archive_key<'e, E>(
-    executor: E,
-    id: Uuid,
-    user_id: Uuid,
-) -> sqlx::Result<Option<Option<String>>>
-where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
-{
-    sqlx::query_scalar::<_, Option<String>>(
-        "SELECT archive_key FROM conversations WHERE id = $1 AND user_id = $2 AND status = 'archived'",
-    )
-    .bind(id)
-    .bind(user_id)
-    .fetch_optional(executor)
-    .await
 }

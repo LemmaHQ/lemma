@@ -1,7 +1,7 @@
 //! Storage kernel: connection pool, migrations, and shared row entities.
 //!
 //! This crate owns no domain logic. Queries live in the domain crates
-//! (lemma-auth, lemma-providers, lemma-conversations, lemma-archive);
+//! (lemma-auth, lemma-providers, lemma-conversations);
 //! only the row types shared across them are defined here.
 
 pub mod entity;

@@ -35,19 +35,6 @@ CREATE TABLE providers (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX ON providers (user_id);
-CREATE TABLE s3_configs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    endpoint TEXT NOT NULL,
-    region TEXT NOT NULL,
-    bucket TEXT NOT NULL,
-    access_key TEXT NOT NULL,
-    secret_key TEXT NOT NULL,
-    migration_from JSONB,
-    migrated_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
-);
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -56,8 +43,6 @@ CREATE TABLE conversations (
     leaf_id UUID,
     last_model JSONB,
     archived_at TIMESTAMPTZ,
-    archive_key TEXT,
-    message_count INTEGER,
     created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );

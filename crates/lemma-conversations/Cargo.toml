@@ -8,7 +8,6 @@ buffa.workspace = true
 buffa-types.workspace = true
 chrono.workspace = true
 connectrpc.workspace = true
-lemma-archive.workspace = true
 lemma-auth.workspace = true
 lemma-core.workspace = true
 lemma-db-server.workspace = true

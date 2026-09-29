@@ -14,7 +14,6 @@ export interface ConversationRow {
     // ConversationStatus enum value; 2 is archived.
     status: number;
     archivedAtMs: number | null;
-    messageCount: number;
     createdAtMs: number;
     updatedAtMs: number;
 }
@@ -47,7 +46,6 @@ export function conversationToRow(c: Conversation): ConversationRow {
         title: c.title,
         status: c.status,
         archivedAtMs: c.archivedAt ? ms(c.archivedAt) : null,
-        messageCount: c.messageCount,
         createdAtMs: ms(c.createdAt),
         updatedAtMs: ms(c.updatedAt),
     };
