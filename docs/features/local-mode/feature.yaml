@@ -11,5 +11,3 @@ clients:
   android:
     status: in-progress
     tracking: 65
-links:
-  plan: docs/plans/2026-09-21-core-restructure.md
