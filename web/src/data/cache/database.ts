@@ -17,21 +17,8 @@ export class LemmaDb extends Dexie {
             messages: "id, [conversationId+createdAtMs]",
             meta: "key",
         });
-        // Version 2 re-indexes messages by seq instead of createdAtMs;
-        // rows cached under the old ordering are dropped and re-pulled.
-        this.version(2)
-            .stores({
-                conversations: "id, updatedAtMs",
-                messages: "id, [conversationId+seq]",
-                meta: "key",
-            })
-            .upgrade(async (tx) => {
-                await tx.table("messages").clear();
-                await tx.table("meta").delete("cursor");
-            });
-        // Version 3 restores the (createdAtMs, id) ordering after the sync
-        // system removal dropped the server-side seq column; rows cached
-        // under the seq index are dropped and re-pulled.
+        // Version 3 restores the (createdAtMs, id) ordering; rows cached
+        // under the previous seq index are dropped and re-pulled.
         this.version(3)
             .stores({
                 conversations: "id, updatedAtMs",

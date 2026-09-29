@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/lemma-client",
     "crates/lemma-server",
     "crates/lemma-db-client",
     "crates/lemma-db-server",
@@ -43,7 +42,6 @@ lemma-agent = { path = "crates/lemma-agent" }
 lemma-auth = { path = "crates/lemma-auth" }
 lemma-chat = { path = "crates/lemma-chat" }
 lemma-conversations = { path = "crates/lemma-conversations" }
-lemma-client = { path = "crates/lemma-client" }
 lemma-crypto = { path = "crates/lemma-crypto" }
 lemma-db-client = { path = "crates/lemma-db-client" }
 lemma-db-server = { path = "crates/lemma-db-server" }

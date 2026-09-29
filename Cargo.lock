@@ -1729,27 +1729,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-client"
-version = "0.1.0"
-dependencies = [
- "futures",
- "lemma-adapter",
- "lemma-agent",
- "lemma-core",
- "lemma-db-client",
- "lemma-proto",
- "lemma-session",
- "lemma-tools",
- "parking_lot",
- "rusqlite",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "lemma-conversations"
 version = "0.1.0"
 dependencies = [

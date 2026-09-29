@@ -13,18 +13,14 @@ Rewrite this file when the implementation changes; do not archive old versions.
 
 - `lemma-db-client` persists traces in a single plaintext SQLite database (rusqlite, WAL mode, foreign keys on).
 - Messages form a tree through a `parent_id` column; each conversation row carries the active `leaf_id` pointer, and context is a read-time path projection.
-- An FTS5 virtual table indexes the plain text extracted from message content and backs the read-only `QueryHistoryTool`.
-- An `outbox` table and `sync_state` cursor table capture local offline changes and sync progress.
+- An FTS5 virtual table indexes the plain text extracted from message content; the read-only `QueryHistoryTool` it backs returns with the agent tool-loop work (it previously lived in the removed `lemma-client`).
 
 ## Engine assembly
 
-- `lemma-client` is the single UI-facing facade crate implementing the `ClientEngine` trait.
-- `LocalClientEngine` bundles the SQLite store, the agent loop, built-in tools (`read_file`, `write_file`, `bash`), and `QueryHistoryTool`.
-- `RemoteClientEngine` provides the ConnectRPC gateway client skeleton.
-- Desktop embeds `LocalClientEngine` directly or as a sidecar; Android embeds it via UniFFI.
+- The server hosts the shared `AgentLoop` through `lemma-chat`; no separate facade crate exists today.
+- Desktop embeds the Rust core directly or as a sidecar; Android embeds it via UniFFI. Both compose `lemma-session` + `lemma-agent` + `lemma-adapter` + `lemma-tools` + `lemma-db-client` the same way the server does.
 
 ## Synchronization
 
-- `SyncEngine` in `lemma-client` provides bidirectional sync.
-- Push reads pending `outbox` entries and confirms via `ack_outbox`.
-- Pull applies remote changes from `lemma-sync` atomically to local SQLite and advances `sync_state.last_sync_seq`.
+- The legacy sync system (outbox, `sync_seq` cursors, `SyncEngine`) was excised in 2026-09; there is no wire sync today.
+- Any future sync must be redesigned tree-native against the session tree, not resurrected as outbox/seq machinery.

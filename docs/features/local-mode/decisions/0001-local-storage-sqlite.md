@@ -1,6 +1,6 @@
 # 0001: Local trace storage is a single SQLite database; JSONL is export-only
 
-- Status: accepted
+- Status: accepted (amended 2026-09: the sync system referenced below — `sync_seq`, outbox, sync cursor — was excised; the single-SQLite decision is unchanged, and any future sync will be redesigned tree-native)
 - Date: 2026-09-20
 
 ## Context

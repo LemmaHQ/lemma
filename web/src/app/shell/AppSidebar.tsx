@@ -16,8 +16,6 @@ import type { SessionSummary } from "@/features/conversations/grouping";
 import { LanguageToggle } from "@/features/preferences/LanguageToggle";
 import { ThemeToggle } from "@/features/preferences/ThemeToggle";
 
-import { SyncIndicator } from "./SyncIndicator";
-
 interface AppSidebarProps {
     sessions: SessionSummary[];
     archived: SessionSummary[];
@@ -126,7 +124,6 @@ export function AppSidebar({
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <SyncIndicator />
                 <LanguageToggle />
                 <ThemeToggle />
             </div>

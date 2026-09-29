@@ -79,7 +79,6 @@ fn message_to_proto(m: &DbMessage) -> Message {
         .into(),
         created_at: Timestamp::from(m.created_at).into(),
         updated_at: Timestamp::from(m.updated_at).into(),
-        seq: 0,
         ..Default::default()
     }
 }
