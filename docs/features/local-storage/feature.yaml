@@ -1,6 +1,6 @@
 id: local-storage
 title: Local Storage
-status: draft
+status: in-progress
 owners: [core]
 clients:
   web:
