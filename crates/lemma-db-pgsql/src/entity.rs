@@ -14,9 +14,25 @@ pub struct User {
     pub id: Uuid,
     pub username: String,
     pub email: String,
-    pub password_hash: String,
     pub role: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct Credential {
+    pub user_id: Uuid,
+    /// Argon2 hash of the account password.
+    pub password_hash: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct Setting {
+    pub user_id: Uuid,
+    pub key: String,
+    pub value: Json<serde_json::Value>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -63,6 +79,7 @@ pub struct Conversation {
     pub leaf_id: Option<Uuid>,
     pub status: String,
     pub last_model: Option<Json<LastModel>>,
+    pub local_only: bool,
     pub archived_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

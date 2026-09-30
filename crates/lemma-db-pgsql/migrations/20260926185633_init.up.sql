@@ -2,13 +2,18 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'normal',
     created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 CREATE UNIQUE INDEX users_owner_unique ON users (role)
 WHERE role = 'owner';
+CREATE TABLE auth_credentials (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -20,6 +25,13 @@ CREATE TABLE refresh_tokens (
     expires_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX ON refresh_tokens (user_id);
+CREATE TABLE settings (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    PRIMARY KEY (user_id, key)
+);
 CREATE TABLE providers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -42,6 +54,7 @@ CREATE TABLE conversations (
     status TEXT NOT NULL DEFAULT 'active',
     leaf_id UUID,
     last_model JSONB,
+    local_only BOOLEAN NOT NULL DEFAULT FALSE,
     archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()

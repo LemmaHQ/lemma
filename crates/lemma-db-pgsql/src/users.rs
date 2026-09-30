@@ -4,19 +4,14 @@ use crate::entity::User;
 
 /// Inserts a user and returns it. The very first user becomes the owner;
 /// everyone after that is normal.
-pub async fn insert<'e, E>(
-    executor: E,
-    username: &str,
-    email: &str,
-    password_hash: &str,
-) -> sqlx::Result<User>
+pub async fn insert<'e, E>(executor: E, username: &str, email: &str) -> sqlx::Result<User>
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     sqlx::query_as::<_, User>(
         r#"
-        INSERT INTO users (username, email, password_hash, role)
-        VALUES ($1, $2, $3,
+        INSERT INTO users (username, email, role)
+        VALUES ($1, $2,
             CASE WHEN EXISTS (SELECT 1 FROM users WHERE role = 'owner')
                 THEN 'normal' ELSE 'owner' END)
         RETURNING *
@@ -24,7 +19,6 @@ where
     )
     .bind(username)
     .bind(email)
-    .bind(password_hash)
     .fetch_one(executor)
     .await
 }

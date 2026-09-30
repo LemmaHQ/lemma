@@ -4,7 +4,7 @@ use buffa_types::google::protobuf::Timestamp;
 use chrono::{Duration, Utc};
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_db_pgsql::entity::User as DbUser;
-use lemma_db_pgsql::{tokens, users};
+use lemma_db_pgsql::{credentials, tokens, users};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AuthTokens, ErrorReason, LoginResponse, LogoutResponse, MeResponse, RefreshResponse, Role,
@@ -117,15 +117,20 @@ impl lemma_proto::lemma::v1::AuthService for AuthService {
         }
         let hash = hash_password(password)
             .map_err(|e| ConnectError::internal(format!("hash password: {e}")))?;
-        let user = match users::insert(&self.pool, username, email, &hash).await {
+        let mut tx = self.pool.begin().await.map_err(map_db)?;
+        let user = match users::insert(&mut *tx, username, email).await {
             Ok(u) => u,
             // Lost a concurrent first-signup race for the single owner
             // slot; retry, and the insert now lands as a normal user.
-            Err(e) if is_owner_conflict(&e) => users::insert(&self.pool, username, email, &hash)
+            Err(e) if is_owner_conflict(&e) => users::insert(&mut *tx, username, email)
                 .await
                 .map_err(map_db)?,
             Err(e) => return Err(map_db(e)),
         };
+        credentials::upsert(&mut *tx, user.id, &hash)
+            .await
+            .map_err(map_db)?;
+        tx.commit().await.map_err(map_db)?;
         let (tokens, _) = self.issue_tokens(&self.pool, user.id).await?;
         Response::ok(SignUpResponse {
             user: user_to_proto(&user).into(),
@@ -152,7 +157,11 @@ impl lemma_proto::lemma::v1::AuthService for AuthService {
             .await
             .map_err(map_db)?
             .ok_or_else(|| app_error(ErrorReason::CredentialsInvalid))?;
-        if !verify_password(request.password, &user.password_hash) {
+        let stored_hash = credentials::password_hash(&self.pool, user.id)
+            .await
+            .map_err(map_db)?
+            .ok_or_else(|| app_error(ErrorReason::CredentialsInvalid))?;
+        if !verify_password(request.password, &stored_hash) {
             return Err(app_error(ErrorReason::CredentialsInvalid));
         }
         let (tokens, _) = self.issue_tokens(&self.pool, user.id).await?;

@@ -1,5 +1,7 @@
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS conversations;
 DROP TABLE IF EXISTS providers;
+DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS auth_credentials;
 DROP TABLE IF EXISTS users;

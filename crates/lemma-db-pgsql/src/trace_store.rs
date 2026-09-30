@@ -30,7 +30,7 @@ fn meta_from_row(row: DbConversation) -> ConversationMeta {
         id: row.id,
         title: row.title,
         leaf_id: row.leaf_id,
-        local_only: false,
+        local_only: row.local_only,
         last_model: row.last_model.map(|j| LastModel {
             provider_id: j.0.provider_id,
             model: j.0.model,
@@ -89,21 +89,20 @@ impl TraceStore for PgTraceStore {
         Box::pin(async move {
             let row = sqlx::query_as::<_, DbConversation>(
                 r#"
-                INSERT INTO conversations (id, user_id, title, leaf_id, status, created_at, updated_at)
-                VALUES ($1, $2, $3, NULL, 'active', NOW(), NOW())
+                INSERT INTO conversations (id, user_id, title, leaf_id, status, local_only, created_at, updated_at)
+                VALUES ($1, $2, $3, NULL, 'active', $4, NOW(), NOW())
                 RETURNING *
                 "#,
             )
             .bind(id)
             .bind(self.user_id)
             .bind(title)
+            .bind(local_only)
             .fetch_one(&self.pool)
             .await
             .map_err(|e| SessionError::Store(e.to_string()))?;
 
-            let mut meta = meta_from_row(row);
-            meta.local_only = local_only;
-            Ok(meta)
+            Ok(meta_from_row(row))
         })
     }
 

@@ -5,8 +5,10 @@
 //! lives outside this crate.
 
 pub mod conversations;
+pub mod credentials;
 pub mod entity;
 pub mod providers;
+pub mod settings;
 pub mod tokens;
 mod trace_store;
 pub mod users;
