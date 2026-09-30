@@ -9,17 +9,20 @@ use uuid::Uuid;
 
 use crate::entity;
 use crate::error::SqliteStoreError;
+use crate::now_ms;
 
-/// SQLite trace store over a shared connection pool.
+/// SQLite trace store over a shared connection pool, bound to the local
+/// account.
 #[derive(Clone)]
 pub struct SqliteTraceStore {
     pool: SqlitePool,
+    user_id: Uuid,
 }
 
 impl SqliteTraceStore {
-    /// Wraps a migrated pool.
-    pub fn new(pool: SqlitePool) -> Self {
-        Self { pool }
+    /// Wraps a migrated pool, scoped to the given account.
+    pub fn new(pool: SqlitePool, user_id: Uuid) -> Self {
+        Self { pool, user_id }
     }
 }
 
@@ -38,6 +41,14 @@ fn status_parse(status: &str) -> MessageStatus {
         "error" => MessageStatus::Error,
         "aborted" => MessageStatus::Aborted,
         _ => MessageStatus::Done,
+    }
+}
+
+fn role_of(message: &Message) -> &'static str {
+    match message {
+        Message::User { .. } => "user",
+        Message::Assistant { .. } => "assistant",
+        Message::ToolResult { .. } => "tool",
     }
 }
 
@@ -67,7 +78,7 @@ fn stored_of(row: entity::Message) -> Result<StoredMessage, SqliteStoreError> {
         status: status_parse(&row.status),
         model: row.model,
         provider_id: row.provider_id,
-        started_at: row.started_at,
+        started_at: row.started_at.unwrap_or(0),
         created_at: row.created_at,
     })
 }
@@ -92,31 +103,25 @@ impl TraceStore for SqliteTraceStore {
         local_only: bool,
     ) -> BoxStoreFuture<'a, ConversationMeta> {
         Box::pin(async move {
-            let now = 0i64;
-            sqlx::query(
+            let now = now_ms();
+            let row = sqlx::query_as::<_, entity::Conversation>(
                 r#"
-                INSERT INTO conversations (id, title, leaf_id, local_only, last_model, created_at, updated_at)
-                VALUES (?, ?, NULL, ?, NULL, ?, ?)
+                INSERT INTO conversations (id, user_id, title, leaf_id, status, local_only, created_at, updated_at)
+                VALUES (?, ?, ?, NULL, 'active', ?, ?, ?)
+                RETURNING *
                 "#,
             )
             .bind(id)
+            .bind(self.user_id)
             .bind(&title)
             .bind(local_only)
             .bind(now)
             .bind(now)
-            .execute(&self.pool)
+            .fetch_one(&self.pool)
             .await
             .map_err(SqliteStoreError::from)?;
 
-            Ok(ConversationMeta {
-                id,
-                title,
-                leaf_id: None,
-                local_only,
-                last_model: None,
-                created_at: now,
-                updated_at: now,
-            })
+            Ok(meta_of(row))
         })
     }
 
@@ -124,12 +129,12 @@ impl TraceStore for SqliteTraceStore {
         Box::pin(async move {
             let row = sqlx::query_as::<_, entity::Conversation>(
                 r#"
-                SELECT id, title, leaf_id, local_only, last_model, created_at, updated_at
-                FROM conversations
-                WHERE id = ?
+                SELECT * FROM conversations
+                WHERE id = ? AND user_id = ?
                 "#,
             )
             .bind(id)
+            .bind(self.user_id)
             .fetch_optional(&self.pool)
             .await
             .map_err(SqliteStoreError::from)?;
@@ -143,12 +148,14 @@ impl TraceStore for SqliteTraceStore {
             sqlx::query(
                 r#"
                 UPDATE conversations
-                SET leaf_id = ?
-                WHERE id = ?
+                SET leaf_id = ?, updated_at = ?
+                WHERE id = ? AND user_id = ?
                 "#,
             )
             .bind(leaf_id)
+            .bind(now_ms())
             .bind(id)
+            .bind(self.user_id)
             .execute(&self.pool)
             .await
             .map_err(SqliteStoreError::from)?;
@@ -170,12 +177,14 @@ impl TraceStore for SqliteTraceStore {
             sqlx::query(
                 r#"
                 UPDATE conversations
-                SET last_model = ?
-                WHERE id = ?
+                SET last_model = ?, updated_at = ?
+                WHERE id = ? AND user_id = ?
                 "#,
             )
             .bind(json)
+            .bind(now_ms())
             .bind(id)
+            .bind(self.user_id)
             .execute(&self.pool)
             .await
             .map_err(SqliteStoreError::from)?;
@@ -188,24 +197,27 @@ impl TraceStore for SqliteTraceStore {
             let content =
                 Json(serde_json::to_value(&entry.message).map_err(SqliteStoreError::from)?);
             let usage = usage_of(&entry.message);
+            let now = now_ms();
 
             sqlx::query(
                 r#"
-                INSERT INTO messages (id, conversation_id, parent_id, content_json, status, model,
-                                      provider_id, token_usage, started_at, first_token_at, finished_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
+                INSERT INTO messages (id, conversation_id, parent_id, role, content_json, model,
+                                      provider_id, status, token_usage, started_at, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
             .bind(entry.id)
             .bind(entry.conversation_id)
             .bind(entry.parent_id)
+            .bind(role_of(&entry.message))
             .bind(content)
-            .bind(status_str(entry.status))
             .bind(entry.model)
             .bind(entry.provider_id)
+            .bind(status_str(entry.status))
             .bind(usage)
             .bind(entry.started_at)
             .bind(entry.created_at)
+            .bind(now)
             .execute(&self.pool)
             .await
             .map_err(SqliteStoreError::from)?;
@@ -224,7 +236,7 @@ impl TraceStore for SqliteTraceStore {
                 r#"
                 UPDATE messages
                 SET content_json = ?, status = ?, token_usage = ?,
-                    first_token_at = ?, finished_at = ?
+                    first_token_at = ?, finished_at = ?, updated_at = ?
                 WHERE id = ?
                 "#,
             )
@@ -233,6 +245,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(usage)
             .bind(update.first_token_at)
             .bind(update.finished_at)
+            .bind(now_ms())
             .bind(id)
             .execute(&self.pool)
             .await
@@ -249,9 +262,7 @@ impl TraceStore for SqliteTraceStore {
         Box::pin(async move {
             let rows = sqlx::query_as::<_, entity::Message>(
                 r#"
-                SELECT id, conversation_id, parent_id, content_json, status, model, provider_id,
-                       token_usage, started_at, first_token_at, finished_at, created_at
-                FROM messages
+                SELECT * FROM messages
                 WHERE conversation_id = ?
                 ORDER BY created_at ASC, id ASC
                 "#,

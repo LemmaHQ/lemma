@@ -4,10 +4,13 @@
 //! SQL for the local store; other modules consume the public functions and
 //! row types only.
 
+pub mod conversations;
 pub mod entity;
-
 mod error;
+pub mod providers;
+pub mod settings;
 mod store;
+pub mod users;
 
 pub use error::SqliteStoreError;
 pub use store::SqliteTraceStore;
@@ -16,6 +19,12 @@ use std::path::Path;
 
 use sqlx::SqlitePool;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
+
+pub(crate) fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as i64)
+}
 
 /// Opens or creates a SQLite database file with WAL mode and foreign keys on.
 pub async fn connect(path: impl AsRef<Path>) -> sqlx::Result<SqlitePool> {
