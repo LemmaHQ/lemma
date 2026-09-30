@@ -30,4 +30,6 @@ All SQL lives inside the two storage crates; every other module persists data on
 
 ### Schema evolution
 
-- WHEN the schema changes, THE SYSTEM SHALL regenerate the migration from scratch rather than layering incremental migrations; a version mismatch on open drops and rebuilds the SQLite database.
+- THE SYSTEM SHALL define each backend's schema as ordered, versioned migrations owned by the storage crates; both backends run on sqlx.
+- WHILE the project is in its pre-release refactor window, schema changes SHALL be applied by editing the initial migration in place.
+- WHEN the project ships its first release, subsequent schema changes SHALL be delivered as incremental migrations that upgrade existing databases in place, on both backends.
