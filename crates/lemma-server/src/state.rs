@@ -19,8 +19,8 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new(config: Config) -> Result<Self, Box<dyn std::error::Error>> {
-        let pool = lemma_db_server::connect(&config.database_url).await?;
-        lemma_db_server::migrate(&pool).await?;
+        let pool = lemma_db_pgsql::connect(&config.database_url).await?;
+        lemma_db_pgsql::migrate(&pool).await?;
 
         let provider: Arc<dyn Provider> = Arc::new(DispatchProvider::new());
         Ok(Self {

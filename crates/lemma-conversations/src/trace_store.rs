@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use lemma_core::Message;
-use lemma_db_server::entity::{
+use lemma_db_pgsql::entity::{
     Conversation as DbConversation, LastModel as DbLastModel, Message as DbMessage,
     TokenUsage as DbTokenUsage,
 };

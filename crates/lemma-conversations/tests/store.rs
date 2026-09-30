@@ -29,7 +29,7 @@ async fn seed_message(pool: &PgPool, conv: Uuid, offset_secs: f64) {
     .unwrap();
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn create_defaults(pool: PgPool) {
     let uid = new_user(&pool).await;
     let c = store::insert(&pool, uid).await.unwrap();
@@ -38,7 +38,7 @@ async fn create_defaults(pool: PgPool) {
     assert!(c.archived_at.is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn archive_sets_metadata_and_guards(pool: PgPool) {
     let uid = new_user(&pool).await;
     let c = store::insert(&pool, uid).await.unwrap();
@@ -52,7 +52,7 @@ async fn archive_sets_metadata_and_guards(pool: PgPool) {
     assert!(store::archive(&pool, c.id, uid).await.unwrap().is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn restore_reactivates_and_guards(pool: PgPool) {
     let uid = new_user(&pool).await;
     let c = store::insert(&pool, uid).await.unwrap();
@@ -65,7 +65,7 @@ async fn restore_reactivates_and_guards(pool: PgPool) {
     assert!(store::restore(&pool, c.id, uid).await.unwrap().is_none());
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn active_and_archived_lists_are_disjoint(pool: PgPool) {
     let uid = new_user(&pool).await;
     let a = store::insert(&pool, uid).await.unwrap();
@@ -80,7 +80,7 @@ async fn active_and_archived_lists_are_disjoint(pool: PgPool) {
     assert_eq!(archived[0].id, a.id);
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn delete_archived_cascades_messages(pool: PgPool) {
     let uid = new_user(&pool).await;
     let c = store::insert(&pool, uid).await.unwrap();
@@ -99,7 +99,7 @@ async fn delete_archived_cascades_messages(pool: PgPool) {
     assert!(!store::delete_archived(&pool, live.id, uid).await.unwrap());
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn message_keyset_pagination(pool: PgPool) {
     let uid = new_user(&pool).await;
     let c = store::insert(&pool, uid).await.unwrap();

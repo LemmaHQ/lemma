@@ -6,7 +6,7 @@ use lemma_session::compliance;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn pg_store_compliance(pool: PgPool) {
     let name = format!("u-{}", Uuid::new_v4());
     let user_id = users::insert(&pool, &name, &format!("{name}@example.com"), "hash")

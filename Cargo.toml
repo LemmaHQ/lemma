@@ -2,7 +2,7 @@
 members = [
     "crates/lemma-server",
     "crates/lemma-db-sqlite",
-    "crates/lemma-db-server",
+    "crates/lemma-db-pgsql",
     "crates/lemma-proto",
     "crates/lemma-auth",
     "crates/lemma-providers",
@@ -43,7 +43,7 @@ lemma-auth = { path = "crates/lemma-auth" }
 lemma-chat = { path = "crates/lemma-chat" }
 lemma-conversations = { path = "crates/lemma-conversations" }
 lemma-crypto = { path = "crates/lemma-crypto" }
-lemma-db-server = { path = "crates/lemma-db-server" }
+lemma-db-pgsql = { path = "crates/lemma-db-pgsql" }
 lemma-db-sqlite = { path = "crates/lemma-db-sqlite" }
 lemma-proto = { path = "crates/lemma-proto" }
 lemma-providers = { path = "crates/lemma-providers" }

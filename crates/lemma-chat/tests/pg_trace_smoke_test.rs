@@ -43,7 +43,7 @@ impl Provider for MockEchoProvider {
     }
 }
 
-#[sqlx::test(migrations = "../lemma-db-server/migrations")]
+#[sqlx::test(migrations = "../lemma-db-pgsql/migrations")]
 async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     let user_id = Uuid::new_v4();
     // Seed user record
