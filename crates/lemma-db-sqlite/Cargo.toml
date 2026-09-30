@@ -1,5 +1,5 @@
 [package]
-name = "lemma-db-client"
+name = "lemma-db-sqlite"
 edition.workspace = true
 version.workspace = true
 

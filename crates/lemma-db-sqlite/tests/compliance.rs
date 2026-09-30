@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, missing_docs)]
 
-use lemma_db_client::SqliteTraceStore;
+use lemma_db_sqlite::SqliteTraceStore;
 use lemma_session::compliance;
 use uuid::Uuid;
 
