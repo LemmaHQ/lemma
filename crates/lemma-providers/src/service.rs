@@ -1,10 +1,10 @@
 //! Handler for the ProviderService RPCs.
 
-use crate::providers::{self, NewProvider, ProviderPatch};
 use buffa::EnumValue;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_db_pgsql::entity::Provider as DbProvider;
+use lemma_db_pgsql::providers::{self, NewProvider, ProviderPatch};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     CreateProviderResponse, DeleteProviderResponse, ErrorReason, FetchModelsResponse,

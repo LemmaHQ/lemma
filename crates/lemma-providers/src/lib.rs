@@ -1,8 +1,7 @@
-//! Provider domain: CRUD for user-configured LLM providers, live model
-//! list fetching, and the queries for the providers table.
+//! Provider domain: CRUD for user-configured LLM providers and live model
+//! list fetching.
 
 mod models;
-pub mod providers;
 mod service;
 
 pub use models::fetch_models;

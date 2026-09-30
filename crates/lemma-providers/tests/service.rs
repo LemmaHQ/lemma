@@ -11,6 +11,7 @@ use connectrpc::{
 };
 use http::HeaderMap;
 use lemma_auth::sign_access_token;
+use lemma_db_pgsql::providers as store;
 use lemma_proto::lemma::v1::ProviderService as ProviderServiceRpc;
 use lemma_proto::lemma::v1::{
     CreateProviderRequest, CreateProviderResponse, DeleteProviderRequest, DeleteProviderResponse,
@@ -19,7 +20,6 @@ use lemma_proto::lemma::v1::{
 };
 use lemma_proto::lemma::v1::{FetchModelsRequest, FetchModelsResponse};
 use lemma_providers::ProviderService;
-use lemma_providers::providers as store;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -46,7 +46,7 @@ fn auth_ctx(user_id: Uuid) -> RequestContext {
 }
 
 async fn new_user(pool: &PgPool, name: &str) -> Uuid {
-    lemma_auth::users::insert(pool, name, &format!("{name}@example.com"), "hash")
+    lemma_db_pgsql::users::insert(pool, name, &format!("{name}@example.com"), "hash")
         .await
         .unwrap()
         .id

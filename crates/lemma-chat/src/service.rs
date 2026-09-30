@@ -10,8 +10,8 @@ use futures::stream;
 use lemma_adapter::Provider;
 use lemma_agent::{AgentConfig, AgentLoop, TurnEvent};
 use lemma_auth::require_user;
-use lemma_conversations::PgTraceStore;
 use lemma_core::{ContentBlock, Message, TextContent};
+use lemma_db_pgsql::PgTraceStore;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AbortMessageResponse, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted, ErrorReason,
@@ -68,7 +68,7 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
         }
 
         let provider =
-            lemma_providers::providers::find_by_id_and_user(&self.pool, provider_id, user_id)
+            lemma_db_pgsql::providers::find_by_id_and_user(&self.pool, provider_id, user_id)
                 .await
                 .map_err(map_db)?
                 .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;

@@ -1,9 +1,10 @@
 //! Queries for the providers table.
 
-use lemma_db_pgsql::entity::Provider;
 use sqlx::QueryBuilder;
 use sqlx::types::Json;
 use uuid::Uuid;
+
+use crate::entity::Provider;
 
 /// Fields for inserting a provider.
 #[allow(missing_docs)]

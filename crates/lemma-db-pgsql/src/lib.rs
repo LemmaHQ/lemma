@@ -1,10 +1,17 @@
-//! Storage kernel: connection pool, migrations, and shared row entities.
+//! PostgreSQL storage backend: connection pool, migrations, row entities,
+//! and all SQL for the shared and server-only domains.
 //!
-//! This crate owns no domain logic. Queries live in the domain crates
-//! (lemma-auth, lemma-providers, lemma-conversations);
-//! only the row types shared across them are defined here.
+//! Other crates consume the public query modules and row types only; no SQL
+//! lives outside this crate.
 
+pub mod conversations;
 pub mod entity;
+pub mod providers;
+pub mod tokens;
+mod trace_store;
+pub mod users;
+
+pub use trace_store::PgTraceStore;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;

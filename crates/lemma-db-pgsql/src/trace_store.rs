@@ -1,15 +1,16 @@
 use chrono::{DateTime, Utc};
 use lemma_core::Message;
-use lemma_db_pgsql::entity::{
-    Conversation as DbConversation, LastModel as DbLastModel, Message as DbMessage,
-    TokenUsage as DbTokenUsage,
-};
 use lemma_session::{
     BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, SessionError,
     StoredMessage, TraceStore,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
+
+use crate::entity::{
+    Conversation as DbConversation, LastModel as DbLastModel, Message as DbMessage,
+    TokenUsage as DbTokenUsage,
+};
 
 /// PostgreSQL implementation of the canonical `TraceStore`.
 pub struct PgTraceStore {

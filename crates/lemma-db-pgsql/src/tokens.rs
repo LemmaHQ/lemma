@@ -1,8 +1,9 @@
 //! Queries for the refresh_tokens table.
 
 use chrono::{DateTime, Utc};
-use lemma_db_pgsql::entity::RefreshToken;
 use uuid::Uuid;
+
+use crate::entity::RefreshToken;
 
 /// Inserts a refresh token row and returns it.
 pub async fn insert<'e, E>(

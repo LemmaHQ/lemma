@@ -16,7 +16,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::store;
+use lemma_db_pgsql::conversations as store;
 
 const DEFAULT_PAGE_LIMIT: i32 = 50;
 const MAX_PAGE_LIMIT: i32 = 100;

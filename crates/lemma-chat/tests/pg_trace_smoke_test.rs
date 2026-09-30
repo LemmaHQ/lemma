@@ -71,10 +71,7 @@ async fn pg_trace_store_and_agent_loop_end_to_end_observed(pool: PgPool) {
     .await
     .unwrap();
 
-    let store = Arc::new(lemma_conversations::PgTraceStore::new(
-        pool.clone(),
-        user_id,
-    ));
+    let store = Arc::new(lemma_db_pgsql::PgTraceStore::new(pool.clone(), user_id));
     let provider = Arc::new(MockEchoProvider);
     let agent = AgentLoop::new(store.clone(), provider);
 

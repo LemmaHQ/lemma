@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, missing_docs)]
 
-use lemma_auth::users;
-use lemma_conversations::PgTraceStore;
+use lemma_db_pgsql::PgTraceStore;
+use lemma_db_pgsql::users;
 use lemma_session::compliance;
 use sqlx::PgPool;
 use uuid::Uuid;

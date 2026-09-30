@@ -1,7 +1,8 @@
 //! Queries for the conversations and messages tables.
 
-use lemma_db_pgsql::entity::{Conversation, Message};
 use uuid::Uuid;
+
+use crate::entity::{Conversation, Message};
 
 /// Creates an empty conversation and returns it.
 pub async fn insert<'e, E>(executor: E, user_id: Uuid) -> sqlx::Result<Conversation>
