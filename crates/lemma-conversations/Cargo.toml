@@ -16,10 +16,5 @@ serde_json.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
 
-[dev-dependencies]
-lemma-session.workspace = true
-buffa.workspace = true
-http.workspace = true
-
 [lints]
 workspace = true

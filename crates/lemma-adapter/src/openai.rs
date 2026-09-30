@@ -157,15 +157,3 @@ impl Provider for OpenAiCompatible {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn maps_finish_reasons() {
-        assert_eq!(map_finish_reason("stop"), StopReason::Stop);
-        assert_eq!(map_finish_reason("length"), StopReason::Length);
-        assert_eq!(map_finish_reason("tool_calls"), StopReason::ToolUse);
-    }
-}

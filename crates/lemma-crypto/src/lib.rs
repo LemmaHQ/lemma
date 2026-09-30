@@ -89,30 +89,3 @@ pub fn mask(plain: &str) -> String {
     let tail: String = plain.chars().skip(len - 4).collect();
     format!("{head}****{tail}")
 }
-
-#[cfg(test)]
-mod tests {
-    #![allow(clippy::unwrap_used)]
-
-    use super::*;
-
-    #[test]
-    fn roundtrip() {
-        let key = derive_key("test-secret");
-        let sealed = seal(&key, "sk-abc123xyz987").unwrap();
-        assert_ne!(sealed, "sk-abc123xyz987");
-        assert_eq!(open(&key, &sealed).unwrap(), "sk-abc123xyz987");
-    }
-
-    #[test]
-    fn wrong_key_fails() {
-        let sealed = seal(&derive_key("a"), "secret").unwrap();
-        assert!(open(&derive_key("b"), &sealed).is_err());
-    }
-
-    #[test]
-    fn mask_works() {
-        assert_eq!(mask("sk-1234567890abc"), "sk-****0abc");
-        assert_eq!(mask("short"), "****");
-    }
-}

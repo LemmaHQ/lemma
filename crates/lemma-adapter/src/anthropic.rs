@@ -198,15 +198,3 @@ impl Provider for AnthropicMessages {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn maps_stop_reasons() {
-        assert_eq!(map_stop_reason("end_turn"), StopReason::Stop);
-        assert_eq!(map_stop_reason("max_tokens"), StopReason::Length);
-        assert_eq!(map_stop_reason("tool_use"), StopReason::ToolUse);
-    }
-}

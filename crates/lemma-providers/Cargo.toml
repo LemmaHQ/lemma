@@ -19,10 +19,3 @@ uuid.workspace = true
 
 [lints]
 workspace = true
-
-[dev-dependencies]
-axum.workspace = true
-http.workspace = true
-lemma-auth.workspace = true
-serde_json.workspace = true
-tokio.workspace = true

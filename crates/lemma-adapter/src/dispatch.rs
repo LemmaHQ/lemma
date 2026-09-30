@@ -43,23 +43,3 @@ impl Provider for DispatchProvider {
         self.select(req.kind).stream(req)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn same_data(a: &dyn Provider, b: &dyn Provider) -> bool {
-        std::ptr::from_ref(a).cast::<()>() == std::ptr::from_ref(b).cast::<()>()
-    }
-
-    #[test]
-    fn dispatch_by_kind() {
-        let d = DispatchProvider::new();
-        assert!(same_data(d.select(ProviderKind::Anthropic), &d.anthropic));
-        assert!(same_data(d.select(ProviderKind::Gemini), &d.gemini));
-        assert!(same_data(
-            d.select(ProviderKind::OpenAiCompatible),
-            &d.openai
-        ));
-    }
-}

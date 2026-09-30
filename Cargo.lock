@@ -1622,14 +1622,11 @@ dependencies = [
 name = "lemma-adapter"
 version = "0.1.0"
 dependencies = [
- "axum",
  "futures",
  "lemma-core",
- "parking_lot",
  "reqwest",
  "serde",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -1640,7 +1637,6 @@ dependencies = [
  "lemma-adapter",
  "lemma-core",
  "lemma-session",
- "parking_lot",
  "serde",
  "serde_json",
  "tokio",
@@ -1652,12 +1648,10 @@ name = "lemma-auth"
 version = "0.1.0"
 dependencies = [
  "argon2",
- "buffa",
  "buffa-types",
  "chrono",
  "connectrpc",
  "hex",
- "http",
  "jsonwebtoken",
  "lemma-db-pgsql",
  "lemma-proto",
@@ -1676,7 +1670,6 @@ dependencies = [
  "buffa-types",
  "connectrpc",
  "futures",
- "http",
  "lemma-adapter",
  "lemma-agent",
  "lemma-auth",
@@ -1685,8 +1678,6 @@ dependencies = [
  "lemma-db-pgsql",
  "lemma-proto",
  "lemma-providers",
- "lemma-session",
- "parking_lot",
  "sqlx",
  "tokio",
  "tokio-stream",
@@ -1701,12 +1692,10 @@ dependencies = [
  "buffa-types",
  "chrono",
  "connectrpc",
- "http",
  "lemma-auth",
  "lemma-core",
  "lemma-db-pgsql",
  "lemma-proto",
- "lemma-session",
  "serde_json",
  "sqlx",
  "uuid",
@@ -1735,7 +1724,6 @@ name = "lemma-db-pgsql"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "dotenvy",
  "lemma-core",
  "lemma-session",
  "serde",
@@ -1774,21 +1762,17 @@ dependencies = [
 name = "lemma-providers"
 version = "0.1.0"
 dependencies = [
- "axum",
  "buffa",
  "buffa-types",
  "chrono",
  "connectrpc",
- "http",
  "lemma-auth",
  "lemma-crypto",
  "lemma-db-pgsql",
  "lemma-proto",
  "reqwest",
  "serde",
- "serde_json",
  "sqlx",
- "tokio",
  "uuid",
 ]
 
@@ -1827,7 +1811,6 @@ name = "lemma-tools"
 version = "0.1.0"
 dependencies = [
  "futures",
- "parking_lot",
  "serde",
  "serde_json",
  "tokio",

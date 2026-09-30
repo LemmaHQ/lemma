@@ -18,9 +18,5 @@ sha2.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
 
-[dev-dependencies]
-buffa.workspace = true
-http.workspace = true
-
 [lints]
 workspace = true

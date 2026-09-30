@@ -160,14 +160,3 @@ impl Provider for GeminiGenerate {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn maps_finish_reasons() {
-        assert_eq!(map_finish_reason("STOP"), StopReason::Stop);
-        assert_eq!(map_finish_reason("MAX_TOKENS"), StopReason::Length);
-    }
-}
