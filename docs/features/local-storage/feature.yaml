@@ -1,0 +1,11 @@
+id: local-storage
+title: Local Storage
+status: draft
+owners: [core]
+clients:
+  web:
+    status: planned
+  desktop:
+    status: planned
+  android:
+    status: planned

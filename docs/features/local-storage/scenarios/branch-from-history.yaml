@@ -1,0 +1,9 @@
+name: Branch from an earlier message
+given:
+  - a conversation holds the chain A → B → C with the leaf pointer at C
+when:
+  - the user sends a new message continuing from A
+then:
+  - the new message row is appended with A as its parent
+  - the leaf pointer moves to the tip of the new branch
+  - rows B and C remain unchanged
