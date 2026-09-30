@@ -3,7 +3,7 @@ use std::fmt;
 /// Errors produced during SQLite storage operations.
 #[derive(Debug)]
 pub enum SqliteStoreError {
-    /// Failure from the underlying SQLite driver.
+    /// Failure from the underlying database driver.
     Database(String),
     /// JSON serialization or deserialization failure.
     Serialization(String),
@@ -20,8 +20,14 @@ impl fmt::Display for SqliteStoreError {
 
 impl std::error::Error for SqliteStoreError {}
 
-impl From<rusqlite::Error> for SqliteStoreError {
-    fn from(err: rusqlite::Error) -> Self {
+impl From<sqlx::Error> for SqliteStoreError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::Database(err.to_string())
+    }
+}
+
+impl From<sqlx::migrate::MigrateError> for SqliteStoreError {
+    fn from(err: sqlx::migrate::MigrateError) -> Self {
         Self::Database(err.to_string())
     }
 }
