@@ -1,19 +1,19 @@
 [workspace]
 members = [
-    "crates/lemma-server",
-    "crates/lemma-db-sqlite",
-    "crates/lemma-db-pgsql",
-    "crates/lemma-proto",
-    "crates/lemma-auth",
-    "crates/lemma-provider",
-    "crates/lemma-conversation",
-    "crates/lemma-chat",
-    "crates/lemma-crypto",
-    "crates/lemma-core",
-    "crates/lemma-adapter",
-    "crates/lemma-agent",
-    "crates/lemma-session",
-    "crates/lemma-tools",
+    "crates/server/lemma-server",
+    "crates/shared/lemma-db-sqlite",
+    "crates/server/lemma-db-pgsql",
+    "crates/shared/lemma-proto",
+    "crates/server/lemma-auth",
+    "crates/shared/lemma-provider",
+    "crates/shared/lemma-conversation",
+    "crates/server/lemma-chat",
+    "crates/shared/lemma-crypto",
+    "crates/shared/lemma-core",
+    "crates/shared/lemma-adapter",
+    "crates/shared/lemma-agent",
+    "crates/shared/lemma-session",
+    "crates/shared/lemma-tools",
 ]
 resolver = "2"
 
@@ -37,19 +37,19 @@ futures = "0.3.34"
 hex = "0.4.3"
 http = "1.5.0"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
-lemma-adapter = { path = "crates/lemma-adapter" }
-lemma-agent = { path = "crates/lemma-agent" }
-lemma-auth = { path = "crates/lemma-auth" }
-lemma-chat = { path = "crates/lemma-chat" }
-lemma-conversation = { path = "crates/lemma-conversation" }
-lemma-crypto = { path = "crates/lemma-crypto" }
-lemma-db-pgsql = { path = "crates/lemma-db-pgsql" }
-lemma-db-sqlite = { path = "crates/lemma-db-sqlite" }
-lemma-proto = { path = "crates/lemma-proto" }
-lemma-provider = { path = "crates/lemma-provider" }
-lemma-session = { path = "crates/lemma-session" }
-lemma-tools = { path = "crates/lemma-tools" }
-lemma-core = { path = "crates/lemma-core" }
+lemma-adapter = { path = "crates/shared/lemma-adapter" }
+lemma-agent = { path = "crates/shared/lemma-agent" }
+lemma-auth = { path = "crates/server/lemma-auth" }
+lemma-chat = { path = "crates/server/lemma-chat" }
+lemma-conversation = { path = "crates/shared/lemma-conversation" }
+lemma-crypto = { path = "crates/shared/lemma-crypto" }
+lemma-db-pgsql = { path = "crates/server/lemma-db-pgsql" }
+lemma-db-sqlite = { path = "crates/shared/lemma-db-sqlite" }
+lemma-proto = { path = "crates/shared/lemma-proto" }
+lemma-provider = { path = "crates/shared/lemma-provider" }
+lemma-session = { path = "crates/shared/lemma-session" }
+lemma-tools = { path = "crates/shared/lemma-tools" }
+lemma-core = { path = "crates/shared/lemma-core" }
 parking_lot = "0.12.5"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }

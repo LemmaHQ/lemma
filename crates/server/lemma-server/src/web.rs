@@ -8,7 +8,7 @@ use axum::{
 use rust_embed::Embed;
 
 #[derive(Embed)]
-#[folder = "../../web/dist"]
+#[folder = "../../../web/dist"]
 struct WebDist;
 
 pub async fn handler(uri: Uri) -> Response<Body> {

@@ -6,13 +6,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // scans the proto directory, so an unregistered file still builds
         // green and only fails at first reference.
         .files(&[
-            "../../proto/lemma/v1/auth.proto",
-            "../../proto/lemma/v1/errors.proto",
-            "../../proto/lemma/v1/provider.proto",
-            "../../proto/lemma/v1/conversation.proto",
-            "../../proto/lemma/v1/chat.proto",
+            "../../../proto/lemma/v1/auth.proto",
+            "../../../proto/lemma/v1/errors.proto",
+            "../../../proto/lemma/v1/provider.proto",
+            "../../../proto/lemma/v1/conversation.proto",
+            "../../../proto/lemma/v1/chat.proto",
         ])
-        .includes(&["../../proto"])
+        .includes(&["../../../proto"])
         .include_file("_connectrpc.rs")
         .compile()?;
     Ok(())
