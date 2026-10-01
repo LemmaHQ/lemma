@@ -1,46 +1,17 @@
-//! Handler for the ProviderService RPCs.
+//! Provider domain service: validation, API-key sealing, and
+//! orchestration over a [`ProviderStore`].
 
-use buffa::EnumValue;
-use buffa_types::google::protobuf::Timestamp;
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_db_pgsql::entity::Provider as DbProvider;
-use lemma_db_pgsql::providers::{self, NewProvider, ProviderPatch};
-use lemma_proto::app_error;
-use lemma_proto::lemma::v1::{
-    CreateProviderResponse, DeleteProviderResponse, ErrorReason, FetchModelsResponse,
-    ListProvidersResponse, Provider, ProviderKind, UpdateProviderResponse,
-};
-use sqlx::PgPool;
 use std::sync::Arc;
+
+use chrono::{DateTime, Utc};
+use lemma_crypto::{derive_key, mask, open, seal};
+use lemma_proto::lemma::v1::ProviderKind;
 use uuid::Uuid;
 
-use crate::fetch_models;
-use lemma_crypto::{derive_key, mask, open, seal};
-
-/// Connect handler implementing the ProviderService RPCs.
-///
-/// Holds two secrets: `jwt_secret` authenticates requests, `secret_key`
-/// derives the key that seals provider API keys at rest.
-pub struct ProviderService {
-    pool: PgPool,
-    jwt_secret: Arc<str>,
-    secret_key: Arc<str>,
-}
-
-impl ProviderService {
-    /// Creates the handler.
-    pub fn new(
-        pool: PgPool,
-        jwt_secret: impl Into<Arc<str>>,
-        secret_key: impl Into<Arc<str>>,
-    ) -> Self {
-        Self {
-            pool,
-            jwt_secret: jwt_secret.into(),
-            secret_key: secret_key.into(),
-        }
-    }
-}
+use crate::error::ProviderError;
+use crate::models::fetch_models;
+use crate::record::{NewProvider, ProviderPatch, ProviderRecord};
+use crate::store::ProviderStore;
 
 /// Maps a stored kind string to its proto enum. Unrecognized strings
 /// fall back to Openai, the most common shape.
@@ -52,199 +23,253 @@ pub fn kind_to_proto(kind: &str) -> ProviderKind {
     }
 }
 
-fn kind_from_proto(kind: &EnumValue<ProviderKind>) -> Result<&'static str, ConnectError> {
-    match kind.as_known() {
-        Some(ProviderKind::Anthropic) => Ok("anthropic"),
-        Some(ProviderKind::Gemini) => Ok("gemini"),
-        Some(ProviderKind::Openai) => Ok("openai"),
-        _ => Err(app_error(ErrorReason::ProviderKindInvalid)),
+/// Maps a proto kind to its stored string. Returns `None` for
+/// unspecified or unknown values.
+pub fn kind_to_str(kind: ProviderKind) -> Option<&'static str> {
+    match kind {
+        ProviderKind::Openai => Some("openai"),
+        ProviderKind::Anthropic => Some("anthropic"),
+        ProviderKind::Gemini => Some("gemini"),
+        _ => None,
     }
 }
 
-fn to_proto(p: &DbProvider, secret_key: &str) -> Provider {
-    let key = derive_key(secret_key);
-    // A key that fails to open (e.g. master-secret rotation) degrades to
-    // a fully masked placeholder instead of failing the whole request.
-    let api_key = open(&key, &p.api_key)
-        .map(|k| mask(&k))
-        .unwrap_or_else(|_| "****".to_string());
-    Provider {
-        id: p.id.to_string(),
-        kind: kind_to_proto(&p.kind).into(),
-        name: p.name.clone(),
-        base_url: p.base_url.clone(),
-        api_key,
-        models: p.models.0.clone(),
-        enabled: p.enabled,
-        api_path: p.api_path.clone(),
-        models_path: p.models_path.clone(),
-        created_at: Timestamp::from(p.created_at).into(),
-        updated_at: Timestamp::from(p.updated_at).into(),
-        ..Default::default()
-    }
+/// A provider as presented to callers: the API key is masked for
+/// display.
+#[derive(Debug, Clone)]
+pub struct ProviderView {
+    /// Provider id.
+    pub id: Uuid,
+    /// Provider kind.
+    pub kind: ProviderKind,
+    /// Display name.
+    pub name: String,
+    /// API base URL.
+    pub base_url: String,
+    /// Masked API key.
+    pub api_key: String,
+    /// Cached model ids.
+    pub models: Vec<String>,
+    /// Enabled flag.
+    pub enabled: bool,
+    /// Chat endpoint path override.
+    pub api_path: String,
+    /// Model-list endpoint path override.
+    pub models_path: String,
+    /// Creation time.
+    pub created_at: DateTime<Utc>,
+    /// Last update time.
+    pub updated_at: DateTime<Utc>,
 }
 
-fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
+/// Input for creating a provider. `api_key` is plaintext.
+pub struct CreateInput {
+    /// Provider kind.
+    pub kind: ProviderKind,
+    /// Display name.
+    pub name: String,
+    /// API base URL.
+    pub base_url: String,
+    /// Plaintext API key.
+    pub api_key: String,
+    /// Chat endpoint path override.
+    pub api_path: String,
+    /// Model-list endpoint path override.
+    pub models_path: String,
+    /// Model ids to cache.
+    pub models: Vec<String>,
 }
 
-fn map_db(e: sqlx::Error) -> ConnectError {
-    ConnectError::internal(format!("db: {e}"))
+/// Input for updating a provider. An absent or empty `api_key` keeps the
+/// current key; a non-empty one is a plaintext replacement.
+#[derive(Default)]
+pub struct UpdateInput {
+    /// Display name.
+    pub name: Option<String>,
+    /// API base URL.
+    pub base_url: Option<String>,
+    /// Plaintext replacement API key.
+    pub api_key: Option<String>,
+    /// Chat endpoint path override.
+    pub api_path: Option<String>,
+    /// Model-list endpoint path override.
+    pub models_path: Option<String>,
+    /// Enabled flag.
+    pub enabled: Option<bool>,
+    /// Model ids to cache.
+    pub models: Option<Vec<String>>,
 }
 
-#[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::ProviderService for ProviderService {
-    async fn list_providers(
-        &self,
-        ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListProvidersRequest>,
-    ) -> ServiceResult<ListProvidersResponse> {
-        let user_id = lemma_auth::require_user(&self.jwt_secret, &ctx)?;
-        let list = providers::list_by_user(&self.pool, user_id)
-            .await
-            .map_err(map_db)?;
-        Response::ok(ListProvidersResponse {
-            providers: list.iter().map(|p| to_proto(p, &self.secret_key)).collect(),
-            ..Default::default()
-        })
+/// Provider domain service over a [`ProviderStore`] backend.
+///
+/// `secret_key` selects the API-key storage encoding: `Some` seals keys
+/// with lemma-crypto (server), `None` stores plaintext (local storage
+/// stays inspectable).
+pub struct ProviderService {
+    store: Arc<dyn ProviderStore>,
+    secret_key: Option<Arc<str>>,
+}
+
+impl ProviderService {
+    /// Creates the service over a store backend.
+    pub fn new(store: Arc<dyn ProviderStore>, secret_key: Option<Arc<str>>) -> Self {
+        Self { store, secret_key }
     }
 
-    async fn create_provider(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::CreateProviderRequest>,
-    ) -> ServiceResult<CreateProviderResponse> {
-        let user_id = lemma_auth::require_user(&self.jwt_secret, &ctx)?;
-        let kind = kind_from_proto(&request.kind)?;
-        let name = request.name.trim();
-        let base_url = request.base_url.trim().trim_end_matches('/');
-        let api_key = request.api_key;
-        if name.is_empty() || base_url.is_empty() || api_key.is_empty() {
-            return Err(app_error(ErrorReason::ProviderFieldsRequired));
-        }
-        let sealed = {
-            let key = derive_key(&self.secret_key);
-            seal(&key, api_key)
-        }
-        .map_err(|e| ConnectError::internal(format!("seal key: {e}")))?;
-        let provider = providers::insert(
-            &self.pool,
-            &NewProvider {
-                id: Uuid::new_v4(),
-                user_id,
-                kind,
-                name,
-                base_url,
-                api_key: &sealed,
-                api_path: request.api_path.trim(),
-                models_path: request.models_path.trim(),
-                models: &request
-                    .models
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>(),
-            },
-        )
-        .await
-        .map_err(map_db)?;
-        Response::ok(CreateProviderResponse {
-            provider: to_proto(&provider, &self.secret_key).into(),
-            ..Default::default()
-        })
-    }
-
-    async fn update_provider(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::UpdateProviderRequest>,
-    ) -> ServiceResult<UpdateProviderResponse> {
-        let user_id = lemma_auth::require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        // An absent or empty api_key means "keep the current key". The
-        // frontend never resubmits the masked display value, so whatever
-        // arrives here is a real new key to seal.
-        let api_key = match request.api_key {
-            Some(k) if !k.is_empty() => {
-                let key = derive_key(&self.secret_key);
-                Some(seal(&key, k).map_err(|e| ConnectError::internal(format!("seal key: {e}")))?)
+    fn seal_key(&self, plain: &str) -> Result<String, ProviderError> {
+        match &self.secret_key {
+            Some(secret) => {
+                seal(&derive_key(secret), plain).map_err(|e| ProviderError::Crypto(e.to_string()))
             }
+            None => Ok(plain.to_string()),
+        }
+    }
+
+    fn open_key(&self, stored: &str) -> Result<String, ProviderError> {
+        match &self.secret_key {
+            Some(secret) => {
+                open(&derive_key(secret), stored).map_err(|e| ProviderError::Crypto(e.to_string()))
+            }
+            None => Ok(stored.to_string()),
+        }
+    }
+
+    fn view(&self, r: &ProviderRecord) -> ProviderView {
+        // A key that fails to open (e.g. master-secret rotation) degrades
+        // to a fully masked placeholder instead of failing the request.
+        let api_key = self
+            .open_key(&r.api_key)
+            .map(|k| mask(&k))
+            .unwrap_or_else(|_| "****".to_string());
+        ProviderView {
+            id: r.id,
+            kind: kind_to_proto(&r.kind),
+            name: r.name.clone(),
+            base_url: r.base_url.clone(),
+            api_key,
+            models: r.models.clone(),
+            enabled: r.enabled,
+            api_path: r.api_path.clone(),
+            models_path: r.models_path.clone(),
+            created_at: r.created_at,
+            updated_at: r.updated_at,
+        }
+    }
+
+    /// Lists the user's providers with masked keys.
+    pub async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderView>, ProviderError> {
+        let records = self.store.list(user_id).await?;
+        Ok(records.iter().map(|r| self.view(r)).collect())
+    }
+
+    /// Validates and stores a new provider.
+    pub async fn create(
+        &self,
+        user_id: Uuid,
+        input: CreateInput,
+    ) -> Result<ProviderView, ProviderError> {
+        let kind = kind_to_str(input.kind).ok_or(ProviderError::KindInvalid)?;
+        let name = input.name.trim();
+        let base_url = input.base_url.trim().trim_end_matches('/');
+        if name.is_empty() || base_url.is_empty() || input.api_key.is_empty() {
+            return Err(ProviderError::FieldsRequired);
+        }
+        let sealed = self.seal_key(&input.api_key)?;
+        let record = self
+            .store
+            .insert(
+                user_id,
+                &NewProvider {
+                    id: Uuid::new_v4(),
+                    kind: kind.to_string(),
+                    name: name.to_string(),
+                    base_url: base_url.to_string(),
+                    api_key: sealed,
+                    api_path: input.api_path.trim().to_string(),
+                    models_path: input.models_path.trim().to_string(),
+                    models: input.models,
+                },
+            )
+            .await?;
+        Ok(self.view(&record))
+    }
+
+    /// Applies an update to a provider owned by the user.
+    pub async fn update(
+        &self,
+        user_id: Uuid,
+        id: Uuid,
+        input: UpdateInput,
+    ) -> Result<ProviderView, ProviderError> {
+        let api_key = match input.api_key {
+            Some(k) if !k.is_empty() => Some(self.seal_key(&k)?),
             _ => None,
         };
         let patch = ProviderPatch {
-            name: request.name.map(|s| s.trim().to_string()),
-            base_url: request
+            name: input.name.map(|s| s.trim().to_string()),
+            base_url: input
                 .base_url
                 .map(|s| s.trim().trim_end_matches('/').to_string()),
             api_key,
-            api_path: request.api_path.map(|s| s.trim().to_string()),
-            models_path: request.models_path.map(|s| s.trim().to_string()),
-            enabled: request.enabled,
-            models: request
-                .models
-                .as_option()
-                .map(|m| m.models.iter().map(|s| s.to_string()).collect()),
+            api_path: input.api_path.map(|s| s.trim().to_string()),
+            models_path: input.models_path.map(|s| s.trim().to_string()),
+            enabled: input.enabled,
+            models: input.models,
         };
-        let provider = providers::update(&self.pool, id, user_id, patch)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ProviderNotFound))?;
-        Response::ok(UpdateProviderResponse {
-            provider: to_proto(&provider, &self.secret_key).into(),
-            ..Default::default()
-        })
+        let record = self
+            .store
+            .update(user_id, id, patch)
+            .await?
+            .ok_or(ProviderError::NotFound)?;
+        Ok(self.view(&record))
     }
 
-    async fn delete_provider(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteProviderRequest>,
-    ) -> ServiceResult<DeleteProviderResponse> {
-        let user_id = lemma_auth::require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let deleted = providers::delete(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?;
-        if !deleted {
-            return Err(app_error(ErrorReason::ProviderNotFound));
+    /// Deletes a provider owned by the user.
+    pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
+        if !self.store.delete(user_id, id).await? {
+            return Err(ProviderError::NotFound);
         }
-        Response::ok(DeleteProviderResponse::default())
+        Ok(())
     }
 
-    async fn fetch_models(
+    /// Fetches the live model list using a stored provider's key.
+    pub async fn fetch_models_for(
         &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::FetchModelsRequest>,
-    ) -> ServiceResult<FetchModelsResponse> {
-        let user_id = lemma_auth::require_user(&self.jwt_secret, &ctx)?;
-        let (kind, base_url, api_key, models_path) = if !request.id.is_empty() {
-            let id = parse_id(request.id)?;
-            let p = providers::find_by_id_and_user(&self.pool, id, user_id)
-                .await
-                .map_err(map_db)?
-                .ok_or_else(|| app_error(ErrorReason::ProviderNotFound))?;
-            let key = derive_key(&self.secret_key);
-            let plain = open(&key, &p.api_key)
-                .map_err(|e| ConnectError::internal(format!("open key: {e}")))?;
-            (
-                kind_to_proto(&p.kind),
-                p.base_url.clone(),
-                plain,
-                p.models_path.clone(),
-            )
-        } else {
-            (
-                kind_to_proto(kind_from_proto(&request.kind)?),
-                request.base_url.trim().trim_end_matches('/').to_string(),
-                request.api_key.to_string(),
-                request.models_path.trim().to_string(),
-            )
-        };
-        let models = fetch_models(kind, &base_url, &api_key, &models_path)
-            .await
-            .map_err(|e| ConnectError::internal(format!("fetch models: {e}")))?;
-        Response::ok(FetchModelsResponse {
-            models,
-            ..Default::default()
-        })
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<Vec<String>, ProviderError> {
+        let record = self
+            .store
+            .get(user_id, id)
+            .await?
+            .ok_or(ProviderError::NotFound)?;
+        let plain = self.open_key(&record.api_key)?;
+        fetch_models(
+            kind_to_proto(&record.kind),
+            &record.base_url,
+            &plain,
+            &record.models_path,
+        )
+        .await
+        .map_err(ProviderError::Fetch)
+    }
+
+    /// Fetches the live model list for ad-hoc connection details.
+    pub async fn fetch_models_adhoc(
+        &self,
+        kind: ProviderKind,
+        base_url: &str,
+        api_key: &str,
+        models_path: &str,
+    ) -> Result<Vec<String>, ProviderError> {
+        kind_to_str(kind).ok_or(ProviderError::KindInvalid)?;
+        fetch_models(
+            kind,
+            base_url.trim().trim_end_matches('/'),
+            api_key,
+            models_path.trim(),
+        )
+        .await
+        .map_err(ProviderError::Fetch)
     }
 }

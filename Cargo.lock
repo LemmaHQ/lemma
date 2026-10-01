@@ -1725,6 +1725,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "lemma-core",
+ "lemma-provider",
  "lemma-session",
  "serde",
  "serde_json",
@@ -1737,7 +1738,9 @@ dependencies = [
 name = "lemma-db-sqlite"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "lemma-core",
+ "lemma-provider",
  "lemma-session",
  "serde",
  "serde_json",
@@ -1762,16 +1765,25 @@ dependencies = [
 name = "lemma-provider"
 version = "0.1.0"
 dependencies = [
- "buffa",
- "buffa-types",
  "chrono",
- "connectrpc",
- "lemma-auth",
  "lemma-crypto",
- "lemma-db-pgsql",
  "lemma-proto",
  "reqwest",
  "serde",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-provider-rpc"
+version = "0.1.0"
+dependencies = [
+ "buffa",
+ "buffa-types",
+ "connectrpc",
+ "lemma-auth",
+ "lemma-db-pgsql",
+ "lemma-proto",
+ "lemma-provider",
  "sqlx",
  "uuid",
 ]
@@ -1789,7 +1801,7 @@ dependencies = [
  "lemma-conversation",
  "lemma-db-pgsql",
  "lemma-proto",
- "lemma-provider",
+ "lemma-provider-rpc",
  "rust-embed",
  "sqlx",
  "tokio",

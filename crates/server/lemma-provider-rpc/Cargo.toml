@@ -1,0 +1,18 @@
+[package]
+version.workspace = true
+edition.workspace = true
+name = "lemma-provider-rpc"
+
+[dependencies]
+buffa.workspace = true
+buffa-types.workspace = true
+connectrpc.workspace = true
+lemma-auth.workspace = true
+lemma-db-pgsql.workspace = true
+lemma-proto.workspace = true
+lemma-provider.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

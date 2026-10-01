@@ -4,7 +4,7 @@ use lemma_adapter::{DispatchProvider, Provider};
 use lemma_auth::AuthService;
 use lemma_chat::ChatService;
 use lemma_conversation::ConversationService;
-use lemma_provider::ProviderService;
+use lemma_provider_rpc::ProviderRpc;
 use sqlx::PgPool;
 
 use crate::config::Config;
@@ -12,7 +12,7 @@ use crate::config::Config;
 pub struct AppState {
     pub pool: PgPool,
     pub auth: Arc<AuthService>,
-    pub providers: Arc<ProviderService>,
+    pub providers: Arc<ProviderRpc>,
     pub conversations: Arc<ConversationService>,
     pub chat: Arc<ChatService>,
 }
@@ -25,7 +25,7 @@ impl AppState {
         let provider: Arc<dyn Provider> = Arc::new(DispatchProvider::new());
         Ok(Self {
             auth: Arc::new(AuthService::new(pool.clone(), config.jwt_secret.clone())),
-            providers: Arc::new(ProviderService::new(
+            providers: Arc::new(ProviderRpc::new(
                 pool.clone(),
                 config.jwt_secret.clone(),
                 config.secret_key.clone(),

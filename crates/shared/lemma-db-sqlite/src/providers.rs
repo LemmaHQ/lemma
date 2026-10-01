@@ -1,42 +1,112 @@
 //! Queries for the providers table.
 
+use chrono::{DateTime, Utc};
 use sqlx::types::Json;
 use sqlx::{QueryBuilder, Sqlite};
 use uuid::Uuid;
 
+use lemma_provider::{
+    BoxProviderFuture, NewProvider, ProviderError, ProviderPatch, ProviderRecord, ProviderStore,
+};
+
 use crate::entity::Provider;
 use crate::now_ms;
 
-/// Fields for inserting a provider.
-#[allow(missing_docs)]
-pub struct NewProvider<'a> {
-    pub id: Uuid,
-    pub user_id: Uuid,
-    pub kind: &'a str,
-    pub name: &'a str,
-    pub base_url: &'a str,
-    /// Plaintext on the local backend; sealing happens on the server.
-    pub api_key: &'a str,
-    pub api_path: &'a str,
-    pub models_path: &'a str,
-    pub models: &'a [String],
+fn timestamp(ms: i64) -> Result<DateTime<Utc>, ProviderError> {
+    DateTime::from_timestamp_millis(ms)
+        .ok_or_else(|| ProviderError::Store(format!("timestamp out of range: {ms}")))
 }
 
-/// Partial update: `None` fields are left untouched.
-#[derive(Default)]
-#[allow(missing_docs)]
-pub struct ProviderPatch {
-    pub name: Option<String>,
-    pub base_url: Option<String>,
-    pub api_key: Option<String>,
-    pub api_path: Option<String>,
-    pub models_path: Option<String>,
-    pub enabled: Option<bool>,
-    pub models: Option<Vec<String>>,
+fn into_record(p: Provider) -> Result<ProviderRecord, ProviderError> {
+    Ok(ProviderRecord {
+        id: p.id,
+        user_id: p.user_id,
+        kind: p.kind,
+        name: p.name,
+        base_url: p.base_url,
+        api_key: p.api_key,
+        api_path: p.api_path,
+        models_path: p.models_path,
+        models: p.models.0,
+        enabled: p.enabled,
+        created_at: timestamp(p.created_at)?,
+        updated_at: timestamp(p.updated_at)?,
+    })
+}
+
+fn store_err(e: sqlx::Error) -> ProviderError {
+    ProviderError::Store(e.to_string())
+}
+
+/// [`ProviderStore`] backed by a SQLite pool.
+pub struct SqliteProviderStore {
+    pool: sqlx::SqlitePool,
+}
+
+impl SqliteProviderStore {
+    /// Creates the store over a pool.
+    pub fn new(pool: sqlx::SqlitePool) -> Self {
+        Self { pool }
+    }
+}
+
+impl ProviderStore for SqliteProviderStore {
+    fn insert<'a>(
+        &'a self,
+        user_id: Uuid,
+        new: &'a NewProvider,
+    ) -> BoxProviderFuture<'a, ProviderRecord> {
+        Box::pin(async move {
+            insert(&self.pool, user_id, new)
+                .await
+                .map_err(store_err)
+                .and_then(into_record)
+        })
+    }
+
+    fn list<'a>(&'a self, user_id: Uuid) -> BoxProviderFuture<'a, Vec<ProviderRecord>> {
+        Box::pin(async move {
+            list_by_user(&self.pool, user_id)
+                .await
+                .map_err(store_err)?
+                .into_iter()
+                .map(into_record)
+                .collect()
+        })
+    }
+
+    fn get<'a>(&'a self, user_id: Uuid, id: Uuid) -> BoxProviderFuture<'a, Option<ProviderRecord>> {
+        Box::pin(async move {
+            find_by_id_and_user(&self.pool, id, user_id)
+                .await
+                .map_err(store_err)?
+                .map(into_record)
+                .transpose()
+        })
+    }
+
+    fn update<'a>(
+        &'a self,
+        user_id: Uuid,
+        id: Uuid,
+        patch: ProviderPatch,
+    ) -> BoxProviderFuture<'a, Option<ProviderRecord>> {
+        Box::pin(async move {
+            update(&self.pool, id, user_id, patch)
+                .await
+                .map_err(store_err)?
+                .map(into_record)
+                .transpose()
+        })
+    }
+
+    fn delete<'a>(&'a self, user_id: Uuid, id: Uuid) -> BoxProviderFuture<'a, bool> {
+        Box::pin(async move { delete(&self.pool, id, user_id).await.map_err(store_err) })
+    }
 }
 
 /// Inserts a provider and returns it.
-pub async fn insert<'e, E>(executor: E, p: &NewProvider<'_>) -> sqlx::Result<Provider>
+pub async fn insert<'e, E>(executor: E, user_id: Uuid, p: &NewProvider) -> sqlx::Result<Provider>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
 {
@@ -50,14 +120,14 @@ where
         "#,
     )
     .bind(p.id)
-    .bind(p.user_id)
-    .bind(p.kind)
-    .bind(p.name)
-    .bind(p.base_url)
-    .bind(p.api_key)
-    .bind(p.api_path)
-    .bind(p.models_path)
-    .bind(Json(p.models.to_vec()))
+    .bind(user_id)
+    .bind(&p.kind)
+    .bind(&p.name)
+    .bind(&p.base_url)
+    .bind(&p.api_key)
+    .bind(&p.api_path)
+    .bind(&p.models_path)
+    .bind(Json(p.models.clone()))
     .bind(now)
     .bind(now)
     .fetch_one(executor)

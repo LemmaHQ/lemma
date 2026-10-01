@@ -13,7 +13,7 @@ members = [
     "crates/shared/lemma-adapter",
     "crates/shared/lemma-agent",
     "crates/shared/lemma-session",
-    "crates/shared/lemma-tools",
+    "crates/shared/lemma-tools", "crates/server/lemma-provider-rpc",
 ]
 resolver = "2"
 
@@ -47,6 +47,7 @@ lemma-db-pgsql = { path = "crates/server/lemma-db-pgsql" }
 lemma-db-sqlite = { path = "crates/shared/lemma-db-sqlite" }
 lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
+lemma-provider-rpc = { path = "crates/server/lemma-provider-rpc" }
 lemma-session = { path = "crates/shared/lemma-session" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }

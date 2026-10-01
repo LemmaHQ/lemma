@@ -6,6 +6,7 @@ name = "lemma-db-pgsql"
 [dependencies]
 chrono.workspace = true
 lemma-core.workspace = true
+lemma-provider.workspace = true
 lemma-session.workspace = true
 serde.workspace = true
 serde_json.workspace = true
