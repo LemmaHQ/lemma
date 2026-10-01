@@ -5,6 +5,7 @@
 - 缩进一律使用 4 个空格（不用 Tab）
 - 配置文件与项目骨架优先用生成命令（如 `cargo new`、`buf init`、`npm create`），不手写
 - 模块用同名 .rs 文件（`auth.rs` + `auth/` 目录），不用 `mod.rs`
+- 命名单复数：crate 名与概念目录用单数；装同类条目的容器目录用复数（`crates/`、`migrations/`、`scenarios/`）。存量复数 crate 一并规范化
 
 ## 注释规范
 
