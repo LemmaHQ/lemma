@@ -3,8 +3,8 @@ use std::sync::Arc;
 use lemma_adapter::{DispatchProvider, Provider};
 use lemma_auth::AuthService;
 use lemma_chat::ChatService;
-use lemma_conversations::ConversationService;
-use lemma_providers::ProviderService;
+use lemma_conversation::ConversationService;
+use lemma_provider::ProviderService;
 use sqlx::PgPool;
 
 use crate::config::Config;

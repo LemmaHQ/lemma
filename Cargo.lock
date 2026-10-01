@@ -1677,7 +1677,7 @@ dependencies = [
  "lemma-crypto",
  "lemma-db-pgsql",
  "lemma-proto",
- "lemma-providers",
+ "lemma-provider",
  "sqlx",
  "tokio",
  "tokio-stream",
@@ -1685,7 +1685,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-conversations"
+name = "lemma-conversation"
 version = "0.1.0"
 dependencies = [
  "buffa",
@@ -1759,7 +1759,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-providers"
+name = "lemma-provider"
 version = "0.1.0"
 dependencies = [
  "buffa",
@@ -1786,10 +1786,10 @@ dependencies = [
  "lemma-adapter",
  "lemma-auth",
  "lemma-chat",
- "lemma-conversations",
+ "lemma-conversation",
  "lemma-db-pgsql",
  "lemma-proto",
- "lemma-providers",
+ "lemma-provider",
  "rust-embed",
  "sqlx",
  "tokio",

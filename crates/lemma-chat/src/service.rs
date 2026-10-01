@@ -78,7 +78,7 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
             .map_err(|_| ConnectError::internal("failed to decrypt API key"))?;
 
         let agent_config = AgentConfig {
-            kind: crate::upstream::kind_of(lemma_providers::kind_to_proto(&provider.kind)),
+            kind: crate::upstream::kind_of(lemma_provider::kind_to_proto(&provider.kind)),
             base_url: provider.base_url.clone(),
             api_path: provider.api_path.clone(),
             api_key,

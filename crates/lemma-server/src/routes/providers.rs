@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::Router;
-use lemma_providers::ProviderService;
+use lemma_provider::ProviderService;
 
 pub fn router(service: Arc<ProviderService>) -> Router {
     let connect = connectrpc::Router::new()

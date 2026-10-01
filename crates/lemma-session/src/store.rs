@@ -92,8 +92,8 @@ pub struct MessageUpdate {
 
 /// Trait abstracting conversation persistence.
 ///
-/// Implemented by PostgreSQL (`lemma-conversations` on server) and
-/// SQLite (`lemma-db-sqlite` on clients).
+/// Implemented by PostgreSQL (`lemma-db-pgsql`) and SQLite
+/// (`lemma-db-sqlite`).
 pub trait TraceStore: Send + Sync {
     /// Creates a new conversation entry.
     fn create_conversation<'a>(

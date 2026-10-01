@@ -5,8 +5,8 @@ members = [
     "crates/lemma-db-pgsql",
     "crates/lemma-proto",
     "crates/lemma-auth",
-    "crates/lemma-providers",
-    "crates/lemma-conversations",
+    "crates/lemma-provider",
+    "crates/lemma-conversation",
     "crates/lemma-chat",
     "crates/lemma-crypto",
     "crates/lemma-core",
@@ -41,12 +41,12 @@ lemma-adapter = { path = "crates/lemma-adapter" }
 lemma-agent = { path = "crates/lemma-agent" }
 lemma-auth = { path = "crates/lemma-auth" }
 lemma-chat = { path = "crates/lemma-chat" }
-lemma-conversations = { path = "crates/lemma-conversations" }
+lemma-conversation = { path = "crates/lemma-conversation" }
 lemma-crypto = { path = "crates/lemma-crypto" }
 lemma-db-pgsql = { path = "crates/lemma-db-pgsql" }
 lemma-db-sqlite = { path = "crates/lemma-db-sqlite" }
 lemma-proto = { path = "crates/lemma-proto" }
-lemma-providers = { path = "crates/lemma-providers" }
+lemma-provider = { path = "crates/lemma-provider" }
 lemma-session = { path = "crates/lemma-session" }
 lemma-tools = { path = "crates/lemma-tools" }
 lemma-core = { path = "crates/lemma-core" }

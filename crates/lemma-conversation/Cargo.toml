@@ -1,7 +1,7 @@
 [package]
 version.workspace = true
 edition.workspace = true
-name = "lemma-conversations"
+name = "lemma-conversation"
 
 [dependencies]
 buffa.workspace = true

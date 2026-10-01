@@ -1,7 +1,7 @@
 [package]
 version.workspace = true
 edition.workspace = true
-name = "lemma-providers"
+name = "lemma-provider"
 
 [dependencies]
 buffa.workspace = true
