@@ -8,7 +8,8 @@ pub mod entity;
 pub mod queries;
 pub mod stores;
 
-pub use queries::{conversations, credentials, providers, settings, tokens, users};
+pub use queries::auth::{credentials, tokens};
+pub use queries::{conversations, providers, settings, users};
 pub use stores::provider::PgProviderStore;
 pub use stores::trace::PgTraceStore;
 
