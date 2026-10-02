@@ -1,0 +1,10 @@
+name: A turn streams its events in order
+given:
+  - a conversation exists with a configured provider
+when:
+  - the user sends a message
+then:
+  - the first event carries the committed user message id
+  - zero or more delta events carry the reply text in order
+  - exactly one terminal event reports completion with token usage
+  - the assistant message row holds the full text with status done

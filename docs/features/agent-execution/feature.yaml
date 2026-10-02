@@ -1,0 +1,13 @@
+id: agent-execution
+title: Agent Execution
+status: in-progress
+owners: [core]
+api:
+  proto: [lemma.v1]
+clients:
+  web:
+    status: planned
+  desktop:
+    status: planned
+  android:
+    status: planned
