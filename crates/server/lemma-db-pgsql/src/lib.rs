@@ -4,17 +4,13 @@
 //! Other crates consume the public query modules and row types only; no SQL
 //! lives outside this crate.
 
-pub mod conversations;
-pub mod credentials;
 pub mod entity;
-pub mod providers;
-pub mod settings;
-pub mod tokens;
-mod trace_store;
-pub mod users;
+pub mod queries;
+pub mod stores;
 
-pub use providers::PgProviderStore;
-pub use trace_store::PgTraceStore;
+pub use queries::{conversations, credentials, providers, settings, tokens, users};
+pub use stores::provider::PgProviderStore;
+pub use stores::trace::PgTraceStore;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;

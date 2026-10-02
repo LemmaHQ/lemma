@@ -1,3 +1,5 @@
+//! `TraceStore` implementation over the conversations and messages tables.
+
 use chrono::{DateTime, Utc};
 use lemma_core::Message;
 use lemma_session::{

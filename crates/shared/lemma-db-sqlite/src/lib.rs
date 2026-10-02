@@ -4,16 +4,15 @@
 //! SQL for the local store; other modules consume the public functions and
 //! row types only.
 
-pub mod conversations;
 pub mod entity;
 mod error;
-pub mod providers;
-pub mod settings;
-mod store;
-pub mod users;
+pub mod queries;
+pub mod stores;
 
 pub use error::SqliteStoreError;
-pub use store::SqliteTraceStore;
+pub use queries::{conversations, providers, settings, users};
+pub use stores::provider::SqliteProviderStore;
+pub use stores::trace::SqliteTraceStore;
 
 use std::path::Path;
 
