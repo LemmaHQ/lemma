@@ -2,15 +2,14 @@
 
 use lemma_core::Message;
 use lemma_session::{
-    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, StoredMessage,
-    TraceStore,
+    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, SessionError,
+    StoredMessage, TraceStore,
 };
 use sqlx::SqlitePool;
 use sqlx::types::Json;
 use uuid::Uuid;
 
 use crate::entity;
-use crate::error::SqliteStoreError;
 use crate::now_ms;
 
 /// SQLite trace store over a shared connection pool, bound to the local
@@ -70,8 +69,13 @@ fn meta_of(row: entity::Conversation) -> ConversationMeta {
     }
 }
 
-fn stored_of(row: entity::Message) -> Result<StoredMessage, SqliteStoreError> {
-    let message: Message = serde_json::from_value(row.content_json.0)?;
+fn store_err(e: sqlx::Error) -> SessionError {
+    SessionError::Store(e.to_string())
+}
+
+fn stored_of(row: entity::Message) -> Result<StoredMessage, SessionError> {
+    let message: Message = serde_json::from_value(row.content_json.0)
+        .map_err(|e| SessionError::Store(format!("bad content_json: {e}")))?;
     Ok(StoredMessage {
         id: row.id,
         conversation_id: row.conversation_id,
@@ -121,7 +125,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(now)
             .fetch_one(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
 
             Ok(meta_of(row))
         })
@@ -139,7 +143,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(self.user_id)
             .fetch_optional(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
 
             Ok(row.map(meta_of))
         })
@@ -160,7 +164,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(self.user_id)
             .execute(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
             Ok(())
         })
     }
@@ -189,15 +193,17 @@ impl TraceStore for SqliteTraceStore {
             .bind(self.user_id)
             .execute(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
             Ok(())
         })
     }
 
     fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
-            let content =
-                Json(serde_json::to_value(&entry.message).map_err(SqliteStoreError::from)?);
+            let content = Json(
+                serde_json::to_value(&entry.message)
+                    .map_err(|e| SessionError::Store(format!("serialize message: {e}")))?,
+            );
             let usage = usage_of(&entry.message);
             let now = now_ms();
 
@@ -222,7 +228,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(now)
             .execute(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
 
             Ok(())
         })
@@ -230,8 +236,10 @@ impl TraceStore for SqliteTraceStore {
 
     fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()> {
         Box::pin(async move {
-            let content =
-                Json(serde_json::to_value(&update.message).map_err(SqliteStoreError::from)?);
+            let content = Json(
+                serde_json::to_value(&update.message)
+                    .map_err(|e| SessionError::Store(format!("serialize message: {e}")))?,
+            );
             let usage = usage_of(&update.message);
 
             sqlx::query(
@@ -251,7 +259,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(id)
             .execute(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
 
             Ok(())
         })
@@ -272,12 +280,12 @@ impl TraceStore for SqliteTraceStore {
             .bind(conversation_id)
             .fetch_all(&self.pool)
             .await
-            .map_err(SqliteStoreError::from)?;
+            .map_err(store_err)?;
 
             let messages = rows
                 .into_iter()
                 .map(stored_of)
-                .collect::<Result<Vec<_>, SqliteStoreError>>()?;
+                .collect::<Result<Vec<_>, _>>()?;
             Ok(messages)
         })
     }

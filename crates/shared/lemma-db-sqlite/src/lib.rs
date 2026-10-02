@@ -5,11 +5,9 @@
 //! row types only.
 
 pub mod entity;
-mod error;
 pub mod queries;
 pub mod stores;
 
-pub use error::SqliteStoreError;
 pub use queries::{conversations, providers, settings, users};
 pub use stores::provider::SqliteProviderStore;
 pub use stores::trace::SqliteTraceStore;
