@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use lemma_adapter::{DispatchProvider, Provider};
+use lemma_agent_rpc::AgentRpc;
 use lemma_auth::AuthService;
-use lemma_chat::ChatService;
 use lemma_conversation::ConversationService;
 use lemma_provider_rpc::ProviderRpc;
 use sqlx::PgPool;
@@ -14,7 +14,7 @@ pub struct AppState {
     pub auth: Arc<AuthService>,
     pub providers: Arc<ProviderRpc>,
     pub conversations: Arc<ConversationService>,
-    pub chat: Arc<ChatService>,
+    pub agent: Arc<AgentRpc>,
 }
 
 impl AppState {
@@ -34,7 +34,7 @@ impl AppState {
                 pool.clone(),
                 config.jwt_secret.clone(),
             )),
-            chat: Arc::new(ChatService::new(
+            agent: Arc::new(AgentRpc::new(
                 pool.clone(),
                 config.jwt_secret.clone(),
                 config.secret_key.clone(),

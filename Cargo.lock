@@ -1644,26 +1644,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-auth"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "buffa-types",
- "chrono",
- "connectrpc",
- "hex",
- "jsonwebtoken",
- "lemma-db-pgsql",
- "lemma-proto",
- "rand 0.10.2",
- "serde",
- "sha2 0.11.0",
- "sqlx",
- "uuid",
-]
-
-[[package]]
-name = "lemma-chat"
+name = "lemma-agent-rpc"
 version = "0.1.0"
 dependencies = [
  "buffa",
@@ -1681,6 +1662,25 @@ dependencies = [
  "sqlx",
  "tokio",
  "tokio-stream",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-auth"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "buffa-types",
+ "chrono",
+ "connectrpc",
+ "hex",
+ "jsonwebtoken",
+ "lemma-db-pgsql",
+ "lemma-proto",
+ "rand 0.10.2",
+ "serde",
+ "sha2 0.11.0",
+ "sqlx",
  "uuid",
 ]
 
@@ -1796,8 +1796,8 @@ dependencies = [
  "connectrpc",
  "dotenvy",
  "lemma-adapter",
+ "lemma-agent-rpc",
  "lemma-auth",
- "lemma-chat",
  "lemma-conversation",
  "lemma-db-pgsql",
  "lemma-proto",

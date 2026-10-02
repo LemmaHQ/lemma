@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package lemma.v1;
 
-// 对话编排：发消息（服务端流）、中断、断线续传
-service ChatService {
+// Agent 执行：发消息（服务端流）、中断、断线续传
+service AgentService {
   rpc SendMessage(SendMessageRequest) returns (stream SendMessageResponse);
   rpc AbortMessage(AbortMessageRequest) returns (AbortMessageResponse);
   rpc ResumeStream(ResumeStreamRequest) returns (stream ResumeStreamResponse);
@@ -15,34 +15,34 @@ message TokenUsage {
   int32 total_tokens = 3;
 }
 
-message ChatStarted {
+message AgentStarted {
   string message_id = 1;
   // 回显客户端生成 ID，关联乐观渲染与重发去重
   string client_msg_id = 2;
 }
 
-message ChatDelta {
+message AgentDelta {
   string content = 1;
 }
 
-message ChatDone {
+message AgentDone {
   TokenUsage usage = 1;
 }
 
-message ChatAborted {}
+message AgentAborted {}
 
-message ChatError {
+message AgentError {
   string message = 1;
 }
 
 // 统一流事件
-message ChatEvent {
+message AgentEvent {
   oneof kind {
-    ChatStarted started = 1;
-    ChatDelta delta = 2;
-    ChatDone done = 3;
-    ChatAborted aborted = 4;
-    ChatError error = 5;
+    AgentStarted started = 1;
+    AgentDelta delta = 2;
+    AgentDone done = 3;
+    AgentAborted aborted = 4;
+    AgentError error = 5;
   }
 }
 
@@ -56,7 +56,7 @@ message SendMessageRequest {
 }
 
 message SendMessageResponse {
-  ChatEvent event = 1;
+  AgentEvent event = 1;
 }
 
 message AbortMessageRequest {
@@ -73,5 +73,5 @@ message ResumeStreamRequest {
 }
 
 message ResumeStreamResponse {
-  ChatEvent event = 1;
+  AgentEvent event = 1;
 }

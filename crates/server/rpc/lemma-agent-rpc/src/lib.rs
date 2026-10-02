@@ -1,4 +1,4 @@
-//! Handler for the ChatService RPCs, driven by `lemma-agent::AgentLoop`.
+//! Connect RPC shell exposing `lemma-agent::AgentLoop` as the AgentService.
 
 use std::sync::Arc;
 
@@ -7,30 +7,39 @@ use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
 use futures::stream;
-use lemma_adapter::Provider;
+use lemma_adapter::{Provider, ProviderKind};
 use lemma_agent::{AgentConfig, AgentLoop, TurnEvent};
 use lemma_auth::require_user;
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_db_pgsql::PgTraceStore;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, ChatDelta, ChatDone, ChatError, ChatEvent, ChatStarted, ErrorReason,
-    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, chat_event,
+    AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted, ErrorReason,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, agent_event,
 };
 use sqlx::PgPool;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
 
-/// Connect handler implementing the ChatService RPCs.
-pub struct ChatService {
+/// Maps the proto provider kind onto the canonical provider kind.
+fn kind_of(kind: lemma_proto::lemma::v1::ProviderKind) -> ProviderKind {
+    match kind {
+        lemma_proto::lemma::v1::ProviderKind::Anthropic => ProviderKind::Anthropic,
+        lemma_proto::lemma::v1::ProviderKind::Gemini => ProviderKind::Gemini,
+        _ => ProviderKind::OpenAiCompatible,
+    }
+}
+
+/// Connect handler implementing the AgentService RPCs.
+pub struct AgentRpc {
     pool: PgPool,
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
     provider: Arc<dyn Provider>,
 }
 
-impl ChatService {
+impl AgentRpc {
     /// Creates the handler with the given LLM provider.
     pub fn new(
         pool: PgPool,
@@ -48,7 +57,7 @@ impl ChatService {
 }
 
 #[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::ChatService for ChatService {
+impl lemma_proto::lemma::v1::AgentService for AgentRpc {
     async fn send_message(
         &self,
         ctx: RequestContext,
@@ -78,7 +87,7 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
             .map_err(|_| ConnectError::internal("failed to decrypt API key"))?;
 
         let agent_config = AgentConfig {
-            kind: crate::upstream::kind_of(lemma_provider::kind_to_proto(&provider.kind)),
+            kind: kind_of(lemma_provider::kind_to_proto(&provider.kind)),
             base_url: provider.base_url.clone(),
             api_path: provider.api_path.clone(),
             api_key,
@@ -163,9 +172,9 @@ impl lemma_proto::lemma::v1::ChatService for ChatService {
     }
 }
 
-fn started_event(id: Uuid, client_msg_id: String) -> ChatEvent {
-    ChatEvent {
-        kind: Some(chat_event::Kind::Started(Box::new(ChatStarted {
+fn started_event(id: Uuid, client_msg_id: String) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Started(Box::new(AgentStarted {
             message_id: id.to_string(),
             client_msg_id,
             ..Default::default()
@@ -174,9 +183,9 @@ fn started_event(id: Uuid, client_msg_id: String) -> ChatEvent {
     }
 }
 
-fn delta_event(text: String) -> ChatEvent {
-    ChatEvent {
-        kind: Some(chat_event::Kind::Delta(Box::new(ChatDelta {
+fn delta_event(text: String) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Delta(Box::new(AgentDelta {
             content: text,
             ..Default::default()
         }))),
@@ -184,9 +193,9 @@ fn delta_event(text: String) -> ChatEvent {
     }
 }
 
-fn done_event(usage: Option<lemma_core::Usage>) -> ChatEvent {
-    ChatEvent {
-        kind: Some(chat_event::Kind::Done(Box::new(ChatDone {
+fn done_event(usage: Option<lemma_core::Usage>) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Done(Box::new(AgentDone {
             usage: usage
                 .map(|u| {
                     MessageField::some(TokenUsage {
@@ -203,9 +212,9 @@ fn done_event(usage: Option<lemma_core::Usage>) -> ChatEvent {
     }
 }
 
-fn error_event(message: &str) -> ChatEvent {
-    ChatEvent {
-        kind: Some(chat_event::Kind::Error(Box::new(ChatError {
+fn error_event(message: &str) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Error(Box::new(AgentError {
             message: message.to_string(),
             ..Default::default()
         }))),

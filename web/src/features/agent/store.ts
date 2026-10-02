@@ -2,9 +2,9 @@ import { create } from "zustand";
 
 import { getDb } from "@/data/cache/database";
 import { listMessages, type MessageRow } from "@/data/cache/records";
-import { chatClient, conversationClient } from "@/data/rpc/clients";
+import { agentClient, conversationClient } from "@/data/rpc/clients";
 import { errorText } from "@/data/rpc/errors";
-import type { ChatEvent } from "@/gen/lemma/v1/chat_pb";
+import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import i18n from "@/i18n";
 
@@ -192,7 +192,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                 ),
             }));
 
-        const applyEvent = (event?: ChatEvent) => {
+        const applyEvent = (event?: AgentEvent) => {
             const kind = event?.kind;
             if (!kind) return;
             switch (kind.case) {
@@ -222,7 +222,7 @@ export const useChat = create<ChatState>()((set, get) => ({
             for (;;) {
                 try {
                     if (!activeMessageId) {
-                        const stream = chatClient.sendMessage(
+                        const stream = agentClient.sendMessage(
                             {
                                 conversationId,
                                 content,
@@ -237,7 +237,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                         const current =
                             get().items.find((it) => it.id === aiTempId)
                                 ?.content ?? "";
-                        const stream = chatClient.resumeStream(
+                        const stream = agentClient.resumeStream(
                             {
                                 messageId: activeMessageId,
                                 offset: BigInt(charLen(current)),
@@ -277,7 +277,7 @@ export const useChat = create<ChatState>()((set, get) => ({
         const id = activeMessageId;
         if (id) {
             try {
-                await chatClient.abortMessage({ messageId: id });
+                await agentClient.abortMessage({ messageId: id });
             } catch {
                 // Persisting the abort is best-effort; the local stream is
                 // cut either way.

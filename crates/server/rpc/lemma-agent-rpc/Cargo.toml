@@ -1,0 +1,25 @@
+[package]
+version.workspace = true
+edition.workspace = true
+name = "lemma-agent-rpc"
+
+[dependencies]
+buffa.workspace = true
+buffa-types.workspace = true
+connectrpc.workspace = true
+futures.workspace = true
+lemma-adapter.workspace = true
+lemma-agent.workspace = true
+lemma-auth.workspace = true
+lemma-core.workspace = true
+lemma-crypto.workspace = true
+lemma-db-pgsql.workspace = true
+lemma-proto.workspace = true
+lemma-provider.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
