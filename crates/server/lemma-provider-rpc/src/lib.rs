@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_db_pgsql::providers::PgProviderStore;
+use lemma_db_pgsql::PgProviderStore;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     CreateProviderResponse, DeleteProviderResponse, ErrorReason, FetchModelsResponse,

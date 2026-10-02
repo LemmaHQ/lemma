@@ -13,7 +13,8 @@ members = [
     "crates/shared/lemma-adapter",
     "crates/shared/lemma-agent",
     "crates/shared/lemma-session",
-    "crates/shared/lemma-tools", "crates/server/lemma-provider-rpc",
+    "crates/shared/lemma-tools",
+    "crates/server/lemma-provider-rpc",
 ]
 resolver = "2"
 

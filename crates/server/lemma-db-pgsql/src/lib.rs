@@ -13,6 +13,7 @@ pub mod tokens;
 mod trace_store;
 pub mod users;
 
+pub use providers::PgProviderStore;
 pub use trace_store::PgTraceStore;
 
 use sqlx::PgPool;
