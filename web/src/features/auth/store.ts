@@ -2,12 +2,17 @@ import { create } from "zustand";
 
 import type { User } from "@/gen/lemma/v1/auth_pb";
 import { authClient } from "@/data/rpc/clients";
+import { cookieAuth } from "@/platform/environment";
 import {
+    clearStoredUserId,
     clearTokens,
     getAccessToken,
     getRefreshToken,
+    setStoredUserId,
     setTokens,
 } from "@/data/credentials";
+
+const cookieMode = cookieAuth();
 
 interface AuthState {
     user: User | null;
@@ -27,14 +32,27 @@ export const useAuth = create<AuthState>()((set) => ({
     ready: false,
 
     bootstrap: async () => {
-        // A stored token restores the session via me(); any failure means
-        // the session is gone and the tokens are dropped.
-        if (getAccessToken()) {
+        if (cookieMode) {
+            clearTokens();
             try {
                 const res = await authClient.me({});
-                set({ user: res.user ?? null });
+                const user = res.user ?? null;
+                if (user) setStoredUserId(user.id);
+                set({ user });
+            } catch {
+                set({ user: null });
+            }
+        } else if (getAccessToken()) {
+            // A stored token restores the session via me(); any failure
+            // means the session is gone and the tokens are dropped.
+            try {
+                const res = await authClient.me({});
+                const user = res.user ?? null;
+                if (user) setStoredUserId(user.id);
+                set({ user });
             } catch {
                 clearTokens();
+                clearStoredUserId();
             }
         }
         set({ ready: true });
@@ -46,27 +64,40 @@ export const useAuth = create<AuthState>()((set) => ({
             ? { email: identifier, password }
             : { username: identifier, password };
         const res = await authClient.login(req);
-        if (!res.tokens) throw new Error("no tokens in response");
-        setTokens(res.tokens.accessToken, res.tokens.refreshToken);
-        set({ user: res.user ?? null });
+        if (!cookieMode) {
+            if (!res.tokens) throw new Error("no tokens in response");
+            setTokens(res.tokens.accessToken, res.tokens.refreshToken);
+        }
+        const user = res.user ?? null;
+        if (user) setStoredUserId(user.id);
+        set({ user });
     },
 
     signup: async (username, email, password) => {
         const res = await authClient.signUp({ username, email, password });
-        if (!res.tokens) throw new Error("no tokens in response");
-        setTokens(res.tokens.accessToken, res.tokens.refreshToken);
-        set({ user: res.user ?? null });
+        if (!cookieMode) {
+            if (!res.tokens) throw new Error("no tokens in response");
+            setTokens(res.tokens.accessToken, res.tokens.refreshToken);
+        }
+        const user = res.user ?? null;
+        if (user) setStoredUserId(user.id);
+        set({ user });
     },
 
     logout: async () => {
         try {
-            const refreshToken = getRefreshToken();
-            if (refreshToken) await authClient.logout({ refreshToken });
+            if (cookieMode) {
+                await authClient.logout({});
+            } else {
+                const refreshToken = getRefreshToken();
+                if (refreshToken) await authClient.logout({ refreshToken });
+            }
         } catch {
             // Revoking the refresh token is best-effort: local logout must
             // succeed even when the server is unreachable.
         }
         clearTokens();
+        clearStoredUserId();
         set({ user: null });
     },
 }));

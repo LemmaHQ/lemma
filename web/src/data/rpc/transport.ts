@@ -3,7 +3,7 @@ import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { AuthService } from "@/gen/lemma/v1/auth_pb";
-import { appPath, resolveBaseUrl } from "@/platform/environment";
+import { appPath, resolveBaseUrl, cookieAuth } from "@/platform/environment";
 import {
     clearTokens,
     getAccessToken,
@@ -11,29 +11,46 @@ import {
     setTokens,
 } from "@/data/credentials";
 
+const cookieMode = cookieAuth();
+
 // The refresh call bypasses the interceptor below, or a 401 from refresh
 // itself would trigger another refresh.
 const bareTransport = createConnectTransport({ baseUrl: resolveBaseUrl() });
 
-// Any failure (missing token, network, server rejection) reads as false;
-// the caller then drops the session.
-async function tryRefresh(): Promise<boolean> {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
+async function doRefresh(): Promise<boolean> {
     const auth = createClient(AuthService, bareTransport);
     try {
+        if (cookieMode) {
+            await auth.refresh({});
+            return true;
+        }
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) return false;
         const res = await auth.refresh({ refreshToken });
         if (!res.tokens) return false;
         setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         return true;
     } catch {
+        // Any failure (missing token, network, server rejection) reads as
+        // false; the caller then drops the session.
         return false;
     }
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+function tryRefresh(): Promise<boolean> {
+    refreshPromise ??= doRefresh().finally(() => {
+        refreshPromise = null;
+    });
+    return refreshPromise;
+}
+
 const authInterceptor: Interceptor = (next) => async (req) => {
-    const token = getAccessToken();
-    if (token) req.header.set("Authorization", `Bearer ${token}`);
+    if (!cookieMode) {
+        const token = getAccessToken();
+        if (token) req.header.set("Authorization", `Bearer ${token}`);
+    }
     try {
         return await next(req);
     } catch (e) {
@@ -47,12 +64,14 @@ const authInterceptor: Interceptor = (next) => async (req) => {
             throw e;
         }
         if (!(await tryRefresh())) {
-            clearTokens();
+            if (!cookieMode) clearTokens();
             window.location.href = appPath("/login");
             throw e;
         }
-        const fresh = getAccessToken();
-        if (fresh) req.header.set("Authorization", `Bearer ${fresh}`);
+        if (!cookieMode) {
+            const fresh = getAccessToken();
+            if (fresh) req.header.set("Authorization", `Bearer ${fresh}`);
+        }
         return await next(req);
     }
 };

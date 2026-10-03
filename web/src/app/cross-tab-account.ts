@@ -1,19 +1,4 @@
-const ACCESS_KEY = "lemma.access_token";
-
-// Decodes the JWT payload without verifying the signature; used only to
-// tell which user a token belongs to, never for authorization.
-function userIdOf(token: string): string | null {
-    try {
-        const raw = token.split(".")[1] ?? "";
-        const b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
-        const payload = JSON.parse(
-            atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)),
-        ) as { sub?: string };
-        return payload.sub ?? null;
-    } catch {
-        return null;
-    }
-}
+const USER_KEY = "lemma.user_id";
 
 /**
  * Reloads this tab when another tab signs in as a different user. The
@@ -23,9 +8,9 @@ function userIdOf(token: string): string | null {
  */
 export function installCrossTabGuard(): void {
     window.addEventListener("storage", (event) => {
-        if (event.key !== ACCESS_KEY) return;
-        const prev = event.oldValue ? userIdOf(event.oldValue) : null;
-        const next = event.newValue ? userIdOf(event.newValue) : null;
+        if (event.key !== USER_KEY) return;
+        const prev = event.oldValue;
+        const next = event.newValue;
         if (prev && next && prev !== next) window.location.reload();
     });
 }

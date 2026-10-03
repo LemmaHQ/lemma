@@ -13,6 +13,16 @@ export function isDesktop(): boolean {
     return typeof window !== "undefined" && window.lemmaDesktop !== undefined;
 }
 
+export function cookieAuth(): boolean {
+    if (typeof window === "undefined" || isDesktop()) return false;
+    const base = resolveBaseUrl();
+    try {
+        return new URL(base, window.location.href).origin === window.location.origin;
+    } catch {
+        return false;
+    }
+}
+
 export function resolveBaseUrl(): string {
     const injected =
         typeof window !== "undefined" ? window.__LEMMA_SERVER_URL__ : undefined;

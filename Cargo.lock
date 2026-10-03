@@ -1674,6 +1674,7 @@ dependencies = [
  "chrono",
  "connectrpc",
  "hex",
+ "http",
  "jsonwebtoken",
  "lemma-db-pgsql",
  "lemma-proto",

@@ -9,6 +9,7 @@ buffa-types.workspace = true
 chrono.workspace = true
 connectrpc.workspace = true
 hex.workspace = true
+http.workspace = true
 jsonwebtoken.workspace = true
 lemma-db-pgsql.workspace = true
 lemma-proto.workspace = true
