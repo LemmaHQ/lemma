@@ -4,10 +4,12 @@ members = [
     "crates/shared/lemma-db-sqlite",
     "crates/server/lemma-db-pgsql",
     "crates/shared/lemma-proto",
-    "crates/server/lemma-auth",
+    "crates/shared/lemma-auth",
     "crates/shared/lemma-provider",
     "crates/shared/lemma-conversation",
     "crates/server/rpc/lemma-agent-rpc",
+    "crates/server/rpc/lemma-auth-rpc",
+    "crates/server/rpc/lemma-conversation-rpc",
     "crates/server/rpc/lemma-provider-rpc",
     "crates/shared/lemma-crypto",
     "crates/shared/lemma-core",
@@ -40,8 +42,10 @@ http = "1.5.0"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }
-lemma-auth = { path = "crates/server/lemma-auth" }
+lemma-auth = { path = "crates/shared/lemma-auth" }
+lemma-auth-rpc = { path = "crates/server/rpc/lemma-auth-rpc" }
 lemma-conversation = { path = "crates/shared/lemma-conversation" }
+lemma-conversation-rpc = { path = "crates/server/rpc/lemma-conversation-rpc" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
 lemma-db-pgsql = { path = "crates/server/lemma-db-pgsql" }
 lemma-db-sqlite = { path = "crates/shared/lemma-db-sqlite" }

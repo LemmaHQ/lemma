@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         })
         .await?;
-    state.pool.close().await;
+    state.close().await;
     Ok(())
 }
 

@@ -5,6 +5,8 @@ version.workspace = true
 
 [dependencies]
 chrono.workspace = true
+lemma-auth.workspace = true
+lemma-conversation.workspace = true
 lemma-core.workspace = true
 lemma-provider.workspace = true
 lemma-session.workspace = true

@@ -10,6 +10,8 @@ pub mod stores;
 
 pub use queries::auth::{credentials, tokens};
 pub use queries::{conversations, providers, settings, users};
+pub use stores::auth::PgAuthStore;
+pub use stores::conversation::PgConversationStore;
 pub use stores::provider::PgProviderStore;
 pub use stores::trace::PgTraceStore;
 

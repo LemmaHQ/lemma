@@ -5,18 +5,12 @@ name = "lemma-auth"
 
 [dependencies]
 argon2.workspace = true
-buffa-types.workspace = true
 chrono.workspace = true
-connectrpc.workspace = true
 hex.workspace = true
-http.workspace = true
 jsonwebtoken.workspace = true
-lemma-db-pgsql.workspace = true
-lemma-proto.workspace = true
 rand.workspace = true
 serde.workspace = true
 sha2.workspace = true
-sqlx.workspace = true
 uuid.workspace = true
 
 [lints]

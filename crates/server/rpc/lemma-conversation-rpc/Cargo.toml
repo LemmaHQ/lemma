@@ -1,23 +1,17 @@
 [package]
 version.workspace = true
 edition.workspace = true
-name = "lemma-agent-rpc"
+name = "lemma-conversation-rpc"
 
 [dependencies]
 buffa.workspace = true
 buffa-types.workspace = true
 connectrpc.workspace = true
-futures.workspace = true
-lemma-adapter.workspace = true
-lemma-agent.workspace = true
 lemma-auth-rpc.workspace = true
+lemma-conversation.workspace = true
 lemma-core.workspace = true
-lemma-crypto.workspace = true
 lemma-proto.workspace = true
-lemma-provider.workspace = true
-lemma-session.workspace = true
-tokio.workspace = true
-tokio-stream.workspace = true
+serde_json.workspace = true
 uuid.workspace = true
 
 [lints]

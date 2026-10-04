@@ -1611,9 +1611,9 @@ dependencies = [
 
 [[package]]
 name = "lazy_static"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 dependencies = [
  "spin",
 ]
@@ -1653,13 +1653,12 @@ dependencies = [
  "futures",
  "lemma-adapter",
  "lemma-agent",
- "lemma-auth",
+ "lemma-auth-rpc",
  "lemma-core",
  "lemma-crypto",
- "lemma-db-pgsql",
  "lemma-proto",
  "lemma-provider",
- "sqlx",
+ "lemma-session",
  "tokio",
  "tokio-stream",
  "uuid",
@@ -1670,18 +1669,24 @@ name = "lemma-auth"
 version = "0.1.0"
 dependencies = [
  "argon2",
- "buffa-types",
  "chrono",
- "connectrpc",
  "hex",
- "http",
  "jsonwebtoken",
- "lemma-db-pgsql",
- "lemma-proto",
  "rand 0.10.2",
  "serde",
  "sha2 0.11.0",
- "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-auth-rpc"
+version = "0.1.0"
+dependencies = [
+ "buffa-types",
+ "connectrpc",
+ "http",
+ "lemma-auth",
+ "lemma-proto",
  "uuid",
 ]
 
@@ -1689,16 +1694,23 @@ dependencies = [
 name = "lemma-conversation"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-conversation-rpc"
+version = "0.1.0"
+dependencies = [
  "buffa",
  "buffa-types",
- "chrono",
  "connectrpc",
- "lemma-auth",
+ "lemma-auth-rpc",
+ "lemma-conversation",
  "lemma-core",
- "lemma-db-pgsql",
  "lemma-proto",
  "serde_json",
- "sqlx",
  "uuid",
 ]
 
@@ -1725,6 +1737,8 @@ name = "lemma-db-pgsql"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lemma-auth",
+ "lemma-conversation",
  "lemma-core",
  "lemma-provider",
  "lemma-session",
@@ -1740,6 +1754,8 @@ name = "lemma-db-sqlite"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lemma-auth",
+ "lemma-conversation",
  "lemma-core",
  "lemma-provider",
  "lemma-session",
@@ -1768,7 +1784,6 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "lemma-crypto",
- "lemma-proto",
  "reqwest",
  "serde",
  "uuid",
@@ -1778,14 +1793,11 @@ dependencies = [
 name = "lemma-provider-rpc"
 version = "0.1.0"
 dependencies = [
- "buffa",
  "buffa-types",
  "connectrpc",
- "lemma-auth",
- "lemma-db-pgsql",
+ "lemma-auth-rpc",
  "lemma-proto",
  "lemma-provider",
- "sqlx",
  "uuid",
 ]
 
@@ -1798,15 +1810,17 @@ dependencies = [
  "dotenvy",
  "lemma-adapter",
  "lemma-agent-rpc",
- "lemma-auth",
- "lemma-conversation",
+ "lemma-auth-rpc",
+ "lemma-conversation-rpc",
  "lemma-db-pgsql",
- "lemma-proto",
+ "lemma-db-sqlite",
  "lemma-provider-rpc",
+ "lemma-session",
  "rust-embed",
  "sqlx",
  "tokio",
  "tower-http 0.7.1",
+ "uuid",
 ]
 
 [[package]]
@@ -3851,18 +3865,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.57"
+version = "0.8.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d35102a9f36d089ccae9e4c6802bc118be4487b80aaffc0ab4e0cf5ce92d2873"
+checksum = "6df92bf3d9227be3d53173901ddbffac2babc27ae50f397776ffd6dc33f800cb"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.57"
+version = "0.8.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "146c01f5ab44258da43cf276c74a2763db2ff3969c9c652c3f2de07041d0b2bc"
+checksum = "ac4f328cf2f05d084e496c3e9c3f33ed0a183656a16e1fcec4d464d8373aec82"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -4,16 +4,8 @@ edition.workspace = true
 name = "lemma-conversation"
 
 [dependencies]
-buffa.workspace = true
-buffa-types.workspace = true
 chrono.workspace = true
-connectrpc.workspace = true
-lemma-auth.workspace = true
-lemma-core.workspace = true
-lemma-db-pgsql.workspace = true
-lemma-proto.workspace = true
 serde_json.workspace = true
-sqlx.workspace = true
 uuid.workspace = true
 
 [lints]

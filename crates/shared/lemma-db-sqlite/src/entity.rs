@@ -19,6 +19,27 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
+pub struct Credential {
+    pub user_id: Uuid,
+    /// Argon2 hash of the account password.
+    pub password_hash: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct RefreshToken {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub token_hash: String,
+    pub label: Option<String>,
+    pub replaced_by: Option<Uuid>,
+    pub revoked_at: Option<i64>,
+    pub created_at: i64,
+    pub expires_at: i64,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Setting {
     pub user_id: Uuid,
     pub key: String,

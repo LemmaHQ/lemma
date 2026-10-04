@@ -1,38 +1,18 @@
 //! Provider domain service: validation, API-key sealing, and
 //! orchestration over a [`ProviderStore`].
 
+use std::str::FromStr;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use lemma_crypto::{derive_key, mask, open, seal};
-use lemma_proto::lemma::v1::ProviderKind;
 use uuid::Uuid;
 
 use crate::error::ProviderError;
+use crate::kind::ProviderKind;
 use crate::models::fetch_models;
 use crate::record::{NewProvider, ProviderPatch, ProviderRecord};
 use crate::store::ProviderStore;
-
-/// Maps a stored kind string to its proto enum. Unrecognized strings
-/// fall back to Openai, the most common shape.
-pub fn kind_to_proto(kind: &str) -> ProviderKind {
-    match kind {
-        "anthropic" => ProviderKind::Anthropic,
-        "gemini" => ProviderKind::Gemini,
-        _ => ProviderKind::Openai,
-    }
-}
-
-/// Maps a proto kind to its stored string. Returns `None` for
-/// unspecified or unknown values.
-pub fn kind_to_str(kind: ProviderKind) -> Option<&'static str> {
-    match kind {
-        ProviderKind::Openai => Some("openai"),
-        ProviderKind::Anthropic => Some("anthropic"),
-        ProviderKind::Gemini => Some("gemini"),
-        _ => None,
-    }
-}
 
 /// A provider as presented to callers: the API key is masked for
 /// display.
@@ -143,7 +123,7 @@ impl ProviderService {
             .unwrap_or_else(|_| "****".to_string());
         ProviderView {
             id: r.id,
-            kind: kind_to_proto(&r.kind),
+            kind: ProviderKind::from_str(&r.kind).unwrap_or(ProviderKind::OpenAiCompatible),
             name: r.name.clone(),
             base_url: r.base_url.clone(),
             api_key,
@@ -168,7 +148,7 @@ impl ProviderService {
         user_id: Uuid,
         input: CreateInput,
     ) -> Result<ProviderView, ProviderError> {
-        let kind = kind_to_str(input.kind).ok_or(ProviderError::KindInvalid)?;
+        let kind = input.kind.as_str();
         let name = input.name.trim();
         let base_url = input.base_url.trim().trim_end_matches('/');
         if name.is_empty() || base_url.is_empty() || input.api_key.is_empty() {
@@ -245,7 +225,7 @@ impl ProviderService {
             .ok_or(ProviderError::NotFound)?;
         let plain = self.open_key(&record.api_key)?;
         fetch_models(
-            kind_to_proto(&record.kind),
+            ProviderKind::from_str(&record.kind).unwrap_or(ProviderKind::OpenAiCompatible),
             &record.base_url,
             &plain,
             &record.models_path,
@@ -262,7 +242,6 @@ impl ProviderService {
         api_key: &str,
         models_path: &str,
     ) -> Result<Vec<String>, ProviderError> {
-        kind_to_str(kind).ok_or(ProviderError::KindInvalid)?;
         fetch_models(
             kind,
             base_url.trim().trim_end_matches('/'),

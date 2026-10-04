@@ -8,7 +8,10 @@ pub mod entity;
 pub mod queries;
 pub mod stores;
 
+pub use queries::auth::{credentials, tokens};
 pub use queries::{conversations, providers, settings, users};
+pub use stores::auth::SqliteAuthStore;
+pub use stores::conversation::SqliteConversationStore;
 pub use stores::provider::SqliteProviderStore;
 pub use stores::trace::SqliteTraceStore;
 

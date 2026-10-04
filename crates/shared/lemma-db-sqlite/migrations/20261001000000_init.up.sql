@@ -9,6 +9,25 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX users_owner_unique ON users (role)
 WHERE role = 'owner';
 
+CREATE TABLE auth_credentials (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    password_hash TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE refresh_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT UNIQUE NOT NULL,
+    label TEXT,
+    replaced_by TEXT REFERENCES refresh_tokens(id),
+    revoked_at INTEGER,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
+
 CREATE TABLE providers (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

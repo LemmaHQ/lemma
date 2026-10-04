@@ -1,5 +1,6 @@
 //! Connect RPC shell exposing `lemma-agent::AgentLoop` as the AgentService.
 
+use std::str::FromStr;
 use std::sync::Arc;
 
 use buffa::MessageField;
@@ -9,46 +10,52 @@ use connectrpc::{
 use futures::stream;
 use lemma_adapter::{Provider, ProviderKind};
 use lemma_agent::{AgentConfig, AgentLoop, TurnEvent};
-use lemma_auth::require_user;
+use lemma_auth_rpc::require_user;
 use lemma_core::{ContentBlock, Message, TextContent};
-use lemma_db_pgsql::PgTraceStore;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted, ErrorReason,
     ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, agent_event,
 };
-use sqlx::PgPool;
+use lemma_provider::{ProviderKind as DomainKind, ProviderStore};
+use lemma_session::TraceStore;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
 
-/// Maps the proto provider kind onto the canonical provider kind.
-fn kind_of(kind: lemma_proto::lemma::v1::ProviderKind) -> ProviderKind {
+/// Maps the domain provider kind onto the adapter provider kind.
+fn kind_of(kind: DomainKind) -> ProviderKind {
     match kind {
-        lemma_proto::lemma::v1::ProviderKind::Anthropic => ProviderKind::Anthropic,
-        lemma_proto::lemma::v1::ProviderKind::Gemini => ProviderKind::Gemini,
-        _ => ProviderKind::OpenAiCompatible,
+        DomainKind::Anthropic => ProviderKind::Anthropic,
+        DomainKind::Gemini => ProviderKind::Gemini,
+        DomainKind::OpenAiCompatible => ProviderKind::OpenAiCompatible,
     }
 }
 
+/// Factory producing a user-scoped trace store per request.
+pub type TraceStoreFactory = Arc<dyn Fn(Uuid) -> Arc<dyn TraceStore> + Send + Sync>;
+
 /// Connect handler implementing the AgentService RPCs.
 pub struct AgentRpc {
-    pool: PgPool,
+    traces: TraceStoreFactory,
+    providers: Arc<dyn ProviderStore>,
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
     provider: Arc<dyn Provider>,
 }
 
 impl AgentRpc {
-    /// Creates the handler with the given LLM provider.
+    /// Creates the handler over injected stores with the given LLM provider.
     pub fn new(
-        pool: PgPool,
+        traces: TraceStoreFactory,
+        providers: Arc<dyn ProviderStore>,
         jwt_secret: impl Into<Arc<str>>,
         secret_key: impl Into<Arc<str>>,
         provider: Arc<dyn Provider>,
     ) -> Self {
         Self {
-            pool,
+            traces,
+            providers,
             jwt_secret: jwt_secret.into(),
             secret_key: secret_key.into(),
             provider,
@@ -76,18 +83,23 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             return Err(app_error(ErrorReason::ERROR_REASON_MODEL_REQUIRED));
         }
 
-        let provider =
-            lemma_db_pgsql::providers::find_by_id_and_user(&self.pool, provider_id, user_id)
-                .await
-                .map_err(map_db)?
-                .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
+        let provider = self
+            .providers
+            .get(user_id, provider_id)
+            .await
+            .map_err(|e| ConnectError::internal(format!("provider store: {e}")))?
+            .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
 
         let master_key = lemma_crypto::derive_key(&self.secret_key);
         let api_key = lemma_crypto::open(&master_key, &provider.api_key)
             .map_err(|_| ConnectError::internal("failed to decrypt API key"))?;
 
+        let kind = DomainKind::from_str(&provider.kind).map_err(|()| {
+            ConnectError::internal(format!("unknown provider kind: {}", provider.kind))
+        })?;
+
         let agent_config = AgentConfig {
-            kind: kind_of(lemma_provider::kind_to_proto(&provider.kind)),
+            kind: kind_of(kind),
             base_url: provider.base_url.clone(),
             api_path: provider.api_path.clone(),
             api_key,
@@ -96,8 +108,7 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             thinking_effort: None,
         };
 
-        let store = Arc::new(PgTraceStore::new(self.pool.clone(), user_id));
-        let agent = AgentLoop::new(store, self.provider.clone());
+        let agent = AgentLoop::new((self.traces)(user_id), self.provider.clone());
 
         let user_msg = Message::User {
             content: vec![ContentBlock::Text(TextContent {
@@ -224,8 +235,4 @@ fn error_event(message: &str) -> AgentEvent {
 
 fn parse_uuid(s: &str) -> Result<Uuid, ConnectError> {
     Uuid::parse_str(s).map_err(|_| app_error(ErrorReason::ERROR_REASON_ID_INVALID))
-}
-
-fn map_db(err: sqlx::Error) -> ConnectError {
-    ConnectError::internal(format!("database error: {err}"))
 }

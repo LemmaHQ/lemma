@@ -1,19 +1,20 @@
-//! Auth domain: signup, login, token refresh and rotation.
+//! Connect RPC shell for the AuthService: cookie handling,
+//! `require_user` authentication, and proto mapping. All behavior lives
+//! in `lemma-auth`.
 
-mod jwt;
-mod password;
 mod service;
 
-pub use jwt::{Claims, sign_access_token, verify_access_token};
-pub use password::{hash_password, verify_password};
-pub use service::AuthService;
+pub use service::AuthRpc;
 
-use rand::Rng;
-use sha2::{Digest, Sha256};
+use lemma_auth::verify_access_token;
+use lemma_proto::app_error;
+use lemma_proto::lemma::v1::ErrorReason;
 
-pub(crate) const ACCESS_COOKIE: &str = "lemma_access";
+/// Name of the cookie carrying the access token for browser clients.
+pub const ACCESS_COOKIE: &str = "lemma_access";
 
-pub(crate) fn cookie_value(ctx: &connectrpc::RequestContext, name: &str) -> Option<String> {
+/// Reads a cookie from the request headers by name.
+pub fn cookie_value(ctx: &connectrpc::RequestContext, name: &str) -> Option<String> {
     ctx.headers()
         .get_all(http::header::COOKIE)
         .iter()
@@ -26,22 +27,6 @@ pub(crate) fn cookie_value(ctx: &connectrpc::RequestContext, name: &str) -> Opti
         })
 }
 
-/// Generates a new refresh token: 256 random bits, hex-encoded. The
-/// plaintext goes to the client; only [`hash_token`] of it is stored.
-pub fn generate_refresh_token() -> String {
-    let mut bytes = [0u8; 32];
-    rand::rng().fill_bytes(&mut bytes);
-    hex::encode(bytes)
-}
-
-/// SHA-256 of a refresh token, for storage and lookup. The plaintext
-/// token is never persisted.
-pub fn hash_token(token: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(token.as_bytes());
-    hex::encode(hasher.finalize())
-}
-
 /// Authenticates a request via its `Authorization: Bearer` access token,
 /// falling back to the `lemma_access` cookie sent by browser clients, and
 /// returns the user id. Every failure mode maps to the same `TokenInvalid`
@@ -50,9 +35,6 @@ pub fn require_user(
     secret: &str,
     ctx: &connectrpc::RequestContext,
 ) -> Result<uuid::Uuid, connectrpc::ConnectError> {
-    use lemma_proto::app_error;
-    use lemma_proto::lemma::v1::ErrorReason;
-
     let bearer = ctx
         .header("authorization")
         .and_then(|v| v.to_str().ok())

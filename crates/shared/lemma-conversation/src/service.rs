@@ -1,241 +1,125 @@
-//! Handler for the ConversationService RPCs.
+//! Conversation business flows: lifecycle (create, rename, archive,
+//! restore, delete) and message pagination over a [`ConversationStore`]
+//! backend.
 
-use buffa::MessageField;
-use buffa_types::google::protobuf::Timestamp;
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_auth::require_user;
-use lemma_db_pgsql::entity::{Conversation as DbConversation, Message as DbMessage};
-use lemma_proto::app_error;
-use lemma_proto::lemma::v1::{
-    ArchiveConversationResponse, Conversation, ConversationStatus, CreateConversationResponse,
-    DeleteArchivedResponse, ErrorReason, ListArchivedResponse, ListConversationsResponse,
-    ListMessagesResponse, Message, MessageStatus, RenameConversationResponse,
-    RestoreConversationResponse,
-};
-use sqlx::PgPool;
 use std::sync::Arc;
+
 use uuid::Uuid;
 
-use lemma_db_pgsql::conversations as store;
+use crate::error::ConversationError;
+use crate::record::{Conversation, Message};
+use crate::store::ConversationStore;
 
-const DEFAULT_PAGE_LIMIT: i32 = 50;
-const MAX_PAGE_LIMIT: i32 = 100;
+/// Default page size for message listing.
+pub const DEFAULT_PAGE_LIMIT: i32 = 50;
 
-/// Connect handler implementing the ConversationService RPCs.
+/// Maximum page size for message listing.
+pub const MAX_PAGE_LIMIT: i32 = 100;
+
+/// Conversation domain service over a [`ConversationStore`] backend.
 ///
-/// Archiving is a database-only status flip; messages stay in place.
+/// Archiving is a storage-only status flip; messages stay in place.
 pub struct ConversationService {
-    pool: PgPool,
-    jwt_secret: Arc<str>,
+    store: Arc<dyn ConversationStore>,
 }
 
 impl ConversationService {
-    /// Creates the handler.
-    pub fn new(pool: PgPool, jwt_secret: impl Into<Arc<str>>) -> Self {
-        Self {
-            pool,
-            jwt_secret: jwt_secret.into(),
-        }
+    /// Creates the service over a store backend.
+    pub fn new(store: Arc<dyn ConversationStore>) -> Self {
+        Self { store }
     }
-}
 
-fn conversation_to_proto(c: &DbConversation) -> Conversation {
-    Conversation {
-        id: c.id.to_string(),
-        title: c.title.clone(),
-        status: match c.status.as_str() {
-            "archived" => ConversationStatus::Archived,
-            _ => ConversationStatus::Active,
-        }
-        .into(),
-        archived_at: match c.archived_at {
-            Some(t) => MessageField::some(Timestamp::from(t)),
-            None => MessageField::none(),
-        },
-        created_at: Timestamp::from(c.created_at).into(),
-        updated_at: Timestamp::from(c.updated_at).into(),
-        ..Default::default()
-    }
-}
-
-fn message_to_proto(m: &DbMessage) -> Message {
-    Message {
-        id: m.id.to_string(),
-        conversation_id: m.conversation_id.to_string(),
-        role: m.role.clone(),
-        content: serde_json::from_value::<lemma_core::Message>(m.content_json.0.clone())
-            .map(|msg| msg.visible_text())
-            .unwrap_or_default(),
-        provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
-        model: m.model.clone().unwrap_or_default(),
-        status: match m.status.as_str() {
-            "streaming" => MessageStatus::Streaming,
-            "aborted" => MessageStatus::Aborted,
-            "error" => MessageStatus::Error,
-            // Stored values predate the enum; anything unrecognized is a
-            // completed message.
-            _ => MessageStatus::Done,
-        }
-        .into(),
-        created_at: Timestamp::from(m.created_at).into(),
-        updated_at: Timestamp::from(m.updated_at).into(),
-        ..Default::default()
-    }
-}
-
-fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
-}
-
-fn map_db(e: sqlx::Error) -> ConnectError {
-    ConnectError::internal(format!("db: {e}"))
-}
-
-#[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::ConversationService for ConversationService {
-    async fn list_conversations(
+    /// Lists the user's active conversations.
+    pub async fn list_conversations(
         &self,
-        ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListConversationsRequest>,
-    ) -> ServiceResult<ListConversationsResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let list = store::list_active_by_user(&self.pool, user_id)
-            .await
-            .map_err(map_db)?;
-        Response::ok(ListConversationsResponse {
-            conversations: list.iter().map(conversation_to_proto).collect(),
-            ..Default::default()
-        })
+        user_id: Uuid,
+    ) -> Result<Vec<Conversation>, ConversationError> {
+        self.store.list_active_by_user(user_id).await
     }
 
-    async fn create_conversation(
-        &self,
-        ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::CreateConversationRequest>,
-    ) -> ServiceResult<CreateConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let c = store::insert(&self.pool, user_id).await.map_err(map_db)?;
-        Response::ok(CreateConversationResponse {
-            conversation: conversation_to_proto(&c).into(),
-            ..Default::default()
-        })
+    /// Creates an empty conversation for the user.
+    pub async fn create(&self, user_id: Uuid) -> Result<Conversation, ConversationError> {
+        self.store.insert(user_id).await
     }
 
-    async fn rename_conversation(
+    /// Renames a conversation owned by the user.
+    pub async fn rename(
         &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::RenameConversationRequest>,
-    ) -> ServiceResult<RenameConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let title = request.title.trim();
+        user_id: Uuid,
+        id: Uuid,
+        title: &str,
+    ) -> Result<Conversation, ConversationError> {
+        let title = title.trim();
         if title.is_empty() {
-            return Err(app_error(ErrorReason::TitleRequired));
+            return Err(ConversationError::TitleRequired);
         }
-        let c = store::rename(&self.pool, id, user_id, title)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotFound))?;
-        Response::ok(RenameConversationResponse {
-            conversation: conversation_to_proto(&c).into(),
-            ..Default::default()
-        })
+        self.store
+            .rename(id, user_id, title)
+            .await?
+            .ok_or(ConversationError::NotFound)
     }
 
-    async fn list_messages(
+    /// Lists a conversation's messages newest-first with keyset
+    /// pagination. `limit` is clamped to [`DEFAULT_PAGE_LIMIT`] and
+    /// [`MAX_PAGE_LIMIT`].
+    pub async fn list_messages(
         &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ListMessagesRequest>,
-    ) -> ServiceResult<ListMessagesResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let conversation_id = parse_id(request.conversation_id)?;
-        store::find_by_id_and_user(&self.pool, conversation_id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotFound))?;
-        let before_id = if request.before_id.is_empty() {
-            None
-        } else {
-            Some(parse_id(request.before_id)?)
-        };
-        let limit = if request.limit <= 0 {
+        user_id: Uuid,
+        conversation_id: Uuid,
+        before_id: Option<Uuid>,
+        limit: i32,
+    ) -> Result<(Vec<Message>, bool), ConversationError> {
+        self.store
+            .find_by_id_and_user(conversation_id, user_id)
+            .await?
+            .ok_or(ConversationError::NotFound)?;
+        let limit = if limit <= 0 {
             DEFAULT_PAGE_LIMIT
         } else {
-            request.limit.min(MAX_PAGE_LIMIT)
+            limit.min(MAX_PAGE_LIMIT)
         };
-        let (messages, has_more) =
-            store::list_messages(&self.pool, conversation_id, before_id, limit as i64)
-                .await
-                .map_err(map_db)?;
-        Response::ok(ListMessagesResponse {
-            messages: messages.iter().map(message_to_proto).collect(),
-            has_more,
-            ..Default::default()
-        })
+        self.store
+            .list_messages(conversation_id, before_id, limit as i64)
+            .await
     }
 
-    async fn archive_conversation(
+    /// Archives an active conversation owned by the user.
+    pub async fn archive(
         &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ArchiveConversationRequest>,
-    ) -> ServiceResult<ArchiveConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let conversation = store::archive(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotActive))?;
-        Response::ok(ArchiveConversationResponse {
-            conversation: conversation_to_proto(&conversation).into(),
-            ..Default::default()
-        })
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<Conversation, ConversationError> {
+        self.store
+            .archive(id, user_id)
+            .await?
+            .ok_or(ConversationError::NotActive)
     }
 
-    async fn restore_conversation(
+    /// Restores an archived conversation owned by the user.
+    pub async fn restore(
         &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::RestoreConversationRequest>,
-    ) -> ServiceResult<RestoreConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let conversation = store::restore(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?
-            .ok_or_else(|| app_error(ErrorReason::ConversationNotArchived))?;
-        Response::ok(RestoreConversationResponse {
-            conversation: conversation_to_proto(&conversation).into(),
-            ..Default::default()
-        })
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<Conversation, ConversationError> {
+        self.store
+            .restore(id, user_id)
+            .await?
+            .ok_or(ConversationError::NotArchived)
     }
 
-    async fn list_archived(
+    /// Lists the user's archived conversations.
+    pub async fn list_archived(
         &self,
-        ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListArchivedRequest>,
-    ) -> ServiceResult<ListArchivedResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let list = store::list_archived_by_user(&self.pool, user_id)
-            .await
-            .map_err(map_db)?;
-        Response::ok(ListArchivedResponse {
-            conversations: list.iter().map(conversation_to_proto).collect(),
-            ..Default::default()
-        })
+        user_id: Uuid,
+    ) -> Result<Vec<Conversation>, ConversationError> {
+        self.store.list_archived_by_user(user_id).await
     }
 
-    async fn delete_archived(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteArchivedRequest>,
-    ) -> ServiceResult<DeleteArchivedResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let deleted = store::delete_archived(&self.pool, id, user_id)
-            .await
-            .map_err(map_db)?;
-        if !deleted {
-            return Err(app_error(ErrorReason::ArchivedConversationNotFound));
+    /// Deletes an archived conversation owned by the user.
+    pub async fn delete_archived(&self, user_id: Uuid, id: Uuid) -> Result<(), ConversationError> {
+        if !self.store.delete_archived(id, user_id).await? {
+            return Err(ConversationError::ArchivedNotFound);
         }
-        Response::ok(DeleteArchivedResponse::default())
+        Ok(())
     }
 }

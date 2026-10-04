@@ -1,7 +1,8 @@
 //! Fetches the live model list from a provider's API.
 
-use lemma_proto::lemma::v1::ProviderKind;
 use std::time::Duration;
+
+use crate::kind::ProviderKind;
 
 #[derive(serde::Deserialize)]
 struct ModelsList {
@@ -47,7 +48,7 @@ pub async fn fetch_models(
     let url = format!("{}{}", base_url.trim_end_matches('/'), path);
 
     match kind {
-        ProviderKind::PROVIDER_KIND_OPENAI => {
+        ProviderKind::OpenAiCompatible => {
             let list: ModelsList = client
                 .get(&url)
                 .bearer_auth(api_key)
@@ -61,7 +62,7 @@ pub async fn fetch_models(
                 .map_err(|e| e.to_string())?;
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
-        ProviderKind::PROVIDER_KIND_ANTHROPIC => {
+        ProviderKind::Anthropic => {
             let list: ModelsList = client
                 .get(&url)
                 .header("x-api-key", api_key)
@@ -76,7 +77,7 @@ pub async fn fetch_models(
                 .map_err(|e| e.to_string())?;
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
-        ProviderKind::PROVIDER_KIND_GEMINI => {
+        ProviderKind::Gemini => {
             let list: GeminiModels = client
                 .get(&url)
                 .header("x-goog-api-key", api_key)
@@ -99,6 +100,5 @@ pub async fn fetch_models(
                 })
                 .collect())
         }
-        _ => Err("unsupported provider kind".into()),
     }
 }
