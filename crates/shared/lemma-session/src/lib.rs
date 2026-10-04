@@ -5,7 +5,6 @@
 //! Zero I/O and zero runtime bindings: hosts (server, desktop, mobile)
 //! supply concrete store implementations.
 
-pub mod compliance;
 mod error;
 mod store;
 mod tree;
