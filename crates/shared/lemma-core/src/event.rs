@@ -60,6 +60,10 @@ pub enum StreamEvent {
         stop_reason: StopReason,
         /// Token usage, when the provider reports it.
         usage: Option<Usage>,
+        /// Milliseconds from request dispatch to the first content delta
+        /// (text, thinking, or tool-call); `None` when the stream carried
+        /// no content.
+        ttft_ms: Option<u64>,
     },
     /// Generation failed; partial content, if any, was already emitted.
     Error {

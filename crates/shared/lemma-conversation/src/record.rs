@@ -30,6 +30,8 @@ pub struct Message {
     pub id: Uuid,
     /// Owning conversation.
     pub conversation_id: Uuid,
+    /// Parent message in the conversation tree; `None` for roots.
+    pub parent_id: Option<Uuid>,
     /// Authoring role.
     pub role: String,
     /// Structured content payload.
@@ -40,6 +42,8 @@ pub struct Message {
     pub model: Option<String>,
     /// Delivery status: `streaming`, `done`, `aborted`, or `error`.
     pub status: String,
+    /// Failure reason when status is `error`; `None` otherwise.
+    pub error: Option<String>,
     /// Creation time.
     pub created_at: DateTime<Utc>,
     /// Last update time.

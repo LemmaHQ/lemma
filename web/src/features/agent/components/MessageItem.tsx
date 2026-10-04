@@ -2,7 +2,7 @@ import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { MessageContent } from "./MessageContent";
+import { MessageContent, ThinkingBlock } from "./MessageContent";
 import { Button } from "@/components/ui/button";
 import type { AgentItem } from "@/features/agent/store";
 
@@ -51,6 +51,12 @@ export function MessageItem({
                 <Sparkles className="size-3.5" />
             </div>
             <div className="min-w-0 flex-1">
+                {message.thinking && (
+                    <ThinkingBlock
+                        thinking={message.thinking}
+                        streaming={streaming}
+                    />
+                )}
                 <MessageContent content={message.content} />
                 {streaming && (
                     <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />

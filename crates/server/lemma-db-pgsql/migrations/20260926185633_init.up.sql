@@ -70,6 +70,7 @@ CREATE TABLE messages (
     model TEXT,
     provider_id UUID REFERENCES providers(id),
     status TEXT NOT NULL DEFAULT 'done',
+    error TEXT,
     token_usage JSONB,
     started_at TIMESTAMPTZ,
     first_token_at TIMESTAMPTZ,

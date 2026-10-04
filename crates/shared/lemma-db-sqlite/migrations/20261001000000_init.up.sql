@@ -76,6 +76,7 @@ CREATE TABLE messages (
     model TEXT,
     provider_id TEXT REFERENCES providers(id),
     status TEXT NOT NULL DEFAULT 'done',
+    error TEXT,
     token_usage TEXT,
     started_at INTEGER,
     first_token_at INTEGER,

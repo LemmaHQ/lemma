@@ -1,4 +1,4 @@
-import { Check, Copy } from "lucide-react";
+import { Check, ChevronRight, Copy } from "lucide-react";
 import {
     type ComponentProps,
     isValidElement,
@@ -11,6 +11,11 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 
 import { Button } from "@/components/ui/button";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // Language auto-detect mis-guesses on short snippets, so only fenced
 // blocks that declare a language get highlighted.
@@ -113,6 +118,39 @@ const components: Components = {
         />
     ),
 };
+
+interface ThinkingBlockProps {
+    thinking: string;
+    streaming: boolean;
+}
+
+export function ThinkingBlock({ thinking, streaming }: ThinkingBlockProps) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(streaming);
+    const [prevStreaming, setPrevStreaming] = useState(streaming);
+    if (streaming !== prevStreaming) {
+        setPrevStreaming(streaming);
+        if (!streaming) setOpen(false);
+    }
+
+    return (
+        <Collapsible
+            open={open}
+            onOpenChange={setOpen}
+            className="mb-3 overflow-hidden rounded-md border border-border"
+        >
+            <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
+                <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+                {streaming ? t("chat.thinkingInProgress") : t("chat.thinking")}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="border-t border-border px-3 py-2 text-xs whitespace-pre-wrap text-muted-foreground">
+                    {thinking}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
 
 interface MessageContentProps {
     content: string;

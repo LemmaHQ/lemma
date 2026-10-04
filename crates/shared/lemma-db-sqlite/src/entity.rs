@@ -103,6 +103,7 @@ pub struct Message {
     pub model: Option<String>,
     pub provider_id: Option<Uuid>,
     pub status: String,
+    pub error: Option<String>,
     pub token_usage: Option<Json<TokenUsage>>,
     pub started_at: Option<i64>,
     pub first_token_at: Option<i64>,

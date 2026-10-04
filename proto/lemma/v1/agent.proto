@@ -21,8 +21,20 @@ message AgentStarted {
   string client_msg_id = 2;
 }
 
-message AgentDelta {
+message TextDelta {
   string content = 1;
+}
+
+message ThinkingDelta {
+  string content = 1;
+}
+
+// 结构化增量：一次推送一个 part，客户端按 part 类型分别累积
+message AgentDelta {
+  oneof part {
+    TextDelta text = 1;
+    ThinkingDelta thinking = 2;
+  }
 }
 
 message AgentDone {
@@ -53,6 +65,8 @@ message SendMessageRequest {
   string provider_id = 3;
   string model = 4;
   string client_msg_id = 5;
+  // 推理强度；空串表示沿用会话上次使用的设置
+  string thinking_effort = 6;
 }
 
 message SendMessageResponse {

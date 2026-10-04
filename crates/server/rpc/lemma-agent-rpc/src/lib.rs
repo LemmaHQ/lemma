@@ -15,7 +15,8 @@ use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted, ErrorReason,
-    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TokenUsage, agent_event,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TextDelta, ThinkingDelta,
+    TokenUsage, agent_delta, agent_event,
 };
 use lemma_provider::{ProviderKind as DomainKind, ProviderStore};
 use lemma_session::TraceStore;
@@ -98,6 +99,18 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             ConnectError::internal(format!("unknown provider kind: {}", provider.kind))
         })?;
 
+        let thinking_effort = if request.thinking_effort.is_empty() {
+            (self.traces)(user_id)
+                .get_conversation(conversation_id)
+                .await
+                .ok()
+                .flatten()
+                .and_then(|c| c.last_model)
+                .and_then(|m| m.thinking_effort)
+        } else {
+            Some(request.thinking_effort.to_string())
+        };
+
         let agent_config = AgentConfig {
             kind: kind_of(kind),
             base_url: provider.base_url.clone(),
@@ -105,7 +118,7 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             api_key,
             model: request.model.to_string(),
             provider_id: provider.id,
-            thinking_effort: None,
+            thinking_effort,
         };
 
         let agent = AgentLoop::new((self.traces)(user_id), self.provider.clone());
@@ -130,7 +143,13 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
                 }
                 TurnEvent::Delta { delta } => {
                     let _ = tx_clone.try_send(Ok(SendMessageResponse {
-                        event: MessageField::some(delta_event(delta)),
+                        event: MessageField::some(text_delta_event(delta)),
+                        ..Default::default()
+                    }));
+                }
+                TurnEvent::ThinkingDelta { delta } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(thinking_delta_event(delta)),
                         ..Default::default()
                     }));
                 }
@@ -194,10 +213,26 @@ fn started_event(id: Uuid, client_msg_id: String) -> AgentEvent {
     }
 }
 
-fn delta_event(text: String) -> AgentEvent {
+fn text_delta_event(text: String) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::Delta(Box::new(AgentDelta {
-            content: text,
+            part: Some(agent_delta::Part::Text(Box::new(TextDelta {
+                content: text,
+                ..Default::default()
+            }))),
+            ..Default::default()
+        }))),
+        ..Default::default()
+    }
+}
+
+fn thinking_delta_event(thinking: String) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Delta(Box::new(AgentDelta {
+            part: Some(agent_delta::Part::Thinking(Box::new(ThinkingDelta {
+                content: thinking,
+                ..Default::default()
+            }))),
             ..Default::default()
         }))),
         ..Default::default()

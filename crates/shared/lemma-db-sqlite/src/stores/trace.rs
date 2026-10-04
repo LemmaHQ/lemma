@@ -82,6 +82,7 @@ fn stored_of(row: entity::Message) -> Result<StoredMessage, SessionError> {
         parent_id: row.parent_id,
         message,
         status: status_parse(&row.status),
+        error: row.error,
         model: row.model,
         provider_id: row.provider_id,
         started_at: row.started_at.unwrap_or(0),
@@ -210,8 +211,8 @@ impl TraceStore for SqliteTraceStore {
             sqlx::query(
                 r#"
                 INSERT INTO messages (id, conversation_id, parent_id, role, content_json, model,
-                                      provider_id, status, token_usage, started_at, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                      provider_id, status, error, token_usage, started_at, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
             .bind(entry.id)
@@ -222,6 +223,7 @@ impl TraceStore for SqliteTraceStore {
             .bind(entry.model)
             .bind(entry.provider_id)
             .bind(status_str(entry.status))
+            .bind(entry.error)
             .bind(usage)
             .bind(entry.started_at)
             .bind(entry.created_at)
@@ -245,13 +247,14 @@ impl TraceStore for SqliteTraceStore {
             sqlx::query(
                 r#"
                 UPDATE messages
-                SET content_json = ?, status = ?, token_usage = ?,
+                SET content_json = ?, status = ?, error = ?, token_usage = ?,
                     first_token_at = ?, finished_at = ?, updated_at = ?
                 WHERE id = ?
                 "#,
             )
             .bind(content)
             .bind(status_str(update.status))
+            .bind(update.error)
             .bind(usage)
             .bind(update.first_token_at)
             .bind(update.finished_at)

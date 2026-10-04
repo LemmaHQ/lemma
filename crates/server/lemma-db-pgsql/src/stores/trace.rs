@@ -74,6 +74,7 @@ fn stored_from_row(r: DbMessage) -> Result<StoredMessage, SessionError> {
         parent_id: r.parent_id,
         message,
         status: status_parse(&r.status),
+        error: r.error,
         model: r.model,
         provider_id: r.provider_id,
         started_at: r.started_at.map_or(0, |t| t.timestamp_millis()),
@@ -158,13 +159,14 @@ impl TraceStore for PgTraceStore {
             sqlx::query(
                 r#"
                 UPDATE messages
-                SET content_json = $1, status = $2, token_usage = $3,
-                    first_token_at = $4, finished_at = $5, updated_at = NOW()
-                WHERE id = $6
+                SET content_json = $1, status = $2, error = $3, token_usage = $4,
+                    first_token_at = $5, finished_at = $6, updated_at = NOW()
+                WHERE id = $7
                 "#,
             )
             .bind(sqlx::types::Json(content))
             .bind(status_str(update.status))
+            .bind(update.error)
             .bind(usage.map(|u| {
                 sqlx::types::Json(DbTokenUsage {
                     input: u.input,
@@ -226,8 +228,8 @@ impl TraceStore for PgTraceStore {
             sqlx::query(
                 r#"
                 INSERT INTO messages (id, conversation_id, parent_id, role, content_json, model,
-                                      provider_id, status, token_usage, started_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+                                      provider_id, status, error, token_usage, started_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
                 "#,
             )
             .bind(entry.id)
@@ -238,6 +240,7 @@ impl TraceStore for PgTraceStore {
             .bind(&entry.model)
             .bind(entry.provider_id)
             .bind(status_str(entry.status))
+            .bind(&entry.error)
             .bind(usage.map(|u| {
                 sqlx::types::Json(DbTokenUsage {
                     input: u.input,

@@ -23,6 +23,12 @@ pub(crate) trait SseParser: Send + 'static {
     fn on_eof(&mut self) -> Option<Usage> {
         None
     }
+    /// Events still owed at EOF, e.g. closing an open thinking block on
+    /// APIs with no terminal event; emitted ahead of the synthesized
+    /// `Done`.
+    fn flush(&mut self) -> Vec<StreamEvent> {
+        Vec::new()
+    }
     /// Stop reason reported for the EOF-synthesized `Done`; APIs with a
     /// terminal event leave the default.
     fn on_stop_reason(&self) -> StopReason {
@@ -79,14 +85,24 @@ impl State {
     }
 
     /// Queues events, wrapping text deltas in the canonical block
-    /// lifecycle.
+    /// lifecycle. Parsers may also drive the lifecycle explicitly with
+    /// their own `TextStart`/`TextEnd`; an open text block is closed
+    /// before a thinking or tool-call block starts and before `Done`.
     fn wrap(&mut self, events: Vec<StreamEvent>) -> Vec<StreamEvent> {
         let mut out = Vec::with_capacity(events.len() + 2);
         for event in events {
             match &event {
+                StreamEvent::TextStart => self.text_open = true,
+                StreamEvent::TextEnd => self.text_open = false,
                 StreamEvent::TextDelta { .. } if !self.text_open => {
                     self.text_open = true;
                     out.push(StreamEvent::TextStart);
+                }
+                StreamEvent::ThinkingStart | StreamEvent::ToolCallStart { .. }
+                    if self.text_open =>
+                {
+                    self.text_open = false;
+                    out.push(StreamEvent::TextEnd);
                 }
                 StreamEvent::Done { .. } => {
                     if self.text_open {
@@ -136,14 +152,13 @@ pub(crate) fn events_from_sse(bytes: ByteStream, parser: impl SseParser) -> BoxE
                     None => {
                         let usage = state.parser.on_eof();
                         let stop_reason = state.parser.on_stop_reason();
-                        let mut events = Vec::new();
-                        if state.text_open {
-                            state.text_open = false;
-                            events.push(StreamEvent::TextEnd);
-                        }
-                        events.push(StreamEvent::Done { stop_reason, usage });
-                        state.done_seen = true;
-                        pending = events.into_iter();
+                        let mut events = state.parser.flush();
+                        events.push(StreamEvent::Done {
+                            stop_reason,
+                            usage,
+                            ttft_ms: None,
+                        });
+                        pending = state.wrap(events).into_iter();
                     }
                 }
             }

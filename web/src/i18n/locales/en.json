@@ -38,7 +38,9 @@
         "stop": "Stop generating",
         "suggestion1": "Explain a concept step by step",
         "suggestion2": "Help me debug an issue",
-        "suggestion3": "Draft and refine some text"
+        "suggestion3": "Draft and refine some text",
+        "thinking": "Thought process",
+        "thinkingInProgress": "Thinking…"
     },
     "common": {
         "appName": "Lemma",

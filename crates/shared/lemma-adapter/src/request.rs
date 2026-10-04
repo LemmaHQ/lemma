@@ -26,6 +26,9 @@ pub struct ChatRequest {
     pub model: String,
     /// Conversation history in canonical form.
     pub messages: Vec<Message>,
+    /// Reasoning effort knob (`low`/`medium`/`high` or a numeric budget),
+    /// forwarded to the vendor's thinking control when set and non-empty.
+    pub thinking_effort: Option<String>,
 }
 
 /// Extracts the `(role, text)` pair of a message for text-only wire
@@ -46,4 +49,15 @@ pub(crate) fn role_text(message: &Message) -> Option<(&'static str, String)> {
         })
         .collect();
     Some((role, text))
+}
+
+/// Maps a thinking-effort knob to a token budget: a numeric string is
+/// used verbatim, named tiers map to fixed budgets, and anything else
+/// falls back to the medium tier.
+pub(crate) fn thinking_budget(effort: &str) -> u32 {
+    effort.parse::<u32>().unwrap_or(match effort {
+        "low" => 2048,
+        "high" => 16384,
+        _ => 8192,
+    })
 }

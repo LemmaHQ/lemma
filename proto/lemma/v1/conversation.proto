@@ -41,6 +41,12 @@ message Message {
   MessageStatus status = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
+  // 会话树父节点；根消息为空
+  string parent_id = 10;
+  // 思维链全文（多个 thinking block 拼接）；无推理内容时为空
+  string thinking = 11;
+  // 失败原因（status 为 error 时有值）
+  string error = 12;
 }
 
 message ListConversationsRequest {}

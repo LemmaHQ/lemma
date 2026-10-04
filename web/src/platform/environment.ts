@@ -17,7 +17,10 @@ export function cookieAuth(): boolean {
     if (typeof window === "undefined" || isDesktop()) return false;
     const base = resolveBaseUrl();
     try {
-        return new URL(base, window.location.href).origin === window.location.origin;
+        return (
+            new URL(base, window.location.href).origin ===
+            window.location.origin
+        );
     } catch {
         return false;
     }

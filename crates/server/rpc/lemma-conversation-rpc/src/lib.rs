@@ -56,12 +56,27 @@ fn conversation_to_proto(c: &DomainConversation) -> Conversation {
 }
 
 fn message_to_proto(m: &DomainMessage) -> Message {
+    let core_msg = serde_json::from_value::<lemma_core::Message>(m.content_json.clone()).ok();
     Message {
         id: m.id.to_string(),
         conversation_id: m.conversation_id.to_string(),
+        parent_id: m.parent_id.map(|p| p.to_string()).unwrap_or_default(),
         role: m.role.clone(),
-        content: serde_json::from_value::<lemma_core::Message>(m.content_json.clone())
+        content: core_msg
+            .as_ref()
             .map(|msg| msg.visible_text())
+            .unwrap_or_default(),
+        thinking: core_msg
+            .as_ref()
+            .map(|msg| {
+                msg.content()
+                    .iter()
+                    .filter_map(|b| match b {
+                        lemma_core::ContentBlock::Thinking(t) => Some(t.thinking.as_str()),
+                        _ => None,
+                    })
+                    .collect::<String>()
+            })
             .unwrap_or_default(),
         provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
         model: m.model.clone().unwrap_or_default(),
@@ -72,6 +87,7 @@ fn message_to_proto(m: &DomainMessage) -> Message {
             _ => MessageStatus::Done,
         }
         .into(),
+        error: m.error.clone().unwrap_or_default(),
         created_at: Timestamp::from(m.created_at).into(),
         updated_at: Timestamp::from(m.updated_at).into(),
         ..Default::default()

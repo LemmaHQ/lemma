@@ -52,6 +52,8 @@ pub struct StoredMessage {
     pub message: lemma_core::Message,
     /// Lifecycle status of the entry.
     pub status: MessageStatus,
+    /// Failure reason when status is `Error`; `None` otherwise.
+    pub error: Option<String>,
     /// Provider row the message was dispatched to, when known.
     pub provider_id: Option<Uuid>,
     /// Model identifier that produced the entry, when known.
@@ -84,6 +86,8 @@ pub struct MessageUpdate {
     pub message: lemma_core::Message,
     /// Terminal lifecycle status.
     pub status: MessageStatus,
+    /// Failure reason when status is `Error`; `None` otherwise.
+    pub error: Option<String>,
     /// First-token timestamp in Unix epoch milliseconds.
     pub first_token_at: Option<i64>,
     /// Turn end timestamp in Unix epoch milliseconds.

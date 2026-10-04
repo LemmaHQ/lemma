@@ -12,6 +12,7 @@ export interface AgentItem {
     id: string;
     role: "user" | "assistant";
     content: string;
+    thinking: string;
     // UI-facing vocabulary mapped from MessageStatus.
     status: "streaming" | "done" | "aborted" | "error";
     providerId: string;
@@ -63,9 +64,11 @@ function protoToItem(m: Message): AgentItem {
         id: m.id,
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,
+        thinking: m.thinking,
         status: statusFromProto(m.status),
         providerId: m.providerId,
         model: m.model,
+        error: m.error || undefined,
     };
 }
 
@@ -74,6 +77,7 @@ function rowToItem(m: MessageRow): AgentItem {
         id: m.id,
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,
+        thinking: "",
         status: statusFromProto(m.status as MessageStatus),
         providerId: m.providerId,
         model: m.model,
@@ -162,6 +166,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                     id: clientMsgId,
                     role: "user",
                     content,
+                    thinking: "",
                     status: "done",
                     providerId: "",
                     model: "",
@@ -170,6 +175,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                     id: aiTempId,
                     role: "assistant",
                     content: "",
+                    thinking: "",
                     status: "streaming",
                     providerId,
                     model,
@@ -191,6 +197,14 @@ export const useChat = create<ChatState>()((set, get) => ({
                         : it,
                 ),
             }));
+        const appendThinking = (chunk: string) =>
+            set((s) => ({
+                items: s.items.map((it) =>
+                    it.id === aiTempId
+                        ? { ...it, thinking: it.thinking + chunk }
+                        : it,
+                ),
+            }));
 
         const applyEvent = (event?: AgentEvent) => {
             const kind = event?.kind;
@@ -199,9 +213,13 @@ export const useChat = create<ChatState>()((set, get) => ({
                 case "started":
                     activeMessageId = kind.value.messageId;
                     break;
-                case "delta":
-                    appendAi(kind.value.content);
+                case "delta": {
+                    const part = kind.value.part;
+                    if (part.case === "text") appendAi(part.value.content);
+                    else if (part.case === "thinking")
+                        appendThinking(part.value.content);
                     break;
+                }
                 case "done":
                     updateAi({ status: "done" });
                     break;

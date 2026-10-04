@@ -25,11 +25,13 @@ fn into_message(m: entity::Message) -> Message {
     Message {
         id: m.id,
         conversation_id: m.conversation_id,
+        parent_id: m.parent_id,
         role: m.role,
         content_json: m.content_json.0,
         provider_id: m.provider_id,
         model: m.model,
         status: m.status,
+        error: m.error,
         created_at: m.created_at,
         updated_at: m.updated_at,
     }
