@@ -1,43 +1,30 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
-import { getServerUrl, setServerUrl } from "./settings";
+import * as engine from "./engine";
 
 // Quit when launched by the Squirrel installer/updater hooks.
 if (started) {
     app.quit();
 }
 
+if (process.env.LEMMA_DEBUG_PORT) {
+    app.commandLine.appendSwitch(
+        "remote-debugging-port",
+        process.env.LEMMA_DEBUG_PORT,
+    );
+}
+
 let mainWindow: BrowserWindow | null = null;
-
-const loadSetupPage = (reason?: string) => {
-    if (!mainWindow) return;
-    if (SETUP_VITE_DEV_SERVER_URL) {
-        // The define is the dev server's bare origin; the setup page lives
-        // at /setup.html (no index.html exists at the project root).
-        const url = new URL(SETUP_VITE_DEV_SERVER_URL);
-        url.pathname = "/setup.html";
-        if (reason) url.searchParams.set("reason", reason);
-        mainWindow.loadURL(url.toString());
-    } else {
-        mainWindow.loadFile(
-            path.join(__dirname, `../renderer/${SETUP_VITE_NAME}/setup.html`),
-            reason ? { query: { reason } } : undefined,
-        );
-    }
-};
-
-const SETUP_LOAD_RETRIES = 3;
-let setupLoadAttempts = 0;
+let engineStopping = false;
 
 const loadFatalPage = (detail: string) => {
     if (!mainWindow) return;
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lemma</title></head>
-<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#151615;color:#e6e6e4;font:14px system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-app-region:drag">
-<main style="max-width:420px;padding:32px;-webkit-app-region:no-drag">
-<h1 style="margin:0 0 12px;font-size:20px">Lemma failed to load its interface</h1>
-<p style="margin:0 0 8px;color:#8f918c">${detail}</p>
-<p style="margin:0;color:#8f918c">Fully quit the app and start it again. In a dev session, also check for a leftover dev-server process still holding the renderer port.</p>
+<body style="margin:0;font-family:system-ui;background:#151615;color:#e6e6e4">
+<main style="display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;height:100vh">
+<h1 style="font-size:18px;margin:0">Cannot start the local engine</h1>
+<p style="opacity:0.7;margin:0">${detail}</p>
 </main></body></html>`;
     mainWindow.loadURL(
         `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
@@ -46,33 +33,44 @@ const loadFatalPage = (detail: string) => {
 
 const loadApp = () => {
     if (!mainWindow) return;
-    const serverUrl = getServerUrl();
-    if (!serverUrl) {
-        loadSetupPage();
-        return;
-    }
-    if (app.isPackaged) {
-        mainWindow.loadFile(path.join(__dirname, "../../web-dist/index.html"));
-    } else {
-        // Dev mode loads the app from the server itself; failures surface
-        // through did-fail-load below.
-        mainWindow.loadURL(serverUrl).catch(() => {});
-    }
+    mainWindow.loadFile(path.join(__dirname, "../../web-dist/index.html"));
 };
 
+interface TitleBarState {
+    theme: "light" | "dark";
+    surface: "sidebar" | "background";
+}
+
+const TITLE_BAR_COLORS: Record<
+    "light" | "dark",
+    Record<"sidebar" | "background", { color: string; symbolColor: string }>
+> = {
+    light: {
+        background: { color: "#ffffff", symbolColor: "#000000e6" },
+        sidebar: { color: "#f5f5f5", symbolColor: "#000000e6" },
+    },
+    dark: {
+        background: { color: "#121212", symbolColor: "#ffffffd6" },
+        sidebar: { color: "#1f1f1f", symbolColor: "#ffffffd6" },
+    },
+};
+
+const titleBarOverlay = (state: TitleBarState) => ({
+    ...TITLE_BAR_COLORS[state.theme][state.surface],
+    height: 40,
+});
+
+const initialTitleBarState = (): TitleBarState => ({
+    theme: nativeTheme.shouldUseDarkColors ? "dark" : "light",
+    surface: "background",
+});
 const createWindow = () => {
     const window = new BrowserWindow({
         width: 1280,
         height: 800,
         backgroundColor: "#151615",
         titleBarStyle: "hidden",
-        titleBarOverlay: {
-            color: nativeTheme.shouldUseDarkColors ? "#151615" : "#ffffff",
-            symbolColor: nativeTheme.shouldUseDarkColors
-                ? "#e6e6e4"
-                : "#1f1f1f",
-            height: 40,
-        },
+        titleBarOverlay: titleBarOverlay(initialTitleBarState()),
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
         },
@@ -93,46 +91,32 @@ const createWindow = () => {
             window.webContents.toggleDevTools();
         }
     });
-
-    window.webContents.on("did-finish-load", () => {
-        setupLoadAttempts = 0;
-    });
-
-    window.webContents.on(
-        "did-fail-load",
-        (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
-            if (!isMainFrame) return;
-            // ERR_ABORTED fires when a new navigation supersedes this one.
-            if (errorCode === -3) return;
-            if (validatedURL.startsWith("data:")) return;
-            if (validatedURL === getServerUrl()) {
-                setupLoadAttempts = 0;
-                loadSetupPage(`Cannot reach ${validatedURL}`);
-                return;
-            }
-            // The shell UI itself failed to load (in dev, usually a stale
-            // dev-server process holding the renderer port). Retry a few
-            // times, then show an error page instead of a black window.
-            setupLoadAttempts += 1;
-            if (setupLoadAttempts <= SETUP_LOAD_RETRIES) {
-                setTimeout(() => loadSetupPage(), 1000);
-            } else {
-                loadFatalPage(`${errorDescription} (${errorCode})`);
-            }
-        },
-    );
-
-    loadApp();
 };
 
-ipcMain.handle("get-server-url", () => getServerUrl());
-ipcMain.handle("set-server-url", (_event, url: string) => {
-    setServerUrl(url);
-    setupLoadAttempts = 0;
-    loadApp();
+ipcMain.on("set-titlebar", (_event, state: TitleBarState) => {
+    if (
+        (state.theme !== "light" && state.theme !== "dark") ||
+        (state.surface !== "sidebar" && state.surface !== "background")
+    ) {
+        console.error("titlebar state rejected:", state);
+        return;
+    }
+    try {
+        mainWindow?.setTitleBarOverlay(titleBarOverlay(state));
+    } catch (err) {
+        console.error("titlebar overlay rejected:", state, err);
+    }
 });
+
 ipcMain.on("get-server-url-sync", (event) => {
-    event.returnValue = getServerUrl() ?? "";
+    event.returnValue = engine.serverUrl() ?? "";
+});
+ipcMain.handle("get-skip-credentials", () => {
+    const skip = engine.getSkipCredentials();
+    const url = engine.serverUrl();
+    return url && skip
+        ? { serverUrl: url, username: skip.username, password: skip.password }
+        : null;
 });
 ipcMain.on("toggle-maximize", () => {
     if (!mainWindow) return;
@@ -157,9 +141,23 @@ if (!gotTheLock) {
         }
     });
 
-    app.on("ready", () => {
+    app.on("ready", async () => {
         Menu.setApplicationMenu(null);
-        createWindow();
+        try {
+            await engine.start();
+            createWindow();
+            loadApp();
+        } catch (err) {
+            createWindow();
+            loadFatalPage(err instanceof Error ? err.message : String(err));
+        }
+    });
+
+    app.on("before-quit", (event) => {
+        if (engineStopping) return;
+        event.preventDefault();
+        engineStopping = true;
+        engine.stop().finally(() => app.quit());
     });
 
     app.on("window-all-closed", () => {

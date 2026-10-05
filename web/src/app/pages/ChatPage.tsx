@@ -16,6 +16,7 @@ import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { cn } from "@/lib/utils";
 import { useChat as useChatStore } from "@/features/agent/store";
+import { setTitleBarSurface } from "@/features/preferences/theme";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
@@ -53,6 +54,10 @@ export default function ChatPage() {
     useEffect(() => {
         if (activeId) void openConversation(activeId);
     }, [activeId, openConversation]);
+
+    useEffect(() => {
+        setTitleBarSurface("sidebar");
+    }, []);
 
     const sendText = async (text: string) => {
         if (!model || chat.streaming) return;

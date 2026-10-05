@@ -20,9 +20,32 @@ export function resolveTheme(pref: ThemePreference): "light" | "dark" {
     return pref;
 }
 
+/** The page surface under the reserved titlebar strip: sidebar-shell
+ *  pages vs full-bleed pages. The desktop shell mirrors it natively. */
+export type TitleBarSurface = "sidebar" | "background";
+
+let currentSurface: TitleBarSurface = "background";
+
+/** Declares which surface the current page paints under the titlebar
+ *  strip, marks the root dataset, and pushes to the desktop shell. */
+export function setTitleBarSurface(surface: TitleBarSurface) {
+    currentSurface = surface;
+    document.documentElement.dataset.surface = surface;
+    notifyTitleBar();
+}
+
+function notifyTitleBar() {
+    window.lemmaDesktop?.setTitleBar({
+        theme: resolveTheme(readThemePreference()),
+        surface: currentSurface,
+    });
+}
+
 /** Applies the resolved theme via the data-theme attribute on <html>. */
 export function applyTheme(pref: ThemePreference) {
-    document.documentElement.setAttribute("data-theme", resolveTheme(pref));
+    const resolved = resolveTheme(pref);
+    document.documentElement.setAttribute("data-theme", resolved);
+    notifyTitleBar();
 }
 
 export function saveThemePreference(pref: ThemePreference) {

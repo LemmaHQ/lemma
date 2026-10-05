@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorText } from "@/data/rpc/errors";
 import { useAuth } from "@/features/auth/store";
+import { isDesktop } from "@/platform/environment";
 
 export function AuthCard() {
     const { t } = useTranslation();
@@ -52,6 +53,20 @@ export function AuthCard() {
         setError("");
         try {
             await signup(username.trim(), email.trim(), password);
+        } catch (e) {
+            setError(errorText(e, t));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleSkip = async () => {
+        const skip = await window.lemmaDesktop?.getSkipCredentials();
+        if (!skip) return;
+        setBusy(true);
+        setError("");
+        try {
+            await login(skip.username, skip.password);
         } catch (e) {
             setError(errorText(e, t));
         } finally {
@@ -217,6 +232,26 @@ export function AuthCard() {
                         </form>
                     </TabsContent>
                 </Tabs>
+                {isDesktop() && (
+                    <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex items-center gap-3">
+                            <div className="h-px flex-1 bg-border" />
+                            <span className="text-xs text-muted-foreground">
+                                {t("auth.orDivider")}
+                            </span>
+                            <div className="h-px flex-1 bg-border" />
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            disabled={busy}
+                            onClick={handleSkip}
+                        >
+                            {t("auth.skipDesktop")}
+                        </Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

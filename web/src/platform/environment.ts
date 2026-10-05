@@ -2,8 +2,15 @@ declare global {
     interface Window {
         __LEMMA_SERVER_URL__?: string;
         lemmaDesktop?: {
-            getServerUrl(): Promise<string | undefined>;
-            setServerUrl(url: string): Promise<void>;
+            getSkipCredentials(): Promise<{
+                serverUrl: string;
+                username: string;
+                password: string;
+            } | null>;
+            setTitleBar(state: {
+                theme: "light" | "dark";
+                surface: "sidebar" | "background";
+            }): void;
             toggleMaximize(): void;
         };
     }

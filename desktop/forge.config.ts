@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
@@ -7,9 +10,18 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
+const engineBinaryPath = (): string => {
+    const name =
+        process.platform === "win32" ? "lemma-server.exe" : "lemma-server";
+    const bin = path.join(__dirname, "bin", name);
+    if (fs.existsSync(bin)) return bin;
+    return path.join(__dirname, "..", "target", "release", name);
+};
+
 const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
+        extraResource: [engineBinaryPath()],
         // Mirrors plugin-vite's default ignore (which only keeps .vite) and
         // additionally keeps the bundled web build.
         ignore: (file) => {
@@ -26,11 +38,8 @@ const config: ForgeConfig = {
     ],
     plugins: [
         new VitePlugin({
-            // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
-            // If you are familiar with Vite configuration, it will look really familiar.
             build: [
                 {
-                    // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
                     entry: "src/main.ts",
                     config: "vite.main.config.mts",
                     target: "main",
@@ -41,12 +50,7 @@ const config: ForgeConfig = {
                     target: "preload",
                 },
             ],
-            renderer: [
-                {
-                    name: "setup",
-                    config: "vite.setup.config.mts",
-                },
-            ],
+            renderer: [],
         }),
         // Fuses are used to enable/disable various Electron functionality
         // at package time, before code signing the application

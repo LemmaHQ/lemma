@@ -18,6 +18,10 @@ html.desktop body {
     padding-top: 40px;
 }
 
+html.desktop[data-surface="sidebar"] .desktop-titlebar {
+    background-color: var(--sidebar);
+}
+
 /* The strip reservation must not inflate page height, or full-height pages
    overflow the window and spawn a phantom document scrollbar. */
 html.desktop .min-h-dvh {

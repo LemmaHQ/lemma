@@ -12,7 +12,7 @@ import { installCrossTabGuard } from "./app/cross-tab-account.ts";
 if (isDesktop()) {
     document.documentElement.classList.add("desktop");
     const titlebar = document.createElement("div");
-    titlebar.className = "desktop-titlebar";
+    titlebar.className = "desktop-titlebar bg-background";
     titlebar.addEventListener("dblclick", () => {
         window.lemmaDesktop?.toggleMaximize();
     });
