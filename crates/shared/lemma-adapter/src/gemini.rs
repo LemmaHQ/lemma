@@ -199,12 +199,17 @@ impl Provider for GeminiGenerate {
     fn stream(&self, req: ChatRequest) -> BoxChatFuture {
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
+            let base_url = if req.base_url.is_empty() {
+                "https://generativelanguage.googleapis.com/v1beta"
+            } else {
+                req.base_url.as_str()
+            };
             let path = if req.api_path.is_empty() {
                 format!("/models/{}:streamGenerateContent?alt=sse", req.model)
             } else {
                 req.api_path.replace("{model}", &req.model)
             };
-            let url = format!("{}{}", req.base_url.trim_end_matches('/'), path);
+            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
             let mut body = serde_json::json!({
                 "contents": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
                     "role": if role == "assistant" { "model" } else { "user" },
@@ -215,11 +220,16 @@ impl Provider for GeminiGenerate {
                 body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
                     serde_json::json!(thinking_budget(effort));
             }
+            let headers = if req.api_key.is_empty() {
+                Vec::new()
+            } else {
+                vec![("x-goog-api-key".to_string(), req.api_key.clone())]
+            };
             let start = Instant::now();
             let bytes = transport
                 .post_stream(
                     url,
-                    vec![("x-goog-api-key".to_string(), req.api_key.clone())],
+                    headers,
                     body,
                 )
                 .await?;

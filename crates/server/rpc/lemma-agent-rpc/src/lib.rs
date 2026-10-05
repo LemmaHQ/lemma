@@ -92,8 +92,12 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND))?;
 
         let master_key = lemma_crypto::derive_key(&self.secret_key);
-        let api_key = lemma_crypto::open(&master_key, &provider.api_key)
-            .map_err(|_| ConnectError::internal("failed to decrypt API key"))?;
+        let api_key = if provider.api_key.is_empty() {
+            String::new()
+        } else {
+            lemma_crypto::open(&master_key, &provider.api_key)
+                .map_err(|_| ConnectError::internal("failed to decrypt API key"))?
+        };
 
         let kind = DomainKind::from_str(&provider.kind).map_err(|()| {
             ConnectError::internal(format!("unknown provider kind: {}", provider.kind))

@@ -16,6 +16,8 @@ pub struct ProviderRecord {
     pub user_id: Uuid,
     /// Stored kind string (`openai`, `anthropic`, `gemini`).
     pub kind: String,
+    /// User-facing machine identifier, ASCII-only, immutable after creation.
+    pub identifier: String,
     /// Display name.
     pub name: String,
     /// API base URL, without trailing slash.
@@ -43,6 +45,8 @@ pub struct NewProvider {
     pub id: Uuid,
     /// Stored kind string.
     pub kind: String,
+    /// User-facing machine identifier, ASCII-only, immutable after creation.
+    pub identifier: String,
     /// Display name.
     pub name: String,
     /// API base URL.

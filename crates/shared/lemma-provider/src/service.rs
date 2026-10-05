@@ -22,6 +22,8 @@ pub struct ProviderView {
     pub id: Uuid,
     /// Provider kind.
     pub kind: ProviderKind,
+    /// User-facing machine identifier, ASCII-only, immutable after creation.
+    pub identifier: String,
     /// Display name.
     pub name: String,
     /// API base URL.
@@ -46,6 +48,8 @@ pub struct ProviderView {
 pub struct CreateInput {
     /// Provider kind.
     pub kind: ProviderKind,
+    /// User-facing machine identifier, ASCII-only, immutable after creation.
+    pub identifier: String,
     /// Display name.
     pub name: String,
     /// API base URL.
@@ -97,6 +101,9 @@ impl ProviderService {
     }
 
     fn seal_key(&self, plain: &str) -> Result<String, ProviderError> {
+        if plain.is_empty() {
+            return Ok(String::new());
+        }
         match &self.secret_key {
             Some(secret) => {
                 seal(&derive_key(secret), plain).map_err(|e| ProviderError::Crypto(e.to_string()))
@@ -106,6 +113,9 @@ impl ProviderService {
     }
 
     fn open_key(&self, stored: &str) -> Result<String, ProviderError> {
+        if stored.is_empty() {
+            return Ok(String::new());
+        }
         match &self.secret_key {
             Some(secret) => {
                 open(&derive_key(secret), stored).map_err(|e| ProviderError::Crypto(e.to_string()))
@@ -117,11 +127,12 @@ impl ProviderService {
     fn view(&self, r: &ProviderRecord) -> ProviderView {
         let api_key = self
             .open_key(&r.api_key)
-            .map(|k| mask(&k))
+            .map(|k| if k.is_empty() { String::new() } else { mask(&k) })
             .unwrap_or_else(|_| "****".to_string());
         ProviderView {
             id: r.id,
             kind: ProviderKind::from_str(&r.kind).unwrap_or(ProviderKind::OpenAiCompatible),
+            identifier: r.identifier.clone(),
             name: r.name.clone(),
             base_url: r.base_url.clone(),
             api_key,
@@ -147,9 +158,14 @@ impl ProviderService {
         input: CreateInput,
     ) -> Result<ProviderView, ProviderError> {
         let kind = input.kind.as_str();
+        let identifier = input.identifier.trim();
         let name = input.name.trim();
+        let name = if name.is_empty() { identifier } else { name };
         let base_url = input.base_url.trim().trim_end_matches('/');
-        if name.is_empty() || base_url.is_empty() || input.api_key.is_empty() {
+        if identifier.is_empty() || !identifier.is_ascii() {
+            return Err(ProviderError::IdentifierInvalid);
+        }
+        if base_url.is_empty() {
             return Err(ProviderError::FieldsRequired);
         }
         let sealed = self.seal_key(&input.api_key)?;
@@ -160,6 +176,7 @@ impl ProviderService {
                 &NewProvider {
                     id: Uuid::new_v4(),
                     kind: kind.to_string(),
+                    identifier: identifier.to_string(),
                     name: name.to_string(),
                     base_url: base_url.to_string(),
                     api_key: sealed,

@@ -52,6 +52,7 @@ pub struct Provider {
     pub id: Uuid,
     pub user_id: Uuid,
     pub kind: String,
+    pub identifier: String,
     pub name: String,
     pub base_url: String,
     pub api_key: String,

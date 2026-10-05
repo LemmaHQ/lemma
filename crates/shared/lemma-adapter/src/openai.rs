@@ -246,12 +246,17 @@ impl Provider for OpenAiCompatible {
     fn stream(&self, req: ChatRequest) -> BoxChatFuture {
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
+            let base_url = if req.base_url.is_empty() {
+                "https://api.openai.com/v1"
+            } else {
+                req.base_url.as_str()
+            };
             let path = if req.api_path.is_empty() {
                 "/chat/completions"
             } else {
                 &req.api_path
             };
-            let url = format!("{}{}", req.base_url.trim_end_matches('/'), path);
+            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
             let mut body = serde_json::json!({
                 "model": req.model,
                 "messages": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
@@ -264,14 +269,19 @@ impl Provider for OpenAiCompatible {
             if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
                 body["reasoning_effort"] = serde_json::Value::String(effort.to_string());
             }
+            let headers = if req.api_key.is_empty() {
+                Vec::new()
+            } else {
+                vec![(
+                    "authorization".to_string(),
+                    format!("Bearer {}", req.api_key),
+                )]
+            };
             let start = Instant::now();
             let bytes = transport
                 .post_stream(
                     url,
-                    vec![(
-                        "authorization".to_string(),
-                        format!("Bearer {}", req.api_key),
-                    )],
+                    headers,
                     body,
                 )
                 .await?;

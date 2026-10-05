@@ -275,12 +275,17 @@ impl Provider for AnthropicMessages {
     fn stream(&self, req: ChatRequest) -> BoxChatFuture {
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
+            let base_url = if req.base_url.is_empty() {
+                "https://api.anthropic.com/v1"
+            } else {
+                req.base_url.as_str()
+            };
             let path = if req.api_path.is_empty() {
                 "/messages"
             } else {
                 &req.api_path
             };
-            let url = format!("{}{}", req.base_url.trim_end_matches('/'), path);
+            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
             let effort = req.thinking_effort.as_deref().filter(|e| !e.is_empty());
             let budget = effort.map(thinking_budget);
             let max_tokens = match budget {
@@ -302,17 +307,18 @@ impl Provider for AnthropicMessages {
                     "budget_tokens": budget,
                 });
             }
+            let mut headers = vec![(
+                "anthropic-version".to_string(),
+                ANTHROPIC_VERSION.to_string(),
+            )];
+            if !req.api_key.is_empty() {
+                headers.push(("x-api-key".to_string(), req.api_key.clone()));
+            }
             let start = Instant::now();
             let bytes = transport
                 .post_stream(
                     url,
-                    vec![
-                        ("x-api-key".to_string(), req.api_key.clone()),
-                        (
-                            "anthropic-version".to_string(),
-                            ANTHROPIC_VERSION.to_string(),
-                        ),
-                    ],
+                    headers,
                     body,
                 )
                 .await?;

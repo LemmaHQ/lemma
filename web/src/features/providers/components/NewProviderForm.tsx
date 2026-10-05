@@ -17,6 +17,7 @@ import { errorText } from "@/data/rpc/errors";
 
 export interface NewProviderData {
     kind: ProviderKind;
+    identifier: string;
     name: string;
     baseUrl: string;
     apiKey: string;
@@ -27,25 +28,20 @@ interface NewProviderFormProps {
     onCancel: () => void;
 }
 
-const DEFAULT_BASE_URLS: Partial<Record<ProviderKind, string>> = {
-    [ProviderKind.OPENAI]: "https://api.openai.com/v1",
-    [ProviderKind.ANTHROPIC]: "https://api.anthropic.com/v1",
-    [ProviderKind.GEMINI]: "https://generativelanguage.googleapis.com/v1beta",
-};
-
 const KIND_OPTIONS = [
     { value: "openai", kind: ProviderKind.OPENAI },
     { value: "anthropic", kind: ProviderKind.ANTHROPIC },
     { value: "gemini", kind: ProviderKind.GEMINI },
 ] as const;
 
+const requiredMark = <span className="text-destructive">*</span>;
+
 export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const { t } = useTranslation();
     const [name, setName] = useState("");
     const [kind, setKind] = useState<ProviderKind>(ProviderKind.OPENAI);
-    const [baseUrl, setBaseUrl] = useState(
-        DEFAULT_BASE_URLS[ProviderKind.OPENAI] ?? "",
-    );
+    const [identifier, setIdentifier] = useState("");
+    const [baseUrl, setBaseUrl] = useState("");
     const [apiKey, setApiKey] = useState("");
     const [showKey, setShowKey] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -57,25 +53,25 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
             return;
         }
         setKind(option.kind);
-        setBaseUrl((current) => {
-            const untouched =
-                current === "" ||
-                Object.values(DEFAULT_BASE_URLS).includes(current);
-            return untouched
-                ? (DEFAULT_BASE_URLS[option.kind] ?? current)
-                : current;
-        });
     };
 
     const handleSave = async () => {
+        const trimmedIdentifier = identifier.trim();
+        if (!/^[\x20-\x7E]+$/.test(trimmedIdentifier)) {
+            setFailed(t("providers.identifierInvalid"));
+            return;
+        }
+        if (!baseUrl.trim()) {
+            setFailed(t("errors.providerFieldsRequired"));
+            return;
+        }
         setBusy(true);
         setFailed(null);
         try {
-            const kindLabel =
-                KIND_OPTIONS.find((o) => o.kind === kind)?.value ?? "provider";
             await onSave({
                 kind,
-                name: name.trim() || kindLabel,
+                identifier: trimmedIdentifier,
+                name: name.trim() || trimmedIdentifier,
                 baseUrl: baseUrl.trim(),
                 apiKey: apiKey.trim(),
             });
@@ -93,7 +89,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
             </h2>
             <div className="mt-6 flex max-w-md flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="np-kind">{t("providers.type")}</Label>
+                    <Label htmlFor="np-kind">
+                        {requiredMark} {t("providers.type")}
+                    </Label>
                     <Select
                         value={KIND_OPTIONS.find((o) => o.kind === kind)?.value}
                         onValueChange={handleKindChange}
@@ -111,6 +109,20 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="np-identifier">
+                        {requiredMark} {t("providers.identifier")}
+                    </Label>
+                    <Input
+                        id="np-identifier"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder={t("providers.identifierPlaceholder")}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        {t("providers.identifierHint")}
+                    </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
                     <Label htmlFor="np-name">{t("providers.name")}</Label>
                     <Input
                         id="np-name"
@@ -120,7 +132,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="np-baseurl">{t("providers.baseUrl")}</Label>
+                    <Label htmlFor="np-baseurl">
+                        {requiredMark} {t("providers.baseUrl")}
+                    </Label>
                     <Input
                         id="np-baseurl"
                         value={baseUrl}

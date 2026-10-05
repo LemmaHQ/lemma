@@ -38,6 +38,7 @@ interface ProviderDetailProps {
     provider: Provider;
     onToggleEnabled: (enabled: boolean) => void;
     onSaveBaseUrl: (baseUrl: string) => Promise<void>;
+    onSaveName: (name: string) => Promise<void>;
     onSaveApiKey: (apiKey: string) => Promise<void>;
     onModelsChange: (models: string[]) => void;
     onFetchModels: () => Promise<string[]>;
@@ -48,6 +49,7 @@ export function ProviderDetail({
     provider,
     onToggleEnabled,
     onSaveBaseUrl,
+    onSaveName,
     onSaveApiKey,
     onModelsChange,
     onFetchModels,
@@ -56,12 +58,15 @@ export function ProviderDetail({
     const { t } = useTranslation();
     const [apiKey, setApiKey] = useState("");
     const [showKey, setShowKey] = useState(false);
+    const [name, setName] = useState(provider.name);
     const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
     const [savingKey, setSavingKey] = useState(false);
+    const [savingName, setSavingName] = useState(false);
     const [savingUrl, setSavingUrl] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const apiKeyDirty = apiKey.trim().length > 0;
+    const nameDirty = name.trim() !== provider.name && name.trim().length > 0;
     const baseUrlDirty =
         baseUrl.trim() !== provider.baseUrl && baseUrl.trim().length > 0;
 
@@ -88,6 +93,19 @@ export function ProviderDetail({
             setError(errorText(e, t));
         } finally {
             setSavingUrl(false);
+        }
+    };
+
+    const saveName = async () => {
+        setSavingName(true);
+        setError(null);
+        try {
+            await onSaveName(name.trim());
+        } catch (e) {
+            setName(provider.name);
+            setError(errorText(e, t));
+        } finally {
+            setSavingName(false);
         }
     };
 
@@ -130,6 +148,38 @@ export function ProviderDetail({
             </header>
 
             <section className="mt-4">
+                <FieldRow
+                    label={t("providers.identifier")}
+                    description={t("providers.identifierHint")}
+                >
+                    <Input
+                        value={provider.identifier}
+                        readOnly
+                        disabled
+                        className="flex-1 font-mono text-xs"
+                    />
+                </FieldRow>
+
+                <FieldRow
+                    label={t("providers.name")}
+                    description={t("providers.nameDesc")}
+                >
+                    <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={t("providers.namePlaceholder")}
+                        className="flex-1"
+                    />
+                    <Button
+                        type="button"
+                        size="sm"
+                        disabled={!nameDirty || savingName}
+                        onClick={() => void saveName()}
+                    >
+                        {t("common.save")}
+                    </Button>
+                </FieldRow>
+
                 <FieldRow
                     label={t("providers.apiKey")}
                     description={t("providers.apiKeyKeepHint")}

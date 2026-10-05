@@ -40,18 +40,30 @@ pub async fn fetch_models(
         .timeout(Duration::from_secs(10))
         .build()
         .map_err(|e| e.to_string())?;
+    let (default_base, default_path) = match kind {
+        ProviderKind::OpenAiCompatible => ("https://api.openai.com/v1", "/models"),
+        ProviderKind::Anthropic => ("https://api.anthropic.com/v1", "/models"),
+        ProviderKind::Gemini => ("https://generativelanguage.googleapis.com", "/v1beta/models"),
+    };
+    let base = if base_url.is_empty() {
+        default_base
+    } else {
+        base_url.trim_end_matches('/')
+    };
     let path = if models_path.is_empty() {
-        "/models"
+        default_path
     } else {
         models_path
     };
-    let url = format!("{}{}", base_url.trim_end_matches('/'), path);
+    let url = format!("{base}{path}");
 
     match kind {
         ProviderKind::OpenAiCompatible => {
-            let list: ModelsList = client
-                .get(&url)
-                .bearer_auth(api_key)
+            let mut req = client.get(&url);
+            if !api_key.is_empty() {
+                req = req.bearer_auth(api_key);
+            }
+            let list: ModelsList = req
                 .send()
                 .await
                 .map_err(|e| e.to_string())?
@@ -63,10 +75,13 @@ pub async fn fetch_models(
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
         ProviderKind::Anthropic => {
-            let list: ModelsList = client
+            let mut req = client
                 .get(&url)
-                .header("x-api-key", api_key)
-                .header("anthropic-version", "2023-06-01")
+                .header("anthropic-version", "2023-06-01");
+            if !api_key.is_empty() {
+                req = req.header("x-api-key", api_key);
+            }
+            let list: ModelsList = req
                 .send()
                 .await
                 .map_err(|e| e.to_string())?
@@ -78,9 +93,11 @@ pub async fn fetch_models(
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
         ProviderKind::Gemini => {
-            let list: GeminiModels = client
-                .get(&url)
-                .header("x-goog-api-key", api_key)
+            let mut req = client.get(&url);
+            if !api_key.is_empty() {
+                req = req.header("x-goog-api-key", api_key);
+            }
+            let list: GeminiModels = req
                 .send()
                 .await
                 .map_err(|e| e.to_string())?

@@ -8,6 +8,10 @@ use std::fmt;
 pub enum ProviderError {
     /// A required field was empty after trimming.
     FieldsRequired,
+    /// The identifier was empty or contained non-ASCII characters.
+    IdentifierInvalid,
+    /// The identifier is already used by another provider of this user.
+    IdentifierTaken,
     /// The provider does not exist for this user.
     NotFound,
     /// Sealing or opening a stored API key failed.
@@ -22,6 +26,8 @@ impl fmt::Display for ProviderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FieldsRequired => write!(f, "provider fields required"),
+            Self::IdentifierInvalid => write!(f, "provider identifier invalid"),
+            Self::IdentifierTaken => write!(f, "provider identifier taken"),
             Self::NotFound => write!(f, "provider not found"),
             Self::Crypto(e) => write!(f, "crypto: {e}"),
             Self::Store(e) => write!(f, "store: {e}"),

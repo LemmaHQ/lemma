@@ -23,6 +23,7 @@ export function ProvidersPanel() {
     const handleSaveNew = async (data: NewProviderData) => {
         const provider = await store.create({
             kind: data.kind,
+            identifier: data.identifier,
             name: data.name,
             baseUrl: data.baseUrl,
             apiKey: data.apiKey,
@@ -63,6 +64,9 @@ export function ProvidersPanel() {
                         }
                         onSaveBaseUrl={(baseUrl) =>
                             store.update(selected.id, { baseUrl })
+                        }
+                        onSaveName={(name) =>
+                            store.update(selected.id, { name })
                         }
                         onSaveApiKey={(apiKey) =>
                             store.update(selected.id, { apiKey })

@@ -15,14 +15,16 @@ where
 {
     sqlx::query_as::<_, Provider>(
         r#"
-        INSERT INTO providers (id, user_id, kind, name, base_url, api_key, api_path, models_path, models)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO providers (id, user_id, kind, identifier, name, base_url, api_key, api_path,
+                               models_path, models)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
         "#,
     )
     .bind(p.id)
     .bind(user_id)
     .bind(&p.kind)
+    .bind(&p.identifier)
     .bind(&p.name)
     .bind(&p.base_url)
     .bind(&p.api_key)

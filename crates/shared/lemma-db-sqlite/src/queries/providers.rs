@@ -17,15 +17,16 @@ where
     let now = now_ms();
     sqlx::query_as::<_, Provider>(
         r#"
-        INSERT INTO providers (id, user_id, kind, name, base_url, api_key, api_path, models_path,
-                               models, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO providers (id, user_id, kind, identifier, name, base_url, api_key, api_path,
+                               models_path, models, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING *
         "#,
     )
     .bind(p.id)
     .bind(user_id)
     .bind(&p.kind)
+    .bind(&p.identifier)
     .bind(&p.name)
     .bind(&p.base_url)
     .bind(&p.api_key)

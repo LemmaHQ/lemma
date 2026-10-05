@@ -71,6 +71,7 @@ fn to_proto(v: ProviderView) -> Provider {
     Provider {
         id: v.id.to_string(),
         kind: kind_to_proto(v.kind).into(),
+        identifier: v.identifier,
         name: v.name,
         base_url: v.base_url,
         api_key: v.api_key,
@@ -91,6 +92,8 @@ fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
 fn map_domain(e: ProviderError) -> ConnectError {
     match e {
         ProviderError::FieldsRequired => app_error(ErrorReason::ProviderFieldsRequired),
+        ProviderError::IdentifierInvalid => app_error(ErrorReason::ProviderIdentifierInvalid),
+        ProviderError::IdentifierTaken => app_error(ErrorReason::ProviderIdentifierTaken),
         ProviderError::NotFound => app_error(ErrorReason::ProviderNotFound),
         ProviderError::Crypto(m) => ConnectError::internal(format!("crypto: {m}")),
         ProviderError::Store(m) => ConnectError::internal(format!("db: {m}")),
@@ -126,6 +129,7 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
             .ok_or_else(|| app_error(ErrorReason::ProviderKindInvalid))?;
         let input = CreateInput {
             kind,
+            identifier: request.identifier.to_string(),
             name: request.name.to_string(),
             base_url: request.base_url.to_string(),
             api_key: request.api_key.to_string(),

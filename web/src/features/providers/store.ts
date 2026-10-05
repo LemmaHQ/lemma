@@ -15,6 +15,7 @@ export interface ProviderPatch {
 
 export interface NewProvider {
     kind: ProviderKind;
+    identifier: string;
     name: string;
     baseUrl: string;
     apiKey: string;

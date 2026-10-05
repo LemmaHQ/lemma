@@ -12,6 +12,9 @@ const reasonKeys: Record<ErrorReason, ParseKeys> = {
     [ErrorReason.TOKEN_INVALID]: "errors.tokenInvalid",
     [ErrorReason.USER_NOT_FOUND]: "errors.userNotFound",
     [ErrorReason.PROVIDER_FIELDS_REQUIRED]: "errors.providerFieldsRequired",
+    [ErrorReason.PROVIDER_IDENTIFIER_INVALID]:
+        "errors.providerIdentifierInvalid",
+    [ErrorReason.PROVIDER_IDENTIFIER_TAKEN]: "errors.providerIdentifierTaken",
     [ErrorReason.PROVIDER_KIND_INVALID]: "errors.providerKindInvalid",
     [ErrorReason.PROVIDER_NOT_FOUND]: "errors.providerNotFound",
     [ErrorReason.PROVIDER_DISABLED]: "errors.providerDisabled",

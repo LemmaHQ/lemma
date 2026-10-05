@@ -25,6 +25,8 @@ message Provider {
   string models_path = 9; // 留空为 /models
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
+  // 用户可见的机器标识，仅限 ASCII，创建后不可变
+  string identifier = 12;
 }
 
 // 区分"未提供"与"清空"
@@ -46,6 +48,7 @@ message CreateProviderRequest {
   repeated string models = 5;
   string api_path = 6;
   string models_path = 7;
+  string identifier = 8;
 }
 
 message UpdateProviderRequest {

@@ -14,6 +14,7 @@ fn into_record(p: Provider) -> ProviderRecord {
         id: p.id,
         user_id: p.user_id,
         kind: p.kind,
+        identifier: p.identifier,
         name: p.name,
         base_url: p.base_url,
         api_key: p.api_key,
@@ -28,6 +29,13 @@ fn into_record(p: Provider) -> ProviderRecord {
 
 fn store_err(e: sqlx::Error) -> ProviderError {
     ProviderError::Store(e.to_string())
+}
+
+fn insert_err(e: sqlx::Error) -> ProviderError {
+    match &e {
+        sqlx::Error::Database(db) if db.is_unique_violation() => ProviderError::IdentifierTaken,
+        _ => ProviderError::Store(e.to_string()),
+    }
 }
 
 /// [`ProviderStore`] backed by a PostgreSQL pool.
@@ -52,7 +60,7 @@ impl ProviderStore for PgProviderStore {
             providers::insert(&self.pool, user_id, new)
                 .await
                 .map(into_record)
-                .map_err(store_err)
+                .map_err(insert_err)
         })
     }
 
