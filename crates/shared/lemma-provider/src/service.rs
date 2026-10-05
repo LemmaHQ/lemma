@@ -115,8 +115,6 @@ impl ProviderService {
     }
 
     fn view(&self, r: &ProviderRecord) -> ProviderView {
-        // A key that fails to open (e.g. master-secret rotation) degrades
-        // to a fully masked placeholder instead of failing the request.
         let api_key = self
             .open_key(&r.api_key)
             .map(|k| mask(&k))

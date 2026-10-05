@@ -21,7 +21,9 @@ export function isDesktop(): boolean {
 }
 
 export function cookieAuth(): boolean {
-    if (typeof window === "undefined" || isDesktop()) return false;
+    if (typeof window === "undefined" || isDesktop()) {
+        return false;
+    }
     const base = resolveBaseUrl();
     try {
         return (

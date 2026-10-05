@@ -5,8 +5,6 @@ import { expect, it } from "vitest";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { errorText } from "./errors";
 
-// The stub echoes the key so assertions pin the reason→key mapping itself,
-// independent of locale wording.
 const t = ((key: string) => key) as unknown as TFunction;
 
 function withReason(reason: ErrorReason): ConnectError {
@@ -21,7 +19,6 @@ it("maps app error reason to i18n key", () => {
     );
 });
 
-// ConnectError.message carries a "[code] " prefix by design.
 it("falls back to raw English message when reason has no mapping", () => {
     expect(errorText(withReason(999 as ErrorReason), t)).toBe(
         "[not_found] raw message",

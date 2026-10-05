@@ -17,8 +17,6 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-// Language auto-detect mis-guesses on short snippets, so only fenced
-// blocks that declare a language get highlighted.
 const rehypePlugins = [[rehypeHighlight, { detect: false }]] as ComponentProps<
     typeof ReactMarkdown
 >["rehypePlugins"];
@@ -35,14 +33,9 @@ function CodeBlock({ children }: { children?: ReactNode }) {
     }
 
     const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(
-                codeRef.current?.textContent ?? "",
-            );
-        } catch {
-            // The clipboard API is unavailable on non-HTTPS origins, common
-            // for a self-hosted LAN deployment; copying just no-ops there.
-        }
+        await navigator.clipboard
+            .writeText(codeRef.current?.textContent ?? "")
+            .catch(() => undefined);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
     };
@@ -80,8 +73,6 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 const components: Components = {
     pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
     p: ({ node: _node, ...props }) => <p {...props} />,
-    // Chat message headings are demoted so they never outrank the page's
-    // own outline.
     h1: ({ node: _node, ...props }) => (
         <h2 className="mt-6 mb-2 text-base font-semibold" {...props} />
     ),
@@ -130,7 +121,9 @@ export function ThinkingBlock({ thinking, streaming }: ThinkingBlockProps) {
     const [prevStreaming, setPrevStreaming] = useState(streaming);
     if (streaming !== prevStreaming) {
         setPrevStreaming(streaming);
-        if (!streaming) setOpen(false);
+        if (!streaming) {
+            setOpen(false);
+        }
     }
 
     return (
@@ -157,8 +150,6 @@ interface MessageContentProps {
 }
 
 export function MessageContent({ content }: MessageContentProps) {
-    // The arbitrary variant styles inline code while leaving fenced blocks
-    // to CodeBlock.
     return (
         <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-eyebrow [&_:not(pre)>code]:text-code-foreground">
             <ReactMarkdown

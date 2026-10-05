@@ -56,8 +56,6 @@ export function ProvidersPanel() {
                     />
                 ) : selected ? (
                     <ProviderDetail
-                        // Remount on provider switch so the detail
-                        // form's draft state resets.
                         key={selected.id}
                         provider={selected}
                         onToggleEnabled={(enabled) =>

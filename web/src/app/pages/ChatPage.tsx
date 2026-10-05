@@ -28,7 +28,7 @@ function toSummary(c: Conversation): SessionSummary {
     };
 }
 
-export default function ChatPage() {
+export function ChatPage() {
     const { t } = useTranslation();
     const conversations = useConversations();
     const chat = useChatStore();
@@ -52,7 +52,9 @@ export default function ChatPage() {
 
     const openConversation = useChatStore((s) => s.open);
     useEffect(() => {
-        if (activeId) void openConversation(activeId);
+        if (activeId) {
+            void openConversation(activeId);
+        }
     }, [activeId, openConversation]);
 
     useEffect(() => {
@@ -60,7 +62,9 @@ export default function ChatPage() {
     }, []);
 
     const sendText = async (text: string) => {
-        if (!model || chat.streaming) return;
+        if (!model || chat.streaming) {
+            return;
+        }
         try {
             let cid = activeId;
             if (!cid) {
@@ -70,13 +74,15 @@ export default function ChatPage() {
             }
             await chat.send(model.providerId, model.model, text);
         } catch {
-            // chat.send already renders its failures on the message item.
+            return;
         }
     };
 
     const handleSend = () => {
         const text = draft.trim();
-        if (!text) return;
+        if (!text) {
+            return;
+        }
         setDraft("");
         void sendText(text);
     };
@@ -86,9 +92,13 @@ export default function ChatPage() {
     };
 
     const handleRegenerate = (messageId: string) => {
-        if (chat.streaming || !model) return;
+        if (chat.streaming || !model) {
+            return;
+        }
         const idx = chat.items.findIndex((m) => m.id === messageId);
-        if (idx < 0) return;
+        if (idx < 0) {
+            return;
+        }
         for (let i = idx - 1; i >= 0; i--) {
             const prev = chat.items[i];
             if (prev.role === "user") {
@@ -100,7 +110,9 @@ export default function ChatPage() {
 
     const handleArchive = async (id: string) => {
         await conversations.archive(id);
-        if (id === activeId) navigate("/");
+        if (id === activeId) {
+            navigate("/");
+        }
     };
 
     const handleRename = async (id: string, title: string) => {
@@ -133,7 +145,9 @@ export default function ChatPage() {
 
     const providerNameById = useMemo(() => {
         const map = new Map<string, string>();
-        for (const p of providersStore.list) map.set(p.id, p.name);
+        for (const p of providersStore.list) {
+            map.set(p.id, p.name);
+        }
         return map;
     }, [providersStore.list]);
 

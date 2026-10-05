@@ -19,7 +19,9 @@ interface HomeViewProps {
 }
 
 function autosize(el: HTMLTextAreaElement | null) {
-    if (!el) return;
+    if (!el) {
+        return;
+    }
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
 }
@@ -40,7 +42,9 @@ export function HomeView({
 
     const canSend = value.trim().length > 0;
     const submit = () => {
-        if (canSend) onSubmit(value.trim());
+        if (canSend) {
+            onSubmit(value.trim());
+        }
     };
 
     return (
@@ -60,8 +64,6 @@ export function HomeView({
                             if (
                                 e.key === "Enter" &&
                                 !e.shiftKey &&
-                                // Enter during IME composition confirms a
-                                // candidate; it must not send.
                                 !e.nativeEvent.isComposing
                             ) {
                                 e.preventDefault();

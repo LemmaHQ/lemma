@@ -23,7 +23,6 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         | ErrorReason::ConversationNotArchived
         | ErrorReason::ArchivedConversationNotFound
         | ErrorReason::MessageNotFound => ErrorCode::NotFound,
-        // Any reason not listed above maps to InvalidArgument by default.
         _ => ErrorCode::InvalidArgument,
     }
 }

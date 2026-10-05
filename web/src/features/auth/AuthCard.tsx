@@ -62,7 +62,9 @@ export function AuthCard() {
 
     const handleSkip = async () => {
         const skip = await window.lemmaDesktop?.getSkipCredentials();
-        if (!skip) return;
+        if (!skip) {
+            return;
+        }
         setBusy(true);
         setError("");
         try {

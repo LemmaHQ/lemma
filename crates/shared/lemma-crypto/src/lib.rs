@@ -49,8 +49,6 @@ pub fn derive_key(secret: &str) -> Key<Aes256Gcm> {
 pub fn seal(key: &Key<Aes256Gcm>, plaintext: &str) -> Result<String, CryptoError> {
     let cipher = Aes256Gcm::new(key);
     let nonce = Nonce::<Aes256Gcm>::generate();
-    // AES-GCM encryption only fails on payload size overflow, so Decrypt
-    // doubles as the generic AEAD error here.
     let ct = cipher
         .encrypt(&nonce, plaintext.as_bytes())
         .map_err(|_| CryptoError::Decrypt)?;

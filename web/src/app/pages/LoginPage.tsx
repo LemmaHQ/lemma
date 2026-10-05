@@ -8,15 +8,16 @@ import { ThemeToggle } from "@/features/preferences/ThemeToggle";
 import { setTitleBarSurface } from "@/features/preferences/theme";
 import { useAuth } from "@/features/auth/store";
 
-export default function LoginPage() {
+export function LoginPage() {
     const { t } = useTranslation();
     const user = useAuth((s) => s.user);
 
     useEffect(() => {
         setTitleBarSurface("background");
     }, []);
-    if (user) return <Navigate to="/" replace />;
-
+    if (user) {
+        return <Navigate to="/" replace />;
+    }
 
     return (
         <div className="relative grid min-h-dvh place-items-center bg-background px-4">

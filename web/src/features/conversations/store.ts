@@ -56,7 +56,9 @@ export const useConversationsStore = create<ConversationsState>()(
 
         hydrateFromCache: async () => {
             const db = getDb();
-            if (!db) return;
+            if (!db) {
+                return;
+            }
             const [list, archived] = await Promise.all([
                 listConversations(db),
                 listArchived(db),
@@ -80,8 +82,9 @@ export const useConversationsStore = create<ConversationsState>()(
 
         create: async () => {
             const res = await conversationClient.createConversation({});
-            if (!res.conversation)
+            if (!res.conversation) {
                 throw new Error("no conversation in response");
+            }
             set((s) => ({ list: [res.conversation!, ...s.list] }));
             return res.conversation.id;
         },
@@ -91,7 +94,9 @@ export const useConversationsStore = create<ConversationsState>()(
                 id,
                 title,
             });
-            if (!res.conversation) return;
+            if (!res.conversation) {
+                return;
+            }
             set((s) => ({
                 list: s.list.map((c) => (c.id === id ? res.conversation! : c)),
             }));
@@ -99,8 +104,6 @@ export const useConversationsStore = create<ConversationsState>()(
 
         archive: async (id) => {
             await conversationClient.archiveConversation({ id });
-            // Optimistic move: the response carries no conversation, so the
-            // cached item is reused for the archived list.
             const item = get().list.find((c) => c.id === id);
             set((s) => ({
                 list: s.list.filter((c) => c.id !== id),

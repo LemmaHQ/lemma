@@ -24,7 +24,9 @@ let exitWatcher: Promise<number | null> | null = null;
 
 const engineBinary = (): string => {
     const name = process.platform === "win32" ? "lemma-server.exe" : "lemma-server";
-    if (app.isPackaged) return path.join(process.resourcesPath, name);
+    if (app.isPackaged) {
+        return path.join(process.resourcesPath, name);
+    }
     const profile = process.env.LEMMA_ENGINE_PROFILE ?? "debug";
     return path.join(__dirname, "../../../target", profile, name);
 };
@@ -34,7 +36,9 @@ export function getSkipCredentials(): SkipCredentials | null {
 }
 
 export async function start(): Promise<SkipCredentials> {
-    if (child) throw new Error("engine already running");
+    if (child) {
+        throw new Error("engine already running");
+    }
 
     const binary = engineBinary();
     const proc = spawn(binary, [], {
@@ -74,9 +78,13 @@ export async function start(): Promise<SkipCredentials> {
     proc.stdout.on("data", (chunk: Buffer) => {
         buffer += chunk.toString();
         const index = buffer.indexOf("\n");
-        if (index === -1) return;
+        if (index === -1) {
+            return;
+        }
         const line = buffer.slice(0, index).trim();
-        if (!line.startsWith(READY_PREFIX)) return;
+        if (!line.startsWith(READY_PREFIX)) {
+            return;
+        }
         clearTimeout(timer);
         try {
             const payload = JSON.parse(line.slice(READY_PREFIX.length)) as ReadyPayload;
@@ -112,11 +120,15 @@ export const serverUrl = (): string | null =>
 
 export async function stop(): Promise<void> {
     const proc = child;
-    if (!proc) return;
+    if (!proc) {
+        return;
+    }
     child = null;
     proc.stdin.end();
     const grace = Promise.withResolvers<void>();
     setTimeout(grace.resolve, STOP_GRACE_MS);
     await Promise.race([exitWatcher, grace.promise]);
-    if (!proc.killed) proc.kill();
+    if (!proc.killed) {
+        proc.kill();
+    }
 }

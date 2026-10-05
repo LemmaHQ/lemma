@@ -53,10 +53,10 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
 
     const handleKindChange = (value: string) => {
         const option = KIND_OPTIONS.find((o) => o.value === value);
-        if (!option) return;
+        if (!option) {
+            return;
+        }
         setKind(option.kind);
-        // Switching kinds rewrites the base URL only while the user has not
-        // customized it (empty or still one of the known defaults).
         setBaseUrl((current) => {
             const untouched =
                 current === "" ||

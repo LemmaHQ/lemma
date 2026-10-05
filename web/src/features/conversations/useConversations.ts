@@ -7,7 +7,9 @@ export function useConversations() {
     const loaded = useConversationsStore((s) => s.loaded);
     const refresh = useConversationsStore((s) => s.refresh);
     useEffect(() => {
-        if (!loaded) void refresh();
+        if (!loaded) {
+            void refresh();
+        }
     }, [loaded, refresh]);
     return store;
 }

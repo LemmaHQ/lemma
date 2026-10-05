@@ -24,7 +24,9 @@ interface ChatComposerProps {
 }
 
 function autosize(el: HTMLTextAreaElement | null) {
-    if (!el) return;
+    if (!el) {
+        return;
+    }
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
 }
@@ -63,12 +65,12 @@ export function ChatComposer({
                         if (
                             e.key === "Enter" &&
                             !e.shiftKey &&
-                            // Enter during IME composition confirms a
-                            // candidate; it must not send.
                             !e.nativeEvent.isComposing
                         ) {
                             e.preventDefault();
-                            if (canSend && !streaming) onSend();
+                            if (canSend && !streaming) {
+                                onSend();
+                            }
                         }
                     }}
                     placeholder={t("chat.inputPlaceholder")}

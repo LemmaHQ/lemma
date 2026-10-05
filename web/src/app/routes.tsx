@@ -9,9 +9,17 @@ import {
 
 import { Loading, RequireAuth } from "./RequireAuth";
 
-const ChatPage = lazy(() => import("@/app/pages/ChatPage"));
-const LoginPage = lazy(() => import("@/app/pages/LoginPage"));
-const SettingsPage = lazy(() => import("@/app/pages/settings/SettingsPage"));
+const ChatPage = lazy(() =>
+    import("@/app/pages/ChatPage").then((m) => ({ default: m.ChatPage })),
+);
+const LoginPage = lazy(() =>
+    import("@/app/pages/LoginPage").then((m) => ({ default: m.LoginPage })),
+);
+const SettingsPage = lazy(() =>
+    import("@/app/pages/settings/SettingsPage").then((m) => ({
+        default: m.SettingsPage,
+    })),
+);
 
 const Router =
     window.location.protocol === "file:" ? HashRouter : BrowserRouter;

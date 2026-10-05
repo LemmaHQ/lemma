@@ -95,8 +95,6 @@ fn map_stop_reason(reason: &str) -> StopReason {
     }
 }
 
-// Usage arrives split across events: input tokens in message_start,
-// output tokens cumulative in message_delta.
 struct Parser {
     input: Option<i64>,
     output: Option<i64>,

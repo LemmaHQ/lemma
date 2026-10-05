@@ -13,8 +13,6 @@ import {
 
 const cookieMode = cookieAuth();
 
-// The refresh call bypasses the interceptor below, or a 401 from refresh
-// itself would trigger another refresh.
 const bareTransport = createConnectTransport({ baseUrl: resolveBaseUrl() });
 
 async function doRefresh(): Promise<boolean> {
@@ -25,14 +23,16 @@ async function doRefresh(): Promise<boolean> {
             return true;
         }
         const refreshToken = getRefreshToken();
-        if (!refreshToken) return false;
+        if (!refreshToken) {
+            return false;
+        }
         const res = await auth.refresh({ refreshToken });
-        if (!res.tokens) return false;
+        if (!res.tokens) {
+            return false;
+        }
         setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         return true;
     } catch {
-        // Any failure (missing token, network, server rejection) reads as
-        // false; the caller then drops the session.
         return false;
     }
 }
@@ -49,13 +49,13 @@ function tryRefresh(): Promise<boolean> {
 const authInterceptor: Interceptor = (next) => async (req) => {
     if (!cookieMode) {
         const token = getAccessToken();
-        if (token) req.header.set("Authorization", `Bearer ${token}`);
+        if (token) {
+            req.header.set("Authorization", `Bearer ${token}`);
+        }
     }
     try {
         return await next(req);
     } catch (e) {
-        // A 401 from AuthService itself (e.g. a wrong password at login)
-        // must not trigger a refresh.
         if (
             !(e instanceof ConnectError) ||
             e.code !== Code.Unauthenticated ||
@@ -64,13 +64,17 @@ const authInterceptor: Interceptor = (next) => async (req) => {
             throw e;
         }
         if (!(await tryRefresh())) {
-            if (!cookieMode) clearTokens();
+            if (!cookieMode) {
+                clearTokens();
+            }
             window.location.href = appPath("/login");
             throw e;
         }
         if (!cookieMode) {
             const fresh = getAccessToken();
-            if (fresh) req.header.set("Authorization", `Bearer ${fresh}`);
+            if (fresh) {
+                req.header.set("Authorization", `Bearer ${fresh}`);
+            }
         }
         return await next(req);
     }

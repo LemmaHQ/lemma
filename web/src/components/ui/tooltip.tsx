@@ -47,9 +47,6 @@ function TooltipContent({
             <TooltipPrimitive.Content
                 data-slot="tooltip-content"
                 sideOffset={sideOffset}
-                // Desktop shell: the top 40px are the native title bar
-                // overlay, which paints over web content — force tooltips
-                // to flip below the trigger instead of entering that zone.
                 collisionPadding={
                     collisionPadding ?? (isDesktop() ? { top: 44 } : 0)
                 }

@@ -14,7 +14,9 @@ export function useAccountRuntime() {
     const userId = useAuth((s) => s.user?.id ?? null);
 
     useEffect(() => {
-        if (!userId) return;
+        if (!userId) {
+            return;
+        }
         openDb(userId);
         void useConversationsStore.getState().refresh();
         return () => {

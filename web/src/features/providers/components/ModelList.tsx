@@ -29,7 +29,9 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     }, [models, query]);
 
     const fetchRemote = async () => {
-        if (fetching) return;
+        if (fetching) {
+            return;
+        }
         setFetching(true);
         setFetchMsg(null);
         try {
@@ -47,7 +49,9 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         const id = newModel.trim();
         setNewModel("");
         setAdding(false);
-        if (!id || models.includes(id)) return;
+        if (!id || models.includes(id)) {
+            return;
+        }
         onChange([id, ...models]);
     };
 

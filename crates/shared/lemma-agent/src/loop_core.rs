@@ -155,7 +155,6 @@ impl AgentLoop {
                 AgentError::NotFound(format!("conversation {conversation_id} not found"))
             })?;
 
-        // 1. Determine parent ID for the new User turn.
         let user_parent_id = parent_id_override.or(meta.leaf_id);
 
         let user_msg_id = Uuid::new_v4();
@@ -180,11 +179,9 @@ impl AgentLoop {
             obs(TurnEvent::UserAppended { id: user_msg_id });
         }
 
-        // 2. Reconstruct linear context history from root to this new user message.
         let all_entries = self.store.list_messages(conversation_id).await?;
         let linear_context = build_context_path(&all_entries, user_msg_id)?;
 
-        // 3. Pre-create Assistant node in the tree so partial state is visible.
         let assistant_msg_id = Uuid::new_v4();
         let initial_assistant_msg = Message::Assistant {
             content: vec![ContentBlock::Text(TextContent {
@@ -222,7 +219,6 @@ impl AgentLoop {
             )
             .await?;
 
-        // 4. Dispatch to provider.
         let req = ChatRequest {
             kind: config.kind,
             base_url: config.base_url,
@@ -345,7 +341,6 @@ impl AgentLoop {
             blocks.push(prev.close(None));
         }
 
-        // 5. Finalize assistant turn with accumulated content and token usage.
         let full_text: String = blocks.iter().filter_map(ContentBlock::plain_text).collect();
         let content = if blocks.iter().all(|b| matches!(b, ContentBlock::Text(_))) {
             vec![ContentBlock::Text(TextContent {

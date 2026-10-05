@@ -16,7 +16,11 @@ export function RequireAuth() {
     const user = useAuth((s) => s.user);
     const ready = useAuth((s) => s.ready);
 
-    if (!ready) return <Loading />;
-    if (!user) return <Navigate to="/login" replace />;
+    if (!ready) {
+        return <Loading />;
+    }
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
     return <Outlet />;
 }

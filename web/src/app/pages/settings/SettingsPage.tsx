@@ -8,7 +8,7 @@ import { setTitleBarSurface } from "@/features/preferences/theme";
 import { parseSettingsSection } from "./sections";
 import { SettingsNav } from "./SettingsNav";
 
-export default function SettingsPage() {
+export function SettingsPage() {
     const section = parseSettingsSection(useParams().section);
 
     useEffect(() => {

@@ -199,8 +199,6 @@ impl Provider for GeminiGenerate {
     fn stream(&self, req: ChatRequest) -> BoxChatFuture {
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            // A custom api_path embeds the model via a {model}
-            // placeholder; the default path appends it directly.
             let path = if req.api_path.is_empty() {
                 format!("/models/{}:streamGenerateContent?alt=sse", req.model)
             } else {
@@ -208,7 +206,6 @@ impl Provider for GeminiGenerate {
             };
             let url = format!("{}{}", req.base_url.trim_end_matches('/'), path);
             let mut body = serde_json::json!({
-                // Gemini names the assistant role "model".
                 "contents": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
                     "role": if role == "assistant" { "model" } else { "user" },
                     "parts": [{ "text": text }],

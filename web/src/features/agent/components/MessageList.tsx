@@ -7,7 +7,6 @@ import { MessageItem } from "./MessageItem";
 
 interface MessageListProps {
     items: AgentItem[];
-    // Scroll resets when the conversation changes.
     resetKey: string | null;
     providerNameById: Map<string, string>;
     onPickSuggestion: (text: string) => void;
@@ -25,18 +24,24 @@ export function MessageList({
 
     useEffect(() => {
         const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
+        if (el) {
+            el.scrollTop = el.scrollHeight;
+        }
     }, [items, resetKey]);
 
     const lastAssistantId = useMemo(() => {
         for (let i = items.length - 1; i >= 0; i--) {
-            if (items[i].role === "assistant") return items[i].id;
+            if (items[i].role === "assistant") {
+                return items[i].id;
+            }
         }
         return null;
     }, [items]);
 
     const sourceOf = (m: AgentItem) => {
-        if (!m.model) return undefined;
+        if (!m.model) {
+            return undefined;
+        }
         const name = providerNameById.get(m.providerId);
         return name ? `${name} · ${m.model}` : m.model;
     };

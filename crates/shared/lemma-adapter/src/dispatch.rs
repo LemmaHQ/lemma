@@ -21,8 +21,6 @@ impl DispatchProvider {
         }
     }
 
-    // Unspecified and unrecognized kinds fall through to the
-    // OpenAI-compatible adapter, the most common API shape.
     fn select(&self, kind: ProviderKind) -> &dyn Provider {
         match kind {
             ProviderKind::Anthropic => &self.anthropic,

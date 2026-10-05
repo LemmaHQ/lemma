@@ -30,7 +30,9 @@ function ProviderGroup({
     onSelect: (id: string) => void;
 }) {
     const [open, setOpen] = useState(true);
-    if (providers.length === 0) return null;
+    if (providers.length === 0) {
+        return null;
+    }
     return (
         <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/60">
@@ -87,7 +89,9 @@ export function ProviderListPane({
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        if (!q) return providers;
+        if (!q) {
+            return providers;
+        }
         return providers.filter((p) => p.name.toLowerCase().includes(q));
     }, [providers, query]);
 

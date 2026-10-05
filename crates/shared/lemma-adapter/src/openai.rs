@@ -85,8 +85,6 @@ fn map_finish_reason(reason: &str) -> StopReason {
     }
 }
 
-// With stream_options.include_usage set, usage arrives in its own chunk
-// ahead of [DONE]; the parser holds it until the terminal event.
 struct Parser {
     usage: Option<RawUsage>,
     stop: StopReason,

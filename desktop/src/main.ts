@@ -3,7 +3,6 @@ import started from "electron-squirrel-startup";
 import path from "node:path";
 import * as engine from "./engine";
 
-// Quit when launched by the Squirrel installer/updater hooks.
 if (started) {
     app.quit();
 }
@@ -19,7 +18,9 @@ let mainWindow: BrowserWindow | null = null;
 let engineStopping = false;
 
 const loadFatalPage = (detail: string) => {
-    if (!mainWindow) return;
+    if (!mainWindow) {
+        return;
+    }
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lemma</title></head>
 <body style="margin:0;font-family:system-ui;background:#151615;color:#e6e6e4">
 <main style="display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;height:100vh">
@@ -32,7 +33,9 @@ const loadFatalPage = (detail: string) => {
 };
 
 const loadApp = () => {
-    if (!mainWindow) return;
+    if (!mainWindow) {
+        return;
+    }
     mainWindow.loadFile(path.join(__dirname, "../../web-dist/index.html"));
 };
 
@@ -81,7 +84,9 @@ const createWindow = () => {
     });
 
     window.webContents.on("before-input-event", (_event, input) => {
-        if (input.type !== "keyDown") return;
+        if (input.type !== "keyDown") {
+            return;
+        }
         const devtoolsKey =
             input.key === "F12" ||
             ((input.control || input.meta) &&
@@ -119,7 +124,9 @@ ipcMain.handle("get-skip-credentials", () => {
         : null;
 });
 ipcMain.on("toggle-maximize", () => {
-    if (!mainWindow) return;
+    if (!mainWindow) {
+        return;
+    }
     if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
     } else {
@@ -154,7 +161,9 @@ if (!gotTheLock) {
     });
 
     app.on("before-quit", (event) => {
-        if (engineStopping) return;
+        if (engineStopping) {
+            return;
+        }
         event.preventDefault();
         engineStopping = true;
         engine.stop().finally(() => app.quit());

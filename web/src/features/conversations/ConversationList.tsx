@@ -47,7 +47,9 @@ function SessionRow({
     const commit = () => {
         const title = inputRef.current?.value.trim() ?? "";
         setEditing(false);
-        if (title && title !== session.title) onRename(session.id, title);
+        if (title && title !== session.title) {
+            onRename(session.id, title);
+        }
     };
 
     if (editing) {

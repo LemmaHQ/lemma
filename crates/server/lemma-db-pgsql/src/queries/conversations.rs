@@ -167,8 +167,6 @@ where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
     let rows: Vec<Message> = if let Some(before) = before_id {
-        // The self-join resolves before_id to its ordering position in the
-        // same conversation, so the cursor cannot page across conversations.
         sqlx::query_as::<_, Message>(
             r#"
             SELECT m.* FROM messages m

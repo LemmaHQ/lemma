@@ -11,9 +11,6 @@ const mk = (id: string, updatedAtMs: number): SessionSummary => ({
 });
 
 describe("groupSessions", () => {
-    // Pin the clock to noon: the buckets are calendar days, so a wall-clock
-    // run within minutes of midnight would spill "a minute ago" into
-    // yesterday.
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 5, 15, 12, 0, 0));

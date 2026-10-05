@@ -20,14 +20,10 @@ export function resolveTheme(pref: ThemePreference): "light" | "dark" {
     return pref;
 }
 
-/** The page surface under the reserved titlebar strip: sidebar-shell
- *  pages vs full-bleed pages. The desktop shell mirrors it natively. */
 export type TitleBarSurface = "sidebar" | "background";
 
 let currentSurface: TitleBarSurface = "background";
 
-/** Declares which surface the current page paints under the titlebar
- *  strip, marks the root dataset, and pushes to the desktop shell. */
 export function setTitleBarSurface(surface: TitleBarSurface) {
     currentSurface = surface;
     document.documentElement.dataset.surface = surface;
@@ -41,7 +37,6 @@ function notifyTitleBar() {
     });
 }
 
-/** Applies the resolved theme via the data-theme attribute on <html>. */
 export function applyTheme(pref: ThemePreference) {
     const resolved = resolveTheme(pref);
     document.documentElement.setAttribute("data-theme", resolved);
@@ -61,7 +56,9 @@ export function useThemePreference(): readonly [
 
     useEffect(() => {
         applyTheme(preference);
-        if (preference !== "system") return;
+        if (preference !== "system") {
+            return;
+        }
         const mql = window.matchMedia("(prefers-color-scheme: dark)");
         const onChange = () => applyTheme("system");
         mql.addEventListener("change", onChange);

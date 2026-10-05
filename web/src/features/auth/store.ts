@@ -37,18 +37,20 @@ export const useAuth = create<AuthState>()((set) => ({
             try {
                 const res = await authClient.me({});
                 const user = res.user ?? null;
-                if (user) setStoredUserId(user.id);
+                if (user) {
+                    setStoredUserId(user.id);
+                }
                 set({ user });
             } catch {
                 set({ user: null });
             }
         } else if (getAccessToken()) {
-            // A stored token restores the session via me(); any failure
-            // means the session is gone and the tokens are dropped.
             try {
                 const res = await authClient.me({});
                 const user = res.user ?? null;
-                if (user) setStoredUserId(user.id);
+                if (user) {
+                    setStoredUserId(user.id);
+                }
                 set({ user });
             } catch {
                 clearTokens();
@@ -59,43 +61,46 @@ export const useAuth = create<AuthState>()((set) => ({
     },
 
     login: async (identifier, password) => {
-        // The login target is an email when it contains @, else a username.
         const req = identifier.includes("@")
             ? { email: identifier, password }
             : { username: identifier, password };
         const res = await authClient.login(req);
         if (!cookieMode) {
-            if (!res.tokens) throw new Error("no tokens in response");
+            if (!res.tokens) {
+                throw new Error("no tokens in response");
+            }
             setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         }
         const user = res.user ?? null;
-        if (user) setStoredUserId(user.id);
+        if (user) {
+            setStoredUserId(user.id);
+        }
         set({ user });
     },
 
     signup: async (username, email, password) => {
         const res = await authClient.signUp({ username, email, password });
         if (!cookieMode) {
-            if (!res.tokens) throw new Error("no tokens in response");
+            if (!res.tokens) {
+                throw new Error("no tokens in response");
+            }
             setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         }
         const user = res.user ?? null;
-        if (user) setStoredUserId(user.id);
+        if (user) {
+            setStoredUserId(user.id);
+        }
         set({ user });
     },
 
     logout: async () => {
-        try {
-            if (cookieMode) {
-                await authClient.logout({});
-            } else {
-                const refreshToken = getRefreshToken();
-                if (refreshToken) await authClient.logout({ refreshToken });
-            }
-        } catch {
-            // Revoking the refresh token is best-effort: local logout must
-            // succeed even when the server is unreachable.
-        }
+        const refreshToken = getRefreshToken();
+        const request = cookieMode
+            ? authClient.logout({})
+            : refreshToken
+              ? authClient.logout({ refreshToken })
+              : null;
+        await request?.catch(() => undefined);
         clearTokens();
         clearStoredUserId();
         set({ user: null });

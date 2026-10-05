@@ -35,12 +35,9 @@ export function MessageItem({
     }
 
     const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(message.content);
-        } catch {
-            // The clipboard API may be unavailable (non-HTTPS origins);
-            // copying just no-ops then.
-        }
+        await navigator.clipboard
+            .writeText(message.content)
+            .catch(() => undefined);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
     };

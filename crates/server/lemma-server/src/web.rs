@@ -24,9 +24,6 @@ fn serve(path: &str) -> Response<Body> {
             if let Ok(v) = HeaderValue::from_str(file.metadata.mimetype()) {
                 headers.insert(header::CONTENT_TYPE, v);
             }
-            // assets/ files have content-hashed names and can be cached
-            // forever; everything else must revalidate so a new deploy
-            // is picked up.
             headers.insert(
                 header::CACHE_CONTROL,
                 if path.starts_with("assets/") {
@@ -37,8 +34,6 @@ fn serve(path: &str) -> Response<Body> {
             );
             res
         }
-        // Paths without an extension are client-side routes; hand them
-        // to the SPA.
         None if !path.contains('.') => serve("index.html"),
         None => StatusCode::NOT_FOUND.into_response(),
     }
