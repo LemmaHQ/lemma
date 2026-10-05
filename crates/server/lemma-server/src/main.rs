@@ -51,7 +51,10 @@ async fn run_local() -> Result<(), Box<dyn std::error::Error>> {
     let state = state::AppState::local(&data_dir).await?;
 
     if let Some(store) = &state.local_auth_store {
-        let secrets = state.local_secrets.as_ref().ok_or("local secrets missing")?;
+        let secrets = state
+            .local_secrets
+            .as_ref()
+            .ok_or("local secrets missing")?;
         let service = lemma_auth::AuthService::new(store.clone(), secrets.jwt_secret.as_str());
         local::ensure_default_account(store.as_ref(), &service).await?;
     }

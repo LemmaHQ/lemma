@@ -23,7 +23,8 @@ let skipCredentials: SkipCredentials | null = null;
 let exitWatcher: Promise<number | null> | null = null;
 
 const engineBinary = (): string => {
-    const name = process.platform === "win32" ? "lemma-server.exe" : "lemma-server";
+    const name =
+        process.platform === "win32" ? "lemma-server.exe" : "lemma-server";
     if (app.isPackaged) {
         return path.join(process.resourcesPath, name);
     }
@@ -87,7 +88,9 @@ export async function start(): Promise<SkipCredentials> {
         }
         clearTimeout(timer);
         try {
-            const payload = JSON.parse(line.slice(READY_PREFIX.length)) as ReadyPayload;
+            const payload = JSON.parse(
+                line.slice(READY_PREFIX.length),
+            ) as ReadyPayload;
             if (
                 typeof payload.port !== "number" ||
                 typeof payload.default_username !== "string" ||

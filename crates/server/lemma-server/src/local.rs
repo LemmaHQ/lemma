@@ -4,7 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
-use lemma_auth::{AuthStore, AuthService};
+use lemma_auth::{AuthService, AuthStore};
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
@@ -38,8 +38,7 @@ pub fn load_or_create_secrets(data_dir: &Path) -> Result<LocalSecrets, String> {
             };
             std::fs::create_dir_all(data_dir)
                 .map_err(|e| format!("create {}: {e}", data_dir.display()))?;
-            let json =
-                serde_json::to_string(&secrets).map_err(|e| format!("secrets.json: {e}"))?;
+            let json = serde_json::to_string(&secrets).map_err(|e| format!("secrets.json: {e}"))?;
             std::fs::write(&path, json).map_err(|e| format!("write {}: {e}", path.display()))?;
             Ok(secrets)
         }

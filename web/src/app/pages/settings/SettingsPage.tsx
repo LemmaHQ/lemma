@@ -18,7 +18,6 @@ export function SettingsPage() {
         return <Navigate to="/settings/appearance" replace />;
     }
 
-
     return (
         <div className="flex h-dvh gap-2 bg-sidebar p-2 text-foreground">
             <SettingsNav />

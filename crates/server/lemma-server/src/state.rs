@@ -121,8 +121,10 @@ impl AppState {
                 {
                     let pool = pool.clone();
                     Arc::new(move |user_id: Uuid| {
-                        Arc::new(lemma_db_sqlite::SqliteTraceStore::new(pool.clone(), user_id))
-                            as Arc<dyn lemma_session::TraceStore>
+                        Arc::new(lemma_db_sqlite::SqliteTraceStore::new(
+                            pool.clone(),
+                            user_id,
+                        )) as Arc<dyn lemma_session::TraceStore>
                     })
                 },
                 providers,
