@@ -99,18 +99,17 @@ web-lint:
 web-fmt:
     npm run format
 
-# Build the desktop-bundled variant
-[group('web')]
-[working-directory('web')]
-web-build-desktop:
-    npm run build:desktop
+# Build desktop web assets
+[group('desktop')]
+[working-directory('desktop')]
+desktop-build:
+    npm run build
 
 # Run the dev shell
 [group('desktop')]
-[working-directory('desktop')]
 desktop-dev:
-    npm run start
-
+    cargo build -p lemma-server
+    npm --workspace=desktop run start
 # Run eslint
 [group('desktop')]
 [working-directory('desktop')]
@@ -128,7 +127,7 @@ desktop-fmt:
 [working-directory('desktop')]
 desktop-package:
     just proto-gen
-    just web-build-desktop
+    just desktop-build
     npm run package
 
 # Build the image

@@ -6,6 +6,8 @@
     "main": ".vite/build/main.js",
     "private": true,
     "scripts": {
+        "build": "npm --workspace=web run build:desktop",
+        "prestart": "npm run build",
         "start": "electron-forge start",
         "package": "electron-forge package",
         "make": "electron-forge make",

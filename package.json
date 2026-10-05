@@ -10,6 +10,8 @@
         "gen:proto": "cd proto && buf generate",
         "gen:tokens": "node web/scripts/gen-tokens.mjs",
         "check:features": "node scripts/check-features.mjs",
+        "build:desktop": "npm --workspace=desktop run build",
+        "dev:desktop": "npm --workspace=desktop run start",
         "lint:md": "markdownlint-cli2",
         "lint:cn": "autocorrect --lint",
         "lint:docs": "markdownlint-cli2 && autocorrect --lint"
