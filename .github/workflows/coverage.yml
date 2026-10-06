@@ -42,6 +42,7 @@ jobs:
 
       # lemma-server is process wiring with no tests; excluding it keeps
       # the gate meaningful and drops the web/dist embed dependency.
+      # lemma-core and lemma-proto are pure data contracts and generated code.
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -64,7 +65,7 @@ jobs:
         # NEXTEST_PROFILE selects the ci profile, which also writes JUnit
         # XML for the test-results upload below.
         run: >
-          cargo llvm-cov nextest --workspace --exclude lemma-server
+          cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto
           --lcov --output-path lcov.info
           --fail-under-lines 85
         env:

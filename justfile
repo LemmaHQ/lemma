@@ -54,12 +54,12 @@ rust-fmt:
 # Coverage summary in the terminal
 [group('rust')]
 rust-cov:
-    cargo llvm-cov --workspace --exclude lemma-server --summary-only
+    cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --summary-only
 
 # Coverage HTML report
 [group('rust')]
 rust-cov-html:
-    cargo llvm-cov --workspace --exclude lemma-server --html --open
+    cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --html --open
 
 # Validate the feature catalog
 [group('features')]
