@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import type { User } from "@/gen/lemma/v1/auth_pb";
 import { authClient } from "@/data/rpc/clients";
-import { cookieAuth } from "@/platform/environment";
+import { getPlatform } from "@/platform";
 import {
     clearStoredUserId,
     clearTokens,
@@ -12,7 +12,7 @@ import {
     setTokens,
 } from "@/data/credentials";
 
-const cookieMode = cookieAuth();
+const cookieMode = getPlatform().auth.cookieMode;
 
 interface AuthState {
     user: User | null;

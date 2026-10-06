@@ -3,7 +3,7 @@ import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { AuthService } from "@/gen/lemma/v1/auth_pb";
-import { appPath, resolveBaseUrl, cookieAuth } from "@/platform/environment";
+import { getPlatform } from "@/platform";
 import {
     clearTokens,
     getAccessToken,
@@ -11,9 +11,10 @@ import {
     setTokens,
 } from "@/data/credentials";
 
-const cookieMode = cookieAuth();
+const platform = getPlatform();
+const cookieMode = platform.auth.cookieMode;
 
-const bareTransport = createConnectTransport({ baseUrl: resolveBaseUrl() });
+const bareTransport = createConnectTransport({ baseUrl: platform.baseUrl });
 
 async function doRefresh(): Promise<boolean> {
     const auth = createClient(AuthService, bareTransport);
@@ -67,7 +68,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
             if (!cookieMode) {
                 clearTokens();
             }
-            window.location.href = appPath("/login");
+            window.location.href = platform.appPath("/login");
             throw e;
         }
         if (!cookieMode) {
@@ -81,6 +82,6 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 };
 
 export const transport = createConnectTransport({
-    baseUrl: resolveBaseUrl(),
+    baseUrl: platform.baseUrl,
     interceptors: [authInterceptor],
 });

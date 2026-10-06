@@ -32,7 +32,7 @@ export default defineConfig([
             "tailwindcss/no-custom-classname": [
                 "warn",
                 {
-                    whitelist: ["glass"],
+                    whitelist: ["glass", "desktop-titlebar"],
                 },
             ],
             "@typescript-eslint/no-unused-vars": [

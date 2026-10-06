@@ -15,13 +15,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorText } from "@/data/rpc/errors";
 import { useAuth } from "@/features/auth/store";
-import { isDesktop } from "@/platform/environment";
+import { usePlatformAuth } from "@/platform";
 
 export function AuthCard() {
     const { t } = useTranslation();
     const login = useAuth((s) => s.login);
     const signup = useAuth((s) => s.signup);
-
+    const platformAuth = usePlatformAuth();
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
@@ -61,7 +61,7 @@ export function AuthCard() {
     };
 
     const handleSkip = async () => {
-        const skip = await window.lemmaDesktop?.getSkipCredentials();
+        const skip = await platformAuth.getSkipCredentials();
         if (!skip) {
             return;
         }
@@ -234,7 +234,7 @@ export function AuthCard() {
                         </form>
                     </TabsContent>
                 </Tabs>
-                {isDesktop() && (
+                {platformAuth.canSkipAuth && (
                     <div className="flex flex-col gap-4 pt-4">
                         <div className="flex items-center gap-3">
                             <div className="h-px flex-1 bg-border" />
