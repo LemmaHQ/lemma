@@ -2,6 +2,14 @@
 default:
     @just --list
 
+# Fast static analysis and contract validation
+[group('workspace')]
+check: proto-lint proto-build check-features rust-lint web-lint desktop-lint
+
+# Full workspace verification including tests
+[group('workspace')]
+verify: check rust-test web-test
+
 # Lint contracts
 [group('proto')]
 [working-directory('proto')]
