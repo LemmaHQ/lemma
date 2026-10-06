@@ -6,8 +6,10 @@ api:
   proto: [lemma.v1]
 clients:
   web:
-    status: planned
+    status: supported
+    since: "0.1.0"
   desktop:
-    status: planned
+    status: inherited
+    inherits: web
   android:
     status: planned
