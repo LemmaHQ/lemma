@@ -13,7 +13,6 @@ ignores:
   - ".git/**"
   - "**/node_modules/**"
   - "docs/style-guide/**"
-  - "DESIGN.md"
   - "target/**"
   - "**/build/**"
   - "web/src/gen/**"

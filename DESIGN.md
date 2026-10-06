@@ -357,6 +357,7 @@ components:
     padding: 32px
     borderColor: "{colors.border}"
 ---
+# Lemma Design System
 
 ## Overview
 
@@ -371,6 +372,7 @@ Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC*
 The page rhythm is a **workbench, not a marketing narrative**: a 260px session sidebar on the left, the conversation flow in the middle (user messages right-aligned in `{colors.muted}` bubbles; assistant messages as inverse round avatar + plain flow), and the composer at the bottom (`{colors.composer}` panel + round send button that arms to `{colors.primary}` once text is present), with the content column capped at max-w-3xl. The language serves long reading and typing sessions, not presentation.
 
 **Key Characteristics:**
+
 - **Three-state theme** — flat light / flat dark / follow system; semantic tokens defined once, valued per theme.
 - **Single blue accent** `{colors.primary}` #1783ff — derived focus ring, opacity hovers, no second chromatic color.
 - **Alpha-tier neutrals** — labels, fills and separators are black/white at fixed alpha steps, so both themes share one hierarchy.
@@ -384,12 +386,14 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 > The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and `web/src/styles/tokens.css` is generated from them by `web/scripts/gen-tokens.mjs` as `:root` / `[data-theme="dark"]`. Every value is an sRGB hex literal — 8-digit hex expresses the alpha tiers — so the front matter round-trips through Stitch and `designmd export` unchanged.
 
 ### Brand & Accent
+
 - **Primary Blue** (`{colors.primary}`): The single chromatic accent #1783ff (dark #1a88ff) — primary buttons, focus rings, link emphasis.
 - **On Primary** (`{colors.primary-foreground}`): White text on the primary color, for contrast.
 - **Ring** (`{colors.ring}`): Focus ring — the primary at 40% alpha. Stored as a flat 8-digit hex rather than a `color-mix` expression so every consumer reads the same value; when the primary changes, the ring is re-derived in the same edit.
 - No hover/pressed tokens: always opacity modifiers (`primary/90`, `secondary/80`).
 
 ### Surface
+
 - **Background** (`{colors.background}`): Main canvas. Flat #ffffff in light; flat #121212 in dark.
 - **Sidebar** (`{colors.sidebar}`): Sidebar zone, one shade step below the canvas: #f5f5f5 in light; #1f1f1f in dark.
 - **Composer** (`{colors.composer}`): Input-area panel. #ffffff in light; #1f1f1f in dark.
@@ -399,6 +403,7 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 - **Code** (`{colors.code}` + `{colors.code-border}`): Code block background and border; blocks overlay the canvas at 60% opacity.
 
 ### Text
+
 - **Foreground** (`{colors.foreground}`): All headlines and primary body text — black 90% alpha, white 84% in dark.
 - **Muted Foreground** (`{colors.muted-foreground}`): Secondary text — captions, meta info, group headers, placeholders — black 60% / white 56%.
 - **Tertiary Foreground** (`{colors.tertiary-foreground}`): Hints and disabled-adjacent text — black 45% / white 42%.
@@ -406,11 +411,13 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 - **Three text levels are deliberate**: finer hierarchy is carried by font weight (400/500/600), not by additional grays.
 
 ### Border
+
 - **Border** (`{colors.border}`): Default hairline on cards and dividers.
 - **Input** (`{colors.input}`): Input border, one step lighter than border in dark.
 - Zone variants: `sidebar-border`, `code-border`, paired with their surfaces.
 
 ### Semantic
+
 - **Destructive** (`{colors.destructive}`): Delete and dangerous actions; one lightness step per theme.
 - **Warning** (`{colors.warning}` / `{colors.warning-soft}` / `{colors.warning-border}`): Banner trio — strong text, soft background, border. Adopted from the amber palette the migration banner shipped with.
 - **Success** (`{colors.success}`): Positive feedback — storage test "Connected", migration finished.
@@ -523,92 +530,113 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 ### Buttons
 
 **`button-primary`** — Sky-blue CTA. Used sparingly: sign in, save changes, and the send button's armed state.
+
 - Background `{colors.primary}`, text `{colors.primary-foreground}`, type `{typography.button}`, 36px tall with 16px horizontal padding, rounded `{rounded.md}`.
 - Hover is an opacity modifier (`primary/90`); focus is the 3px `{colors.ring}`.
 
 **`button-secondary`** — Quiet filled button for secondary actions.
+
 - Background `{colors.secondary}`, text `{colors.secondary-foreground}`; hover `secondary/80`.
 
 **`button-outline`** — Bordered button on the page canvas.
+
 - Background `{colors.background}`, 1px `{colors.border}` border; hover fills `{colors.accent}`.
 
 **`button-ghost`** — Borderless action for dense toolbars and icon buttons.
+
 - Transparent at rest; hover is the `button-ghost-hover` variant — `{colors.accent}` fill, `{colors.accent-foreground}` text — and `button-outline` hovers with the same pair. Icon buttons (copy, regenerate, collapse) are the same recipe, square or round.
 
 **`button-destructive`** — Danger actions (delete provider, delete storage).
+
 - Background `{colors.destructive}`, text `{colors.destructive-foreground}`; hover `destructive/90`.
 
 ### Forms
 
 **`text-input`** — Hairline field: transparent background, 1px `{colors.input}` border. Textareas share the recipe.
+
 - Type `{typography.body-sm}`, rounded `{rounded.md}`, 36px tall with 12px horizontal padding; placeholder in `{colors.muted-foreground}`.
 - Focus keeps the surface: the `text-input-focus` variant swaps the edge to a 3px `{colors.ring}` ring. Buttons, selects, switches, tabs, and textareas focus through that same ring.
 
 ### Overlays
 
 **`popover`** — Floating panel shared by dropdown menus and selects.
+
 - Background `{colors.popover}`, 1px `{colors.border}`, rounded `{rounded.md}`, padding 4px.
 - The only component family allowed a drop shadow (shadow-md) besides the composer card; everything else stays flat.
 
 **`tooltip`** — Inverse mini overlay.
+
 - Background `{colors.foreground}`, text `{colors.background}`, type `{typography.caption}`, padding 6px 12px.
 
 ### Toggles
 
 **`switch`** — Round-thumb toggle.
+
 - Off: `{colors.input}`; on: `{colors.primary}`. Rounded `{rounded.full}`, 18px tall with a 16px thumb.
 
 **`tabs`** — Segmented control (settings groups).
+
 - Track `{colors.muted}` with `{colors.muted-foreground}` labels; the selected segment lifts to `{colors.background}` with shadow-xs and `{colors.foreground}` text. Selected = lift, not color.
 
 ### Sidebar
 
 **`sidebar`** — The session rail, a dedicated surface zone.
+
 - Background `{colors.sidebar}`, text `{colors.sidebar-foreground}`, width 260px; group headers in `{typography.caption}` + `{colors.muted-foreground}`. The footer strip is separated by a hairline `{colors.sidebar-border}`, the only edge the rail draws.
 
 **`sidebar-session-row`** — One conversation in the list.
+
 - Transparent at rest, rounded `{rounded.md}`, padding 6px 12px; hover tints `accent/60`. The open conversation is the `sidebar-session-row-active` variant — `{colors.sidebar-accent}` fill, weight bumped to 500, text unchanged.
 - Inline actions (rename / archive) fade in on hover — the row stays text-pure at rest.
 
 **`settings-nav-item`** — One row in the settings rail, the sidebar pattern at a tighter padding.
+
 - Text `{colors.sidebar-foreground}`, rounded `{rounded.md}`, padding 6px 8px; hover tints `accent/60`.
 - The selected row is `settings-nav-item-active`: `{colors.sidebar-accent}` fill with `{colors.sidebar-accent-foreground}` text — the one place that foreground pair is used.
 
 ### Messages
 
 **`message-bubble-user`** — Right-aligned bubble, capped at 75% width.
+
 - Background `{colors.muted}`, type `{typography.body-sm}`, rounded `{rounded.xl}`, padding 10px 16px.
 
 **`message-assistant`** — Deliberately bubble-less: a 28px round inverse avatar (Sparkles) followed by plain-flowing markdown.
+
 - Long answers read as documents, not chat frames. Errors render in `{colors.destructive}`; source and stop notices in `{typography.caption}` + `{colors.muted-foreground}`; action buttons are ghost icons.
 
 ### Composer
 
 **`composer`** — The input panel, its own surface token.
+
 - Background `{colors.composer}`, 1px `{colors.input}` border, rounded `{rounded.xl}`, padding 12px; the textarea inside is transparent and borderless.
 - The card carries `shadow-composer` — a soft ambient lift (`0 8px 30px` black at 12% alpha; dark `0 12px 40px` black at 60%) — so the composer floats above the scrolling transcript. It is the only non-overlay shadow in the system.
 - The send button is a 32px round state-driven button: empty composer rests on `{colors.secondary}` with a `{colors.muted-foreground}` icon; once text is present it arms to `{colors.primary}` with a `{colors.primary-foreground}` icon, hover as `primary/90`. Sending is the composer's primary action, so the armed state earns the blue — the one sanctioned in-app use beyond system-level emphasis.
 
 **`model-switcher`** — Ghost trigger + popover overlay.
+
 - Model IDs render in `{typography.mono-sm}` — machine text in machine type.
 
 ### Code
 
 **`code-block`** — Fenced code in chat.
+
 - Background `{colors.code}` overlaid at 60% opacity, 1px `{colors.code-border}`, type `{typography.mono}`, padding 16px. Inline code uses the same family at 2px 4px padding.
 
 ### Feedback
 
 **`banner-warning`** — Inline warning banner (pending migration notice).
+
 - Background `{colors.warning-soft}`, 1px `{colors.warning-border}`, text `{colors.warning}`, type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px.
 - The three values are amber palette steps — 50 / 300 / 700 in light, 950 / 800 / 400 in dark — lifted from Tailwind's amber ramp rather than tuned like the neutrals.
 
 **`status-success`** — Inline confirmation line (storage migrated, connection tested).
+
 - Text `{colors.success}` at `{typography.body-sm}`; the terser connection-test variant drops to `{typography.caption}`. Success is text-only — there is no filled success banner.
 
 ### Auth
 
 **`auth-card`** — The centered login / signup card.
+
 - Background `{colors.card}`, 1px `{colors.border}`, rounded `{rounded.xl}`, padding 32px.
 
 ## Do's and Don'ts
