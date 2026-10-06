@@ -242,13 +242,7 @@ impl Provider for GeminiGenerate {
                 vec![("x-goog-api-key".to_string(), req.api_key.clone())]
             };
             let start = Instant::now();
-            let bytes = transport
-                .post_stream(
-                    url,
-                    headers,
-                    body,
-                )
-                .await?;
+            let bytes = transport.post_stream(url, headers, body).await?;
             Ok(timed(
                 start,
                 events_from_sse(

@@ -137,9 +137,8 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
         let agent = match &self.workspaces_dir {
             Some(dir) => {
                 let workspace = dir.join(conversation_id.to_string());
-                std::fs::create_dir_all(&workspace).map_err(|e| {
-                    ConnectError::internal(format!("create workspace: {e}"))
-                })?;
+                std::fs::create_dir_all(&workspace)
+                    .map_err(|e| ConnectError::internal(format!("create workspace: {e}")))?;
                 let mut registry = ToolRegistry::new();
                 registry.register(Arc::new(ReadFileTool));
                 registry.register(Arc::new(WriteFileTool));
@@ -328,12 +327,10 @@ fn error_event(message: &str) -> AgentEvent {
 
 fn turn_started_event(id: Uuid) -> AgentEvent {
     AgentEvent {
-        kind: Some(agent_event::Kind::TurnStarted(Box::new(
-            AgentTurnStarted {
-                message_id: id.to_string(),
-                ..Default::default()
-            },
-        ))),
+        kind: Some(agent_event::Kind::TurnStarted(Box::new(AgentTurnStarted {
+            message_id: id.to_string(),
+            ..Default::default()
+        }))),
         ..Default::default()
     }
 }
@@ -352,7 +349,12 @@ fn tool_call_started_event(call_id: &str, name: &str, arguments: &str) -> AgentE
     }
 }
 
-fn tool_call_finished_event(call_id: &str, name: &str, content: &str, is_error: bool) -> AgentEvent {
+fn tool_call_finished_event(
+    call_id: &str,
+    name: &str,
+    content: &str,
+    is_error: bool,
+) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::ToolCallFinished(Box::new(
             ToolCallFinished {

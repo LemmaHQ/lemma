@@ -72,7 +72,14 @@ impl AppState {
             DatabaseBackend::Sqlite => {
                 let pool = lemma_db_sqlite::connect(config.sqlite_path()?).await?;
                 lemma_db_sqlite::migrate(&pool).await?;
-                Self::sqlite_state(pool, provider, config.jwt_secret, config.secret_key, false, None)
+                Self::sqlite_state(
+                    pool,
+                    provider,
+                    config.jwt_secret,
+                    config.secret_key,
+                    false,
+                    None,
+                )
             }
         }
     }

@@ -163,11 +163,18 @@ struct TurnOutcome {
 
 impl TurnOutcome {
     fn full_text(&self) -> String {
-        self.blocks.iter().filter_map(ContentBlock::plain_text).collect()
+        self.blocks
+            .iter()
+            .filter_map(ContentBlock::plain_text)
+            .collect()
     }
 
     fn content(&self) -> Vec<ContentBlock> {
-        if self.blocks.iter().all(|b| matches!(b, ContentBlock::Text(_))) {
+        if self
+            .blocks
+            .iter()
+            .all(|b| matches!(b, ContentBlock::Text(_)))
+        {
             vec![ContentBlock::Text(TextContent {
                 text: self.full_text(),
             })]
@@ -204,7 +211,10 @@ async fn run_tool(runtime: &ToolRuntime, call: &ToolCall) -> (String, bool) {
             }
         }
     }
-    match tool.execute(call.arguments.clone(), runtime.env.as_ref()).await {
+    match tool
+        .execute(call.arguments.clone(), runtime.env.as_ref())
+        .await
+    {
         Ok(value) => match serde_json::to_string_pretty(&value) {
             Ok(text) => (text, false),
             Err(_) => (value.to_string(), false),

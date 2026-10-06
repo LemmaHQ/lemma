@@ -43,7 +43,10 @@ pub async fn fetch_models(
     let (default_base, default_path) = match kind {
         ProviderKind::OpenAiCompatible => ("https://api.openai.com/v1", "/models"),
         ProviderKind::Anthropic => ("https://api.anthropic.com/v1", "/models"),
-        ProviderKind::Gemini => ("https://generativelanguage.googleapis.com", "/v1beta/models"),
+        ProviderKind::Gemini => (
+            "https://generativelanguage.googleapis.com",
+            "/v1beta/models",
+        ),
     };
     let base = if base_url.is_empty() {
         default_base
@@ -75,9 +78,7 @@ pub async fn fetch_models(
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
         ProviderKind::Anthropic => {
-            let mut req = client
-                .get(&url)
-                .header("anthropic-version", "2023-06-01");
+            let mut req = client.get(&url).header("anthropic-version", "2023-06-01");
             if !api_key.is_empty() {
                 req = req.header("x-api-key", api_key);
             }

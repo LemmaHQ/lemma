@@ -291,13 +291,7 @@ impl Provider for OpenAiCompatible {
                 )]
             };
             let start = Instant::now();
-            let bytes = transport
-                .post_stream(
-                    url,
-                    headers,
-                    body,
-                )
-                .await?;
+            let bytes = transport.post_stream(url, headers, body).await?;
             Ok(timed(
                 start,
                 events_from_sse(

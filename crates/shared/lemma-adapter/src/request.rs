@@ -105,9 +105,7 @@ pub(crate) fn anthropic_messages(messages: &[Message]) -> Vec<serde_json::Value>
                 "content": text_of(content),
             }),
             Message::Assistant { content, .. } => {
-                let structured = content
-                    .iter()
-                    .any(|b| !matches!(b, ContentBlock::Text(_)));
+                let structured = content.iter().any(|b| !matches!(b, ContentBlock::Text(_)));
                 if !structured {
                     return serde_json::json!({
                         "role": "assistant",
@@ -227,4 +225,3 @@ pub(crate) fn thinking_budget(effort: &str) -> u32 {
         _ => 8192,
     })
 }
-
