@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::approval::ToolTier;
 use crate::env::ExecEnv;
 use crate::error::ToolError;
 use crate::tool::{BoxToolFuture, Tool, ToolSpec};
@@ -23,6 +24,10 @@ impl Tool for ReadFileTool {
                 "required": ["path"]
             }),
         }
+    }
+
+    fn tier(&self) -> ToolTier {
+        ToolTier::Read
     }
 
     fn execute<'a>(&'a self, args: serde_json::Value, env: &'a dyn ExecEnv) -> BoxToolFuture<'a> {
@@ -62,6 +67,10 @@ impl Tool for WriteFileTool {
         }
     }
 
+    fn tier(&self) -> ToolTier {
+        ToolTier::Write
+    }
+
     fn execute<'a>(&'a self, args: serde_json::Value, env: &'a dyn ExecEnv) -> BoxToolFuture<'a> {
         Box::pin(async move {
             let path_str = args.get("path").and_then(|v| v.as_str()).ok_or_else(|| {
@@ -99,6 +108,10 @@ impl Tool for BashTool {
                 "required": ["command"]
             }),
         }
+    }
+
+    fn tier(&self) -> ToolTier {
+        ToolTier::Exec
     }
 
     fn execute<'a>(&'a self, args: serde_json::Value, env: &'a dyn ExecEnv) -> BoxToolFuture<'a> {

@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::error::ProviderError;
 use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, role_text, thinking_budget};
+use crate::request::{ChatRequest, gemini_contents, thinking_budget};
 use crate::sse::{SseParser, events_from_sse};
 use crate::transport::{HttpTransport, ReqwestTransport};
 
@@ -108,6 +108,7 @@ struct Parser {
     thinking_open: bool,
     signature: Option<String>,
     next_call: u64,
+    called_tool: bool,
 }
 
 impl Parser {
@@ -136,6 +137,7 @@ impl Parser {
         }
         if let Some(call) = part.function_call {
             self.close_thinking(events);
+            self.called_tool = true;
             let id = format!("call_{}", self.next_call);
             self.next_call += 1;
             events.push(StreamEvent::ToolCallStart {
@@ -166,9 +168,10 @@ impl SseParser for Parser {
             self.usage = Some(u);
         }
         let candidate = chunk.candidates.into_iter().next();
-        if let Some(reason) = candidate.as_ref().and_then(|c| c.finish_reason.as_deref()) {
-            self.stop = map_finish_reason(reason);
-        }
+        let finish = candidate
+            .as_ref()
+            .and_then(|c| c.finish_reason.as_deref())
+            .map(str::to_string);
         let parts = candidate
             .and_then(|c| c.content)
             .map(|c| c.parts)
@@ -176,6 +179,13 @@ impl SseParser for Parser {
         let mut events = Vec::new();
         for part in parts {
             self.part_events(part, &mut events);
+        }
+        if let Some(reason) = finish.as_deref() {
+            self.stop = if self.called_tool {
+                StopReason::ToolUse
+            } else {
+                map_finish_reason(reason)
+            };
         }
         Ok(events)
     }
@@ -211,11 +221,17 @@ impl Provider for GeminiGenerate {
             };
             let url = format!("{}{}", base_url.trim_end_matches('/'), path);
             let mut body = serde_json::json!({
-                "contents": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
-                    "role": if role == "assistant" { "model" } else { "user" },
-                    "parts": [{ "text": text }],
-                }))).collect::<Vec<_>>(),
+                "contents": gemini_contents(&req.messages),
             });
+            if !req.tools.is_empty() {
+                body["tools"] = serde_json::json!([{
+                    "functionDeclarations": req.tools.iter().map(|t| serde_json::json!({
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.parameters,
+                    })).collect::<Vec<_>>(),
+                }]);
+            }
             if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
                 body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
                     serde_json::json!(thinking_budget(effort));
@@ -243,6 +259,7 @@ impl Provider for GeminiGenerate {
                         thinking_open: false,
                         signature: None,
                         next_call: 0,
+                        called_tool: false,
                     },
                 ),
             ))
@@ -265,6 +282,7 @@ mod tests {
             thinking_open: false,
             signature: None,
             next_call: 0,
+            called_tool: false,
         }
     }
 
@@ -318,7 +336,7 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"ge
                     },
                 },
                 StreamEvent::Done {
-                    stop_reason: StopReason::Stop,
+                    stop_reason: StopReason::ToolUse,
                     usage: Some(Usage {
                         input: 5,
                         output: 10,

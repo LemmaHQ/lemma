@@ -62,6 +62,7 @@ impl AppState {
                         config.jwt_secret.clone(),
                         config.secret_key.clone(),
                         provider,
+                        None,
                     )),
                     local_auth_store: None,
                     local_secrets: None,
@@ -71,7 +72,7 @@ impl AppState {
             DatabaseBackend::Sqlite => {
                 let pool = lemma_db_sqlite::connect(config.sqlite_path()?).await?;
                 lemma_db_sqlite::migrate(&pool).await?;
-                Self::sqlite_state(pool, provider, config.jwt_secret, config.secret_key, false)
+                Self::sqlite_state(pool, provider, config.jwt_secret, config.secret_key, false, None)
             }
         }
     }
@@ -89,6 +90,7 @@ impl AppState {
             Arc::from(secrets.jwt_secret.as_str()),
             Arc::from(secrets.secret_key.as_str()),
             true,
+            Some(data_dir.join("workspaces")),
         )?;
         state.local_secrets = Some(secrets);
         Ok(state)
@@ -102,6 +104,7 @@ impl AppState {
         jwt_secret: Arc<str>,
         secret_key: Arc<str>,
         local: bool,
+        workspaces_dir: Option<std::path::PathBuf>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let auth_store: Arc<dyn lemma_auth::AuthStore> =
             Arc::new(lemma_db_sqlite::SqliteAuthStore::new(pool.clone()));
@@ -131,6 +134,7 @@ impl AppState {
                 jwt_secret,
                 secret_key,
                 provider,
+                workspaces_dir,
             )),
             local_auth_store: local.then_some(auth_store),
             local_secrets: None,

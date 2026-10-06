@@ -16,7 +16,7 @@ use lemma_proto::lemma::v1::{
     ArchiveConversationResponse, Conversation, ConversationStatus, CreateConversationResponse,
     DeleteArchivedResponse, ErrorReason, ListArchivedResponse, ListConversationsResponse,
     ListMessagesResponse, Message, MessageStatus, RenameConversationResponse,
-    RestoreConversationResponse,
+    RestoreConversationResponse, ToolCall, ToolResultMeta,
 };
 use uuid::Uuid;
 
@@ -80,6 +80,34 @@ fn message_to_proto(m: &DomainMessage) -> Message {
             .unwrap_or_default(),
         provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
         model: m.model.clone().unwrap_or_default(),
+        tool_calls: core_msg
+            .as_ref()
+            .map(|msg| {
+                msg.tool_calls()
+                    .into_iter()
+                    .map(|c| ToolCall {
+                        id: c.id.clone(),
+                        name: c.name.clone(),
+                        arguments: serde_json::to_string(&c.arguments).unwrap_or_default(),
+                        ..Default::default()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        tool_result: match core_msg.as_ref() {
+            Some(lemma_core::Message::ToolResult {
+                tool_call_id,
+                tool_name,
+                is_error,
+                ..
+            }) => MessageField::some(ToolResultMeta {
+                tool_call_id: tool_call_id.clone(),
+                name: tool_name.clone(),
+                is_error: *is_error,
+                ..Default::default()
+            }),
+            _ => MessageField::none(),
+        },
         status: match m.status.as_str() {
             "streaming" => MessageStatus::Streaming,
             "aborted" => MessageStatus::Aborted,

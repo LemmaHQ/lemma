@@ -1,6 +1,7 @@
 import { ArrowUp, Square } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 
 import { ModelSwitcher } from "./ModelSwitcher";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,8 @@ export function ChatComposer({
         autosize(textareaRef.current);
     }, [value, textareaRef]);
 
-    const canSend = value.trim().length > 0;
+    const noModel = model === null;
+    const canSend = !noModel && value.trim().length > 0;
 
     return (
         <div className="px-6 pb-6">
@@ -59,6 +61,7 @@ export function ChatComposer({
                     ref={textareaRef}
                     value={value}
                     rows={1}
+                    disabled={noModel}
                     onChange={(e) => onChange(e.target.value)}
                     onInput={(e) => autosize(e.currentTarget)}
                     onKeyDown={(e) => {
@@ -73,7 +76,11 @@ export function ChatComposer({
                             }
                         }
                     }}
-                    placeholder={t("chat.inputPlaceholder")}
+                    placeholder={
+                        noModel
+                            ? t("chat.noModelPlaceholder")
+                            : t("chat.inputPlaceholder")
+                    }
                     aria-label={t("chat.inputPlaceholder")}
                     className="max-h-40 min-h-13 resize-none border-0 bg-transparent px-4 pt-3.5 shadow-none focus-visible:ring-0"
                 />
@@ -114,8 +121,21 @@ export function ChatComposer({
                 </div>
             </div>
             <p className="mx-auto max-w-3xl pt-2 text-center text-xs text-muted-foreground">
-                {model ? model.model : t("chat.noProvider")} ·{" "}
-                {t("chat.disclaimer")}
+                {model ? (
+                    <>
+                        {model.model} · {t("chat.disclaimer")}
+                    </>
+                ) : (
+                    <>
+                        {t("chat.noModelHint")}{" "}
+                        <Link
+                            to="/settings/providers"
+                            className="text-primary underline underline-offset-2"
+                        >
+                            {t("chat.noModelAction")}
+                        </Link>
+                    </>
+                )}
             </p>
         </div>
     );

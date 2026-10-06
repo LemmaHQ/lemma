@@ -16,6 +16,7 @@ lemma-crypto.workspace = true
 lemma-proto.workspace = true
 lemma-provider.workspace = true
 lemma-session.workspace = true
+lemma-tools.workspace = true
 tokio.workspace = true
 tokio-stream.workspace = true
 uuid.workspace = true

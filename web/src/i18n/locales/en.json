@@ -33,6 +33,9 @@
         "emptyTitle": "How can I help you today?",
         "inputPlaceholder": "Message the assistant…",
         "like": "Good response",
+        "noModelAction": "Open settings",
+        "noModelHint": "Set up a provider and model in Settings first.",
+        "noModelPlaceholder": "Configure a provider and model to start chatting…",
         "noProvider": "No provider",
         "regenerate": "Regenerate",
         "selectModel": "Select model",
@@ -42,7 +45,14 @@
         "suggestion2": "Help me debug an issue",
         "suggestion3": "Draft and refine some text",
         "thinking": "Thought process",
-        "thinkingInProgress": "Thinking…"
+        "thinkingInProgress": "Thinking…",
+        "toolCall": {
+            "arguments": "Arguments",
+            "done": "Done",
+            "failed": "Failed",
+            "output": "Output",
+            "running": "Running"
+        }
     },
     "common": {
         "appName": "Lemma",

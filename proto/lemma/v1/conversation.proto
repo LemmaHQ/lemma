@@ -30,10 +30,25 @@ message Conversation {
   google.protobuf.Timestamp updated_at = 7;
 }
 
+// 工具调用块（assistant 消息内）
+message ToolCall {
+  string id = 1;
+  string name = 2;
+  // 调用参数（JSON 序列化文本）
+  string arguments = 3;
+}
+
+// 工具执行结果元数据（role 为 tool 的消息；输出文本在 content 字段）
+message ToolResultMeta {
+  string tool_call_id = 1;
+  string name = 2;
+  bool is_error = 3;
+}
+
 message Message {
   string id = 1;
   string conversation_id = 2;
-  string role = 3; // user | assistant | system
+  string role = 3; // user | assistant | system | tool
   string content = 4;
   // 来源模型（仅 assistant 有值）
   string provider_id = 5;
@@ -47,6 +62,10 @@ message Message {
   string thinking = 11;
   // 失败原因（status 为 error 时有值）
   string error = 12;
+  // 工具调用块（assistant 消息；可能多个）
+  repeated ToolCall tool_calls = 13;
+  // 工具结果元数据（仅 role 为 tool 时有值）
+  ToolResultMeta tool_result = 14;
 }
 
 message ListConversationsRequest {}

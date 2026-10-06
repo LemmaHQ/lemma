@@ -47,6 +47,26 @@ message AgentError {
   string message = 1;
 }
 
+// 新一轮 assistant 消息开始（工具循环中每轮一条）
+message AgentTurnStarted {
+  string message_id = 1;
+}
+
+message ToolCallStarted {
+  string call_id = 1;
+  string name = 2;
+  // 调用参数（JSON 序列化文本）
+  string arguments = 3;
+}
+
+message ToolCallFinished {
+  string call_id = 1;
+  string name = 2;
+  // 工具输出文本
+  string content = 3;
+  bool is_error = 4;
+}
+
 // 统一流事件
 message AgentEvent {
   oneof kind {
@@ -55,6 +75,9 @@ message AgentEvent {
     AgentDone done = 3;
     AgentAborted aborted = 4;
     AgentError error = 5;
+    AgentTurnStarted turn_started = 6;
+    ToolCallStarted tool_call_started = 7;
+    ToolCallFinished tool_call_finished = 8;
   }
 }
 

@@ -1,5 +1,6 @@
 //! Connect RPC shell exposing `lemma-agent::AgentLoop` as the AgentService.
 
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -9,17 +10,19 @@ use connectrpc::{
 };
 use futures::stream;
 use lemma_adapter::{Provider, ProviderKind};
-use lemma_agent::{AgentConfig, AgentLoop, TurnEvent};
+use lemma_agent::{AgentConfig, AgentLoop, ToolRuntime, TurnEvent};
 use lemma_auth_rpc::require_user;
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted, ErrorReason,
-    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TextDelta, ThinkingDelta,
-    TokenUsage, agent_delta, agent_event,
+    AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted,
+    AgentTurnStarted, ErrorReason, ResumeStreamResponse, SendMessageRequest, SendMessageResponse,
+    TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted, agent_delta,
+    agent_event,
 };
 use lemma_provider::{ProviderKind as DomainKind, ProviderStore};
 use lemma_session::TraceStore;
+use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
@@ -43,6 +46,9 @@ pub struct AgentRpc {
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
     provider: Arc<dyn Provider>,
+    /// Root directory of per-conversation tool workspaces; `None` disables
+    /// tool use (server deployments without a host workspace).
+    workspaces_dir: Option<PathBuf>,
 }
 
 impl AgentRpc {
@@ -53,6 +59,7 @@ impl AgentRpc {
         jwt_secret: impl Into<Arc<str>>,
         secret_key: impl Into<Arc<str>>,
         provider: Arc<dyn Provider>,
+        workspaces_dir: Option<PathBuf>,
     ) -> Self {
         Self {
             traces,
@@ -60,6 +67,7 @@ impl AgentRpc {
             jwt_secret: jwt_secret.into(),
             secret_key: secret_key.into(),
             provider,
+            workspaces_dir,
         }
     }
 }
@@ -126,6 +134,23 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
         };
 
         let agent = AgentLoop::new((self.traces)(user_id), self.provider.clone());
+        let agent = match &self.workspaces_dir {
+            Some(dir) => {
+                let workspace = dir.join(conversation_id.to_string());
+                std::fs::create_dir_all(&workspace).map_err(|e| {
+                    ConnectError::internal(format!("create workspace: {e}"))
+                })?;
+                let mut registry = ToolRegistry::new();
+                registry.register(Arc::new(ReadFileTool));
+                registry.register(Arc::new(WriteFileTool));
+                registry.register(Arc::new(BashTool));
+                agent.with_tools(ToolRuntime::new(
+                    registry,
+                    Arc::new(LocalExecEnv::new(workspace)),
+                ))
+            }
+            None => agent,
+        };
 
         let user_msg = Message::User {
             content: vec![ContentBlock::Text(TextContent {
@@ -160,6 +185,35 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
                 TurnEvent::AssistantDone { usage, .. } => {
                     let _ = tx_clone.try_send(Ok(SendMessageResponse {
                         event: MessageField::some(done_event(usage)),
+                        ..Default::default()
+                    }));
+                }
+                TurnEvent::AssistantStarted { id } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(turn_started_event(id)),
+                        ..Default::default()
+                    }));
+                }
+                TurnEvent::ToolStarted {
+                    id,
+                    name,
+                    arguments,
+                } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(tool_call_started_event(&id, &name, &arguments)),
+                        ..Default::default()
+                    }));
+                }
+                TurnEvent::ToolFinished {
+                    id,
+                    name,
+                    content,
+                    is_error,
+                } => {
+                    let _ = tx_clone.try_send(Ok(SendMessageResponse {
+                        event: MessageField::some(tool_call_finished_event(
+                            &id, &name, &content, is_error,
+                        )),
                         ..Default::default()
                     }));
                 }
@@ -268,6 +322,47 @@ fn error_event(message: &str) -> AgentEvent {
             message: message.to_string(),
             ..Default::default()
         }))),
+        ..Default::default()
+    }
+}
+
+fn turn_started_event(id: Uuid) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::TurnStarted(Box::new(
+            AgentTurnStarted {
+                message_id: id.to_string(),
+                ..Default::default()
+            },
+        ))),
+        ..Default::default()
+    }
+}
+
+fn tool_call_started_event(call_id: &str, name: &str, arguments: &str) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::ToolCallStarted(Box::new(
+            ToolCallStarted {
+                call_id: call_id.to_string(),
+                name: name.to_string(),
+                arguments: arguments.to_string(),
+                ..Default::default()
+            },
+        ))),
+        ..Default::default()
+    }
+}
+
+fn tool_call_finished_event(call_id: &str, name: &str, content: &str, is_error: bool) -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::ToolCallFinished(Box::new(
+            ToolCallFinished {
+                call_id: call_id.to_string(),
+                name: name.to_string(),
+                content: content.to_string(),
+                is_error,
+                ..Default::default()
+            },
+        ))),
         ..Default::default()
     }
 }

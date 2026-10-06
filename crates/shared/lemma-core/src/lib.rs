@@ -8,9 +8,11 @@
 mod content;
 mod event;
 mod message;
+mod tool;
 mod usage;
 
 pub use content::{ContentBlock, ImageContent, TextContent, ThinkingContent, ToolCall};
 pub use event::StreamEvent;
 pub use message::{Message, StopReason};
+pub use tool::ToolSpec;
 pub use usage::Usage;

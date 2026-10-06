@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Copy } from "lucide-react";
+import { Check, ChevronRight, Copy, Loader2, Wrench } from "lucide-react";
 import {
     type ComponentProps,
     isValidElement,
@@ -16,6 +16,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import type { ToolCallItem } from "@/features/agent/store";
 
 const rehypePlugins = [[rehypeHighlight, { detect: false }]] as ComponentProps<
     typeof ReactMarkdown
@@ -139,6 +140,65 @@ export function ThinkingBlock({ thinking, streaming }: ThinkingBlockProps) {
             <CollapsibleContent>
                 <div className="border-t border-border px-3 py-2 text-xs whitespace-pre-wrap text-muted-foreground">
                     {thinking}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
+
+interface ToolCallCardProps {
+    call: ToolCallItem;
+}
+
+export function ToolCallCard({ call }: ToolCallCardProps) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(call.state === "running");
+
+    return (
+        <Collapsible
+            open={open}
+            onOpenChange={setOpen}
+            className="overflow-hidden rounded-md border border-border"
+        >
+            <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
+                <ChevronRight className="size-3 shrink-0 transition-transform group-data-[state=open]:rotate-90" />
+                <Wrench className="size-3 shrink-0" />
+                <span className="truncate font-mono">{call.name}</span>
+                {call.state === "running" ? (
+                    <span className="ml-auto flex shrink-0 items-center gap-1">
+                        <Loader2 className="size-3 animate-spin" />
+                        {t("chat.toolCall.running")}
+                    </span>
+                ) : call.isError ? (
+                    <span className="ml-auto shrink-0 text-destructive">
+                        {t("chat.toolCall.failed")}
+                    </span>
+                ) : (
+                    <span className="ml-auto shrink-0">
+                        {t("chat.toolCall.done")}
+                    </span>
+                )}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="space-y-2 border-t border-border px-3 py-2">
+                    <div>
+                        <p className="mb-1 text-xs font-medium text-muted-foreground">
+                            {t("chat.toolCall.arguments")}
+                        </p>
+                        <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-eyebrow whitespace-pre-wrap text-code-foreground">
+                            {call.arguments}
+                        </pre>
+                    </div>
+                    {call.state === "done" && (
+                        <div>
+                            <p className="mb-1 text-xs font-medium text-muted-foreground">
+                                {t("chat.toolCall.output")}
+                            </p>
+                            <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-eyebrow whitespace-pre-wrap text-code-foreground">
+                                {call.output}
+                            </pre>
+                        </div>
+                    )}
                 </div>
             </CollapsibleContent>
         </Collapsible>

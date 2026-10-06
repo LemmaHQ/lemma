@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::error::ProviderError;
 use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, role_text, thinking_budget};
+use crate::request::{ChatRequest, anthropic_messages, thinking_budget};
 use crate::sse::{SseParser, events_from_sse};
 use crate::transport::{HttpTransport, ReqwestTransport};
 
@@ -295,12 +295,22 @@ impl Provider for AnthropicMessages {
             let mut body = serde_json::json!({
                 "model": req.model,
                 "max_tokens": max_tokens,
-                "messages": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
-                    "role": role,
-                    "content": text,
-                }))).collect::<Vec<_>>(),
+                "messages": anthropic_messages(&req.messages),
                 "stream": true,
             });
+            if !req.tools.is_empty() {
+                body["tools"] = req
+                    .tools
+                    .iter()
+                    .map(|t| {
+                        serde_json::json!({
+                            "name": t.name,
+                            "description": t.description,
+                            "input_schema": t.parameters,
+                        })
+                    })
+                    .collect();
+            }
             if let Some(budget) = budget {
                 body["thinking"] = serde_json::json!({
                     "type": "enabled",

@@ -1637,6 +1637,7 @@ dependencies = [
  "lemma-adapter",
  "lemma-core",
  "lemma-session",
+ "lemma-tools",
  "serde",
  "serde_json",
  "tokio",
@@ -1659,6 +1660,7 @@ dependencies = [
  "lemma-proto",
  "lemma-provider",
  "lemma-session",
+ "lemma-tools",
  "tokio",
  "tokio-stream",
  "uuid",
@@ -1843,6 +1845,7 @@ name = "lemma-tools"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "lemma-core",
  "serde",
  "serde_json",
  "tokio",

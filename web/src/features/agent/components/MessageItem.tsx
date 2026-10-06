@@ -2,7 +2,7 @@ import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { MessageContent, ThinkingBlock } from "./MessageContent";
+import { MessageContent, ThinkingBlock, ToolCallCard } from "./MessageContent";
 import { Button } from "@/components/ui/button";
 import type { AgentItem } from "@/features/agent/store";
 
@@ -23,6 +23,10 @@ export function MessageItem({
     const [copied, setCopied] = useState(false);
 
     const streaming = message.status === "streaming";
+
+    if (message.role === "tool") {
+        return null;
+    }
 
     if (message.role === "user") {
         return (
@@ -55,6 +59,13 @@ export function MessageItem({
                     />
                 )}
                 <MessageContent content={message.content} />
+                {message.toolCalls.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                        {message.toolCalls.map((call) => (
+                            <ToolCallCard key={call.id} call={call} />
+                        ))}
+                    </div>
+                )}
                 {streaming && (
                     <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
                 )}

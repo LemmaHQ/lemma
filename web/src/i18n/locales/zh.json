@@ -33,6 +33,9 @@
         "emptyTitle": "今天想聊点什么？",
         "inputPlaceholder": "给助手发消息…",
         "like": "回答不错",
+        "noModelAction": "前往设置",
+        "noModelHint": "先在设置中配置供应商与模型。",
+        "noModelPlaceholder": "配置供应商与模型后开始对话…",
         "noProvider": "暂无供应商",
         "regenerate": "重新生成",
         "selectModel": "选择模型",
@@ -42,7 +45,14 @@
         "suggestion2": "帮我排查一个问题",
         "suggestion3": "起草并润色一段文字",
         "thinking": "思考过程",
-        "thinkingInProgress": "正在思考…"
+        "thinkingInProgress": "正在思考…",
+        "toolCall": {
+            "arguments": "参数",
+            "done": "已完成",
+            "failed": "失败",
+            "output": "输出",
+            "running": "运行中"
+        }
     },
     "common": {
         "appName": "Lemma",

@@ -62,7 +62,11 @@ export function ChatPage() {
     }, []);
 
     const sendText = async (text: string) => {
-        if (!model || chat.streaming) {
+        if (chat.streaming) {
+            return;
+        }
+        if (!model) {
+            navigate("/settings/providers");
             return;
         }
         try {

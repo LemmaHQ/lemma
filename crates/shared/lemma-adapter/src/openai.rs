@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::error::ProviderError;
 use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, role_text};
+use crate::request::{ChatRequest, openai_messages};
 use crate::sse::{SseParser, events_from_sse};
 use crate::transport::{HttpTransport, ReqwestTransport};
 
@@ -259,13 +259,26 @@ impl Provider for OpenAiCompatible {
             let url = format!("{}{}", base_url.trim_end_matches('/'), path);
             let mut body = serde_json::json!({
                 "model": req.model,
-                "messages": req.messages.iter().filter_map(|m| role_text(m).map(|(role, text)| serde_json::json!({
-                    "role": role,
-                    "content": text,
-                }))).collect::<Vec<_>>(),
+                "messages": openai_messages(&req.messages),
                 "stream": true,
                 "stream_options": { "include_usage": true },
             });
+            if !req.tools.is_empty() {
+                body["tools"] = req
+                    .tools
+                    .iter()
+                    .map(|t| {
+                        serde_json::json!({
+                            "type": "function",
+                            "function": {
+                                "name": t.name,
+                                "description": t.description,
+                                "parameters": t.parameters,
+                            },
+                        })
+                    })
+                    .collect();
+            }
             if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
                 body["reasoning_effort"] = serde_json::Value::String(effort.to_string());
             }
