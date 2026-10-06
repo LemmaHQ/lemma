@@ -56,7 +56,7 @@ export function ProviderDetail({
     onDelete,
 }: ProviderDetailProps) {
     const { t } = useTranslation();
-    const [apiKey, setApiKey] = useState("");
+    const [apiKey, setApiKey] = useState(provider.apiKey);
     const [showKey, setShowKey] = useState(false);
     const [name, setName] = useState(provider.name);
     const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
@@ -65,7 +65,7 @@ export function ProviderDetail({
     const [savingUrl, setSavingUrl] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const apiKeyDirty = apiKey.trim().length > 0;
+    const apiKeyDirty = apiKey.trim() !== provider.apiKey.trim();
     const nameDirty = name.trim() !== provider.name && name.trim().length > 0;
     const baseUrlDirty =
         baseUrl.trim() !== provider.baseUrl && baseUrl.trim().length > 0;
@@ -75,8 +75,8 @@ export function ProviderDetail({
         setError(null);
         try {
             await onSaveApiKey(apiKey.trim());
-            setApiKey("");
         } catch (e) {
+            setApiKey(provider.apiKey);
             setError(errorText(e, t));
         } finally {
             setSavingKey(false);
@@ -182,18 +182,15 @@ export function ProviderDetail({
 
                 <FieldRow
                     label={t("providers.apiKey")}
-                    description={t("providers.apiKeyKeepHint")}
+                    description={t("providers.apiKeyDesc")}
                 >
                     <div className="relative flex-1">
                         <Input
                             type={showKey ? "text" : "password"}
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={
-                                provider.apiKey ||
-                                t("providers.apiKeyPlaceholder")
-                            }
-                            className="pr-9"
+                            placeholder={t("providers.apiKeyPlaceholder")}
+                            className="pr-9 font-mono text-xs"
                         />
                         <button
                             type="button"

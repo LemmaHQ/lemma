@@ -96,7 +96,7 @@
     "providers": {
         "addModel": "Add model",
         "apiKey": "API key",
-        "apiKeyKeepHint": "Leave blank to keep the current key.",
+        "apiKeyDesc": "Authentication key for requests to the provider.",
         "apiKeyPlaceholder": "sk-…",
         "baseUrl": "Base URL",
         "baseUrlDesc": "API endpoint, including the version segment.",

@@ -3,8 +3,6 @@
 //!
 //! Secrets are encrypted with AES-256-GCM under a key derived from the
 //! configured master secret and stored base64-encoded in the database.
-//! They never leave the backend in plaintext; responses carry the masked
-//! form produced by [`mask`].
 
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aead::{Aead, Generate, Key, KeyInit, Nonce};
@@ -71,19 +69,4 @@ pub fn open(key: &Key<Aes256Gcm>, sealed: &str) -> Result<String, CryptoError> {
         .decrypt(&nonce, ct)
         .map_err(|_| CryptoError::Decrypt)?;
     String::from_utf8(pt).map_err(|_| CryptoError::Encoding)
-}
-
-/// Renders a secret for display: the first 3 and last 4 characters around
-/// `****`, or just `****` when the secret is 8 characters or fewer.
-///
-/// Display-only. A masked value must never be passed back into [`seal`]:
-/// it would be sealed as-is and silently destroy the real secret.
-pub fn mask(plain: &str) -> String {
-    let len = plain.chars().count();
-    if len <= 8 {
-        return "****".to_string();
-    }
-    let head: String = plain.chars().take(3).collect();
-    let tail: String = plain.chars().skip(len - 4).collect();
-    format!("{head}****{tail}")
 }

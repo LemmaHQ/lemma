@@ -96,7 +96,7 @@
     "providers": {
         "addModel": "添加模型",
         "apiKey": "API key",
-        "apiKeyKeepHint": "留空表示沿用当前密钥。",
+        "apiKeyDesc": "用于向服务商发起请求的认证密钥。",
         "apiKeyPlaceholder": "sk-…",
         "baseUrl": "Base URL",
         "baseUrlDesc": "API 接口地址（含版本段）。",

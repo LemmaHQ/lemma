@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
-use lemma_crypto::{derive_key, mask, open, seal};
+use lemma_crypto::{derive_key, open, seal};
 use uuid::Uuid;
 
 use crate::error::ProviderError;
@@ -125,10 +125,7 @@ impl ProviderService {
     }
 
     fn view(&self, r: &ProviderRecord) -> ProviderView {
-        let api_key = self
-            .open_key(&r.api_key)
-            .map(|k| if k.is_empty() { String::new() } else { mask(&k) })
-            .unwrap_or_else(|_| "****".to_string());
+        let api_key = self.open_key(&r.api_key).unwrap_or_default();
         ProviderView {
             id: r.id,
             kind: ProviderKind::from_str(&r.kind).unwrap_or(ProviderKind::OpenAiCompatible),
@@ -197,8 +194,8 @@ impl ProviderService {
         input: UpdateInput,
     ) -> Result<ProviderView, ProviderError> {
         let api_key = match input.api_key {
-            Some(k) if !k.is_empty() => Some(self.seal_key(&k)?),
-            _ => None,
+            Some(k) => Some(self.seal_key(&k)?),
+            None => None,
         };
         let patch = ProviderPatch {
             name: input.name.map(|s| s.trim().to_string()),
