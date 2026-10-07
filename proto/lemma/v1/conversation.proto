@@ -4,14 +4,14 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// 会话状态（仅客户端可见状态）
+// Conversation lifecycle status visible to clients.
 enum ConversationStatus {
   CONVERSATION_STATUS_UNSPECIFIED = 0;
   CONVERSATION_STATUS_ACTIVE = 1;
   CONVERSATION_STATUS_ARCHIVED = 2;
 }
 
-// 消息状态
+// Message lifecycle status.
 enum MessageStatus {
   MESSAGE_STATUS_UNSPECIFIED = 0;
   MESSAGE_STATUS_STREAMING = 1;
@@ -24,21 +24,21 @@ message Conversation {
   string id = 1;
   string title = 2;
   ConversationStatus status = 3;
-  // 归档时间（仅 archived 时有值）
+  // Timestamp recorded when the conversation transitions to archived status.
   google.protobuf.Timestamp archived_at = 4;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
 }
 
-// 工具调用块（assistant 消息内）
+// Tool call block within an assistant message.
 message ToolCall {
   string id = 1;
   string name = 2;
-  // 调用参数（JSON 序列化文本）
+  // Invocation arguments formatted as serialized JSON text.
   string arguments = 3;
 }
 
-// 工具执行结果元数据（role 为 tool 的消息；输出文本在 content 字段）
+// Tool execution metadata for tool-role messages; payload text resides in content.
 message ToolResultMeta {
   string tool_call_id = 1;
   string name = 2;
@@ -50,21 +50,21 @@ message Message {
   string conversation_id = 2;
   string role = 3; // user | assistant | system | tool
   string content = 4;
-  // 来源模型（仅 assistant 有值）
+  // Originating provider and model for assistant messages.
   string provider_id = 5;
   string model = 6;
   MessageStatus status = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
-  // 会话树父节点；根消息为空
+  // Parent node in the message tree; empty for root messages.
   string parent_id = 10;
-  // 思维链全文（多个 thinking block 拼接）；仅在模型产出推理内容时赋值
+  // Full chain-of-thought text concatenated from thinking blocks when produced by the model.
   string thinking = 11;
-  // 失败原因（status 为 error 时有值）
+  // Error description populated when status is set to error.
   string error = 12;
-  // 工具调用块（assistant 消息；可能多个）
+  // Tool call requests issued within an assistant message.
   repeated ToolCall tool_calls = 13;
-  // 工具结果元数据（仅 role 为 tool 时有值）
+  // Tool execution result metadata present on tool-role messages.
   ToolResultMeta tool_result = 14;
 }
 
@@ -91,14 +91,14 @@ message RenameConversationResponse {
 
 message ListMessagesRequest {
   string conversation_id = 1;
-  // (created_at, id) keyset 分页，不传则从头
+  // Keyset pagination anchor using (created_at, id); omitted to start from the beginning.
   string before_id = 2;
   int32 limit = 3;
 }
 
 message ListMessagesResponse {
   repeated Message messages = 1;
-  // 是否还有更早的历史
+  // Indicates presence of earlier messages in the history timeline.
   bool has_more = 2;
 }
 
@@ -135,12 +135,12 @@ service ConversationService {
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
   rpc RenameConversation(RenameConversationRequest) returns (RenameConversationResponse);
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
-  // 归档：置状态，消息原地保留
+  // Archives an active conversation in place, preserving messages intact.
   rpc ArchiveConversation(ArchiveConversationRequest) returns (ArchiveConversationResponse);
-  // 解档：回到活跃列表
+  // Restores an archived conversation back to active status.
   rpc RestoreConversation(RestoreConversationRequest) returns (RestoreConversationResponse);
-  // 归档元数据全量
+  // Lists all archived conversations.
   rpc ListArchived(ListArchivedRequest) returns (ListArchivedResponse);
-  // 永久物理擦除归档会话记录
+  // Permanently purges an archived conversation and its records.
   rpc DeleteArchived(DeleteArchivedRequest) returns (DeleteArchivedResponse);
 }

@@ -4,7 +4,7 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// 供应商协议类型
+// Provider protocol kind.
 enum ProviderKind {
   PROVIDER_KIND_UNSPECIFIED = 0;
   PROVIDER_KIND_OPENAI = 1; // OpenAI Compatible
@@ -12,24 +12,24 @@ enum ProviderKind {
   PROVIDER_KIND_GEMINI = 3; // Gemini Content Generation API
 }
 
-// 供应商配置（每用户独立私有）
+// Provider configuration scoped per user account.
 message Provider {
   string id = 1;
   ProviderKind kind = 2;
   string name = 3;
-  string base_url = 4; // 含版本段，如 https://api.openai.com/v1
-  string api_key = 5; // 返回时脱敏
+  string base_url = 4; // Base URL including API version path, e.g. https://api.openai.com/v1
+  string api_key = 5; // Masked when returned in read responses
   repeated string models = 6;
   bool enabled = 7;
-  string api_path = 8; // 留空按 kind 默认
-  string models_path = 9; // 留空为 /models
+  string api_path = 8; // Empty string uses provider kind default
+  string models_path = 9; // Empty string defaults to /models
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
-  // 用户可见的机器标识，仅限 ASCII，创建后值保持固定
+  // Machine identifier visible to users; restricted to ASCII, immutable after creation.
   string identifier = 12;
 }
 
-// 显式表达列表更新或置空状态
+// Explicit wrapper for list update or clearing operations.
 message ProviderModelsPatch {
   repeated string models = 1;
 }
@@ -53,7 +53,7 @@ message CreateProviderRequest {
 
 message UpdateProviderRequest {
   string id = 1;
-  // 仅更新显式提供的字段，保留其余已有配置
+  // Updates provided fields while preserving existing configuration.
   optional string name = 2;
   optional string base_url = 3;
   optional string api_key = 4;
@@ -70,7 +70,7 @@ message DeleteProviderRequest {
 message DeleteProviderResponse {}
 
 message FetchModelsRequest {
-  // id 与 (kind/base_url/api_key) 二选一
+  // Accepts existing provider id or inline configuration credentials
   string id = 1;
   ProviderKind kind = 2;
   string base_url = 3;
@@ -95,6 +95,6 @@ service ProviderService {
   rpc CreateProvider(CreateProviderRequest) returns (CreateProviderResponse);
   rpc UpdateProvider(UpdateProviderRequest) returns (UpdateProviderResponse);
   rpc DeleteProvider(DeleteProviderRequest) returns (DeleteProviderResponse);
-  // 拉取供应商远程模型列表
+  // Fetches remote model list from the provider endpoint.
   rpc FetchModels(FetchModelsRequest) returns (FetchModelsResponse);
 }

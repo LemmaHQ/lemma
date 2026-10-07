@@ -4,7 +4,7 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// 用户角色：owner 为首个注册用户，当前与 normal 权益相同
+// User role: owner is assigned to the initial registered user, sharing privileges with normal users.
 enum Role {
   ROLE_UNSPECIFIED = 0;
   ROLE_OWNER = 1;
@@ -19,7 +19,7 @@ message User {
   google.protobuf.Timestamp created_at = 5;
 }
 
-// 令牌对：access 短寿命，refresh 存库、可吊销
+// Token pair: short-lived access token and database-backed revokable refresh token.
 message AuthTokens {
   string access_token = 1;
   google.protobuf.Timestamp access_token_expires_at = 2;
@@ -38,7 +38,7 @@ message SignUpResponse {
 }
 
 message LoginRequest {
-  // username 与 email 二选一
+  // Accepts either username or email as the login identifier.
   string username = 1;
   string email = 2;
   string password = 3;
@@ -70,12 +70,12 @@ message MeResponse {
 }
 
 service AuthService {
-  // 首个注册用户成为 owner
+  // Registers a new user account, assigning owner role to the initial registration.
   rpc SignUp(SignUpRequest) returns (SignUpResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
-  // refresh 轮换：旧 token 立即作废
+  // Token rotation: revokes the previous refresh token and issues a new pair.
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
-  // 吊销当前 refresh token
+  // Revokes the active refresh token session.
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc Me(MeRequest) returns (MeResponse);
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package lemma.v1;
 
-// Agent 执行：发消息（服务端流）、中断、断线续传
+// Agent execution: send message (server stream), abort, and stream resumption.
 service AgentService {
   rpc SendMessage(SendMessageRequest) returns (stream SendMessageResponse);
   rpc AbortMessage(AbortMessageRequest) returns (AbortMessageResponse);
@@ -17,7 +17,7 @@ message TokenUsage {
 
 message AgentStarted {
   string message_id = 1;
-  // 回显客户端生成 ID，关联乐观渲染与重发去重
+  // Echoes client-generated ID for optimistic rendering and deduplication.
   string client_msg_id = 2;
 }
 
@@ -29,7 +29,7 @@ message ThinkingDelta {
   string content = 1;
 }
 
-// 结构化增量：一次推送一个 part，客户端按 part 类型分别累积
+// Structured stream delta: yields one part per event for client-side accumulation by part type.
 message AgentDelta {
   oneof part {
     TextDelta text = 1;
@@ -47,7 +47,7 @@ message AgentError {
   string message = 1;
 }
 
-// 新一轮 assistant 消息开始（工具循环中每轮一条）
+// Marks the start of an assistant turn, emitted per iteration in tool execution loops.
 message AgentTurnStarted {
   string message_id = 1;
 }
@@ -55,19 +55,19 @@ message AgentTurnStarted {
 message ToolCallStarted {
   string call_id = 1;
   string name = 2;
-  // 调用参数（JSON 序列化文本）
+  // Invocation arguments formatted as serialized JSON text.
   string arguments = 3;
 }
 
 message ToolCallFinished {
   string call_id = 1;
   string name = 2;
-  // 工具输出文本
+  // Tool execution output text.
   string content = 3;
   bool is_error = 4;
 }
 
-// 统一流事件
+// Unified stream event.
 message AgentEvent {
   oneof kind {
     AgentStarted started = 1;
@@ -84,11 +84,11 @@ message AgentEvent {
 message SendMessageRequest {
   string conversation_id = 1;
   string content = 2;
-  // 本次回复使用的供应商与模型（模型与会话解耦，随时可换）
+  // Provider and model used for this turn, decoupled from conversation state.
   string provider_id = 3;
   string model = 4;
   string client_msg_id = 5;
-  // 推理强度；空串表示沿用会话上次使用的设置
+  // Reasoning effort level; empty string retains the conversation's active configuration.
   string thinking_effort = 6;
 }
 
@@ -102,10 +102,10 @@ message AbortMessageRequest {
 
 message AbortMessageResponse {}
 
-// 续传：服务端按 offset 重放缺失内容，流仍在进行则继续实时推送
+// Stream resumption: the server replays past content from offset and continues live streaming.
 message ResumeStreamRequest {
   string message_id = 1;
-  // 已收到的字符数
+  // Character count already received by the client.
   int64 offset = 2;
 }
 
