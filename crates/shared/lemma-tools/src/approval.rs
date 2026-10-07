@@ -1,28 +1,28 @@
-/// Capability tier of a tool, determining its default approval behavior.
+/// Capability tier of a tool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToolTier {
-    /// Read-only inspection (file read, directory listing).
+    /// Read-only inspection.
     Read,
-    /// State-mutating operations (file write, deletion).
+    /// State-mutating operation.
     Write,
-    /// Arbitrary command execution.
+    /// Command execution.
     Exec,
 }
 
-/// The decision made by an approval policy for a specific tool call.
+/// Decision made by an approval policy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApprovalDecision {
-    /// Proceed with execution automatically.
+    /// Proceed with execution.
     Allow,
-    /// Prompt the operator for explicit confirmation before running.
+    /// Prompt operator for confirmation.
     Prompt(String),
-    /// Silently reject the tool execution.
+    /// Reject the execution.
     Deny(String),
 }
 
-/// Safety policy governing tool execution permissions.
+/// Safety policy governing tool permissions.
 pub trait ApprovalPolicy: Send + Sync {
-    /// Evaluates an execution attempt against the configured security posture.
+    /// Evaluates an execution attempt against safety policy.
     fn evaluate(
         &self,
         tool_name: &str,

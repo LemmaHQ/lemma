@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::tool::{Tool, ToolSpec};
 
-/// Registry storing enabled tools available to the agent.
+/// Registry storing enabled tools.
 #[derive(Default, Clone)]
 pub struct ToolRegistry {
     tools: HashMap<String, Arc<dyn Tool>>,
@@ -17,18 +17,18 @@ impl ToolRegistry {
         }
     }
 
-    /// Registers a tool into the registry.
+    /// Registers a tool instance.
     pub fn register(&mut self, tool: Arc<dyn Tool>) {
         let name = tool.spec().name;
         self.tools.insert(name, tool);
     }
 
-    /// Looks up a registered tool by its wire name.
+    /// Looks up tool by wire name.
     pub fn get(&self, name: &str) -> Option<Arc<dyn Tool>> {
         self.tools.get(name).cloned()
     }
 
-    /// Returns specifications of all currently registered tools.
+    /// Returns specifications of all registered tools.
     pub fn specs(&self) -> Vec<ToolSpec> {
         self.tools.values().map(|t| t.spec()).collect()
     }

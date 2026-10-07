@@ -1,19 +1,15 @@
 use std::path::{Component, Path, PathBuf};
 
-use crate::env::{BoxEnvFuture, ExecCommandResult, ExecEnv, FileMeta};
+use super::{BoxEnvFuture, ExecCommandResult, ExecEnv, FileMeta};
 use crate::error::ToolError;
 
-/// Direct host-OS execution environment rooted at a workspace directory.
-///
-/// All file operations are confined to the workspace root: absolute paths
-/// and paths escaping the root via `..` are rejected before touching the
-/// filesystem.
+/// Host execution environment rooted at a workspace directory.
 pub struct LocalExecEnv {
     root: PathBuf,
 }
 
 impl LocalExecEnv {
-    /// Creates an environment confined to `root`.
+    /// Creates an environment confined to root path.
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }

@@ -3,13 +3,13 @@ use std::fmt;
 /// Errors produced during tool discovery, argument validation, and execution.
 #[derive(Debug)]
 pub enum ToolError {
-    /// Failure during tool argument validation against its parameter schema.
+    /// Failure during tool argument validation.
     Validation(String),
-    /// Execution denied by safety approval gate.
+    /// Execution denied by approval policy.
     PermissionDenied(String),
-    /// Failure encountered within the execution environment (e.g. I/O, process exit).
+    /// Failure encountered within the execution environment.
     Execution(String),
-    /// Tool not found in the registry.
+    /// Tool not found in registry.
     NotFound(String),
 }
 
@@ -25,3 +25,9 @@ impl fmt::Display for ToolError {
 }
 
 impl std::error::Error for ToolError {}
+
+impl From<std::io::Error> for ToolError {
+    fn from(error: std::io::Error) -> Self {
+        Self::Execution(error.to_string())
+    }
+}
