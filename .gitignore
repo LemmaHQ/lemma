@@ -4,7 +4,7 @@ target/
 # Node JS
 node_modules/
 
-# 日志
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -13,20 +13,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Web（Vite）
+# Web (Vite)
 dist
 dist-ssr
 *.local
-# 生成代码与 Token
+# Generated code and design tokens
 web/src/gen
 web/src/styles/tokens.css
 
-# Desktop（Electron Forge）
+# Desktop (Electron Forge)
 desktop/out/
 desktop/.vite/
 desktop/web-dist/
 
-# 环境变量与密钥
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
@@ -48,17 +48,17 @@ desktop/web-dist/
 .claude/
 .codex/
 
-# 系统
+# Operating system files
 .DS_Store
 Thumbs.db
 
-# 数据库
+# Database
 /data/
 
-# 临时文件
+# Temporary files
 /tmp/
 
-# 覆盖率报告
+# Coverage reports
 lcov.info
 web/coverage/
 web/junit.xml
