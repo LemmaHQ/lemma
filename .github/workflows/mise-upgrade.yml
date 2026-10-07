@@ -25,12 +25,12 @@ jobs:
         run: rustup component add rustfmt clippy llvm-tools-preview
 
       - name: Install cargo-binstall
-        uses: jdx/mise-action@v4
+        uses: jdx/mise-action@v5
         with:
           install_args: cargo:cargo-binstall
 
       - name: Install remaining tools
-        uses: jdx/mise-action@v4
+        uses: jdx/mise-action@v5
         with:
           install_args: node just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest
 
