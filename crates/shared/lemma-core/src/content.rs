@@ -51,14 +51,14 @@ pub struct ToolCall {
 pub struct ImageContent {
     /// MIME type, e.g. `image/png`.
     pub mime_type: String,
-    /// Reference to the content-addressed blob store; raw bytes are never
-    /// embedded in the trace.
+    /// Reference to the content-addressed blob store; raw bytes remain
+    /// separated from the trace.
     pub blob_ref: String,
 }
 
 impl ContentBlock {
-    /// The visible text of a text block; other block kinds carry no
-    /// user-facing prose.
+    /// The visible text of a text block, returning `None` for structured
+    /// content kinds.
     pub fn plain_text(&self) -> Option<&str> {
         match self {
             Self::Text(t) => Some(&t.text),

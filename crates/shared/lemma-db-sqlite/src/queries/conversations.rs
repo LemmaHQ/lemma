@@ -101,8 +101,8 @@ where
     .await
 }
 
-/// Archives an active conversation without touching its messages.
-/// Returns `None` unless the conversation is currently active.
+/// Archives an active conversation while preserving its messages intact.
+/// Returns `Some` exclusively when the conversation is active.
 pub async fn archive<'e, E>(
     executor: E,
     id: Uuid,
@@ -131,7 +131,7 @@ where
 }
 
 /// Restores an archived conversation to active, clearing the archive
-/// metadata. Returns `None` unless the conversation is currently
+/// metadata. Returns `Some` exclusively when the conversation is currently
 /// archived.
 pub async fn restore<'e, E>(
     executor: E,
@@ -157,8 +157,8 @@ where
     .await
 }
 
-/// Deletes an archived conversation. Active conversations are not
-/// deletable through this path.
+/// Deletes an archived conversation. Deletion is restricted exclusively
+/// to archived conversations.
 pub async fn delete_archived<'e, E>(executor: E, id: Uuid, user_id: Uuid) -> sqlx::Result<bool>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,

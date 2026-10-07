@@ -36,7 +36,7 @@ where
 }
 
 /// Inserts the rotation successor of a consumed token, inheriting its
-/// owner. Returns `None` when the consumed token does not exist.
+/// owner. Returns `Some` exclusively when the consumed token exists.
 pub async fn insert_successor<'e, E>(
     executor: E,
     id: Uuid,

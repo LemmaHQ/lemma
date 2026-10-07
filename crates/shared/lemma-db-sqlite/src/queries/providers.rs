@@ -67,7 +67,7 @@ where
 }
 
 /// Applies a patch to a provider owned by the given user, returning the
-/// updated row or `None` when it does not exist.
+/// updated row or `None` for missing records.
 pub async fn update<'e, E>(
     executor: E,
     id: Uuid,

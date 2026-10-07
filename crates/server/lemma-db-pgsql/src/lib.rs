@@ -1,8 +1,8 @@
 //! PostgreSQL storage backend: connection pool, migrations, row entities,
 //! and all SQL for the shared and server-only domains.
 //!
-//! Other crates consume the public query modules and row types only; no SQL
-//! lives outside this crate.
+//! Other crates consume the public query modules and row types exclusively; all SQL
+//! queries reside strictly within this crate.
 
 pub mod entity;
 pub mod queries;

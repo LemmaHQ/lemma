@@ -34,9 +34,9 @@ assets/brand/
 | File | Content | Intended Surfaces |
 | :--- | :--- | :--- |
 | `lockup_workspace_dark/light.svg` | `[L·]` badge + `LEMMA` + subtitle `AI WORKSPACE` centered on the vertical axis (4.5px tracking) | Hero sections, About pages, splash screens — anywhere product recognition must be established |
-| `lockup_pure_dark/light.svg` | `[L·]` badge + `LEMMA` on a single line, sharing one absolute horizontal centerline (y=55), no subtitle | Compact placements such as sidebar headers and window title bars |
+| `lockup_pure_dark/light.svg` | `[L·]` badge + `LEMMA` on a single line, sharing one absolute horizontal centerline (y=55), badge and wordmark exclusively | Compact placements such as sidebar headers and window title bars |
 
-### Q.E.D. Proof Seals (semantic stamps, not brand identifiers)
+### Q.E.D. Proof Seals (semantic stamps designating proof closure)
 
 | File | Content |
 | :--- | :--- |
@@ -55,8 +55,8 @@ assets/brand/
 ## Usage Conventions
 
 - Always reference the `svg/` masters for vector contexts; use PNGs only for raster-only pipelines (e.g. `.ico` generation, mipmap intermediates).
-- Platform-local copies (e.g. `web/public/favicon.svg`, `desktop/assets/icon.*`, mipmap PNGs) must be derived from these masters; never hand-edit copies, and refresh them whenever a master changes.
-- Dark and light variants are swapped in pairs on theme change; do not recolor a single variant by inversion.
+- Platform-local copies (e.g. `web/public/favicon.svg`, `desktop/assets/icon.*`, mipmap PNGs) must be derived from these masters: generate copies exclusively from masters, refreshing them upon any master update.
+- Dark and light variants are swapped in pairs on theme change: deploy paired theme-specific assets directly.
 
 ## Regeneration
 
@@ -67,13 +67,13 @@ python assets/brand/generate.py
 ```
 
 Requirements: TeX Live (`lualatex`, with Latin Modern Roman / Latin Modern Math fonts) and `dvisvgm`.
-Intermediate artifacts (`.tex` / `.dvi` / `_raw.svg`) are written to the system temp directory and never touch the repository.
+Intermediate artifacts (`.tex` / `.dvi` / `_raw.svg`) are written to the system temp directory and stay strictly external to the repository tree.
 
 The PNG masters are 2x rasterizations of the corresponding SVGs (512 viewBox → 1024px, transparent background).
 After any SVG change, re-render at 2x with any rasterizer, e.g. `rsvg-convert -z 2 -b none in.svg -o out.png` or the Inkscape equivalent.
 
-## Prohibitions
+## Repository Invariants
 
-- No drafts, variants, or experiments in this directory (the calligraphic-L, paper, and navy editions from the review phase are retired and must not be revived).
-- Never reverse-sync platform copies back into this directory as if they were the source of truth.
-- The scratch workspace `tmp/` (gitignored) and its showcase page and legacy scripts are not asset references.
+- Keep this directory restricted to canonical release assets (calligraphic-L, paper, and navy editions remain permanently retired in git history).
+- Treat files in this directory as the sole source of truth for platform assets.
+- Rely exclusively on committed master assets in `svg/` and `png/`.

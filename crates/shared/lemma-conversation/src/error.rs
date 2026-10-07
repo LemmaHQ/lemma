@@ -8,13 +8,13 @@ use std::fmt;
 pub enum ConversationError {
     /// The title was empty after trimming.
     TitleRequired,
-    /// The conversation does not exist for this user.
+    /// Target conversation is absent for this user.
     NotFound,
-    /// The conversation is not active.
+    /// Target conversation remains in an archived state.
     NotActive,
-    /// The conversation is not archived.
+    /// Target conversation remains in an active state.
     NotArchived,
-    /// The archived conversation does not exist for this user.
+    /// Target archived conversation is absent for this user.
     ArchivedNotFound,
     /// The storage backend failed.
     Store(String),

@@ -6,13 +6,13 @@
 ## Context
 
 The previous store kept one row per user or assistant message, with thinking blocks, tool calls, and tool results nested inside the assistant row as content blocks.
-Per-event metadata (timings, token usage, status) then had no home, tool-loop trajectories could not be recorded faithfully, and branching or rendering at sub-message granularity was impossible.
+Dedicated fields were required for per-event metadata (timings, token usage, status) and tool-loop trajectories, demanding granular message-level representation for branching and rendering.
 
 ## Decision
 
 Store one tree row per canonical message, using the existing `lemma-core` vocabulary and nothing else: `User`, `Assistant`, and `ToolResult` each occupy exactly one row.
 Tool calls remain content blocks inside the assistant row that requested them; their results are separate `ToolResult` rows.
-No new event or record types are introduced.
+The architecture leverages existing event and record types exclusively.
 
 ## Consequences
 

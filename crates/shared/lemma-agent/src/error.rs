@@ -7,7 +7,7 @@ pub enum AgentError {
     Provider(String),
     /// Failure persisting or querying the underlying trace store.
     Store(String),
-    /// The conversation or targeted message node does not exist.
+    /// Target conversation or message node is absent.
     NotFound(String),
     /// Invalid argument or malformed message structure.
     InvalidInput(String),

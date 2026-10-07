@@ -14,8 +14,8 @@ type BoxTransportFuture<'a> =
 /// Pluggable HTTP layer for provider calls.
 ///
 /// Hosts inject their own networking stack (reqwest on server/desktop,
-/// platform networking on mobile); adapters never construct clients
-/// themselves.
+/// platform networking on mobile); adapters rely exclusively on injected
+/// client implementations.
 pub trait HttpTransport: Send + Sync {
     /// Sends a POST with a JSON body and returns the response as a byte
     /// stream. Non-2xx statuses become an error carrying the body.

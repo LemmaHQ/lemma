@@ -20,7 +20,7 @@ pub type BoxChatFuture =
 ///
 /// Implementations translate the canonical request into their vendor's
 /// wire format and the vendor's response stream back into canonical
-/// [`StreamEvent`]s. They hold no conversation state.
+/// [`StreamEvent`]s. Implementations remain purely stateless.
 pub trait Provider: Send + Sync {
     /// Starts a streaming chat call.
     fn stream(&self, req: ChatRequest) -> BoxChatFuture;

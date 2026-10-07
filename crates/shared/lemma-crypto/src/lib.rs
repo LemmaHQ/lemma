@@ -15,8 +15,8 @@ pub enum CryptoError {
     /// AEAD operation failed. In practice this means decryption with the
     /// wrong key or a tampered payload.
     Decrypt,
-    /// Input is not a well-formed sealed payload: bad base64, truncated,
-    /// or not valid UTF-8 after decryption.
+    /// Input payload is malformed: invalid base64 encoding, truncated length,
+    /// or corrupted plaintext following decryption.
     Encoding,
 }
 

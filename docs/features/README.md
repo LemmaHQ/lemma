@@ -12,7 +12,7 @@ Prose in this directory uses one sentence per line.
 <feature-id>/
   feature.yaml     # Identity, lifecycle, per-client status. Machine-checked.
   spec.md          # WHAT: behavioral contract. RFC 2119 + EARS requirements.
-  design.md        # HOW: current implementation approach. May go stale; rewrite, don't archive.
+  design.md        # HOW: current implementation approach. May go stale; rewrite in place over time.
   decisions/       # Optional. Irreversible trade-offs, MADR format, append-only.
   scenarios/       # Acceptance scenarios: Gherkin semantics in YAML form.
 ```
@@ -38,16 +38,16 @@ links:
 ```
 
 `status` (top level) is the single lifecycle axis: `draft → approved → in-progress → done`, plus `deprecated` for retired features.
-There is no separate maturity field.
+The status field wholly encapsulates feature maturity.
 
 Per-client `status` is a closed set:
 
-- `planned` — agreed to build, not started
+- `planned` — queued for future implementation
 - `in-progress` — actively being built
 - `partial` — some of the spec's requirements work; list the gaps in spec.md
 - `supported` — the full spec is implemented
 - `inherited` — the client ships another client's implementation; requires `inherits` (desktop is an Electron shell of web and is usually `inherited`)
-- `n/a` — the capability does not apply to this client by design
+- `n/a` — out of scope for this client platform
 
 `since` is the first release version shipping that status.
 `tracking` is the GitHub issue number for the remaining work.
@@ -55,7 +55,7 @@ Status fields are updated in the same PR that lands the implementation.
 
 ## Writing spec.md
 
-spec.md states the behavioral contract — WHAT the feature does, never how it is implemented.
+spec.md states the behavioral contract — WHAT the feature does, strictly focusing on observable behavior.
 Keep it short; ten lines of requirements is a fine spec.
 
 - Normative constraints use RFC 2119 keywords: MUST / SHOULD / MAY.
@@ -79,16 +79,16 @@ then:
 ```
 
 Scenarios are human-readable documentation in Phase 1; a test runner consuming them is a later increment.
-Write them in the format above so no rewrite is needed when the runner lands.
+Write them in the format above to ensure seamless compatibility with the upcoming runner.
 
-## What does not belong here
+## Separation of Concerns
 
 - **Transient work artifacts**: implementation plans live in `docs/plans/`, tasks live in GitHub issues and the org project board.
-  `feature.yaml` links to them via `links`; it does not embed them.
+  `feature.yaml` references them through `links`, maintaining decoupled metadata.
 - **Historical changelogs**: `design.md` describes the present.
   When the implementation changes, rewrite it.
-  Irreversible decisions go to `decisions/` and are never edited after merge.
-- **Non-feature work**: refactors, dependency upgrades, and CI changes have no feature directory; they follow the plain `docs/plans/` approval flow.
+  Irreversible decisions go to `decisions/` and remain permanent append-only records post-merge.
+- **Non-feature work**: refactors, dependency upgrades, and CI changes route through the plain `docs/plans/` approval flow.
 
 ## Workflow
 

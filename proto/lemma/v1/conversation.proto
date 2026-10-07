@@ -58,7 +58,7 @@ message Message {
   google.protobuf.Timestamp updated_at = 9;
   // 会话树父节点；根消息为空
   string parent_id = 10;
-  // 思维链全文（多个 thinking block 拼接）；无推理内容时为空
+  // 思维链全文（多个 thinking block 拼接）；仅在模型产出推理内容时赋值
   string thinking = 11;
   // 失败原因（status 为 error 时有值）
   string error = 12;
@@ -141,6 +141,6 @@ service ConversationService {
   rpc RestoreConversation(RestoreConversationRequest) returns (RestoreConversationResponse);
   // 归档元数据全量
   rpc ListArchived(ListArchivedRequest) returns (ListArchivedResponse);
-  // 彻底删除，不可恢复
+  // 永久物理擦除归档会话记录
   rpc DeleteArchived(DeleteArchivedRequest) returns (DeleteArchivedResponse);
 }

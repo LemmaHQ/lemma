@@ -5,7 +5,7 @@ use std::fmt;
 pub enum SessionError {
     /// Failure persisting or querying the underlying trace store.
     Store(String),
-    /// The conversation or targeted message node does not exist.
+    /// Target conversation or message node is absent from the session tree.
     NotFound(String),
 }
 

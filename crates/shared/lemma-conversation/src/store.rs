@@ -45,8 +45,8 @@ pub trait ConversationStore: Send + Sync {
         title: &'a str,
     ) -> BoxConversationFuture<'a, Option<Conversation>>;
 
-    /// Archives an active conversation without touching its messages.
-    /// Returns `None` unless the conversation is currently active.
+    /// Archives an active conversation while preserving its messages intact.
+    /// Returns `Some` exclusively when the conversation is active.
     fn archive<'a>(
         &'a self,
         id: Uuid,
@@ -54,7 +54,7 @@ pub trait ConversationStore: Send + Sync {
     ) -> BoxConversationFuture<'a, Option<Conversation>>;
 
     /// Restores an archived conversation to active, clearing the archive
-    /// metadata. Returns `None` unless the conversation is currently
+    /// metadata. Returns `Some` exclusively when the conversation is currently
     /// archived.
     fn restore<'a>(
         &'a self,
@@ -63,7 +63,7 @@ pub trait ConversationStore: Send + Sync {
     ) -> BoxConversationFuture<'a, Option<Conversation>>;
 
     /// Deletes an archived conversation, returning whether a row was
-    /// removed. Active conversations are not deletable through this path.
+    /// removed. Deletion is restricted exclusively to archived conversations.
     fn delete_archived<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool>;
 
     /// Keyset-paginates a conversation's messages newest-first. `before_id`

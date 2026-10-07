@@ -44,8 +44,7 @@ pub(crate) fn text_of(content: &[ContentBlock]) -> String {
         .collect()
 }
 
-/// Parses a string into JSON, falling back to `fallback` when the text
-/// is not valid JSON.
+/// Parses a string into JSON, falling back to `fallback` on parse failures.
 pub(crate) fn parse_args(arguments: &str, fallback: serde_json::Value) -> serde_json::Value {
     serde_json::from_str(arguments).unwrap_or(fallback)
 }

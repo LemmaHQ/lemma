@@ -1,5 +1,5 @@
 /// Any provider failure, reduced to a message. These surface to clients
-/// as in-band error events, not coded business errors.
+/// exclusively as in-band error events.
 #[derive(Debug)]
 pub struct ProviderError {
     /// Human-readable failure description.

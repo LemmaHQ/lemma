@@ -29,8 +29,8 @@ pub trait ProviderStore: Send + Sync {
     /// Finds a provider owned by the user.
     fn get<'a>(&'a self, user_id: Uuid, id: Uuid) -> BoxProviderFuture<'a, Option<ProviderRecord>>;
 
-    /// Applies a patch, returning the updated record or `None` when the
-    /// provider does not exist for this user.
+    /// Applies a patch, returning the updated record or `None` for missing
+    /// records owned by the user.
     fn update<'a>(
         &'a self,
         user_id: Uuid,

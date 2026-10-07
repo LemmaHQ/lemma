@@ -8,8 +8,8 @@ export default defineConfig({
     plugins: [
         react(),
         tailwindcss(),
-        // Uploads bundle stats to Codecov during `vite build`; without a
-        // token (local builds) it stays a no-op.
+        // Uploads bundle stats to Codecov during `vite build` when provided
+        // with an upload token.
         codecovVitePlugin({
             enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
             bundleName: "lemma-web",
@@ -30,7 +30,7 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reporter: ["text", "lcov"],
-            // Generated proto code and locale dictionaries carry no logic.
+            // Focus coverage on handwritten business logic and components.
             exclude: ["src/gen/**", "src/i18n/locales/**"],
             thresholds: {
                 lines: 90,

@@ -3,7 +3,7 @@
 //! Every business error must go through [`app_error`]: the reason comes
 //! from the closed set in `errors.proto`, the English message here is only
 //! a fallback, and the frontend localizes by reason code. Internal
-//! operational errors stay code-free and are never localized.
+//! operational errors remain code-free and retain their raw diagnostic strings.
 
 use base64::Engine as _;
 use buffa::Message;
@@ -57,8 +57,8 @@ fn message(reason: ErrorReason) -> &'static str {
     }
 }
 
-/// Builds a coded business error with the fallback message and no
-/// attributes.
+/// Builds a coded business error with the fallback message and an empty
+/// attribute map.
 pub fn app_error(reason: ErrorReason) -> ConnectError {
     app_error_with(reason, &[])
 }

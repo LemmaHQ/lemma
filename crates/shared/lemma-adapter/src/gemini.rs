@@ -13,8 +13,7 @@ use crate::sse::{SseParser, events_from_sse};
 use crate::transport::{HttpTransport, ReqwestTransport};
 
 /// Streams via `:streamGenerateContent?alt=sse` with an `x-goog-api-key`
-/// header. The stream has no `[DONE]` sentinel; usage rides the last
-/// chunk and is flushed at EOF.
+/// header. Usage metrics accompany the terminal chunk and flush at EOF.
 pub struct GeminiGenerate {
     transport: Arc<dyn HttpTransport>,
 }

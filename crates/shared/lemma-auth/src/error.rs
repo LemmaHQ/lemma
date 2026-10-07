@@ -30,11 +30,11 @@ pub enum AuthError {
     SignupFieldsRequired,
     /// Exactly one of username or email must identify the account.
     LoginTargetRequired,
-    /// The login or password did not match.
+    /// Provided credentials failed authentication.
     CredentialsInvalid,
     /// The refresh token was missing, expired, rotated, or revoked.
     TokenInvalid,
-    /// The account does not exist.
+    /// Target account is absent.
     UserNotFound,
     /// The username or email is already registered.
     UsernameTaken,

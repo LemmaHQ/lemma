@@ -18,13 +18,12 @@ use crate::transport::ByteStream;
 /// Parses a provider's SSE `data:` payloads into canonical events.
 pub(crate) trait SseParser: Send + 'static {
     fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ProviderError>;
-    /// Flushes pending state when the stream ends without a terminal
-    /// event; used for token usage on APIs with no `[DONE]` sentinel.
+    /// Flushes pending state when the stream reaches EOF directly;
+    /// extracts token usage from APIs providing usage metrics on the last chunk.
     fn on_eof(&mut self) -> Option<Usage> {
         None
     }
-    /// Events still owed at EOF, e.g. closing an open thinking block on
-    /// APIs with no terminal event; emitted ahead of the synthesized
+    /// Events emitted at stream closure, closing open blocks ahead of the synthesized
     /// `Done`.
     fn flush(&mut self) -> Vec<StreamEvent> {
         Vec::new()

@@ -9,7 +9,7 @@ pub enum ToolError {
     PermissionDenied(String),
     /// Failure encountered within the execution environment.
     Execution(String),
-    /// Tool not found in registry.
+    /// Target tool missing from the registry.
     NotFound(String),
 }
 

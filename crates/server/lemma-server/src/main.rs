@@ -77,8 +77,8 @@ async fn run_local() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// The desktop shell loads its UI from file://, so its API calls arrive
-/// cross-origin (Origin: null). Auth is Bearer-only with no cookies, so
-/// an open CORS policy does not weaken browser security.
+/// cross-origin (Origin: null). Auth relies exclusively on Bearer tokens,
+/// preserving browser security under an open CORS policy.
 fn cors_layer() -> tower_http::cors::CorsLayer {
     tower_http::cors::CorsLayer::new()
         .allow_origin(tower_http::cors::Any)

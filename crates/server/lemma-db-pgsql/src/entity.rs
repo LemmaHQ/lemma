@@ -1,7 +1,7 @@
 //! Row types for the shared tables, mapped with `sqlx::FromRow`.
 //!
-//! Field docs are limited to columns whose semantics are not obvious from
-//! the name: sealed credentials and lifecycle pointers.
+//! Field docs focus on specialized columns requiring explicit context:
+//! sealed credentials and lifecycle pointers.
 
 #![allow(missing_docs)]
 

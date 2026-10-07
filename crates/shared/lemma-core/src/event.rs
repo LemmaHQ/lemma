@@ -7,7 +7,7 @@ use crate::usage::Usage;
 /// One incremental event from a streaming provider call.
 ///
 /// Adapters emit this closed set; consumers (UI, persistence, agent loop)
-/// never see vendor-specific stream shapes. `tool_call_delta` carries raw
+/// consume standardized event streams uniformly. `tool_call_delta` carries raw
 /// argument JSON fragments so UIs can preview arguments before they parse.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -61,8 +61,7 @@ pub enum StreamEvent {
         /// Token usage, when the provider reports it.
         usage: Option<Usage>,
         /// Milliseconds from request dispatch to the first content delta
-        /// (text, thinking, or tool-call); `None` when the stream carried
-        /// no content.
+        /// (text, thinking, or tool-call); `Some` upon receiving initial content.
         ttft_ms: Option<u64>,
     },
     /// Generation failed; partial content, if any, was already emitted.

@@ -27,7 +27,7 @@ pub fn generate_refresh_token() -> String {
 }
 
 /// SHA-256 of a refresh token, for storage and lookup. The plaintext
-/// token is never persisted.
+/// token stays strictly ephemeral in memory.
 pub fn hash_token(token: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(token.as_bytes());

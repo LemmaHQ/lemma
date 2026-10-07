@@ -20,7 +20,7 @@ pub struct ProviderRecord {
     pub identifier: String,
     /// Display name.
     pub name: String,
-    /// API base URL, without trailing slash.
+    /// Normalized API base URL ending at host or path.
     pub base_url: String,
     /// API key in the backend's storage encoding.
     pub api_key: String,

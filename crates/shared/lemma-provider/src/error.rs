@@ -8,11 +8,11 @@ use std::fmt;
 pub enum ProviderError {
     /// A required field was empty after trimming.
     FieldsRequired,
-    /// The identifier was empty or contained non-ASCII characters.
+    /// The identifier contains characters outside the standard ASCII range or is empty.
     IdentifierInvalid,
     /// The identifier is already used by another provider of this user.
     IdentifierTaken,
-    /// The provider does not exist for this user.
+    /// Target provider is absent for this user.
     NotFound,
     /// Sealing or opening a stored API key failed.
     Crypto(String),

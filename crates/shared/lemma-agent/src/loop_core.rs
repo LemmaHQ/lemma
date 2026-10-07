@@ -141,7 +141,7 @@ pub struct ToolRuntime {
 }
 
 impl ToolRuntime {
-    /// Creates a runtime without an approval gate.
+    /// Creates a runtime executing turns autonomously.
     pub fn new(registry: ToolRegistry, env: Arc<dyn ExecEnv>) -> Self {
         Self {
             registry,
@@ -235,7 +235,7 @@ pub struct AgentLoop {
 }
 
 impl AgentLoop {
-    /// Creates a new execution engine without tool support.
+    /// Creates a new execution engine configured for direct model generation.
     pub fn new(store: Arc<dyn TraceStore>, provider: Arc<dyn Provider>) -> Self {
         Self {
             store,
@@ -251,8 +251,7 @@ impl AgentLoop {
     }
 
     /// Appends a user prompt to a conversation, executes the generation
-    /// loop, and stores the resulting assistant turns without intermediate
-    /// notifications.
+    /// loop, and stores the settled assistant turns in batch upon completion.
     pub async fn run_turn(
         &self,
         conversation_id: Uuid,

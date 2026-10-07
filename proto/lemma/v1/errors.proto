@@ -39,6 +39,6 @@ enum ErrorReason {
 // 附在 ConnectError.details 的结构化错误；文案由前端 i18n 按 reason 渲染
 message ErrorInfo {
   ErrorReason reason = 1;
-  // i18n 插值参数（如 bucket not found 的桶名）
+  // i18n 插值参数（如缺失存储桶的名称）
   map<string, string> attrs = 2;
 }

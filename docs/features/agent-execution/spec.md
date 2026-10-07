@@ -10,11 +10,11 @@ One platform-agnostic engine (`lemma-agent`) drives the turn; the server exposes
 ### Shared engine
 
 - THE SYSTEM SHALL execute every turn through a single platform-agnostic engine shared by server and local modes.
-- The engine SHALL depend only on storage and provider contracts, never on RPC types, HTTP plumbing, or a concrete database.
+- The engine SHALL depend exclusively on storage and provider domain contracts, isolating RPC types, HTTP plumbing, and concrete databases behind the abstraction layer.
 - WHEN a turn starts, THE SYSTEM SHALL append the user message to the session tree and move the conversation's leaf pointer to it.
 - WHEN a turn starts, THE SYSTEM SHALL record the selected provider and model on the conversation metadata.
 - WHEN a turn starts, THE SYSTEM SHALL pre-create the assistant message with streaming status, so a partially generated reply is visible after an interruption.
-- WHEN the provider stream settles without tool calls, THE SYSTEM SHALL finalize the assistant message in place with its full content, status, token usage, and timing marks.
+- WHEN the provider stream settles upon direct text completion, THE SYSTEM SHALL finalize the assistant message in place with its full content, status, token usage, and timing marks.
 
 ### Streaming events
 

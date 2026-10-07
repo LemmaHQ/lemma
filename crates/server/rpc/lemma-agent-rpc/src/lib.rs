@@ -46,8 +46,8 @@ pub struct AgentRpc {
     jwt_secret: Arc<str>,
     secret_key: Arc<str>,
     provider: Arc<dyn Provider>,
-    /// Root directory of per-conversation tool workspaces; `None` disables
-    /// tool use (server deployments without a host workspace).
+    /// Root directory of per-conversation tool workspaces; `None` restricts execution
+    /// to direct model generation (server deployments maintaining isolated execution).
     workspaces_dir: Option<PathBuf>,
 }
 

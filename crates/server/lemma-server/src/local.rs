@@ -9,8 +9,8 @@ use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 /// Fixed passphrase of the default local account. It is public by design:
-/// it is not a secret, it is the no-login entry point for the desktop
-/// engine. Accounts a user registers themselves carry real passwords.
+/// functioning as the open entry point for the desktop engine.
+/// Accounts a user registers individually carry private passwords.
 pub const DEFAULT_USERNAME: &str = "lemma";
 const DEFAULT_EMAIL: &str = "lemma@local";
 pub const DEFAULT_PASSWORD: &str = "lemma-local-default";
@@ -71,7 +71,7 @@ pub fn print_ready(payload: &ReadyPayload) {
 }
 
 /// Makes sure the default local account exists; called on every local
-/// startup so a user who signed up first never blocks it.
+/// startup to guarantee predictable access across all runtimes.
 pub async fn ensure_default_account(
     store: &dyn AuthStore,
     auth: &AuthService,

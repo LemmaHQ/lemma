@@ -30,7 +30,7 @@ pub fn cookie_value(ctx: &connectrpc::RequestContext, name: &str) -> Option<Stri
 /// Authenticates a request via its `Authorization: Bearer` access token,
 /// falling back to the `lemma_access` cookie sent by browser clients, and
 /// returns the user id. Every failure mode maps to the same `TokenInvalid`
-/// error so callers cannot probe which check failed.
+/// error to preserve timing and error uniformity across checks.
 pub fn require_user(
     secret: &str,
     ctx: &connectrpc::RequestContext,

@@ -92,7 +92,7 @@ function generateTokensCss(data) {
         motionTokens.push(`    --ease-${name}: ${val};`);
     }
 
-    return `/* Generated from DESIGN.md by web/scripts/gen-tokens.mjs. Do not edit manually. */
+    return `/* Generated from DESIGN.md by web/scripts/gen-tokens.mjs. Direct changes are overwritten by the generator. */
 
 :root {
 ${lightColors.join("\n")}

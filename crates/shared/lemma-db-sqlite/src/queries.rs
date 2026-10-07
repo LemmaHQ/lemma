@@ -1,4 +1,4 @@
-//! SQL query modules, one per domain. No SQL lives outside these files.
+//! SQL query modules, one per domain. All SQL queries route exclusively through these files.
 
 pub mod auth;
 pub mod conversations;
