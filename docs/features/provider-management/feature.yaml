@@ -1,0 +1,15 @@
+id: provider-management
+title: Provider Management
+status: in-progress
+owners: [core]
+api:
+  proto: [lemma.v1]
+clients:
+  web:
+    status: supported
+    since: "0.1.0"
+  desktop:
+    status: inherited
+    inherits: web
+  android:
+    status: planned
