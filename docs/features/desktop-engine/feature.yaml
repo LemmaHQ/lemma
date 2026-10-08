@@ -1,0 +1,12 @@
+id: desktop-engine
+title: Desktop Sidecar Engine
+status: done
+owners: [desktop, core]
+clients:
+  desktop:
+    status: supported
+    since: "0.1.0"
+  web:
+    status: n/a
+  android:
+    status: n/a
