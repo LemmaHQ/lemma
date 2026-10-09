@@ -17,6 +17,10 @@ interface SettingsRepository {
     fun setLocalJwtSecret(secret: String?)
     fun getLocalUserId(): String?
     fun setLocalUserId(userId: String?)
+    fun getDefaultProviderId(): String?
+    fun setDefaultProviderId(providerId: String?)
+    fun getDefaultModel(): String?
+    fun setDefaultModel(model: String?)
     fun clearAuth()
 }
 
@@ -32,6 +36,8 @@ class DefaultSettingsRepository(
         private const val KEY_THEME_MODE = "lemma_theme_mode"
         private const val KEY_LOCAL_JWT_SECRET = "lemma_local_jwt_secret"
         private const val KEY_LOCAL_USER_ID = "lemma_local_user_id"
+        private const val KEY_DEFAULT_PROVIDER_ID = "lemma_default_provider_id"
+        private const val KEY_DEFAULT_MODEL = "lemma_default_model"
         const val MODE_REMOTE = "remote"
         const val MODE_LOCAL = "local"
         const val THEME_SYSTEM = "system"
@@ -116,6 +122,30 @@ class DefaultSettingsRepository(
             settings.remove(KEY_LOCAL_USER_ID)
         } else {
             settings.putString(KEY_LOCAL_USER_ID, userId)
+        }
+    }
+
+    override fun getDefaultProviderId(): String? {
+        return settings.getStringOrNull(KEY_DEFAULT_PROVIDER_ID)
+    }
+
+    override fun setDefaultProviderId(providerId: String?) {
+        if (providerId == null) {
+            settings.remove(KEY_DEFAULT_PROVIDER_ID)
+        } else {
+            settings.putString(KEY_DEFAULT_PROVIDER_ID, providerId)
+        }
+    }
+
+    override fun getDefaultModel(): String? {
+        return settings.getStringOrNull(KEY_DEFAULT_MODEL)
+    }
+
+    override fun setDefaultModel(model: String?) {
+        if (model == null) {
+            settings.remove(KEY_DEFAULT_MODEL)
+        } else {
+            settings.putString(KEY_DEFAULT_MODEL, model)
         }
     }
 
