@@ -11,6 +11,8 @@ interface SettingsRepository {
     fun setRefreshToken(token: String?)
     fun getThemeMode(): String
     fun setThemeMode(mode: String)
+    fun getLocalJwtSecret(): String?
+    fun setLocalJwtSecret(secret: String?)
     fun clearAuth()
 }
 
@@ -23,6 +25,7 @@ class DefaultSettingsRepository(
         private const val KEY_ACCESS_TOKEN = "lemma_access_token"
         private const val KEY_REFRESH_TOKEN = "lemma_refresh_token"
         private const val KEY_THEME_MODE = "lemma_theme_mode"
+        private const val KEY_LOCAL_JWT_SECRET = "lemma_local_jwt_secret"
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"
         const val THEME_DARK = "dark"
@@ -70,6 +73,18 @@ class DefaultSettingsRepository(
 
     override fun setThemeMode(mode: String) {
         settings.putString(KEY_THEME_MODE, mode)
+    }
+
+    override fun getLocalJwtSecret(): String? {
+        return settings.getStringOrNull(KEY_LOCAL_JWT_SECRET)
+    }
+
+    override fun setLocalJwtSecret(secret: String?) {
+        if (secret == null) {
+            settings.remove(KEY_LOCAL_JWT_SECRET)
+        } else {
+            settings.putString(KEY_LOCAL_JWT_SECRET, secret)
+        }
     }
 
     override fun clearAuth() {
