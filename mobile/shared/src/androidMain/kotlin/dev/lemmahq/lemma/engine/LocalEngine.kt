@@ -2,8 +2,13 @@ package dev.lemmahq.lemma.engine
 
 import android.content.Context
 import dev.lemmahq.lemma.data.SettingsRepository
+import dev.lemmahq.lemma.uniffi.AgentEventListener
 import dev.lemmahq.lemma.uniffi.LemmaEngine
+import dev.lemmahq.lemma.uniffi.MobileAgentEvent
 import java.security.SecureRandom
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -35,4 +40,23 @@ class LocalEngine private constructor() {
             return secret
         }
     }
+}
+
+/** Runs one agent turn locally, streaming events until `Done` or `Error`, then completing. */
+fun LemmaEngine.sendMessageEvents(
+    userId: String,
+    conversationId: String,
+    content: String,
+    providerId: String,
+    model: String,
+    thinkingEffort: String? = null,
+): Flow<MobileAgentEvent> = callbackFlow {
+    val listener = object : AgentEventListener {
+        override fun onEvent(event: MobileAgentEvent) {
+            trySend(event)
+        }
+    }
+    sendMessage(userId, conversationId, content, providerId, model, thinkingEffort, listener)
+    close()
+    awaitClose()
 }
