@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use lemma_adapter::{DispatchProvider, Provider, ProviderKind as AdapterKind};
 use lemma_agent::{AgentConfig, AgentLoop, ToolRuntime, TurnEvent};
-use lemma_auth::{AuthService, AuthTokens, Session, User};
+use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
+use lemma_auth::{AuthService, AuthStore, AuthTokens, Session, User};
 use lemma_conversation::{Conversation, ConversationService, Message};
 use lemma_core::{ContentBlock, Message as CoreMessage, TextContent};
 use lemma_db_sqlite::{
@@ -165,6 +166,8 @@ pub struct MobileMessage {
     pub parent_id: Option<String>,
     /// Authoring role.
     pub role: String,
+    /// Visible text content, mirroring the server's presentation mapping.
+    pub text: String,
     /// Structured content payload as JSON.
     pub content_json: String,
     /// Provider id used, for assistant messages.
@@ -175,8 +178,21 @@ pub struct MobileMessage {
     pub status: String,
     /// Failure reason when status is `error`.
     pub error: Option<String>,
-    /// Creation time, RFC 3339.
-    pub created_at: String,
+    /// Creation time, seconds since the Unix epoch.
+    pub created_at_seconds: i64,
+}
+
+fn visible_text(content: &serde_json::Value) -> String {
+    content
+        .as_array()
+        .map(|blocks| {
+            blocks
+                .iter()
+                .filter(|b| b.get("type").and_then(|t| t.as_str()) == Some("text"))
+                .filter_map(|b| b.get("text").and_then(|t| t.as_str()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 impl From<Message> for MobileMessage {
@@ -185,12 +201,13 @@ impl From<Message> for MobileMessage {
             id: m.id.to_string(),
             parent_id: m.parent_id.map(|id| id.to_string()),
             role: m.role,
+            text: visible_text(&m.content_json),
             content_json: m.content_json.to_string(),
             provider_id: m.provider_id.map(|id| id.to_string()),
             model: m.model,
             status: m.status,
             error: m.error,
-            created_at: m.created_at.to_rfc3339(),
+            created_at_seconds: m.created_at.timestamp(),
         }
     }
 }
@@ -397,6 +414,7 @@ fn map_event(ev: TurnEvent) -> MobileAgentEvent {
 #[derive(uniffi::Object)]
 pub struct LemmaEngine {
     auth: AuthService,
+    auth_store: Arc<SqliteAuthStore>,
     conversations: ConversationService,
     providers: ProviderService,
     provider_store: Arc<SqliteProviderStore>,
@@ -419,13 +437,15 @@ impl LemmaEngine {
         lemma_db_sqlite::migrate(&pool)
             .await
             .map_err(|e| EngineError::Storage(e.to_string()))?;
-        let auth = AuthService::new(Arc::new(SqliteAuthStore::new(pool.clone())), jwt_secret);
+        let auth_store = Arc::new(SqliteAuthStore::new(pool.clone()));
+        let auth = AuthService::new(auth_store.clone(), jwt_secret);
         let conversations =
             ConversationService::new(Arc::new(SqliteConversationStore::new(pool.clone())));
         let provider_store = Arc::new(SqliteProviderStore::new(pool.clone()));
         let providers = ProviderService::new(provider_store.clone(), None);
         Ok(Arc::new(Self {
             auth,
+            auth_store,
             conversations,
             providers,
             provider_store,
@@ -483,6 +503,28 @@ impl LemmaEngine {
     pub async fn me(&self, user_id: String) -> Result<MobileUser, EngineError> {
         self.auth
             .me(parse_id(&user_id)?)
+            .await
+            .map(Into::into)
+            .map_err(|e| EngineError::Auth(e.to_string()))
+    }
+
+    /// Opens a session on the default local account, provisioning it on
+    /// first use. Shared by every local-mode runtime.
+    pub async fn use_default_account(&self) -> Result<MobileSession, EngineError> {
+        if self
+            .auth_store
+            .find_user_by_login(DEFAULT_USERNAME)
+            .await
+            .map_err(|e| EngineError::Storage(e.to_string()))?
+            .is_none()
+        {
+            self.auth
+                .sign_up(DEFAULT_USERNAME, DEFAULT_EMAIL, DEFAULT_PASSWORD)
+                .await
+                .map_err(|e| EngineError::Auth(e.to_string()))?;
+        }
+        self.auth
+            .login(DEFAULT_USERNAME, "", DEFAULT_PASSWORD)
             .await
             .map(Into::into)
             .map_err(|e| EngineError::Auth(e.to_string()))

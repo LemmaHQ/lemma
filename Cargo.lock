@@ -1962,6 +1962,7 @@ dependencies = [
  "lemma-provider",
  "lemma-session",
  "lemma-tools",
+ "serde_json",
  "sqlx",
  "tokio",
  "uniffi",

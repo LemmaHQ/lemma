@@ -25,6 +25,7 @@ lemma-db-sqlite.workspace = true
 lemma-provider.workspace = true
 lemma-session.workspace = true
 lemma-tools.workspace = true
+serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 uniffi.workspace = true
