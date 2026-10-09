@@ -69,3 +69,4 @@ web/junit.xml
 **/build/
 local.properties
 mise.local.toml
+mobile/shared/src/androidMain/jniLibs/
