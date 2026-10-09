@@ -17,6 +17,7 @@ members = [
     "crates/shared/lemma-agent",
     "crates/shared/lemma-session",
     "crates/shared/lemma-tools",
+    "crates/shared/lemma-mobile",
 ]
 resolver = "2"
 
@@ -77,6 +78,7 @@ sqlx = { version = "0.9.0", features = [
 tokio = { version = "1.53.1", features = ["full"] }
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 tower-http = { version = "0.7.1", features = ["cors"] }
+uniffi = { version = "0.32.2", features = ["tokio"] }
 uuid = { version = "1.25.0", features = ["v4", "serde"] }
 
 [workspace.lints.clippy]

@@ -1,0 +1,27 @@
+[package]
+name = "lemma-mobile"
+edition.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]
+
+[features]
+bindgen = ["uniffi/cli"]
+
+[dependencies]
+chrono.workspace = true
+lemma-auth.workspace = true
+lemma-conversation.workspace = true
+lemma-db-sqlite.workspace = true
+tokio.workspace = true
+uniffi.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
