@@ -8,6 +8,9 @@ mod record;
 mod service;
 mod store;
 
+/// Default-account constants shared by local-mode runtimes.
+pub mod local;
+
 pub use error::{AuthError, AuthStoreError};
 pub use jwt::{ACCESS_TOKEN_TTL_SECS, Claims, sign_access_token, verify_access_token};
 pub use password::{hash_password, verify_password};

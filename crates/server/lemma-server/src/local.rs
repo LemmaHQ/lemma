@@ -4,16 +4,12 @@
 
 use std::path::{Path, PathBuf};
 
+use lemma_auth::local::DEFAULT_EMAIL;
 use lemma_auth::{AuthService, AuthStore};
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
-/// Fixed passphrase of the default local account. It is public by design:
-/// functioning as the open entry point for the desktop engine.
-/// Accounts a user registers individually carry private passwords.
-pub const DEFAULT_USERNAME: &str = "lemma";
-const DEFAULT_EMAIL: &str = "lemma@local";
-pub const DEFAULT_PASSWORD: &str = "lemma-local-default";
+pub use lemma_auth::local::{DEFAULT_PASSWORD, DEFAULT_USERNAME};
 
 /// Secrets the engine manages itself in local mode, persisted next to the
 /// database so tokens survive restarts.
