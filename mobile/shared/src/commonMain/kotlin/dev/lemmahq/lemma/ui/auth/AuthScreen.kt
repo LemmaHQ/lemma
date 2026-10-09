@@ -23,11 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.connectrpc.ResponseMessage
-import dev.lemmahq.gen.lemma.v1.loginRequest
-import dev.lemmahq.gen.lemma.v1.signUpRequest
-import dev.lemmahq.lemma.data.SettingsRepository
-import dev.lemmahq.lemma.network.LemmaRpcClient
+import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
@@ -36,10 +32,11 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(
-    serverUrl: String,
-    settingsRepository: SettingsRepository,
+    client: LemmaClient,
+    connectionLabel: String,
+    showSkip: Boolean,
     onAuthSuccess: () -> Unit,
-    onChangeServer: () -> Unit,
+    onChangeMode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isLoginMode by remember { mutableStateOf(true) }
@@ -49,13 +46,6 @@ fun AuthScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-
-    val rpcClient = remember(serverUrl) {
-        LemmaRpcClient(
-            host = serverUrl,
-            tokenProvider = { settingsRepository.getAccessToken() }
-        )
-    }
 
     Box(
         modifier = modifier
@@ -78,7 +68,7 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Connected to $serverUrl",
+                text = connectionLabel,
                 style = LemmaTheme.typography.labelSmall,
                 color = LemmaTheme.colors.textTertiary
             )
@@ -152,43 +142,11 @@ fun AuthScreen(
                         scope.launch {
                             try {
                                 if (isLoginMode) {
-                                    val req = loginRequest {
-                                        if (email.contains("@")) {
-                                            this.email = email.trim()
-                                        } else {
-                                            this.username = email.trim()
-                                        }
-                                        this.password = password
-                                    }
-                                    when (val response = rpcClient.auth.login(req, emptyMap())) {
-                                        is ResponseMessage.Success -> {
-                                            val res = response.message
-                                            settingsRepository.setAccessToken(res.tokens.accessToken)
-                                            settingsRepository.setRefreshToken(res.tokens.refreshToken)
-                                            onAuthSuccess()
-                                        }
-                                        is ResponseMessage.Failure -> {
-                                            errorMessage = response.cause.message ?: "Login failed"
-                                        }
-                                    }
+                                    client.login(email, password)
                                 } else {
-                                    val req = signUpRequest {
-                                        this.username = username.trim()
-                                        this.email = email.trim()
-                                        this.password = password
-                                    }
-                                    when (val response = rpcClient.auth.signUp(req, emptyMap())) {
-                                        is ResponseMessage.Success -> {
-                                            val res = response.message
-                                            settingsRepository.setAccessToken(res.tokens.accessToken)
-                                            settingsRepository.setRefreshToken(res.tokens.refreshToken)
-                                            onAuthSuccess()
-                                        }
-                                        is ResponseMessage.Failure -> {
-                                            errorMessage = response.cause.message ?: "Sign up failed"
-                                        }
-                                    }
+                                    client.signUp(username, email, password)
                                 }
+                                onAuthSuccess()
                             } catch (e: Exception) {
                                 errorMessage = e.message ?: "Authentication failed"
                             } finally {
@@ -219,11 +177,26 @@ fun AuthScreen(
                 )
 
                 Text(
-                    text = "Change server",
+                    text = if (showSkip) "Skip" else "Change server",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textTertiary,
                     modifier = Modifier.clickable {
-                        onChangeServer()
+                        if (showSkip) {
+                            isLoading = true
+                            errorMessage = null
+                            scope.launch {
+                                try {
+                                    client.useDefaultAccount()
+                                    onAuthSuccess()
+                                } catch (e: Exception) {
+                                    errorMessage = e.message ?: "Authentication failed"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        } else {
+                            onChangeMode()
+                        }
                     }
                 )
             }

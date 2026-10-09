@@ -35,7 +35,9 @@ import java.net.URL
 @Composable
 fun SetupScreen(
     settingsRepository: SettingsRepository,
+    localAvailable: Boolean,
     onConnected: (String) -> Unit,
+    onLocalSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var urlInput by remember {
@@ -137,6 +139,17 @@ fun SetupScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     variant = LemmaButtonVariant.Primary
+                )
+            }
+
+            if (localAvailable) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LemmaButton(
+                    text = "Run locally on this device",
+                    onClick = onLocalSelected,
+                    modifier = Modifier.fillMaxWidth(),
+                    variant = LemmaButtonVariant.Secondary
                 )
             }
         }

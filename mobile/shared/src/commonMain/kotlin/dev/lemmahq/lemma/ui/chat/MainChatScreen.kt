@@ -35,17 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.connectrpc.ResponseMessage
-import dev.lemmahq.gen.lemma.v1.Conversation
-import dev.lemmahq.gen.lemma.v1.createConversationRequest
-import dev.lemmahq.gen.lemma.v1.listConversationsRequest
-import dev.lemmahq.gen.lemma.v1.listMessagesRequest
-import dev.lemmahq.gen.lemma.v1.listProvidersRequest
-import dev.lemmahq.gen.lemma.v1.sendMessageRequest
+import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ClientConversation
+import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
-import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaBubble
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
@@ -61,7 +56,7 @@ data class UiMessage(
 
 @Composable
 fun MainChatScreen(
-    rpcClient: LemmaRpcClient,
+    client: LemmaClient,
     onLogout: () -> Unit,
     localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
     modifier: Modifier = Modifier
@@ -70,8 +65,8 @@ fun MainChatScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val conversations = remember { mutableStateListOf<Conversation>() }
-    var currentConversation by remember { mutableStateOf<Conversation?>(null) }
+    val conversations = remember { mutableStateListOf<ClientConversation>() }
+    var currentConversation by remember { mutableStateOf<ClientConversation?>(null) }
     val messages = remember { mutableStateListOf<UiMessage>() }
     var inputText by remember { mutableStateOf("") }
     var isStreaming by remember { mutableStateOf(false) }
@@ -86,10 +81,7 @@ fun MainChatScreen(
         val cached = localChatRepository.getConversations()
         if (cached.isNotEmpty() && conversations.isEmpty()) {
             val restored = cached.map { c ->
-                dev.lemmahq.gen.lemma.v1.conversation {
-                    this.id = c.id
-                    this.title = c.title
-                }
+                ClientConversation(id = c.id, title = c.title)
             }
             conversations.addAll(restored)
             if (currentConversation == null) {
@@ -99,16 +91,13 @@ fun MainChatScreen(
 
         isLoadingConversations = true
         try {
-            when (val provRes = rpcClient.provider.listProviders(listProvidersRequest {}, emptyMap())) {
-                is ResponseMessage.Success -> {
-                    val first = provRes.message.providersList.firstOrNull { it.enabled }
-                    if (first != null) {
-                        selectedProviderId = first.id
-                        selectedModel = first.modelsList.firstOrNull().orEmpty()
-                    }
-                }
-                is ResponseMessage.Failure -> {}
+            val first = client.listProviders().firstOrNull { it.enabled }
+            if (first != null) {
+                selectedProviderId = first.id
+                selectedModel = first.models.firstOrNull().orEmpty()
             }
+        } catch (e: Exception) {
+            bannerErrorMessage = ErrorFormatter.format(e)
         } finally {
             isLoadingConversations = false
         }
@@ -130,31 +119,30 @@ fun MainChatScreen(
             messages.clear()
         }
 
-        when (val msgRes = rpcClient.conversation.listMessages(listMessagesRequest { conversationId = convId }, emptyMap())) {
-            is ResponseMessage.Success -> {
-                val serverMsgs = msgRes.message.messagesList
-                val list = serverMsgs.map {
-                    UiMessage(
-                        id = it.id,
-                        role = if (it.role == "user") LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
-                        text = it.content
-                    )
-                }
-                messages.clear()
-                messages.addAll(list)
-                for (m in serverMsgs) {
-                    localChatRepository.saveMessage(
-                        id = m.id,
-                        conversationId = convId,
-                        role = if (m.role == "user") 1L else 2L,
-                        content = m.content,
-                        status = m.statusValue.toLong(),
-                        createdAt = m.createdAt.seconds,
-                        updatedAt = m.updatedAt.seconds
-                    )
-                }
+        try {
+            val serverMsgs = client.listMessages(convId)
+            val list = serverMsgs.map {
+                UiMessage(
+                    id = it.id,
+                    role = if (it.role == "user") LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
+                    text = it.content
+                )
             }
-            is ResponseMessage.Failure -> {}
+            messages.clear()
+            messages.addAll(list)
+            for (m in serverMsgs) {
+                localChatRepository.saveMessage(
+                    id = m.id,
+                    conversationId = convId,
+                    role = if (m.role == "user") 1L else 2L,
+                    content = m.content,
+                    status = 2L,
+                    createdAt = m.createdAtSeconds,
+                    updatedAt = m.updatedAtSeconds
+                )
+            }
+        } catch (e: Exception) {
+            bannerErrorMessage = ErrorFormatter.format(e)
         }
     }
 
@@ -189,13 +177,13 @@ fun MainChatScreen(
                         onClick = {
                             scope.launch {
                                 drawerState.close()
-                                when (val res = rpcClient.conversation.createConversation(createConversationRequest {}, emptyMap())) {
-                                    is ResponseMessage.Success -> {
-                                        conversations.add(0, res.message.conversation)
-                                        currentConversation = res.message.conversation
-                                        messages.clear()
-                                    }
-                                    is ResponseMessage.Failure -> {}
+                                try {
+                                    val created = client.createConversation()
+                                    conversations.add(0, created)
+                                    currentConversation = created
+                                    messages.clear()
+                                } catch (e: Exception) {
+                                    bannerErrorMessage = ErrorFormatter.format(e)
                                 }
                             }
                         },
@@ -401,13 +389,13 @@ fun MainChatScreen(
                         scope.launch {
                             var conv = currentConversation
                             if (conv == null) {
-                                when (val cRes = rpcClient.conversation.createConversation(createConversationRequest {}, emptyMap())) {
-                                    is ResponseMessage.Success -> {
-                                        conv = cRes.message.conversation
-                                        currentConversation = conv
-                                        conversations.add(0, conv)
-                                    }
-                                    is ResponseMessage.Failure -> return@launch
+                                try {
+                                    conv = client.createConversation()
+                                    currentConversation = conv
+                                    conversations.add(0, conv)
+                                } catch (e: Exception) {
+                                    bannerErrorMessage = ErrorFormatter.format(e)
+                                    return@launch
                                 }
                             }
 
@@ -429,49 +417,39 @@ fun MainChatScreen(
                             isStreaming = true
 
                             try {
-                                val stream = rpcClient.agent.sendMessage(emptyMap())
-                                val req = sendMessageRequest {
-                                    this.conversationId = conv.id
-                                    this.content = text
-                                    this.providerId = selectedProviderId
-                                    this.model = selectedModel
-                                    this.clientMsgId = userMsgId
-                                }
-                                stream.sendAndClose(req)
-                                for (res in stream.responseChannel()) {
-                                    val event = res.event
-                                    if (event.hasDelta() && event.delta.hasText()) {
-                                        val delta = event.delta.text.content
+                                client.sendMessage(conv.id, text, selectedProviderId, selectedModel, userMsgId)
+                                    .collect { event ->
                                         val lastIdx = messages.indexOfLast { it.id == aiMsgId }
-                                        if (lastIdx >= 0) {
-                                            val old = messages[lastIdx]
-                                            messages[lastIdx] = old.copy(text = old.text + delta)
+                                        when (event) {
+                                            is AgentStreamEvent.Delta -> {
+                                                if (lastIdx >= 0) {
+                                                    val old = messages[lastIdx]
+                                                    messages[lastIdx] = old.copy(text = old.text + event.text)
+                                                }
+                                            }
+                                            is AgentStreamEvent.Done -> {
+                                                if (lastIdx >= 0) {
+                                                    val aiText = messages[lastIdx].text
+                                                    localChatRepository.saveMessage(
+                                                        id = aiMsgId,
+                                                        conversationId = conv.id,
+                                                        role = 2L,
+                                                        content = aiText,
+                                                        status = 2L,
+                                                        createdAt = 0L,
+                                                        updatedAt = 0L
+                                                    )
+                                                }
+                                            }
+                                            is AgentStreamEvent.Error -> {
+                                                if (lastIdx >= 0) {
+                                                    val old = messages[lastIdx]
+                                                    messages[lastIdx] = old.copy(text = old.text + "\n[Error: ${event.message}]")
+                                                }
+                                            }
+                                            else -> {}
                                         }
-                                    } else if (event.hasDone()) {
-                                        val lastIdx = messages.indexOfLast { it.id == aiMsgId }
-                                        if (lastIdx >= 0) {
-                                            val aiText = messages[lastIdx].text
-                                            localChatRepository.saveMessage(
-                                                id = aiMsgId,
-                                                conversationId = conv.id,
-                                                role = 2L,
-                                                content = aiText,
-                                                status = 2L,
-                                                createdAt = 0L,
-                                                updatedAt = 0L
-                                            )
-                                        }
-                                        break
-                                    } else if (event.hasError()) {
-                                        val err = event.error.message
-                                        val lastIdx = messages.indexOfLast { it.id == aiMsgId }
-                                        if (lastIdx >= 0) {
-                                            val old = messages[lastIdx]
-                                            messages[lastIdx] = old.copy(text = old.text + "\n[Error: $err]")
-                                        }
-                                        break
                                     }
-                                }
                             } catch (e: Exception) {
                                 val formattedError = ErrorFormatter.format(e)
                                 bannerErrorMessage = formattedError

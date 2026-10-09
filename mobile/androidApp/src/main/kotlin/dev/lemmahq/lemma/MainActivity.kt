@@ -10,6 +10,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import dev.lemmahq.lemma.data.DriverFactory
 import dev.lemmahq.lemma.data.SqlDelightLocalChatRepository
 import dev.lemmahq.lemma.db.LemmaDatabase
+import dev.lemmahq.lemma.engine.LocalLemmaClient
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -21,7 +23,12 @@ class MainActivity : ComponentActivity() {
                 val db = LemmaDatabase(driver)
                 SqlDelightLocalChatRepository(db)
             }
-            App(localChatRepository = repo)
+            App(
+                localChatRepository = repo,
+                localClientFactory = { settings ->
+                    LocalLemmaClient.create(applicationContext, settings)
+                }
+            )
         }
     }
 }
