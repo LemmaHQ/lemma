@@ -3,6 +3,8 @@ package dev.lemmahq.lemma.data
 import com.russhwolf.settings.Settings
 
 interface SettingsRepository {
+    fun getAppMode(): String?
+    fun setAppMode(mode: String?)
     fun getServerUrl(): String?
     fun setServerUrl(url: String?)
     fun getAccessToken(): String?
@@ -13,6 +15,8 @@ interface SettingsRepository {
     fun setThemeMode(mode: String)
     fun getLocalJwtSecret(): String?
     fun setLocalJwtSecret(secret: String?)
+    fun getLocalUserId(): String?
+    fun setLocalUserId(userId: String?)
     fun clearAuth()
 }
 
@@ -21,14 +25,30 @@ class DefaultSettingsRepository(
 ) : SettingsRepository {
 
     companion object {
+        private const val KEY_APP_MODE = "lemma_app_mode"
         private const val KEY_SERVER_URL = "lemma_server_url"
         private const val KEY_ACCESS_TOKEN = "lemma_access_token"
         private const val KEY_REFRESH_TOKEN = "lemma_refresh_token"
         private const val KEY_THEME_MODE = "lemma_theme_mode"
         private const val KEY_LOCAL_JWT_SECRET = "lemma_local_jwt_secret"
+        private const val KEY_LOCAL_USER_ID = "lemma_local_user_id"
+        const val MODE_REMOTE = "remote"
+        const val MODE_LOCAL = "local"
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"
         const val THEME_DARK = "dark"
+    }
+
+    override fun getAppMode(): String? {
+        return settings.getStringOrNull(KEY_APP_MODE)
+    }
+
+    override fun setAppMode(mode: String?) {
+        if (mode == null) {
+            settings.remove(KEY_APP_MODE)
+        } else {
+            settings.putString(KEY_APP_MODE, mode)
+        }
     }
 
     override fun getServerUrl(): String? {
@@ -87,8 +107,21 @@ class DefaultSettingsRepository(
         }
     }
 
+    override fun getLocalUserId(): String? {
+        return settings.getStringOrNull(KEY_LOCAL_USER_ID)
+    }
+
+    override fun setLocalUserId(userId: String?) {
+        if (userId == null) {
+            settings.remove(KEY_LOCAL_USER_ID)
+        } else {
+            settings.putString(KEY_LOCAL_USER_ID, userId)
+        }
+    }
+
     override fun clearAuth() {
         settings.remove(KEY_ACCESS_TOKEN)
         settings.remove(KEY_REFRESH_TOKEN)
+        settings.remove(KEY_LOCAL_USER_ID)
     }
 }
