@@ -9,8 +9,8 @@ import com.connectrpc.extensions.GoogleJavaLiteProtobufStrategy
 import com.connectrpc.http.clone
 import com.connectrpc.impl.ProtocolClient
 import com.connectrpc.okhttp.ConnectOkHttpClient
+import dev.lemmahq.gen.lemma.v1.AgentServiceClient
 import dev.lemmahq.gen.lemma.v1.AuthServiceClient
-import dev.lemmahq.gen.lemma.v1.ChatServiceClient
 import dev.lemmahq.gen.lemma.v1.ConversationServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
 import dev.lemmahq.lemma.data.SettingsRepository
@@ -76,7 +76,7 @@ class LemmaRpcClient(
     )
 
     val auth = AuthServiceClient(protocolClient)
-    val chat = ChatServiceClient(protocolClient)
+    val agent = AgentServiceClient(protocolClient)
     val conversation = ConversationServiceClient(protocolClient)
     val provider = ProviderServiceClient(protocolClient)
 }

@@ -46,7 +46,6 @@ import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.network.LemmaRpcClient
-import dev.lemmahq.lemma.network.SyncCoordinator
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaBubble
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
@@ -70,8 +69,6 @@ fun MainChatScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    val syncCoordinator = remember(rpcClient, localChatRepository) { SyncCoordinator(rpcClient, localChatRepository) }
-
 
     val conversations = remember { mutableStateListOf<Conversation>() }
     var currentConversation by remember { mutableStateOf<Conversation?>(null) }
@@ -111,23 +108,6 @@ fun MainChatScreen(
                     }
                 }
                 is ResponseMessage.Failure -> {}
-            }
-
-            syncCoordinator.syncAll()
-
-            val updatedCached = localChatRepository.getConversations()
-            if (updatedCached.isNotEmpty()) {
-                conversations.clear()
-                val list = updatedCached.map { c ->
-                    dev.lemmahq.gen.lemma.v1.conversation {
-                        this.id = c.id
-                        this.title = c.title
-                    }
-                }
-                conversations.addAll(list)
-                if (currentConversation == null) {
-                    currentConversation = list.first()
-                }
             }
         } finally {
             isLoadingConversations = false
@@ -449,7 +429,7 @@ fun MainChatScreen(
                             isStreaming = true
 
                             try {
-                                val stream = rpcClient.chat.sendMessage(emptyMap())
+                                val stream = rpcClient.agent.sendMessage(emptyMap())
                                 val req = sendMessageRequest {
                                     this.conversationId = conv.id
                                     this.content = text
@@ -460,8 +440,8 @@ fun MainChatScreen(
                                 stream.sendAndClose(req)
                                 for (res in stream.responseChannel()) {
                                     val event = res.event
-                                    if (event.hasDelta()) {
-                                        val delta = event.delta.content
+                                    if (event.hasDelta() && event.delta.hasText()) {
+                                        val delta = event.delta.text.content
                                         val lastIdx = messages.indexOfLast { it.id == aiMsgId }
                                         if (lastIdx >= 0) {
                                             val old = messages[lastIdx]
