@@ -35,11 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientConversation
+import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaBubble
@@ -57,7 +60,9 @@ data class UiMessage(
 @Composable
 fun MainChatScreen(
     client: LemmaClient,
+    settingsRepository: SettingsRepository,
     onLogout: () -> Unit,
+    onManageProviders: () -> Unit,
     localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
     modifier: Modifier = Modifier
 ) {
@@ -72,10 +77,28 @@ fun MainChatScreen(
     var isStreaming by remember { mutableStateOf(false) }
     var isLoadingConversations by remember { mutableStateOf(false) }
 
+    var providers by remember { mutableStateOf<List<ClientProvider>>(emptyList()) }
+    var providersLoaded by remember { mutableStateOf(false) }
     var selectedProviderId by remember { mutableStateOf("") }
     var selectedModel by remember { mutableStateOf("") }
+    var showModelPicker by remember { mutableStateOf(false) }
     var bannerErrorMessage by remember { mutableStateOf<String?>(null) }
     var lastFailedText by remember { mutableStateOf<String?>(null) }
+
+    fun applyDefaultSelection(available: List<ClientProvider>) {
+        val defaultProviderId = settingsRepository.getDefaultProviderId()
+        val defaultModel = settingsRepository.getDefaultModel()
+        val fromSettings = available.firstOrNull { it.id == defaultProviderId && it.enabled }
+            ?.takeIf { defaultModel != null && it.models.contains(defaultModel) }
+        if (fromSettings != null) {
+            selectedProviderId = fromSettings.id
+            selectedModel = defaultModel.orEmpty()
+        } else {
+            val first = available.firstOrNull { it.enabled }
+            selectedProviderId = first?.id.orEmpty()
+            selectedModel = first?.models?.firstOrNull().orEmpty()
+        }
+    }
 
     LaunchedEffect(Unit) {
         val cached = localChatRepository.getConversations()
@@ -91,20 +114,24 @@ fun MainChatScreen(
 
         isLoadingConversations = true
         try {
-            val first = client.listProviders().firstOrNull { it.enabled }
-            if (first != null) {
-                selectedProviderId = first.id
-                selectedModel = first.models.firstOrNull().orEmpty()
-            }
+            val loaded = client.listProviders()
+            providers = loaded
+            applyDefaultSelection(loaded)
         } catch (e: Exception) {
             bannerErrorMessage = ErrorFormatter.format(e)
         } finally {
             isLoadingConversations = false
+            providersLoaded = true
         }
     }
 
-    LaunchedEffect(currentConversation?.id) {
-        val convId = currentConversation?.id ?: return@LaunchedEffect
+    LaunchedEffect(currentConversation?.id, providersLoaded) {
+        if (!providersLoaded) return@LaunchedEffect
+        val convId = currentConversation?.id
+        if (convId == null) {
+            messages.clear()
+            return@LaunchedEffect
+        }
         val cachedMsgs = localChatRepository.getMessages(convId)
         if (cachedMsgs.isNotEmpty()) {
             messages.clear()
@@ -121,7 +148,7 @@ fun MainChatScreen(
 
         try {
             val serverMsgs = client.listMessages(convId)
-            val list = serverMsgs.map {
+            val list = serverMsgs.asReversed().map {
                 UiMessage(
                     id = it.id,
                     role = if (it.role == "user") LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
@@ -140,6 +167,14 @@ fun MainChatScreen(
                     createdAt = m.createdAtSeconds,
                     updatedAt = m.updatedAtSeconds
                 )
+            }
+            val lastUsed = serverMsgs.firstOrNull { it.role == "assistant" && !it.model.isNullOrBlank() }
+            val lastProvider = providers.firstOrNull { it.id == lastUsed?.providerId && it.enabled }
+            if (lastUsed != null && lastProvider != null && lastProvider.models.contains(lastUsed.model)) {
+                selectedProviderId = lastProvider.id
+                selectedModel = lastUsed.model.orEmpty()
+            } else {
+                applyDefaultSelection(providers)
             }
         } catch (e: Exception) {
             bannerErrorMessage = ErrorFormatter.format(e)
@@ -232,6 +267,18 @@ fun MainChatScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LemmaButton(
+                        text = "Providers",
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onManageProviders()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        variant = LemmaButtonVariant.Secondary
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LemmaButton(
                         text = "Sign Out",
                         onClick = onLogout,
                         modifier = Modifier.fillMaxWidth(),
@@ -273,15 +320,16 @@ fun MainChatScreen(
                     )
                 }
 
-                if (selectedModel.isNotBlank()) {
+                if (providers.any { it.enabled }) {
                     Box(
                         modifier = Modifier
                             .clip(LemmaTheme.shapes.full)
                             .background(LemmaTheme.colors.fill2)
+                            .clickable { showModelPicker = true }
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = selectedModel,
+                            text = selectedModel.ifBlank { "Select model" },
                             style = LemmaTheme.typography.labelSmall,
                             color = LemmaTheme.colors.textSecondary
                         )
@@ -384,6 +432,10 @@ fun MainChatScreen(
                     onSend = {
                         val text = inputText.trim()
                         if (text.isBlank() || isStreaming) return@LemmaInput
+                        if (selectedProviderId.isBlank() || selectedModel.isBlank()) {
+                            bannerErrorMessage = "Select a model first"
+                            return@LemmaInput
+                        }
                         inputText = ""
 
                         scope.launch {
@@ -464,6 +516,74 @@ fun MainChatScreen(
                             }
                         }
                     }
+                )
+            }
+        }
+    }
+
+    if (showModelPicker) {
+        Dialog(onDismissRequest = { showModelPicker = false }) {
+            Column(
+                modifier = Modifier
+                    .clip(LemmaTheme.shapes.medium)
+                    .background(LemmaTheme.colors.backgroundGroup)
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Select Model",
+                    style = LemmaTheme.typography.titleMedium,
+                    color = LemmaTheme.colors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    providers.filter { it.enabled }.forEach { provider ->
+                        item(key = "header_${provider.id}") {
+                            Text(
+                                text = provider.name,
+                                style = LemmaTheme.typography.labelSmall,
+                                color = LemmaTheme.colors.textTertiary,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                        items(provider.models, key = { "${provider.id}/$it" }) { model ->
+                            val isSelected = provider.id == selectedProviderId && model == selectedModel
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(LemmaTheme.shapes.medium)
+                                    .background(
+                                        if (isSelected) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
+                                    )
+                                    .clickable {
+                                        selectedProviderId = provider.id
+                                        selectedModel = model
+                                        settingsRepository.setDefaultProviderId(provider.id)
+                                        settingsRepository.setDefaultModel(model)
+                                        showModelPicker = false
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = model,
+                                    style = LemmaTheme.typography.bodyMedium,
+                                    color = LemmaTheme.colors.textPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                LemmaButton(
+                    text = "Manage Providers",
+                    onClick = {
+                        showModelPicker = false
+                        onManageProviders()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    variant = LemmaButtonVariant.Secondary
                 )
             }
         }

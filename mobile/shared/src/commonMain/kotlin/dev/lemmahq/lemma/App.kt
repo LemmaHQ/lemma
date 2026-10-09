@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -22,6 +23,7 @@ import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.auth.AuthScreen
 import dev.lemmahq.lemma.ui.chat.MainChatScreen
+import dev.lemmahq.lemma.ui.provider.ProvidersScreen
 import dev.lemmahq.lemma.ui.setup.SetupScreen
 
 @Composable
@@ -39,6 +41,8 @@ fun App(
     var currentServerUrl by remember { mutableStateOf(settingsRepository.getServerUrl()) }
     var currentAccessToken by remember { mutableStateOf(settingsRepository.getAccessToken()) }
     val isDark by remember { mutableStateOf(settingsRepository.getThemeMode() == DefaultSettingsRepository.THEME_DARK) }
+    var showProviders by remember { mutableStateOf(false) }
+    var providersNonce by remember { mutableStateOf(0) }
 
     val client by produceState<LemmaClient?>(null, appMode, currentServerUrl) {
         value = when {
@@ -110,15 +114,27 @@ fun App(
                     val ready = client
                     if (ready == null) {
                         LoadingIndicator()
-                    } else {
-                        MainChatScreen(
+                    } else if (showProviders) {
+                        ProvidersScreen(
                             client = ready,
-                            onLogout = {
-                                settingsRepository.clearAuth()
-                                currentAccessToken = null
-                            },
-                            localChatRepository = localChatRepository
+                            onBack = {
+                                showProviders = false
+                                providersNonce++
+                            }
                         )
+                    } else {
+                        key(providersNonce) {
+                            MainChatScreen(
+                                client = ready,
+                                settingsRepository = settingsRepository,
+                                onLogout = {
+                                    settingsRepository.clearAuth()
+                                    currentAccessToken = null
+                                },
+                                onManageProviders = { showProviders = true },
+                                localChatRepository = localChatRepository
+                            )
+                        }
                     }
                 }
             }
