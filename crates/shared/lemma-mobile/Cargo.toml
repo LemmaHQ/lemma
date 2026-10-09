@@ -16,9 +16,16 @@ bindgen = ["uniffi/cli"]
 
 [dependencies]
 chrono.workspace = true
+lemma-adapter.workspace = true
+lemma-agent.workspace = true
 lemma-auth.workspace = true
 lemma-conversation.workspace = true
+lemma-core.workspace = true
 lemma-db-sqlite.workspace = true
+lemma-provider.workspace = true
+lemma-session.workspace = true
+lemma-tools.workspace = true
+sqlx.workspace = true
 tokio.workspace = true
 uniffi.workspace = true
 uuid.workspace = true

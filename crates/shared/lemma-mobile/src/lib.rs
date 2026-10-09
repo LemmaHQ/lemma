@@ -3,11 +3,23 @@
 //! backend as the server mode.
 
 use std::fmt;
+use std::str::FromStr;
 use std::sync::Arc;
 
+use lemma_adapter::{DispatchProvider, Provider, ProviderKind as AdapterKind};
+use lemma_agent::{AgentConfig, AgentLoop, ToolRuntime, TurnEvent};
 use lemma_auth::{AuthService, AuthTokens, Session, User};
 use lemma_conversation::{Conversation, ConversationService, Message};
-use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore};
+use lemma_core::{ContentBlock, Message as CoreMessage, TextContent};
+use lemma_db_sqlite::{
+    SqliteAuthStore, SqliteConversationStore, SqliteProviderStore, SqliteTraceStore,
+};
+use lemma_provider::{
+    CreateInput, ProviderKind as DomainKind, ProviderService, ProviderStore, ProviderView,
+    UpdateInput,
+};
+use lemma_session::TraceStore;
+use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use uuid::Uuid;
 
 uniffi::setup_scaffolding!();
@@ -21,6 +33,12 @@ pub enum EngineError {
     Auth(String),
     /// The conversation domain rejected the operation.
     Conversation(String),
+    /// The provider domain rejected the operation.
+    Provider(String),
+    /// The agent execution failed.
+    Agent(String),
+    /// A request argument failed validation.
+    Validation(String),
     /// The storage backend failed.
     Storage(String),
 }
@@ -31,6 +49,9 @@ impl fmt::Display for EngineError {
             Self::InvalidId(raw) => write!(f, "invalid id: {raw}"),
             Self::Auth(e) => write!(f, "auth: {e}"),
             Self::Conversation(e) => write!(f, "conversation: {e}"),
+            Self::Provider(e) => write!(f, "provider: {e}"),
+            Self::Agent(e) => write!(f, "agent: {e}"),
+            Self::Validation(e) => write!(f, "validation: {e}"),
             Self::Storage(e) => write!(f, "storage: {e}"),
         }
     }
@@ -183,12 +204,205 @@ pub struct MessagePage {
     pub has_more: bool,
 }
 
-/// The embedded local engine: auth and conversation domain services over a
-/// migrated SQLite pool.
+/// A model provider configuration.
+#[derive(uniffi::Record)]
+pub struct MobileProvider {
+    /// Provider id.
+    pub id: String,
+    /// Provider kind: `openai`, `anthropic`, or `gemini`.
+    pub kind: String,
+    /// User-facing machine identifier, immutable after creation.
+    pub identifier: String,
+    /// Display name.
+    pub name: String,
+    /// API base URL.
+    pub base_url: String,
+    /// Stored API key, empty when keyless.
+    pub api_key: String,
+    /// Cached model ids.
+    pub models: Vec<String>,
+    /// Enabled flag.
+    pub enabled: bool,
+    /// Chat endpoint path override.
+    pub api_path: String,
+    /// Model-list endpoint path override.
+    pub models_path: String,
+}
+
+impl From<ProviderView> for MobileProvider {
+    fn from(v: ProviderView) -> Self {
+        Self {
+            id: v.id.to_string(),
+            kind: v.kind.as_str().to_string(),
+            identifier: v.identifier,
+            name: v.name,
+            base_url: v.base_url,
+            api_key: v.api_key,
+            models: v.models,
+            enabled: v.enabled,
+            api_path: v.api_path,
+            models_path: v.models_path,
+        }
+    }
+}
+
+/// Patch input for updating a provider; absent fields keep current values.
+#[derive(uniffi::Record)]
+pub struct ProviderUpdate {
+    /// Display name.
+    pub name: Option<String>,
+    /// API base URL.
+    pub base_url: Option<String>,
+    /// Plaintext replacement API key.
+    pub api_key: Option<String>,
+    /// Chat endpoint path override.
+    pub api_path: Option<String>,
+    /// Model-list endpoint path override.
+    pub models_path: Option<String>,
+    /// Enabled flag.
+    pub enabled: Option<bool>,
+    /// Model ids to cache.
+    pub models: Option<Vec<String>>,
+}
+
+impl From<ProviderUpdate> for UpdateInput {
+    fn from(p: ProviderUpdate) -> Self {
+        Self {
+            name: p.name,
+            base_url: p.base_url,
+            api_key: p.api_key,
+            api_path: p.api_path,
+            models_path: p.models_path,
+            enabled: p.enabled,
+            models: p.models,
+        }
+    }
+}
+
+/// One streamed event of an agent turn.
+#[derive(Debug, uniffi::Enum)]
+pub enum MobileAgentEvent {
+    /// The user message has been committed.
+    Started {
+        /// User message id.
+        message_id: String,
+    },
+    /// A new assistant message node started streaming.
+    TurnStarted {
+        /// Assistant message id.
+        message_id: String,
+    },
+    /// An incremental text chunk.
+    Delta {
+        /// Incremental chunk.
+        text: String,
+    },
+    /// An incremental reasoning chunk.
+    ThinkingDelta {
+        /// Incremental reasoning chunk.
+        text: String,
+    },
+    /// A tool call is about to execute.
+    ToolStarted {
+        /// Provider-assigned call id.
+        id: String,
+        /// Tool name.
+        name: String,
+        /// Call arguments as serialized JSON.
+        arguments: String,
+    },
+    /// A tool call finished executing.
+    ToolFinished {
+        /// Provider-assigned call id.
+        id: String,
+        /// Tool name.
+        name: String,
+        /// Tool output text.
+        content: String,
+        /// True when the tool reported a failure.
+        is_error: bool,
+    },
+    /// The turn completed and the assistant message persisted.
+    Done {
+        /// Assistant message id.
+        message_id: String,
+        /// Prompt tokens consumed, zero when unreported.
+        input_tokens: i64,
+        /// Response tokens produced, zero when unreported.
+        output_tokens: i64,
+    },
+    /// The turn failed.
+    Error {
+        /// Failure description.
+        message: String,
+    },
+}
+
+/// Receives streamed agent turn events on the Kotlin side.
+#[uniffi::export(foreign)]
+pub trait AgentEventListener: Send + Sync {
+    /// Delivers one streamed turn event.
+    fn on_event(&self, event: MobileAgentEvent);
+}
+
+/// Maps the domain provider kind onto the adapter provider kind.
+fn kind_of(kind: DomainKind) -> AdapterKind {
+    match kind {
+        DomainKind::Anthropic => AdapterKind::Anthropic,
+        DomainKind::Gemini => AdapterKind::Gemini,
+        DomainKind::OpenAiCompatible => AdapterKind::OpenAiCompatible,
+    }
+}
+
+fn map_event(ev: TurnEvent) -> MobileAgentEvent {
+    match ev {
+        TurnEvent::UserAppended { id } => MobileAgentEvent::Started {
+            message_id: id.to_string(),
+        },
+        TurnEvent::AssistantStarted { id } => MobileAgentEvent::TurnStarted {
+            message_id: id.to_string(),
+        },
+        TurnEvent::Delta { delta } => MobileAgentEvent::Delta { text: delta },
+        TurnEvent::ThinkingDelta { delta } => MobileAgentEvent::ThinkingDelta { text: delta },
+        TurnEvent::ToolStarted {
+            id,
+            name,
+            arguments,
+        } => MobileAgentEvent::ToolStarted {
+            id,
+            name,
+            arguments,
+        },
+        TurnEvent::ToolFinished {
+            id,
+            name,
+            content,
+            is_error,
+        } => MobileAgentEvent::ToolFinished {
+            id,
+            name,
+            content,
+            is_error,
+        },
+        TurnEvent::AssistantDone { id, usage, .. } => MobileAgentEvent::Done {
+            message_id: id.to_string(),
+            input_tokens: usage.map_or(0, |u| u.input),
+            output_tokens: usage.map_or(0, |u| u.output),
+        },
+    }
+}
+
+/// The embedded local engine: auth, conversation, provider, and agent
+/// domain services over a migrated SQLite pool.
 #[derive(uniffi::Object)]
 pub struct LemmaEngine {
     auth: AuthService,
     conversations: ConversationService,
+    providers: ProviderService,
+    provider_store: Arc<SqliteProviderStore>,
+    pool: sqlx::SqlitePool,
+    dispatch: Arc<dyn Provider>,
+    workspaces_dir: std::path::PathBuf,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -198,18 +412,26 @@ impl LemmaEngine {
     /// tokens and is supplied by the caller's configuration.
     #[uniffi::constructor]
     pub async fn open(data_dir: String, jwt_secret: String) -> Result<Arc<Self>, EngineError> {
-        let db_path = std::path::Path::new(&data_dir).join("lemma.db");
-        let pool = lemma_db_sqlite::connect(&db_path)
+        let data_dir = std::path::PathBuf::from(data_dir);
+        let pool = lemma_db_sqlite::connect(&data_dir.join("lemma.db"))
             .await
             .map_err(|e| EngineError::Storage(e.to_string()))?;
         lemma_db_sqlite::migrate(&pool)
             .await
             .map_err(|e| EngineError::Storage(e.to_string()))?;
         let auth = AuthService::new(Arc::new(SqliteAuthStore::new(pool.clone())), jwt_secret);
-        let conversations = ConversationService::new(Arc::new(SqliteConversationStore::new(pool)));
+        let conversations =
+            ConversationService::new(Arc::new(SqliteConversationStore::new(pool.clone())));
+        let provider_store = Arc::new(SqliteProviderStore::new(pool.clone()));
+        let providers = ProviderService::new(provider_store.clone(), None);
         Ok(Arc::new(Self {
             auth,
             conversations,
+            providers,
+            provider_store,
+            pool,
+            dispatch: Arc::new(DispatchProvider::new()),
+            workspaces_dir: data_dir.join("workspaces"),
         }))
     }
 
@@ -377,5 +599,193 @@ impl LemmaEngine {
                 has_more,
             })
             .map_err(|e| EngineError::Conversation(e.to_string()))
+    }
+
+    /// Lists the user's provider configurations.
+    pub async fn list_providers(
+        &self,
+        user_id: String,
+    ) -> Result<Vec<MobileProvider>, EngineError> {
+        self.providers
+            .list(parse_id(&user_id)?)
+            .await
+            .map(|ps| ps.into_iter().map(Into::into).collect())
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Validates and stores a new provider configuration.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn create_provider(
+        &self,
+        user_id: String,
+        kind: String,
+        identifier: String,
+        name: String,
+        base_url: String,
+        api_key: String,
+        api_path: String,
+        models_path: String,
+        models: Vec<String>,
+    ) -> Result<MobileProvider, EngineError> {
+        let kind = DomainKind::from_str(&kind)
+            .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
+        self.providers
+            .create(
+                parse_id(&user_id)?,
+                CreateInput {
+                    kind,
+                    identifier,
+                    name,
+                    base_url,
+                    api_key,
+                    api_path,
+                    models_path,
+                    models,
+                },
+            )
+            .await
+            .map(Into::into)
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Applies a patch to a provider owned by the user.
+    pub async fn update_provider(
+        &self,
+        user_id: String,
+        provider_id: String,
+        patch: ProviderUpdate,
+    ) -> Result<MobileProvider, EngineError> {
+        self.providers
+            .update(parse_id(&user_id)?, parse_id(&provider_id)?, patch.into())
+            .await
+            .map(Into::into)
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Deletes a provider owned by the user.
+    pub async fn delete_provider(
+        &self,
+        user_id: String,
+        provider_id: String,
+    ) -> Result<(), EngineError> {
+        self.providers
+            .delete(parse_id(&user_id)?, parse_id(&provider_id)?)
+            .await
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Fetches the live model list using a stored provider's key.
+    pub async fn fetch_provider_models(
+        &self,
+        user_id: String,
+        provider_id: String,
+    ) -> Result<Vec<String>, EngineError> {
+        self.providers
+            .fetch_models_for(parse_id(&user_id)?, parse_id(&provider_id)?)
+            .await
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Fetches the live model list for ad-hoc connection details.
+    pub async fn fetch_models(
+        &self,
+        kind: String,
+        base_url: String,
+        api_key: String,
+        models_path: String,
+    ) -> Result<Vec<String>, EngineError> {
+        let kind = DomainKind::from_str(&kind)
+            .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
+        self.providers
+            .fetch_models_adhoc(kind, &base_url, &api_key, &models_path)
+            .await
+            .map_err(|e| EngineError::Provider(e.to_string()))
+    }
+
+    /// Runs one agent turn: appends the user message, streams model and tool
+    /// events to `listener`, and persists the settled assistant messages.
+    /// The stream terminates with a `Done` or `Error` event.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn send_message(
+        &self,
+        user_id: String,
+        conversation_id: String,
+        content: String,
+        provider_id: String,
+        model: String,
+        thinking_effort: Option<String>,
+        listener: Arc<dyn AgentEventListener>,
+    ) -> Result<(), EngineError> {
+        let user_id = parse_id(&user_id)?;
+        let conversation_id = parse_id(&conversation_id)?;
+        let provider_id = parse_id(&provider_id)?;
+        if content.trim().is_empty() {
+            return Err(EngineError::Validation("content required".to_string()));
+        }
+        if model.trim().is_empty() {
+            return Err(EngineError::Validation("model required".to_string()));
+        }
+
+        let record = self
+            .provider_store
+            .get(user_id, provider_id)
+            .await
+            .map_err(|e| EngineError::Storage(e.to_string()))?
+            .ok_or_else(|| EngineError::Provider(format!("provider {provider_id} not found")))?;
+        let kind = DomainKind::from_str(&record.kind).map_err(|()| {
+            EngineError::Provider(format!("unknown provider kind: {}", record.kind))
+        })?;
+
+        let traces: Arc<dyn TraceStore> =
+            Arc::new(SqliteTraceStore::new(self.pool.clone(), user_id));
+        let thinking_effort = match thinking_effort {
+            Some(effort) if !effort.is_empty() => Some(effort),
+            _ => traces
+                .get_conversation(conversation_id)
+                .await
+                .map_err(|e| EngineError::Storage(e.to_string()))?
+                .and_then(|meta| meta.last_model)
+                .and_then(|m| m.thinking_effort),
+        };
+
+        let config = AgentConfig {
+            kind: kind_of(kind),
+            base_url: record.base_url,
+            api_path: record.api_path,
+            api_key: record.api_key,
+            model,
+            provider_id: record.id,
+            thinking_effort,
+        };
+
+        let workspace = self.workspaces_dir.join(conversation_id.to_string());
+        std::fs::create_dir_all(&workspace)
+            .map_err(|e| EngineError::Storage(format!("create workspace: {e}")))?;
+        let mut registry = ToolRegistry::new();
+        registry.register(Arc::new(ReadFileTool));
+        registry.register(Arc::new(WriteFileTool));
+        registry.register(Arc::new(BashTool));
+        let agent = AgentLoop::new(traces, self.dispatch.clone()).with_tools(ToolRuntime::new(
+            registry,
+            Arc::new(LocalExecEnv::new(workspace)),
+        ));
+
+        let user_msg = CoreMessage::User {
+            content: vec![ContentBlock::Text(TextContent { text: content })],
+        };
+
+        let observer: Arc<dyn Fn(TurnEvent) + Send + Sync> = {
+            let listener = listener.clone();
+            Arc::new(move |ev| listener.on_event(map_event(ev)))
+        };
+        if let Err(e) = agent
+            .run_turn_observed(conversation_id, user_msg, None, config, Some(observer))
+            .await
+        {
+            listener.on_event(MobileAgentEvent::Error {
+                message: e.to_string(),
+            });
+        }
+        Ok(())
     }
 }

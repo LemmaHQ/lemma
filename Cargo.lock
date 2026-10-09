@@ -1953,9 +1953,16 @@ name = "lemma-mobile"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lemma-adapter",
+ "lemma-agent",
  "lemma-auth",
  "lemma-conversation",
+ "lemma-core",
  "lemma-db-sqlite",
+ "lemma-provider",
+ "lemma-session",
+ "lemma-tools",
+ "sqlx",
  "tokio",
  "uniffi",
  "uuid",
