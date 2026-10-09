@@ -5,11 +5,15 @@ import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientConversation
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientProvider
+import dev.lemmahq.lemma.client.ClientProviderInput
+import dev.lemmahq.lemma.client.ClientProviderPatch
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.uniffi.LemmaEngine
 import dev.lemmahq.lemma.uniffi.MobileAgentEvent
+import dev.lemmahq.lemma.uniffi.MobileProvider
 import dev.lemmahq.lemma.uniffi.MobileSession
+import dev.lemmahq.lemma.uniffi.ProviderUpdate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -40,9 +44,54 @@ class LocalLemmaClient private constructor(
     }
 
     override suspend fun listProviders(): List<ClientProvider> {
-        return engine.listProviders(userId()).map {
-            ClientProvider(id = it.id, name = it.name, models = it.models, enabled = it.enabled)
-        }
+        return engine.listProviders(userId()).map { it.toClient() }
+    }
+
+    override suspend fun createProvider(input: ClientProviderInput): ClientProvider {
+        return engine.createProvider(
+            userId(),
+            input.kind,
+            input.identifier,
+            input.name,
+            input.baseUrl,
+            input.apiKey,
+            input.apiPath,
+            input.modelsPath,
+            input.models
+        ).toClient()
+    }
+
+    override suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider {
+        return engine.updateProvider(
+            userId(),
+            id,
+            ProviderUpdate(
+                name = patch.name,
+                baseUrl = patch.baseUrl,
+                apiKey = patch.apiKey,
+                apiPath = patch.apiPath,
+                modelsPath = patch.modelsPath,
+                enabled = patch.enabled,
+                models = patch.models
+            )
+        ).toClient()
+    }
+
+    override suspend fun deleteProvider(id: String) {
+        engine.deleteProvider(userId(), id)
+    }
+
+    override suspend fun fetchProviderModels(id: String): List<String> {
+        return engine.fetchProviderModels(userId(), id)
+    }
+
+    override suspend fun fetchModels(
+        kind: String,
+        baseUrl: String,
+        apiKey: String,
+        modelsPath: String
+    ): List<String> {
+        return engine.fetchModels(kind, baseUrl, apiKey, modelsPath)
     }
 
     override suspend fun createConversation(): ClientConversation {
@@ -57,6 +106,8 @@ class LocalLemmaClient private constructor(
                 id = it.id,
                 role = it.role,
                 content = it.text,
+                providerId = it.providerId,
+                model = it.model,
                 createdAtSeconds = it.createdAtSeconds,
                 updatedAtSeconds = it.createdAtSeconds
             )
@@ -89,6 +140,21 @@ class LocalLemmaClient private constructor(
         settings.setAccessToken(session.accessToken)
         settings.setRefreshToken(session.refreshToken)
     }
+}
+
+private fun MobileProvider.toClient(): ClientProvider {
+    return ClientProvider(
+        id = id,
+        kind = kind,
+        identifier = identifier,
+        name = name,
+        baseUrl = baseUrl,
+        apiPath = apiPath,
+        modelsPath = modelsPath,
+        models = models,
+        enabled = enabled,
+        hasApiKey = apiKey.isNotBlank()
+    )
 }
 
 private fun MobileAgentEvent.toStreamEvent(): AgentStreamEvent {

@@ -5,9 +5,38 @@ import kotlinx.coroutines.flow.Flow
 /** A model provider as surfaced to the UI. */
 data class ClientProvider(
     val id: String,
+    val kind: String,
+    val identifier: String,
     val name: String,
+    val baseUrl: String,
+    val apiPath: String,
+    val modelsPath: String,
     val models: List<String>,
-    val enabled: Boolean
+    val enabled: Boolean,
+    val hasApiKey: Boolean
+)
+
+/** Input for creating a provider; `identifier` is immutable afterwards. */
+data class ClientProviderInput(
+    val kind: String,
+    val identifier: String,
+    val name: String,
+    val baseUrl: String,
+    val apiKey: String = "",
+    val apiPath: String = "",
+    val modelsPath: String = "",
+    val models: List<String> = emptyList()
+)
+
+/** Patch input for updating a provider; null fields keep current values. */
+data class ClientProviderPatch(
+    val name: String? = null,
+    val baseUrl: String? = null,
+    val apiKey: String? = null,
+    val apiPath: String? = null,
+    val modelsPath: String? = null,
+    val enabled: Boolean? = null,
+    val models: List<String>? = null
 )
 
 /** A conversation summary as surfaced to the UI. */
@@ -21,6 +50,8 @@ data class ClientMessage(
     val id: String,
     val role: String,
     val content: String,
+    val providerId: String?,
+    val model: String?,
     val createdAtSeconds: Long,
     val updatedAtSeconds: Long
 )
@@ -72,6 +103,21 @@ interface LemmaClient {
 
     /** Lists provider configurations of the current account. */
     suspend fun listProviders(): List<ClientProvider>
+
+    /** Creates a provider configuration and returns the stored record. */
+    suspend fun createProvider(input: ClientProviderInput): ClientProvider
+
+    /** Applies a patch to a provider and returns the stored record. */
+    suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider
+
+    /** Deletes a provider configuration. */
+    suspend fun deleteProvider(id: String)
+
+    /** Fetches the live model list using a stored provider's credentials. */
+    suspend fun fetchProviderModels(id: String): List<String>
+
+    /** Fetches the live model list for ad-hoc connection details. */
+    suspend fun fetchModels(kind: String, baseUrl: String, apiKey: String, modelsPath: String): List<String>
 
     /** Creates an empty conversation. */
     suspend fun createConversation(): ClientConversation
