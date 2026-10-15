@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-One page per subsystem of Lemma: what it is, the data structures it moves, and the invariants it holds. The folder complements `docs/architecture.md`, which describes *behavior* across subsystems (the crate layers, server and local modes, the path of one turn); each page here is the reference for one subsystem's types and wiring.
+One page per subsystem of Lemma: what it is, the data structures it moves, and the invariants it holds. The folder complements [architecture.md](../architecture.md), which describes *behavior* across subsystems (the crate layers, server and local modes, the path of one turn); each page here is the reference for one subsystem's types and wiring.
 
 | Page | Owns |
 |---|---|
