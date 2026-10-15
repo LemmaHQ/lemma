@@ -9,7 +9,7 @@ fileTypes:
 ignores:
     - ".git/**"
     - "**/node_modules/**"
-    - "docs/style-guide/**"
+    - ".agents/skills/*/references/**"
     - "target/**"
     - "**/build/**"
     - "web/src/gen/**"
