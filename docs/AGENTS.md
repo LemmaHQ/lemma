@@ -22,12 +22,12 @@ Each fact has one home: the tier whose job it is; elsewhere, link there.
 | --- | --- | --- |
 | Root `AGENTS.md` | Standing orders: rules an agent needs in context in every session, one to three lines each, linking its home | Stories, worked examples, situational procedures, anything restated from a linked home |
 | Subtree `AGENTS.md` (`crates/`, `web/`, `desktop/`, `mobile/`, `proto/`, `docs/`) | Orders specific to that subtree | Repo-wide rules the root file already carries |
-| `architecture.md` | Ordered map: crate layers, server and local modes, the path of one turn, extension points; read before changing `crates/` | Type definitions (→ subsystems), per-crate detail (→ crate READMEs), decision rationale (→ commit messages), implementation-status annotations |
-| `glossary.md` | Terms with a precise meaning in code, one definition each | Behavior narration (→ architecture.md), type definitions (→ subsystems) |
+| [architecture.md](architecture.md) | Ordered map: crate layers, server and local modes, the path of one turn, extension points; read before changing `crates/` | Type definitions (→ subsystems), per-crate detail (→ crate READMEs), decision rationale (→ commit messages), implementation-status annotations |
+| [glossary.md](glossary.md) | Terms with a precise meaning in code, one definition each | Behavior narration (→ architecture.md), type definitions (→ subsystems) |
 | `subsystems/` | One reference page per subsystem: type definitions, semantics, invariants | Behavior narration across subsystems (→ architecture.md) |
 | Crate and package README | The per-crate contract: config, semantics, limitations, extension points | Doc-comment restatement, other crates' concerns |
-| `development.md` | Environment setup, daily workflow, and a summary of CI | Runtime/version rationale (→ commit messages), check-by-check lists that drift from the `justfile` |
-| `testing.md` | Test tiers: what each covers, where tests live, how they run | Individual test walkthroughs, fixture detail owned by a crate or package |
+| [development.md](development.md) | Environment setup, daily workflow, and a summary of CI | Runtime/version rationale (→ commit messages), check-by-check lists that drift from the `justfile` |
+| [testing.md](testing.md) | Test tiers: what each covers, where tests live, how they run | Individual test walkthroughs, fixture detail owned by a crate or package |
 | `DESIGN.md` | Design tokens and the visual system; source of the generated `tokens.css` | Component behavior (→ subsystems) |
 | Skills (`.agents/skills/`) | Reusable workflows and specialized decision standards, including per-language code style | Product and runtime contracts (→ docs or source) |
 
@@ -44,7 +44,7 @@ Placement: rationale → commit messages; type definitions → subsystems; term 
 
 ## Wordcount budgets
 
-Targets: root `AGENTS.md` ≤ 1,500; this file ≤ 1,200; other subtree `AGENTS.md` ≤ 500; `architecture.md` ≤ 2,400. Budgets count words in the English file. Other tiers have no budget.
+Targets: root `AGENTS.md` ≤ 1,500; this file ≤ 1,200; other subtree `AGENTS.md` ≤ 500; [architecture.md](architecture.md) ≤ 2,400. Budgets count words in the English file. Other tiers have no budget.
 
 When a document exceeds its budget:
 

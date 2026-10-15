@@ -22,12 +22,12 @@
 | --- | --- | --- |
 | 根 `AGENTS.md` | 常驻规则：Agent 每次会话都需要放在上下文中的规则，每条一至三行，并链接到其归属 | 故事、完整示例、场景化流程，以及从已链接归属处复述的任何内容 |
 | 子树 `AGENTS.md`（`crates/`、`web/`、`desktop/`、`mobile/`、`proto/`、`docs/`） | 仅作用于该子树的规则 | 根文件已经包含的全仓库规则 |
-| `architecture.md` | 有序的系统地图：crate 分层、服务端与本地两种模式、一次 turn 的完整链路、扩展点；修改 `crates/` 前阅读 | 类型定义（→ subsystems）、单个 crate 的细节（→ crate README）、决策理由（→ commit message）、实现进度标注 |
-| `glossary.md` | 在代码中有确切含义的术语，每个术语一条定义 | 行为叙述（→ architecture.md）、类型定义（→ subsystems） |
+| [architecture.md](architecture.zh.md) | 有序的系统地图：crate 分层、服务端与本地两种模式、一次 turn 的完整链路、扩展点；修改 `crates/` 前阅读 | 类型定义（→ subsystems）、单个 crate 的细节（→ crate README）、决策理由（→ commit message）、实现进度标注 |
+| [glossary.md](glossary.zh.md) | 在代码中有确切含义的术语，每个术语一条定义 | 行为叙述（→ architecture.md）、类型定义（→ subsystems） |
 | `subsystems/` | 每个子系统一页参考：类型定义、语义、不变量 | 跨子系统的行为叙述（→ architecture.md） |
 | Crate 与 package README | 单个 crate 的契约：配置、语义、限制、扩展点 | 对文档注释的复述、其他 crate 的事务 |
-| `development.md` | 环境搭建、日常工作流与 CI 概览 | 运行时与版本选择的理由（→ commit message）、会与 `justfile` 脱节的逐项检查列表 |
-| `testing.md` | 测试分层：各层覆盖什么、测试放在哪里、如何运行 | 单个测试的走查、归属于某个 crate 或 package 的 fixture 细节 |
+| [development.md](development.zh.md) | 环境搭建、日常工作流与 CI 概览 | 运行时与版本选择的理由（→ commit message）、会与 `justfile` 脱节的逐项检查列表 |
+| [testing.md](testing.zh.md) | 测试分层：各层覆盖什么、测试放在哪里、如何运行 | 单个测试的走查、归属于某个 crate 或 package 的 fixture 细节 |
 | `DESIGN.md` | 设计 token 与视觉体系；生成文件 `tokens.css` 的数据源 | 组件行为（→ subsystems） |
 | Skill（`.agents/skills/`） | 可复用的工作流与专项决策标准，包括各语言的代码风格 | 产品与运行时契约（→ 文档或源码） |
 
@@ -44,7 +44,7 @@
 
 ## 字数预算
 
-目标：根 `AGENTS.md` ≤ 1,500；本文件 ≤ 1,200；其他子树 `AGENTS.md` ≤ 500；`architecture.md` ≤ 2,400。预算按英文文件的词数计算。其他层不设预算。
+目标：根 `AGENTS.md` ≤ 1,500；本文件 ≤ 1,200；其他子树 `AGENTS.md` ≤ 500；[architecture.md](architecture.zh.md) ≤ 2,400。预算按英文文件的词数计算。其他层不设预算。
 
 文档超出预算时：
 
