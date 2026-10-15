@@ -1,82 +1,81 @@
 # AGENTS.md
 
-## 个人编码习惯
+English | [中文](AGENTS.zh.md)
 
-- 缩进统一使用 4 个空格
-- 配置文件与项目骨架优先借助生成命令（如 `cargo new`、`buf init`、`npm create`）初始化
-- 模块组织固定采用同名 .rs 文件与子目录映射（`auth.rs` + `auth/` 目录）
-- 命名单复数：crate 名与概念目录统一使用单数；装同类条目的容器目录统一使用复数（`crates/`、`migrations/`、`scenarios/`）。存量复数 crate 持续规范化
+Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. Read `docs/architecture.md` before changing `crates/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
-## 注释与文档规范
+## Repository layout
 
-细则基准在 [`lemma-code-style`](.agents/skills/lemma-code-style/SKILL.md) skill，本节是沉淀后的本项目规则。
+```text
+crates/       Rust workspace (crates/AGENTS.md)
+  shared/     crates linked by the server, the desktop engine, and Android
+  server/     server-only crates: the lemma-server binary, the PostgreSQL store
+    rpc/      one ConnectRPC service crate per proto service
+proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
+web/          React web client, also the desktop renderer (web/AGENTS.md)
+desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
+mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
+assets/       brand assets
+.agents/      Agent Notes and skills
+docs/         documentation (docs/AGENTS.md)
+DESIGN.md     design tokens; source of web/src/styles/tokens.css
+```
 
-- **表述精炼准确**：spec、文档与注释清晰界定系统功能与边界，默认采用正向表述；划定边界、列举排除项与评审清单时可使用否定句式与反向清单
-- **废弃与临时代码**：历史代码变更通过 Git 历史追溯并从工作区彻底清理
-- **业务设计与心智流**：系统设计与权衡统一沉淀至设计文档或 Issue/PR，函数体内保持清晰自解释的逻辑流
-- **命名与类型约束**：标识符与类型声明保持完全自解释，替代同义反复的注释
-- **文档与契约边界**：
-  - **Rust**：仅顶层公开模块 / Crate 入口使用紧凑 `//!` 说明定位；公共 API / Trait 允许紧凑文档注释 `///`；`unsafe` 块仅限使用紧凑的 `// SAFETY: <前置条件证明>`
-  - **TypeScript**：公开导出的公共接口允许紧凑 JSDoc（类型完全由 TS 类型系统表达，省略 JSDoc 类型注解）；多同类型实参调用允许内联参数名标记 `/* paramName= */`
-  - **Kotlin**：公开 API 允许紧凑 KDoc（首句为完整摘要短语，自解释的属性与方法直接省略 KDoc）
-  - **Shell**：脚本首行声明 Shebang（`#!/usr/bin/env bash`）；对外提供的复用函数采用紧凑契约头（注明 Description、Globals、Arguments、Outputs、Returns）
+## Commands
 
-## 代码风格与语言规范
+```sh
+just check              # buf lint/build, clippy, web and desktop eslint
+just verify             # check, then Rust and web tests
+just rust-dev           # run lemma-server with .env
+just web-dev            # Vite dev server
+just desktop-dev        # build lemma-server, then launch Electron
+just proto-gen          # regenerate web TypeScript and Android Kotlin from proto/
+just docker-up          # full stack with PostgreSQL; docker-down stops it
+just docs-lint          # markdownlint and autocorrect
+```
 
-### 通用规则
+Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 
-- 缩进统一使用 4 个空格，行尾保持纯净无空白，文件末尾保留单换行，源码统一采用 UTF-8 编码
-- 类型与接口（Class / Struct / Interface / Trait / Enum）使用 `PascalCase`；常量与环境变量使用 `UPPER_SNAKE_CASE`
-- 标识符命名保持自然纯粹，限定使用标准语义词（Kotlin 私有 backing property 除外）
-- 交付代码清理所有临时调试语句（如 `console.log`、`debugger`、`println!`、`dbg!`、`echo`）
+### Run relevant checks locally
 
-### Rust
+Before pushing, follow `.agents/skills/lemma-pre-push-checks/SKILL.md`; report only commands run.
 
-- 流程优先表达式驱动，保持计算链条流畅精简
-- 守卫分支优先使用 `let-else`，复杂分支优先使用详尽 `match`
-- `use` 导入语句按“标准库 / 外部依赖 / 本地 crate”分组排序，大括号内保持紧凑
-- 模块文件严格遵循 `foo.rs` + `foo/` 目录组织，保持结构一致
-- 数据传递优先借用与零拷贝，生命周期按需表达
+- Match evidence to the change: the changed subtree's lint and tests, `just docs-lint` for docs.
+- Run `just verify` only for a repository-wide change or on request; CI owns exhaustive coverage.
 
-### TypeScript
+## Secrets / .env
 
-- 变量声明使用 `const`，在需要重新赋值时使用 `let`；单条语句仅声明单变量
-- 语句末尾显式书写分号，代码格式确定清晰
-- 条件判断严格使用全等 `===` 与 `!==`
-- 控制流分支（`if`、`for`、`while` 等）统一使用大括号 `{}`
-- 模块导出限定使用 ES Module 命名导出（Named Exports），类型导入导出显式使用 `import type` / `export type`
-- 严格类型安全：未知输入使用 `unknown` 并收窄，采用原生确定类型表达
+`lemma-server` reads the root `.env`; [.env.example](.env.example) lists the variables. Never commit credentials.
 
-### Kotlin
+## Conventions
 
-- 语句末尾省略分号；单表达式函数使用 `= expr` 语法并省略返回类型注解
-- 大括号遵循 K&R 风格（左括号置于行末）
-- 充分运用空安全调用符（`?.`、`?:`、`let`）处理可空类型
-- 属性除私有 backing property（`_prop` 配合公开 `prop`）外一律采用 `camelCase`
-- 包名一律全小写连续书写，单文件一条语句
+- **Formatting:** 4-space indentation (YAML and `.proto` use 2), no trailing whitespace, exactly one trailing newline, UTF-8.
+- **Scaffold with generators.** Initialize configuration files and project skeletons with their tool's generator (`cargo new`, `buf init`, `npm create`).
+- **Names:** types use `PascalCase`; constants and environment variables use `UPPER_SNAKE_CASE`; identifiers use plain, standard terms. Crates and concept directories are singular; directories that hold entries of one kind are plural (`crates/`, `migrations/`).
+- **Names and types explain themselves** instead of comments that restate them.
+- **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, Agent Notes, or the PR. Doc comments take the compact forms each subtree `AGENTS.md` defines.
+- **Remove debug statements** (`console.log`, `debugger`, `println!`, `dbg!`) before delivery.
+- **Delete obsolete and temporary code;** Git keeps history.
+- **Write logic for a defined scenario.** Before adding defensive logic (limits, fallback branches, extra validation, degraded paths), explain the scenario and the reason to the user and let the user decide.
+- **Specs, docs, and comments state function and boundaries precisely.** Phrase positively by default; boundaries, exclusions, and review checklists may use negative phrasing.
+- **Code style:** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) holds the upstream guides behind these rules.
+- **Create Agent Notes only for durable decision rationale;** mechanical and local edits are exempt ([scope](.agents/notes/README.md#when-to-write-one)).
 
-### Shell
+## Git
 
-- 解释器固定为 Bash，脚本首行声明 `#!/usr/bin/env bash` 或 `#!/bin/bash`
-- 变量展开必须包含大括号与双引号包裹：`"${var}"`；测试字符串判空使用 `-z "${var}"` 或 `-n "${var}"`
-- 命令行参数与标志列表统一使用 Bash 数组 `declare -a FLAGS=(...)` 并以 `"${FLAGS[@]}"` 传参
-- 条件测试使用 `[[ ... ]]`，算术运算使用 `(( ... ))` 或 `$(( ... ))`
-- 函数内部变量统一使用 `local` 声明；多函数脚本统一提供 `main "$@"` 作为入口；优先使用 Shell 原生 Builtin 代替外部进程
+- Commit messages follow [COMMIT_CONVENTION.md](COMMIT_CONVENTION.md), in English.
+- Commit and push only on explicit request.
+- One commit does one complete thing; split independent hunks into separate commits.
+- Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.
 
-## Git 提交习惯
+## Defensive patterns
 
-- 遵循 Conventional Commits，提交信息使用英语
-- 按逻辑块整合提交，单个功能与主题保持完整独立
-- 提交保持原子化：一笔只做一件完整的事
-- 任何提交必须精确指定文件范围，逐文件显式 `git add`
-- 仅在明确要求时执行提交与推送
+Read [docs/defensive-patterns/README.md](docs/defensive-patterns/README.md) before changing a crate's public API, a proto contract or RPC service, agent or session behavior, a client component or store, or the mobile bindings. Its [review principles](docs/defensive-patterns/README.md#why-these-rules) apply per artifact.
 
-## 开发流程
+## Documentation
 
-- spec、文档与注释清晰阐明功能定义与设计边界，默认正向描述，划定边界与排除项时可用否定表述
-- 逻辑编写保持依据明确与契约精炼：仅针对明确业务场景编写处理逻辑；新增防御性逻辑（如上限、兜底分支、额外校验、降级路径）前向用户阐述场景与理由，由用户决策后加入
+Docs accompany every code change: update the affected README and doc comments together. [docs/AGENTS.md](docs/AGENTS.md) owns tiers, writing rules, and word budgets; the [bilingual contract](docs/i18n/README.md) owns English and Chinese pairs.
 
-## 协作约定
+## Editing these instructions
 
-- 提交前核验磁盘真实改动，尊重用户在验证空档中的主动删改；按 hunk 级保持原子化，各个独立逻辑块单独成笔
-- 交付代码默认零注释：逻辑设计与约束解释留在会话与文档，不落入代码及配置文件
+`AGENTS.md` and `AGENTS.zh.md` are one English–Chinese pair; update both in the same change. Keep each rule self-contained and link its home.

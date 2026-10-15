@@ -5,7 +5,7 @@ description: Use when writing or reviewing Rust, TypeScript, or Kotlin code in L
 
 # Lemma Code Style
 
-The standing style rules live in the root [AGENTS.md](../../../AGENTS.md) and are always in context. This skill adds the upstream style guides behind those rules and the order in which they apply.
+Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language rules live in [crates/AGENTS.md](../../../crates/AGENTS.md) (Rust), [web/AGENTS.md](../../../web/AGENTS.md) (TypeScript, also for `desktop/`), and [mobile/AGENTS.md](../../../mobile/AGENTS.md) (Kotlin). This skill adds the upstream style guides behind those rules and the order in which they apply.
 
 ## Precedence
 
@@ -16,8 +16,8 @@ The standing style rules live in the root [AGENTS.md](../../../AGENTS.md) and ar
 
 A higher source wins every conflict. Known conflicts:
 
-- **Comments.** Delivered code carries no comments by default; doc comments are limited to the forms listed in the root `AGENTS.md`. Upstream requirements for file overviews, implementation comments, or KDoc on every public member do not apply.
-- **Indentation.** Four spaces in every language; YAML uses two.
+- **Comments.** Delivered code carries no comments by default; doc comments take only the forms the per-language `AGENTS.md` defines. Upstream requirements for file overviews, implementation comments, or KDoc on every public member do not apply.
+- **Indentation.** Four spaces in every language; YAML and `.proto` use two.
 - **TypeScript toolchain.** The Google-internal tooling in the TypeScript guide's "Toolchain requirements" section does not apply; Prettier and ESLint as configured in the repository are the formatter and linter.
 - **Naming.** Identifiers use plain, standard terms; the Kotlin private backing property `_prop` is the one underscore prefix allowed.
 
