@@ -16,7 +16,7 @@ web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.
 desktop/      Electron 外壳，以本地引擎方式运行 lemma-server（desktop/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
-.agents/      Agent Note 与 skill
+.agents/      skill
 docs/         文档（docs/AGENTS.md）
 DESIGN.md     设计 token；web/src/styles/tokens.css 的数据源
 ```
@@ -36,13 +36,6 @@ just docs-lint          # markdownlint 与 autocorrect
 
 各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
 
-### 在本地运行相关检查
-
-推送之前遵循 `.agents/skills/lemma-pre-push-checks/SKILL.md`；只汇报实际运行过的命令。
-
-- 证据与改动对应：跑被改子树的 lint 与测试，文档改动跑 `just docs-lint`。
-- 只有仓库级改动或明确要求时才跑 `just verify`；完整覆盖由 CI 负责。
-
 ## 密钥 / .env
 
 `lemma-server` 读取根目录的 `.env`；变量见 [.env.example](.env.example)。绝不提交凭据。
@@ -53,13 +46,12 @@ just docs-lint          # markdownlint 与 autocorrect
 - **用生成命令搭骨架。** 配置文件与项目骨架用对应工具的生成命令初始化（`cargo new`、`buf init`、`npm create`）。
 - **命名：** 类型用 `PascalCase`；常量与环境变量用 `UPPER_SNAKE_CASE`；标识符使用自然、标准的语义词。crate 与概念目录用单数；装同类条目的容器目录用复数（`crates/`、`migrations/`）。
 - **名称与类型自解释**，取代复述它们的注释。
-- **交付代码默认零注释。** 设计与约束的解释留在会话、文档、Agent Note 或 PR 中。文档注释采用各子树 `AGENTS.md` 规定的紧凑形式。
+- **交付代码默认零注释。** 设计与约束的解释留在会话、文档或 commit message 中。文档注释采用各子树 `AGENTS.md` 规定的紧凑形式。
 - **交付前清理调试语句**（`console.log`、`debugger`、`println!`、`dbg!`）。
 - **彻底删除废弃与临时代码；** 历史由 Git 保留。
 - **只为明确的业务场景编写逻辑。** 新增防御性逻辑（上限、兜底分支、额外校验、降级路径）之前，先向用户说明场景与理由，由用户决定。
 - **spec、文档与注释准确界定功能与边界。** 默认正向表述；划定边界、列举排除项与评审清单时可以使用否定表述。
 - **代码风格：** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) 收录这些规则背后的上游指南。
-- **只为长期有效的决策理由创建 Agent Note；** 机械性与局部改动不需要（[范围](.agents/notes/README.zh.md#什么时候写)）。
 
 ## Git
 
@@ -67,10 +59,6 @@ just docs-lint          # markdownlint 与 autocorrect
 - 只在明确要求时提交与推送。
 - 一笔提交只做一件完整的事；相互独立的 hunk 分成不同的提交。
 - 用 `git add <file>` 逐个显式暂存文件。提交前核对磁盘上的实际改动，保留用户在此期间做的修改。
-
-## 防御性模式
-
-修改 crate 公共 API、proto 契约或 RPC 服务、Agent 或会话行为、客户端组件或 store、移动端绑定之前，先读 [docs/defensive-patterns/README.zh.md](docs/defensive-patterns/README.zh.md)。其中的[评审原则](docs/defensive-patterns/README.zh.md#为什么有这些规则)按产物适用。
 
 ## 文档
 

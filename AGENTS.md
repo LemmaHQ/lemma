@@ -16,7 +16,7 @@ web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
-.agents/      Agent Notes and skills
+.agents/      skills
 docs/         documentation (docs/AGENTS.md)
 DESIGN.md     design tokens; source of web/src/styles/tokens.css
 ```
@@ -36,13 +36,6 @@ just docs-lint          # markdownlint and autocorrect
 
 Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 
-### Run relevant checks locally
-
-Before pushing, follow `.agents/skills/lemma-pre-push-checks/SKILL.md`; report only commands run.
-
-- Match evidence to the change: the changed subtree's lint and tests, `just docs-lint` for docs.
-- Run `just verify` only for a repository-wide change or on request; CI owns exhaustive coverage.
-
 ## Secrets / .env
 
 `lemma-server` reads the root `.env`; [.env.example](.env.example) lists the variables. Never commit credentials.
@@ -53,13 +46,12 @@ Before pushing, follow `.agents/skills/lemma-pre-push-checks/SKILL.md`; report o
 - **Scaffold with generators.** Initialize configuration files and project skeletons with their tool's generator (`cargo new`, `buf init`, `npm create`).
 - **Names:** types use `PascalCase`; constants and environment variables use `UPPER_SNAKE_CASE`; identifiers use plain, standard terms. Crates and concept directories are singular; directories that hold entries of one kind are plural (`crates/`, `migrations/`).
 - **Names and types explain themselves** instead of comments that restate them.
-- **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, Agent Notes, or the PR. Doc comments take the compact forms each subtree `AGENTS.md` defines.
+- **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, or commit messages. Doc comments take the compact forms each subtree `AGENTS.md` defines.
 - **Remove debug statements** (`console.log`, `debugger`, `println!`, `dbg!`) before delivery.
 - **Delete obsolete and temporary code;** Git keeps history.
 - **Write logic for a defined scenario.** Before adding defensive logic (limits, fallback branches, extra validation, degraded paths), explain the scenario and the reason to the user and let the user decide.
 - **Specs, docs, and comments state function and boundaries precisely.** Phrase positively by default; boundaries, exclusions, and review checklists may use negative phrasing.
 - **Code style:** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) holds the upstream guides behind these rules.
-- **Create Agent Notes only for durable decision rationale;** mechanical and local edits are exempt ([scope](.agents/notes/README.md#when-to-write-one)).
 
 ## Git
 
@@ -67,10 +59,6 @@ Before pushing, follow `.agents/skills/lemma-pre-push-checks/SKILL.md`; report o
 - Commit and push only on explicit request.
 - One commit does one complete thing; split independent hunks into separate commits.
 - Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.
-
-## Defensive patterns
-
-Read [docs/defensive-patterns/README.md](docs/defensive-patterns/README.md) before changing a crate's public API, a proto contract or RPC service, agent or session behavior, a client component or store, or the mobile bindings. Its [review principles](docs/defensive-patterns/README.md#why-these-rules) apply per artifact.
 
 ## Documentation
 
