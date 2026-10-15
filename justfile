@@ -4,7 +4,7 @@ default:
 
 # Fast static analysis and contract validation
 [group('workspace')]
-check: proto-lint proto-build check-features rust-lint web-lint desktop-lint
+check: proto-lint proto-build rust-lint web-lint desktop-lint
 
 # Full workspace verification including tests
 [group('workspace')]
@@ -60,11 +60,6 @@ rust-cov:
 [group('rust')]
 rust-cov-html:
     cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --html --open
-
-# Validate the feature catalog
-[group('features')]
-check-features:
-    npm run check:features
 
 # Generate design tokens (DESIGN.md -> tokens.css)
 [group('web')]

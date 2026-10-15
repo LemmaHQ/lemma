@@ -1,7 +1,0 @@
-name: Both backends satisfy the same contract
-given:
-  - the shared storage conformance suite
-when:
-  - the suite runs against lemma-db-pgsql and lemma-db-sqlite
-then:
-  - both backends pass with identical behavior

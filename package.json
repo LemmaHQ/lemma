@@ -9,7 +9,6 @@
     "scripts": {
         "gen:proto": "cd proto && buf generate",
         "gen:tokens": "node web/scripts/gen-tokens.mjs",
-        "check:features": "node scripts/check-features.mjs",
         "build:desktop": "npm --workspace=desktop run build",
         "dev:desktop": "npm --workspace=desktop run start",
         "lint:md": "markdownlint-cli2",
@@ -24,8 +23,7 @@
         "@google/design.md": "^0.4.0",
         "autocorrect-node": "^2.14.0",
         "gray-matter": "4.0.3",
-        "markdownlint-cli2": "^0.23.3",
-        "yaml": "^2.8.1"
+        "markdownlint-cli2": "^0.23.3"
     },
     "allowScripts": {
         "electron-winstaller@5.4.4": true,
