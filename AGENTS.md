@@ -46,7 +46,7 @@ Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 - **Scaffold with generators.** Initialize configuration files and project skeletons with their tool's generator (`cargo new`, `buf init`, `npm create`).
 - **Names:** types use `PascalCase`; constants and environment variables use `UPPER_SNAKE_CASE`; identifiers use plain, standard terms. Crates and concept directories are singular; directories that hold entries of one kind are plural (`crates/`, `migrations/`).
 - **Names and types explain themselves** instead of comments that restate them.
-- **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, or commit messages. Doc comments take the compact forms each subtree `AGENTS.md` defines.
+- **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, or commit messages; known issues go to GitHub issues, never to `TODO`, `FIXME`, or similar markers. Doc comments take the compact forms each subtree `AGENTS.md` defines.
 - **Remove debug statements** (`console.log`, `debugger`, `println!`, `dbg!`) before delivery.
 - **Delete obsolete and temporary code;** Git keeps history.
 - **Write logic for a defined scenario.** Before adding defensive logic (limits, fallback branches, extra validation, degraded paths), explain the scenario and the reason to the user and let the user decide.

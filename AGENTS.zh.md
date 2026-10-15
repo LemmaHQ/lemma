@@ -46,7 +46,7 @@ just docs-lint          # markdownlint 与 autocorrect
 - **用生成命令搭骨架。** 配置文件与项目骨架用对应工具的生成命令初始化（`cargo new`、`buf init`、`npm create`）。
 - **命名：** 类型用 `PascalCase`；常量与环境变量用 `UPPER_SNAKE_CASE`；标识符使用自然、标准的语义词。crate 与概念目录用单数；装同类条目的容器目录用复数（`crates/`、`migrations/`）。
 - **名称与类型自解释**，取代复述它们的注释。
-- **交付代码默认零注释。** 设计与约束的解释留在会话、文档或 commit message 中。文档注释采用各子树 `AGENTS.md` 规定的紧凑形式。
+- **交付代码默认零注释。** 设计与约束的解释留在会话、文档或 commit message 中；已知问题记到 GitHub issue，不用 `TODO`、`FIXME` 或类似标记。文档注释采用各子树 `AGENTS.md` 规定的紧凑形式。
 - **交付前清理调试语句**（`console.log`、`debugger`、`println!`、`dbg!`）。
 - **彻底删除废弃与临时代码；** 历史由 Git 保留。
 - **只为明确的业务场景编写逻辑。** 新增防御性逻辑（上限、兜底分支、额外校验、降级路径）之前，先向用户说明场景与理由，由用户决定。
