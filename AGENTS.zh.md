@@ -55,7 +55,7 @@ just docs-lint          # markdownlint 与 autocorrect
 
 ## Git
 
-- 提交信息遵循 [COMMIT_CONVENTION.md](COMMIT_CONVENTION.md)，使用英语。
+- 提交信息遵循 [lemma-commit](.agents/skills/lemma-commit/SKILL.md)，使用英语。
 - 只在明确要求时提交与推送。
 - 一笔提交只做一件完整的事；相互独立的 hunk 分成不同的提交。
 - 用 `git add <file>` 逐个显式暂存文件。提交前核对磁盘上的实际改动，保留用户在此期间做的修改。

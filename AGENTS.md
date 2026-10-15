@@ -55,7 +55,7 @@ Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 
 ## Git
 
-- Commit messages follow [COMMIT_CONVENTION.md](COMMIT_CONVENTION.md), in English.
+- Commit messages follow [lemma-commit](.agents/skills/lemma-commit/SKILL.md), in English.
 - Commit and push only on explicit request.
 - One commit does one complete thing; split independent hunks into separate commits.
 - Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.

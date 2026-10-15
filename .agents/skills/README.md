@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Skills are reusable workflows and specialized decision standards that an agent loads on demand: documentation placement, prose review, and per-language code style. Product and runtime contracts live in docs or source; standing orders live in the root `AGENTS.md`.
+Skills are reusable workflows and specialized decision standards that an agent loads on demand: documentation placement, prose review, commit messages, and per-language code style. Product and runtime contracts live in docs or source; standing orders live in the root `AGENTS.md`.
 
 ## Layout and naming
 

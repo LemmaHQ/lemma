@@ -1,4 +1,9 @@
-# COMMIT_CONVENTION.md
+---
+name: lemma-commit
+description: Use when writing or reviewing a git commit message in Lemma — subject format, type and scope, body, footers, atomicity.
+---
+
+# Lemma Commit Standard
 
 Discipline for git commit messages. Apply to every commit written. The Lemma Commit Standard (LCS) v1.0 — takes durable parts of established conventions, drops the parts that conflict with substance-over-style.
 
