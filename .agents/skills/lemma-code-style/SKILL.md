@@ -26,7 +26,7 @@ A higher source wins every conflict. Known conflicts:
 Read only the section the question needs.
 
 | Language | Reference | Sections |
-|---|---|---|
+| --- | --- | --- |
 | Rust | [rustguide.md](references/rustguide.md) | Formatting conventions; Items; Statements; Expressions; Types and Bounds; Other style advice; `Cargo.toml` conventions |
 | TypeScript | [tsguide.md](references/tsguide.md) | Source file structure; Language features; Naming; Type system; Comments and documentation; Policies |
 | Kotlin | [kotlinguide.md](references/kotlinguide.md) | Source files; Formatting; Naming; Documentation |

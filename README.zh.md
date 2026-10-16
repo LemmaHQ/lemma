@@ -35,7 +35,7 @@ just rust-dev
 ## 仓库结构
 
 | 路径 | 内容 |
-|---|---|
+| --- | --- |
 | `crates/` | Rust workspace：各运行时共用的核心，以及服务端 |
 | `proto/` | Protobuf 契约，包名 `lemma.v1` |
 | `web/` | React Web 客户端，同时是桌面端的渲染层 |

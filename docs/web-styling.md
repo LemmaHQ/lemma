@@ -18,7 +18,7 @@ The theme is the `data-theme` attribute on `<html>`, `light` or `dark`. An inlin
 Lemma keeps the principles of the DeepSeek Harness styling reference and expresses them in Tailwind CSS v4 and shadcn/ui, where DSH uses CSS Modules and no component library:
 
 | Principle | Lemma form |
-|---|---|
+| --- | --- |
 | Components consume semantic tokens, never palette values or literal colors | Semantic utilities generated from the tokens: `bg-card`, `text-muted-foreground`, `border-border`, `rounded-md` |
 | Light and dark overrides belong to the theme owner | `tokens.css` holds both themes; no `dark:` variant appears in feature code or in `components/ui/` |
 | Shared controls live in one catalog | shadcn components in `components/ui/`, combined with `cn()` |
@@ -48,7 +48,7 @@ Blue `primary` is the single chromatic accent. It marks primary buttons, the foc
 Neutrals are black or white at fixed alpha tiers, so both themes share one hierarchy:
 
 | Role | Utilities | Use |
-|---|---|---|
+| --- | --- | --- |
 | Canvas | `bg-background` | The main canvas and panes |
 | Sidebar zone | `bg-sidebar`, `bg-sidebar-accent` | The session sidebar, the settings rail, and the selected row in them |
 | Panel and overlay | `bg-card`, `bg-popover` | Cards, menus, selects, dialogs |
@@ -61,7 +61,7 @@ Text has two levels: `text-foreground` for primary text and `text-muted-foregrou
 ### Elevation
 
 | Level | Treatment | Use |
-|---|---|---|
+| --- | --- | --- |
 | Flat | No border, no shadow | Body text, assistant messages, sidebar rows |
 | Panel | `bg-card` or `bg-background` with a hairline border | Cards, panes, settings panels |
 | Fill shift | `bg-accent` or `bg-muted` | Hovered and selected rows, ghost buttons, the selected tab |
@@ -73,7 +73,7 @@ The tooltip is the one inverse surface: `bg-foreground` with `text-background`, 
 ### Type roles
 
 | Role | Use |
-|---|---|
+| --- | --- |
 | `display-xl`, `display-lg`, `display-md` | Reserved for landing pages |
 | `headline` | Page-level titles |
 | `card-title` | Card and empty-state titles |

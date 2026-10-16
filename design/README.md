@@ -11,7 +11,7 @@ English | [中文](README.zh.md)
 `tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, a group sets `$type` for its descendants, and a value of the form `{group.token}` references another token. Colors are `#rrggbb` or `#rrggbbaa` strings, dimensions and durations are strings with a unit, and cubic Bézier easings are four-number arrays.
 
 | Group | Contents |
-|---|---|
+| --- | --- |
 | `palette` | Static colors: white, black, gray steps, blue and red steps, and alpha tiers of black, white, and a few tinted colors. Palette names describe the color, not its use. |
 | `light`, `dark` | One theme each. `color` holds the semantic aliases (`primary`, `background`, `muted-foreground`, …) and `shadow` holds the elevation shadows. Every value references the palette. |
 | `font` | Font family stacks: `sans` and `mono`. |
@@ -26,7 +26,7 @@ Semantic aliases come in two layers: a feature reads `muted-foreground`, and the
 `gen-tokens.mjs` writes three files. Git ignores all of them; each build regenerates them.
 
 | Output | Consumer | Contents |
-|---|---|---|
+| --- | --- | --- |
 | `web/src/styles/tokens.css` | Web client and desktop renderer | Semantic colors and elevation shadows as CSS variables on `:root` and `[data-theme="dark"]`, motion variables, and the Tailwind `@theme` mappings for colors, fonts, shadows, type roles, and radii |
 | `desktop/src/gen/design-tokens.ts` | Electron main process | `themeColors`: the semantic colors of each theme, for the titlebar overlay and the window background |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android app | `LemmaPalette`: the static palette as Compose `Color` values; `theme/Scheme.kt` maps it onto the app's color roles |

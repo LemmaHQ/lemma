@@ -5,7 +5,7 @@
 Lemma 的每个子系统一页：它是什么、它传递的数据结构，以及它维持的不变量。本目录与 [architecture.zh.md](../architecture.zh.md) 互为补充：后者描述跨子系统的*行为*（crate 分层、服务端与本地两种模式、一次 turn 的完整链路）；这里的每一页是单个子系统的类型与连接方式的参考。
 
 | 页面 | 负责 |
-|---|---|
+| --- | --- |
 | `core.md` | `lemma-core` 中共享的领域类型：消息、内容块、流事件、工具调用、token 用量 |
 | `agent.md` | `lemma-agent` 中共享的 agent 引擎及其 `AgentService` 暴露：turn 循环、有序流事件、中止与恢复 |
 | `adapter.md` | `lemma-adapter` 中的 provider 适配器：请求组装、分发、传输，以及 OpenAI、Anthropic、Gemini 的 SSE 解析 |

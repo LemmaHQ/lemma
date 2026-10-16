@@ -64,7 +64,7 @@ cargo binstall cargo-ndk
 ### Environment variables
 
 | Variable | Read by | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `DATABASE_URL` | `lemma-server`, server mode | `postgres://` or `postgresql://` selects PostgreSQL; `sqlite:` selects SQLite at the given path |
 | `LEMMA_JWT_SECRET` | `lemma-server`, server mode | signs and verifies access tokens |
 | `LEMMA_SECRET_KEY` | `lemma-server`, server mode | derives the key that seals provider API keys; changing it makes stored keys unreadable |
@@ -81,7 +81,7 @@ cargo binstall cargo-ndk
 Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change. Rust CI, Web CI, and Spec CI end in a `check` job that fails if any of their jobs failed.
 
 | Workflow | Paths | Runs |
-|---|---|---|
+| --- | --- | --- |
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied, and `cargo nextest` with a PostgreSQL service |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
 | Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint` and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |

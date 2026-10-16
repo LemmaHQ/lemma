@@ -35,7 +35,7 @@ Set the database password and both secrets in `.env` before `docker compose up -
 ## Repository
 
 | Path | Contents |
-|---|---|
+| --- | --- |
 | `crates/` | Rust workspace: the core shared by every runtime, and the server |
 | `proto/` | Protobuf contracts, package `lemma.v1` |
 | `web/` | React web client, also the desktop renderer |

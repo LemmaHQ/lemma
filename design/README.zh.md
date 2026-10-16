@@ -11,7 +11,7 @@
 `tokens.json` 遵循 [W3C Design Tokens Community Group 格式](https://www.designtokens.org/tr/drafts/format/)：token 是带 `$value` 的对象，分组通过 `$type` 为其后代设定类型，`{group.token}` 形式的值引用另一个 token。颜色是 `#rrggbb` 或 `#rrggbbaa` 字符串，尺寸与时长是带单位的字符串，三次贝塞尔缓动是四个数字组成的数组。
 
 | 分组 | 内容 |
-|---|---|
+| --- | --- |
 | `palette` | 静态颜色：白、黑、灰阶、蓝与红的色阶，以及黑、白和几种带色调颜色的透明度阶。色板名称描述颜色本身，而不是用途。 |
 | `light`、`dark` | 各对应一个主题。`color` 存放语义别名（`primary`、`background`、`muted-foreground` 等），`shadow` 存放层级阴影。每个取值都引用色板。 |
 | `font` | 字体族栈：`sans` 与 `mono`。 |
@@ -26,7 +26,7 @@
 `gen-tokens.mjs` 写出三份文件。三者都被 Git 忽略，每次构建都会重新生成。
 
 | 输出 | 使用方 | 内容 |
-|---|---|---|
+| --- | --- | --- |
 | `web/src/styles/tokens.css` | Web 客户端与桌面端渲染层 | `:root` 与 `[data-theme="dark"]` 上作为 CSS 变量的语义颜色与层级阴影、动效变量，以及颜色、字体、阴影、字体角色与圆角的 Tailwind `@theme` 映射 |
 | `desktop/src/gen/design-tokens.ts` | Electron 主进程 | `themeColors`：各主题的语义颜色，供标题栏覆盖层与窗口背景使用 |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android 应用 | `LemmaPalette`：以 Compose `Color` 表示的静态色板；`theme/Scheme.kt` 把它映射到应用的颜色角色 |

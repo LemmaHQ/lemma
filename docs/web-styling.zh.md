@@ -18,7 +18,7 @@
 Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 shadcn/ui 表达；DSH 则使用 CSS Modules，且不使用组件库：
 
 | 原则 | Lemma 的写法 |
-|---|---|
+| --- | --- |
 | 组件使用语义 token，不使用色板值或字面颜色 | 由 token 生成的语义工具类：`bg-card`、`text-muted-foreground`、`border-border`、`rounded-md` |
 | 亮色与暗色的覆盖归主题所有者 | `tokens.css` 包含两套主题；功能代码与 `components/ui/` 中不出现 `dark:` 变体 |
 | 共享控件集中在一个目录 | `components/ui/` 中的 shadcn 组件，通过 `cn()` 组合 |
@@ -48,7 +48,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 中性色是固定透明度阶上的黑或白，两套主题共享同一层级：
 
 | 角色 | 工具类 | 用途 |
-|---|---|---|
+| --- | --- | --- |
 | 画布 | `bg-background` | 主画布与窗格 |
 | 侧边栏区域 | `bg-sidebar`、`bg-sidebar-accent` | 会话侧边栏、设置导航，以及其中选中的行 |
 | 面板与浮层 | `bg-card`、`bg-popover` | 卡片、菜单、选择列表、对话框 |
@@ -61,7 +61,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 ### 层级
 
 | 级别 | 处理方式 | 用途 |
-|---|---|---|
+| --- | --- | --- |
 | 平面 | 无边框、无阴影 | 正文、助手消息、侧边栏行 |
 | 面板 | `bg-card` 或 `bg-background` 加细线边框 | 卡片、窗格、设置面板 |
 | 填充变化 | `bg-accent` 或 `bg-muted` | 悬停与选中的行、幽灵按钮、选中的标签页 |
@@ -73,7 +73,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 ### 字体角色
 
 | 角色 | 用途 |
-|---|---|
+| --- | --- |
 | `display-xl`、`display-lg`、`display-md` | 保留给落地页 |
 | `headline` | 页面级标题 |
 | `card-title` | 卡片与空状态的标题 |

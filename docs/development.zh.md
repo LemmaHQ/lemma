@@ -64,7 +64,7 @@ cargo binstall cargo-ndk
 ### 环境变量
 
 | 变量 | 读取方 | 含义 |
-|---|---|---|
+| --- | --- | --- |
 | `DATABASE_URL` | `lemma-server`，服务端模式 | `postgres://` 或 `postgresql://` 选择 PostgreSQL；`sqlite:` 选择指定路径上的 SQLite |
 | `LEMMA_JWT_SECRET` | `lemma-server`，服务端模式 | 签名并校验访问令牌 |
 | `LEMMA_SECRET_KEY` | `lemma-server`，服务端模式 | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取 |
@@ -81,7 +81,7 @@ cargo binstall cargo-ndk
 [.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行。Rust CI、Web CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。
 
 | 工作流 | 路径 | 运行内容 |
-|---|---|---|
+| --- | --- | --- |
 | Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、拒绝警告的 clippy，以及带 PostgreSQL 服务的 `cargo nextest` |
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
 | Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |

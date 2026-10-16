@@ -9,7 +9,7 @@ Read this before changing anything under `crates/`. It maps the crate layers, th
 Lemma is one Rust workspace. A crate depends only on crates in its own layer or the layers above it in this table; `lemma-core` is the language every layer speaks.
 
 | Layer | Crates | Owns |
-|---|---|---|
+| --- | --- | --- |
 | Contracts | `lemma-proto`, `lemma-core` | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage` |
 | Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent` | Vendor wire formats; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop |
 | Domains | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts and tokens; conversation lifecycle and message pages; provider configuration and model lists; API-key sealing |
@@ -25,7 +25,7 @@ Crates under `crates/shared/` build for every runtime, including Android; crates
 The same domain services and turn loop run in three hosts. Clients choose a host; the core does not know which client is calling.
 
 | Runtime | Host | Storage | Tools | Stored API keys |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Server mode | `lemma-server`, port 1025 | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none | sealed with `LEMMA_SECRET_KEY` |
 | Local engine | `lemma-server` with `LEMMA_LOCAL_MODE`, loopback port chosen by the OS | SQLite at `<LEMMA_DATA_DIR>/lemma.db` | per-conversation workspace | sealed with an engine-generated key |
 | In-process | `LemmaEngine` in `lemma-mobile`, loaded into the Android app | SQLite at `<filesDir>/lemma.db` | per-conversation workspace | plaintext |
@@ -96,7 +96,7 @@ Provider API keys pass through `ProviderService`, which seals them with AES-256-
 New behavior attaches to one of these points. Changing the turn loop itself updates this map.
 
 | Goal | Mechanism |
-|---|---|
+| --- | --- |
 | Add a vendor protocol | implement `Provider` in `lemma-adapter`, add a `ProviderKind` variant to the adapter and the domain, route it in `DispatchProvider`, and map it in each host's `kind_of` |
 | Add a model-facing tool | implement `Tool` in `lemma-tools` and register it where the hosts build their `ToolRegistry` (`lemma-agent-rpc`, `lemma-mobile`) |
 | Gate tool calls | implement `ApprovalPolicy` and set it on the `ToolRuntime` |

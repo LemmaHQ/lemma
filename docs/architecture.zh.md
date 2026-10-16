@@ -9,7 +9,7 @@
 Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其上方的层；`lemma-core` 是各层共用的语言。
 
 | 层 | Crate | 负责 |
-|---|---|---|
+| --- | --- | --- |
 | 契约 | `lemma-proto`、`lemma-core` | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage` |
 | 引擎 | `lemma-adapter`、`lemma-session`、`lemma-tools`、`lemma-agent` | 厂商协议格式；消息树及其 `TraceStore` trait；工具注册表、审批策略与执行环境；turn 循环 |
 | 领域 | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号与令牌；会话生命周期与消息分页；provider 配置与模型列表；API key 加密 |
@@ -25,7 +25,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 同一套领域服务与 turn 循环运行在三种宿主中。客户端选择宿主；核心不感知调用方是哪个客户端。
 
 | 运行时 | 宿主 | 存储 | 工具 | 已存储的 API key |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 服务端模式 | `lemma-server`，端口 1025 | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无 | 用 `LEMMA_SECRET_KEY` 加密 |
 | 本地引擎 | 设置了 `LEMMA_LOCAL_MODE` 的 `lemma-server`，回环地址上由操作系统分配端口 | `<LEMMA_DATA_DIR>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 用引擎生成的密钥加密 |
 | 进程内 | `lemma-mobile` 中的 `LemmaEngine`，加载进 Android 应用 | `<filesDir>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 明文 |
@@ -96,7 +96,7 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 新行为接入以下某个接入点。修改 turn 循环本身时，同步更新这张表。
 
 | 目标 | 机制 |
-|---|---|
+| --- | --- |
 | 新增厂商协议 | 在 `lemma-adapter` 中实现 `Provider`，在适配器与领域中各加一个 `ProviderKind` 变体，在 `DispatchProvider` 中路由，并在各宿主的 `kind_of` 中映射 |
 | 新增面向模型的工具 | 在 `lemma-tools` 中实现 `Tool`，并在宿主构建 `ToolRegistry` 处注册（`lemma-agent-rpc`、`lemma-mobile`） |
 | 管控工具调用 | 实现 `ApprovalPolicy` 并设置到 `ToolRuntime` 上 |
