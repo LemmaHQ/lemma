@@ -1,5 +1,6 @@
 package dev.lemmahq.lemma
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -40,7 +41,12 @@ fun App(
     }
     var currentServerUrl by remember { mutableStateOf(settingsRepository.getServerUrl()) }
     var currentAccessToken by remember { mutableStateOf(settingsRepository.getAccessToken()) }
-    val isDark by remember { mutableStateOf(settingsRepository.getThemeMode() == DefaultSettingsRepository.THEME_DARK) }
+    val themeMode = remember { settingsRepository.getThemeMode() }
+    val isDark = when (themeMode) {
+        DefaultSettingsRepository.THEME_DARK -> true
+        DefaultSettingsRepository.THEME_LIGHT -> false
+        else -> isSystemInDarkTheme()
+    }
     var showProviders by remember { mutableStateOf(false) }
     var providersNonce by remember { mutableStateOf(0) }
 
