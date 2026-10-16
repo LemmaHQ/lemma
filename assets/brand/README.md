@@ -1,5 +1,7 @@
 # Lemma Brand Assets
 
+English | [中文](README.zh.md)
+
 This directory is the single source of truth for the Lemma brand across the entire repository.
 Web, Desktop, and Mobile must derive their brand assets from the masters stored here.
 
