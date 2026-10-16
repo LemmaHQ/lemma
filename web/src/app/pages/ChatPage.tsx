@@ -10,6 +10,16 @@ import { ChatComposer } from "@/features/agent/components/ChatComposer";
 import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
 import { useModelSelection } from "@/features/agent/useModelSelection";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/data/rpc/errors";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
@@ -42,6 +52,7 @@ export function ChatPage() {
         () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1",
     );
     const [draft, setDraft] = useState("");
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -175,13 +186,7 @@ export function ChatPage() {
                     onRestoreSession={(id) =>
                         void runAction(() => conversations.restore(id))
                     }
-                    onDeleteSession={(id) => {
-                        if (window.confirm(t("sessions.deleteConfirm"))) {
-                            void runAction(() =>
-                                conversations.deleteArchived(id),
-                            );
-                        }
-                    }}
+                    onDeleteSession={setPendingDeleteId}
                     onCollapse={() => toggleSidebar(true)}
                 />
             </div>
@@ -260,6 +265,45 @@ export function ChatPage() {
                     )}
                 </div>
             </main>
+
+            <AlertDialog
+                open={pendingDeleteId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingDeleteId(null);
+                    }
+                }}
+            >
+                <AlertDialogContent size="sm">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t("sessions.deleteTitle")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("sessions.deleteDescription")}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            {t("common.cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            onClick={() => {
+                                if (pendingDeleteId) {
+                                    void runAction(() =>
+                                        conversations.deleteArchived(
+                                            pendingDeleteId,
+                                        ),
+                                    );
+                                }
+                            }}
+                        >
+                            {t("sessions.delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

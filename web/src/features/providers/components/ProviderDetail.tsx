@@ -2,6 +2,17 @@ import { Eye, EyeOff, Lock, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -107,9 +118,6 @@ export function ProviderDetail({
     };
 
     const handleDelete = async () => {
-        if (!window.confirm(t("providers.deleteConfirm"))) {
-            return;
-        }
         setError(null);
         try {
             await onDelete();
@@ -126,16 +134,40 @@ export function ProviderDetail({
                 </span>
                 <h2 className="text-base font-semibold">{provider.name}</h2>
                 <div className="ml-auto flex items-center gap-3">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label={t("providers.deleteProvider")}
-                        onClick={() => void handleDelete()}
-                    >
-                        <Trash2 className="size-4" />
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground hover:text-destructive"
+                                aria-label={t("providers.deleteProvider")}
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent size="sm">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    {t("providers.deleteTitle")}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {t("providers.deleteDescription")}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                    {t("common.cancel")}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    variant="destructive"
+                                    onClick={() => void handleDelete()}
+                                >
+                                    {t("common.delete")}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <Switch
                         checked={provider.enabled}
                         onCheckedChange={onToggleEnabled}
