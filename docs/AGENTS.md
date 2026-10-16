@@ -2,7 +2,7 @@
 
 English | [中文](AGENTS.zh.md)
 
-This file defines document structure, Markdown tiers, writing rules, and word budgets for Lemma. Use `.agents/skills/lemma-doc/SKILL.md` for placement and validation, and `.agents/skills/lemma-prose-standard/SKILL.md` for required coverage and editorial judgment. The [bilingual contract](i18n/README.md) defines how English and Chinese pairs are maintained.
+This file defines document structure, Markdown tiers, writing rules, and word budgets for Lemma. Use [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) for placement and validation, and [lemma-prose-standard](../.agents/skills/lemma-prose-standard/SKILL.md) for required coverage and editorial judgment. The [bilingual contract](i18n/README.md) defines how English and Chinese pairs are maintained.
 
 ## Document structure
 
@@ -41,7 +41,7 @@ Placement: rationale → commit messages; type definitions → subsystems; term 
 - **One physical line per paragraph**: use editor soft-wrap. Code blocks, tables, and list structure keep their formatting.
 - **The owning subsystems page updates in the same change** that reshapes a documented type.
 - **Pairs update together**: a change to either language updates its counterpart and re-records the pair in the same commit, with [terminology.md](i18n/terminology.md) loaded first ([bilingual contract](i18n/README.md#updating-a-pair)).
-- **Doc comments state complete contracts, not reasoning transcripts.** `//!`, `///`, JSDoc, and KDoc preserve behavior, failure, timing, ownership, and consequences; delete narration, test walkthroughs, review analysis, and code restatement. Keep the local contract and link its rationale. Use `.agents/skills/lemma-prose-standard/SKILL.md` for details.
+- **Doc comments state complete contracts, not reasoning transcripts.** `//!`, `///`, JSDoc, and KDoc preserve behavior, failure, timing, ownership, and consequences; delete narration, test walkthroughs, review analysis, and code restatement. Keep the local contract and link its rationale. Use [lemma-prose-standard](../.agents/skills/lemma-prose-standard/SKILL.md) for details.
 - **Write directly**: name actors and facts. Name the exact check, type, API, operation, or behavior instead of metaphorical "gate", "vocabulary", or "surface".
 
 ## Wordcount budgets
@@ -58,7 +58,7 @@ Budgets are guardrails, not reduction targets.
 
 ## The slop checklist
 
-Hunt these in any doc; `.agents/skills/lemma-doc/SKILL.md` runs this list as an audit:
+Hunt these in any doc; [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) runs this list as an audit:
 
 - Duplicated rules: search a distinctive phrase; keep one home and link the rest.
 - History outside its permitted tier: state current facts and link the historical owner.

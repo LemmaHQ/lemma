@@ -3,11 +3,11 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing --write .agents/skills/README.md
 /skills:
-  en: abc08aecf881aa0c
-  zh: 2ff708bcf5de2f35
+  en: aea69fcccf0f5e86
+  zh: e58220f942c6e234
 /skills/layout-and-naming:
-  en: afe44d589f2a7436
-  zh: 404bd56c8408479a
+  en: adc7802a4049931c
+  zh: a979023bec183e7e
 /skills/planned-skills:
-  en: 093a26c486b75646
-  zh: 75a79adb0de28b8e
+  en: 80f22d9da6ac351e
+  zh: 6c2374f198f80f9e

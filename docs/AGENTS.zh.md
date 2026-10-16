@@ -2,7 +2,7 @@
 
 [English](AGENTS.md) | 中文
 
-本文件定义 Lemma 的文档结构、Markdown 分层、写作规则与字数预算。归属判断与校验使用 `.agents/skills/lemma-doc/SKILL.md`，必需的覆盖面与编辑判断使用 `.agents/skills/lemma-prose-standard/SKILL.md`。[双语契约](i18n/README.zh.md)定义中英文配对的维护方式。
+本文件定义 Lemma 的文档结构、Markdown 分层、写作规则与字数预算。归属判断与校验使用 [lemma-doc](../.agents/skills/lemma-doc/SKILL.md)，必需的覆盖面与编辑判断使用 [lemma-prose-standard](../.agents/skills/lemma-prose-standard/SKILL.md)。[双语契约](i18n/README.zh.md)定义中英文配对的维护方式。
 
 ## 文档结构
 
@@ -41,7 +41,7 @@
 - **每段占一个物理行**：依靠编辑器软换行。代码块、表格与列表结构保持各自的格式。
 - **所属的 subsystems 页面在同一次改动中更新**，只要该改动调整了已文档化的类型。
 - **配对文件同步更新**：修改任一语言时，先加载 [terminology.md](i18n/terminology.md)，在同一次提交中更新其对应文件并重新记录这对文件（[双语契约](i18n/README.zh.md#更新一对文件)）。
-- **文档注释陈述完整契约，而不是推理过程。** `//!`、`///`、JSDoc 与 KDoc 保留行为、失败、时序、所有权与后果；删除叙述、测试走查、评审分析与对代码的复述。保留局部契约，并链接到其理由。细则见 `.agents/skills/lemma-prose-standard/SKILL.md`。
+- **文档注释陈述完整契约，而不是推理过程。** `//!`、`///`、JSDoc 与 KDoc 保留行为、失败、时序、所有权与后果；删除叙述、测试走查、评审分析与对代码的复述。保留局部契约，并链接到其理由。细则见 [lemma-prose-standard](../.agents/skills/lemma-prose-standard/SKILL.md)。
 - **直接表达**：点明主体与事实。用确切的检查、类型、API、操作或行为，而不是比喻性的“gate”“vocabulary”“surface”。
 
 ## 字数预算
@@ -58,7 +58,7 @@
 
 ## Slop 清单
 
-在任何文档中排查以下问题；`.agents/skills/lemma-doc/SKILL.md` 以此清单作为审计项：
+在任何文档中排查以下问题；[lemma-doc](../.agents/skills/lemma-doc/SKILL.md) 以此清单作为审计项：
 
 - 重复的规则：搜索一个有辨识度的短语；保留一处归属，其余位置改为链接。
 - 出现在允许层级之外的历史：陈述当前事实，并链接到历史的归属。
