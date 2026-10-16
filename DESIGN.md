@@ -506,18 +506,25 @@ Depth is carried by surface roles + hairline borders. Components stay flat; drop
 
 ### Border Radius Scale
 
-| Token            | Value  | Use                                                                 |
-| ---------------- | ------ | ------------------------------------------------------------------- |
-| `{rounded.xs}`   | 4px    | Inline code, sidebar inline action buttons                          |
-| `{rounded.sm}`   | 6px    | Spare step — nothing assigned today                                 |
-| `{rounded.md}`   | 8px    | All buttons, form inputs, session rows, code blocks, dropdown items |
-| `{rounded.lg}`   | 12px   | Tabs track, new-chat button, page canvas panels                     |
-| `{rounded.xl}`   | 16px   | Cards, user bubbles, composer                                       |
-| `{rounded.xxl}`  | 24px   | Reserved (landing banners)                                          |
-| `{rounded.pill}` | 9999px | Status pills                                                        |
-| `{rounded.full}` | 9999px | Avatars, switch, round icon buttons (send / stop)                   |
+Choose a radius by the component's role, not by its pixel size; a taller instance of a role keeps the role's radius.
+
+| Role                       | Token                               | Value  | Members today                                                                                                  |
+| -------------------------- | ----------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| Small detail               | `{rounded.xs}`                      | 4px    | Inline code, sidebar inline action buttons, menu and select items                                              |
+| Inset block inside a panel | `{rounded.sm}`                      | 6px    | Tool-call argument and output blocks                                                                           |
+| Control or row             | `{rounded.md}`                      | 8px    | Buttons, form inputs, selects, tooltips, dropdown menus, session and settings rows, code blocks, tool panels   |
+| Pane or standalone chrome  | `{rounded.lg}`                      | 12px   | Page canvas panels, tabs track, new-chat button, sidebar expand button                                         |
+| Content card               | `{rounded.xl}`                      | 16px   | Cards, user bubbles, composer                                                                                  |
+| Reserved                   | `{rounded.xxl}`                     | 24px   | Landing banners                                                                                                |
+| Circle or capsule          | `{rounded.pill}` / `{rounded.full}` | 9999px | Status pills; avatars, switch, round icon buttons (send / stop), status dots                                   |
 
 The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention) plus one `--radius-*` token per step, so all six steps resolve to exactly these values.
+
+### Nested Radii
+
+- **Concentric inset**: a fill inset inside a rounded parent takes the parent's radius minus the inset, rounded down to the nearest step. Menus are 8px with 4px padding, so their items are 4px; the 12px tabs track has a 3px inset, so its triggers are 8px.
+- **Separate surface**: a child that is a surface of its own, such as a code block in a message or a tool-call block in a panel, takes its own role's radius.
+- **Flush fill**: a fill flush against its parent's edge, such as a code block's header strip, gets no radius of its own; the parent clips it with `overflow-hidden`.
 
 ### Iconography & Avatars
 
@@ -669,7 +676,7 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 | ------- | ------- | ---------------------------------------------------- |
 | Desktop | ≥1024px | Default workbench: 260px sidebar + main canvas       |
 | Tablet  | 768px   | Content column shrinks; sidebar manually collapsible |
-| Mobile  | <768px  | Not yet adapted (see Known Gaps)                     |
+| Mobile  | <768px  | Not yet adapted                                      |
 
 ### Touch Targets
 
@@ -691,15 +698,7 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 1. Focus on ONE component at a time and reference it by its `components:` token name.
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `composer`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
-4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required, and 56 warnings in exactly three buckets: 36 orphaned tokens (the `dark-*` set mirrors the light set by name, so components reference the light token and the theme swaps underneath; `glass` / `tertiary-foreground` are consumed by the hand-written layer, not by `components:`), 10 `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning, and 9 contrast pairs — seven are alpha-compositing artifacts (the linter compares translucent fills against translucent text at face value instead of compositing over the page background, the same blind spot as the `transparent` case in rule 5) and two are accepted sub-AA brand pairs (white on #1783ff primary and on #ff3849 destructive, both shipped as-is by the reference design). A warning outside those three buckets is a regression — most often an orphaned token or a real contrast failure. The `motion` section is not a recognized schema key and earns one info-level `token-like-ignored` notice; our own generator consumes it.
+4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required; warnings fall in three accepted buckets: orphaned tokens (the `dark-*` set mirrors the light set by name, so components reference the light token and the theme swaps underneath; `glass` / `tertiary-foreground` are consumed by the hand-written layer, not by `components:`), `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning, and contrast pairs that are either alpha-compositing artifacts (the linter compares translucent fills against translucent text at face value instead of compositing over the page background, the same blind spot as the `transparent` case in rule 5) or the two accepted sub-AA brand pairs (white on #1783ff primary and on #ff3849 destructive). A warning outside those three buckets is a regression — most often an orphaned token or a real contrast failure. The `motion` section is not a recognized schema key and earns one info-level `token-like-ignored` notice; our own generator consumes it.
 5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
-6. This document is the source of truth for every front-end design value. Change the value here, then run the generator (`npm run gen:tokens` — it also fires automatically via npm pre-hooks on dev/build); `web/src/styles/tokens.css` is a build artifact and never edited by hand. The Electron setup page (`desktop/src/setup.css`) carries the same dark values in its own `:root` and must be updated in the same edit. Colors are hex literals — alpha tiers use 8-digit hex; do not reintroduce `oklch()` or `color-mix()` into the front matter.
+6. This document is the source of truth for every front-end design value. Change the value here, then run the generator (`npm run gen:tokens` — it also fires automatically via npm pre-hooks on dev/build); `web/src/styles/tokens.css` is a build artifact and never edited by hand. Colors are hex literals — alpha tiers use 8-digit hex; do not reintroduce `oklch()` or `color-mix()` into the front matter.
 7. Treat blue as scarce: primary buttons, focus ring, link emphasis.
-
-## Known Gaps
-
-- Form-field validation styling (`aria-invalid` rings exist in the primitives) is not designed into any flow yet.
-- Mobile layout (<768px) is not adapted — sidebar and composer need a dedicated treatment.
-- Open follow-ups from the color refactor: text shade calibration, chat bubble / avatar review.
-- Glass surfaces (`{colors.glass}`) currently render as a true blur only on web; other platforms fall back to the translucent solid.
-- The mono font is not subset — the first code block on a slow network may swap in late.
