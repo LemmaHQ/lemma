@@ -17,7 +17,7 @@
 <a id="scope"></a>
 ## 范围与权威来源
 
-本文定义 `web/` 的圆角刻度及组件规则。取值位于 [`design/tokens.json`](../design/tokens.json) 的 `radius` 分组，由生成器转换为 `rounded-*` 工具类。修改取值在那里进行；规则变化时同时更新本标准的两个语言版本。
+本文定义 `web/` 的圆角刻度及组件规则；[Web UI 样式参考](web-styling.zh.md)定义总体的样式归属。取值位于 [`design/tokens.json`](../design/tokens.json) 的 `radius` 分组，由生成器转换为 `rounded-*` 工具类。修改取值在那里进行；规则变化时同时更新本标准的两个语言版本。
 
 <a id="radius-scale"></a>
 ## 选择圆角

@@ -28,7 +28,8 @@
 | Crate 与 package README | 单个 crate 的契约：配置、语义、限制、扩展点 | 对文档注释的复述、其他 crate 的事务 |
 | [development.md](development.zh.md) | 环境搭建、日常工作流与 CI 概览 | 运行时与版本选择的理由（→ commit message）、会与 `justfile` 脱节的逐项检查列表 |
 | [testing.md](testing.zh.md) | 测试分层：各层覆盖什么、测试放在哪里、如何运行 | 单个测试的走查、归属于某个 crate 或 package 的 fixture 细节 |
-| `design/tokens.json` | 设计 token 取值：静态色板、各主题的语义别名、字体排版、圆角、动效；Web、桌面端与 Android 生成 token 的数据源 | 使用规则（→ `web/AGENTS.md`、[ui-radius.md](ui-radius.zh.md)） |
+| [design/README.md](../design/README.zh.md) 与 `tokens.json` | 设计 token 取值及其格式：静态色板、各主题的语义别名、字体排版、圆角、动效；生成器的输出与检查 | 使用规则（→ [web-styling.md](web-styling.zh.md)） |
+| [web-styling.md](web-styling.zh.md) | Web 客户端的样式归属、组件规则与视觉体系 | token 取值（→ `design/tokens.json`）、圆角规则（→ [ui-radius.md](ui-radius.zh.md)）、组件清单（→ [web/src/components/ui/README.md](../web/src/components/ui/README.zh.md)） |
 | [ui-radius.md](ui-radius.zh.md) | Web 客户端的圆角角色、嵌套与悬停几何 | token 取值（→ `design/tokens.json`） |
 | Skill（`.agents/skills/`） | 可复用的工作流与专项决策标准，包括各语言的代码风格 | 产品与运行时契约（→ 文档或源码） |
 

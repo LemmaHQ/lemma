@@ -17,7 +17,7 @@ Choose corner radii by component role, and align nested fills, hover states, and
 <a id="scope"></a>
 ## Scope and authority
 
-This reference defines the radius scale for `web/` and its component rules. The values live in the `radius` group of [`design/tokens.json`](../design/tokens.json); the generator turns them into the `rounded-*` utilities. Change a value there, and update both language versions of this standard when a rule changes.
+This reference defines the radius scale for `web/` and its component rules; the [Web UI style reference](web-styling.md) defines general styling ownership. The values live in the `radius` group of [`design/tokens.json`](../design/tokens.json); the generator turns them into the `rounded-*` utilities. Change a value there, and update both language versions of this standard when a rule changes.
 
 <a id="radius-scale"></a>
 ## Select the radius

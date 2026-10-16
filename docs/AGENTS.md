@@ -28,7 +28,8 @@ Each fact has one home: the tier whose job it is; elsewhere, link there.
 | Crate and package README | The per-crate contract: config, semantics, limitations, extension points | Doc-comment restatement, other crates' concerns |
 | [development.md](development.md) | Environment setup, daily workflow, and a summary of CI | Runtime/version rationale (→ commit messages), check-by-check lists that drift from the `justfile` |
 | [testing.md](testing.md) | Test tiers: what each covers, where tests live, how they run | Individual test walkthroughs, fixture detail owned by a crate or package |
-| `design/tokens.json` | Design token values: static palette, semantic aliases per theme, type, radius, motion; source of the generated web, desktop, and Android tokens | Usage rules (→ `web/AGENTS.md`, [ui-radius.md](ui-radius.md)) |
+| [design/README.md](../design/README.md) and `tokens.json` | Design token values and their format: static palette, semantic aliases per theme, type, radius, motion; the generator's outputs and checks | Usage rules (→ [web-styling.md](web-styling.md)) |
+| [web-styling.md](web-styling.md) | Styling ownership, component rules, and the visual system of the web client | Token values (→ `design/tokens.json`), radius rules (→ [ui-radius.md](ui-radius.md)), the component list (→ [web/src/components/ui/README.md](../web/src/components/ui/README.md)) |
 | [ui-radius.md](ui-radius.md) | Radius roles, nesting, and hover geometry for the web client | Token values (→ `design/tokens.json`) |
 | Skills (`.agents/skills/`) | Reusable workflows and specialized decision standards, including per-language code style | Product and runtime contracts (→ docs or source) |
 

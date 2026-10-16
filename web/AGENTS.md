@@ -24,9 +24,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Styling
 
-- **Feature code takes design values only from tokens.** `src/app/` and `src/features/` use the Tailwind utilities generated from [design/tokens.json](../design/tokens.json) (`bg-card`, `rounded-md`) and write no hex color and no `dark:` variant; light and dark values differ only in `tokens.css`. An off-scale radius is limited to drawing details such as the streaming caret.
-- **Controls reuse `src/components/ui/`.** A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
-- **Radii follow the role and nesting rules** in [ui-radius.md](../docs/ui-radius.md).
+- **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities generated from [design/tokens.json](../design/tokens.json), with no hex color, no arbitrary value, and no `dark:` variant.
+- **Controls reuse `src/components/ui/`;** check its [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 

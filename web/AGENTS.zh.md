@@ -24,9 +24,8 @@
 
 ## 样式
 
-- **功能代码只从 token 取设计值。** `src/app/` 与 `src/features/` 使用由 [design/tokens.json](../design/tokens.json) 生成的 Tailwind 工具类（`bg-card`、`rounded-md`），不写十六进制颜色，也不写 `dark:` 变体；亮色与暗色的取值只在 `tokens.css` 中区分。刻度之外的圆角只用于绘制细节，例如流式输出的光标。
-- **控件复用 `src/components/ui/`。** 多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
-- **圆角遵循按角色与嵌套的规则**，见 [ui-radius.md](../docs/ui-radius.zh.md)。
+- **样式遵循 [web-styling.md](../docs/web-styling.zh.md)**，圆角遵循 [ui-radius.md](../docs/ui-radius.zh.md)。功能代码只使用由 [design/tokens.json](../design/tokens.json) 生成的语义工具类，不写十六进制颜色、任意值或 `dark:` 变体。
+- **控件复用 `src/components/ui/`；** 先查阅其[组件目录](src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
 
 ## 生成文件
 
