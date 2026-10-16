@@ -7,26 +7,17 @@ import { usePlatformLayout } from "@/platform";
 import { cn } from "@/lib/utils";
 
 function TooltipProvider({
-    delayDuration = 0,
     ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
     return (
-        <TooltipPrimitive.Provider
-            data-slot="tooltip-provider"
-            delayDuration={delayDuration}
-            {...props}
-        />
+        <TooltipPrimitive.Provider data-slot="tooltip-provider" {...props} />
     );
 }
 
 function Tooltip({
     ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-    return (
-        <TooltipProvider>
-            <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-        </TooltipProvider>
-    );
+    return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
 function TooltipTrigger({
