@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
 import * as engine from "./engine";
+import { themeColors } from "./gen/design-tokens";
 
 if (started) {
     app.quit();
@@ -44,22 +45,9 @@ interface TitleBarState {
     surface: "sidebar" | "background";
 }
 
-const TITLE_BAR_COLORS: Record<
-    "light" | "dark",
-    Record<"sidebar" | "background", { color: string; symbolColor: string }>
-> = {
-    light: {
-        background: { color: "#ffffff", symbolColor: "#000000e6" },
-        sidebar: { color: "#f5f5f5", symbolColor: "#000000e6" },
-    },
-    dark: {
-        background: { color: "#121212", symbolColor: "#ffffffd6" },
-        sidebar: { color: "#1f1f1f", symbolColor: "#ffffffd6" },
-    },
-};
-
 const titleBarOverlay = (state: TitleBarState) => ({
-    ...TITLE_BAR_COLORS[state.theme][state.surface],
+    color: themeColors[state.theme][state.surface],
+    symbolColor: themeColors[state.theme].foreground,
     height: 40,
 });
 
@@ -68,12 +56,13 @@ const initialTitleBarState = (): TitleBarState => ({
     surface: "background",
 });
 const createWindow = () => {
+    const initialState = initialTitleBarState();
     const window = new BrowserWindow({
         width: 1280,
         height: 800,
-        backgroundColor: "#151615",
+        backgroundColor: themeColors[initialState.theme].background,
         titleBarStyle: "hidden",
-        titleBarOverlay: titleBarOverlay(initialTitleBarState()),
+        titleBarOverlay: titleBarOverlay(initialState),
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
         },
