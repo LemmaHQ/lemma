@@ -9,6 +9,16 @@ plugins {
     alias(libs.plugins.sqldelight)
 }
 
+val designTokensDir = layout.buildDirectory.dir("generated/source/tokens")
+
+val generateDesignTokens = tasks.register<Exec>("generateDesignTokens") {
+    workingDir = rootProject.projectDir
+    commandLine("node", "design/gen-tokens.mjs")
+    inputs.file(rootProject.file("design/tokens.json"))
+    inputs.file(rootProject.file("design/gen-tokens.mjs"))
+    outputs.dir(designTokensDir)
+}
+
 kotlin {
 
     android {
@@ -46,6 +56,7 @@ kotlin {
         }
         commonMain {
             kotlin.srcDir("build/generated/source/bufgen")
+            kotlin.srcDir(generateDesignTokens)
             dependencies {
                 implementation(libs.compose.runtime)
                 implementation(libs.compose.foundation)
