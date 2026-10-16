@@ -76,7 +76,6 @@ export function ProviderDetail({
         try {
             await onSaveApiKey(apiKey.trim());
         } catch (e) {
-            setApiKey(provider.apiKey);
             setError(errorText(e, t));
         } finally {
             setSavingKey(false);
@@ -89,7 +88,6 @@ export function ProviderDetail({
         try {
             await onSaveBaseUrl(baseUrl.trim());
         } catch (e) {
-            setBaseUrl(provider.baseUrl);
             setError(errorText(e, t));
         } finally {
             setSavingUrl(false);
@@ -102,7 +100,6 @@ export function ProviderDetail({
         try {
             await onSaveName(name.trim());
         } catch (e) {
-            setName(provider.name);
             setError(errorText(e, t));
         } finally {
             setSavingName(false);
