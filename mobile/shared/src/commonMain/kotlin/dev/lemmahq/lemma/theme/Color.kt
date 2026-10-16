@@ -8,7 +8,7 @@ object LemmaColors {
     val PrimaryHoverLight = Color(0xFF167FF7)
     val PrimaryHoverDark = Color(0xFF258EFF)
 
-    val RedLight = Color(0xFFFF3849)
+    val RedLight = Color(0xFFD92033)
     val RedDark = Color(0xFFFF4756)
     val GreenLight = Color(0xFF16C456)
     val GreenDark = Color(0xFF32FF7D)
