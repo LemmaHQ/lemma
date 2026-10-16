@@ -2,7 +2,7 @@
 
 [English](AGENTS.md) | 中文
 
-Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM Agent。修改 `crates/` 之前先读 [docs/architecture.zh.md](docs/architecture.zh.md)；编写文档遵循 [docs/AGENTS.zh.md](docs/AGENTS.zh.md)。
+Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent。修改 `crates/` 之前先读 [docs/architecture.zh.md](docs/architecture.zh.md)；编写文档遵循 [docs/AGENTS.zh.md](docs/AGENTS.zh.md)。
 
 ## 仓库布局
 

@@ -7,13 +7,13 @@
     <img alt="Lemma" src="assets/brand/svg/lockup_workspace_light.svg" width="440">
 </picture>
 
-Lemma 用一个 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent。你自行配置模型 provider，agent 在每个对话各自的工作区中读文件、写文件、运行 shell 命令。
+Lemma 用一个 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent。你自行配置模型 provider，agent 在每个会话各自的工作区中读文件、写文件、运行 shell 命令。
 
 ## 功能
 
 - **三种 provider 类型。** OpenAI chat completions 及兼容 API、Anthropic、Gemini，每个 provider 使用你自己的 base URL 与 API key。
-- **对话是一棵消息树。** 每条消息记录其父消息；模型请求携带从根到当前叶子的路径。
-- **Agent 工具。** `read_file`、`write_file` 与 `bash` 在每个对话各自的工作区目录中运行，适用于桌面应用与 Android 应用。
+- **会话是一棵消息树。** 每条消息记录其父消息；模型请求携带从根到当前叶子的路径。
+- **Agent 工具。** `read_file`、`write_file` 与 `bash` 在每个会话各自的工作区目录中运行，适用于桌面应用与 Android 应用。
 - **三种运行时。** 面向浏览器的服务端、面向桌面应用的本地引擎、面向 Android 的进程内引擎运行同一个 Rust 核心（[架构](docs/architecture.zh.md#运行时)）。
 
 ## 快速开始

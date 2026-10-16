@@ -20,7 +20,7 @@
 
 | 层 | 职责 | 不应放在这里 |
 | --- | --- | --- |
-| 根 `AGENTS.md` | 常驻规则：Agent 每次会话都需要放在上下文中的规则，每条一至三行，并链接到其归属 | 故事、完整示例、场景化流程，以及从已链接归属处复述的任何内容 |
+| 根 `AGENTS.md` | 常驻规则：agent 每次会话都需要放在上下文中的规则，每条一至三行，并链接到其归属 | 故事、完整示例、场景化流程，以及从已链接归属处复述的任何内容 |
 | 子树 `AGENTS.md`（`crates/`、`web/`、`desktop/`、`mobile/`、`proto/`、`docs/`） | 仅作用于该子树的规则 | 根文件已经包含的全仓库规则 |
 | [architecture.md](architecture.zh.md) | 有序的系统地图：crate 分层、服务端与本地两种模式、一次 turn 的完整链路、扩展点；修改 `crates/` 前阅读 | 类型定义（→ subsystems）、单个 crate 的细节（→ crate README）、决策理由（→ commit message）、实现进度标注 |
 | [glossary.md](glossary.zh.md) | 在代码中有确切含义的术语，每个术语一条定义 | 行为叙述（→ architecture.md）、类型定义（→ subsystems） |

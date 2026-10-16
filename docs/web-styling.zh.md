@@ -52,7 +52,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 | 画布 | `bg-background` | 主画布与窗格 |
 | 侧边栏区域 | `bg-sidebar`、`bg-sidebar-accent` | 会话侧边栏、设置导航，以及其中选中的行 |
 | 面板与浮层 | `bg-card`、`bg-popover` | 卡片、菜单、选择列表、对话框 |
-| 毛玻璃 | `.glass` | 对话顶栏、侧边栏展开按钮、输入框面板：`glass` 颜色加背景模糊 |
+| 毛玻璃 | `.glass` | 会话顶栏、侧边栏展开按钮、输入框面板：`glass` 颜色加背景模糊 |
 | 填充 | `bg-secondary`、`bg-muted`、`bg-accent` | 次要按钮、用户气泡、悬停与选中填充 |
 | 代码 | `bg-code`、`border-code-border` | 代码块与行内代码 |
 
@@ -68,7 +68,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 | 浮层 | 菜单材质或 `bg-popover`、`border-0`、层级阴影 | 菜单、选择列表、确认对话框、输入框面板 |
 | 焦点 | `focus-visible` 时的 `ring` 颜色 | 获得焦点的控件 |
 
-提示是唯一的反色表面：`bg-foreground` 配 `text-background`，无阴影。
+工具提示是唯一的反色表面：`bg-foreground` 配 `text-background`，无阴影。
 
 ### 字体角色
 
