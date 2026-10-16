@@ -8,7 +8,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 - **Rust**（`just rust-test`，即 `cargo test --workspace`）：单元测试写在被测源文件底部的 `#[cfg(test)] mod tests` 中；集成测试放在 crate 的 `tests/` 目录，只使用其公开 API。CI 用 `cargo nextest run --workspace` 运行同一批测试。
 - **真实 provider**（只在本地运行）：调用厂商真实 API 的测试从环境变量读取 key，并标注 `#[ignore]`，因此 `just rust-test` 与 CI 都会跳过它们；用 `cargo test --workspace -- --ignored` 运行。每种 provider 类型有一个冒烟测试：发送一条提示，期望收到 `Done` 且文本非空；另有一个完成一次工具调用的测试。
-- **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块；没有测试渲染 React 组件。
+- **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键；没有测试渲染 React 组件。
 - **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备。`just verify` 与 CI 都不运行这一层。
 
 ## 存储测试

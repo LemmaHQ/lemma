@@ -20,7 +20,7 @@
 - `src/data/rpc/` 创建 ConnectRPC 客户端并映射错误；`src/data/cache/` 是 IndexedDB 缓存。
 - `src/platform/` 选择浏览器或桌面适配器；它之外的代码只通过该适配器使用桌面能力。
 - `src/components/ui/` 存放 shadcn 组件，通过 shadcn CLI 添加。
-- 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键。
+- 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。
 
 ## 样式
 

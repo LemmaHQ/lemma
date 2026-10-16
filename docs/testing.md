@@ -8,7 +8,7 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 - **Rust** (`just rust-test`, which runs `cargo test --workspace`): unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; integration tests live in the crate's `tests/` directory and use only its public API. CI runs the same tests with `cargo nextest run --workspace`.
 - **Real provider** (local only): tests that call a live vendor API read the key from an environment variable and carry `#[ignore]`, so `just rust-test` and CI skip them; `cargo test --workspace -- --ignored` runs them. Each provider kind has a smoke test that sends one prompt and expects `Done` with non-empty text, and one that completes a tool call.
-- **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules; no test renders a React component.
+- **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules, plus a check that `en.json` and `zh.json` hold the same keys; no test renders a React component.
 - **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device. `just verify` and CI do not run this tier.
 
 ## Store tests

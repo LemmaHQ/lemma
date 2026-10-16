@@ -20,7 +20,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/data/rpc/` creates the ConnectRPC clients and maps errors; `src/data/cache/` is the IndexedDB cache.
 - `src/platform/` selects the browser or desktop adapter; code outside it reaches desktop capabilities only through that adapter.
 - `src/components/ui/` holds shadcn components, added through the shadcn CLI.
-- User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys.
+- User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
 
 ## Styling
 
