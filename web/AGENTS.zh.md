@@ -22,6 +22,12 @@
 - `src/components/ui/` 存放 shadcn 组件，通过 shadcn CLI 添加。
 - 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键。
 
+## 样式
+
+- **功能代码只从 token 取设计值。** `src/app/` 与 `src/features/` 使用由 [DESIGN.md](../DESIGN.md) 生成的 Tailwind 工具类（`bg-card`、`rounded-md`），不写十六进制颜色，也不写 `dark:` 变体；亮色与暗色的取值只在 `tokens.css` 中区分。刻度之外的圆角只用于绘制细节，例如流式输出的光标。
+- **控件复用 `src/components/ui/`。** 多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
+- **圆角遵循按角色与嵌套的规则**，见 [DESIGN.md](../DESIGN.md#shapes)。
+
 ## 生成文件
 
 `src/gen/` 由 `just proto-gen` 生成；`src/styles/tokens.css` 由 [DESIGN.md](../DESIGN.md) 经 `scripts/gen-tokens.mjs` 生成，`dev` 与 `build` 会先运行它。两者都被 Git 忽略；修改其来源。

@@ -22,6 +22,12 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/components/ui/` holds shadcn components, added through the shadcn CLI.
 - User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys.
 
+## Styling
+
+- **Feature code takes design values only from tokens.** `src/app/` and `src/features/` use the Tailwind utilities generated from [DESIGN.md](../DESIGN.md) (`bg-card`, `rounded-md`) and write no hex color and no `dark:` variant; light and dark values differ only in `tokens.css`. An off-scale radius is limited to drawing details such as the streaming caret.
+- **Controls reuse `src/components/ui/`.** A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
+- **Radii follow the role and nesting rules** in [DESIGN.md](../DESIGN.md#shapes).
+
 ## Generated files
 
 `src/gen/` comes from `just proto-gen`; `src/styles/tokens.css` comes from [DESIGN.md](../DESIGN.md) through `scripts/gen-tokens.mjs`, which `dev` and `build` run first. Git ignores both; edit their sources.
