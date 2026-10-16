@@ -1,0 +1,10 @@
+# Translation-pairing record for AGENTS.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write proto/AGENTS.md
+/agentsmd--protobuf-contracts:
+  en: 0747857dc6a4829b
+  zh: 6179aeaf8533f4eb
+/agentsmd--protobuf-contracts/commands:
+  en: 80deb808c50708b9
+  zh: bce8db61072b07cf

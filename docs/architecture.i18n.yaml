@@ -1,0 +1,25 @@
+# Translation-pairing record for architecture.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/architecture.md
+/lemma-architecture:
+  en: 15f197829c7e8735
+  zh: ec38442c0a7b13af
+/lemma-architecture/crate-layers:
+  en: 7c2dec046d6d6cac
+  zh: e7d9102f44a96877
+/lemma-architecture/runtimes:
+  en: 922535d8f1a01f51
+  zh: b78e6456509a0954
+/lemma-architecture/contracts-across-the-wire:
+  en: a67b032a73ee9a9d
+  zh: 0070b9becbb81bb1
+/lemma-architecture/the-path-of-one-turn:
+  en: efa263bd6083c9f7
+  zh: fe4ca97e60a7fa07
+/lemma-architecture/persistence:
+  en: bf1b3e447c20eadf
+  zh: 3dcc0a48f77efaa6
+/lemma-architecture/where-new-behavior-goes:
+  en: 892ec48ab4745165
+  zh: 89bbd843b93a249d

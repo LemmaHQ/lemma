@@ -8,7 +8,9 @@ on:
       - "proto/**"
       - "design/**"
       - "docs/**"
-      - "*.md"
+      - "scripts/**"
+      - "**/*.md"
+      - "**/*.i18n.yaml"
       - ".markdownlint*"
       - ".autocorrect*"
       - ".github/workflows/spec-ci.yml"
@@ -17,7 +19,9 @@ on:
       - "proto/**"
       - "design/**"
       - "docs/**"
-      - "*.md"
+      - "scripts/**"
+      - "**/*.md"
+      - "**/*.i18n.yaml"
       - ".markdownlint*"
       - ".autocorrect*"
       - ".github/workflows/spec-ci.yml"
@@ -77,6 +81,9 @@ jobs:
 
       - name: Lint docs formatting
         run: npm run lint:docs
+
+      - name: Check translation pairs
+        run: node scripts/verify-translation-pairing.mjs
 
   check:
     name: check

@@ -19,6 +19,7 @@ assets/       brand assets
 design/       design tokens (tokens.json) and the generator for web, desktop, and Android
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
+scripts/      translation-pairing check and brief generator (docs/i18n/README.md)
 ```
 
 ## Commands
@@ -32,6 +33,7 @@ just desktop-dev        # build lemma-server, then launch Electron
 just proto-gen          # regenerate web TypeScript and Android Kotlin from proto/
 just docker-up          # full stack with PostgreSQL; docker-down stops it
 just docs-lint          # markdownlint and autocorrect
+just docs-pairing       # check bilingual pairs; --write <file> records one
 ```
 
 Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.

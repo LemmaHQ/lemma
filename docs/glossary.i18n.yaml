@@ -1,0 +1,25 @@
+# Translation-pairing record for glossary.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/glossary.md
+/glossary:
+  en: 4864c12d0e23f381
+  zh: f295535f4ec9d400
+/glossary/conversation-tree:
+  en: 4aaf8cbe7352702b
+  zh: 1a95bd2e083a9d14
+/glossary/agent-loop:
+  en: 5f723cfa9f85f00a
+  zh: af5851b09f098ebe
+/glossary/providers-and-adapters:
+  en: 212b8e61a3977bb9
+  zh: ffab3c354c6e40a0
+/glossary/tools:
+  en: 4a58e82de8e39e93
+  zh: 8e5f65e556c64a92
+/glossary/runtimes-and-accounts:
+  en: 35f8fe0fbab95aa9
+  zh: 909bae0bc1b0ab2f
+/glossary/errors:
+  en: 4d556714dfe2d666
+  zh: dc8413600fdd2415

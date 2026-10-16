@@ -1,0 +1,19 @@
+# Translation-pairing record for README.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write README.md
+/lemma:
+  en: 4eeedf908ffd7694
+  zh: 0c137f2b36b63cf6
+/lemma/features:
+  en: 0c3fc1d5f24415ce
+  zh: 4bc53f311eef966b
+/lemma/quick-start:
+  en: 8c15a28fffb1592c
+  zh: 378b71bfe8628df6
+/lemma/repository:
+  en: d4569047dbdcbf1d
+  zh: 184ab14933e58944
+/lemma/documentation:
+  en: c6a4b8864543e9b5
+  zh: 63df27c3d28200b1

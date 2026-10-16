@@ -84,7 +84,7 @@ Every workflow under [.github/workflows/](../.github/workflows/) except mise-upg
 |---|---|---|
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied, and `cargo nextest` with a PostgreSQL service |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
-| Spec CI | `proto/`, `design/`, `docs/`, root Markdown, the markdownlint and autocorrect configs | `buf lint` and `buf build`, the token generator's checks, the docs lint |
+| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint` and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
 | Coverage | all | Rust and web coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
 | CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, and GitHub Actions |
 | mise-upgrade | daily schedule | bumps the pins in `mise.toml`, syncs the Dockerfile's Node version, and opens a pull request |

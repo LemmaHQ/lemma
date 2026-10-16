@@ -1,0 +1,25 @@
+# Translation-pairing record for AGENTS.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/AGENTS.md
+/agentsmd--the-documentation-standard:
+  en: 5fddf652fad46b18
+  zh: 695c46026cac0855
+/agentsmd--the-documentation-standard/document-structure:
+  en: 77286e8df49d97cf
+  zh: e9d33bb03f497015
+/agentsmd--the-documentation-standard/the-tier-taxonomy-one-home-per-fact:
+  en: 3de13612eea2f0a4
+  zh: cf339d13135910e0
+/agentsmd--the-documentation-standard/writing-rules:
+  en: 2011ee6d8fb15d24
+  zh: 6607268aff6cbbd3
+/agentsmd--the-documentation-standard/wordcount-budgets:
+  en: 254b757a206c9fc6
+  zh: 0e54c66be9265b2d
+/agentsmd--the-documentation-standard/the-slop-checklist:
+  en: eda59ee189243878
+  zh: cf9c140070d3fac3
+/agentsmd--the-documentation-standard/repository-references:
+  en: e94e8dc841967b56
+  zh: 50626d38bf8a978c

@@ -1,0 +1,40 @@
+# Translation-pairing record for development.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/development.md
+/development:
+  en: 7cc1820db7ceecdd
+  zh: 93d7f6dc107d3f45
+/development/setup-tutorial:
+  en: 5207d17725c07a27
+  zh: bbb030802b1260c5
+/development/setup-tutorial/prerequisites:
+  en: a24de9913537bcab
+  zh: 9dacada89e73e24c
+/development/setup-tutorial/windows:
+  en: 99e7e724136db905
+  zh: 032d8fe103cbf4e5
+/development/setup-tutorial/first-time-setup:
+  en: b0be8c727259b6a4
+  zh: 3b70010360277400
+/development/setup-tutorial/run-the-server-and-the-web-client:
+  en: 5628b0400d450ddf
+  zh: 02572218e7c42764
+/development/setup-tutorial/run-the-desktop-app:
+  en: 95a48c67a0feccf9
+  zh: dff15a6b5be92eb8
+/development/setup-tutorial/run-the-android-app:
+  en: 5a98230cb5c275bc
+  zh: 3108b85f5e974953
+/development/reference:
+  en: e8d198429c35fa10
+  zh: fa9493dbf6a94867
+/development/reference/environment-variables:
+  en: 3b3942ec9a9357bc
+  zh: 83d01e768eedda01
+/development/reference/ci-workflows:
+  en: 7b33c6ab323f0d21
+  zh: 7c914d1901bd6d0b
+/development/reference/daily-commands:
+  en: 2b6e87b09a395eaf
+  zh: d096f5d6f0bdc26d

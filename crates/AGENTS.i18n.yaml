@@ -1,0 +1,19 @@
+# Translation-pairing record for AGENTS.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write crates/AGENTS.md
+/agentsmd--rust-workspace:
+  en: 62cb561bf7be3af7
+  zh: fc3f62c503a0bb2c
+/agentsmd--rust-workspace/code:
+  en: eb015385d65e67d1
+  zh: a5968b0de1af510c
+/agentsmd--rust-workspace/doc-comments:
+  en: 1ab6532458a94eed
+  zh: 72b5336844762e5e
+/agentsmd--rust-workspace/layout:
+  en: 19828310b6e587be
+  zh: 4d6390bb9076ea32
+/agentsmd--rust-workspace/commands:
+  en: ead3eb0397053463
+  zh: 981a25b62032fb25

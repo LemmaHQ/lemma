@@ -40,7 +40,7 @@ Placement: rationale → commit messages; type definitions → subsystems; term 
 - **Document current state.** Keep history in commits. Other prose names live mechanisms, not changes or stack positions.
 - **One physical line per paragraph**: use editor soft-wrap. Code blocks, tables, and list structure keep their formatting.
 - **The owning subsystems page updates in the same change** that reshapes a documented type.
-- **Pairs update together**: a change to either language updates its counterpart in the same commit ([bilingual contract](i18n/README.md)).
+- **Pairs update together**: a change to either language updates its counterpart and re-records the pair in the same commit, with [terminology.md](i18n/terminology.md) loaded first ([bilingual contract](i18n/README.md#updating-a-pair)).
 - **Doc comments state complete contracts, not reasoning transcripts.** `//!`, `///`, JSDoc, and KDoc preserve behavior, failure, timing, ownership, and consequences; delete narration, test walkthroughs, review analysis, and code restatement. Keep the local contract and link its rationale. Use `.agents/skills/lemma-prose-standard/SKILL.md` for details.
 - **Write directly**: name actors and facts. Name the exact check, type, API, operation, or behavior instead of metaphorical "gate", "vocabulary", or "surface".
 

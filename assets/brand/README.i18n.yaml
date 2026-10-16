@@ -1,0 +1,37 @@
+# Translation-pairing record for README.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write assets/brand/README.md
+/lemma-brand-assets:
+  en: a118c3b34f1fb8fb
+  zh: cf6a803b27122533
+/lemma-brand-assets/directory-layout:
+  en: f8493e6268d915a4
+  zh: 93a9b8fcc05aba10
+/lemma-brand-assets/asset-roster-and-roles:
+  en: af07a0aab427be38
+  zh: 0c892caabf7d4719
+/lemma-brand-assets/asset-roster-and-roles/base-elements-never-appear-in-the-ui-alone-composition-ingredients-only:
+  en: b4f987671f95fa3f
+  zh: f52fa15f697756b3
+/lemma-brand-assets/asset-roster-and-roles/app-icons-the-face-of-the-software-for-the-operating-system:
+  en: 39ce085e41a835d0
+  zh: 278fa74a5a1b5f93
+/lemma-brand-assets/asset-roster-and-roles/lockups-brand-titles-for-interfaces:
+  en: bcc38289f7253341
+  zh: c7ec58398921b56c
+/lemma-brand-assets/asset-roster-and-roles/qed-proof-seals-semantic-stamps-designating-proof-closure:
+  en: f25dbc2a3a3d7e6d
+  zh: 8f10fce6f6a51875
+/lemma-brand-assets/color-discipline:
+  en: aa582fe73a303f50
+  zh: ca6fd8e83a6ee6ae
+/lemma-brand-assets/usage-conventions:
+  en: c239297f9ca759b5
+  zh: ecde91ccf37c3f0f
+/lemma-brand-assets/regeneration:
+  en: 6fb6fa4d4863819b
+  zh: 60dce71476e1318b
+/lemma-brand-assets/repository-invariants:
+  en: f3f9ce62205cd570
+  zh: 51758f8cce79431e

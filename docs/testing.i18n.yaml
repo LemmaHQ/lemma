@@ -1,0 +1,22 @@
+# Translation-pairing record for testing.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/testing.md
+/testing:
+  en: 656397c5c8c42926
+  zh: f0ca2a8c758a1180
+/testing/tiers:
+  en: 1ebec0c72a575f4d
+  zh: b899f5aebb8055bd
+/testing/store-tests:
+  en: c48601e8c866860f
+  zh: 2ce40344f861eae3
+/testing/coverage:
+  en: 95152d5710ccdbbb
+  zh: bec3145bbb5eed27
+/testing/how-tests-run:
+  en: d117fe406e27fa48
+  zh: 21c883ce2ae00870
+/testing/real-implementations-over-mocks:
+  en: 6b4747341e34e8ba
+  zh: 8dfb43650fe22bb9

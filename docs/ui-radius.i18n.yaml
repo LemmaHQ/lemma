@@ -1,0 +1,28 @@
+# Translation-pairing record for ui-radius.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/ui-radius.md
+/lemma-corner-radius-standard:
+  en: 7baf32103a75dddf
+  zh: 8a64c2d0dbc941a7
+/lemma-corner-radius-standard/summary:
+  en: e3f519df69ca0bb3
+  zh: c8e51f5d226b4614
+/lemma-corner-radius-standard/table-of-contents:
+  en: c5799410caf98c1c
+  zh: e2a8a34786aad495
+/lemma-corner-radius-standard/scope-and-authority:
+  en: 52c96aea942b3e47
+  zh: fcbcea8747b7917b
+/lemma-corner-radius-standard/select-the-radius:
+  en: ea40ea74ac9e9556
+  zh: 557c7a4952c47a7a
+/lemma-corner-radius-standard/reuse-tokens-and-preserve-deliberate-shapes:
+  en: 7c0149eb5d617a00
+  zh: 16291c964675ff65
+/lemma-corner-radius-standard/nested-geometry-and-hover:
+  en: c40216444159c86c
+  zh: a2a7e436d9749351
+/lemma-corner-radius-standard/apply-and-verify:
+  en: 1cffec605af653df
+  zh: 548009edbd5320b8

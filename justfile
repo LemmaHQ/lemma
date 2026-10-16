@@ -162,3 +162,13 @@ mobile-android-test:
 [group('docs')]
 docs-lint:
     npm run lint:docs
+
+# Check bilingual pairs against their records; --write <file> records a pair
+[group('docs')]
+docs-pairing *args:
+    node scripts/verify-translation-pairing.mjs {{args}}
+
+# Print translation briefs for out-of-sync pairs
+[group('docs')]
+docs-brief *args:
+    node scripts/gen-translation-brief.mjs {{args}}

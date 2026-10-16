@@ -1,0 +1,34 @@
+# Translation-pairing record for web-styling.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write docs/web-styling.md
+/web-ui-style-reference:
+  en: 90a2c0639e2688ac
+  zh: 29842c4069cb223b
+/web-ui-style-reference/ownership:
+  en: a5edbf92aa75ce73
+  zh: 6e23db5e2dcbc527
+/web-ui-style-reference/styling-stack:
+  en: 70b3d97a93a3a133
+  zh: 987508d44d10dac0
+/web-ui-style-reference/component-rules:
+  en: 9431b1f81f32261f
+  zh: ea95560d7b9e9557
+/web-ui-style-reference/visual-system:
+  en: 37fc3eb74b790cbb
+  zh: 0c9919a2f338785f
+/web-ui-style-reference/visual-system/color:
+  en: c3fbeefa9896a30c
+  zh: 5337e9cd648c68ba
+/web-ui-style-reference/visual-system/elevation:
+  en: 6751c824211ba3cc
+  zh: 620a039786837d97
+/web-ui-style-reference/visual-system/type-roles:
+  en: d125c3ffffe7863d
+  zh: 80d96d010d4aed41
+/web-ui-style-reference/corner-radii:
+  en: 735ba261165a1070
+  zh: 3a627053949bda33
+/web-ui-style-reference/changing-the-system:
+  en: ed116deb540b1550
+  zh: 45bb1b932c5f85e8

@@ -1,0 +1,19 @@
+# Translation-pairing record for README.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing --write web/src/styles/README.md
+/web-theme-styles:
+  en: cbd91a8a659ad711
+  zh: fbfa25823785f661
+/web-theme-styles/summary:
+  en: efe7bf80f14e4128
+  zh: 48efa6baee190d8a
+/web-theme-styles/files:
+  en: 49fa1fb7fe0ae017
+  zh: 0b76b3d8088f4199
+/web-theme-styles/themecss:
+  en: 8de6be9d01dc9a75
+  zh: 402be338f75db114
+/web-theme-styles/indexcss:
+  en: fac89f3d50661c09
+  zh: 81a9f3033734b33f

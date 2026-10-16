@@ -19,6 +19,7 @@ assets/       品牌素材
 design/       设计 token（tokens.json）及面向 Web、桌面端与 Android 的生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
+scripts/      双语配对检查与翻译简报生成器（docs/i18n/README.md）
 ```
 
 ## 命令
@@ -32,6 +33,7 @@ just desktop-dev        # 构建 lemma-server，再启动 Electron
 just proto-gen          # 从 proto/ 重新生成 web TypeScript 与 Android Kotlin 代码
 just docker-up          # 带 PostgreSQL 的完整栈；docker-down 停止
 just docs-lint          # markdownlint 与 autocorrect
+just docs-pairing       # 检查双语配对；--write <file> 记录一对
 ```
 
 各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
