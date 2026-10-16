@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+
+import { errorText } from "@/data/rpc/errors";
 
 import {
     NewProviderForm,
@@ -7,6 +10,7 @@ import {
 } from "./components/NewProviderForm";
 import { ProviderDetail } from "./components/ProviderDetail";
 import { ProviderListPane } from "./components/ProviderListPane";
+import type { ProviderPatch } from "./store";
 import { useProviders } from "./useProviders";
 
 export function ProvidersPanel() {
@@ -38,6 +42,14 @@ export function ProvidersPanel() {
         setSelectedId(null);
     };
 
+    const applyPatch = async (id: string, patch: ProviderPatch) => {
+        try {
+            await store.update(id, patch);
+        } catch (e) {
+            toast.error(errorText(e, t));
+        }
+    };
+
     return (
         <>
             <ProviderListPane
@@ -60,7 +72,7 @@ export function ProvidersPanel() {
                         key={selected.id}
                         provider={selected}
                         onToggleEnabled={(enabled) =>
-                            void store.update(selected.id, { enabled })
+                            void applyPatch(selected.id, { enabled })
                         }
                         onSaveBaseUrl={(baseUrl) =>
                             store.update(selected.id, { baseUrl })
@@ -72,7 +84,7 @@ export function ProvidersPanel() {
                             store.update(selected.id, { apiKey })
                         }
                         onModelsChange={(models) =>
-                            void store.update(selected.id, { models })
+                            void applyPatch(selected.id, { models })
                         }
                         onFetchModels={() =>
                             store.fetchModels({ id: selected.id })
