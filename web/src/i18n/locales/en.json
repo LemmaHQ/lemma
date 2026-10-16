@@ -66,6 +66,7 @@
         "settings": "Settings"
     },
     "errors": {
+        "agentFailed": "The model request failed.",
         "archivedConversationNotFound": "Archived conversation not found.",
         "contentRequired": "Message content is required.",
         "conversationNotActive": "Conversation not found or already archived.",
@@ -76,6 +77,7 @@
         "loginTargetRequired": "Provide exactly one of username or email.",
         "messageNotFound": "Message not found.",
         "modelRequired": "Please select a model.",
+        "network": "Can't reach the server. Check your connection and try again.",
         "notAssistantMessage": "Only assistant messages support this action.",
         "providerDisabled": "This provider is disabled.",
         "providerFieldsRequired": "Base URL is required.",
@@ -84,6 +86,7 @@
         "providerKindInvalid": "Invalid provider type.",
         "providerNotFound": "Provider not found.",
         "signupFieldsRequired": "Username and email are required; password must be at least 8 characters.",
+        "timeout": "The request timed out. Please try again.",
         "titleRequired": "Title is required.",
         "tokenInvalid": "Your session has expired. Please sign in again.",
         "unspecified": "Something went wrong. Please try again.",

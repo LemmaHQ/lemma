@@ -19,18 +19,22 @@ it("maps app error reason to i18n key", () => {
     );
 });
 
-it("falls back to raw English message when reason has no mapping", () => {
+it("reads an unmapped reason as unspecified", () => {
     expect(errorText(withReason(999 as ErrorReason), t)).toBe(
-        "[not_found] raw message",
+        "errors.unspecified",
     );
 });
 
-it("displays the ConnectError message as-is when no ErrorInfo detail is present", () => {
+it("maps a transport code when no ErrorInfo detail is present", () => {
     const e = new ConnectError("network unreachable", Code.Unavailable);
-    expect(errorText(e, t)).toBe("[unavailable] network unreachable");
+    expect(errorText(e, t)).toBe("errors.network");
 });
 
-it("stringifies non-ConnectError instances", () => {
-    expect(errorText(new Error("boom"), t)).toBe("Error: boom");
-    expect(errorText("plain", t)).toBe("plain");
+it("reads an unmapped code as unspecified", () => {
+    const e = new ConnectError("internal detail", Code.Internal);
+    expect(errorText(e, t)).toBe("errors.unspecified");
+});
+
+it("reads non-ConnectError values as unspecified", () => {
+    expect(errorText(new Error("boom"), t)).toBe("errors.unspecified");
 });

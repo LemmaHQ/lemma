@@ -1,4 +1,4 @@
-import { ConnectError } from "@connectrpc/connect";
+import { Code, ConnectError } from "@connectrpc/connect";
 import type { ParseKeys, TFunction } from "i18next";
 
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
@@ -31,6 +31,13 @@ const reasonKeys: Record<ErrorReason, ParseKeys> = {
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
 };
 
+const codeKeys: Partial<Record<Code, ParseKeys>> = {
+    [Code.Unavailable]: "errors.network",
+    [Code.DeadlineExceeded]: "errors.timeout",
+    [Code.Unauthenticated]: "errors.tokenInvalid",
+};
+
+/** Localized text for a failed request; unmapped failures read as `errors.unspecified`. */
 export function errorText(e: unknown, t: TFunction): string {
     if (e instanceof ConnectError) {
         const info = e.findDetails(ErrorInfoSchema)[0];
@@ -42,7 +49,7 @@ export function errorText(e: unknown, t: TFunction): string {
             ) => string;
             return render(key, info.attrs);
         }
-        return e.message;
+        return t(codeKeys[e.code] ?? "errors.unspecified");
     }
-    return String(e);
+    return t("errors.unspecified");
 }

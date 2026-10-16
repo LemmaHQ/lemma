@@ -69,10 +69,17 @@ export function MessageItem({
                 {streaming && (
                     <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
                 )}
-                {message.status === "error" && message.error && (
-                    <p className="mt-2 text-sm text-destructive">
-                        {message.error}
-                    </p>
+                {message.status === "error" && (
+                    <div className="mt-2 space-y-1">
+                        <p className="text-sm text-destructive">
+                            {t("errors.agentFailed")}
+                        </p>
+                        {message.error && (
+                            <p className="text-xs wrap-break-word text-muted-foreground">
+                                {message.error}
+                            </p>
+                        )}
+                    </div>
                 )}
                 {message.status === "aborted" && (
                     <p className="mt-2 text-xs text-muted-foreground">

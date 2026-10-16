@@ -66,6 +66,7 @@
         "settings": "设置"
     },
     "errors": {
+        "agentFailed": "模型请求失败。",
         "archivedConversationNotFound": "归档会话不存在。",
         "contentRequired": "消息内容不能为空。",
         "conversationNotActive": "会话不存在或已归档。",
@@ -76,6 +77,7 @@
         "loginTargetRequired": "登录须且仅须提供用户名或邮箱之一。",
         "messageNotFound": "消息不存在。",
         "modelRequired": "请先选择模型。",
+        "network": "无法连接服务器，请检查网络后重试。",
         "notAssistantMessage": "只有助手消息支持该操作。",
         "providerDisabled": "供应商已停用。",
         "providerFieldsRequired": "请填写 Base URL。",
@@ -84,6 +86,7 @@
         "providerKindInvalid": "无效的供应商类型。",
         "providerNotFound": "供应商不存在。",
         "signupFieldsRequired": "请填写用户名和邮箱，密码至少 8 位。",
+        "timeout": "请求超时，请重试。",
         "titleRequired": "标题不能为空。",
         "tokenInvalid": "登录状态已失效，请重新登录。",
         "unspecified": "操作失败，请重试。",
