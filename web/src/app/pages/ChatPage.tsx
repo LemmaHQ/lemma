@@ -3,6 +3,7 @@ import { PanelLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 
 import { AppSidebar } from "@/app/shell/AppSidebar";
 import { ChatComposer } from "@/features/agent/components/ChatComposer";
@@ -10,6 +11,7 @@ import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
 import { useModelSelection } from "@/features/agent/useModelSelection";
 import { Button } from "@/components/ui/button";
+import { errorText } from "@/data/rpc/errors";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
@@ -77,8 +79,8 @@ export function ChatPage() {
                 await chat.open(cid);
             }
             await chat.send(model.providerId, model.model, text);
-        } catch {
-            return;
+        } catch (e) {
+            toast.error(errorText(e, t));
         }
     };
 
@@ -112,26 +114,21 @@ export function ChatPage() {
         }
     };
 
-    const handleArchive = async (id: string) => {
-        await conversations.archive(id);
-        if (id === activeId) {
-            navigate("/");
+    const runAction = async (action: () => Promise<void>) => {
+        try {
+            await action();
+        } catch (e) {
+            toast.error(errorText(e, t));
         }
     };
 
-    const handleRename = async (id: string, title: string) => {
-        await conversations.rename(id, title);
-    };
-
-    const handleRestore = async (id: string) => {
-        await conversations.restore(id);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (window.confirm(t("sessions.deleteConfirm"))) {
-            await conversations.deleteArchived(id);
-        }
-    };
+    const handleArchive = (id: string) =>
+        runAction(async () => {
+            await conversations.archive(id);
+            if (id === activeId) {
+                navigate("/");
+            }
+        });
 
     const handlePickSuggestion = (text: string) => {
         setDraft(text);
@@ -173,10 +170,18 @@ export function ChatPage() {
                     onOpenSession={(id) => navigate(`/conversations/${id}`)}
                     onArchiveSession={(id) => void handleArchive(id)}
                     onRenameSession={(id, title) =>
-                        void handleRename(id, title)
+                        void runAction(() => conversations.rename(id, title))
                     }
-                    onRestoreSession={(id) => void handleRestore(id)}
-                    onDeleteSession={(id) => void handleDelete(id)}
+                    onRestoreSession={(id) =>
+                        void runAction(() => conversations.restore(id))
+                    }
+                    onDeleteSession={(id) => {
+                        if (window.confirm(t("sessions.deleteConfirm"))) {
+                            void runAction(() =>
+                                conversations.deleteArchived(id),
+                            );
+                        }
+                    }}
                     onCollapse={() => toggleSidebar(true)}
                 />
             </div>
