@@ -83,8 +83,8 @@ cargo binstall cargo-ndk
 | 工作流 | 路径 | 运行内容 |
 |---|---|---|
 | Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、拒绝警告的 clippy，以及带 PostgreSQL 服务的 `cargo nextest` |
-| Web CI | `web/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
-| Spec CI | `proto/`、`DESIGN.md`、`docs/`、根目录 Markdown、markdownlint 与 autocorrect 配置 | `buf lint` 与 `buf build`、`DESIGN.md` lint、文档 lint |
+| Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
+| Spec CI | `proto/`、`design/`、`docs/`、根目录 Markdown、markdownlint 与 autocorrect 配置 | `buf lint` 与 `buf build`、token 生成器的检查、文档 lint |
 | Coverage | 全部 | Rust 与 Web 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
 | CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript 与 GitHub Actions 做代码扫描 |
 | mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |

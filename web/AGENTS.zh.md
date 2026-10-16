@@ -24,13 +24,13 @@
 
 ## 样式
 
-- **功能代码只从 token 取设计值。** `src/app/` 与 `src/features/` 使用由 [DESIGN.md](../DESIGN.md) 生成的 Tailwind 工具类（`bg-card`、`rounded-md`），不写十六进制颜色，也不写 `dark:` 变体；亮色与暗色的取值只在 `tokens.css` 中区分。刻度之外的圆角只用于绘制细节，例如流式输出的光标。
+- **功能代码只从 token 取设计值。** `src/app/` 与 `src/features/` 使用由 [design/tokens.json](../design/tokens.json) 生成的 Tailwind 工具类（`bg-card`、`rounded-md`），不写十六进制颜色，也不写 `dark:` 变体；亮色与暗色的取值只在 `tokens.css` 中区分。刻度之外的圆角只用于绘制细节，例如流式输出的光标。
 - **控件复用 `src/components/ui/`。** 多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
-- **圆角遵循按角色与嵌套的规则**，见 [DESIGN.md](../DESIGN.md#shapes)。
+- **圆角遵循按角色与嵌套的规则**，见 [ui-radius.md](../docs/ui-radius.zh.md)。
 
 ## 生成文件
 
-`src/gen/` 由 `just proto-gen` 生成；`src/styles/tokens.css` 由 [DESIGN.md](../DESIGN.md) 经 `scripts/gen-tokens.mjs` 生成，`dev` 与 `build` 会先运行它。两者都被 Git 忽略；修改其来源。
+`src/gen/` 由 `just proto-gen` 生成；`src/styles/tokens.css` 由 [design/tokens.json](../design/tokens.json) 经 `design/gen-tokens.mjs` 生成，`dev` 与 `build` 会先运行它。两者都被 Git 忽略；修改其来源。
 
 ## 命令
 

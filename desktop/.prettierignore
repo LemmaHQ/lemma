@@ -1,5 +1,6 @@
 out
 .vite
 web-dist
+src/gen
 node_modules
 package-lock.json

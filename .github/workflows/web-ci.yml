@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - "web/**"
+      - "design/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/web-ci.yml"
   pull_request:
     paths:
       - "web/**"
+      - "design/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/web-ci.yml"
@@ -51,8 +53,8 @@ jobs:
       - name: Generate proto code
         run: npm run gen:proto
 
-      # tokens.css is generated from DESIGN.md and gitignored; eslint's
-      # tailwindcss plugin resolves it via cssConfigPath during lint.
+      # tokens.css is generated from design/tokens.json and gitignored;
+      # eslint's tailwindcss plugin resolves it via cssConfigPath.
       - name: Generate design tokens
         run: npm run gen:tokens
 

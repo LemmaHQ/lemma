@@ -18,5 +18,4 @@ Lemma's documentation is maintained in English and Simplified Chinese. This page
 **Excluded** (English only, because tools consume them verbatim):
 
 - `SKILL.md` files and the references under each skill.
-- `DESIGN.md`, the source of the generated design tokens.
 - Generated files.

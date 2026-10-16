@@ -25,6 +25,7 @@ web/src/styles/tokens.css
 desktop/out/
 desktop/.vite/
 desktop/web-dist/
+desktop/src/gen/
 
 # Environment variables and secrets
 .env

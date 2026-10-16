@@ -16,9 +16,9 @@ web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.
 desktop/      Electron 外壳，以本地引擎方式运行 lemma-server（desktop/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
+design/       设计 token（tokens.json）及面向 Web、桌面端与 Android 的生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
-DESIGN.md     设计 token；web/src/styles/tokens.css 的数据源
 ```
 
 ## 命令

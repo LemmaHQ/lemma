@@ -28,7 +28,8 @@
 | Crate 与 package README | 单个 crate 的契约：配置、语义、限制、扩展点 | 对文档注释的复述、其他 crate 的事务 |
 | [development.md](development.zh.md) | 环境搭建、日常工作流与 CI 概览 | 运行时与版本选择的理由（→ commit message）、会与 `justfile` 脱节的逐项检查列表 |
 | [testing.md](testing.zh.md) | 测试分层：各层覆盖什么、测试放在哪里、如何运行 | 单个测试的走查、归属于某个 crate 或 package 的 fixture 细节 |
-| `DESIGN.md` | 设计 token 与视觉体系；生成文件 `tokens.css` 的数据源 | 组件行为（→ subsystems） |
+| `design/tokens.json` | 设计 token 取值：静态色板、各主题的语义别名、字体排版、圆角、动效；Web、桌面端与 Android 生成 token 的数据源 | 使用规则（→ `web/AGENTS.md`、[ui-radius.md](ui-radius.zh.md)） |
+| [ui-radius.md](ui-radius.zh.md) | Web 客户端的圆角角色、嵌套与悬停几何 | token 取值（→ `design/tokens.json`） |
 | Skill（`.agents/skills/`） | 可复用的工作流与专项决策标准，包括各语言的代码风格 | 产品与运行时契约（→ 文档或源码） |
 
 归属规则：决策理由 → commit message；类型定义 → subsystems；术语定义 → glossary；crate 契约 → README；代码风格与工作流 → skill；常驻规则 → 根 `AGENTS.md`。

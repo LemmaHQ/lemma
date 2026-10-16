@@ -16,9 +16,9 @@ web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
+design/       design tokens (tokens.json) and the generator for web, desktop, and Android
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
-DESIGN.md     design tokens; source of web/src/styles/tokens.css
 ```
 
 ## Commands

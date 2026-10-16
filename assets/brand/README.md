@@ -49,7 +49,7 @@ assets/brand/
 | Role | Value | Usage |
 | :--- | :--- | :--- |
 | Base | `#121212` / `#ffffff` | Plates, backgrounds, body text |
-| Focus blue | `#1783ff` | The single interactive accent (icon dot, interactive elements); matches `primary` in `DESIGN.md` |
+| Focus blue | `#1783ff` | The single interactive accent (icon dot, interactive elements); matches `palette.blue.500` in `design/tokens.json` |
 | Proof rose | `#e83168` | Q.E.D. seals and reasoning-completion states only |
 
 ## Usage Conventions

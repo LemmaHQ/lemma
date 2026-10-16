@@ -28,7 +28,8 @@ Each fact has one home: the tier whose job it is; elsewhere, link there.
 | Crate and package README | The per-crate contract: config, semantics, limitations, extension points | Doc-comment restatement, other crates' concerns |
 | [development.md](development.md) | Environment setup, daily workflow, and a summary of CI | Runtime/version rationale (→ commit messages), check-by-check lists that drift from the `justfile` |
 | [testing.md](testing.md) | Test tiers: what each covers, where tests live, how they run | Individual test walkthroughs, fixture detail owned by a crate or package |
-| `DESIGN.md` | Design tokens and the visual system; source of the generated `tokens.css` | Component behavior (→ subsystems) |
+| `design/tokens.json` | Design token values: static palette, semantic aliases per theme, type, radius, motion; source of the generated web, desktop, and Android tokens | Usage rules (→ `web/AGENTS.md`, [ui-radius.md](ui-radius.md)) |
+| [ui-radius.md](ui-radius.md) | Radius roles, nesting, and hover geometry for the web client | Token values (→ `design/tokens.json`) |
 | Skills (`.agents/skills/`) | Reusable workflows and specialized decision standards, including per-language code style | Product and runtime contracts (→ docs or source) |
 
 Placement: rationale → commit messages; type definitions → subsystems; term definitions → glossary; crate contracts → READMEs; code style and workflows → skills; standing orders → root `AGENTS.md`.

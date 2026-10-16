@@ -61,7 +61,7 @@ rust-cov:
 rust-cov-html:
     cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --html --open
 
-# Generate design tokens (DESIGN.md -> tokens.css)
+# Generate design tokens (web CSS, desktop TS, Android palette)
 [group('web')]
 web-gen-tokens:
     npm run gen:tokens
