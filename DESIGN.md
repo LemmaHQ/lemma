@@ -36,38 +36,41 @@ colors:
   code: "#f5f5f5"
   code-foreground: "#000000e6"
   code-border: "#00000021"
-  dark-primary: "#1a88ff"
-  dark-primary-foreground: "#ffffff"
-  dark-ring: "#1a88ff66"
-  dark-background: "#121212"
-  dark-foreground: "#ffffffd6"
-  dark-glass: "#121212d6"
-  dark-card: "#1f1f1f"
-  dark-card-foreground: "#ffffffd6"
-  dark-popover: "#1f1f1f"
-  dark-popover-foreground: "#ffffffd6"
-  dark-secondary: "#ffffff1a"
-  dark-secondary-foreground: "#ffffffd6"
-  dark-muted: "#ffffff0d"
-  dark-muted-foreground: "#ffffff8f"
-  dark-accent: "#ffffff1a"
-  dark-accent-foreground: "#ffffffd6"
-  dark-destructive: "#ff4756"
-  dark-destructive-foreground: "#ffffff"
-  dark-border: "#ffffff1f"
-  dark-input: "#ffffff1f"
-  dark-sidebar: "#1f1f1f"
-  dark-sidebar-foreground: "#ffffffd6"
-  dark-sidebar-border: "#ffffff1f"
-  dark-sidebar-accent: "#ffffff14"
-  dark-sidebar-accent-foreground: "#ffffffd6"
-  dark-code: "#1f1f1f"
-  dark-code-foreground: "#ffffffd6"
-  dark-code-border: "#ffffff1f"
-  dark-warning: "#ff9f0a"
-  dark-warning-soft: "#ff9f0a1a"
-  dark-warning-border: "#ff9f0a66"
-  dark-success: "#32ff7d"
+
+dark:
+  colors:
+    primary: "#1a88ff"
+    primary-foreground: "#ffffff"
+    ring: "#1a88ff66"
+    warning: "#ff9f0a"
+    warning-soft: "#ff9f0a1a"
+    warning-border: "#ff9f0a66"
+    success: "#32ff7d"
+    background: "#121212"
+    foreground: "#ffffffd6"
+    glass: "#121212d6"
+    card: "#1f1f1f"
+    card-foreground: "#ffffffd6"
+    popover: "#1f1f1f"
+    popover-foreground: "#ffffffd6"
+    secondary: "#ffffff1a"
+    secondary-foreground: "#ffffffd6"
+    muted: "#ffffff0d"
+    muted-foreground: "#ffffff8f"
+    accent: "#ffffff1a"
+    accent-foreground: "#ffffffd6"
+    destructive: "#ff4756"
+    destructive-foreground: "#ffffff"
+    border: "#ffffff1f"
+    input: "#ffffff1f"
+    sidebar: "#1f1f1f"
+    sidebar-foreground: "#ffffffd6"
+    sidebar-border: "#ffffff1f"
+    sidebar-accent: "#ffffff14"
+    sidebar-accent-foreground: "#ffffffd6"
+    code: "#1f1f1f"
+    code-foreground: "#ffffffd6"
+    code-border: "#ffffff1f"
 
 typography:
   display-xl:
@@ -357,7 +360,7 @@ components:
 
 ## Overview
 
-Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in the colors block of this document; `web/scripts/gen-tokens.mjs` generates `web/src/styles/tokens.css` from it on every build.
+Lemma is a self-hosted AI chat workbench with three theme states (light / dark / system). The design system is **semantic-token-only**: components reference semantic names like `{colors.card}` and `{typography.button}`. Both theme sets are authored in this document, light in `colors` and dark in `dark.colors`; `web/scripts/gen-tokens.mjs` generates `web/src/styles/tokens.css` from them on every build.
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.glass}` floating chrome and the composer, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Both themes are fully flat — hierarchy comes from **alpha tiers on pure black/white**, not from solid shade ladders: labels at 90/60% (dark 84/56%), fills at 3~25% (dark 5~25%), separators at 13% (dark 12%), stored as 8-digit hex. Light mode is a pure-white canvas with a `#f5f5f5` sidebar; dark mode is a `#121212` canvas with a `#1f1f1f` sidebar; zones divide by hairline separators, and shadows are reserved for overlays. `{colors.glass}` is the single translucent surface — the primary background at 84% alpha with a hairline border — used for the conversation top bar, the sidebar expand button, and the composer; the web layer adds `backdrop-filter`, other platforms render it as the same translucent solid.
 
@@ -379,7 +382,7 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 
 ## Colors
 
-> The front matter above holds the values; this chapter explains each token's role and intent. Light values are unprefixed, dark overrides carry the `dark-` prefix, and `web/src/styles/tokens.css` is generated from them by `web/scripts/gen-tokens.mjs` as `:root` / `[data-theme="dark"]`. Every value is an sRGB hex literal — 8-digit hex expresses the alpha tiers — so the front matter round-trips through Stitch and `designmd export` unchanged.
+> The front matter above holds the values; this chapter explains each token's role and intent. `colors` holds the light values and `dark.colors` overrides the same names for the dark theme; `web/scripts/gen-tokens.mjs` generates `web/src/styles/tokens.css` from them as `:root` / `[data-theme="dark"]` and rejects a dark name that has no light counterpart. Every value is an sRGB hex literal — 8-digit hex expresses the alpha tiers. `designmd export` reads `colors` only, so its output carries the light theme.
 
 ### Brand & Accent
 
@@ -692,7 +695,7 @@ No images in the app — icons are Lucide, avatars are initial/symbol circles. N
 1. Focus on ONE component at a time and reference it by its `components:` token name.
 2. Introducing a surface: pick an existing role (`background` / `card` / `popover` / `sidebar` / `glass`); do not invent new ones casually.
 3. Default UI text to `{typography.body-sm}` at weight 400; reach hierarchy through weight (500 / 600) before new sizes.
-4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required; warnings fall in three accepted buckets: orphaned tokens (the `dark-*` set mirrors the light set by name, so components reference the light token and the theme swaps underneath), `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning, and contrast pairs that are either alpha-compositing artifacts (the linter compares translucent fills against translucent text at face value instead of compositing over the page background, the same blind spot as the `transparent` case in rule 5) or the two accepted sub-AA brand pairs (white on #1783ff primary and on #ff3849 destructive). A warning outside those three buckets is a regression — most often an orphaned token or a real contrast failure. The `motion` section is not a recognized schema key and earns one info-level `token-like-ignored` notice; our own generator consumes it.
+4. Run `npx -p @google/design.md designmd lint DESIGN.md` after edits — the bare `npx @google/design.md lint` form resolves to a different entry point and prints nothing at all. 0 errors required; the accepted warnings are `borderColor` sub-tokens, which the spec names as its own example of an unknown component property and requires consumers to accept with a warning; contrast pairs that are alpha-compositing artifacts (the linter compares translucent fills against translucent text at face value instead of compositing over the page background, the same blind spot as the `transparent` case in rule 5) or the two accepted sub-AA brand pairs (white on #1783ff primary and on #ff3849 destructive); and one `token-like-ignored` warning each for `motion` and `dark`, which are not schema keys but which our generator consumes. Any other warning is a regression — most often an orphaned color token or a real contrast failure.
 5. The front matter carries no YAML comments. A transparent rest state is expressed by omitting `backgroundColor`: `transparent` is a legal color keyword, but the linter flattens it to `#00000000` and then reports a spurious 1.18:1 contrast failure against it. Interaction states (hover / pressed / active) and pending changes belong in the matching prose chapter; add a variant as a separate `<component>-<state>` entry only when every property resolves to a token reference.
 6. This document is the source of truth for every front-end design value. Change the value here, then run the generator (`npm run gen:tokens` — it also fires automatically via npm pre-hooks on dev/build); `web/src/styles/tokens.css` is a build artifact and never edited by hand. Colors are hex literals — alpha tiers use 8-digit hex; do not reintroduce `oklch()` or `color-mix()` into the front matter.
 7. Treat blue as scarce: primary buttons, focus ring, link emphasis.

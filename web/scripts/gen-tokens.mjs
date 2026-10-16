@@ -31,21 +31,23 @@ function pxToEm(letterSpacingPx, fontSizePx) {
 
 function generateTokensCss(data) {
     const colors = data.colors || {};
+    const darkColors = data.dark?.colors || {};
     const typography = data.typography || {};
     const rounded = data.rounded || {};
 
-    const lightColors = [];
-    const darkColors = [];
+    const lightColorTokens = [];
+    const darkColorTokens = [];
     const themeColorMappings = [];
 
     for (const [key, val] of Object.entries(colors)) {
-        if (key.startsWith("dark-")) {
-            const cleanKey = key.replace(/^dark-/, "");
-            darkColors.push(`    --${cleanKey}: ${val};`);
-        } else {
-            lightColors.push(`    --${key}: ${val};`);
-            themeColorMappings.push(`    --color-${key}: var(--${key});`);
+        lightColorTokens.push(`    --${key}: ${val};`);
+        themeColorMappings.push(`    --color-${key}: var(--${key});`);
+    }
+    for (const [key, val] of Object.entries(darkColors)) {
+        if (!(key in colors)) {
+            throw new Error(`dark.colors.${key} has no counterpart in colors`);
         }
+        darkColorTokens.push(`    --${key}: ${val};`);
     }
 
     const typographyTokens = [];
@@ -95,13 +97,13 @@ function generateTokensCss(data) {
     return `/* Generated from DESIGN.md by web/scripts/gen-tokens.mjs. Direct changes are overwritten by the generator. */
 
 :root {
-${lightColors.join("\n")}
+${lightColorTokens.join("\n")}
 
 ${motionTokens.join("\n")}
 }
 
 [data-theme="dark"] {
-${darkColors.join("\n")}
+${darkColorTokens.join("\n")}
 }
 
 @theme inline {
