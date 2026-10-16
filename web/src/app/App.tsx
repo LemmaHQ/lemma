@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PlatformProvider } from "@/platform";
 
@@ -12,6 +13,7 @@ export function App() {
             <AppShell>
                 <TooltipProvider>
                     <AppRoutes />
+                    <Toaster />
                 </TooltipProvider>
             </AppShell>
         </PlatformProvider>
