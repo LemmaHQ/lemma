@@ -7,10 +7,6 @@ colors:
   primary: "#1783ff"
   primary-foreground: "#ffffff"
   ring: "#1783ff66"
-  warning: "#ff9500"
-  warning-soft: "#ff95001a"
-  warning-border: "#ff950066"
-  success: "#16c456"
   background: "#ffffff"
   foreground: "#000000e6"
   glass: "#ffffffd6"
@@ -42,10 +38,6 @@ dark:
     primary: "#1a88ff"
     primary-foreground: "#ffffff"
     ring: "#1a88ff66"
-    warning: "#ff9f0a"
-    warning-soft: "#ff9f0a1a"
-    warning-border: "#ff9f0a66"
-    success: "#32ff7d"
     background: "#121212"
     foreground: "#ffffffd6"
     glass: "#121212d6"
@@ -338,16 +330,6 @@ components:
     rounded: "{rounded.md}"
     padding: 16px
     borderColor: "{colors.code-border}"
-  banner-warning:
-    backgroundColor: "{colors.warning-soft}"
-    textColor: "{colors.warning}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 8px 12px
-    borderColor: "{colors.warning-border}"
-  status-success:
-    textColor: "{colors.success}"
-    typography: "{typography.body-sm}"
   auth-card:
     backgroundColor: "{colors.card}"
     textColor: "{colors.card-foreground}"
@@ -364,7 +346,7 @@ Lemma is a self-hosted AI chat workbench with three theme states (light / dark /
 
 Surfaces are organized by **role**, not ladder: `{colors.background}` main canvas, `{colors.sidebar}` sidebar zone, `{colors.card}` / `{colors.popover}` panels and overlays, `{colors.glass}` floating chrome and the composer, `{colors.muted}` / `{colors.secondary}` / `{colors.accent}` fills. Both themes are fully flat — hierarchy comes from **alpha tiers on pure black/white**, not from solid shade ladders: labels at 90/60% (dark 84/56%), fills at 3~25% (dark 5~25%), separators at 13% (dark 12%), stored as 8-digit hex. Light mode is a pure-white canvas with a `#f5f5f5` sidebar; dark mode is a `#121212` canvas with a `#1f1f1f` sidebar; zones divide by hairline separators, and shadows are reserved for overlays. `{colors.glass}` is the single translucent surface — the primary background at 84% alpha with a hairline border — used for the conversation top bar, the sidebar expand button, and the composer; the web layer adds `backdrop-filter`, other platforms render it as the same translucent solid.
 
-The single chromatic accent is blue `{colors.primary}` #1783ff (dark #1a88ff) — primary buttons, focus rings, link emphasis — topped with white text `{colors.primary-foreground}` for contrast. `{colors.ring}` is the primary at 40% alpha, stored flat: change the primary and re-derive the ring in the same edit. Hovers are opacity modifiers (`primary/90`), so they follow the primary without a token of their own. Three semantic colors are live: `{colors.destructive}` #d92033, `{colors.warning}` #ff9500 (with `warning-soft` 10%-alpha fill and `warning-border`), and `{colors.success}` #16c456 — each brightened in dark mode for contrast on #121212.
+The single chromatic accent is blue `{colors.primary}` #1783ff (dark #1a88ff) — primary buttons, focus rings, link emphasis — topped with white text `{colors.primary-foreground}` for contrast. `{colors.ring}` is the primary at 40% alpha, stored flat: change the primary and re-derive the ring in the same edit. Hovers are opacity modifiers (`primary/90`), so they follow the primary without a token of their own. One semantic color is live: `{colors.destructive}` #d92033, brightened in dark mode for contrast on #121212.
 
 Fonts are dual self-hosted (woff2 from GitHub releases, no CDN): **Sarasa UI SC** (400/500/600) carries UI and body text — Latin from Iosevka, CJK included, identical rendering across platforms; **Maple Mono NF CN** (400/700) carries code — CJK 2:1 alignment, renders Nerd Font icons, so pasted terminal output no longer degrades to tofu boxes. The 13-step type scale is kept as-is, including negative display tracking (-3.0px @ 80px down to 0 at body).
 
@@ -416,8 +398,6 @@ The page rhythm is a **workbench, not a marketing narrative**: a 260px session s
 ### Semantic
 
 - **Destructive** (`{colors.destructive}`): Delete and dangerous actions, and error text. The light value reaches 4.5:1 both under white labels and as text on white; the dark value is brighter for text on the dark canvas.
-- **Warning** (`{colors.warning}` / `{colors.warning-soft}` / `{colors.warning-border}`): Banner trio — strong text, soft background, border. Adopted from the amber palette the migration banner shipped with.
-- **Success** (`{colors.success}`): Positive feedback — storage test "Connected", migration finished.
 - Overlay scrim: no dialog component yet; start at `black/60` when introduced, no standalone token.
 
 ## Typography
@@ -468,7 +448,7 @@ One sans family spans display to body; the family change is silent, hierarchy co
 - **Base unit**: 4px — identical to Tailwind's scale, so every token maps 1:1 to a utility (`{spacing.md}` 16px = `p-4`).
 - **Tokens (front matter)**: `{spacing.xxs}` 4px · `{spacing.xs}` 8px · `{spacing.sm}` 12px · `{spacing.md}` 16px · `{spacing.lg}` 24px · `{spacing.xl}` 32px · `{spacing.xxl}` 48px · `{spacing.section}` 96px.
 - Component conventions: buttons are 36px tall with 16px horizontal padding; form inputs 36px tall with 12px; card interiors `{spacing.lg}` 24px; auth card `{spacing.xl}` 32px; composer `{spacing.sm}` 12px.
-- Fixed-height components (buttons, inputs) declare `height` plus a single `padding`, which is their horizontal inset — vertical centering comes from the height, not from padding. Content-height components (rows, bubbles, tooltip, banner) keep a two-value `padding`: CSS shorthand, `vertical horizontal`. The spec types `padding` as one `Dimension`, so the pairs are a deliberate extension the reference linter accepts; collapsing them to one number would lose the split that makes a row denser than it is wide.
+- Fixed-height components (buttons, inputs) declare `height` plus a single `padding`, which is their horizontal inset — vertical centering comes from the height, not from padding. Content-height components (rows, bubbles, tooltip) keep a two-value `padding`: CSS shorthand, `vertical horizontal`. The spec types `padding` as one `Dimension`, so the pairs are a deliberate extension the reference linter accepts; collapsing them to one number would lose the split that makes a row denser than it is wide.
 - `{spacing.section}` 96px is reserved for landing pages — currently unused in the app.
 
 ### Grid & Container
@@ -626,17 +606,6 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 - Background `{colors.code}` overlaid at 60% opacity, 1px `{colors.code-border}`, type `{typography.mono}`, padding 16px. Inline code uses the same family at 2px 4px padding.
 
-### Feedback
-
-**`banner-warning`** — Inline warning banner (pending migration notice).
-
-- Background `{colors.warning-soft}`, 1px `{colors.warning-border}`, text `{colors.warning}`, type `{typography.body-sm}`, rounded `{rounded.md}`, padding 8px 12px.
-- The three values are amber palette steps — 50 / 300 / 700 in light, 950 / 800 / 400 in dark — lifted from Tailwind's amber ramp rather than tuned like the neutrals.
-
-**`status-success`** — Inline confirmation line (storage migrated, connection tested).
-
-- Text `{colors.success}` at `{typography.body-sm}`; the terser connection-test variant drops to `{typography.caption}`. Success is text-only — there is no filled success banner.
-
 ### Auth
 
 **`auth-card`** — The centered login / signup card.
@@ -657,7 +626,7 @@ The generator emits a bare `--radius` base from `rounded.lg` (shadcn convention)
 
 ### Don't
 
-- Don't hard-code raw color values in components — every surface, the migration banner included, resolves through a semantic token authored here and generated into `tokens.css`.
+- Don't hard-code raw color values in components — every surface resolves through a semantic token authored here and generated into `tokens.css`.
 - Don't introduce a second chromatic accent.
 - Don't add drop shadows outside overlays (popover / dropdown / tooltip) and the composer card's `shadow-composer`.
 - Don't use display-size type inside the app — display-xl through display-md are reserved for landing pages.
