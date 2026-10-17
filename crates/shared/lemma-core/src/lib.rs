@@ -3,7 +3,7 @@
 //! These types are the single language spoken by every layer of the system:
 //! provider adapters translate vendor wire formats into them, the agent loop
 //! appends them to the trace, and stores persist them verbatim. Nothing here
-//! performs I/O; the crate depends on serde only.
+//! performs I/O.
 
 mod content;
 mod event;
