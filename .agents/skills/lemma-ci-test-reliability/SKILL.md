@@ -10,7 +10,7 @@ Build tests that stay correct under the repository's real execution topology, no
 ## Read the owning rules
 
 - [testing.md](../../../docs/testing.md) selects the tier: Rust unit or integration, store tests, web vitest, Android host tests, or the local real-provider tests.
-- Read the workflow under `.github/workflows/` and `web/vite.config.ts` when their job or worker topology affects the test.
+- Read the owning [workflow](../../../.github/workflows/) and the web client's [vite.config.ts](../../../web/vite.config.ts) when their job or worker topology affects the test.
 
 ## Model the execution topology
 

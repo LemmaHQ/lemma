@@ -17,13 +17,13 @@ Follow this sequence for each requested scope. Keep the common reader path brief
 4. Classify the page as tutorial or reference, then follow the authoring order in [document structure](../../../docs/AGENTS.md#document-structure).
 5. Write the English or Chinese side, then update the counterpart in the same pass with [terminology.md](../../../docs/i18n/terminology.md) loaded. Keep headings, lists, tables, code blocks, and link targets aligned.
 6. Verify every claim against code, tests, generators, or configuration, and run the operations the page instructs, per the fact-check procedure below. Update the owner before any derivative.
-7. Run the checks under [Validation](#validation), then re-read the complete diff for correctness and again for brevity and repository fit.
+7. Run the checks listed in the [Validation](#validation) section below, then re-read the complete diff for correctness and again for brevity and repository fit.
 
 ## Fact-check procedure: test, do not assume
 
 Documentation states how Lemma behaves today, and the only admissible evidence for an operation claim is having run it. This procedure applies to every new document and every new paragraph that claims an operation, command, default, error, or platform difference.
 
-1. **Read the facts, not the names.** Take recipe behavior from the `justfile`, package scripts from `package.json`, crate dependencies from `Cargo.toml`, wire contracts from `proto/`, and token values from `design/tokens.json`. A directory or crate name is not evidence of what it does.
+1. **Read the facts, not the names.** Take recipe behavior from the `justfile`, package scripts from `package.json`, crate dependencies from `Cargo.toml`, wire contracts from the `.proto` files, and token values from the design token source ([design/README.md](../../../design/README.md)). A directory or crate name is not evidence of what it does.
 2. **Run every claimed operation against the current checkout.** Execute each command and configuration exactly as the page will show it; write down only what you observed, including output, warnings, and failure modes. A claim that needs a provider key, a device, or a long build the user has not approved names how to verify it instead of asserting the behavior.
 3. **Delete what you could not reproduce.** Never carry a command, field, default, or behavior from memory, analogy, or a neighboring page. When a claim fails to reproduce, fix the claim, not the code.
 4. **Check old prose against the code.** A stale statement already committed is still wrong; correct it against current code, not against the old prose.

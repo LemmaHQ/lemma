@@ -11,7 +11,7 @@ Find changes that remove maintained obligations: APIs, proto fields, states, con
 
 Read the root `AGENTS.md`, [architecture.md](../../../docs/architecture.md) before judging crates, [testing.md](../../../docs/testing.md), and the subtree `AGENTS.md` for the area. Decisions and their rationale live in commit bodies: run `git log` on the files involved before calling something accidental.
 
-Treat these as intentional unless the user overrides them: the SQLite and PostgreSQL stores behind one store trait, the three provider kinds and their adapters, the three runtimes (server mode, the desktop local engine, the Android in-process engine), and the proto contract shared by web and Android. Unused members inside a protected design remain candidates when removing them preserves its purpose.
+Treat the designs [architecture.md](../../../docs/architecture.md) maps as intentional unless the user overrides them: the runtimes, the storage backends behind shared store traits, the provider adapters, and the wire contract shared by remote clients. Unused members inside an intentional design remain candidates when removing them preserves its purpose.
 
 For a broad request, split independent domains among subagents (agent loop and session tree; providers and adapters; auth and crypto; RPC crates and proto; web client; desktop shell; Android; scripts, CI, and docs), and require consumer evidence and the strongest retention argument from each.
 
@@ -25,7 +25,7 @@ For a broad request, split independent domains among subagents (agent loop and s
 
 ## Prove reachability and the trade-off
 
-Search exact symbols, field reads and writes, enum variants, proto field names in both generated languages, config keys, environment variables, and `justfile` recipes. Include `crates/`, `web/src/`, `desktop/src/`, `mobile/`, `proto/`, workflows, and `scripts/`. Tests and declarations show a contract without proving a shipped producer or consumer. A proto field is a wire contract: removing one reserves its number.
+Search exact symbols, field reads and writes, enum variants, proto field names in both generated languages, config keys, environment variables, and `justfile` recipes. Cover every area of the [repository layout](../../../AGENTS.md#repository-layout), including workflows and scripts. Tests and declarations show a contract without proving a shipped producer or consumer. A proto field is a wire contract: removing one reserves its number.
 
 For each candidate, record the current owner, the effective producer and consumer path, what disappears, what remains, and the strongest reason to keep it. Distinguish:
 

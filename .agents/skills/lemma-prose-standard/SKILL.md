@@ -19,9 +19,9 @@ Accept `mode: automatic | interactive`; default to `automatic`. Enter interactiv
 
 `mode` controls questions, not write authority. Review and audit tasks report findings without editing; explicitly requested write, fix, or trim tasks apply clear changes.
 
-Always exclude generated output and dependencies from discovery, review, and edits: `web/src/gen/`, `web/src/styles/tokens.css`, `desktop/src/gen/`, every `build/`, `dist/`, `target/`, and `node_modules/` directory. Also exclude the upstream style guides under `.agents/skills/lemma-code-style/references/`; they are quoted sources, not Lemma prose.
+Always exclude gitignored files from discovery, review, and edits: generated output, build directories, and dependencies. Search tracked files only, with `git ls-files` or a search that respects `.gitignore`. Also exclude the upstream style guides under `.agents/skills/lemma-code-style/references/`; they are quoted sources, not Lemma prose.
 
-Treat generated files as derivative. Edit the owning source, then regenerate: `proto/` for `src/gen/` and the Kotlin bindings, `design/tokens.json` for the token outputs, `lemma-mobile`'s public API for the UniFFI bindings. Bilingual pairs have no permanent owner: either language may be the authored side for an update. Follow the [pairs rule](../../../docs/AGENTS.md#writing-rules), update the counterpart minimally, and re-record the pair.
+Treat generated files as derivative. Edit the owning source, then regenerate: the [proto contract](../../../proto/AGENTS.md) for the generated RPC code, the [design tokens](../../../design/README.md) for the token outputs, and `lemma-mobile`'s public API for the [UniFFI bindings](../../../mobile/AGENTS.md#modules-and-generated-code). Bilingual pairs have no permanent owner: either language may be the authored side for an update. Follow the [pairs rule](../../../docs/AGENTS.md#writing-rules), update the counterpart minimally, and re-record the pair.
 
 ## Preserve the complete proposition
 
@@ -53,7 +53,7 @@ This is not a one-way shortening pass. Add or restore prose when code, types, an
 - **Skills and agent instructions:** state behavioral guardrails and explicit scope limitations such as "guidance, not a script". Keep the workflow concise and link its source of truth.
 - **Configuration comments** (`justfile`, workflows, Gradle, Vite): explain access limits, non-obvious wiring or load order, and likely misuse. A `justfile` recipe's comment is its `just --list` summary. Do not narrate entries the configuration already shows.
 - **Model-visible text:** tool and parameter descriptions in `lemma-tools` `ToolSpec`s reach every model request that advertises the tool. Treat their wording as behavior: change it deliberately, state the change in the commit body, and exercise it through the local real-provider tests ([testing.md](../../../docs/testing.md#tiers)) when the change can alter tool use.
-- **UI strings:** wording is behavior. Web copy lives in `web/src/i18n/locales/en.json` and `zh.json` with matching keys; inspect text, accessible names, tooltips, and placeholders together. Chinese terms follow [terminology.md](../../../docs/i18n/terminology.md); notice style follows [lemma-client-ui-ux](../lemma-client-ui-ux/SKILL.md).
+- **UI strings:** wording is behavior. Web copy lives in the [locale files](../../../web/src/i18n/locales/) with matching keys; inspect text, accessible names, tooltips, and placeholders together. Chinese terms follow [terminology.md](../../../docs/i18n/terminology.md); notice style follows [lemma-client-ui-ux](../lemma-client-ui-ux/SKILL.md).
 - **Diagnostics and errors:** name the failing subject or path, the violated rule, and the correction when it is non-obvious. A client-visible failure carries an `ErrorReason` that clients translate; its English message is a fallback ([lemma-error-handling](../lemma-error-handling/SKILL.md)). Remove internal execution narration.
 
 Preserve searchable mechanism names and meaningful modal, temporal, or negative emphasis. Normalize decorative emphasis only.

@@ -11,7 +11,7 @@ The web client is also the desktop renderer, so every web rule applies to deskto
 
 ## Visual foundation
 
-- **Use existing tokens for color, radius, spacing, and motion.** Before introducing a value, search the target page and its nearest established sibling for the token already in use, and adopt it. The same applies to whole treatments (toasts, menus, the composer, settings rows, page padding): reuse the established one instead of inventing a parallel one. Android reads colors from `LemmaTheme.colors`, which `Scheme.kt` maps from the generated `LemmaPalette`; it never declares a hex color.
+- **Use existing tokens for color, radius, spacing, and motion.** Before introducing a value, search the target page and its nearest established sibling for the token already in use, and adopt it. The same applies to whole treatments (toasts, menus, the composer, settings rows, page padding): reuse the established one instead of inventing a parallel one. Android reads colors from `LemmaTheme.colors`, which maps the palette generated from the [design tokens](../../../design/README.md); it never declares a hex color.
 - **Verify every change in light and dark themes.** Muted ink on a fill is the usual failure; check both before it ships.
 - **Font weight tops out at 500.** Use `font-normal` and `font-medium` on web and `FontWeight.Normal` and `FontWeight.Medium` in Compose. Differentiate with size or ink, not weight.
 - **Pick sizes from the type roles.** Parallel content shares one role; never invent a size for one element, and keep the number of distinct sizes on a page small. Without a precedent on the page, borrow the role of the most similar existing element.
@@ -35,7 +35,7 @@ Apply [lemma-error-handling](../lemma-error-handling/SKILL.md#localized-actionab
 
 ## Copy placement
 
-- Web copy lives in `web/src/i18n/locales/en.json` and `zh.json` with the same keys; components call `t()`.
+- Web copy lives in the [locale files](../../../web/src/i18n/locales/), `en.json` and `zh.json` with the same keys; components call `t()`.
 - Android copy lives in Compose Multiplatform resources, `composeResources/values/strings.xml` and `values-zh/strings.xml`, read through `stringResource`. Composables take no hardcoded user-visible strings.
 - Chinese terms follow [terminology.md](../../../docs/i18n/terminology.md); UI copy renders provider as `服务商`, while docs keep the English term.
 - Check text, accessible names, tooltips, and placeholders together, in both languages.
@@ -52,16 +52,16 @@ Apply [lemma-error-handling](../lemma-error-handling/SKILL.md#localized-actionab
 Verify every menu, select, popover, and tooltip for all three:
 
 - **Dismissable:** an outside click and Escape close it; on Android, the back gesture closes it before leaving the screen.
-- **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the 40px `.desktop-titlebar` covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
+- **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the `.desktop-titlebar` drag region covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
 - **Unclipped:** it portals out of `overflow` ancestors and is never covered by neighboring elements or the titlebar.
 
-Scrollbars use the shared styles in `index.css`. Verify the bar is neither clipped by rounded corners nor flush against the container edge.
+Scrollbars use the shared styles in [index.css](../../../web/src/index.css). Verify the bar is neither clipped by rounded corners nor flush against the container edge.
 
 ## Desktop window
 
 - The desktop titlebar is a drag region painted by the web client; the shell's `titleBarOverlay` colors come from the generated `themeColors`. A new header element sets `-webkit-app-region: no-drag` on its interactive parts, and sits below or beside the window controls, never under them.
 - The titlebar follows the surface beneath it, so a collapsed sidebar and an expanded one both look continuous at the top edge.
-- Desktop-only behavior goes through `src/platform/`; feature code never reads `window.lemmaDesktop` directly.
+- Desktop-only behavior goes through the web client's [platform layer](../../../web/src/platform/); feature code never reads `window.lemmaDesktop` directly.
 
 ## Android adaptation
 

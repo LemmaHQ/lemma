@@ -5,7 +5,7 @@ description: Use when designing or reviewing failures in Lemma — domain error 
 
 # Lemma error handling
 
-Define failures, their owners, and what remains safe after failure. This skill is guidance, not a checklist; the wire contract lives in `proto/lemma/v1/errors.proto` and the [glossary](../../../docs/glossary.md#errors).
+Define failures, their owners, and what remains safe after failure. This skill is guidance, not a checklist; the wire contract lives in [errors.proto](../../../proto/lemma/v1/errors.proto) and the [glossary](../../../docs/glossary.md#errors).
 
 ## Typed, structured failures
 
@@ -13,7 +13,7 @@ Expected failures need declared types, stable discriminants, and handling-releva
 
 At the RPC boundary, each service crate maps its domain enum exhaustively:
 
-- An expected failure the client can act on becomes `app_error(ErrorReason::…)`, or `app_error_with` when the localized text needs attributes. Adding one adds an `ErrorReason` value in `errors.proto`, a key in both web locales, and a row in `reasonKeys` in `web/src/data/rpc/errors.ts`.
+- An expected failure the client can act on becomes `app_error(ErrorReason::…)`, or `app_error_with` when the localized text needs attributes. Adding one adds an `ErrorReason` value in `errors.proto`, a key in both web locales, and a row in `reasonKeys` in [errors.ts](../../../web/src/data/rpc/errors.ts).
 - An infrastructure failure becomes `ConnectError::internal` with text prefixed by its subsystem (`db: …`, `crypto: …`). Internal errors carry no reason; clients show the generic message.
 
 `unwrap` is denied and `expect` warns workspace-wide; a defect that can only come from a bug may remain a panic, but containment must never turn it into success.
@@ -30,7 +30,7 @@ Defensive additions (fallback branches, retries, extra validation, degraded path
 
 Every report a user sees needs a readable summary, the affected operation, and a safe next action. Keep sensitive internals (SQL, paths, keys, provider responses with credentials) out of user-facing text.
 
-- **Web:** `errorText(e, t)` translates the `ErrorReason`, then falls back by Connect code (`Unavailable`, `DeadlineExceeded`, `Unauthenticated`), then to `errors.unspecified`. A failed action reports through a toast (`toast.error(errorText(e, t))`); a form keeps the user's input and shows the failure beside it. A failed agent turn shows the localized summary with the provider's text as secondary detail.
+- **Web:** `errorText(e, t)` in [errors.ts](../../../web/src/data/rpc/errors.ts) turns any failure into localized text, ending at a generic message. A failed action reports through a toast (`toast.error(errorText(e, t))`); a form keeps the user's input and shows the failure beside it. A failed agent turn shows the localized summary with the provider's text as secondary detail.
 - **Android:** errors reach the UI through `ErrorFormatter`; it must produce localized text from the reason, never the enum name or raw transport text. A failed send restores the unsent text so the user can retry.
 - **Chinese copy** follows [lemma-client-ui-ux](../lemma-client-ui-ux/SKILL.md#feedback-surfaces): short, with no trailing full stop on notices of two sentences or fewer.
 

@@ -50,8 +50,8 @@ Run these as case-insensitive regex searches over the scope, then judge every hi
 
 ## Workflow
 
-1. Scope and exclusions per [lemma-prose-standard](../lemma-prose-standard/SKILL.md#inputs-and-exclusions): require an explicit scope; never edit generated output or the upstream guides under `lemma-code-style/references/`.
+1. Scope and exclusions per [lemma-prose-standard](../lemma-prose-standard/SKILL.md#inputs-and-exclusions): require an explicit scope; never edit generated output or the upstream style guides.
 2. Audit read-only first: run the recall probes, judge every hit, and read the densest prose in scope directly.
-3. Fix owner-first per surface: generated outputs → fix the source (`proto/`, `design/tokens.json`) and regenerate; bilingual prose → update the counterpart minimally and re-record with `just docs-pairing --write <file>`; model-visible tool descriptions and UI strings → route through [lemma-prose-standard](../lemma-prose-standard/SKILL.md) and change only with owning behavior evidence, otherwise leave unchanged and report the deferral.
+3. Fix owner-first per surface: generated outputs → fix the owning source and regenerate ([lemma-prose-standard](../lemma-prose-standard/SKILL.md#inputs-and-exclusions)); bilingual prose → update the counterpart minimally and re-record with `just docs-pairing --write <file>`; model-visible tool descriptions and UI strings → route through [lemma-prose-standard](../lemma-prose-standard/SKILL.md) and change only with owning behavior evidence, otherwise leave unchanged and report the deferral.
 4. Before deleting anything, enumerate the passage's propositions and check the overcorrection traps: a trim that flips an obligation into an endorsement, promotes a hypothetical to a shipped feature, deletes a true fact, or drops the evidence source.
 5. Verify: re-run the probes expecting only sanctioned keeps and this skill's own file; confirm every remaining citation resolves at HEAD; run the checks for touched surfaces (`just docs-pairing`, the crate's clippy for doc comments, `git diff --check`).
