@@ -28,7 +28,6 @@ For every acquired resource, identify its owner, its atomic allocation, an obser
 ## Allocate resources atomically
 
 - Network fixtures bind `127.0.0.1:0` and read the assigned port from the bound listener, as the local engine does. Never pick a free port and bind it later.
-- Temporary directories come from a per-test unique root (`tempfile::tempdir`, `fs.mkdtemp`); never a predictable shared path.
 - Store tests use a private database: SQLite through `lemma_db_sqlite::connect_in_memory()`, PostgreSQL through a new database per test named uniquely, dropped on teardown.
 - Temporary directories come from a per-test unique root, such as `tempfile::tempdir` in Rust or `fs.mkdtemp` in Node; never a predictable shared path.
 - Literal paths and URLs used only as parser inputs or expected values are not acquired resources; leave them.
