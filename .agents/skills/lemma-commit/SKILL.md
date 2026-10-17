@@ -34,7 +34,8 @@ Risk: <if destructive or migration>
 | `:`               | Colon + single space.                                                                                                          |
 | Summary           | Imperative mood (`add`, not `added`). Lowercase first letter. No trailing period.                                              |
 | Length            | ≤ 72 chars total. Aim for ≤ 50. Hard limit 72 (GitHub truncation).                                                             |
-| Banned in subject | Emoji, AI footers, " and " (split into two commits), past tense                                                                |
+| Banned in subject | Emoji, AI footers, past tense                                                                                                  |
+| One concern       | Names one change. " and ", commas, or slashes joining separable changes mean split; " and " within one change is fine.         |
 
 ## Type taxonomy
 
@@ -84,7 +85,7 @@ Risk: <if destructive or migration>
 
 ## Atomicity
 
-- **One concern per commit.** If you can write " and " between two changes, split.
+- **One concern per commit.** Two changes are separate concerns when either could be reverted alone and leave the repository coherent; split them. A conjunction in the subject is the usual sign, not the rule.
 - **Tests for behavior changes ship in the same commit.** Not a follow-up.
 - **Squash WIP before push.** A 6-commit branch with `wip: testing`, `wip: more`, `oops typo` should land as 1-2 clean commits.
 - **Don't amend a published commit on a shared branch.** Follow up with a `style:` commit instead.
@@ -149,7 +150,7 @@ _No type, no scope, no signal, no description._
 feat(api): add login endpoint and refactor auth and update docs
 ```
 
-_Two " and " in subject = three commits hiding as one._
+_Each " and " joins a change that could be reverted alone: three commits hiding as one._
 
 ```
 fix: corrected the issue where the user was unable to login
@@ -167,7 +168,7 @@ _Too long, past tense ("corrected" not "fix"), restates the diff._
 6. **Body leads with why?** (For non-trivial changes.)
 7. **No emoji anywhere?**
 8. **No AI footers?**
-9. **No " and " in subject?**
+9. **One concern?** Could any part be reverted alone?
 10. **Diff matches the message?** No drive-by changes that aren't named.
 
 ## When upstream conventions differ
