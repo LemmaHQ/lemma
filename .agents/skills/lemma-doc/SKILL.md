@@ -59,7 +59,7 @@ After the structural pass, hunt the [slop checklist](../../../docs/AGENTS.md#the
 
 ## Word budgets
 
-Budgets and the relocate-condense-raise policy live in [docs/AGENTS.md](../../../docs/AGENTS.md#wordcount-budgets). Measure the English file with `wc -w`. At or below a target, keep at least 5% headroom; raise a target only when the words need the space, and justify the raise in the commit body.
+Budgets and the relocate-condense-raise policy live in [docs/AGENTS.md](../../../docs/AGENTS.md#wordcount-budgets). They keep standing context small: every agent session loads the root `AGENTS.md` and the subtree files for the area it touches, so situational procedures belong in skills, which load on demand. Measure the English file with `wc -w`. At or below a target, keep at least 5% headroom; raise a target only when the words need the space, and justify the raise in the commit body.
 
 ## Validation
 
@@ -69,5 +69,5 @@ Validate the affected format, not merely Markdown syntax.
 - **Links:** every relative link resolves, Chinese links to paired documents target the `.zh.md` side, and planned files are code-formatted paths ([repository references](../../../docs/AGENTS.md#repository-references)).
 - **Formatting:** `just docs-lint` runs markdownlint and autocorrect; Markdown under `web/` also goes through `npx prettier --write`, which reformats tables, before the pair is recorded.
 - **Tutorials:** exercise the documented entry path, or name how to verify it when it needs a key, device, or build the user has not approved.
-- **Skills:** frontmatter `name` equals the directory name, `description` states when to load the skill, and every relative link resolves.
+- **Skills:** frontmatter `name` equals the directory name, every relative link resolves, and `description` is the load trigger: it names the tasks and file types that should load the skill, not what the skill contains.
 - **Whitespace:** `git diff --check`.
