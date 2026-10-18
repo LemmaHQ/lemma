@@ -91,9 +91,13 @@ jobs:
         run: just rust-fmt-check
 
   clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
+    name: Clippy (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     needs: web-dist
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v7
 
@@ -167,6 +171,44 @@ jobs:
       - name: Test
         run: just rust-test
 
+  # Service containers run only on Linux runners, so the other platforms
+  # run the suite without DATABASE_URL and skip the PostgreSQL store tests.
+  test-platforms:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: web-dist
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download web/dist
+        uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-binstall
+        uses: jdx/mise-action@v4
+        with:
+          install_args: cargo:cargo-binstall
+
+      - name: Setup mise tools
+        uses: jdx/mise-action@v4
+        with:
+          install_args: protobuf cargo:cargo-nextest just
+
+      - name: Test
+        run: just rust-test
+
   check:
     name: check
     runs-on: ubuntu-latest
@@ -174,13 +216,15 @@ jobs:
       - fmt
       - clippy
       - test
+      - test-platforms
     if: ${{ always() }}
     steps:
       - name: Verify required jobs
         run: |
           if [ "${{ needs.fmt.result }}" != "success" ] || \
              [ "${{ needs.clippy.result }}" != "success" ] || \
-             [ "${{ needs.test.result }}" != "success" ]; then
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.test-platforms.result }}" != "success" ]; then
             echo "Rust CI failed"
             exit 1
           fi

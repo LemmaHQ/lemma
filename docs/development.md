@@ -79,12 +79,14 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Workflow steps call `just` recipes. Rust CI, Web CI, Desktop CI, Mobile CI, and Spec CI end in a `check` job that fails if any of their jobs failed. Mobile CI, the Android coverage job, and the CodeQL Kotlin scan install their tools through [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml).
 
+Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, the desktop build and tests, and the Android host tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only. Windows and macOS runners have no PostgreSQL service, so the Rust tests there skip the PostgreSQL store tests.
+
 | Workflow | Paths | Runs |
 | --- | --- | --- |
-| Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied, and `cargo nextest` with a PostgreSQL service |
+| Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied on three systems, and `cargo nextest` on three systems, with a PostgreSQL service on Linux |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
-| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, renderer build, vitest |
-| Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, host tests, debug APK build |
+| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | prettier check and eslint, then proto and token generation, renderer build, and vitest on three systems |
+| Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, and debug APK build, plus host tests on three systems |
 | Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
 | Coverage | all | Rust, web, desktop, and Android coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
 | CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, GitHub Actions, and Kotlin; the Kotlin scan compiles through `just mobile-android-test` |

@@ -79,12 +79,14 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 [.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
+结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。Windows 与 macOS runner 没有 PostgreSQL 服务，因此那里的 Rust 测试会跳过 PostgreSQL 存储测试。
+
 | 工作流 | 路径 | 运行内容 |
 | --- | --- | --- |
-| Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、拒绝警告的 clippy，以及带 PostgreSQL 服务的 `cargo nextest` |
+| Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest`，Linux 上带 PostgreSQL 服务 |
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
-| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、渲染层构建、vitest |
-| Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint、宿主机测试、debug APK 构建 |
+| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | prettier 检查与 eslint，再在三个系统上运行 proto 与 token 生成、渲染层构建与 vitest |
+| Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |
 | Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |
 | Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
 | CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译 |

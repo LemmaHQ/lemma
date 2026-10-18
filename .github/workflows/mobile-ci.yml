@@ -48,8 +48,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    name: check
+  android:
+    name: Android
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -71,3 +71,40 @@ jobs:
 
       - name: Build
         run: just mobile-android-build
+
+  # The host build that generates the UniFFI bindings picks the library
+  # file per operating system, so the tests also run on Windows and macOS.
+  test-platforms:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mobile toolchain
+        uses: ./.github/actions/setup-mobile
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Test
+        run: just mobile-android-test
+
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    needs:
+      - android
+      - test-platforms
+    if: ${{ always() }}
+    steps:
+      - name: Verify required jobs
+        run: |
+          if [ "${{ needs.android.result }}" != "success" ] || \
+             [ "${{ needs.test-platforms.result }}" != "success" ]; then
+            echo "Mobile CI failed"
+            exit 1
+          fi
