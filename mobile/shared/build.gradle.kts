@@ -108,12 +108,13 @@ androidComponents {
 }
 
 val lemmaRustProfile = providers.gradleProperty("lemma.rust.profile").orElse("debug").get()
-val lemmaHostLibExtension =
-    when {
-        org.gradle.internal.os.OperatingSystem.current().isWindows -> "dll"
-        org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "dylib"
-        else -> "so"
-    }
+val lemmaHostLibPath =
+    "target/debug/" +
+        when {
+            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_mobile.dll"
+            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_mobile.dylib"
+            else -> "liblemma_mobile.so"
+        }
 val androidSdkDir =
     System.getenv("ANDROID_HOME")
         ?: rootProject
@@ -138,7 +139,7 @@ val buildLemmaMobileHost =
         inputs.dir(rootProject.file("crates/shared/lemma-mobile/src"))
         inputs.file(rootProject.file("crates/shared/lemma-mobile/Cargo.toml"))
         inputs.file(rootProject.file("Cargo.lock"))
-        outputs.file(rootProject.file("target/debug/lemma_mobile.${lemmaHostLibExtension}"))
+        outputs.file(rootProject.file(lemmaHostLibPath))
     }
 
 val generateUniffiBindings =
@@ -157,7 +158,7 @@ val generateUniffiBindings =
             "--",
             "generate",
             "--library",
-            "target/debug/lemma_mobile.${lemmaHostLibExtension}",
+            lemmaHostLibPath,
             "--language",
             "kotlin",
             "--no-format",
@@ -167,7 +168,7 @@ val generateUniffiBindings =
             uniffiGeneratedDir.get().asFile.absolutePath,
         )
         inputs.file(rootProject.file("crates/shared/lemma-mobile/uniffi.toml"))
-        inputs.file(rootProject.file("target/debug/lemma_mobile.${lemmaHostLibExtension}"))
+        inputs.file(rootProject.file(lemmaHostLibPath))
         outputs.dir(uniffiGeneratedDir)
     }
 
