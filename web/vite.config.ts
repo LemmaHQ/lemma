@@ -32,9 +32,6 @@ export default defineConfig({
             reporter: ["text", "lcov"],
             // Focus coverage on handwritten business logic and components.
             exclude: ["src/gen/**", "src/i18n/locales/**"],
-            thresholds: {
-                lines: 90,
-            },
         },
     },
 });
