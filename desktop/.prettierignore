@@ -1,7 +1,0 @@
-out
-.vite
-web-dist
-src/gen
-coverage
-node_modules
-package-lock.json

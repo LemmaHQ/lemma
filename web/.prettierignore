@@ -1,6 +1,0 @@
-dist
-node_modules
-src/gen
-src/styles/tokens.css
-package-lock.json
-coverage

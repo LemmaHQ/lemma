@@ -15,8 +15,8 @@
         "lint": "eslint .",
         "test": "vitest run",
         "test:cov": "vitest run --coverage",
-        "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format": "prettier --write . --ignore-path ../.gitignore",
+        "format:check": "prettier --check . --ignore-path ../.gitignore"
     },
     "author": {
         "name": "wanzhao-ysy",
