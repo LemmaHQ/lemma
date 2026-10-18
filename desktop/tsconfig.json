@@ -1,15 +1,10 @@
 {
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
+        "module": "esnext",
         "moduleResolution": "bundler",
-        "types": ["vite/client"],
-        "allowJs": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "noImplicitAny": true,
-        "sourceMap": true,
-        "outDir": "dist",
+        "types": ["node"],
         "resolveJsonModule": true
-    }
+    },
+    "include": ["src", "*.ts", "*.mts"]
 }

@@ -83,8 +83,8 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | 工作流 | 路径 | 运行内容 |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest`，Linux 上带 PostgreSQL 服务 |
-| Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
-| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | prettier 检查与 eslint，再在三个系统上运行 proto 与 token 生成、渲染层构建与 vitest |
+| Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json` | proto 与 token 生成、prettier 检查、eslint、带类型检查的构建、vitest |
+| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json` | prettier 检查与 eslint，再在三个系统上运行 proto 与 token 生成、渲染层构建、桌面端类型检查与 vitest |
 | Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |
 | Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查、仓库引用检查 |
 | Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |

@@ -1,5 +1,6 @@
 import { app } from "electron";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcessByStdio } from "node:child_process";
+import type { Readable, Writable } from "node:stream";
 import path from "node:path";
 
 export interface SkipCredentials {
@@ -18,7 +19,7 @@ const READY_PREFIX = "LEMMA_READY ";
 const READY_TIMEOUT_MS = 10_000;
 const STOP_GRACE_MS = 3_000;
 
-let child: ChildProcessWithoutNullStreams | null = null;
+let child: ChildProcessByStdio<Writable, Readable, null> | null = null;
 let skipCredentials: SkipCredentials | null = null;
 let exitWatcher: Promise<number | null> | null = null;
 

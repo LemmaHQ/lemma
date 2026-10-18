@@ -83,8 +83,8 @@ Steps whose result depends on the host operating system run on Linux, Windows, a
 | Workflow | Paths | Runs |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied on three systems, and `cargo nextest` on three systems, with a PostgreSQL service on Linux |
-| Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
-| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | prettier check and eslint, then proto and token generation, renderer build, and vitest on three systems |
+| Web CI | `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json` | proto and token generation, prettier check, eslint, build with type check, vitest |
+| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json` | prettier check and eslint, then proto and token generation, renderer build, desktop type check, and vitest on three systems |
 | Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, and debug APK build, plus host tests on three systems |
 | Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check, the repository-reference check |
 | Coverage | all | Rust, web, desktop, and Android coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |

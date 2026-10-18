@@ -10,6 +10,7 @@ RUN BUF_VERSION=$(sed -nE 's/^[ "]*(buf)[ "]*= *"([^"]+)".*/\2/p' mise.toml) \
     && npm install -g "@bufbuild/buf@$BUF_VERSION"
 COPY proto ./proto
 COPY design ./design
+COPY tsconfig.base.json ./
 COPY web ./web
 ENV PATH="/app/node_modules/.bin:$PATH"
 RUN cd web && npm run build
