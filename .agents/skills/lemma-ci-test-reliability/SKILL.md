@@ -19,7 +19,7 @@ The same test runs under more than one runner, and each layer can overlap with t
 1. **`cargo nextest`** (`just rust-test`, Rust CI, Coverage): each test is its own process, many in parallel; process isolation does not isolate the PostgreSQL server, ports, or paths.
 2. **`cargo test`** (focused local runs and the `--ignored` real-provider tests): tests of one binary run as threads in one process, so process-global state is shared between them.
 3. **vitest** (`just web-test`, `just desktop-test`, Web CI, Desktop CI, Coverage): files run in parallel workers in the `node` environment; tests in one file share module state.
-4. **Gradle** host tests for Android run on the JVM, locally only.
+4. **Gradle** host tests for Android run on the JVM, locally and in Mobile CI, Coverage, and the CodeQL Kotlin scan.
 
 A test must pass under both Rust runners: correct under nextest alone can still race under `cargo test` threads, and the reverse. CI jobs run on separate GitHub-hosted runners, so cross-job host sharing does not apply; the PostgreSQL service is shared by every test in its job.
 

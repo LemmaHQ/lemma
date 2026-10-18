@@ -175,3 +175,25 @@ jobs:
           files: desktop/junit.xml
           flags: desktop
           report_type: test_results
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mobile toolchain
+        uses: ./.github/actions/setup-mobile
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Coverage
+        run: just mobile-android-cov
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: mobile/androidApp/build/reports/kover/report.xml
+          flags: mobile

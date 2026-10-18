@@ -10,7 +10,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 - **真实 provider**（只在本地运行）：调用厂商真实 API 的测试从环境变量读取 key，并标注 `#[ignore]`，因此 `just rust-test` 与 CI 都会跳过它们；用 `cargo test --workspace -- --ignored` 运行。每种 provider 类型有一个冒烟测试：发送一条提示，期望收到 `Done` 且文本非空；另有一个完成一次工具调用的测试。
 - **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键；没有测试渲染 React 组件。
 - **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：`src/engine.test.ts` 在 mock 掉 `electron` 与 `node:child_process` 的情况下覆盖 `src/engine.ts` 中的引擎握手：就绪行、载荷校验、启动超时、提前退出与停止。
-- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备。CI 不运行这一层。
+- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。
 
 ## 存储测试
 
@@ -23,9 +23,9 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 - **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-server`、`lemma-core` 与 `lemma-proto`。
 - **Web**：`just web-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/` 与 `src/i18n/locales/`。
 - **桌面端**：`just desktop-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/`。
-- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源与 `LemmaPalette`。CI 不运行它。
+- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源与 `LemmaPalette`。
 
-Coverage 工作流运行 Rust、Web 与桌面端的 recipe，把报告及其 JUnit 结果以 `rust`、`web` 与 `desktop` 标记上传到 Codecov。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
+Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop` 与 `mobile` 标记上传到 Codecov，并上传 Rust、Web 与桌面端的 JUnit 结果。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
 
 ## 测试如何运行
 

@@ -1,0 +1,27 @@
+name: Setup mobile toolchain
+description: Install the tools the Android build runs, then generate the contract code it compiles.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+    - name: Rust cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-binstall
+      uses: jdx/mise-action@v4
+      with:
+        install_args: cargo:cargo-binstall
+
+    - name: Setup mise tools
+      uses: jdx/mise-action@v4
+      with:
+        install_args: java node buf protobuf just cargo:cargo-ndk
+
+    - name: Generate proto code
+      shell: bash
+      run: just proto-gen

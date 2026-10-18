@@ -36,8 +36,14 @@ jobs:
             build-mode: none
           - language: javascript-typescript
           - language: actions
+          - language: java-kotlin
+            build-mode: manual
     steps:
       - uses: actions/checkout@v7
+
+      - name: Setup mobile toolchain
+        if: matrix.language == 'java-kotlin'
+        uses: ./.github/actions/setup-mobile
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -45,6 +51,12 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
+
+      # Kotlin is extracted only from a traced compilation: no build cache,
+      # and the compiler runs inside the traced Gradle process.
+      - name: Build Kotlin
+        if: matrix.language == 'java-kotlin'
+        run: just mobile-android-test --no-build-cache --no-daemon -Pkotlin.compiler.execution.strategy=in-process
 
       - name: Analyze
         uses: github/codeql-action/analyze@v4

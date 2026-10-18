@@ -77,19 +77,20 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI workflows
 
-Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Workflow steps call `just` recipes. Rust CI, Web CI, Desktop CI, and Spec CI end in a `check` job that fails if any of their jobs failed.
+Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Workflow steps call `just` recipes. Rust CI, Web CI, Desktop CI, Mobile CI, and Spec CI end in a `check` job that fails if any of their jobs failed. Mobile CI, the Android coverage job, and the CodeQL Kotlin scan install their tools through [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml).
 
 | Workflow | Paths | Runs |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied, and `cargo nextest` with a PostgreSQL service |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
 | Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, renderer build, vitest |
+| Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, host tests, debug APK build |
 | Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
-| Coverage | all | Rust, web, and desktop coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
-| CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, and GitHub Actions |
+| Coverage | all | Rust, web, desktop, and Android coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
+| CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, GitHub Actions, and Kotlin; the Kotlin scan compiles through `just mobile-android-test` |
 | mise-upgrade | daily schedule | bumps the pins in `mise.toml`, syncs the Dockerfile's Node version, and opens a pull request |
 
-Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily. No workflow builds `mobile/`.
+Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily.
 
 ### Daily commands
 

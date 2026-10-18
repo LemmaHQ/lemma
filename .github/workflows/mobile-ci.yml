@@ -1,0 +1,73 @@
+name: Mobile CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/**"
+      - "crates/shared/**"
+      - "proto/**"
+      - "design/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "justfile"
+      - "mise.toml"
+      - ".github/actions/setup-mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - "crates/shared/**"
+      - "proto/**"
+      - "design/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "justfile"
+      - "mise.toml"
+      - ".github/actions/setup-mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+
+concurrency:
+  group: mobile-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mobile toolchain
+        uses: ./.github/actions/setup-mobile
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Format check
+        run: just mobile-fmt-check
+
+      - name: Lint
+        run: just mobile-android-lint-check
+
+      - name: Test
+        run: just mobile-android-test
+
+      - name: Build
+        run: just mobile-android-build

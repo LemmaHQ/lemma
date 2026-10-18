@@ -17,3 +17,6 @@ flags:
   desktop:
     paths:
       - "desktop/"
+  mobile:
+    paths:
+      - "mobile/"

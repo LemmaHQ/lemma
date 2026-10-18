@@ -77,19 +77,20 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI 工作流
 
-[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。
+[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
 | 工作流 | 路径 | 运行内容 |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、拒绝警告的 clippy，以及带 PostgreSQL 服务的 `cargo nextest` |
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
 | Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、渲染层构建、vitest |
+| Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint、宿主机测试、debug APK 构建 |
 | Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |
-| Coverage | 全部 | Rust、Web 与桌面端覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
-| CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript 与 GitHub Actions 做代码扫描 |
+| Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
+| CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译 |
 | mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |
 
-Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。没有工作流构建 `mobile/`。
+Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。
 
 ### 日常命令
 
