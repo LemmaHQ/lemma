@@ -4,7 +4,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-    globalIgnores(["dist", "out", ".vite", "src/gen"]),
+    globalIgnores(["dist", "out", ".vite", "coverage", "src/gen"]),
     {
         files: ["**/*.{ts,mts}"],
         extends: [js.configs.recommended, tseslint.configs.recommended],

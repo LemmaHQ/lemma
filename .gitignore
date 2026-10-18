@@ -63,6 +63,8 @@ Thumbs.db
 lcov.info
 web/coverage/
 web/junit.xml
+desktop/coverage/
+desktop/junit.xml
 
 # Mobile / Gradle
 .gradle/
