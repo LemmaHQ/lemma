@@ -36,7 +36,7 @@
 ```sh
 just web-dev            # Vite 开发服务器
 just web-test           # vitest
-just web-lint           # eslint
-just web-fmt            # prettier --write
+just web-lint-check     # eslint；web-lint 应用修复
+just web-fmt-check      # prettier --check；web-fmt 格式化
 just web-cov            # vitest 覆盖率
 ```

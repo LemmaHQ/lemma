@@ -6,10 +6,11 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 ## 分层
 
-- **Rust**（`just rust-test`，即 `cargo test --workspace`）：单元测试写在被测源文件底部的 `#[cfg(test)] mod tests` 中；集成测试放在 crate 的 `tests/` 目录，只使用其公开 API。CI 用 `cargo nextest run --workspace` 运行同一批测试。
+- **Rust**（`just rust-test`，在本地与 CI 中都运行 `cargo nextest run --workspace`）：单元测试写在被测源文件底部的 `#[cfg(test)] mod tests` 中；集成测试放在 crate 的 `tests/` 目录，只使用其公开 API。
 - **真实 provider**（只在本地运行）：调用厂商真实 API 的测试从环境变量读取 key，并标注 `#[ignore]`，因此 `just rust-test` 与 CI 都会跳过它们；用 `cargo test --workspace -- --ignored` 运行。每种 provider 类型有一个冒烟测试：发送一条提示，期望收到 `Done` 且文本非空；另有一个完成一次工具调用的测试。
 - **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键；没有测试渲染 React 组件。
-- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备。`just verify` 与 CI 都不运行这一层。
+- **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：`src/engine.test.ts` 在 mock 掉 `electron` 与 `node:child_process` 的情况下覆盖 `src/engine.ts` 中的引擎握手：就绪行、载荷校验、启动超时、提前退出与停止。
+- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备。CI 不运行这一层。
 
 ## 存储测试
 
@@ -17,16 +18,18 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 ## 覆盖率
 
-覆盖率门槛作用于 Rust 与 Web；Android 没有门槛。
+没有 recipe 或工作流因覆盖率百分比而失败；下文的 Codecov project 状态是唯一的覆盖率门槛。
 
-- **Rust**：`just rust-cov` 打印 `cargo llvm-cov` 摘要，`just rust-cov-html` 打开 HTML 报告。两者都排除 `lemma-server`、`lemma-core` 与 `lemma-proto`。Coverage 工作流以相同的排除项运行 `cargo llvm-cov nextest`，行覆盖率低于 85% 时失败。
-- **Web**：`just web-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/` 与 `src/i18n/locales/`。`web/vite.config.ts` 设置了 90% 的行覆盖率门槛，因此本地运行与 CI 同样执行它。
+- **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-server`、`lemma-core` 与 `lemma-proto`。
+- **Web**：`just web-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/` 与 `src/i18n/locales/`。
+- **桌面端**：`just desktop-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/`。
+- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 报告。CI 不运行它。
 
-Coverage 工作流把两份报告及其 JUnit 结果以 `rust` 与 `web` 标记上传到 Codecov。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
+Coverage 工作流运行 Rust、Web 与桌面端的 recipe，把报告及其 JUnit 结果以 `rust`、`web` 与 `desktop` 标记上传到 Codecov。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
 
 ## 测试如何运行
 
-`cargo nextest` 让每个 Rust 测试在独立进程中运行。[.config/nextest.toml](../.config/nextest.toml) 中的 `ci` profile 把 JUnit XML 写到 `target/nextest/ci/junit.xml`；Coverage 工作流通过 `NEXTEST_PROFILE=ci` 选用它。
+`cargo nextest` 让每个 Rust 测试在独立进程中运行，不运行 doctest。[.config/nextest.toml](../.config/nextest.toml) 中的 `ci` profile 把 JUnit XML 写到 `target/nextest/ci/junit.xml`；Coverage 工作流通过 `NEXTEST_PROFILE=ci` 选用它。
 
 编译 workspace 会编译嵌入 `web/dist` 的 `lemma-server`；因此 Rust CI 在 clippy 与测试之前先构建 Web 客户端。
 

@@ -25,18 +25,16 @@ scripts/      双语配对检查与翻译简报生成器（docs/i18n/README.md�
 ## 命令
 
 ```sh
-just check              # buf lint/build、clippy、web 与 desktop 的 eslint
-just verify             # check，再跑 Rust 与 web 测试
-just rust-dev           # 读取 .env 运行 lemma-server
-just web-dev            # Vite 开发服务器
-just desktop-dev        # 构建 lemma-server，再启动 Electron
-just proto-gen          # 从 proto/ 重新生成 web TypeScript 与 Android Kotlin 代码
-just docker-up          # 带 PostgreSQL 的完整栈；docker-down 停止
-just docs-lint          # markdownlint 与 autocorrect
-just docs-pairing       # 检查双语配对；--write <file> 记录一对
+just rust-dev            # 读取 .env 运行 lemma-server
+just web-dev             # Vite 开发服务器
+just desktop-dev         # 构建 lemma-server，再启动 Electron
+just proto-gen           # 从 proto/ 重新生成 web TypeScript 与 Android Kotlin 代码
+just design-gen          # 为 web、desktop 与 Android 重新生成设计 token
+just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
+just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 ```
 
-各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
+Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后缀的同名 recipe 会应用修复。CI 步骤调用 recipe，不重复其中的命令，因此本地运行可以复现 CI 步骤。各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
 
 ## 密钥 / .env
 

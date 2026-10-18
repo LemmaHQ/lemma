@@ -27,7 +27,7 @@ Documentation states how Lemma behaves today, and the only admissible evidence f
 2. **Run every claimed operation against the current checkout.** Execute each command and configuration exactly as the page will show it; write down only what you observed, including output, warnings, and failure modes. A claim that needs a provider key, a device, or a long build the user has not approved names how to verify it instead of asserting the behavior.
 3. **Delete what you could not reproduce.** Never carry a command, field, default, or behavior from memory, analogy, or a neighboring page. When a claim fails to reproduce, fix the claim, not the code.
 4. **Check old prose against the code.** A stale statement already committed is still wrong; correct it against current code, not against the old prose.
-5. **Re-record the pair after every edit** with `just docs-pairing --write <file>`.
+5. **Re-record the pair after every edit** with `just docs-pairing <file>`.
 
 ## Voice rules
 
@@ -65,9 +65,9 @@ Budgets and the relocate-condense-raise policy live in [docs/AGENTS.md](../../..
 
 Validate the affected format, not merely Markdown syntax.
 
-- **Pairs:** `just docs-pairing <file>` checks alignment and the record; also compare list, table, and link structure by reading both sides, which the script does not check.
+- **Pairs:** `just docs-pairing-check <file>` checks alignment and the record; also compare list, table, and link structure by reading both sides, which the script does not check.
 - **Links:** every relative link resolves, Chinese links to paired documents target the `.zh.md` side, and planned files are code-formatted paths ([repository references](../../../docs/AGENTS.md#repository-references)).
-- **Formatting:** `just docs-lint` runs markdownlint and autocorrect; Markdown under `web/` also goes through `npx prettier --write`, which reformats tables, before the pair is recorded.
+- **Formatting:** `just docs-lint-check` runs markdownlint and autocorrect on tracked Markdown, and `just docs-lint` applies their fixes; Markdown under `web/` also goes through `just web-fmt`, which reformats tables, before the pair is recorded.
 - **Tutorials:** exercise the documented entry path, or name how to verify it when it needs a key, device, or build the user has not approved.
 - **Skills:** frontmatter `name` equals the directory name, every relative link resolves, and `description` is the load trigger: it names the tasks and file types that should load the skill, not what the skill contains.
 - **Whitespace:** `git diff --check`.

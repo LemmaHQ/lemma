@@ -73,7 +73,7 @@ const rules = (pair) => [
     "",
     `- Structure, code blocks, links, and the language switcher follow [the pairing contract](${CONTRACT}).`,
     `- Render every listed term as [${TERMINOLOGY}](${TERMINOLOGY}) specifies.`,
-    `- Then record and check the pair: \`just docs-pairing --write ${pair.en}\`, then \`just docs-pairing ${pair.en}\`.`,
+    `- Then record and check the pair: \`just docs-pairing ${pair.en}\`, then \`just docs-pairing-check ${pair.en}\`.`,
 ];
 
 const wholeDocumentBrief = (
@@ -163,7 +163,7 @@ function updateBrief(pair) {
         return [
             `# Translation brief: ${pair.en}`,
             "",
-            `**Record only.** Both sides match their recorded hashes; rewrite the record with \`just docs-pairing --write ${pair.en}\`.`,
+            `**Record only.** Both sides match their recorded hashes; rewrite the record with \`just docs-pairing ${pair.en}\`.`,
         ];
     }
     if (changedSides.length === 2) {

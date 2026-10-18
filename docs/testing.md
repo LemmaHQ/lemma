@@ -6,10 +6,11 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 ## Tiers
 
-- **Rust** (`just rust-test`, which runs `cargo test --workspace`): unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; integration tests live in the crate's `tests/` directory and use only its public API. CI runs the same tests with `cargo nextest run --workspace`.
+- **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; integration tests live in the crate's `tests/` directory and use only its public API.
 - **Real provider** (local only): tests that call a live vendor API read the key from an environment variable and carry `#[ignore]`, so `just rust-test` and CI skip them; `cargo test --workspace -- --ignored` runs them. Each provider kind has a smoke test that sends one prompt and expects `Done` with non-empty text, and one that completes a tool call.
 - **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules, plus a check that `en.json` and `zh.json` hold the same keys; no test renders a React component.
-- **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device. `just verify` and CI do not run this tier.
+- **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): `src/engine.test.ts` covers the engine handshake in `src/engine.ts` with `electron` and `node:child_process` mocked: the ready line, payload validation, the startup timeout, an early exit, and stop.
+- **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device. CI does not run this tier.
 
 ## Store tests
 
@@ -17,16 +18,18 @@ Both storage backends run the same test cases, written against the store traits,
 
 ## Coverage
 
-Coverage gates apply to Rust and web; Android has none.
+No recipe or workflow fails on a coverage percentage; the Codecov project status below is the only coverage gate.
 
-- **Rust**: `just rust-cov` prints a `cargo llvm-cov` summary, and `just rust-cov-html` opens the HTML report. Both exclude `lemma-server`, `lemma-core`, and `lemma-proto`. The Coverage workflow runs `cargo llvm-cov nextest` with the same exclusions and fails below 85% line coverage.
-- **Web**: `just web-cov` runs vitest with v8 coverage, excluding `src/gen/` and `src/i18n/locales/`. `web/vite.config.ts` sets a 90% line threshold, so the local run and CI enforce it alike.
+- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-core`, and `lemma-proto`.
+- **Web**: `just web-cov` runs vitest with v8 coverage, excluding `src/gen/` and `src/i18n/locales/`.
+- **Desktop**: `just desktop-cov` runs vitest with v8 coverage, excluding `src/gen/`.
+- **Android**: `just mobile-android-cov` writes a Kover HTML report for `androidApp` and `shared`. CI does not run it.
 
-The Coverage workflow uploads both reports and their JUnit results to Codecov under the `rust` and `web` flags. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
+The Coverage workflow runs the Rust, web, and desktop recipes and uploads their reports and JUnit results to Codecov under the `rust`, `web`, and `desktop` flags. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
 
 ## How tests run
 
-`cargo nextest` runs each Rust test in its own process. Its `ci` profile in [.config/nextest.toml](../.config/nextest.toml) writes JUnit XML to `target/nextest/ci/junit.xml`; the Coverage workflow selects it with `NEXTEST_PROFILE=ci`.
+`cargo nextest` runs each Rust test in its own process and does not run doctests. Its `ci` profile in [.config/nextest.toml](../.config/nextest.toml) writes JUnit XML to `target/nextest/ci/junit.xml`; the Coverage workflow selects it with `NEXTEST_PROFILE=ci`.
 
 Compiling the workspace includes `lemma-server`, which embeds `web/dist`; Rust CI therefore builds the web client before clippy and tests.
 

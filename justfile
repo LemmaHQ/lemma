@@ -1,20 +1,26 @@
+md_files := "git ls-files '*.md' ':!:.agents/skills/lemma-code-style/references/'"
+
 # List all recipes
 default:
     @just --list
 
-# Fast static analysis and contract validation
-[group('workspace')]
-check: proto-lint proto-build rust-lint web-lint desktop-lint
-
-# Full workspace verification including tests
-[group('workspace')]
-verify: check rust-test web-test
-
 # Lint contracts
 [group('proto')]
 [working-directory('proto')]
-proto-lint:
+proto-lint-check:
     buf lint
+
+# Check contract formatting
+[group('proto')]
+[working-directory('proto')]
+proto-fmt-check:
+    buf format --diff --exit-code
+
+# Format contracts
+[group('proto')]
+[working-directory('proto')]
+proto-fmt:
+    buf format --write
 
 # Build contracts
 [group('proto')]
@@ -24,47 +30,73 @@ proto-build:
 
 # Generate contract code (web TS + mobile Kotlin)
 [group('proto')]
+[working-directory('proto')]
 proto-gen:
-    npm run gen:proto
-# Run the dev server
-[group('rust')]
-rust-dev:
-    cargo run
+    buf generate
 
-# Build the workspace
+# Run clippy with warnings denied
 [group('rust')]
-rust-build:
-    cargo build --workspace
+rust-lint-check:
+    cargo clippy --workspace --all-targets -- -D warnings
 
-# Run clippy
+# Apply clippy fixes
 [group('rust')]
 rust-lint:
-    cargo clippy --workspace --all-targets
+    cargo clippy --workspace --all-targets --fix --allow-dirty --allow-staged
 
-# Run tests
+# Check formatting
 [group('rust')]
-rust-test:
-    cargo test --workspace
+rust-fmt-check:
+    cargo fmt --all --check
 
 # Format code
 [group('rust')]
 rust-fmt:
     cargo fmt --all
 
-# Coverage summary in the terminal
+# Build the workspace
 [group('rust')]
-rust-cov:
-    cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --summary-only
+rust-build:
+    cargo build --workspace
 
-# Coverage HTML report
+# Run the dev server
 [group('rust')]
-rust-cov-html:
-    cargo llvm-cov --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto --html --open
+rust-dev:
+    cargo run
 
-# Generate design tokens (web CSS, desktop TS, Android palette)
+# Run tests with nextest
+[group('rust')]
+rust-test:
+    cargo nextest run --workspace
+
+# Coverage under nextest; args replace the terminal summary
+[group('rust')]
+rust-cov *args="--summary-only":
+    cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto {{args}}
+
+# Run eslint
 [group('web')]
-web-gen-tokens:
-    npm run gen:tokens
+[working-directory('web')]
+web-lint-check:
+    npm run lint
+
+# Apply eslint fixes
+[group('web')]
+[working-directory('web')]
+web-lint:
+    npm run lint -- --fix
+
+# Check formatting
+[group('web')]
+[working-directory('web')]
+web-fmt-check:
+    npm run format:check
+
+# Format code
+[group('web')]
+[working-directory('web')]
+web-fmt:
+    npm run format
 
 # Build for production
 [group('web')]
@@ -84,22 +116,34 @@ web-dev:
 web-test:
     npm test
 
-# Coverage report
+# Coverage report; args go to vitest
 [group('web')]
 [working-directory('web')]
-web-cov:
-    npm run test:cov
+web-cov *args:
+    npm run test:cov -- {{args}}
 
 # Run eslint
-[group('web')]
-[working-directory('web')]
-web-lint:
+[group('desktop')]
+[working-directory('desktop')]
+desktop-lint-check:
     npm run lint
 
+# Apply eslint fixes
+[group('desktop')]
+[working-directory('desktop')]
+desktop-lint:
+    npm run lint -- --fix
+
+# Check formatting
+[group('desktop')]
+[working-directory('desktop')]
+desktop-fmt-check:
+    npm run format:check
+
 # Format code
-[group('web')]
-[working-directory('web')]
-web-fmt:
+[group('desktop')]
+[working-directory('desktop')]
+desktop-fmt:
     npm run format
 
 # Build desktop web assets
@@ -113,17 +157,18 @@ desktop-build:
 desktop-dev:
     cargo build -p lemma-server
     npm --workspace=desktop run start
-# Run eslint
-[group('desktop')]
-[working-directory('desktop')]
-desktop-lint:
-    npm run lint
 
-# Format code
+# Run tests
 [group('desktop')]
 [working-directory('desktop')]
-desktop-fmt:
-    npm run format
+desktop-test:
+    npm test
+
+# Coverage report; args go to vitest
+[group('desktop')]
+[working-directory('desktop')]
+desktop-cov *args:
+    npm run test:cov -- {{args}}
 
 # Package the app
 [group('desktop')]
@@ -133,42 +178,69 @@ desktop-package:
     just desktop-build
     npm run package
 
-# Build the image
-[group('docker')]
-docker-build:
-    docker build -t lemma:latest .
+# Run Android Lint on androidApp
+[group('mobile')]
+mobile-android-lint-check:
+    ./gradlew :mobile:androidApp:lint
 
-# Start the full stack
-[group('docker')]
-docker-up:
-    docker compose --profile full up -d
+# Apply Android Lint fixes
+[group('mobile')]
+mobile-android-lint:
+    ./gradlew :mobile:androidApp:lintFix
 
-# Stop the full stack
-[group('docker')]
-docker-down:
-    docker compose --profile full down
+# Check Kotlin formatting
+[group('mobile')]
+mobile-fmt-check:
+    ./gradlew spotlessCheck
+
+# Format Kotlin code
+[group('mobile')]
+mobile-fmt:
+    ./gradlew spotlessApply
 
 # Assemble debug APK
 [group('mobile')]
 mobile-android-build:
     ./gradlew :mobile:androidApp:assembleDebug
 
-# Run unit tests
+# Run androidApp unit tests and shared host tests (commonTest on the JVM)
 [group('mobile')]
 mobile-android-test:
     ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest
 
-# Lint documentation formatting (markdownlint + autocorrect)
+# Kover HTML report for androidApp and shared
+[group('mobile')]
+mobile-android-cov:
+    ./gradlew :mobile:androidApp:koverHtmlReport
+
+# Generate design tokens (web CSS, desktop TS, Android palette)
+[group('design')]
+design-gen:
+    node design/gen-tokens.mjs
+
+# Lint Markdown (markdownlint + autocorrect)
+[group('docs')]
+docs-lint-check:
+    npx --no-install markdownlint-cli2 $({{md_files}})
+    npx --no-install autocorrect --lint $({{md_files}})
+
+# Fix Markdown (autocorrect, then markdownlint)
 [group('docs')]
 docs-lint:
-    npm run lint:docs
+    npx --no-install autocorrect --fix $({{md_files}})
+    npx --no-install markdownlint-cli2 --fix $({{md_files}})
 
-# Check bilingual pairs against their records; --write <file> records a pair
+# Check bilingual pairs against their records
 [group('docs')]
-docs-pairing *args:
-    node scripts/verify-translation-pairing.mjs {{args}}
+docs-pairing-check *files:
+    node scripts/verify-translation-pairing.mjs {{files}}
+
+# Record bilingual pairs; takes files or --all
+[group('docs')]
+docs-pairing *files:
+    node scripts/verify-translation-pairing.mjs --write {{files}}
 
 # Print translation briefs for out-of-sync pairs
 [group('docs')]
-docs-brief *args:
-    node scripts/gen-translation-brief.mjs {{args}}
+docs-brief *files:
+    node scripts/gen-translation-brief.mjs {{files}}

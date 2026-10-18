@@ -24,6 +24,9 @@
 ## 命令
 
 ```sh
-just mobile-android-build   # 构建 debug APK
-just mobile-android-test    # androidApp 单元测试与 shared 的 host 测试
+just mobile-android-build       # 构建 debug APK
+just mobile-android-test        # androidApp 单元测试与 shared 的 host 测试
+just mobile-android-lint-check  # 对 androidApp 运行 Android Lint；mobile-android-lint 应用修复
+just mobile-android-cov         # androidApp 与 shared 的 Kover HTML 报告
+just mobile-fmt-check           # 经 Spotless 运行 kotlinlang 风格的 ktfmt；mobile-fmt 格式化
 ```

@@ -5,12 +5,3 @@ rules:
 fileTypes:
     markdown:
         - "*.md"
-
-ignores:
-    - ".git/**"
-    - "**/node_modules/**"
-    - ".agents/skills/*/references/**"
-    - "target/**"
-    - "**/build/**"
-    - "web/src/gen/**"
-    - "package-lock.json"

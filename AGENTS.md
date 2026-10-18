@@ -25,18 +25,16 @@ scripts/      translation-pairing check and brief generator (docs/i18n/README.md
 ## Commands
 
 ```sh
-just check              # buf lint/build, clippy, web and desktop eslint
-just verify             # check, then Rust and web tests
-just rust-dev           # run lemma-server with .env
-just web-dev            # Vite dev server
-just desktop-dev        # build lemma-server, then launch Electron
-just proto-gen          # regenerate web TypeScript and Android Kotlin from proto/
-just docker-up          # full stack with PostgreSQL; docker-down stops it
-just docs-lint          # markdownlint and autocorrect
-just docs-pairing       # check bilingual pairs; --write <file> records one
+just rust-dev            # run lemma-server with .env
+just web-dev             # Vite dev server
+just desktop-dev         # build lemma-server, then launch Electron
+just proto-gen           # regenerate web TypeScript and Android Kotlin from proto/
+just design-gen          # regenerate design tokens for web, desktop, and Android
+just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
+just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 ```
 
-Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
+Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 
 ## Secrets / .env
 

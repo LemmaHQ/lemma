@@ -31,7 +31,7 @@ Semantic aliases come in two layers: a feature reads `muted-foreground`, and the
 | `desktop/src/gen/design-tokens.ts` | Electron main process | `themeColors`: the semantic colors of each theme, for the titlebar overlay and the window background |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android app | `LemmaPalette`: the static palette as Compose `Color` values; `theme/Scheme.kt` maps it onto the app's color roles |
 
-The web `dev`, `build`, and `build:desktop` scripts run the generator first, and the Gradle task `generateDesignTokens` runs it before Kotlin compiles. `just web-gen-tokens` runs it by hand.
+The web `dev`, `build`, and `build:desktop` scripts run the generator first, and the Gradle task `generateDesignTokens` runs it before Kotlin compiles. `just design-gen` runs it by hand.
 
 ## Checks
 

@@ -17,7 +17,9 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions); th
 
 ```sh
 just desktop-dev        # build lemma-server, then launch Electron
-just desktop-lint       # eslint
-just desktop-fmt        # prettier --write
+just desktop-lint-check # eslint; desktop-lint applies fixes
+just desktop-fmt-check  # prettier --check; desktop-fmt formats
+just desktop-test       # vitest
+just desktop-cov        # vitest coverage
 just desktop-package    # proto-gen, renderer build, electron-forge package
 ```

@@ -1,7 +1,7 @@
 # Translation-pairing record for README.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing --write design/README.md
+#   just docs-pairing design/README.md
 /design-tokens:
   en: bcdc20a24db54d92
   zh: 84648d1e25cb3b0c
@@ -12,8 +12,8 @@
   en: 4e3f7e55dfdc587f
   zh: 80c6b2adbcf114ea
 /design-tokens/outputs:
-  en: 178362a9de7ae655
-  zh: d2f96ebd8b6fbaa3
+  en: a1c2ed7f41cb09d1
+  zh: 185cecae881fe85b
 /design-tokens/checks:
   en: 056fd8083cbd6b74
   zh: 5447bf1ec98eefd3

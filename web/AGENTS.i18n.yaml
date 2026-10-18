@@ -1,7 +1,7 @@
 # Translation-pairing record for AGENTS.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing --write web/AGENTS.md
+#   just docs-pairing web/AGENTS.md
 /agentsmd--web-client:
   en: 57fa4b5300b7bfff
   zh: b6b393d16faee069
@@ -18,5 +18,5 @@
   en: 640a97aef052a71b
   zh: 9890bbede48d0150
 /agentsmd--web-client/commands:
-  en: 590ee082c4047cd8
-  zh: b5d3cefe7e8f167c
+  en: a31fb2cc13558724
+  zh: 6e0310757db846fe

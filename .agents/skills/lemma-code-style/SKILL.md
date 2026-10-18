@@ -10,7 +10,7 @@ Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language r
 ## Precedence
 
 1. The root `AGENTS.md` and the subtree `AGENTS.md` of the code being changed.
-2. Repository formatter and linter configuration: `rustfmt` defaults, `.prettierrc.json`, `web/.prettierrc.json`, and the ESLint configs.
+2. Repository formatter and linter configuration: `rustfmt` defaults, `.prettierrc.json`, `web/.prettierrc.json`, the ESLint configs, and ktfmt in kotlinlang style through Spotless in the root `build.gradle.kts`.
 3. The upstream guide under `references/`.
 4. The style of the surrounding code.
 
@@ -31,4 +31,4 @@ Read only the section the question needs.
 | TypeScript | [tsguide.md](references/tsguide.md) | Source file structure; Language features; Naming; Type system; Comments and documentation; Policies |
 | Kotlin | [kotlinguide.md](references/kotlinguide.md) | Source files; Formatting; Naming; Documentation |
 
-Rust formatting is mechanical: run `cargo fmt` instead of applying the guide by hand, and consult the guide for questions `rustfmt` leaves open.
+Rust and Kotlin formatting is mechanical: run `just rust-fmt` or `just mobile-fmt` instead of applying the guide by hand, and consult the guide for questions the formatter leaves open.

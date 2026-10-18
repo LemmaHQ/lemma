@@ -65,7 +65,7 @@ Preserve searchable mechanism names and meaningful modal, temporal, or negative 
 3. Inspect the requested scope, not only the largest files. Use searches and word counts to find candidates, then judge passages semantically.
 4. Classify each candidate as keep, add, trim, restore, restructure, or defer. Apply clear changes only when the task authorizes edits; do not manufacture edits to satisfy a deletion target.
 5. Update the owner before derivative artifacts. Re-check analogous passages after learning a new rule.
-6. Run the narrow relevant checks: `just docs-pairing` for touched pairs, `git diff --check`, the crate's clippy for doc-comment changes, and the owning test for changed UI strings.
+6. Run the narrow relevant checks: `just docs-pairing-check` for touched pairs, `git diff --check`, the crate's clippy for doc-comment changes, and the owning test for changed UI strings.
 7. Report the inspected scope, clear changes, deliberate keeps, deferred cases, and checks actually run.
 
 ## Borderline decisions

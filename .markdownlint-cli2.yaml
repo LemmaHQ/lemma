@@ -5,14 +5,3 @@ config:
   MD033: false
   MD040: false
   MD041: true
-
-globs:
-  - "**/*.md"
-
-ignores:
-  - ".git/**"
-  - "**/node_modules/**"
-  - ".agents/skills/*/references/**"
-  - "target/**"
-  - "**/build/**"
-  - "web/src/gen/**"

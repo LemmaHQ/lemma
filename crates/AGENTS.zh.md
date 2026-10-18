@@ -28,8 +28,8 @@
 ## 命令
 
 ```sh
-just rust-lint          # 对全部 target 运行 clippy
-just rust-test          # cargo test --workspace
-just rust-fmt           # cargo fmt --all
-just rust-cov           # llvm-cov 汇总；rust-cov-html 打开报告
+just rust-lint-check    # 对全部 target 运行 clippy，拒绝警告；rust-lint 应用修复
+just rust-fmt-check     # cargo fmt --check；rust-fmt 格式化
+just rust-test          # cargo nextest run --workspace
+just rust-cov           # llvm-cov 汇总；`just rust-cov --html --open` 打开报告
 ```

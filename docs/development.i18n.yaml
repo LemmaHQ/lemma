@@ -1,7 +1,7 @@
 # Translation-pairing record for development.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing --write docs/development.md
+#   just docs-pairing docs/development.md
 /development:
   en: 7cc1820db7ceecdd
   zh: 93d7f6dc107d3f45
@@ -18,8 +18,8 @@
   en: b0be8c727259b6a4
   zh: 3b70010360277400
 /development/setup-tutorial/run-the-server-and-the-web-client:
-  en: 5628b0400d450ddf
-  zh: 02572218e7c42764
+  en: 4d90c7da7c546009
+  zh: 3a71a96076b58011
 /development/setup-tutorial/run-the-desktop-app:
   en: 95a48c67a0feccf9
   zh: dff15a6b5be92eb8
@@ -33,8 +33,8 @@
   en: f3a2e73472df61bb
   zh: 15068e24425bbf62
 /development/reference/ci-workflows:
-  en: 4aae132156193f63
-  zh: 4cfc92bfea74ec46
+  en: 0419aabe6532b841
+  zh: 6fdf11b16ec91d00
 /development/reference/daily-commands:
-  en: 2b6e87b09a395eaf
-  zh: d096f5d6f0bdc26d
+  en: beaf5dfb8765b16c
+  zh: 7ae2b8e60e080694

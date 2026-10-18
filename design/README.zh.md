@@ -31,7 +31,7 @@
 | `desktop/src/gen/design-tokens.ts` | Electron 主进程 | `themeColors`：各主题的语义颜色，供标题栏覆盖层与窗口背景使用 |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android 应用 | `LemmaPalette`：以 Compose `Color` 表示的静态色板；`theme/Scheme.kt` 把它映射到应用的颜色角色 |
 
-Web 的 `dev`、`build` 与 `build:desktop` 脚本会先运行生成器，Gradle 任务 `generateDesignTokens` 在 Kotlin 编译前运行它。`just web-gen-tokens` 用于手动运行。
+Web 的 `dev`、`build` 与 `build:desktop` 脚本会先运行生成器，Gradle 任务 `generateDesignTokens` 在 Kotlin 编译前运行它。`just design-gen` 用于手动运行。
 
 ## 检查
 

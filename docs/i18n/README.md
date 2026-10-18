@@ -22,14 +22,14 @@ Lemma's documentation is maintained in English and Simplified Chinese. This page
 
 ## The check
 
-`just docs-pairing` checks every pair:
+`just docs-pairing-check` checks every pair:
 
 1. Every document in scope has its counterpart and its record.
 2. Both sides have the same heading levels in the same order.
 3. The record equals the one computed from the current contents, so a change to either side that has not been re-recorded fails.
 4. Excluded documents have no `.zh.md` and no `.i18n.yaml`.
 
-`just docs-pairing <file>...` checks only the named pairs; any file of a pair names it. Spec CI runs the full check.
+`just docs-pairing-check <file>...` checks only the named pairs; any file of a pair names it. Spec CI runs the full check.
 
 The check compares hashes and heading structure only. A recorded pair can still differ in meaning, terminology, lists, tables, or links; confirm those before recording.
 
@@ -37,7 +37,7 @@ The check compares hashes and heading structure only. A recorded pair can still 
 
 1. Run `just docs-brief`, or `just docs-brief <file>...` for named pairs. For each pair out of sync it prints a translation brief. When one side changed some sections, the brief holds each changed section's last committed source text that matched the record, its current source text, the current counterpart text with line numbers, and the [terminology](terminology.md) rows the change touches. A new pair, an unrecorded pair, a change on both sides, or added and removed sections get a whole-document brief instead.
 2. Edit the counterpart. Change only what the source change covers, and keep the reviewed wording elsewhere.
-3. Record the pair with `just docs-pairing --write <file>`, then check it with `just docs-pairing <file>`. `--write --all` records every pair at once.
+3. Record the pair with `just docs-pairing <file>`, then check it with `just docs-pairing-check <file>`. `just docs-pairing --all` records every pair at once.
 
 ## Scope and exclusions
 

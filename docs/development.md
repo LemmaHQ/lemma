@@ -42,7 +42,7 @@ just rust-dev
 
 For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025. A `sqlite:` `DATABASE_URL` runs the same server on SQLite without Docker.
 
-`just docker-up` starts the server container, building its image from the Dockerfile when none exists, together with the database; `just docker-down` stops them.
+`docker compose --profile full up -d` starts the server container, building its image from the Dockerfile when none exists, together with the database; `docker compose --profile full down` stops them.
 
 ### Run the desktop app
 
@@ -78,19 +78,20 @@ cargo binstall cargo-ndk
 
 ### CI workflows
 
-Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change. Rust CI, Web CI, and Spec CI end in a `check` job that fails if any of their jobs failed.
+Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Workflow steps call `just` recipes. Rust CI, Web CI, Desktop CI, and Spec CI end in a `check` job that fails if any of their jobs failed.
 
 | Workflow | Paths | Runs |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied, and `cargo nextest` with a PostgreSQL service |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
-| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint` and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
-| Coverage | all | Rust and web coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
+| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, renderer build, vitest |
+| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
+| Coverage | all | Rust, web, and desktop coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
 | CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, and GitHub Actions |
 | mise-upgrade | daily schedule | bumps the pins in `mise.toml`, syncs the Dockerfile's Node version, and opens a pull request |
 
-Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily. No workflow builds `desktop/` or `mobile/`.
+Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily. No workflow builds `mobile/`.
 
 ### Daily commands
 
-The root [Commands](../AGENTS.md#commands) section lists the workspace recipes, and each subtree `AGENTS.md` lists its own; `just --list` prints every recipe with its description. `just check` runs the static checks and `just verify` adds the Rust and web tests. Test tiers are in [testing.md](testing.md).
+The root [Commands](../AGENTS.md#commands) section lists the workspace recipes and their naming, and each subtree `AGENTS.md` lists its own; `just --list` prints every recipe with its description. Test tiers are in [testing.md](testing.md).

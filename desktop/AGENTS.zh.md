@@ -17,7 +17,9 @@
 
 ```sh
 just desktop-dev        # 构建 lemma-server，再启动 Electron
-just desktop-lint       # eslint
-just desktop-fmt        # prettier --write
+just desktop-lint-check # eslint；desktop-lint 应用修复
+just desktop-fmt-check  # prettier --check；desktop-fmt 格式化
+just desktop-test       # vitest
+just desktop-cov        # vitest 覆盖率
 just desktop-package    # proto-gen、构建渲染层、electron-forge 打包
 ```

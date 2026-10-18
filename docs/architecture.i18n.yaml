@@ -1,7 +1,7 @@
 # Translation-pairing record for architecture.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing --write docs/architecture.md
+#   just docs-pairing docs/architecture.md
 /lemma-architecture:
   en: 15f197829c7e8735
   zh: ec38442c0a7b13af

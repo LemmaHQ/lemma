@@ -24,6 +24,9 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 ## Commands
 
 ```sh
-just mobile-android-build   # assemble the debug APK
-just mobile-android-test    # androidApp unit tests and shared host tests
+just mobile-android-build       # assemble the debug APK
+just mobile-android-test        # androidApp unit tests and shared host tests
+just mobile-android-lint-check  # Android Lint on androidApp; mobile-android-lint applies fixes
+just mobile-android-cov         # Kover HTML report for androidApp and shared
+just mobile-fmt-check           # ktfmt in kotlinlang style through Spotless; mobile-fmt formats
 ```

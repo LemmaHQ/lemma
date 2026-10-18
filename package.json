@@ -6,15 +6,6 @@
         "web",
         "desktop"
     ],
-    "scripts": {
-        "gen:proto": "cd proto && buf generate",
-        "gen:tokens": "node design/gen-tokens.mjs",
-        "build:desktop": "npm --workspace=desktop run build",
-        "dev:desktop": "npm --workspace=desktop run start",
-        "lint:md": "markdownlint-cli2",
-        "lint:cn": "autocorrect --lint",
-        "lint:docs": "markdownlint-cli2 && autocorrect --lint"
-    },
     "author": {
         "name": "wanzhao-ysy",
         "email": "wanzhao_ysy@qq.com"

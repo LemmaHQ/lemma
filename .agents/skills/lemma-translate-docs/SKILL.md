@@ -27,7 +27,7 @@ description: Use when translating a Lemma document into its counterpart language
 1. **Generate the brief:** `just docs-brief <any file of the pair>`; with no arguments it briefs every out-of-sync pair. A section brief holds each changed section's last committed source that matched the record, its current source, the current counterpart with line numbers, and the terminology rows the change touches.
 2. **Translate from the brief.** The brief is the working set: do not re-read the corpus or re-derive the diff. Escalate to the sources of truth only when the brief leaves a decision unanswerable, such as an unlisted term with no precedent in the surrounding text.
 3. **Make the smallest edit that covers the change.** Keep the reviewed wording of everything the change does not touch, then verify the changed sections clause by clause against the source: nothing added, nothing dropped, terminology per the rows, code spans verbatim.
-4. **Record and check the named pair:** `just docs-pairing --write <file>`, then `just docs-pairing <file>`. Use `--write --all` only when you confirmed every pair.
+4. **Record and check the named pair:** `just docs-pairing <file>`, then `just docs-pairing-check <file>`. Use `just docs-pairing --all` only when you confirmed every pair.
 
 The brief's confirmed source comes from git history, so a source edited twice without a commit in between shows no confirmed text. Compare against `git diff` in that case.
 
@@ -52,8 +52,8 @@ Translate the whole file section by section, keeping each section's structure lo
 ## Finish the pair
 
 1. Switcher: `English | [中文](foo.zh.md)` after the English H1, `[English](foo.md) | 中文` after the Chinese H1; add both for a new pair.
-2. Record the pair with `just docs-pairing --write <file>` only after you confirmed the two sides say the same thing; the record diff states that confirmation.
-3. Run `just docs-pairing <file>` and `just docs-lint` for the touched pairs.
+2. Record the pair with `just docs-pairing <file>` only after you confirmed the two sides say the same thing; the record diff states that confirmation.
+3. Run `just docs-pairing-check <file>` and `just docs-lint-check` for the touched pairs.
 4. In the report and the commit body, state which pairs are new and which were minimally updated, and list any unlisted terms kept in English.
 
 When the user corrects a rendering, apply the decision to [terminology.md](../../../docs/i18n/terminology.md) and every affected document, not only to one file.

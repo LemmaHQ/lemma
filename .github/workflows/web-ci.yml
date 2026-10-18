@@ -9,6 +9,8 @@ on:
       - "design/**"
       - "package.json"
       - "package-lock.json"
+      - "justfile"
+      - "mise.toml"
       - ".github/workflows/web-ci.yml"
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - "design/**"
       - "package.json"
       - "package-lock.json"
+      - "justfile"
+      - "mise.toml"
       - ".github/workflows/web-ci.yml"
 
 concurrency:
@@ -35,7 +39,7 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v4
         with:
-          install_args: node buf
+          install_args: node buf just
 
       - name: Cache npm
         uses: actions/cache@v6
@@ -51,21 +55,21 @@ jobs:
       # Generated code is not committed; regenerate it first.
       # web/src/gen is excluded from prettier/eslint.
       - name: Generate proto code
-        run: npm run gen:proto
+        run: just proto-gen
 
       # tokens.css is generated from design/tokens.json and gitignored;
       # eslint's tailwindcss plugin resolves it via cssConfigPath.
       - name: Generate design tokens
-        run: npm run gen:tokens
+        run: just design-gen
 
       - name: Format check
-        run: npm run format:check -w web
+        run: just web-fmt-check
 
       - name: Lint
-        run: npm run lint -w web
+        run: just web-lint-check
 
       - name: Build
-        run: npm run build -w web
+        run: just web-build
 
       - name: Test
-        run: npm run test -w web
+        run: just web-test

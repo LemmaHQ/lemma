@@ -28,8 +28,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 ## Commands
 
 ```sh
-just rust-lint          # clippy over all targets
-just rust-test          # cargo test --workspace
-just rust-fmt           # cargo fmt --all
-just rust-cov           # llvm-cov summary; rust-cov-html opens the report
+just rust-lint-check    # clippy over all targets, warnings denied; rust-lint applies fixes
+just rust-fmt-check     # cargo fmt --check; rust-fmt formats
+just rust-test          # cargo nextest run --workspace
+just rust-cov           # llvm-cov summary; `just rust-cov --html --open` opens the report
 ```

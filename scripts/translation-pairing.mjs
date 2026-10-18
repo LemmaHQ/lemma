@@ -178,7 +178,7 @@ export const formatRecord = (pair, entries) =>
         `# Translation-pairing record for ${path.posix.basename(pair.en)} (docs/i18n/README.md): one`,
         "# entry per heading section, holding a hash of its English and Chinese text.",
         "# After bringing both sides to the same meaning, re-record with:",
-        `#   just docs-pairing --write ${pair.en}`,
+        `#   just docs-pairing ${pair.en}`,
         ...entries.flatMap(({ key, en, zh }) => [
             `${key}:`,
             `  en: ${en}`,

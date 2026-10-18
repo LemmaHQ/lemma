@@ -9,16 +9,16 @@ Build tests that stay correct under the repository's real execution topology, no
 
 ## Read the owning rules
 
-- [testing.md](../../../docs/testing.md) selects the tier: Rust unit or integration, store tests, web vitest, Android host tests, or the local real-provider tests.
-- Read the owning [workflow](../../../.github/workflows/) and the web client's [vite.config.ts](../../../web/vite.config.ts) when their job or worker topology affects the test.
+- [testing.md](../../../docs/testing.md) selects the tier: Rust unit or integration, store tests, web or desktop vitest, Android host tests, or the local real-provider tests.
+- Read the owning [workflow](../../../.github/workflows/), the web client's [vite.config.ts](../../../web/vite.config.ts), and the desktop shell's [vitest.config.mts](../../../desktop/vitest.config.mts) when their job or worker topology affects the test.
 
 ## Model the execution topology
 
 The same test runs under more than one runner, and each layer can overlap with the others:
 
-1. **`cargo test`** (`just rust-test`, local): tests of one binary run as threads in one process, so process-global state is shared between them.
-2. **`cargo nextest`** (Rust CI, Coverage): each test is its own process, many in parallel; process isolation does not isolate the PostgreSQL server, ports, or paths.
-3. **vitest** (`just web-test`, Web CI, Coverage): files run in parallel workers in the `node` environment; tests in one file share module state.
+1. **`cargo nextest`** (`just rust-test`, Rust CI, Coverage): each test is its own process, many in parallel; process isolation does not isolate the PostgreSQL server, ports, or paths.
+2. **`cargo test`** (focused local runs and the `--ignored` real-provider tests): tests of one binary run as threads in one process, so process-global state is shared between them.
+3. **vitest** (`just web-test`, `just desktop-test`, Web CI, Desktop CI, Coverage): files run in parallel workers in the `node` environment; tests in one file share module state.
 4. **Gradle** host tests for Android run on the JVM, locally only.
 
 A test must pass under both Rust runners: correct under nextest alone can still race under `cargo test` threads, and the reverse. CI jobs run on separate GitHub-hosted runners, so cross-job host sharing does not apply; the PostgreSQL service is shared by every test in its job.
@@ -83,4 +83,4 @@ For an existing nondeterministic CI failure, read [the CI flake diagnosis workfl
 
 ## Validate and report
 
-Run the smallest focused regression under the runner that owns the risk: `cargo test -p <crate> <name>` for thread-shared state, `cargo nextest run -p <crate>` for process topology, `npx vitest run <file>` in `web/`. Add restoration evidence for global mutation, teardown evidence for spawned work, and a negative control for a new guard. Report exact commands and observed results; do not describe skipped, ignored, or pending tests as passing.
+Run the smallest focused regression under the runner that owns the risk: `cargo test -p <crate> <name>` for thread-shared state, `cargo nextest run -p <crate>` for process topology, `npx vitest run <file>` in `web/` or `desktop/`. Add restoration evidence for global mutation, teardown evidence for spawned work, and a negative control for a new guard. Report exact commands and observed results; do not describe skipped, ignored, or pending tests as passing.

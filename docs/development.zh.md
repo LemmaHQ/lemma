@@ -42,7 +42,7 @@ just rust-dev
 
 开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。把 `DATABASE_URL` 设为 `sqlite:` 时，同一个服务端在 SQLite 上运行，无需 Docker。
 
-`just docker-up` 启动服务端容器（镜像不存在时先由 Dockerfile 构建）与数据库；`just docker-down` 停止它们。
+`docker compose --profile full up -d` 启动服务端容器（镜像不存在时先由 Dockerfile 构建）与数据库；`docker compose --profile full down` 停止它们。
 
 ### 运行桌面应用
 
@@ -78,19 +78,20 @@ cargo binstall cargo-ndk
 
 ### CI 工作流
 
-[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行。Rust CI、Web CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。
+[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。
 
 | 工作流 | 路径 | 运行内容 |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、拒绝警告的 clippy，以及带 PostgreSQL 服务的 `cargo nextest` |
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
-| Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |
-| Coverage | 全部 | Rust 与 Web 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
+| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、渲染层构建、vitest |
+| Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |
+| Coverage | 全部 | Rust、Web 与桌面端覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
 | CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript 与 GitHub Actions 做代码扫描 |
 | mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |
 
-Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。没有工作流构建 `desktop/` 或 `mobile/`。
+Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。没有工作流构建 `mobile/`。
 
 ### 日常命令
 
-根目录的[命令](../AGENTS.zh.md#命令)一节列出 workspace 级 recipe，各子目录的 `AGENTS.zh.md` 列出各自的 recipe；`just --list` 打印每个 recipe 及其说明。`just check` 运行静态检查，`just verify` 再加上 Rust 与 Web 测试。测试分层见 [testing.zh.md](testing.zh.md)。
+根目录的[命令](../AGENTS.zh.md#命令)一节列出 workspace 级 recipe 及其命名方式，各子目录的 `AGENTS.zh.md` 列出各自的 recipe；`just --list` 打印每个 recipe 及其说明。测试分层见 [testing.zh.md](testing.zh.md)。

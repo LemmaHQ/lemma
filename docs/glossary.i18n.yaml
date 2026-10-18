@@ -1,7 +1,7 @@
 # Translation-pairing record for glossary.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing --write docs/glossary.md
+#   just docs-pairing docs/glossary.md
 /glossary:
   en: 4864c12d0e23f381
   zh: f295535f4ec9d400

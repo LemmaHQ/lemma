@@ -36,7 +36,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 ```sh
 just web-dev            # Vite dev server
 just web-test           # vitest
-just web-lint           # eslint
-just web-fmt            # prettier --write
+just web-lint-check     # eslint; web-lint applies fixes
+just web-fmt-check      # prettier --check; web-fmt formats
 just web-cov            # vitest coverage
 ```

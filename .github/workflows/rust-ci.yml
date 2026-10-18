@@ -9,6 +9,8 @@ on:
       - "Cargo.lock"
       - "crates/**"
       - "proto/**"
+      - "justfile"
+      - "mise.toml"
       - ".github/workflows/rust-ci.yml"
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - "Cargo.lock"
       - "crates/**"
       - "proto/**"
+      - "justfile"
+      - "mise.toml"
       - ".github/workflows/rust-ci.yml"
 
 concurrency:
@@ -41,7 +45,7 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v4
         with:
-          install_args: node buf
+          install_args: node buf just
 
       - name: Cache npm
         uses: actions/cache@v6
@@ -55,10 +59,10 @@ jobs:
         run: npm ci
 
       - name: Generate proto code
-        run: npm run gen:proto
+        run: just proto-gen
 
       - name: Build web
-        run: npm run build -w web
+        run: just web-build
 
       - name: Upload web/dist
         uses: actions/upload-artifact@v7
@@ -78,8 +82,13 @@ jobs:
         with:
           components: rustfmt
 
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: just
+
       - name: Format
-        run: cargo fmt --all --check
+        run: just rust-fmt-check
 
   clippy:
     name: Clippy
@@ -105,10 +114,10 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v4
         with:
-          install_args: protobuf
+          install_args: protobuf just
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: just rust-lint-check
 
   test:
     name: Test
@@ -153,10 +162,10 @@ jobs:
       - name: Setup mise tools
         uses: jdx/mise-action@v4
         with:
-          install_args: protobuf cargo:cargo-nextest
+          install_args: protobuf cargo:cargo-nextest just
 
       - name: Test
-        run: cargo nextest run --workspace
+        run: just rust-test
 
   check:
     name: check
