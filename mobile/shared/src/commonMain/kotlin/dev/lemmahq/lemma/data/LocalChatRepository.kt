@@ -49,10 +49,9 @@ class SqlDelightLocalChatRepository(private val database: LemmaDatabase) : Local
             queries.getCursor().executeAsOneOrNull() ?: 0L
         }
 
-    override suspend fun setCursor(cursor: Long) =
-        withContext(Dispatchers.Default) {
-            queries.setCursor(cursor)
-        }
+    override suspend fun setCursor(cursor: Long) {
+        withContext(Dispatchers.Default) { queries.setCursor(cursor) }
+    }
 
     override suspend fun getConversations(): List<Cached_conversation> =
         withContext(Dispatchers.Default) {
@@ -66,16 +65,18 @@ class SqlDelightLocalChatRepository(private val database: LemmaDatabase) : Local
         createdAt: Long,
         updatedAt: Long,
         syncSeq: Long,
-    ) =
+    ) {
         withContext(Dispatchers.Default) {
             queries.insertOrReplaceConversation(id, title, status, createdAt, updatedAt, syncSeq)
         }
+    }
 
-    override suspend fun deleteConversation(id: String) =
+    override suspend fun deleteConversation(id: String) {
         withContext(Dispatchers.Default) {
             queries.deleteMessagesByConversation(id)
             queries.deleteConversation(id)
         }
+    }
 
     override suspend fun pruneConversationsNotIn(activeIds: Collection<String>) =
         withContext(Dispatchers.Default) {
@@ -99,7 +100,7 @@ class SqlDelightLocalChatRepository(private val database: LemmaDatabase) : Local
         createdAt: Long,
         updatedAt: Long,
         syncSeq: Long,
-    ) =
+    ) {
         withContext(Dispatchers.Default) {
             queries.insertOrReplaceMessage(
                 id,
@@ -112,4 +113,5 @@ class SqlDelightLocalChatRepository(private val database: LemmaDatabase) : Local
                 syncSeq,
             )
         }
+    }
 }
