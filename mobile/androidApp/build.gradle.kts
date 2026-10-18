@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kover)
 }
 
 kotlin {
@@ -12,6 +13,7 @@ kotlin {
 }
 dependencies {
     implementation(project(":mobile:shared"))
+    kover(project(":mobile:shared"))
 
     implementation(libs.androidx.activity.compose)
 
