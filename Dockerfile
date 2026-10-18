@@ -1,6 +1,6 @@
 # Stage 1: frontend (proto generation + vite build).
 ARG NODE_VERSION=26.12.0
-FROM node:${NODE_VERSION}-bookworm-slim AS web-builder
+FROM node:${NODE_VERSION}-trixie-slim AS web-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY web/package.json web/package.json
@@ -16,7 +16,7 @@ RUN cd proto && buf generate
 RUN cd web && npm run build
 
 # Stage 2: Rust build.
-FROM rust:1-bookworm AS builder
+FROM rust:1.99.1-trixie AS builder
 WORKDIR /app
 COPY mise.toml ./
 RUN apt-get update \
@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/app/target \
     && cp target/release/lemma-server /app/lemma-server
 
 # Stage 3: runtime (single-binary image).
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
