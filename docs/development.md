@@ -86,7 +86,7 @@ Steps whose result depends on the host operating system run on Linux, Windows, a
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json` | proto and token generation, prettier check, eslint, build, vitest |
 | Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json` | prettier check and eslint, then proto and token generation, renderer build, and vitest on three systems |
 | Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, and debug APK build, plus host tests on three systems |
-| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check |
+| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check, the repository-reference check |
 | Coverage | all | Rust, web, desktop, and Android coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
 | CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, GitHub Actions, and Kotlin; the Kotlin scan compiles through `just mobile-android-test` |
 | mise-upgrade | daily schedule | bumps the pins in `mise.toml`, syncs the Dockerfile's Node version, and opens a pull request |

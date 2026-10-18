@@ -86,7 +86,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json` | proto 与 token 生成、prettier 检查、eslint、构建、vitest |
 | Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json` | prettier 检查与 eslint，再在三个系统上运行 proto 与 token 生成、渲染层构建与 vitest |
 | Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |
-| Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查 |
+| Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置 | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查、仓库引用检查 |
 | Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
 | CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译 |
 | mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |

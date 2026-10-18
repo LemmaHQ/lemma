@@ -71,4 +71,4 @@ Hunt these in any doc; [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) runs th
 
 ## Repository references
 
-Use relative Markdown links for current files and code-formatted paths for planned ones. When a planned file lands, search the repository for its path and convert every code-formatted reference into a link in the same change. Historical references use tags, never commit identifiers.
+Link files with relative Markdown links. A code-formatted path names a tracked or gitignored location; `just docs-refs-check` fails on any other, and on any `just` recipe that does not exist. When a path moves or is removed, search the repository for the old path and update every reference in the same change. Historical references use tags, never commit identifiers.

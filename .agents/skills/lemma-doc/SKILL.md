@@ -66,7 +66,8 @@ Budgets and the relocate-condense-raise policy live in [docs/AGENTS.md](../../..
 Validate the affected format, not merely Markdown syntax.
 
 - **Pairs:** `just docs-pairing-check <file>` checks alignment and the record; also compare list, table, and link structure by reading both sides, which the script does not check.
-- **Links:** every relative link resolves, Chinese links to paired documents target the `.zh.md` side, and planned files are code-formatted paths ([repository references](../../../docs/AGENTS.md#repository-references)).
+- **Links:** every relative link resolves, and Chinese links to paired documents target the `.zh.md` side.
+- **References:** `just docs-refs-check` fails on a cited `just` recipe that does not exist and on a code-formatted path that is neither tracked nor gitignored ([repository references](../../../docs/AGENTS.md#repository-references)).
 - **Formatting:** `just docs-lint-check` runs markdownlint and autocorrect on tracked Markdown, and `just docs-lint` applies their fixes; Markdown under `web/` also goes through `just web-fmt`, which reformats tables, before the pair is recorded.
 - **Tutorials:** exercise the documented entry path, or name how to verify it when it needs a key, device, or build the user has not approved.
 - **Skills:** frontmatter `name` equals the directory name, every relative link resolves, and `description` is the load trigger: it names the tasks and file types that should load the skill, not what the skill contains.

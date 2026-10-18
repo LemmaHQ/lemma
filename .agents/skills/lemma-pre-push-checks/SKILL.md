@@ -29,8 +29,8 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 | `web/` | `just web-fmt-check`, `just web-lint-check`, `just web-build`, `just web-test`; also `just desktop-build`, since Desktop CI builds the renderer from `web/` |
 | `desktop/` | `just desktop-fmt-check`, `just desktop-lint-check`, `just desktop-build`, `just desktop-test` |
 | `mobile/` | `just mobile-fmt-check`, `just mobile-android-lint-check`, `just mobile-android-build`, `just mobile-android-test` |
-| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check` |
-| `justfile`, `mise.toml` | every changed recipe once; every workflow's path filter includes both files |
+| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check` |
+| `justfile`, `mise.toml` | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files |
 | `.github/workflows/` | read the changed workflow for path filters and job dependencies; it runs only in CI |
 
 Notes on the rows:

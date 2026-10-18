@@ -237,3 +237,8 @@ docs-pairing *files:
 [group('docs')]
 docs-brief *files:
     node scripts/gen-translation-brief.mjs {{files}}
+
+# Check recipe names and repository paths cited in Markdown
+[group('docs')]
+docs-refs-check:
+    node scripts/verify-repo-references.mjs

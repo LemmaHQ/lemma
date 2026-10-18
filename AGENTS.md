@@ -19,7 +19,7 @@ assets/       brand assets
 design/       design tokens (tokens.json) and the generator for web, desktop, and Android
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
-scripts/      translation-pairing check and brief generator (docs/i18n/README.md)
+scripts/      documentation checks: translation pairing, brief generator, repository references
 ```
 
 ## Commands
@@ -31,6 +31,7 @@ just desktop-dev         # build lemma-server, then launch Electron
 just design-gen          # regenerate design tokens for web, desktop, and Android
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
+just docs-refs-check     # check recipe names and repository paths cited in Markdown
 ```
 
 Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.

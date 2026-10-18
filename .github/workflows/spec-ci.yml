@@ -93,6 +93,9 @@ jobs:
       - name: Check translation pairs
         run: just docs-pairing-check
 
+      - name: Check repository references
+        run: just docs-refs-check
+
   check:
     name: check
     runs-on: ubuntu-latest
