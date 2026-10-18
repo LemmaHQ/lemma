@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`design/` holds Lemma's design token source and its generator. [`tokens.json`](tokens.json) is the single source of every color, font, type role, radius, motion value, and shadow used by the web client, the desktop shell, and the Android app. [`gen-tokens.mjs`](gen-tokens.mjs) turns it into one generated file per platform. Usage rules live in [Web styling](../docs/web-styling.md) and [the radius standard](../docs/ui-radius.md); this page defines the file format, the outputs, and the checks.
+`design/` holds Lemma's design token source and its generator. [`tokens.json`](tokens.json) is the single source of every color, font, type role, radius, motion value, and shadow used by the web client, the desktop shell, and the Android app. [`gen-tokens.ts`](gen-tokens.ts) turns it into one generated file per platform. Usage rules live in [Web styling](../docs/web-styling.md) and [the radius standard](../docs/ui-radius.md); this page defines the file format, the outputs, and the checks.
 
 ## Token file
 
@@ -23,7 +23,7 @@ Semantic aliases come in two layers: a feature reads `muted-foreground`, and the
 
 ## Outputs
 
-`gen-tokens.mjs` writes three files. Git ignores all of them; each build regenerates them.
+`gen-tokens.ts` writes three files. Git ignores all of them; each build regenerates them.
 
 | Output | Consumer | Contents |
 | --- | --- | --- |

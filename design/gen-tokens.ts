@@ -15,40 +15,86 @@ const ANDROID_KT_PATH = path.join(
 );
 const THEMES = ["light", "dark"];
 const NOTICE =
-    "Generated from design/tokens.json by design/gen-tokens.mjs. Direct changes are overwritten by the generator.";
+    "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
 const REFERENCE = /^\{([^}]+)\}$/;
 
-function collectTokens(group, prefix, inheritedType, tokens) {
+type TokenValue =
+    string | number | boolean | TokenValue[] | { [key: string]: TokenValue };
+
+interface TokenSource {
+    $type?: string;
+    $value?: TokenValue;
+    [key: string]: unknown;
+}
+
+interface Token {
+    name: string[];
+    type: string | undefined;
+    value: TokenValue;
+}
+
+type TokenMap = Map<string, Token>;
+
+interface ShadowLayer {
+    [key: string]: TokenValue;
+    inset: boolean;
+    offsetX: string;
+    offsetY: string;
+    blur: string;
+    spread: string;
+    color: string;
+}
+
+interface TypographyValue {
+    [key: string]: TokenValue;
+    fontFamily: string;
+    fontSize: string;
+    fontWeight: number;
+    lineHeight: number;
+    letterSpacing: string;
+}
+
+function collectTokens(
+    group: TokenSource,
+    prefix: string[],
+    inheritedType: string | undefined,
+    tokens: TokenMap,
+): TokenMap {
     const type = group.$type ?? inheritedType;
     for (const [key, node] of Object.entries(group)) {
         if (key.startsWith("$")) {
             continue;
         }
+        const child = node as TokenSource;
         const name = [...prefix, key];
-        if ("$value" in node) {
+        if ("$value" in child) {
             tokens.set(name.join("."), {
                 name,
-                type: node.$type ?? type,
-                value: node.$value,
+                type: child.$type ?? type,
+                value: child.$value as TokenValue,
             });
         } else {
-            collectTokens(node, name, type, tokens);
+            collectTokens(child, name, type, tokens);
         }
     }
     return tokens;
 }
 
-function resolveValue(value, tokens, owner) {
+function resolveValue(
+    value: TokenValue,
+    tokens: TokenMap,
+    owner: string,
+): TokenValue {
     if (typeof value === "string") {
         const match = REFERENCE.exec(value);
         if (!match) {
             return value;
         }
-        const target = tokens.get(match[1]);
+        const target = tokens.get(match[1] as string);
         if (!target) {
             throw new Error(`${owner} references missing token ${value}`);
         }
-        return resolveValue(target.value, tokens, match[1]);
+        return resolveValue(target.value, tokens, match[1] as string);
     }
     if (Array.isArray(value)) {
         return value.map((item) => resolveValue(item, tokens, owner));
@@ -64,8 +110,8 @@ function resolveValue(value, tokens, owner) {
     return value;
 }
 
-function resolveAll(tokens) {
-    const resolved = new Map();
+function resolveAll(tokens: TokenMap): TokenMap {
+    const resolved: TokenMap = new Map();
     for (const [key, token] of tokens) {
         resolved.set(key, {
             ...token,
@@ -75,8 +121,8 @@ function resolveAll(tokens) {
     return resolved;
 }
 
-function group(tokens, prefix) {
-    const entries = [];
+function group(tokens: TokenMap, prefix: string): [string, Token][] {
+    const entries: [string, Token][] = [];
     const head = `${prefix}.`;
     for (const [key, token] of tokens) {
         if (key.startsWith(head)) {
@@ -86,7 +132,7 @@ function group(tokens, prefix) {
     return entries;
 }
 
-function checkThemeParity(tokens) {
+function checkThemeParity(tokens: TokenMap): void {
     const [first, ...rest] = THEMES;
     const reference = new Set(group(tokens, first).map(([key]) => key));
     for (const theme of rest) {
@@ -108,11 +154,11 @@ function checkThemeParity(tokens) {
     }
 }
 
-function pxToRem(px) {
+function pxToRem(px: string): string {
     return `${Number.parseFloat(px) / 16}rem`;
 }
 
-function pxToEm(letterSpacing, fontSize) {
+function pxToEm(letterSpacing: string, fontSize: string): string {
     const spacing = Number.parseFloat(letterSpacing);
     if (!spacing) {
         return "0";
@@ -120,13 +166,13 @@ function pxToEm(letterSpacing, fontSize) {
     return `${Number((spacing / Number.parseFloat(fontSize)).toFixed(4))}em`;
 }
 
-function cssFontFamily(families) {
+function cssFontFamily(families: string[]): string {
     return families
         .map((family) => (/\s/.test(family) ? `"${family}"` : family))
         .join(", ");
 }
 
-function cssShadow(value) {
+function cssShadow(value: ShadowLayer | ShadowLayer[]): string {
     const layers = Array.isArray(value) ? value : [value];
     return layers
         .map((layer) =>
@@ -144,18 +190,20 @@ function cssShadow(value) {
         .join(", ");
 }
 
-function themeDeclarations(tokens, theme) {
-    const lines = [];
+function themeDeclarations(tokens: TokenMap, theme: string): string[] {
+    const lines: string[] = [];
     for (const [key, token] of group(tokens, `${theme}.color`)) {
         lines.push(`    --${key}: ${token.value};`);
     }
     for (const [key, token] of group(tokens, `${theme}.shadow`)) {
-        lines.push(`    --elevation-${key}: ${cssShadow(token.value)};`);
+        lines.push(
+            `    --elevation-${key}: ${cssShadow(token.value as ShadowLayer | ShadowLayer[])};`,
+        );
     }
     return lines;
 }
 
-function generateWebCss(tokens) {
+function generateWebCss(tokens: TokenMap): string {
     const [light, ...darkThemes] = THEMES;
     const rootLines = themeDeclarations(tokens, light);
     rootLines.push("");
@@ -164,17 +212,19 @@ function generateWebCss(tokens) {
     }
     for (const [key, token] of group(tokens, "easing")) {
         rootLines.push(
-            `    --ease-${key}: cubic-bezier(${token.value.join(", ")});`,
+            `    --ease-${key}: cubic-bezier(${(token.value as number[]).join(", ")});`,
         );
     }
 
-    const themeLines = [];
+    const themeLines: string[] = [];
     for (const [key] of group(tokens, `${light}.color`)) {
         themeLines.push(`    --color-${key}: var(--${key});`);
     }
     themeLines.push("", "    /* font */");
     for (const [key, token] of group(tokens, "font")) {
-        themeLines.push(`    --font-${key}: ${cssFontFamily(token.value)};`);
+        themeLines.push(
+            `    --font-${key}: ${cssFontFamily(token.value as string[])};`,
+        );
     }
     themeLines.push("", "    /* shadow */");
     for (const [key] of group(tokens, `${light}.shadow`)) {
@@ -184,13 +234,15 @@ function generateWebCss(tokens) {
     themeLines.push("", "    /* typography */");
     const bodySm = tokens.get("typography.body-sm");
     if (bodySm) {
+        const bodySmValue = bodySm.value as TypographyValue;
         themeLines.push(
-            `    --text-sm: ${pxToRem(bodySm.value.fontSize)};`,
-            `    --text-sm--line-height: ${bodySm.value.lineHeight};`,
+            `    --text-sm: ${pxToRem(bodySmValue.fontSize)};`,
+            `    --text-sm--line-height: ${bodySmValue.lineHeight};`,
         );
     }
     for (const [key, token] of group(tokens, "typography")) {
-        const { fontSize, fontWeight, lineHeight, letterSpacing } = token.value;
+        const { fontSize, fontWeight, lineHeight, letterSpacing } =
+            token.value as TypographyValue;
         themeLines.push(`    --text-${key}: ${pxToRem(fontSize)};`);
         themeLines.push(`    --text-${key}--line-height: ${lineHeight};`);
         const spacing = pxToEm(letterSpacing, fontSize);
@@ -203,7 +255,7 @@ function generateWebCss(tokens) {
     themeLines.push("", "    /* radius */");
     const radiusLg = tokens.get("radius.lg");
     if (radiusLg) {
-        themeLines.push(`    --radius: ${pxToRem(radiusLg.value)};`);
+        themeLines.push(`    --radius: ${pxToRem(radiusLg.value as string)};`);
     }
     for (const [key, token] of group(tokens, "radius")) {
         themeLines.push(`    --radius-${key}: ${token.value};`);
@@ -227,7 +279,7 @@ ${themeLines.join("\n")}
 `;
 }
 
-function generateDesktopTs(tokens) {
+function generateDesktopTs(tokens: TokenMap): string {
     const colors = Object.fromEntries(
         THEMES.map((theme) => [
             theme,
@@ -245,23 +297,23 @@ export const themeColors = ${JSON.stringify(colors, null, 4)} as const;
 `;
 }
 
-function kotlinName(parts) {
+function kotlinName(parts: string[]): string {
     return parts
         .flatMap((part) => part.split("-"))
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join("");
 }
 
-function kotlinColor(hex) {
+function kotlinColor(hex: string): string {
     const digits = hex.slice(1).toUpperCase();
     const alpha = digits.length === 8 ? digits.slice(6) : "FF";
     return `Color(0x${alpha}${digits.slice(0, 6)})`;
 }
 
-function generateAndroidKt(tokens) {
+function generateAndroidKt(tokens: TokenMap): string {
     const lines = group(tokens, "palette").map(
         ([, token]) =>
-            `    val ${kotlinName(token.name.slice(1))} = ${kotlinColor(token.value)}`,
+            `    val ${kotlinName(token.name.slice(1))} = ${kotlinColor(token.value as string)}`,
     );
     return `// ${NOTICE}
 
@@ -275,15 +327,19 @@ ${lines.join("\n")}
 `;
 }
 
-function writeOutput(file, content) {
+function writeOutput(file: string, content: string): void {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, content, "utf8");
     console.log(`Generated ${path.relative(ROOT_DIR, file)}`);
 }
 
-function main() {
-    const source = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
-    const tokens = resolveAll(collectTokens(source, [], undefined, new Map()));
+function main(): void {
+    const source = JSON.parse(
+        fs.readFileSync(TOKENS_PATH, "utf8"),
+    ) as TokenSource;
+    const tokens = resolveAll(
+        collectTokens(source, [], undefined, new Map<string, Token>()),
+    );
     checkThemeParity(tokens);
     writeOutput(WEB_CSS_PATH, generateWebCss(tokens));
     writeOutput(DESKTOP_TS_PATH, generateDesktopTs(tokens));

@@ -15,9 +15,9 @@ val designTokensDir = layout.buildDirectory.dir("generated/source/tokens")
 val generateDesignTokens =
     tasks.register<Exec>("generateDesignTokens") {
         workingDir = rootProject.projectDir
-        commandLine("node", "design/gen-tokens.mjs")
+        commandLine("node", "design/gen-tokens.ts")
         inputs.file(rootProject.file("design/tokens.json"))
-        inputs.file(rootProject.file("design/gen-tokens.mjs"))
+        inputs.file(rootProject.file("design/gen-tokens.ts"))
         outputs.dir(designTokensDir)
     }
 

@@ -30,7 +30,7 @@
 
 ## 生成文件
 
-`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成，`dev`、`build`、`lint` 与 `test` 会先运行它；`src/styles/tokens.css` 由 [design/tokens.json](../design/tokens.json) 经 `design/gen-tokens.mjs` 生成，`dev` 与 `build` 会先运行它。两者都被 Git 忽略；修改其来源。
+`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成，`dev`、`build`、`lint` 与 `test` 会先运行它；`src/styles/tokens.css` 由 [design/tokens.json](../design/tokens.json) 经 `design/gen-tokens.ts` 生成，`dev` 与 `build` 会先运行它。两者都被 Git 忽略；修改其来源。
 
 ## 命令
 

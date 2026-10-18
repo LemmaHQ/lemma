@@ -4,7 +4,7 @@
 
 ## 概要
 
-`design/` 存放 Lemma 的设计 token 源文件及其生成器。[`tokens.json`](tokens.json) 是 Web 客户端、桌面端外壳与 Android 应用所用全部颜色、字体、字体角色、圆角、动效与阴影的唯一来源。[`gen-tokens.mjs`](gen-tokens.mjs) 把它转换为每个平台各一份生成文件。使用规则见 [Web 样式参考](../docs/web-styling.zh.md)与[圆角标准](../docs/ui-radius.zh.md)；本页定义文件格式、输出与检查。
+`design/` 存放 Lemma 的设计 token 源文件及其生成器。[`tokens.json`](tokens.json) 是 Web 客户端、桌面端外壳与 Android 应用所用全部颜色、字体、字体角色、圆角、动效与阴影的唯一来源。[`gen-tokens.ts`](gen-tokens.ts) 把它转换为每个平台各一份生成文件。使用规则见 [Web 样式参考](../docs/web-styling.zh.md)与[圆角标准](../docs/ui-radius.zh.md)；本页定义文件格式、输出与检查。
 
 ## Token 文件
 
@@ -23,7 +23,7 @@
 
 ## 输出
 
-`gen-tokens.mjs` 写出三份文件。三者都被 Git 忽略，每次构建都会重新生成。
+`gen-tokens.ts` 写出三份文件。三者都被 Git 忽略，每次构建都会重新生成。
 
 | 输出 | 使用方 | 内容 |
 | --- | --- | --- |

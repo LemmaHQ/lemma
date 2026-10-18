@@ -209,7 +209,7 @@ mobile-android-cov:
 # Generate design tokens (web CSS, desktop TS, Android palette)
 [group('design')]
 design-gen:
-    node design/gen-tokens.mjs
+    node design/gen-tokens.ts
 
 # Lint Markdown (markdownlint + autocorrect)
 [group('docs')]
