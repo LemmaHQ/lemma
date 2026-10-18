@@ -13,6 +13,7 @@
 - **模块使用 ES 命名导出；** 类型通过 `import type` 与 `export type` 导入导出。
 - **未知输入标注为 `unknown`**，再收窄为具体类型。
 - **JSDoc** 是导出公共接口上的紧凑契约，不写 JSDoc 类型注解。传入多个同类型实参的调用可以内联标注参数名：`/* paramName= */`。
+- **所有 TypeScript 项目共用的编译选项放在根目录 `tsconfig.base.json`；** 各项目的 `tsconfig` 继承它，只补充运行环境需要的设置：DOM、JSX、模块解析、`types`、路径别名。`scripts/` 与 `design/` 中的仓库脚本是由 Node 直接运行的 `.ts` 文件，由 `just scripts-type-check` 做类型检查。
 
 ## 布局
 

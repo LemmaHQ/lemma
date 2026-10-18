@@ -13,6 +13,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Modules use ES named exports;** types move through `import type` and `export type`.
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
+- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/` and `design/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
 
 ## Layout
 

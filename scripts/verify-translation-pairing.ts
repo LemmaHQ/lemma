@@ -4,7 +4,7 @@ import {
     listPairs,
     pairOf,
     writeRecord,
-} from "./translation-pairing.mjs";
+} from "./translation-pairing.ts";
 
 const args = process.argv.slice(2);
 const write = args.includes("--write");
@@ -25,7 +25,7 @@ if (write) {
             writeRecord(pair);
             console.log(`recorded ${pair.record}`);
         } catch (error) {
-            console.error(error.message);
+            console.error(error instanceof Error ? error.message : error);
             failed = true;
         }
     }

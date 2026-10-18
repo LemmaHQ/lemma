@@ -9,12 +9,26 @@ import {
     readText,
     sectionKeys,
     splitSections,
-} from "./translation-pairing.mjs";
+} from "./translation-pairing.ts";
+import type {
+    Entry,
+    Pair,
+    RecordEntry,
+    Section,
+} from "./translation-pairing.ts";
 
 const TERMINOLOGY = "docs/i18n/terminology.md";
 const CONTRACT = "docs/i18n/README.md#the-pairing-contract";
 
-function fenced(text, info = "markdown") {
+type Side = "en" | "zh";
+
+interface Confirmed {
+    sha: string;
+    date: string;
+    sections: Section[];
+}
+
+function fenced(text: string, info = "markdown"): string {
     const longest = Math.max(
         2,
         ...(text.match(/`+/g) ?? []).map((run) => run.length),
@@ -23,18 +37,22 @@ function fenced(text, info = "markdown") {
     return `${fence}${info}\n${text}\n${fence}`;
 }
 
-const sectionText = (section) => section.lines.join("\n").trim();
+const sectionText = (section: Section): string =>
+    section.lines.join("\n").trim();
 
-const sideHashes = (text) =>
+const sideHashes = (text: string): string[] =>
     splitSections(text)
         .map((section) => section.hash)
-        .filter(Boolean);
+        .filter((hash): hash is string => Boolean(hash));
 
-const sameList = (left, right) =>
+const sameList = (
+    left: readonly (string | undefined)[],
+    right: readonly (string | undefined)[],
+): boolean =>
     left.length === right.length &&
     left.every((value, index) => value === right[index]);
 
-function terminologyRows(text, side) {
+function terminologyRows(text: string, side: Side): string {
     const rows = (readText(TERMINOLOGY) ?? "")
         .split("\n")
         .filter(
@@ -56,7 +74,10 @@ function terminologyRows(text, side) {
         : "No listed term occurs in the changed text.";
 }
 
-function confirmedRevision(file, hashes) {
+function confirmedRevision(
+    file: string,
+    hashes: (string | undefined)[],
+): Confirmed | null {
     const log = git(["log", "--format=%H %cs", "--", file]).trim();
     for (const line of log ? log.split("\n") : []) {
         const [sha, date] = line.split(" ");
@@ -68,7 +89,7 @@ function confirmedRevision(file, hashes) {
     return null;
 }
 
-const rules = (pair) => [
+const rules = (pair: Pair): string[] => [
     "## Rules",
     "",
     `- Structure, code blocks, links, and the language switcher follow [the pairing contract](${CONTRACT}).`,
@@ -77,13 +98,13 @@ const rules = (pair) => [
 ];
 
 const wholeDocumentBrief = (
-    pair,
-    label,
-    task,
-    termsText,
-    sourceSide,
-    extra = [],
-) => [
+    pair: Pair,
+    label: string,
+    task: string,
+    termsText: string,
+    sourceSide: Side,
+    extra: string[] = [],
+): string[] => [
     `# Translation brief: ${pair.en}`,
     "",
     `**${label}.** ${task}`,
@@ -96,11 +117,17 @@ const wholeDocumentBrief = (
     ...rules(pair),
 ];
 
-function sectionBrief(pair, sourceSide, confirmed, entries, recorded) {
-    const targetSide = sourceSide === "en" ? "zh" : "en";
-    const sourceSections = splitSections(readText(pair[sourceSide]));
-    const targetSections = splitSections(readText(pair[targetSide]));
-    const keys = sectionKeys(splitSections(readText(pair.en)));
+function sectionBrief(
+    pair: Pair,
+    sourceSide: Side,
+    confirmed: Confirmed | null,
+    entries: Entry[],
+    recorded: RecordEntry[],
+): string[] {
+    const targetSide: Side = sourceSide === "en" ? "zh" : "en";
+    const sourceSections = splitSections(readText(pair[sourceSide])!);
+    const targetSections = splitSections(readText(pair[targetSide])!);
+    const keys = sectionKeys(splitSections(readText(pair.en)!));
     const changed = entries.filter(
         (entry, index) => entry[sourceSide] !== recorded[index][sourceSide],
     );
@@ -150,12 +177,12 @@ function sectionBrief(pair, sourceSide, confirmed, entries, recorded) {
     return lines;
 }
 
-function updateBrief(pair) {
-    const recorded = parseRecord(readText(pair.record));
-    const changedSides = ["en", "zh"].filter(
+function updateBrief(pair: Pair): string[] {
+    const recorded = parseRecord(readText(pair.record)!);
+    const changedSides = (["en", "zh"] as const).filter(
         (side) =>
             !sameList(
-                sideHashes(readText(pair[side])),
+                sideHashes(readText(pair[side])!),
                 recorded.map((entry) => entry[side]),
             ),
     );
@@ -171,7 +198,7 @@ function updateBrief(pair) {
             pair,
             "Both sides changed",
             `Reconcile \`${pair.en}\` and \`${pair.zh}\` by hand: carry each side's change to the other and keep the reviewed wording that neither change touched. \`git diff\` on both files shows the uncommitted part of each change.`,
-            readText(pair.en),
+            readText(pair.en)!,
             "en",
         );
     }
@@ -180,12 +207,18 @@ function updateBrief(pair) {
         pair[sourceSide],
         recorded.map((entry) => entry[sourceSide]),
     );
-    const { entries, error } = computeEntries(
-        readText(pair.en),
-        readText(pair.zh),
-    );
-    if (!error && entries.length === recorded.length) {
-        return sectionBrief(pair, sourceSide, confirmed, entries, recorded);
+    const result = computeEntries(readText(pair.en)!, readText(pair.zh)!);
+    if (
+        result.error === undefined &&
+        result.entries.length === recorded.length
+    ) {
+        return sectionBrief(
+            pair,
+            sourceSide,
+            confirmed,
+            result.entries,
+            recorded,
+        );
     }
     const diff = confirmed
         ? git(["diff", confirmed.sha, "--", pair[sourceSide]]).trim()
@@ -198,9 +231,9 @@ function updateBrief(pair) {
         pair,
         "Sections added or removed",
         `\`${pair[sourceSide]}\` changed its headings. Mirror the change in \`${pair[sourceSide === "en" ? "zh" : "en"]}\`: add, remove, or move the same sections and translate the new text.`,
-        diff ? added : readText(pair[sourceSide]),
+        diff ? added : readText(pair[sourceSide])!,
         sourceSide,
-        diff
+        diff && confirmed
             ? [
                   "",
                   `Source change since commit ${confirmed.sha.slice(0, 7)} (${confirmed.date}):`,
@@ -214,13 +247,13 @@ function updateBrief(pair) {
     );
 }
 
-function brief(pair) {
+function brief(pair: Pair): string[] {
     if (readText(pair.zh) === null) {
         return wholeDocumentBrief(
             pair,
             "New pair",
             `Write \`${pair.zh}\` from \`${pair.en}\`.`,
-            readText(pair.en),
+            readText(pair.en)!,
             "en",
         );
     }
@@ -229,7 +262,7 @@ function brief(pair) {
             pair,
             "New pair",
             `Write \`${pair.en}\` from \`${pair.zh}\`.`,
-            readText(pair.zh),
+            readText(pair.zh)!,
             "zh",
         );
     }
@@ -238,7 +271,7 @@ function brief(pair) {
             pair,
             "Unrecorded pair",
             `Compare \`${pair.en}\` and \`${pair.zh}\` in full and align them before the first record.`,
-            readText(pair.en),
+            readText(pair.en)!,
             "en",
         );
     }

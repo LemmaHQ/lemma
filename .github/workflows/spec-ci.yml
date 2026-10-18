@@ -16,6 +16,10 @@ on:
       - ".autocorrect*"
       - "justfile"
       - "mise.toml"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.base.json"
       - ".github/workflows/spec-ci.yml"
   pull_request:
     paths:
@@ -29,6 +33,10 @@ on:
       - ".autocorrect*"
       - "justfile"
       - "mise.toml"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.base.json"
       - ".github/workflows/spec-ci.yml"
 
 concurrency:
@@ -95,6 +103,9 @@ jobs:
 
       - name: Check repository references
         run: just docs-refs-check
+
+      - name: Type-check scripts
+        run: just scripts-type-check
 
   check:
     name: check

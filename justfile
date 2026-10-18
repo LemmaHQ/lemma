@@ -226,19 +226,24 @@ docs-lint:
 # Check bilingual pairs against their records
 [group('docs')]
 docs-pairing-check *files:
-    node scripts/verify-translation-pairing.mjs {{files}}
+    node scripts/verify-translation-pairing.ts {{files}}
 
 # Record bilingual pairs; takes files or --all
 [group('docs')]
 docs-pairing *files:
-    node scripts/verify-translation-pairing.mjs --write {{files}}
+    node scripts/verify-translation-pairing.ts --write {{files}}
 
 # Print translation briefs for out-of-sync pairs
 [group('docs')]
 docs-brief *files:
-    node scripts/gen-translation-brief.mjs {{files}}
+    node scripts/gen-translation-brief.ts {{files}}
 
 # Check recipe names and repository paths cited in Markdown
 [group('docs')]
 docs-refs-check:
-    node scripts/verify-repo-references.mjs
+    node scripts/verify-repo-references.ts
+
+# Type-check the repository scripts in scripts/ and design/
+[group('scripts')]
+scripts-type-check:
+    npx --no-install tsc -p .

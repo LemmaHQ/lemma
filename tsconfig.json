@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "lib": ["ES2024", "ES2025.RegExp"],
+        "module": "nodenext",
+        "types": ["node"],
+        "allowImportingTsExtensions": true,
+        "erasableSyntaxOnly": true
+    },
+    "include": ["scripts", "design"]
+}

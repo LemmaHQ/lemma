@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT_DIR, git, readText } from "./translation-pairing.mjs";
+import { ROOT_DIR, git, readText } from "./translation-pairing.ts";
 
 const EXCLUDED = /^\.agents\/skills\/lemma-code-style\/references\//;
 const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([\w-]*)/;
@@ -26,7 +26,7 @@ const tracked = git([
 ])
     .split("\0")
     .filter((file) => file && fs.existsSync(path.join(ROOT_DIR, file)));
-const existing = new Set();
+const existing = new Set<string>();
 for (const file of tracked) {
     const parts = file.split("/");
     for (let end = 1; end <= parts.length; end++) {
@@ -39,14 +39,14 @@ const topLevelDirs = new Set(
         .map((file) => file.split("/")[0]),
 );
 
-function repoPath(span) {
+function repoPath(span: string): string | null {
     if (/\s/.test(span) || PLACEHOLDER.test(span)) return null;
     const target = span.replace(/[#:].*$/, "").replace(/\/$/, "");
     const [first] = target.split("/");
     return target.includes("/") && topLevelDirs.has(first) ? target : null;
 }
 
-function ignoredPaths(paths) {
+function ignoredPaths(paths: string[]): Set<string> {
     if (paths.length === 0) return new Set();
     const candidates = paths.flatMap((p) => [p, `${p}/`]);
     let output = "";
@@ -61,7 +61,11 @@ function ignoredPaths(paths) {
             },
         );
     } catch (error) {
-        if (error.status !== 1) throw error;
+        const status =
+            error && typeof error === "object" && "status" in error
+                ? error.status
+                : undefined;
+        if (status !== 1) throw error;
     }
     return new Set(
         output
@@ -74,17 +78,22 @@ function ignoredPaths(paths) {
 const files = tracked
     .filter((file) => file.endsWith(".md") && !EXCLUDED.test(file))
     .sort();
-const problems = [];
-const pathRefs = [];
+const problems: string[] = [];
+const pathRefs: { where: string; target: string }[] = [];
 
-function checkRecipe(where, name) {
+function checkRecipe(where: string, name: string): void {
     if (!recipes.has(name))
         problems.push(`${where}: unknown recipe \`just ${name}\``);
 }
 
+interface Fence {
+    marker: string;
+    shell: boolean;
+}
+
 for (const file of files) {
-    const lines = readText(file).split("\n");
-    let fence = null;
+    const lines = readText(file)!.split("\n");
+    let fence: Fence | null = null;
     lines.forEach((line, index) => {
         const where = `${file}:${index + 1}`;
         const fenceMatch = line.match(FENCE);

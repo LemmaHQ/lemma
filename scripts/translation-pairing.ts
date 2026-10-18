@@ -4,6 +4,38 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+export interface Pair {
+    en: string;
+    zh: string;
+    record: string;
+}
+
+export interface Section {
+    level: number;
+    title: string;
+    start: number;
+    lines: string[];
+    end: number;
+    hash: string | null;
+}
+
+export interface Entry {
+    key: string;
+    index: number;
+    en: string;
+    zh: string | null;
+}
+
+export interface RecordEntry {
+    key: string;
+    en?: string;
+    zh?: string;
+}
+
+export type EntriesResult =
+    | { entries: Entry[]; error?: undefined }
+    | { entries?: undefined; error: string };
+
 export const ROOT_DIR = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
@@ -16,7 +48,7 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
 const RECORD_LINE = /^(\/\S*):$|^ {2}(en|zh): ([0-9a-f]{16})$/;
 
-export function git(args) {
+export function git(args: string[]): string {
     return execFileSync("git", args, {
         cwd: ROOT_DIR,
         encoding: "utf8",
@@ -24,17 +56,17 @@ export function git(args) {
     });
 }
 
-export const isExcluded = (file) =>
+export const isExcluded = (file: string): boolean =>
     EXCLUDED.some((pattern) => pattern.test(file));
 
-export function readText(file) {
+export function readText(file: string): string | null {
     const absolute = path.join(ROOT_DIR, file);
     return fs.existsSync(absolute)
         ? fs.readFileSync(absolute, "utf8").replace(/\r\n/g, "\n")
         : null;
 }
 
-export function pairOf(arg) {
+export function pairOf(arg: string): Pair {
     const file = path
         .relative(ROOT_DIR, path.resolve(arg))
         .split(path.sep)
@@ -47,7 +79,7 @@ export function pairOf(arg) {
     };
 }
 
-export function listPairs() {
+export function listPairs(): Pair[] {
     const files = git([
         "ls-files",
         "--cached",
@@ -60,7 +92,7 @@ export function listPairs() {
     ])
         .split("\0")
         .filter((file) => file && fs.existsSync(path.join(ROOT_DIR, file)));
-    const pairs = new Map();
+    const pairs = new Map<string, Pair>();
     for (const file of files) {
         const pair = pairOf(path.join(ROOT_DIR, file));
         pairs.set(pair.en, pair);
@@ -68,9 +100,11 @@ export function listPairs() {
     return [...pairs.values()].sort((a, b) => a.en.localeCompare(b.en));
 }
 
-export function splitSections(text) {
-    const sections = [{ level: 0, title: "", start: 1, lines: [] }];
-    let fence = null;
+export function splitSections(text: string): Section[] {
+    const sections: Section[] = [
+        { level: 0, title: "", start: 1, lines: [], end: 0, hash: null },
+    ];
+    let fence: string | null = null;
     text.split("\n").forEach((line, index) => {
         const fenceMatch = FENCE.exec(line);
         if (fence) {
@@ -91,10 +125,12 @@ export function splitSections(text) {
                     title: heading[2],
                     start: index + 1,
                     lines: [],
+                    end: 0,
+                    hash: null,
                 });
             }
         }
-        sections.at(-1).lines.push(line);
+        sections.at(-1)!.lines.push(line);
     });
     for (const section of sections) {
         const body = section.lines
@@ -110,16 +146,16 @@ export function splitSections(text) {
     return sections;
 }
 
-const slug = (title) =>
+const slug = (title: string): string =>
     title
         .toLowerCase()
         .replace(/[^\p{L}\p{N}\s_-]/gu, "")
         .trim()
         .replace(/\s/g, "-");
 
-export function sectionKeys(sections) {
-    const stack = [];
-    const seen = new Map();
+export function sectionKeys(sections: Section[]): string[] {
+    const stack: string[] = [];
+    const seen = new Map<string, number>();
     return sections.map((section) => {
         stack.length = Math.max(section.level - 1, 0);
         if (section.level > 0) {
@@ -132,16 +168,16 @@ export function sectionKeys(sections) {
     });
 }
 
-export function structureError(en, zh) {
+export function structureError(en: Section[], zh: Section[]): string | null {
     if (Boolean(en[0].hash) !== Boolean(zh[0].hash)) {
         return `text before the first heading exists on the ${en[0].hash ? "en" : "zh"} side only`;
     }
     const limit = Math.max(en.length, zh.length);
     for (let index = 1; index < limit; index += 1) {
-        const left = en[index];
-        const right = zh[index];
+        const left: Section | undefined = en[index];
+        const right: Section | undefined = zh[index];
         if (!left || !right || left.level !== right.level) {
-            const describe = (section, side) =>
+            const describe = (section: Section | undefined, side: string) =>
                 section
                     ? `"${"#".repeat(section.level)} ${section.title}" (${side} line ${section.start})`
                     : `nothing (${side})`;
@@ -151,7 +187,7 @@ export function structureError(en, zh) {
     return null;
 }
 
-export function computeEntries(enText, zhText) {
+export function computeEntries(enText: string, zhText: string): EntriesResult {
     const en = splitSections(enText);
     const zh = splitSections(zhText);
     const error = structureError(en, zh);
@@ -159,7 +195,7 @@ export function computeEntries(enText, zhText) {
         return { error };
     }
     const keys = sectionKeys(en);
-    const entries = [];
+    const entries: Entry[] = [];
     en.forEach((section, index) => {
         if (section.hash) {
             entries.push({
@@ -173,7 +209,7 @@ export function computeEntries(enText, zhText) {
     return { entries };
 }
 
-export const formatRecord = (pair, entries) =>
+export const formatRecord = (pair: Pair, entries: Entry[]): string =>
     [
         `# Translation-pairing record for ${path.posix.basename(pair.en)} (docs/i18n/README.md): one`,
         "# entry per heading section, holding a hash of its English and Chinese text.",
@@ -187,20 +223,22 @@ export const formatRecord = (pair, entries) =>
         "",
     ].join("\n");
 
-export function parseRecord(text) {
-    const entries = [];
+export function parseRecord(text: string): RecordEntry[] {
+    const entries: RecordEntry[] = [];
     for (const line of text.split("\n")) {
         const match = RECORD_LINE.exec(line);
-        if (match?.[1]) {
-            entries.push({ key: match[1] });
-        } else if (match && entries.length) {
-            entries.at(-1)[match[2]] = match[3];
+        if (!match) continue;
+        const [, key, side, hash] = match;
+        if (key) {
+            entries.push({ key });
+        } else if (side && hash && entries.length) {
+            entries.at(-1)![side as "en" | "zh"] = hash;
         }
     }
     return entries;
 }
 
-export function checkPair(pair) {
+export function checkPair(pair: Pair): string[] {
     const enText = readText(pair.en);
     const zhText = readText(pair.zh);
     const recordText = readText(pair.record);
@@ -217,17 +255,18 @@ export function checkPair(pair) {
     if (zhText === null) {
         return [`${pair.en} has no ${pair.zh}`];
     }
-    const { entries, error } = computeEntries(enText, zhText);
-    if (error) {
-        return [`${pair.en}: ${error}`];
+    const result = computeEntries(enText, zhText);
+    if (result.error !== undefined) {
+        return [`${pair.en}: ${result.error}`];
     }
+    const { entries } = result;
     if (recordText === null) {
         return [`${pair.en} has no ${pair.record}`];
     }
     if (recordText === formatRecord(pair, entries)) {
         return [];
     }
-    const recorded = new Map(
+    const recorded = new Map<string, RecordEntry>(
         parseRecord(recordText).map((entry) => [entry.key, entry]),
     );
     const current = new Set(entries.map((entry) => entry.key));
@@ -250,7 +289,7 @@ export function checkPair(pair) {
     ];
 }
 
-export function writeRecord(pair) {
+export function writeRecord(pair: Pair): void {
     const enText = readText(pair.en);
     const zhText = readText(pair.zh);
     if (enText === null || zhText === null) {
@@ -258,12 +297,12 @@ export function writeRecord(pair) {
             `${pair.en}: both ${pair.en} and ${pair.zh} must exist to record the pair`,
         );
     }
-    const { entries, error } = computeEntries(enText, zhText);
-    if (error) {
-        throw new Error(`${pair.en}: ${error}`);
+    const result = computeEntries(enText, zhText);
+    if (result.error !== undefined) {
+        throw new Error(`${pair.en}: ${result.error}`);
     }
     fs.writeFileSync(
         path.join(ROOT_DIR, pair.record),
-        formatRecord(pair, entries),
+        formatRecord(pair, result.entries),
     );
 }
