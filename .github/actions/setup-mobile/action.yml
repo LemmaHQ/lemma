@@ -1,5 +1,5 @@
 name: Setup mobile toolchain
-description: Install the tools the Android build runs, then generate the contract code it compiles.
+description: Install the tools the Android build runs.
 
 runs:
   using: composite
@@ -21,7 +21,3 @@ runs:
       uses: jdx/mise-action@v4
       with:
         install_args: java node buf protobuf just cargo:cargo-ndk
-
-    - name: Generate proto code
-      shell: bash
-      run: just proto-gen

@@ -28,7 +28,6 @@ scripts/      translation-pairing check and brief generator (docs/i18n/README.md
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
 just desktop-dev         # build lemma-server, then launch Electron
-just proto-gen           # regenerate web TypeScript and Android Kotlin from proto/
 just design-gen          # regenerate design tokens for web, desktop, and Android
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one

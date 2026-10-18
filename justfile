@@ -28,12 +28,6 @@ proto-fmt:
 proto-build:
     buf build
 
-# Generate contract code (web TS + mobile Kotlin)
-[group('proto')]
-[working-directory('proto')]
-proto-gen:
-    buf generate
-
 # Run clippy with warnings denied
 [group('rust')]
 rust-lint-check:
@@ -174,7 +168,6 @@ desktop-cov *args:
 [group('desktop')]
 [working-directory('desktop')]
 desktop-package:
-    just proto-gen
     just desktop-build
     npm run package
 

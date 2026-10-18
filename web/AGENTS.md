@@ -29,7 +29,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Generated files
 
-`src/gen/` comes from `just proto-gen`; `src/styles/tokens.css` comes from [design/tokens.json](../design/tokens.json) through `design/gen-tokens.mjs`, which `dev` and `build` run first. Git ignores both; edit their sources.
+`src/gen/` comes from `proto/` through the `gen:proto` script, which `dev`, `build`, `lint`, and `test` run first; `src/styles/tokens.css` comes from [design/tokens.json](../design/tokens.json) through `design/gen-tokens.mjs`, which `dev` and `build` run first. Git ignores both; edit their sources.
 
 ## Commands
 

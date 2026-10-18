@@ -23,7 +23,6 @@ With [mise](https://mise.jdx.dev/), Rust, and Docker installed:
 ```sh
 mise install
 npm ci
-just proto-gen
 cp .env.example .env
 docker compose up -d
 just web-build

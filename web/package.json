@@ -4,15 +4,19 @@
     "version": "0.1.0",
     "type": "module",
     "scripts": {
-        "predev": "node ../design/gen-tokens.mjs",
+        "gen:proto": "cd ../proto && buf generate",
+        "predev": "node ../design/gen-tokens.mjs && npm run gen:proto",
         "dev": "vite",
-        "prebuild": "node ../design/gen-tokens.mjs",
+        "prebuild": "node ../design/gen-tokens.mjs && npm run gen:proto",
         "build": "tsc -b && vite build",
-        "prebuild:desktop": "node ../design/gen-tokens.mjs",
+        "prebuild:desktop": "node ../design/gen-tokens.mjs && npm run gen:proto",
         "build:desktop": "tsc -b && vite build --base=./ --outDir ../desktop/web-dist --emptyOutDir",
+        "prelint": "npm run gen:proto",
         "lint": "eslint .",
         "preview": "vite preview",
+        "pretest": "npm run gen:proto",
         "test": "vitest run",
+        "pretest:cov": "npm run gen:proto",
         "test:cov": "vitest run --coverage",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
@@ -55,6 +59,7 @@
         "zustand": "^5.0.15"
     },
     "devDependencies": {
+        "@bufbuild/protoc-gen-es": "^2.16.0",
         "@codecov/vite-plugin": "^2.0.1",
         "@eslint/js": "^10.0.1",
         "@tailwindcss/vite": "^4.3.3",

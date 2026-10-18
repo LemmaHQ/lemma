@@ -1,0 +1,25 @@
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: java_multiple_files
+      value: true
+    - file_option: java_package_prefix
+      value: dev.lemmahq.gen
+plugins:
+  - protoc_builtin: java
+    out: ../mobile/shared/build/generated/source/bufgen
+    opt:
+      - lite
+  - protoc_builtin: kotlin
+    out: ../mobile/shared/build/generated/source/bufgen
+    opt:
+      - lite
+  - local:
+      [
+        "java",
+        "-jar",
+        "../mobile/shared/build/proto-generators/protoc-gen-connect-kotlin.jar",
+      ]
+    out: ../mobile/shared/build/generated/source/bufgen

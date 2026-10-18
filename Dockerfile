@@ -12,7 +12,6 @@ COPY proto ./proto
 COPY design ./design
 COPY web ./web
 ENV PATH="/app/node_modules/.bin:$PATH"
-RUN cd proto && buf generate
 RUN cd web && npm run build
 
 # Stage 2: Rust build.

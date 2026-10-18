@@ -95,11 +95,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # The renderer build compiles web/, which imports the generated
-      # contract code.
-      - name: Generate proto code
-        run: just proto-gen
-
       - name: Generate design tokens
         run: just design-gen
 

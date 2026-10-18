@@ -28,7 +28,6 @@ scripts/      双语配对检查与翻译简报生成器（docs/i18n/README.md�
 just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just desktop-dev         # 构建 lemma-server，再启动 Electron
-just proto-gen           # 从 proto/ 重新生成 web TypeScript 与 Android Kotlin 代码
 just design-gen          # 为 web、desktop 与 Android 重新生成设计 token
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对

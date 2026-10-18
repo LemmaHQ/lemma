@@ -21,6 +21,55 @@ val generateDesignTokens =
         outputs.dir(designTokensDir)
     }
 
+val hostOs = org.gradle.internal.os.OperatingSystem.current()
+val hostArch =
+    if (System.getProperty("os.arch") in setOf("aarch64", "arm64")) "aarch_64" else "x86_64"
+val protocClassifier =
+    when {
+        hostOs.isWindows -> "windows-x86_64"
+        hostOs.isMacOsX -> "osx-$hostArch"
+        else -> "linux-$hostArch"
+    }
+
+val protoGenerators by configurations.creating { isTransitive = false }
+val protoGeneratorsDir = layout.buildDirectory.dir("proto-generators")
+
+dependencies {
+    protoGenerators(
+        variantOf(libs.protoc) {
+            classifier(protocClassifier)
+            artifactType("exe")
+        }
+    )
+    protoGenerators(libs.connect.kotlin.protocGen)
+}
+
+val installProtoGenerators =
+    tasks.register<Sync>("installProtoGenerators") {
+        val protocName = if (hostOs.isWindows) "protoc.exe" else "protoc"
+        from(protoGenerators)
+        into(protoGeneratorsDir)
+        rename { name ->
+            if (name.endsWith(".jar")) "protoc-gen-connect-kotlin.jar" else protocName
+        }
+        filePermissions { user { execute = true } }
+    }
+
+val bufGeneratedDir = layout.buildDirectory.dir("generated/source/bufgen")
+
+val generateProtoBindings =
+    tasks.register<Exec>("generateProtoBindings") {
+        workingDir = rootProject.file("proto")
+        val javaBin = File(System.getProperty("java.home"), "bin")
+        val path = listOf(protoGeneratorsDir.get().asFile, javaBin, System.getenv("PATH"))
+        environment("PATH", path.joinToString(File.pathSeparator))
+        commandLine("buf", "generate", "--template", "buf.gen.mobile.yaml")
+        inputs.files(installProtoGenerators)
+        inputs.dir(rootProject.file("proto/lemma"))
+        inputs.file(rootProject.file("proto/buf.gen.mobile.yaml"))
+        outputs.dir(bufGeneratedDir)
+    }
+
 kotlin {
     android {
         namespace = "dev.lemmahq.lemma.shared"
@@ -57,7 +106,7 @@ kotlin {
             }
         }
         commonMain {
-            kotlin.srcDir("build/generated/source/bufgen")
+            kotlin.srcDir(generateProtoBindings)
             kotlin.srcDir(generateDesignTokens)
             dependencies {
                 implementation(libs.compose.runtime)
@@ -103,7 +152,7 @@ dependencies {
 
 androidComponents {
     onVariants {
-        it.sources.java?.addStaticSourceDirectory("build/generated/source/bufgen")
+        it.sources.java?.addStaticSourceDirectory(bufGeneratedDir.get().asFile.path)
     }
 }
 
@@ -198,7 +247,7 @@ val buildLemmaMobileJniLibs =
 
 tasks.configureEach {
     if (name.startsWith("compileAndroid")) {
-        dependsOn(generateUniffiBindings)
+        dependsOn(generateUniffiBindings, generateProtoBindings)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(buildLemmaMobileJniLibs)

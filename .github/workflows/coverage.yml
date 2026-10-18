@@ -104,10 +104,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Generated code is not committed; regenerate it first.
-      - name: Generate proto code
-        run: just proto-gen
-
       - name: Coverage
         # The junit reporter emits web/junit.xml for the test-results
         # upload below; the default reporter keeps the console log.

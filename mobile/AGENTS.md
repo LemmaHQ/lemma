@@ -16,7 +16,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 ## Modules and generated code
 
 - `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI, the SQLDelight database, and both generated binding sets.
-- Protobuf and Connect Kotlin code lands in `shared/build/generated/source/bufgen/` through `just proto-gen`.
+- Gradle generates the Protobuf and Connect Kotlin code into `shared/build/generated/source/bufgen/` before compiling Kotlin, running `buf` with `protoc` and `protoc-gen-connect-kotlin` from Maven at the runtime libraries' versions; this needs `buf` and Java ([proto/AGENTS.md](../proto/AGENTS.md)).
 - Gradle builds `crates/shared/lemma-mobile` for the host and generates its UniFFI Kotlin bindings into `shared/build/generated/source/uniffi/` before compiling Kotlin. Packaging the APK also cross-compiles its JNI libraries into `shared/src/androidMain/jniLibs/`, which needs `cargo-ndk` and an Android NDK. A public API change in `lemma-mobile` is a Kotlin API change.
 - Gradle runs `design/gen-tokens.mjs` before compiling, which writes `LemmaPalette`, the static palette from [design/tokens.json](../design/tokens.json), into `shared/build/generated/source/tokens/`; this needs Node. `theme/Scheme.kt` maps the palette onto the app's color roles.
 - Generated code is never edited or committed.

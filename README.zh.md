@@ -23,7 +23,6 @@ Lemma 用一个 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent
 ```sh
 mise install
 npm ci
-just proto-gen
 cp .env.example .env
 docker compose up -d
 just web-build

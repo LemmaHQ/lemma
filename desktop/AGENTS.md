@@ -21,5 +21,5 @@ just desktop-lint-check # eslint; desktop-lint applies fixes
 just desktop-fmt-check  # prettier --check; desktop-fmt formats
 just desktop-test       # vitest
 just desktop-cov        # vitest coverage
-just desktop-package    # proto-gen, renderer build, electron-forge package
+just desktop-package    # renderer build, electron-forge package
 ```

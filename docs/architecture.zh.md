@@ -40,7 +40,7 @@ Web 客户端按用户维护一份会话与消息的 IndexedDB 缓存（Dexie）
 
 ## 跨线路的契约
 
-`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`ConversationService`、`AgentService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它；`just proto-gen` 生成 Web 的 TypeScript 与 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`ConversationService`、`AgentService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 业务错误携带 `errors.proto` 中封闭枚举里的一个 `ErrorReason`，由 `lemma_proto::app_error` 作为 `ErrorInfo` detail 附加；客户端按原因码本地化。基础设施故障（数据库、解密、上游）返回 internal 级别的 Connect 错误，带原始英文信息，不带原因码。
 

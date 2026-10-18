@@ -24,11 +24,10 @@ From the repository root:
 ```sh
 mise install
 npm ci
-just proto-gen
 cp .env.example .env
 ```
 
-`npm ci` installs the `web` and `desktop` workspaces. Generated contract code is not committed, so `just proto-gen` runs after every clone and every `.proto` change ([proto/AGENTS.md](../proto/AGENTS.md)). In `.env`, set one database password in both `LEMMA_DB_PASSWORD` and `DATABASE_URL`, and replace both secrets.
+`npm ci` installs the `web` and `desktop` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)). In `.env`, set one database password in both `LEMMA_DB_PASSWORD` and `DATABASE_URL`, and replace both secrets.
 
 ### Run the server and the web client
 

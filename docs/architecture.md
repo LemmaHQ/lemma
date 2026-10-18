@@ -40,7 +40,7 @@ The web client keeps a per-user IndexedDB cache (Dexie) of conversations and mes
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `ConversationService`, and `AgentService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`; `just proto-gen` generates the web TypeScript and Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `ConversationService`, and `AgentService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 

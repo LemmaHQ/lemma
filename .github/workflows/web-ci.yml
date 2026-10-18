@@ -53,11 +53,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Generated code is not committed; regenerate it first.
-      # web/src/gen is excluded from prettier/eslint.
-      - name: Generate proto code
-        run: just proto-gen
-
       # tokens.css is generated from design/tokens.json and gitignored;
       # eslint's tailwindcss plugin resolves it via cssConfigPath.
       - name: Generate design tokens

@@ -24,11 +24,10 @@
 ```sh
 mise install
 npm ci
-just proto-gen
 cp .env.example .env
 ```
 
-`npm ci` 安装 `web` 与 `desktop` 两个 workspace。生成的契约代码不提交，因此每次克隆后、每次修改 `.proto` 后都要运行 `just proto-gen`（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。在 `.env` 中，让 `LEMMA_DB_PASSWORD` 与 `DATABASE_URL` 使用同一个数据库密码，并替换两个密钥。
+`npm ci` 安装 `web` 与 `desktop` 两个 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。在 `.env` 中，让 `LEMMA_DB_PASSWORD` 与 `DATABASE_URL` 使用同一个数据库密码，并替换两个密钥。
 
 ### 运行服务端与 Web 客户端
 
