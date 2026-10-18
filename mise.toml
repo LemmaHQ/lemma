@@ -11,3 +11,4 @@ protobuf = "36.2"
 ] }
 "cargo:cargo-llvm-cov" = "0.9.1"
 "cargo:cargo-nextest" = "0.9.145"
+"cargo:cargo-ndk" = "4.1.2"

@@ -50,14 +50,13 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 ### Run the Android app
 
-Android builds also need the Rust Android targets and `cargo-ndk`:
+Android builds also need the Rust Android targets; mise installs `cargo-ndk`:
 
 ```sh
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-cargo binstall cargo-ndk
 ```
 
-`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings and cross-compiles it for the four ABIs with `cargo-ndk`; `-Plemma.rust.profile=release` builds those libraries in release mode. The APK runs in local mode with no server, or in remote mode against a server URL entered in the app ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The APK runs in local mode with no server, or in remote mode against a server URL entered in the app ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 ## Reference
 

@@ -197,7 +197,7 @@ val buildLemmaMobileJniLibs =
 
 tasks.configureEach {
     if (name.startsWith("compileAndroid")) {
-        dependsOn(generateUniffiBindings, buildLemmaMobileJniLibs)
+        dependsOn(generateUniffiBindings)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(buildLemmaMobileJniLibs)

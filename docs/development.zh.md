@@ -50,14 +50,13 @@ just rust-dev
 
 ### 运行 Android 应用
 
-Android 构建还需要 Rust 的 Android target 与 `cargo-ndk`：
+Android 构建还需要 Rust 的 Android target；`cargo-ndk` 由 mise 安装：
 
 ```sh
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-cargo binstall cargo-ndk
 ```
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定，并用 `cargo-ndk` 为四种 ABI 交叉编译；`-Plemma.rust.profile=release` 以 release 模式构建这些库。APK 可以在本地模式下运行而无需服务端，也可以在远程模式下连接在应用中填写的服务端地址（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。APK 可以在本地模式下运行而无需服务端，也可以在远程模式下连接在应用中填写的服务端地址（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
 ## 参考
 
