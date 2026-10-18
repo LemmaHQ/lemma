@@ -170,7 +170,7 @@ jobs:
         run: just rust-test
 
   # Service containers run only on Linux runners, so the other platforms
-  # run the suite without DATABASE_URL and skip the PostgreSQL store tests.
+  # run the suite without DATABASE_URL.
   test-platforms:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

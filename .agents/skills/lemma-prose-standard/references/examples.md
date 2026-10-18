@@ -96,7 +96,7 @@ Keep the consequence of order or a surprising scope rule. Let the configuration 
 
 **Over-trimmed:** Rewording a `ToolSpec` description in a prose-only pass because it reads awkwardly.
 
-**Balanced:** Leave model-visible wording unchanged in a prose-only pass and report it. Change it in a task that owns tool behavior, state the change in the commit body, and exercise it with the local real-provider tests.
+**Balanced:** Leave model-visible wording unchanged in a prose-only pass and report it. Change it in a task that owns tool behavior, state the change in the commit body, and exercise it in a local-mode conversation against a real provider.
 
 Wording that reaches a model changes what the model does.
 

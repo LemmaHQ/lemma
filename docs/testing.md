@@ -6,15 +6,10 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 ## Tiers
 
-- **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; integration tests live in the crate's `tests/` directory and use only its public API.
-- **Real provider** (local only): tests that call a live vendor API read the key from an environment variable and carry `#[ignore]`, so `just rust-test` and CI skip them; `cargo test --workspace -- --ignored` runs them. Each provider kind has a smoke test that sends one prompt and expects `Done` with non-empty text, and one that completes a tool call.
+- **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): the tier covers the provider adapters' stream parsers; storage, the turn loop, the domain services, and the RPC services have no tests. Unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; an integration test goes in the crate's `tests/` directory and uses only its public API.
 - **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules, plus a check that `en.json` and `zh.json` hold the same keys; no test renders a React component.
 - **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): `src/engine.test.ts` covers the engine handshake in `src/engine.ts` with `electron` and `node:child_process` mocked: the ready line, payload validation, the startup timeout, an early exit, and stop.
 - **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device, locally and in Mobile CI.
-
-## Store tests
-
-Both storage backends run the same test cases, written against the store traits, so a migration added to one backend alone fails a test. SQLite store tests open `lemma_db_sqlite::connect_in_memory()` and run the migrations. PostgreSQL store tests run against the server in `DATABASE_URL` with one fresh database per test, and are skipped when `DATABASE_URL` is unset; the Rust CI test job and the Coverage job set it.
 
 ## Coverage
 
@@ -35,9 +30,9 @@ Compiling the workspace includes `lemma-server`, which embeds `web/dist`; Rust C
 
 ## Real implementations over mocks
 
-Only the model boundary is replaced, by recorded provider output; everything behind it runs the shipping code, on an in-memory backend where the code needs storage:
+Tests replace only the model boundary, with vendor output written into the test; everything behind it runs the shipping code, on an in-memory backend where the code needs storage:
 
-- Provider adapter tests feed a recorded vendor SSE payload through the adapter's parser as a byte stream and compare the complete `StreamEvent` sequence.
+- Provider adapter tests feed a vendor SSE payload written in the test through the adapter's parser as a byte stream and compare the complete `StreamEvent` sequence.
 - The web cache tests run the real Dexie database on `fake-indexeddb`.
 - The Android repository tests run the real SQLDelight schema on `JdbcSqliteDriver.IN_MEMORY`, and settings tests use `MapSettings`.
 - Time-dependent web logic fixes the clock with vitest fake timers.

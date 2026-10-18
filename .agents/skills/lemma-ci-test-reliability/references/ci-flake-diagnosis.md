@@ -18,7 +18,7 @@ Classify from recorded evidence, not from the eventual fix:
 - **Load-sensitive synchronization:** a sleep, polling interval, or assumed scheduler turn substitutes for observable readiness or completion.
 - **Platform or entry-path mismatch:** the failure follows an operating system, filesystem rule, or runner. CI runs Linux; a pass on a Windows workstation says nothing about the CI lane, and the reverse.
 - **Product concurrency defect:** the test controls its resources, reproduces deterministically with explicit overlap, and exposes a race in shipped behavior.
-- **External-provider transience:** the failure belongs to a live vendor API, which only the local `#[ignore]` tests call.
+- **External-provider transience:** the failure belongs to a live vendor API, which only a local `#[ignore]` test may call.
 - **Runner infrastructure:** checkout, toolchain install, dependency download, or the PostgreSQL service fails independently of the test command. Require direct runner evidence before assigning this class.
 
 If evidence supports more than one independent fact, report each one.

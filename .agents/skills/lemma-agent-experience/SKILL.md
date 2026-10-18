@@ -25,4 +25,4 @@ The models Lemma runs read two kinds of text from `lemma-tools`. Each tool adver
 
 ## Measure the change
 
-Wording that reaches a model is behavior. Compare the first step's input tokens, from the message usage a real-provider run records, before and after a tool-definition change, and exercise the changed tool with the local real-provider tests ([testing.md](../../../docs/testing.md#tiers)).
+Wording that reaches a model is behavior. Compare the first step's input tokens, from the message usage a real-provider run records, before and after a tool-definition change, and exercise the changed tool in a local-mode conversation (desktop or Android) against a real provider; server mode attaches no tools.

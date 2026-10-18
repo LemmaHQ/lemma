@@ -9,7 +9,7 @@ Build tests that stay correct under the repository's real execution topology, no
 
 ## Read the owning rules
 
-- [testing.md](../../../docs/testing.md) selects the tier: Rust unit or integration, store tests, web or desktop vitest, Android host tests, or the local real-provider tests.
+- [testing.md](../../../docs/testing.md) selects the tier: Rust unit or integration, web or desktop vitest, or Android host tests.
 - Read the owning [workflow](../../../.github/workflows/), the web client's [vite.config.ts](../../../web/vite.config.ts), and the desktop shell's [vitest.config.mts](../../../desktop/vitest.config.mts) when their job or worker topology affects the test.
 
 ## Model the execution topology
@@ -17,7 +17,7 @@ Build tests that stay correct under the repository's real execution topology, no
 The same test runs under more than one runner, and each layer can overlap with the others:
 
 1. **`cargo nextest`** (`just rust-test`, Rust CI, Coverage): each test is its own process, many in parallel; process isolation does not isolate the PostgreSQL server, ports, or paths.
-2. **`cargo test`** (focused local runs and the `--ignored` real-provider tests): tests of one binary run as threads in one process, so process-global state is shared between them.
+2. **`cargo test`** (focused local runs): tests of one binary run as threads in one process, so process-global state is shared between them.
 3. **vitest** (`just web-test`, `just desktop-test`, Web CI, Desktop CI, Coverage): files run in parallel workers in the `node` environment; tests in one file share module state.
 4. **Gradle** host tests for Android run on the JVM, locally and in Mobile CI, Coverage, and the CodeQL Kotlin scan.
 
@@ -75,7 +75,7 @@ Do not present these as root-cause fixes:
 - weakening an assertion;
 - adding a sleep before cleanup or assertion.
 
-Retries remain valid only at the real-provider boundary, in the local `#[ignore]` tests.
+Retries remain valid only at the real-provider boundary, in a local `#[ignore]` test that calls a live vendor API.
 
 ## Diagnose existing flakes
 

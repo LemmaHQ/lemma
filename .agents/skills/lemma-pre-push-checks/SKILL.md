@@ -38,7 +38,7 @@ Notes on the rows:
 - Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) need the user's consent first. Without it, report those rows as not run; never as passing.
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
 - Generated code is gitignored. The web npm scripts and Gradle regenerate the contract code before reading it; run `just design-gen` locally before a build that reads design tokens.
-- Real-provider behavior: when a change can alter what a model sees or does, also run the relevant `#[ignore]` tests with credentials (`cargo test -p <crate> -- --ignored`). Never print keys.
+- Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode conversation against a real provider. Never print keys.
 - When the change adds or alters an async, resource-owning, or global-state test, apply [lemma-ci-test-reliability](../lemma-ci-test-reliability/SKILL.md) first.
 
 Do not repeat a check that already passed on the same content merely because a commit or push follows.
