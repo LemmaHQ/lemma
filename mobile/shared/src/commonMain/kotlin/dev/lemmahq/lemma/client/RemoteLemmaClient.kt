@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.flow
 /** [LemmaClient] backed by a remote Lemma server over Connect RPC. */
 class RemoteLemmaClient(
     private val rpc: LemmaRpcClient,
-    private val settings: SettingsRepository
+    private val settings: SettingsRepository,
 ) : LemmaClient {
 
     override suspend fun login(login: String, password: String) {
@@ -35,10 +35,11 @@ class RemoteLemmaClient(
             this.password = password
         }
         when (val response = rpc.auth.login(request, emptyMap())) {
-            is ResponseMessage.Success -> persistTokens(
-                response.message.tokens.accessToken,
-                response.message.tokens.refreshToken
-            )
+            is ResponseMessage.Success ->
+                persistTokens(
+                    response.message.tokens.accessToken,
+                    response.message.tokens.refreshToken,
+                )
             is ResponseMessage.Failure -> throw response.cause
         }
     }
@@ -50,10 +51,11 @@ class RemoteLemmaClient(
             this.password = password
         }
         when (val response = rpc.auth.signUp(request, emptyMap())) {
-            is ResponseMessage.Success -> persistTokens(
-                response.message.tokens.accessToken,
-                response.message.tokens.refreshToken
-            )
+            is ResponseMessage.Success ->
+                persistTokens(
+                    response.message.tokens.accessToken,
+                    response.message.tokens.refreshToken,
+                )
             is ResponseMessage.Failure -> throw response.cause
         }
     }
@@ -63,7 +65,9 @@ class RemoteLemmaClient(
     }
 
     override suspend fun listProviders(): List<ClientProvider> {
-        return when (val response = rpc.provider.listProviders(listProvidersRequest {}, emptyMap())) {
+        return when (
+            val response = rpc.provider.listProviders(listProvidersRequest {}, emptyMap())
+        ) {
             is ResponseMessage.Success -> response.message.providersList.map { it.toClient() }
             is ResponseMessage.Failure -> throw response.cause
         }
@@ -123,7 +127,7 @@ class RemoteLemmaClient(
         kind: String,
         baseUrl: String,
         apiKey: String,
-        modelsPath: String
+        modelsPath: String,
     ): List<String> {
         val request = fetchModelsRequest {
             this.kind = providerKindEnum(kind)
@@ -138,10 +142,14 @@ class RemoteLemmaClient(
     }
 
     override suspend fun createConversation(): ClientConversation {
-        return when (val response = rpc.conversation.createConversation(createConversationRequest {}, emptyMap())) {
-            is ResponseMessage.Success -> response.message.conversation.let {
-                ClientConversation(id = it.id, title = it.title)
-            }
+        return when (
+            val response =
+                rpc.conversation.createConversation(createConversationRequest {}, emptyMap())
+        ) {
+            is ResponseMessage.Success ->
+                response.message.conversation.let {
+                    ClientConversation(id = it.id, title = it.title)
+                }
             is ResponseMessage.Failure -> throw response.cause
         }
     }
@@ -149,17 +157,18 @@ class RemoteLemmaClient(
     override suspend fun listMessages(conversationId: String): List<ClientMessage> {
         val request = listMessagesRequest { this.conversationId = conversationId }
         return when (val response = rpc.conversation.listMessages(request, emptyMap())) {
-            is ResponseMessage.Success -> response.message.messagesList.map {
-                ClientMessage(
-                    id = it.id,
-                    role = it.role,
-                    content = it.content,
-                    providerId = it.providerId.ifBlank { null },
-                    model = it.model.ifBlank { null },
-                    createdAtSeconds = it.createdAt.seconds,
-                    updatedAtSeconds = it.updatedAt.seconds
-                )
-            }
+            is ResponseMessage.Success ->
+                response.message.messagesList.map {
+                    ClientMessage(
+                        id = it.id,
+                        role = it.role,
+                        content = it.content,
+                        providerId = it.providerId.ifBlank { null },
+                        model = it.model.ifBlank { null },
+                        createdAtSeconds = it.createdAt.seconds,
+                        updatedAtSeconds = it.updatedAt.seconds,
+                    )
+                }
             is ResponseMessage.Failure -> throw response.cause
         }
     }
@@ -169,16 +178,18 @@ class RemoteLemmaClient(
         content: String,
         providerId: String,
         model: String,
-        clientMsgId: String
+        clientMsgId: String,
     ): Flow<AgentStreamEvent> = flow {
         val stream = rpc.agent.sendMessage(emptyMap())
-        stream.sendAndClose(sendMessageRequest {
-            this.conversationId = conversationId
-            this.content = content
-            this.providerId = providerId
-            this.model = model
-            this.clientMsgId = clientMsgId
-        })
+        stream.sendAndClose(
+            sendMessageRequest {
+                this.conversationId = conversationId
+                this.content = content
+                this.providerId = providerId
+                this.model = model
+                this.clientMsgId = clientMsgId
+            }
+        )
         for (response in stream.responseChannel()) {
             val event = response.event
             when {
@@ -186,22 +197,31 @@ class RemoteLemmaClient(
                     emit(AgentStreamEvent.Delta(event.delta.text.content))
                 event.hasDelta() && event.delta.hasThinking() ->
                     emit(AgentStreamEvent.ThinkingDelta(event.delta.thinking.content))
-                event.hasStarted() ->
-                    emit(AgentStreamEvent.Started(event.started.messageId))
+                event.hasStarted() -> emit(AgentStreamEvent.Started(event.started.messageId))
                 event.hasTurnStarted() ->
                     emit(AgentStreamEvent.TurnStarted(event.turnStarted.messageId))
-                event.hasToolCallStarted() -> event.toolCallStarted.let {
-                    emit(AgentStreamEvent.ToolStarted(it.callId, it.name, it.arguments))
-                }
-                event.hasToolCallFinished() -> event.toolCallFinished.let {
-                    emit(AgentStreamEvent.ToolFinished(it.callId, it.name, it.content, it.isError))
-                }
-                event.hasDone() -> emit(
-                    AgentStreamEvent.Done(
-                        promptTokens = event.done.usage.promptTokens.toLong(),
-                        completionTokens = event.done.usage.completionTokens.toLong()
+                event.hasToolCallStarted() ->
+                    event.toolCallStarted.let {
+                        emit(AgentStreamEvent.ToolStarted(it.callId, it.name, it.arguments))
+                    }
+                event.hasToolCallFinished() ->
+                    event.toolCallFinished.let {
+                        emit(
+                            AgentStreamEvent.ToolFinished(
+                                it.callId,
+                                it.name,
+                                it.content,
+                                it.isError,
+                            )
+                        )
+                    }
+                event.hasDone() ->
+                    emit(
+                        AgentStreamEvent.Done(
+                            promptTokens = event.done.usage.promptTokens.toLong(),
+                            completionTokens = event.done.usage.completionTokens.toLong(),
+                        )
                     )
-                )
                 event.hasError() -> emit(AgentStreamEvent.Error(event.error.message))
             }
         }
@@ -224,7 +244,7 @@ private fun Provider.toClient(): ClientProvider {
         modelsPath = modelsPath,
         models = modelsList,
         enabled = enabled,
-        hasApiKey = apiKey.isNotBlank()
+        hasApiKey = apiKey.isNotBlank(),
     )
 }
 

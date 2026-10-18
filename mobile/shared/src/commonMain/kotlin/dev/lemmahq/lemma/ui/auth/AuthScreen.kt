@@ -37,7 +37,7 @@ fun AuthScreen(
     showSkip: Boolean,
     onAuthSuccess: () -> Unit,
     onChangeMode: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var isLoginMode by remember { mutableStateOf(true) }
     var username by remember { mutableStateOf("") }
@@ -48,21 +48,18 @@ fun AuthScreen(
     val scope = rememberCoroutineScope()
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LemmaTheme.colors.background)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background).padding(24.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = if (isLoginMode) "Sign In" else "Create Account",
                 style = LemmaTheme.typography.titleLarge,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -70,7 +67,7 @@ fun AuthScreen(
             Text(
                 text = connectionLabel,
                 style = LemmaTheme.typography.labelSmall,
-                color = LemmaTheme.colors.textTertiary
+                color = LemmaTheme.colors.textTertiary,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -83,7 +80,7 @@ fun AuthScreen(
                         errorMessage = null
                     },
                     placeholder = "Username",
-                    enabled = !isLoading
+                    enabled = !isLoading,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -95,7 +92,7 @@ fun AuthScreen(
                     errorMessage = null
                 },
                 placeholder = if (isLoginMode) "Username or Email" else "Email",
-                enabled = !isLoading
+                enabled = !isLoading,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -107,7 +104,7 @@ fun AuthScreen(
                     errorMessage = null
                 },
                 placeholder = "Password",
-                enabled = !isLoading
+                enabled = !isLoading,
             )
 
             if (errorMessage != null) {
@@ -116,7 +113,7 @@ fun AuthScreen(
                     text = errorMessage.orEmpty(),
                     style = LemmaTheme.typography.labelSmall,
                     color = LemmaTheme.colors.danger,
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 )
             }
 
@@ -125,13 +122,17 @@ fun AuthScreen(
             if (isLoading) {
                 CircularProgressIndicator(
                     color = LemmaTheme.colors.primary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             } else {
                 LemmaButton(
                     text = if (isLoginMode) "Sign In" else "Sign Up",
                     onClick = {
-                        if (email.isBlank() || password.isBlank() || (!isLoginMode && username.isBlank())) {
+                        if (
+                            email.isBlank() ||
+                                password.isBlank() ||
+                                (!isLoginMode && username.isBlank())
+                        ) {
                             errorMessage = "Please fill in all required fields"
                             return@LemmaButton
                         }
@@ -155,7 +156,7 @@ fun AuthScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    variant = LemmaButtonVariant.Primary
+                    variant = LemmaButtonVariant.Primary,
                 )
             }
 
@@ -164,40 +165,42 @@ fun AuthScreen(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = if (isLoginMode) "No account? Sign up" else "Have an account? Sign in",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.primary,
-                    modifier = Modifier.clickable {
-                        isLoginMode = !isLoginMode
-                        errorMessage = null
-                    }
+                    modifier =
+                        Modifier.clickable {
+                            isLoginMode = !isLoginMode
+                            errorMessage = null
+                        },
                 )
 
                 Text(
                     text = if (showSkip) "Skip" else "Change server",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textTertiary,
-                    modifier = Modifier.clickable {
-                        if (showSkip) {
-                            isLoading = true
-                            errorMessage = null
-                            scope.launch {
-                                try {
-                                    client.useDefaultAccount()
-                                    onAuthSuccess()
-                                } catch (e: Exception) {
-                                    errorMessage = e.message ?: "Authentication failed"
-                                } finally {
-                                    isLoading = false
+                    modifier =
+                        Modifier.clickable {
+                            if (showSkip) {
+                                isLoading = true
+                                errorMessage = null
+                                scope.launch {
+                                    try {
+                                        client.useDefaultAccount()
+                                        onAuthSuccess()
+                                    } catch (e: Exception) {
+                                        errorMessage = e.message ?: "Authentication failed"
+                                    } finally {
+                                        isLoading = false
+                                    }
                                 }
+                            } else {
+                                onChangeMode()
                             }
-                        } else {
-                            onChangeMode()
-                        }
-                    }
+                        },
                 )
             }
         }

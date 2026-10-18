@@ -30,7 +30,7 @@ import dev.lemmahq.lemma.ui.setup.SetupScreen
 @Composable
 fun App(
     localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
-    localClientFactory: (suspend (SettingsRepository) -> LemmaClient)? = null
+    localClientFactory: (suspend (SettingsRepository) -> LemmaClient)? = null,
 ) {
     val settingsRepository = remember { DefaultSettingsRepository() }
     var appMode by remember {
@@ -42,37 +42,37 @@ fun App(
     var currentServerUrl by remember { mutableStateOf(settingsRepository.getServerUrl()) }
     var currentAccessToken by remember { mutableStateOf(settingsRepository.getAccessToken()) }
     val themeMode = remember { settingsRepository.getThemeMode() }
-    val isDark = when (themeMode) {
-        DefaultSettingsRepository.THEME_DARK -> true
-        DefaultSettingsRepository.THEME_LIGHT -> false
-        else -> isSystemInDarkTheme()
-    }
+    val isDark =
+        when (themeMode) {
+            DefaultSettingsRepository.THEME_DARK -> true
+            DefaultSettingsRepository.THEME_LIGHT -> false
+            else -> isSystemInDarkTheme()
+        }
     var showProviders by remember { mutableStateOf(false) }
     var providersNonce by remember { mutableStateOf(0) }
 
-    val client by produceState<LemmaClient?>(null, appMode, currentServerUrl) {
-        value = when {
-            appMode == DefaultSettingsRepository.MODE_REMOTE && !currentServerUrl.isNullOrBlank() ->
-                RemoteLemmaClient(
-                    LemmaRpcClient(
-                        host = currentServerUrl.orEmpty(),
-                        tokenProvider = { settingsRepository.getAccessToken() },
-                        settingsRepository = settingsRepository
-                    ),
-                    settingsRepository
-                )
-            appMode == DefaultSettingsRepository.MODE_LOCAL && localClientFactory != null ->
-                localClientFactory.invoke(settingsRepository)
-            else -> null
+    val client by
+        produceState<LemmaClient?>(null, appMode, currentServerUrl) {
+            value =
+                when {
+                    appMode == DefaultSettingsRepository.MODE_REMOTE &&
+                        !currentServerUrl.isNullOrBlank() ->
+                        RemoteLemmaClient(
+                            LemmaRpcClient(
+                                host = currentServerUrl.orEmpty(),
+                                tokenProvider = { settingsRepository.getAccessToken() },
+                                settingsRepository = settingsRepository,
+                            ),
+                            settingsRepository,
+                        )
+                    appMode == DefaultSettingsRepository.MODE_LOCAL && localClientFactory != null ->
+                        localClientFactory.invoke(settingsRepository)
+                    else -> null
+                }
         }
-    }
 
     LemmaTheme(darkTheme = isDark) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-        ) {
+        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             when {
                 appMode.isNullOrBlank() -> {
                     SetupScreen(
@@ -86,7 +86,7 @@ fun App(
                         onLocalSelected = {
                             settingsRepository.setAppMode(DefaultSettingsRepository.MODE_LOCAL)
                             appMode = DefaultSettingsRepository.MODE_LOCAL
-                        }
+                        },
                     )
                 }
                 currentAccessToken.isNullOrBlank() -> {
@@ -96,11 +96,12 @@ fun App(
                     } else {
                         AuthScreen(
                             client = ready,
-                            connectionLabel = if (appMode == DefaultSettingsRepository.MODE_LOCAL) {
-                                "Running locally on this device"
-                            } else {
-                                "Connected to $currentServerUrl"
-                            },
+                            connectionLabel =
+                                if (appMode == DefaultSettingsRepository.MODE_LOCAL) {
+                                    "Running locally on this device"
+                                } else {
+                                    "Connected to $currentServerUrl"
+                                },
                             showSkip = appMode == DefaultSettingsRepository.MODE_LOCAL,
                             onAuthSuccess = {
                                 currentAccessToken = settingsRepository.getAccessToken()
@@ -112,7 +113,7 @@ fun App(
                                 appMode = null
                                 currentServerUrl = null
                                 currentAccessToken = null
-                            }
+                            },
                         )
                     }
                 }
@@ -126,7 +127,7 @@ fun App(
                             onBack = {
                                 showProviders = false
                                 providersNonce++
-                            }
+                            },
                         )
                     } else {
                         key(providersNonce) {
@@ -138,7 +139,7 @@ fun App(
                                     currentAccessToken = null
                                 },
                                 onManageProviders = { showProviders = true },
-                                localChatRepository = localChatRepository
+                                localChatRepository = localChatRepository,
                             )
                         }
                     }

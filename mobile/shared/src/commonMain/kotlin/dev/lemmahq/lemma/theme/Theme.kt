@@ -12,25 +12,19 @@ val LocalLemmaShapes = staticCompositionLocalOf { LemmaShapes() }
 
 object LemmaTheme {
     val colors: LemmaColorScheme
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalLemmaColors.current
+        @Composable @ReadOnlyComposable get() = LocalLemmaColors.current
 
     val typography: LemmaTypography
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalLemmaTypography.current
+        @Composable @ReadOnlyComposable get() = LocalLemmaTypography.current
 
     val shapes: LemmaShapes
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalLemmaShapes.current
+        @Composable @ReadOnlyComposable get() = LocalLemmaShapes.current
 }
 
 @Composable
 fun LemmaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) DarkLemmaColorScheme else LightLemmaColorScheme
     val typography = LemmaTypography()
@@ -40,6 +34,6 @@ fun LemmaTheme(
         LocalLemmaColors provides colorScheme,
         LocalLemmaTypography provides typography,
         LocalLemmaShapes provides shapes,
-        content = content
+        content = content,
     )
 }

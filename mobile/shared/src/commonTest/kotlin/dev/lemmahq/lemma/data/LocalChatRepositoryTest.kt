@@ -2,9 +2,9 @@ package dev.lemmahq.lemma.data
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.lemmahq.lemma.db.LemmaDatabase
-import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.runBlocking
 
 class LocalChatRepositoryTest {
 
@@ -27,7 +27,7 @@ class LocalChatRepositoryTest {
             status = 1,
             createdAt = 1000L,
             updatedAt = 2000L,
-            syncSeq = 10L
+            syncSeq = 10L,
         )
 
         val convs = repo.getConversations()
@@ -43,7 +43,7 @@ class LocalChatRepositoryTest {
             status = 2,
             createdAt = 1000L,
             updatedAt = 1000L,
-            syncSeq = 11L
+            syncSeq = 11L,
         )
 
         val msgs = repo.getMessages("conv_1")

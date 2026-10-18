@@ -13,7 +13,7 @@ import org.json.JSONObject
 
 class TokenAuthenticator(
     private val host: String,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
 ) : Authenticator {
 
     private val refreshClient = OkHttpClient()
@@ -31,10 +31,12 @@ class TokenAuthenticator(
 
         synchronized(this) {
             val currentAccessToken = settingsRepository.getAccessToken()
-            val requestHeaderToken = response.request.header("Authorization")?.removePrefix("Bearer ")
+            val requestHeaderToken =
+                response.request.header("Authorization")?.removePrefix("Bearer ")
 
             if (currentAccessToken != null && currentAccessToken != requestHeaderToken) {
-                return response.request.newBuilder()
+                return response.request
+                    .newBuilder()
                     .header("Authorization", "Bearer $currentAccessToken")
                     .build()
             }
@@ -44,9 +46,7 @@ class TokenAuthenticator(
             }
 
             return if (refreshed != null) {
-                response.request.newBuilder()
-                    .header("Authorization", "Bearer $refreshed")
-                    .build()
+                response.request.newBuilder().header("Authorization", "Bearer $refreshed").build()
             } else {
                 settingsRepository.clearAuth()
                 null
@@ -56,14 +56,18 @@ class TokenAuthenticator(
 
     private fun tryRefresh(refreshToken: String): String? {
         val refreshUrl = host.trimEnd('/') + "/lemma.v1.AuthService/Refresh"
-        val jsonPayload = JSONObject().apply {
-            put("refreshToken", refreshToken)
-        }.toString()
+        val jsonPayload =
+            JSONObject()
+                .apply {
+                    put("refreshToken", refreshToken)
+                }
+                .toString()
 
-        val request = Request.Builder()
-            .url(refreshUrl)
-            .post(jsonPayload.toRequestBody("application/json".toMediaType()))
-            .build()
+        val request =
+            Request.Builder()
+                .url(refreshUrl)
+                .post(jsonPayload.toRequestBody("application/json".toMediaType()))
+                .build()
 
         return try {
             val res = refreshClient.newCall(request).execute()

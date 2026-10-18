@@ -20,15 +20,17 @@ import okhttp3.OkHttpClient
 class LemmaRpcClient(
     val host: String,
     private val tokenProvider: () -> String? = { null },
-    private val settingsRepository: SettingsRepository? = null
+    private val settingsRepository: SettingsRepository? = null,
 ) {
-    private val okHttpClient = ConnectOkHttpClient.configureClient(
-        OkHttpClient.Builder().apply {
-            if (settingsRepository != null) {
-                authenticator(TokenAuthenticator(host, settingsRepository))
-            }
-        }
-    ).build()
+    private val okHttpClient =
+        ConnectOkHttpClient.configureClient(
+                OkHttpClient.Builder().apply {
+                    if (settingsRepository != null) {
+                        authenticator(TokenAuthenticator(host, settingsRepository))
+                    }
+                }
+            )
+            .build()
 
     private val authInterceptor: (ProtocolClientConfig) -> Interceptor = {
         object : Interceptor {
@@ -39,11 +41,12 @@ class LemmaRpcClient(
                         if (token.isNullOrBlank()) {
                             req
                         } else {
-                            val headers: Headers = req.headers + mapOf("authorization" to listOf("Bearer $token"))
+                            val headers: Headers =
+                                req.headers + mapOf("authorization" to listOf("Bearer $token"))
                             req.clone(headers = headers)
                         }
                     },
-                    responseFunction = { it }
+                    responseFunction = { it },
                 )
             }
 
@@ -54,26 +57,29 @@ class LemmaRpcClient(
                         if (token.isNullOrBlank()) {
                             req
                         } else {
-                            val headers: Headers = req.headers + mapOf("authorization" to listOf("Bearer $token"))
+                            val headers: Headers =
+                                req.headers + mapOf("authorization" to listOf("Bearer $token"))
                             req.clone(headers = headers)
                         }
                     },
                     requestBodyFunction = { it },
-                    streamResultFunction = { it }
+                    streamResultFunction = { it },
                 )
             }
         }
     }
 
-    val protocolClient = ProtocolClient(
-        httpClient = ConnectOkHttpClient(okHttpClient),
-        config = ProtocolClientConfig(
-            host = host,
-            serializationStrategy = GoogleJavaLiteProtobufStrategy(),
-            ioCoroutineContext = Dispatchers.IO,
-            interceptors = listOf(authInterceptor)
+    val protocolClient =
+        ProtocolClient(
+            httpClient = ConnectOkHttpClient(okHttpClient),
+            config =
+                ProtocolClientConfig(
+                    host = host,
+                    serializationStrategy = GoogleJavaLiteProtobufStrategy(),
+                    ioCoroutineContext = Dispatchers.IO,
+                    interceptors = listOf(authInterceptor),
+                ),
         )
-    )
 
     val auth = AuthServiceClient(protocolClient)
     val agent = AgentServiceClient(protocolClient)

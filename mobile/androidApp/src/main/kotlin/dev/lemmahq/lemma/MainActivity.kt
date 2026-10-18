@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 localChatRepository = repo,
                 localClientFactory = { settings ->
                     LocalLemmaClient.create(applicationContext, settings)
-                }
+                },
             )
         }
     }

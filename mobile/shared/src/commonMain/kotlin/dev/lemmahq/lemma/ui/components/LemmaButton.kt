@@ -16,7 +16,7 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 enum class LemmaButtonVariant {
     Primary,
     Secondary,
-    Ghost
+    Ghost,
 }
 
 @Composable
@@ -25,32 +25,40 @@ fun LemmaButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     variant: LemmaButtonVariant = LemmaButtonVariant.Primary,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
-    val backgroundColor = when (variant) {
-        LemmaButtonVariant.Primary -> if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
-        LemmaButtonVariant.Secondary -> if (enabled) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
-        LemmaButtonVariant.Ghost -> Color.Transparent
-    }
+    val backgroundColor =
+        when (variant) {
+            LemmaButtonVariant.Primary ->
+                if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
+            LemmaButtonVariant.Secondary ->
+                if (enabled) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
+            LemmaButtonVariant.Ghost -> Color.Transparent
+        }
 
-    val textColor = when (variant) {
-        LemmaButtonVariant.Primary -> if (enabled) Color.White else LemmaTheme.colors.textQuaternary
-        LemmaButtonVariant.Secondary -> if (enabled) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textQuaternary
-        LemmaButtonVariant.Ghost -> if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.textQuaternary
-    }
+    val textColor =
+        when (variant) {
+            LemmaButtonVariant.Primary ->
+                if (enabled) Color.White else LemmaTheme.colors.textQuaternary
+            LemmaButtonVariant.Secondary ->
+                if (enabled) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textQuaternary
+            LemmaButtonVariant.Ghost ->
+                if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.textQuaternary
+        }
 
     Box(
-        modifier = modifier
-            .clip(LemmaTheme.shapes.full)
-            .background(backgroundColor)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .clip(LemmaTheme.shapes.full)
+                .background(backgroundColor)
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             color = textColor,
-            style = LemmaTheme.typography.bodyMedium
+            style = LemmaTheme.typography.bodyMedium,
         )
     }
 }

@@ -13,7 +13,7 @@ data class ClientProvider(
     val modelsPath: String,
     val models: List<String>,
     val enabled: Boolean,
-    val hasApiKey: Boolean
+    val hasApiKey: Boolean,
 )
 
 /** Input for creating a provider; `identifier` is immutable afterwards. */
@@ -25,7 +25,7 @@ data class ClientProviderInput(
     val apiKey: String = "",
     val apiPath: String = "",
     val modelsPath: String = "",
-    val models: List<String> = emptyList()
+    val models: List<String> = emptyList(),
 )
 
 /** Patch input for updating a provider; null fields keep current values. */
@@ -36,13 +36,13 @@ data class ClientProviderPatch(
     val apiPath: String? = null,
     val modelsPath: String? = null,
     val enabled: Boolean? = null,
-    val models: List<String>? = null
+    val models: List<String>? = null,
 )
 
 /** A conversation summary as surfaced to the UI. */
 data class ClientConversation(
     val id: String,
-    val title: String
+    val title: String,
 )
 
 /** A persisted message as surfaced to the UI. */
@@ -53,7 +53,7 @@ data class ClientMessage(
     val providerId: String?,
     val model: String?,
     val createdAtSeconds: Long,
-    val updatedAtSeconds: Long
+    val updatedAtSeconds: Long,
 )
 
 /** One streamed event of an agent turn. */
@@ -72,14 +72,15 @@ sealed interface AgentStreamEvent {
     data class ThinkingDelta(val text: String) : AgentStreamEvent
 
     /** A tool call is about to execute. */
-    data class ToolStarted(val id: String, val name: String, val arguments: String) : AgentStreamEvent
+    data class ToolStarted(val id: String, val name: String, val arguments: String) :
+        AgentStreamEvent
 
     /** A tool call finished executing. */
     data class ToolFinished(
         val id: String,
         val name: String,
         val content: String,
-        val isError: Boolean
+        val isError: Boolean,
     ) : AgentStreamEvent
 
     /** The turn completed and the assistant message persisted. */
@@ -117,7 +118,12 @@ interface LemmaClient {
     suspend fun fetchProviderModels(id: String): List<String>
 
     /** Fetches the live model list for ad-hoc connection details. */
-    suspend fun fetchModels(kind: String, baseUrl: String, apiKey: String, modelsPath: String): List<String>
+    suspend fun fetchModels(
+        kind: String,
+        baseUrl: String,
+        apiKey: String,
+        modelsPath: String,
+    ): List<String>
 
     /** Creates an empty conversation. */
     suspend fun createConversation(): ClientConversation
@@ -125,12 +131,14 @@ interface LemmaClient {
     /** Lists a conversation's settled messages. */
     suspend fun listMessages(conversationId: String): List<ClientMessage>
 
-    /** Streams one agent turn, terminating with [AgentStreamEvent.Done] or [AgentStreamEvent.Error]. */
+    /**
+     * Streams one agent turn, terminating with [AgentStreamEvent.Done] or [AgentStreamEvent.Error].
+     */
     fun sendMessage(
         conversationId: String,
         content: String,
         providerId: String,
         model: String,
-        clientMsgId: String
+        clientMsgId: String,
     ): Flow<AgentStreamEvent>
 }

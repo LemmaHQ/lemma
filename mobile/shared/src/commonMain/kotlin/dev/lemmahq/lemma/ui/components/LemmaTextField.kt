@@ -20,20 +20,21 @@ fun LemmaTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     enabled: Boolean = true,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(LemmaTheme.shapes.medium)
-            .background(LemmaTheme.colors.fill2)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(LemmaTheme.shapes.medium)
+                .background(LemmaTheme.colors.fill2)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         if (value.isEmpty()) {
             Text(
                 text = placeholder,
                 color = LemmaTheme.colors.textTertiary,
-                style = LemmaTheme.typography.bodyLarge
+                style = LemmaTheme.typography.bodyLarge,
             )
         }
         BasicTextField(
@@ -41,11 +42,9 @@ fun LemmaTextField(
             onValueChange = onValueChange,
             enabled = enabled,
             singleLine = singleLine,
-            textStyle = LemmaTheme.typography.bodyLarge.copy(
-                color = LemmaTheme.colors.textPrimary
-            ),
+            textStyle = LemmaTheme.typography.bodyLarge.copy(color = LemmaTheme.colors.textPrimary),
             cursorBrush = SolidColor(LemmaTheme.colors.primary),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

@@ -12,40 +12,41 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 
 enum class LemmaBubbleRole {
     User,
-    Assistant
+    Assistant,
 }
 
 @Composable
 fun LemmaBubble(
     text: String,
     role: LemmaBubbleRole,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = when (role) {
-        LemmaBubbleRole.User -> LemmaTheme.colors.userBubble
-        LemmaBubbleRole.Assistant -> LemmaTheme.colors.assistantBubble
-    }
+    val backgroundColor =
+        when (role) {
+            LemmaBubbleRole.User -> LemmaTheme.colors.userBubble
+            LemmaBubbleRole.Assistant -> LemmaTheme.colors.assistantBubble
+        }
 
-    val textColor = when (role) {
-        LemmaBubbleRole.User -> LemmaTheme.colors.userBubbleText
-        LemmaBubbleRole.Assistant -> LemmaTheme.colors.assistantBubbleText
-    }
+    val textColor =
+        when (role) {
+            LemmaBubbleRole.User -> LemmaTheme.colors.userBubbleText
+            LemmaBubbleRole.Assistant -> LemmaTheme.colors.assistantBubbleText
+        }
 
     Box(
-        modifier = modifier
-            .clip(LemmaTheme.shapes.large)
-            .background(backgroundColor)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+        modifier =
+            modifier
+                .clip(LemmaTheme.shapes.large)
+                .background(backgroundColor)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         if (role == LemmaBubbleRole.Assistant) {
-            LemmaMarkdown(
-                content = text
-            )
+            LemmaMarkdown(content = text)
         } else {
             Text(
                 text = text,
                 color = textColor,
-                style = LemmaTheme.typography.bodyLarge
+                style = LemmaTheme.typography.bodyLarge,
             )
         }
     }

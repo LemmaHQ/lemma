@@ -52,7 +52,7 @@ private val IDENTIFIER_PATTERN = Regex("^[a-z0-9][a-z0-9-]*$")
 fun ProvidersScreen(
     client: LemmaClient,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     var providers by remember { mutableStateOf<List<ClientProvider>>(emptyList()) }
@@ -78,26 +78,23 @@ fun ProvidersScreen(
     LaunchedEffect(Unit) { reload() }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LemmaTheme.colors.background)
-            .padding(16.dp)
+        modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background).padding(16.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 text = "‹",
                 style = LemmaTheme.typography.titleLarge,
                 color = LemmaTheme.colors.textPrimary,
-                modifier = Modifier.clickable(onClick = onBack)
+                modifier = Modifier.clickable(onClick = onBack),
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Providers",
                 style = LemmaTheme.typography.titleLarge,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
         }
 
@@ -107,7 +104,7 @@ fun ProvidersScreen(
             text = "+ Add Provider",
             onClick = { showAddDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            variant = LemmaButtonVariant.Primary
+            variant = LemmaButtonVariant.Primary,
         )
 
         errorMessage?.let { message ->
@@ -115,7 +112,7 @@ fun ProvidersScreen(
             Text(
                 text = message,
                 style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.danger
+                color = LemmaTheme.colors.danger,
             )
         }
 
@@ -124,16 +121,14 @@ fun ProvidersScreen(
         if (isLoading) {
             CircularProgressIndicator(
                 color = LemmaTheme.colors.primary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .align(Alignment.CenterHorizontally)
+                modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
             )
         } else if (providers.isEmpty()) {
             Text(
                 text = "No providers configured yet",
                 style = LemmaTheme.typography.bodyMedium,
                 color = LemmaTheme.colors.textTertiary,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -143,7 +138,10 @@ fun ProvidersScreen(
                         onToggleEnabled = { enabled ->
                             scope.launch {
                                 try {
-                                    client.updateProvider(provider.id, ClientProviderPatch(enabled = enabled))
+                                    client.updateProvider(
+                                        provider.id,
+                                        ClientProviderPatch(enabled = enabled),
+                                    )
                                     reload()
                                 } catch (e: Exception) {
                                     errorMessage = ErrorFormatter.format(e)
@@ -151,7 +149,7 @@ fun ProvidersScreen(
                             }
                         },
                         onEdit = { editingProvider = provider },
-                        onDelete = { deletingProvider = provider }
+                        onDelete = { deletingProvider = provider },
                     )
                 }
             }
@@ -167,7 +165,7 @@ fun ProvidersScreen(
             onSaved = {
                 showAddDialog = false
                 reload()
-            }
+            },
         )
     }
 
@@ -180,28 +178,29 @@ fun ProvidersScreen(
             onSaved = {
                 editingProvider = null
                 reload()
-            }
+            },
         )
     }
 
     deletingProvider?.let { provider ->
         Dialog(onDismissRequest = { deletingProvider = null }) {
             Column(
-                modifier = Modifier
-                    .clip(LemmaTheme.shapes.medium)
-                    .background(LemmaTheme.colors.backgroundGroup)
-                    .padding(20.dp)
+                modifier =
+                    Modifier.clip(LemmaTheme.shapes.medium)
+                        .background(LemmaTheme.colors.backgroundGroup)
+                        .padding(20.dp)
             ) {
                 Text(
                     text = "Delete ${provider.name}?",
                     style = LemmaTheme.typography.titleMedium,
-                    color = LemmaTheme.colors.textPrimary
+                    color = LemmaTheme.colors.textPrimary,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Conversations keep their history; the provider configuration is removed.",
+                    text =
+                        "Conversations keep their history; the provider configuration is removed.",
                     style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.textSecondary
+                    color = LemmaTheme.colors.textSecondary,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -209,7 +208,7 @@ fun ProvidersScreen(
                         text = "Cancel",
                         onClick = { deletingProvider = null },
                         modifier = Modifier.weight(1f),
-                        variant = LemmaButtonVariant.Secondary
+                        variant = LemmaButtonVariant.Secondary,
                     )
                     LemmaButton(
                         text = "Delete",
@@ -226,7 +225,7 @@ fun ProvidersScreen(
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        variant = LemmaButtonVariant.Primary
+                        variant = LemmaButtonVariant.Primary,
                     )
                 }
             }
@@ -239,34 +238,34 @@ private fun ProviderRow(
     provider: ClientProvider,
     onToggleEnabled: (Boolean) -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(LemmaTheme.shapes.medium)
-            .background(LemmaTheme.colors.fill1)
-            .padding(12.dp)
+        modifier =
+            Modifier.fillMaxWidth()
+                .clip(LemmaTheme.shapes.medium)
+                .background(LemmaTheme.colors.fill1)
+                .padding(12.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = provider.name,
                     style = LemmaTheme.typography.bodyLarge,
-                    color = LemmaTheme.colors.textPrimary
+                    color = LemmaTheme.colors.textPrimary,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
-                    modifier = Modifier
-                        .clip(LemmaTheme.shapes.full)
-                        .background(LemmaTheme.colors.fill2)
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                    modifier =
+                        Modifier.clip(LemmaTheme.shapes.full)
+                            .background(LemmaTheme.colors.fill2)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = provider.kind,
                         style = LemmaTheme.typography.labelSmall,
-                        color = LemmaTheme.colors.textSecondary
+                        color = LemmaTheme.colors.textSecondary,
                     )
                 }
             }
@@ -274,32 +273,32 @@ private fun ProviderRow(
                 text = "${provider.identifier} · ${provider.baseUrl}",
                 style = LemmaTheme.typography.labelSmall,
                 color = LemmaTheme.colors.textTertiary,
-                maxLines = 1
+                maxLines = 1,
             )
             Text(
                 text = "${provider.models.size} models",
                 style = LemmaTheme.typography.labelSmall,
-                color = LemmaTheme.colors.textTertiary
+                color = LemmaTheme.colors.textTertiary,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = "Edit",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.primary,
-                    modifier = Modifier.clickable(onClick = onEdit)
+                    modifier = Modifier.clickable(onClick = onEdit),
                 )
                 Text(
                     text = "Delete",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.danger,
-                    modifier = Modifier.clickable(onClick = onDelete)
+                    modifier = Modifier.clickable(onClick = onDelete),
                 )
             }
         }
         Switch(
             checked = provider.enabled,
             onCheckedChange = onToggleEnabled,
-            colors = SwitchDefaults.colors(checkedTrackColor = LemmaTheme.colors.primary)
+            colors = SwitchDefaults.colors(checkedTrackColor = LemmaTheme.colors.primary),
         )
     }
 }
@@ -310,7 +309,7 @@ private fun ProviderEditorDialog(
     client: LemmaClient,
     existing: ClientProvider?,
     onDismiss: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var kind by remember { mutableStateOf(existing?.kind ?: PROVIDER_KINDS.first()) }
@@ -325,23 +324,24 @@ private fun ProviderEditorDialog(
     var isFetching by remember { mutableStateOf(false) }
     var dialogError by remember { mutableStateOf<String?>(null) }
 
-    val canSave = !isSaving &&
-        name.isNotBlank() &&
-        baseUrl.isNotBlank() &&
-        (existing != null || IDENTIFIER_PATTERN.matches(identifier))
+    val canSave =
+        !isSaving &&
+            name.isNotBlank() &&
+            baseUrl.isNotBlank() &&
+            (existing != null || IDENTIFIER_PATTERN.matches(identifier))
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier
-                .clip(LemmaTheme.shapes.medium)
-                .background(LemmaTheme.colors.backgroundGroup)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
+            modifier =
+                Modifier.clip(LemmaTheme.shapes.medium)
+                    .background(LemmaTheme.colors.backgroundGroup)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
         ) {
             Text(
                 text = title,
                 style = LemmaTheme.typography.titleMedium,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -350,22 +350,24 @@ private fun ProviderEditorDialog(
                 PROVIDER_KINDS.forEach { option ->
                     val selected = option == kind
                     Box(
-                        modifier = Modifier
-                            .clip(LemmaTheme.shapes.full)
-                            .background(
-                                if (selected) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
-                            )
-                            .clickable(enabled = existing == null) { kind = option }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                        modifier =
+                            Modifier.clip(LemmaTheme.shapes.full)
+                                .background(
+                                    if (selected) LemmaTheme.colors.primary
+                                    else LemmaTheme.colors.fill2
+                                )
+                                .clickable(enabled = existing == null) { kind = option }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = option,
                             style = LemmaTheme.typography.labelSmall,
-                            color = if (selected) {
-                                LemmaTheme.colors.background
-                            } else {
-                                LemmaTheme.colors.textSecondary
-                            }
+                            color =
+                                if (selected) {
+                                    LemmaTheme.colors.background
+                                } else {
+                                    LemmaTheme.colors.textSecondary
+                                },
                         )
                     }
                 }
@@ -377,41 +379,42 @@ private fun ProviderEditorDialog(
                 value = identifier,
                 onValueChange = { identifier = it },
                 placeholder = "Identifier (lowercase, e.g. my-openai)",
-                enabled = existing == null
+                enabled = existing == null,
             )
             Spacer(modifier = Modifier.height(8.dp))
             LemmaTextField(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = "Display name"
+                placeholder = "Display name",
             )
             Spacer(modifier = Modifier.height(8.dp))
             LemmaTextField(
                 value = baseUrl,
                 onValueChange = { baseUrl = it },
-                placeholder = "https://api.openai.com/v1"
+                placeholder = "https://api.openai.com/v1",
             )
             Spacer(modifier = Modifier.height(8.dp))
             LemmaTextField(
                 value = apiKey,
                 onValueChange = { apiKey = it },
-                placeholder = if (existing?.hasApiKey == true) {
-                    "API key (leave blank to keep current)"
-                } else {
-                    "API key (optional)"
-                }
+                placeholder =
+                    if (existing?.hasApiKey == true) {
+                        "API key (leave blank to keep current)"
+                    } else {
+                        "API key (optional)"
+                    },
             )
             Spacer(modifier = Modifier.height(8.dp))
             LemmaTextField(
                 value = apiPath,
                 onValueChange = { apiPath = it },
-                placeholder = "Chat endpoint path override (optional)"
+                placeholder = "Chat endpoint path override (optional)",
             )
             Spacer(modifier = Modifier.height(8.dp))
             LemmaTextField(
                 value = modelsPath,
                 onValueChange = { modelsPath = it },
-                placeholder = "Model-list endpoint path override (optional)"
+                placeholder = "Model-list endpoint path override (optional)",
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -421,27 +424,30 @@ private fun ProviderEditorDialog(
                     text = "Models (one per line)",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textSecondary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 Text(
                     text = if (isFetching) "Fetching…" else "Fetch",
                     style = LemmaTheme.typography.bodyMedium,
-                    color = if (isFetching) LemmaTheme.colors.textQuaternary else LemmaTheme.colors.primary,
-                    modifier = Modifier.clickable(enabled = !isFetching) {
-                        scope.launch {
-                            isFetching = true
-                            try {
-                                val fetched = existing
-                                    ?.let { client.fetchProviderModels(it.id) }
-                                    ?: client.fetchModels(kind, baseUrl, apiKey, modelsPath)
-                                modelsText = fetched.joinToString("\n")
-                            } catch (e: Exception) {
-                                dialogError = ErrorFormatter.format(e)
-                            } finally {
-                                isFetching = false
+                    color =
+                        if (isFetching) LemmaTheme.colors.textQuaternary
+                        else LemmaTheme.colors.primary,
+                    modifier =
+                        Modifier.clickable(enabled = !isFetching) {
+                            scope.launch {
+                                isFetching = true
+                                try {
+                                    val fetched =
+                                        existing?.let { client.fetchProviderModels(it.id) }
+                                            ?: client.fetchModels(kind, baseUrl, apiKey, modelsPath)
+                                    modelsText = fetched.joinToString("\n")
+                                } catch (e: Exception) {
+                                    dialogError = ErrorFormatter.format(e)
+                                } finally {
+                                    isFetching = false
+                                }
                             }
-                        }
-                    }
+                        },
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -449,7 +455,7 @@ private fun ProviderEditorDialog(
                 value = modelsText,
                 onValueChange = { modelsText = it },
                 placeholder = "gpt-4o",
-                singleLine = false
+                singleLine = false,
             )
 
             dialogError?.let { message ->
@@ -457,7 +463,7 @@ private fun ProviderEditorDialog(
                 Text(
                     text = message,
                     style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.danger
+                    color = LemmaTheme.colors.danger,
                 )
             }
 
@@ -468,16 +474,17 @@ private fun ProviderEditorDialog(
                     text = "Cancel",
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    variant = LemmaButtonVariant.Secondary
+                    variant = LemmaButtonVariant.Secondary,
                 )
                 LemmaButton(
                     text = if (isSaving) "Saving…" else "Save",
                     onClick = {
-                        val models = modelsText
-                            .split(',', '\n')
-                            .map { it.trim() }
-                            .filter { it.isNotEmpty() }
-                            .distinct()
+                        val models =
+                            modelsText
+                                .split(',', '\n')
+                                .map { it.trim() }
+                                .filter { it.isNotEmpty() }
+                                .distinct()
                         scope.launch {
                             isSaving = true
                             try {
@@ -491,7 +498,7 @@ private fun ProviderEditorDialog(
                                             apiKey = apiKey.trim(),
                                             apiPath = apiPath.trim(),
                                             modelsPath = modelsPath.trim(),
-                                            models = models
+                                            models = models,
                                         )
                                     )
                                 } else {
@@ -503,8 +510,8 @@ private fun ProviderEditorDialog(
                                             apiKey = apiKey.trim().ifBlank { null },
                                             apiPath = apiPath.trim(),
                                             modelsPath = modelsPath.trim(),
-                                            models = models
-                                        )
+                                            models = models,
+                                        ),
                                     )
                                 }
                                 onSaved()
@@ -517,7 +524,7 @@ private fun ProviderEditorDialog(
                     },
                     modifier = Modifier.weight(1f),
                     variant = LemmaButtonVariant.Primary,
-                    enabled = canSave
+                    enabled = canSave,
                 )
             }
         }

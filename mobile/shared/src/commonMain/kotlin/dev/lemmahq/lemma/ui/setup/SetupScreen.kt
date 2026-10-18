@@ -26,11 +26,11 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import dev.lemmahq.lemma.ui.components.LemmaTextField
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
 
 @Composable
 fun SetupScreen(
@@ -38,7 +38,7 @@ fun SetupScreen(
     localAvailable: Boolean,
     onConnected: (String) -> Unit,
     onLocalSelected: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var urlInput by remember {
         mutableStateOf(settingsRepository.getServerUrl() ?: "http://127.0.0.1:1025")
@@ -48,21 +48,18 @@ fun SetupScreen(
     val scope = rememberCoroutineScope()
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LemmaTheme.colors.background)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background).padding(24.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = "Lemma",
                 style = LemmaTheme.typography.titleLarge,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -70,7 +67,7 @@ fun SetupScreen(
             Text(
                 text = "Enter the address of your Lemma server.",
                 style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textSecondary
+                color = LemmaTheme.colors.textSecondary,
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -82,7 +79,7 @@ fun SetupScreen(
                     errorMessage = null
                 },
                 placeholder = "http://192.168.1.100:1025",
-                enabled = !isConnecting
+                enabled = !isConnecting,
             )
 
             if (errorMessage != null) {
@@ -91,7 +88,7 @@ fun SetupScreen(
                     text = errorMessage.orEmpty(),
                     style = LemmaTheme.typography.labelSmall,
                     color = LemmaTheme.colors.danger,
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.align(Alignment.Start),
                 )
             }
 
@@ -100,14 +97,16 @@ fun SetupScreen(
             if (isConnecting) {
                 CircularProgressIndicator(
                     color = LemmaTheme.colors.primary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             } else {
                 LemmaButton(
                     text = "Connect",
                     onClick = {
                         val cleanedUrl = urlInput.trim().trimEnd('/')
-                        if (!cleanedUrl.startsWith("http://") && !cleanedUrl.startsWith("https://")) {
+                        if (
+                            !cleanedUrl.startsWith("http://") && !cleanedUrl.startsWith("https://")
+                        ) {
                             errorMessage = "Enter a full address starting with http:// or https://"
                             return@LemmaButton
                         }
@@ -116,17 +115,20 @@ fun SetupScreen(
                         errorMessage = null
 
                         scope.launch {
-                            val success = withContext(Dispatchers.IO) {
-                                try {
-                                    val connection = URL("$cleanedUrl/").openConnection() as HttpURLConnection
-                                    connection.connectTimeout = 4000
-                                    connection.readTimeout = 4000
-                                    connection.requestMethod = "GET"
-                                    connection.responseCode >= 0
-                                } catch (e: Exception) {
-                                    false
+                            val success =
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val connection =
+                                            URL("$cleanedUrl/").openConnection()
+                                                as HttpURLConnection
+                                        connection.connectTimeout = 4000
+                                        connection.readTimeout = 4000
+                                        connection.requestMethod = "GET"
+                                        connection.responseCode >= 0
+                                    } catch (e: Exception) {
+                                        false
+                                    }
                                 }
-                            }
 
                             isConnecting = false
                             if (success) {
@@ -138,7 +140,7 @@ fun SetupScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    variant = LemmaButtonVariant.Primary
+                    variant = LemmaButtonVariant.Primary,
                 )
             }
 
@@ -149,7 +151,7 @@ fun SetupScreen(
                     text = "Run locally on this device",
                     onClick = onLocalSelected,
                     modifier = Modifier.fillMaxWidth(),
-                    variant = LemmaButtonVariant.Secondary
+                    variant = LemmaButtonVariant.Secondary,
                 )
             }
         }

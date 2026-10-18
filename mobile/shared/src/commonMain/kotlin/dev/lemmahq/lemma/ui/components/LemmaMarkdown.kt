@@ -24,83 +24,90 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 @Composable
 fun LemmaMarkdown(
     content: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val colors: MarkdownColors = markdownColor(
-        text = LemmaTheme.colors.assistantBubbleText,
-        codeText = LemmaTheme.colors.textPrimary,
-        linkText = LemmaTheme.colors.primary,
-        codeBackground = LemmaTheme.colors.fill2,
-        dividerColor = LemmaTheme.colors.separator
-    )
-
-    val typography: MarkdownTypography = markdownTypography(
-        h1 = LemmaTheme.typography.titleLarge,
-        h2 = LemmaTheme.typography.titleMedium,
-        h3 = LemmaTheme.typography.titleMedium,
-        text = LemmaTheme.typography.bodyLarge,
-        paragraph = LemmaTheme.typography.bodyLarge,
-        code = LemmaTheme.typography.bodyMedium.copy(
-            fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
-        ),
-        inlineCode = LemmaTheme.typography.bodyMedium.copy(
-            fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp
+    val colors: MarkdownColors =
+        markdownColor(
+            text = LemmaTheme.colors.assistantBubbleText,
+            codeText = LemmaTheme.colors.textPrimary,
+            linkText = LemmaTheme.colors.primary,
+            codeBackground = LemmaTheme.colors.fill2,
+            dividerColor = LemmaTheme.colors.separator,
         )
-    )
 
-    val components = markdownComponents(
-        codeBlock = {
-            val scrollState = rememberScrollState()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(LemmaTheme.shapes.medium)
-                    .background(LemmaTheme.colors.fill2)
-                    .horizontalScroll(scrollState)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    text = it.content,
-                    color = LemmaTheme.colors.textPrimary,
-                    style = LemmaTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+    val typography: MarkdownTypography =
+        markdownTypography(
+            h1 = LemmaTheme.typography.titleLarge,
+            h2 = LemmaTheme.typography.titleMedium,
+            h3 = LemmaTheme.typography.titleMedium,
+            text = LemmaTheme.typography.bodyLarge,
+            paragraph = LemmaTheme.typography.bodyLarge,
+            code =
+                LemmaTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                ),
+            inlineCode =
+                LemmaTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp,
+                ),
+        )
+
+    val components =
+        markdownComponents(
+            codeBlock = {
+                val scrollState = rememberScrollState()
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clip(LemmaTheme.shapes.medium)
+                            .background(LemmaTheme.colors.fill2)
+                            .horizontalScroll(scrollState)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = it.content,
+                        color = LemmaTheme.colors.textPrimary,
+                        style =
+                            LemmaTheme.typography.bodyMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                            ),
                     )
-                )
-            }
-        },
-        codeFence = {
-            val scrollState = rememberScrollState()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(LemmaTheme.shapes.medium)
-                    .background(LemmaTheme.colors.fill2)
-                    .horizontalScroll(scrollState)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    text = it.content,
-                    color = LemmaTheme.colors.textPrimary,
-                    style = LemmaTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+                }
+            },
+            codeFence = {
+                val scrollState = rememberScrollState()
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clip(LemmaTheme.shapes.medium)
+                            .background(LemmaTheme.colors.fill2)
+                            .horizontalScroll(scrollState)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = it.content,
+                        color = LemmaTheme.colors.textPrimary,
+                        style =
+                            LemmaTheme.typography.bodyMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                            ),
                     )
-                )
-            }
-        }
-    )
+                }
+            },
+        )
 
     Markdown(
         content = content,
         colors = colors,
         typography = typography,
         components = components,
-        modifier = modifier
+        modifier = modifier,
     )
 }

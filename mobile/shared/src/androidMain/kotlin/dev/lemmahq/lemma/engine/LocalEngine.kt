@@ -23,17 +23,23 @@ class LocalEngine private constructor() {
 
         /** Returns the running engine, opening and migrating the local database on first use. */
         suspend fun get(context: Context, settings: SettingsRepository): LemmaEngine {
-            engine?.let { return it }
+            engine?.let {
+                return it
+            }
             return mutex.withLock {
-                engine ?: LemmaEngine.open(
-                    dataDir = context.filesDir.absolutePath,
-                    jwtSecret = localJwtSecret(settings)
-                ).also { engine = it }
+                engine
+                    ?: LemmaEngine.open(
+                            dataDir = context.filesDir.absolutePath,
+                            jwtSecret = localJwtSecret(settings),
+                        )
+                        .also { engine = it }
             }
         }
 
         private fun localJwtSecret(settings: SettingsRepository): String {
-            settings.getLocalJwtSecret()?.let { return it }
+            settings.getLocalJwtSecret()?.let {
+                return it
+            }
             val bytes = ByteArray(SECRET_BYTES).also { SecureRandom().nextBytes(it) }
             val secret = bytes.joinToString(separator = "") { byte -> "%02x".format(byte) }
             settings.setLocalJwtSecret(secret)
@@ -51,11 +57,12 @@ fun LemmaEngine.sendMessageEvents(
     model: String,
     thinkingEffort: String? = null,
 ): Flow<MobileAgentEvent> = callbackFlow {
-    val listener = object : AgentEventListener {
-        override fun onEvent(event: MobileAgentEvent) {
-            trySend(event)
+    val listener =
+        object : AgentEventListener {
+            override fun onEvent(event: MobileAgentEvent) {
+                trySend(event)
+            }
         }
-    }
     sendMessage(userId, conversationId, content, providerId, model, thinkingEffort, listener)
     close()
     awaitClose()

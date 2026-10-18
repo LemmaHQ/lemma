@@ -4,29 +4,45 @@ import com.russhwolf.settings.Settings
 
 interface SettingsRepository {
     fun getAppMode(): String?
+
     fun setAppMode(mode: String?)
+
     fun getServerUrl(): String?
+
     fun setServerUrl(url: String?)
+
     fun getAccessToken(): String?
+
     fun setAccessToken(token: String?)
+
     fun getRefreshToken(): String?
+
     fun setRefreshToken(token: String?)
+
     fun getThemeMode(): String
+
     fun setThemeMode(mode: String)
+
     fun getLocalJwtSecret(): String?
+
     fun setLocalJwtSecret(secret: String?)
+
     fun getLocalUserId(): String?
+
     fun setLocalUserId(userId: String?)
+
     fun getDefaultProviderId(): String?
+
     fun setDefaultProviderId(providerId: String?)
+
     fun getDefaultModel(): String?
+
     fun setDefaultModel(model: String?)
+
     fun clearAuth()
 }
 
-class DefaultSettingsRepository(
-    private val settings: Settings = Settings()
-) : SettingsRepository {
+class DefaultSettingsRepository(private val settings: Settings = Settings()) : SettingsRepository {
 
     companion object {
         private const val KEY_APP_MODE = "lemma_app_mode"

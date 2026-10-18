@@ -30,108 +30,110 @@ import dev.lemmahq.lemma.ui.components.LemmaInput
 @Composable
 fun DesignShowcase(
     onToggleTheme: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var inputText by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LemmaTheme.colors.background)
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(LemmaTheme.colors.background)
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Lemma Design System",
                 style = LemmaTheme.typography.titleLarge,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
             LemmaButton(
                 text = if (LemmaTheme.colors.isDark) "Light" else "Dark",
                 variant = LemmaButtonVariant.Secondary,
-                onClick = onToggleTheme
+                onClick = onToggleTheme,
             )
         }
 
         Text(
             text = "Typography & Labels",
             style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary
+            color = LemmaTheme.colors.textPrimary,
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = "Primary Label (High Emphasis)",
                 style = LemmaTheme.typography.bodyLarge,
-                color = LemmaTheme.colors.textPrimary
+                color = LemmaTheme.colors.textPrimary,
             )
             Text(
                 text = "Secondary Label (Medium Emphasis)",
                 style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textSecondary
+                color = LemmaTheme.colors.textSecondary,
             )
             Text(
                 text = "Tertiary Label (Low Emphasis)",
                 style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textTertiary
+                color = LemmaTheme.colors.textTertiary,
             )
             Text(
                 text = "Quaternary Label (Muted)",
                 style = LemmaTheme.typography.labelSmall,
-                color = LemmaTheme.colors.textQuaternary
+                color = LemmaTheme.colors.textQuaternary,
             )
         }
 
         Text(
             text = "Buttons",
             style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary
+            color = LemmaTheme.colors.textPrimary,
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             LemmaButton(
                 text = "Primary",
                 variant = LemmaButtonVariant.Primary,
-                onClick = {}
+                onClick = {},
             )
             LemmaButton(
                 text = "Secondary",
                 variant = LemmaButtonVariant.Secondary,
-                onClick = {}
+                onClick = {},
             )
             LemmaButton(
                 text = "Ghost",
                 variant = LemmaButtonVariant.Ghost,
-                onClick = {}
+                onClick = {},
             )
         }
 
         Text(
             text = "Chat Bubbles",
             style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary
+            color = LemmaTheme.colors.textPrimary,
         )
 
         LemmaBubble(
             text = "Hello Lemma! Can you explain the KMP architecture?",
             role = LemmaBubbleRole.User,
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.align(Alignment.End),
         )
 
         LemmaBubble(
-            text = "Certainly! Lemma's mobile client is built with Compose Multiplatform sharing UI and state logic.",
+            text =
+                "Certainly! Lemma's mobile client is built with Compose Multiplatform sharing UI and state logic.",
             role = LemmaBubbleRole.Assistant,
-            modifier = Modifier.align(Alignment.Start)
+            modifier = Modifier.align(Alignment.Start),
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -139,13 +141,13 @@ fun DesignShowcase(
         Text(
             text = "Input Bar",
             style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary
+            color = LemmaTheme.colors.textPrimary,
         )
 
         LemmaInput(
             value = inputText,
             onValueChange = { inputText = it },
-            onSend = { inputText = "" }
+            onSend = { inputText = "" },
         )
     }
 }

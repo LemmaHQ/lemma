@@ -51,10 +51,11 @@ import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import dev.lemmahq.lemma.ui.components.LemmaInput
 import kotlinx.coroutines.launch
+
 data class UiMessage(
     val id: String,
     val role: LemmaBubbleRole,
-    val text: String
+    val text: String,
 )
 
 @Composable
@@ -64,7 +65,7 @@ fun MainChatScreen(
     onLogout: () -> Unit,
     onManageProviders: () -> Unit,
     localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -88,8 +89,10 @@ fun MainChatScreen(
     fun applyDefaultSelection(available: List<ClientProvider>) {
         val defaultProviderId = settingsRepository.getDefaultProviderId()
         val defaultModel = settingsRepository.getDefaultModel()
-        val fromSettings = available.firstOrNull { it.id == defaultProviderId && it.enabled }
-            ?.takeIf { defaultModel != null && it.models.contains(defaultModel) }
+        val fromSettings =
+            available
+                .firstOrNull { it.id == defaultProviderId && it.enabled }
+                ?.takeIf { defaultModel != null && it.models.contains(defaultModel) }
         if (fromSettings != null) {
             selectedProviderId = fromSettings.id
             selectedModel = defaultModel.orEmpty()
@@ -135,26 +138,32 @@ fun MainChatScreen(
         val cachedMsgs = localChatRepository.getMessages(convId)
         if (cachedMsgs.isNotEmpty()) {
             messages.clear()
-            messages.addAll(cachedMsgs.map { m ->
-                UiMessage(
-                    id = m.id,
-                    role = if (m.role == 1L) LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
-                    text = m.content
-                )
-            })
+            messages.addAll(
+                cachedMsgs.map { m ->
+                    UiMessage(
+                        id = m.id,
+                        role =
+                            if (m.role == 1L) LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
+                        text = m.content,
+                    )
+                }
+            )
         } else {
             messages.clear()
         }
 
         try {
             val serverMsgs = client.listMessages(convId)
-            val list = serverMsgs.asReversed().map {
-                UiMessage(
-                    id = it.id,
-                    role = if (it.role == "user") LemmaBubbleRole.User else LemmaBubbleRole.Assistant,
-                    text = it.content
-                )
-            }
+            val list =
+                serverMsgs.asReversed().map {
+                    UiMessage(
+                        id = it.id,
+                        role =
+                            if (it.role == "user") LemmaBubbleRole.User
+                            else LemmaBubbleRole.Assistant,
+                        text = it.content,
+                    )
+                }
             messages.clear()
             messages.addAll(list)
             for (m in serverMsgs) {
@@ -165,12 +174,18 @@ fun MainChatScreen(
                     content = m.content,
                     status = 2L,
                     createdAt = m.createdAtSeconds,
-                    updatedAt = m.updatedAtSeconds
+                    updatedAt = m.updatedAtSeconds,
                 )
             }
-            val lastUsed = serverMsgs.firstOrNull { it.role == "assistant" && !it.model.isNullOrBlank() }
+            val lastUsed = serverMsgs.firstOrNull {
+                it.role == "assistant" && !it.model.isNullOrBlank()
+            }
             val lastProvider = providers.firstOrNull { it.id == lastUsed?.providerId && it.enabled }
-            if (lastUsed != null && lastProvider != null && lastProvider.models.contains(lastUsed.model)) {
+            if (
+                lastUsed != null &&
+                    lastProvider != null &&
+                    lastProvider.models.contains(lastUsed.model)
+            ) {
                 selectedProviderId = lastProvider.id
                 selectedModel = lastUsed.model.orEmpty()
             } else {
@@ -192,17 +207,13 @@ fun MainChatScreen(
         drawerContent = {
             ModalDrawerSheet(
                 drawerContainerColor = LemmaTheme.colors.backgroundGroup,
-                modifier = Modifier.width(280.dp)
+                modifier = Modifier.width(280.dp),
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                     Text(
                         text = "Conversations",
                         style = LemmaTheme.typography.titleLarge,
-                        color = LemmaTheme.colors.textPrimary
+                        color = LemmaTheme.colors.textPrimary,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -223,7 +234,7 @@ fun MainChatScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        variant = LemmaButtonVariant.Primary
+                        variant = LemmaButtonVariant.Primary,
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -231,33 +242,36 @@ fun MainChatScreen(
                     if (isLoadingConversations) {
                         CircularProgressIndicator(
                             color = LemmaTheme.colors.primary,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .align(Alignment.CenterHorizontally)
+                            modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
                         )
                     } else {
                         LazyColumn(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             items(conversations, key = { it.id }) { conv ->
                                 val isSelected = conv.id == currentConversation?.id
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(LemmaTheme.shapes.medium)
-                                        .background(if (isSelected) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1)
-                                        .clickable {
-                                            currentConversation = conv
-                                            scope.launch { drawerState.close() }
-                                        }
-                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .clip(LemmaTheme.shapes.medium)
+                                            .background(
+                                                if (isSelected) LemmaTheme.colors.fill2
+                                                else LemmaTheme.colors.fill1
+                                            )
+                                            .clickable {
+                                                currentConversation = conv
+                                                scope.launch { drawerState.close() }
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 10.dp)
                                 ) {
                                     Text(
                                         text = conv.title.ifBlank { "New Chat" },
                                         style = LemmaTheme.typography.bodyMedium,
-                                        color = if (isSelected) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textSecondary,
-                                        maxLines = 1
+                                        color =
+                                            if (isSelected) LemmaTheme.colors.textPrimary
+                                            else LemmaTheme.colors.textSecondary,
+                                        maxLines = 1,
                                     )
                                 }
                             }
@@ -273,7 +287,7 @@ fun MainChatScreen(
                             onManageProviders()
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        variant = LemmaButtonVariant.Secondary
+                        variant = LemmaButtonVariant.Secondary,
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -282,82 +296,71 @@ fun MainChatScreen(
                         text = "Sign Out",
                         onClick = onLogout,
                         modifier = Modifier.fillMaxWidth(),
-                        variant = LemmaButtonVariant.Secondary
+                        variant = LemmaButtonVariant.Secondary,
                     )
                 }
             }
-        }
+        },
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(LemmaTheme.colors.background)
-        ) {
+        Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable {
-                        scope.launch { drawerState.open() }
-                    }
+                    modifier =
+                        Modifier.clickable {
+                            scope.launch { drawerState.open() }
+                        },
                 ) {
                     Text(
                         text = "☰",
                         style = LemmaTheme.typography.titleLarge,
-                        color = LemmaTheme.colors.textPrimary
+                        color = LemmaTheme.colors.textPrimary,
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = currentConversation?.title?.ifBlank { "Lemma" } ?: "Lemma",
                         style = LemmaTheme.typography.titleMedium,
                         color = LemmaTheme.colors.textPrimary,
-                        maxLines = 1
+                        maxLines = 1,
                     )
                 }
 
                 if (providers.any { it.enabled }) {
                     Box(
-                        modifier = Modifier
-                            .clip(LemmaTheme.shapes.full)
-                            .background(LemmaTheme.colors.fill2)
-                            .clickable { showModelPicker = true }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier =
+                            Modifier.clip(LemmaTheme.shapes.full)
+                                .background(LemmaTheme.colors.fill2)
+                                .clickable { showModelPicker = true }
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = selectedModel.ifBlank { "Select model" },
                             style = LemmaTheme.typography.labelSmall,
-                            color = LemmaTheme.colors.textSecondary
+                            color = LemmaTheme.colors.textSecondary,
                         )
                     }
                 }
             }
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(LemmaTheme.colors.separator)
+                modifier =
+                    Modifier.fillMaxWidth().height(1.dp).background(LemmaTheme.colors.separator)
             )
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (messages.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "Send a message to start chatting",
                             style = LemmaTheme.typography.bodyMedium,
-                            color = LemmaTheme.colors.textTertiary
+                            color = LemmaTheme.colors.textTertiary,
                         )
                     }
                 } else {
@@ -365,17 +368,18 @@ fun MainChatScreen(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(messages, key = { it.id }) { msg ->
                             val isUser = msg.role == LemmaBubbleRole.User
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+                                horizontalAlignment =
+                                    if (isUser) Alignment.End else Alignment.Start,
                             ) {
                                 LemmaBubble(
                                     text = msg.text,
-                                    role = msg.role
+                                    role = msg.role,
                                 )
                             }
                         }
@@ -384,18 +388,18 @@ fun MainChatScreen(
             }
             if (bannerErrorMessage != null) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(LemmaTheme.colors.danger.copy(alpha = 0.12f))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .background(LemmaTheme.colors.danger.copy(alpha = 0.12f))
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = bannerErrorMessage.orEmpty(),
                         style = LemmaTheme.typography.bodyMedium,
                         color = LemmaTheme.colors.danger,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     if (lastFailedText != null && !isStreaming) {
                         Spacer(modifier = Modifier.width(8.dp))
@@ -403,11 +407,12 @@ fun MainChatScreen(
                             text = "Retry",
                             style = LemmaTheme.typography.bodyMedium,
                             color = LemmaTheme.colors.primary,
-                            modifier = Modifier.clickable {
-                                inputText = lastFailedText.orEmpty()
-                                bannerErrorMessage = null
-                                lastFailedText = null
-                            }
+                            modifier =
+                                Modifier.clickable {
+                                    inputText = lastFailedText.orEmpty()
+                                    bannerErrorMessage = null
+                                    lastFailedText = null
+                                },
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -415,17 +420,14 @@ fun MainChatScreen(
                         text = "✕",
                         style = LemmaTheme.typography.bodyMedium,
                         color = LemmaTheme.colors.textSecondary,
-                        modifier = Modifier.clickable {
-                            bannerErrorMessage = null
-                        }
+                        modifier =
+                            Modifier.clickable {
+                                bannerErrorMessage = null
+                            },
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 LemmaInput(
                     value = inputText,
                     onValueChange = { inputText = it },
@@ -454,8 +456,12 @@ fun MainChatScreen(
                             val userMsgId = "local_user_${messages.size}"
                             val aiMsgId = "local_ai_${messages.size + 1}"
 
-                            messages.add(UiMessage(id = userMsgId, role = LemmaBubbleRole.User, text = text))
-                            messages.add(UiMessage(id = aiMsgId, role = LemmaBubbleRole.Assistant, text = ""))
+                            messages.add(
+                                UiMessage(id = userMsgId, role = LemmaBubbleRole.User, text = text)
+                            )
+                            messages.add(
+                                UiMessage(id = aiMsgId, role = LemmaBubbleRole.Assistant, text = "")
+                            )
                             localChatRepository.saveMessage(
                                 id = userMsgId,
                                 conversationId = conv.id,
@@ -463,20 +469,28 @@ fun MainChatScreen(
                                 content = text,
                                 status = 0L,
                                 createdAt = 0L,
-                                updatedAt = 0L
+                                updatedAt = 0L,
                             )
 
                             isStreaming = true
 
                             try {
-                                client.sendMessage(conv.id, text, selectedProviderId, selectedModel, userMsgId)
+                                client
+                                    .sendMessage(
+                                        conv.id,
+                                        text,
+                                        selectedProviderId,
+                                        selectedModel,
+                                        userMsgId,
+                                    )
                                     .collect { event ->
                                         val lastIdx = messages.indexOfLast { it.id == aiMsgId }
                                         when (event) {
                                             is AgentStreamEvent.Delta -> {
                                                 if (lastIdx >= 0) {
                                                     val old = messages[lastIdx]
-                                                    messages[lastIdx] = old.copy(text = old.text + event.text)
+                                                    messages[lastIdx] =
+                                                        old.copy(text = old.text + event.text)
                                                 }
                                             }
                                             is AgentStreamEvent.Done -> {
@@ -489,14 +503,19 @@ fun MainChatScreen(
                                                         content = aiText,
                                                         status = 2L,
                                                         createdAt = 0L,
-                                                        updatedAt = 0L
+                                                        updatedAt = 0L,
                                                     )
                                                 }
                                             }
                                             is AgentStreamEvent.Error -> {
                                                 if (lastIdx >= 0) {
                                                     val old = messages[lastIdx]
-                                                    messages[lastIdx] = old.copy(text = old.text + "\n[Error: ${event.message}]")
+                                                    messages[lastIdx] =
+                                                        old.copy(
+                                                            text =
+                                                                old.text +
+                                                                    "\n[Error: ${event.message}]"
+                                                        )
                                                 }
                                             }
                                             else -> {}
@@ -509,13 +528,20 @@ fun MainChatScreen(
                                 val lastIdx = messages.indexOfLast { it.id == aiMsgId }
                                 if (lastIdx >= 0) {
                                     val old = messages[lastIdx]
-                                    messages[lastIdx] = old.copy(text = old.text + if (old.text.isBlank()) "[Failed: $formattedError]" else "\n\n[Interrupted: $formattedError]")
+                                    messages[lastIdx] =
+                                        old.copy(
+                                            text =
+                                                old.text +
+                                                    if (old.text.isBlank())
+                                                        "[Failed: $formattedError]"
+                                                    else "\n\n[Interrupted: $formattedError]"
+                                        )
                                 }
                             } finally {
                                 isStreaming = false
                             }
                         }
-                    }
+                    },
                 )
             }
         }
@@ -524,56 +550,60 @@ fun MainChatScreen(
     if (showModelPicker) {
         Dialog(onDismissRequest = { showModelPicker = false }) {
             Column(
-                modifier = Modifier
-                    .clip(LemmaTheme.shapes.medium)
-                    .background(LemmaTheme.colors.backgroundGroup)
-                    .padding(20.dp)
+                modifier =
+                    Modifier.clip(LemmaTheme.shapes.medium)
+                        .background(LemmaTheme.colors.backgroundGroup)
+                        .padding(20.dp)
             ) {
                 Text(
                     text = "Select Model",
                     style = LemmaTheme.typography.titleMedium,
-                    color = LemmaTheme.colors.textPrimary
+                    color = LemmaTheme.colors.textPrimary,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 LazyColumn(
                     modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    providers.filter { it.enabled }.forEach { provider ->
-                        item(key = "header_${provider.id}") {
-                            Text(
-                                text = provider.name,
-                                style = LemmaTheme.typography.labelSmall,
-                                color = LemmaTheme.colors.textTertiary,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-                        }
-                        items(provider.models, key = { "${provider.id}/$it" }) { model ->
-                            val isSelected = provider.id == selectedProviderId && model == selectedModel
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(LemmaTheme.shapes.medium)
-                                    .background(
-                                        if (isSelected) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
-                                    )
-                                    .clickable {
-                                        selectedProviderId = provider.id
-                                        selectedModel = model
-                                        settingsRepository.setDefaultProviderId(provider.id)
-                                        settingsRepository.setDefaultModel(model)
-                                        showModelPicker = false
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                            ) {
+                    providers
+                        .filter { it.enabled }
+                        .forEach { provider ->
+                            item(key = "header_${provider.id}") {
                                 Text(
-                                    text = model,
-                                    style = LemmaTheme.typography.bodyMedium,
-                                    color = LemmaTheme.colors.textPrimary
+                                    text = provider.name,
+                                    style = LemmaTheme.typography.labelSmall,
+                                    color = LemmaTheme.colors.textTertiary,
+                                    modifier = Modifier.padding(vertical = 4.dp),
                                 )
                             }
+                            items(provider.models, key = { "${provider.id}/$it" }) { model ->
+                                val isSelected =
+                                    provider.id == selectedProviderId && model == selectedModel
+                                Box(
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .clip(LemmaTheme.shapes.medium)
+                                            .background(
+                                                if (isSelected) LemmaTheme.colors.fill2
+                                                else LemmaTheme.colors.fill1
+                                            )
+                                            .clickable {
+                                                selectedProviderId = provider.id
+                                                selectedModel = model
+                                                settingsRepository.setDefaultProviderId(provider.id)
+                                                settingsRepository.setDefaultModel(model)
+                                                showModelPicker = false
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = model,
+                                        style = LemmaTheme.typography.bodyMedium,
+                                        color = LemmaTheme.colors.textPrimary,
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 LemmaButton(
@@ -583,7 +613,7 @@ fun MainChatScreen(
                         onManageProviders()
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    variant = LemmaButtonVariant.Secondary
+                    variant = LemmaButtonVariant.Secondary,
                 )
             }
         }

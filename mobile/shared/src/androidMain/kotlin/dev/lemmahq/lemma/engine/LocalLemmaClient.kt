@@ -18,9 +18,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /** [LemmaClient] backed by the embedded Rust engine running in-process. */
-class LocalLemmaClient private constructor(
+class LocalLemmaClient
+private constructor(
     private val engine: LemmaEngine,
-    private val settings: SettingsRepository
+    private val settings: SettingsRepository,
 ) : LemmaClient {
 
     companion object {
@@ -48,33 +49,37 @@ class LocalLemmaClient private constructor(
     }
 
     override suspend fun createProvider(input: ClientProviderInput): ClientProvider {
-        return engine.createProvider(
-            userId(),
-            input.kind,
-            input.identifier,
-            input.name,
-            input.baseUrl,
-            input.apiKey,
-            input.apiPath,
-            input.modelsPath,
-            input.models
-        ).toClient()
+        return engine
+            .createProvider(
+                userId(),
+                input.kind,
+                input.identifier,
+                input.name,
+                input.baseUrl,
+                input.apiKey,
+                input.apiPath,
+                input.modelsPath,
+                input.models,
+            )
+            .toClient()
     }
 
     override suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider {
-        return engine.updateProvider(
-            userId(),
-            id,
-            ProviderUpdate(
-                name = patch.name,
-                baseUrl = patch.baseUrl,
-                apiKey = patch.apiKey,
-                apiPath = patch.apiPath,
-                modelsPath = patch.modelsPath,
-                enabled = patch.enabled,
-                models = patch.models
+        return engine
+            .updateProvider(
+                userId(),
+                id,
+                ProviderUpdate(
+                    name = patch.name,
+                    baseUrl = patch.baseUrl,
+                    apiKey = patch.apiKey,
+                    apiPath = patch.apiPath,
+                    modelsPath = patch.modelsPath,
+                    enabled = patch.enabled,
+                    models = patch.models,
+                ),
             )
-        ).toClient()
+            .toClient()
     }
 
     override suspend fun deleteProvider(id: String) {
@@ -89,7 +94,7 @@ class LocalLemmaClient private constructor(
         kind: String,
         baseUrl: String,
         apiKey: String,
-        modelsPath: String
+        modelsPath: String,
     ): List<String> {
         return engine.fetchModels(kind, baseUrl, apiKey, modelsPath)
     }
@@ -109,7 +114,7 @@ class LocalLemmaClient private constructor(
                 providerId = it.providerId,
                 model = it.model,
                 createdAtSeconds = it.createdAtSeconds,
-                updatedAtSeconds = it.createdAtSeconds
+                updatedAtSeconds = it.createdAtSeconds,
             )
         }
     }
@@ -119,15 +124,17 @@ class LocalLemmaClient private constructor(
         content: String,
         providerId: String,
         model: String,
-        clientMsgId: String
+        clientMsgId: String,
     ): Flow<AgentStreamEvent> {
-        return engine.sendMessageEvents(
-            userId = userId(),
-            conversationId = conversationId,
-            content = content,
-            providerId = providerId,
-            model = model
-        ).map { it.toStreamEvent() }
+        return engine
+            .sendMessageEvents(
+                userId = userId(),
+                conversationId = conversationId,
+                content = content,
+                providerId = providerId,
+                model = model,
+            )
+            .map { it.toStreamEvent() }
     }
 
     private fun userId(): String {
@@ -153,7 +160,7 @@ private fun MobileProvider.toClient(): ClientProvider {
         modelsPath = modelsPath,
         models = models,
         enabled = enabled,
-        hasApiKey = apiKey.isNotBlank()
+        hasApiKey = apiKey.isNotBlank(),
     )
 }
 
@@ -164,7 +171,8 @@ private fun MobileAgentEvent.toStreamEvent(): AgentStreamEvent {
         is MobileAgentEvent.Delta -> AgentStreamEvent.Delta(text)
         is MobileAgentEvent.ThinkingDelta -> AgentStreamEvent.ThinkingDelta(text)
         is MobileAgentEvent.ToolStarted -> AgentStreamEvent.ToolStarted(id, name, arguments)
-        is MobileAgentEvent.ToolFinished -> AgentStreamEvent.ToolFinished(id, name, content, isError)
+        is MobileAgentEvent.ToolFinished ->
+            AgentStreamEvent.ToolFinished(id, name, content, isError)
         is MobileAgentEvent.Done -> AgentStreamEvent.Done(inputTokens, outputTokens)
         is MobileAgentEvent.Error -> AgentStreamEvent.Error(message)
     }

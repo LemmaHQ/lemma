@@ -8,7 +8,11 @@ object ErrorFormatter {
         return when (throwable) {
             is ConnectException -> {
                 val errorInfo = throwable.unpackedDetails(ErrorInfo::class).firstOrNull()
-                if (errorInfo != null && errorInfo.reason != dev.lemmahq.gen.lemma.v1.ErrorReason.ERROR_REASON_UNSPECIFIED) {
+                if (
+                    errorInfo != null &&
+                        errorInfo.reason !=
+                            dev.lemmahq.gen.lemma.v1.ErrorReason.ERROR_REASON_UNSPECIFIED
+                ) {
                     errorInfo.reason.name
                 } else if (!throwable.message.isNullOrBlank()) {
                     throwable.message ?: "Connection failed"

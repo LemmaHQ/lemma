@@ -18,7 +18,14 @@ class InMemoryLocalChatRepository : LocalChatRepository {
         return conversations.sortedByDescending { it.updated_at }
     }
 
-    override suspend fun saveConversation(id: String, title: String, status: Long, createdAt: Long, updatedAt: Long, syncSeq: Long) {
+    override suspend fun saveConversation(
+        id: String,
+        title: String,
+        status: Long,
+        createdAt: Long,
+        updatedAt: Long,
+        syncSeq: Long,
+    ) {
         conversations.removeAll { it.id == id }
         conversations.add(Cached_conversation(id, title, status, createdAt, updatedAt, syncSeq))
     }
@@ -37,8 +44,19 @@ class InMemoryLocalChatRepository : LocalChatRepository {
         return messages.filter { it.conversation_id == conversationId }.sortedBy { it.created_at }
     }
 
-    override suspend fun saveMessage(id: String, conversationId: String, role: Long, content: String, status: Long, createdAt: Long, updatedAt: Long, syncSeq: Long) {
+    override suspend fun saveMessage(
+        id: String,
+        conversationId: String,
+        role: Long,
+        content: String,
+        status: Long,
+        createdAt: Long,
+        updatedAt: Long,
+        syncSeq: Long,
+    ) {
         messages.removeAll { it.id == id }
-        messages.add(Cached_message(id, conversationId, role, content, status, createdAt, updatedAt, syncSeq))
+        messages.add(
+            Cached_message(id, conversationId, role, content, status, createdAt, updatedAt, syncSeq)
+        )
     }
 }

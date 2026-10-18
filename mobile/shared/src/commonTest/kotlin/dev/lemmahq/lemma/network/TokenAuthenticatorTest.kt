@@ -15,17 +15,19 @@ class TokenAuthenticatorTest {
         val repo = DefaultSettingsRepository(MapSettings())
         val authenticator = TokenAuthenticator("http://127.0.0.1:1025", repo)
 
-        val request = Request.Builder()
-            .url("http://127.0.0.1:1025/lemma.v1.ConversationService/ListConversations")
-            .header("Authorization", "Bearer expired_token")
-            .build()
+        val request =
+            Request.Builder()
+                .url("http://127.0.0.1:1025/lemma.v1.ConversationService/ListConversations")
+                .header("Authorization", "Bearer expired_token")
+                .build()
 
-        val response = Response.Builder()
-            .request(request)
-            .protocol(Protocol.HTTP_1_1)
-            .code(401)
-            .message("Unauthorized")
-            .build()
+        val response =
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(401)
+                .message("Unauthorized")
+                .build()
 
         val retryRequest = authenticator.authenticate(null, response)
         assertNull(retryRequest)
@@ -37,16 +39,16 @@ class TokenAuthenticatorTest {
         repo.setRefreshToken("sample_refresh_token")
         val authenticator = TokenAuthenticator("http://127.0.0.1:1025", repo)
 
-        val request = Request.Builder()
-            .url("http://127.0.0.1:1025/lemma.v1.AuthService/Login")
-            .build()
+        val request =
+            Request.Builder().url("http://127.0.0.1:1025/lemma.v1.AuthService/Login").build()
 
-        val response = Response.Builder()
-            .request(request)
-            .protocol(Protocol.HTTP_1_1)
-            .code(401)
-            .message("Unauthorized")
-            .build()
+        val response =
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(401)
+                .message("Unauthorized")
+                .build()
 
         val retryRequest = authenticator.authenticate(null, response)
         assertNull(retryRequest)

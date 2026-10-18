@@ -23,53 +23,51 @@ fun LemmaInput(
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Type a message..."
+    placeholder: String = "Type a message...",
 ) {
     val canSend = value.isNotBlank()
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(LemmaTheme.shapes.full)
-            .background(LemmaTheme.colors.fill2)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(LemmaTheme.shapes.full)
+                .background(LemmaTheme.colors.fill2)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = 4.dp)
-        ) {
+        Box(modifier = Modifier.weight(1f).padding(vertical = 4.dp)) {
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
                     color = LemmaTheme.colors.textTertiary,
-                    style = LemmaTheme.typography.bodyMedium
+                    style = LemmaTheme.typography.bodyMedium,
                 )
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                textStyle = LemmaTheme.typography.bodyMedium.copy(
-                    color = LemmaTheme.colors.textPrimary
-                ),
+                textStyle =
+                    LemmaTheme.typography.bodyMedium.copy(color = LemmaTheme.colors.textPrimary),
                 cursorBrush = SolidColor(LemmaTheme.colors.primary),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 
         Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(LemmaTheme.shapes.full)
-                .background(if (canSend) LemmaTheme.colors.primary else LemmaTheme.colors.fill3)
-                .clickable(enabled = canSend, onClick = onSend),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier.size(32.dp)
+                    .clip(LemmaTheme.shapes.full)
+                    .background(if (canSend) LemmaTheme.colors.primary else LemmaTheme.colors.fill3)
+                    .clickable(enabled = canSend, onClick = onSend),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "↑",
-                color = if (canSend) LemmaTheme.colors.userBubbleText else LemmaTheme.colors.textQuaternary,
-                style = LemmaTheme.typography.bodyMedium
+                color =
+                    if (canSend) LemmaTheme.colors.userBubbleText
+                    else LemmaTheme.colors.textQuaternary,
+                style = LemmaTheme.typography.bodyMedium,
             )
         }
     }
