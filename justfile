@@ -208,10 +208,10 @@ mobile-android-build:
 mobile-android-test:
     ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest
 
-# Kover HTML report for androidApp and shared
+# Kover HTML and XML reports for androidApp and shared
 [group('mobile')]
 mobile-android-cov:
-    ./gradlew :mobile:androidApp:koverHtmlReport
+    ./gradlew :mobile:androidApp:koverHtmlReport :mobile:androidApp:koverXmlReport
 
 # Generate design tokens (web CSS, desktop TS, Android palette)
 [group('design')]

@@ -23,7 +23,7 @@ No recipe or workflow fails on a coverage percentage; the Codecov project status
 - **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-core`, and `lemma-proto`.
 - **Web**: `just web-cov` runs vitest with v8 coverage, excluding `src/gen/` and `src/i18n/locales/`.
 - **Desktop**: `just desktop-cov` runs vitest with v8 coverage, excluding `src/gen/`.
-- **Android**: `just mobile-android-cov` writes a Kover HTML report for `androidApp` and `shared`. CI does not run it.
+- **Android**: `just mobile-android-cov` writes Kover HTML and XML reports for `androidApp` and `shared`, excluding generated code: the contract code, SQLDelight, UniFFI bindings, Compose resources, and `LemmaPalette`. CI does not run it.
 
 The Coverage workflow runs the Rust, web, and desktop recipes and uploads their reports and JUnit results to Codecov under the `rust`, `web`, and `desktop` flags. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
 

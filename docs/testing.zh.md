@@ -23,7 +23,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 - **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-server`、`lemma-core` 与 `lemma-proto`。
 - **Web**：`just web-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/` 与 `src/i18n/locales/`。
 - **桌面端**：`just desktop-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/`。
-- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 报告。CI 不运行它。
+- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源与 `LemmaPalette`。CI 不运行它。
 
 Coverage 工作流运行 Rust、Web 与桌面端的 recipe，把报告及其 JUnit 结果以 `rust`、`web` 与 `desktop` 标记上传到 Codecov。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
 

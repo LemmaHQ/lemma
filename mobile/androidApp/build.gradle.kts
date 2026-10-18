@@ -22,6 +22,22 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
+kover {
+    reports {
+        filters {
+            excludes {
+                packages(
+                    "dev.lemmahq.gen",
+                    "dev.lemmahq.lemma.db",
+                    "dev.lemmahq.lemma.uniffi",
+                    "lemma.mobile.shared.generated.resources",
+                )
+                classes("dev.lemmahq.lemma.theme.LemmaPalette")
+            }
+        }
+    }
+}
+
 android {
     namespace = "dev.lemmahq.lemma"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
