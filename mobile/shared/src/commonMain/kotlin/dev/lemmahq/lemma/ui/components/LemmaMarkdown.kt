@@ -10,7 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mikepenz.markdown.compose.components.markdownComponents
@@ -29,8 +33,6 @@ fun LemmaMarkdown(
     val colors: MarkdownColors =
         markdownColor(
             text = LemmaTheme.colors.assistantBubbleText,
-            codeText = LemmaTheme.colors.textPrimary,
-            linkText = LemmaTheme.colors.primary,
             codeBackground = LemmaTheme.colors.fill2,
             dividerColor = LemmaTheme.colors.separator,
         )
@@ -52,6 +54,15 @@ fun LemmaMarkdown(
                 LemmaTheme.typography.bodyMedium.copy(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 13.sp,
+                ),
+            textLink =
+                TextLinkStyles(
+                    style =
+                        SpanStyle(
+                            color = LemmaTheme.colors.primary,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = TextDecoration.Underline,
+                        )
                 ),
         )
 
