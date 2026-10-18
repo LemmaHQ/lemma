@@ -55,10 +55,12 @@ val installProtoGenerators =
         filePermissions { user { execute = true } }
     }
 
-val bufGeneratedDir = layout.buildDirectory.dir("generated/source/bufgen")
+abstract class BufGenerate : Exec() {
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+}
 
 val generateProtoBindings =
-    tasks.register<Exec>("generateProtoBindings") {
+    tasks.register<BufGenerate>("generateProtoBindings") {
         workingDir = rootProject.file("proto")
         val javaBin = File(System.getProperty("java.home"), "bin")
         val path = listOf(protoGeneratorsDir.get().asFile, javaBin, System.getenv("PATH"))
@@ -67,7 +69,7 @@ val generateProtoBindings =
         inputs.files(installProtoGenerators)
         inputs.dir(rootProject.file("proto/lemma"))
         inputs.file(rootProject.file("proto/buf.gen.mobile.yaml"))
-        outputs.dir(bufGeneratedDir)
+        outputDir.set(layout.buildDirectory.dir("generated/source/bufgen"))
     }
 
 kotlin {
@@ -152,7 +154,7 @@ dependencies {
 
 androidComponents {
     onVariants {
-        it.sources.java?.addStaticSourceDirectory(bufGeneratedDir.get().asFile.path)
+        it.sources.java?.addGeneratedSourceDirectory(generateProtoBindings, BufGenerate::outputDir)
     }
 }
 
@@ -247,7 +249,7 @@ val buildLemmaMobileJniLibs =
 
 tasks.configureEach {
     if (name.startsWith("compileAndroid")) {
-        dependsOn(generateUniffiBindings, generateProtoBindings)
+        dependsOn(generateUniffiBindings)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(buildLemmaMobileJniLibs)
