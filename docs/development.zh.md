@@ -77,7 +77,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI 工作流
 
-[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
+[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。Windows 与 macOS runner 没有 PostgreSQL 服务，因此那里的 Rust 测试会跳过 PostgreSQL 存储测试。
 
