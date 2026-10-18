@@ -97,20 +97,16 @@ async fn local_shutdown() {
     }
 }
 
+#[cfg(unix)]
 async fn shutdown_signal() -> std::io::Result<()> {
-    let ctrl_c = tokio::signal::ctrl_c();
-
-    #[cfg(unix)]
-    {
-        let mut terminate =
-            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-        tokio::select! {
-            result = ctrl_c => result?,
-            _ = terminate.recv() => {},
-        }
-        return Ok(());
+    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    tokio::select! {
+        result = tokio::signal::ctrl_c() => result,
+        _ = terminate.recv() => Ok(()),
     }
+}
 
-    #[cfg(not(unix))]
-    ctrl_c.await
+#[cfg(not(unix))]
+async fn shutdown_signal() -> std::io::Result<()> {
+    tokio::signal::ctrl_c().await
 }
