@@ -13,6 +13,19 @@ export interface ModelOption extends ModelSelection {
     providerName: string;
 }
 
+function isModelSelection(value: unknown): value is ModelSelection {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        "providerId" in value &&
+        typeof value.providerId === "string" &&
+        value.providerId !== "" &&
+        "model" in value &&
+        typeof value.model === "string" &&
+        value.model !== ""
+    );
+}
+
 export function useModelSelection() {
     const providers = useProviders();
 
@@ -33,8 +46,11 @@ export function useModelSelection() {
     const [stored, setStored] = useState<ModelSelection | null>(() => {
         try {
             const raw = localStorage.getItem(MODEL_KEY);
-            const parsed = raw ? (JSON.parse(raw) as ModelSelection) : null;
-            return parsed?.providerId && parsed?.model ? parsed : null;
+            if (raw === null) {
+                return null;
+            }
+            const parsed: unknown = JSON.parse(raw);
+            return isModelSelection(parsed) ? parsed : null;
         } catch {
             return null;
         }
@@ -42,7 +58,7 @@ export function useModelSelection() {
 
     const model = useMemo<ModelSelection | null>(() => {
         if (
-            stored &&
+            stored !== null &&
             options.some(
                 (o) =>
                     o.providerId === stored.providerId &&
@@ -51,10 +67,10 @@ export function useModelSelection() {
         ) {
             return stored;
         }
-        const first = options[0];
-        return first
-            ? { providerId: first.providerId, model: first.model }
-            : null;
+        const first = options.at(0);
+        return first === undefined
+            ? null
+            : { providerId: first.providerId, model: first.model };
     }, [stored, options]);
 
     const selectModel = (selection: ModelSelection) => {

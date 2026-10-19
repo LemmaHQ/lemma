@@ -6,6 +6,14 @@
             "options": {
                 "tabWidth": 2
             }
+        },
+        {
+            "files": ["web/src/**/*.tsx", "web/src/**/*.ts"],
+            "options": {
+                "plugins": ["prettier-plugin-tailwindcss"],
+                "tailwindStylesheet": "./web/src/index.css",
+                "tailwindFunctions": ["cn", "cva"]
+            }
         }
     ]
 }

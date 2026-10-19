@@ -3,18 +3,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, git, readText } from "./translation-pairing.ts";
 
-const EXCLUDED = /^\.agents\/skills\/lemma-code-style\/references\//;
-const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([\w-]*)/;
+const EXCLUDED = /^\.agents\/skills\/lemma-code-style\/references\//u;
+const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([\w-]*)/u;
 const SHELL_FENCES = new Set(["sh", "bash", "shell", "console"]);
-const CODE_SPAN = /(`+)(?!`)(.+?)(?<!`)\1(?!`)/g;
-const RECIPE_CALL = /(?<![\w-])just\s+([a-z][a-z0-9-]*)/g;
-const RECIPE_SPAN = /^just\s+([a-z][a-z0-9-]*)/;
-const PLACEHOLDER = /[<>*{}$…]|\.\.\./;
+const CODE_SPAN = /(`+)(?!`)(.+?)(?<!`)\1(?!`)/gu;
+const RECIPE_CALL = /(?<![\w-])just\s+([a-z][a-z0-9-]*)/gu;
+const RECIPE_SPAN = /^just\s+([a-z][a-z0-9-]*)/u;
+const PLACEHOLDER = /[<>*{}$…]|\.\.\./u;
 
 const recipes = new Set(
     execFileSync("just", ["--summary"], { cwd: ROOT_DIR, encoding: "utf8" })
         .trim()
-        .split(/\s+/),
+        .split(/\s+/u),
 );
 
 const tracked = git([
@@ -25,7 +25,7 @@ const tracked = git([
     "-z",
 ])
     .split("\0")
-    .filter((file) => file && fs.existsSync(path.join(ROOT_DIR, file)));
+    .filter((file) => file !== "" && fs.existsSync(path.join(ROOT_DIR, file)));
 const existing = new Set<string>();
 for (const file of tracked) {
     const parts = file.split("/");
@@ -40,8 +40,8 @@ const topLevelDirs = new Set(
 );
 
 function repoPath(span: string): string | null {
-    if (/\s/.test(span) || PLACEHOLDER.test(span)) return null;
-    const target = span.replace(/[#:].*$/, "").replace(/\/$/, "");
+    if (/\s/u.test(span) || PLACEHOLDER.test(span)) return null;
+    const target = span.replace(/[#:].*$/u, "").replace(/\/$/u, "");
     const [first] = target.split("/");
     return target.includes("/") && topLevelDirs.has(first) ? target : null;
 }
@@ -62,7 +62,7 @@ function ignoredPaths(paths: string[]): Set<string> {
         );
     } catch (error) {
         const status =
-            error && typeof error === "object" && "status" in error
+            typeof error === "object" && error !== null && "status" in error
                 ? error.status
                 : undefined;
         if (status !== 1) throw error;
@@ -71,13 +71,13 @@ function ignoredPaths(paths: string[]): Set<string> {
         output
             .split("\n")
             .filter(Boolean)
-            .map((p) => p.replace(/\/$/, "")),
+            .map((p) => p.replace(/\/$/u, "")),
     );
 }
 
 const files = tracked
     .filter((file) => file.endsWith(".md") && !EXCLUDED.test(file))
-    .sort();
+    .toSorted();
 const problems: string[] = [];
 const pathRefs: { where: string; target: string }[] = [];
 
@@ -92,34 +92,42 @@ interface Fence {
 }
 
 for (const file of files) {
-    const lines = readText(file)!.split("\n");
+    const text = readText(file);
+    if (text === null) continue;
+    const lines = text.split("\n");
     let fence: Fence | null = null;
     lines.forEach((line, index) => {
         const where = `${file}:${index + 1}`;
         const fenceMatch = line.match(FENCE);
-        if (fence) {
-            if (fenceMatch && line.trim().startsWith(fence.marker)) {
+        if (fence !== null) {
+            if (fenceMatch !== null && line.trim().startsWith(fence.marker)) {
                 fence = null;
             } else if (fence.shell) {
-                const command = line.replace(/(^|\s)#.*$/, "");
-                for (const [, name] of command.matchAll(RECIPE_CALL))
-                    checkRecipe(where, name);
+                const command = line.replace(/(^|\s)#.*$/u, "");
+                for (const [, name] of command.matchAll(RECIPE_CALL)) {
+                    if (name !== undefined) checkRecipe(where, name);
+                }
             }
             return;
         }
-        if (fenceMatch) {
-            fence = {
-                marker: fenceMatch[1],
-                shell: SHELL_FENCES.has(fenceMatch[2]),
-            };
-            return;
+        if (fenceMatch !== null) {
+            const marker = fenceMatch[1];
+            const info = fenceMatch[2];
+            if (marker !== undefined && info !== undefined) {
+                fence = {
+                    marker,
+                    shell: SHELL_FENCES.has(info),
+                };
+                return;
+            }
         }
         for (const [, , raw] of line.matchAll(CODE_SPAN)) {
+            if (raw === undefined) continue;
             const span = raw.trim();
-            const call = span.match(RECIPE_SPAN);
-            if (call) checkRecipe(where, call[1]);
+            const recipe = span.match(RECIPE_SPAN)?.[1];
+            if (recipe !== undefined) checkRecipe(where, recipe);
             const target = repoPath(span);
-            if (target && !existing.has(target))
+            if (target !== null && !existing.has(target))
                 pathRefs.push({ where, target });
         }
     });
@@ -136,4 +144,4 @@ for (const problem of problems) {
     console.error(problem);
 }
 console.log(`${files.length} files checked, ${problems.length} problems`);
-process.exit(problems.length ? 1 : 0);
+process.exit(problems.length > 0 ? 1 : 0);

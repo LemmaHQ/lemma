@@ -12,7 +12,7 @@ function keys(messages: Messages, prefix = ""): string[] {
                 ? [prefix + key]
                 : keys(value, `${prefix}${key}.`),
         )
-        .sort();
+        .toSorted();
 }
 
 it("gives every English message a Chinese counterpart", () => {

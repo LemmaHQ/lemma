@@ -1,7 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-const serverUrl = ipcRenderer.sendSync("get-server-url-sync");
-contextBridge.exposeInMainWorld("__LEMMA_SERVER_URL__", serverUrl);
+const serverUrl: unknown = ipcRenderer.sendSync("get-server-url-sync");
+contextBridge.exposeInMainWorld(
+    "__LEMMA_SERVER_URL__",
+    typeof serverUrl === "string" ? serverUrl : "",
+);
 
 contextBridge.exposeInMainWorld("lemmaDesktop", {
     getSkipCredentials: (): Promise<{

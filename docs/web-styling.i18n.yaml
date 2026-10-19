@@ -3,32 +3,32 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/web-styling.md
 /web-ui-style-reference:
-  en: 90a2c0639e2688ac
-  zh: 29842c4069cb223b
+  en: 7a83e464617982b2
+  zh: 56b45296dc0f271a
 /web-ui-style-reference/ownership:
-  en: a5edbf92aa75ce73
-  zh: 6e23db5e2dcbc527
+  en: 0a92102b3b102f2f
+  zh: 6dc56e116ca31c27
 /web-ui-style-reference/styling-stack:
-  en: 95a6806bcf27312e
-  zh: 5b4bf9ad36b27c3b
+  en: 53924b7b57f17674
+  zh: 39952ad1b65383ab
 /web-ui-style-reference/component-rules:
-  en: 9431b1f81f32261f
-  zh: ea95560d7b9e9557
+  en: c018ea35f11ede9c
+  zh: 1cb21910e5c75a28
 /web-ui-style-reference/visual-system:
   en: 37fc3eb74b790cbb
   zh: 0c9919a2f338785f
 /web-ui-style-reference/visual-system/color:
-  en: d8819b6dfc2aea2f
-  zh: a08dbcb649b96879
+  en: 89000621ad03f866
+  zh: 1b9002cb4e364d43
 /web-ui-style-reference/visual-system/elevation:
-  en: 4a5c394a5c38c307
-  zh: 50a1c4fc357d2963
-/web-ui-style-reference/visual-system/type-roles:
-  en: 9fd0ba15dda90adc
-  zh: 3e0c12391a5619a7
+  en: fc09528bc3948808
+  zh: 3aaf3cb902d2376a
+/web-ui-style-reference/visual-system/type:
+  en: 434cf64c9c607c80
+  zh: a1c951b3bd92572f
 /web-ui-style-reference/corner-radii:
   en: 735ba261165a1070
   zh: 3a627053949bda33
 /web-ui-style-reference/changing-the-system:
-  en: ed116deb540b1550
-  zh: 45bb1b932c5f85e8
+  en: ee374f330fbb1e27
+  zh: 38c7400c7b57d4f3

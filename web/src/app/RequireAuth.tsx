@@ -19,7 +19,7 @@ export function RequireAuth() {
     if (!ready) {
         return <Loading />;
     }
-    if (!user) {
+    if (user === null) {
         return <Navigate to="/login" replace />;
     }
     return <Outlet />;

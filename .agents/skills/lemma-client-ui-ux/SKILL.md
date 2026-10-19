@@ -55,11 +55,11 @@ Verify every menu, select, popover, and tooltip for all three:
 - **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the `.desktop-titlebar` drag region covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
 - **Unclipped:** it portals out of `overflow` ancestors and is never covered by neighboring elements or the titlebar.
 
-Scrollbars use the shared styles in [index.css](../../../web/src/index.css). Verify the bar is neither clipped by rounded corners nor flush against the container edge.
+Scrollable panes and panels use the shared `ScrollArea`, whose scrollbar overlays the content and follows the theme. Verify the bar is neither clipped by rounded corners nor flush against the container edge.
 
 ## Desktop window
 
-- The desktop titlebar is a drag region painted by the web client; the shell's `titleBarOverlay` colors come from the generated `themeColors`. A new header element sets `-webkit-app-region: no-drag` on its interactive parts, and sits below or beside the window controls, never under them.
+- The desktop titlebar is a drag region painted by the web client; the shell's `titleBarOverlay` colors come from `themeColors` in `desktop/src/theme-colors.ts`. A new header element sets `-webkit-app-region: no-drag` on its interactive parts, and sits below or beside the window controls, never under them.
 - The titlebar follows the surface beneath it, so a collapsed sidebar and an expanded one both look continuous at the top edge.
 - Desktop-only behavior goes through the web client's [platform layer](../../../web/src/platform/); feature code never reads `window.lemmaDesktop` directly.
 

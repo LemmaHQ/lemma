@@ -3,7 +3,7 @@ import type { PlatformAdapter } from "./types";
 function resolveBaseUrl(): string {
     if (typeof localStorage !== "undefined") {
         const stored = localStorage.getItem("lemma.serverUrl");
-        if (stored) {
+        if (stored !== null && stored !== "") {
             return stored;
         }
     }
@@ -36,7 +36,7 @@ export class BrowserAdapter implements PlatformAdapter {
     readonly auth = {
         cookieMode: false,
         canSkipAuth: false,
-        getSkipCredentials: async () => null,
+        getSkipCredentials: () => Promise.resolve(null),
     };
 
     readonly layout = {

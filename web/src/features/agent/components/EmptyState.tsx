@@ -1,5 +1,15 @@
-import { MessageSquare } from "lucide-react";
+import { IconMessage } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+
+import { Suggestion } from "@/components/ai-elements/suggestion";
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from "@/components/ui/empty";
 
 const SUGGESTION_KEYS = [
     "chat.suggestion1",
@@ -15,29 +25,23 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
     const { t } = useTranslation();
 
     return (
-        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-            <MessageSquare
-                className="size-8 text-muted-foreground/50"
-                strokeWidth={1.5}
-            />
-            <h1 className="text-card-title font-medium">
-                {t("chat.emptyTitle")}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-                {t("chat.emptySubtitle")}
-            </p>
-            <div className="mt-4 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
+        <Empty className="h-full">
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <IconMessage />
+                </EmptyMedia>
+                <EmptyTitle>{t("chat.emptyTitle")}</EmptyTitle>
+                <EmptyDescription>{t("chat.emptySubtitle")}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="flex-row flex-wrap justify-center">
                 {SUGGESTION_KEYS.map((key) => (
-                    <button
+                    <Suggestion
                         key={key}
-                        type="button"
-                        onClick={() => onPickSuggestion(t(key))}
-                        className="cursor-pointer rounded-md border p-3 text-left text-sm transition-colors hover:bg-accent"
-                    >
-                        {t(key)}
-                    </button>
+                        suggestion={t(key)}
+                        onClick={onPickSuggestion}
+                    />
                 ))}
-            </div>
-        </div>
+            </EmptyContent>
+        </Empty>
     );
 }

@@ -52,14 +52,20 @@ export class DesktopAdapter implements PlatformAdapter {
 
     constructor() {
         const injected =
-            typeof window !== "undefined"
-                ? window.__LEMMA_SERVER_URL__
-                : undefined;
+            typeof window === "undefined"
+                ? undefined
+                : // oxlint-disable-next-line eslint/no-underscore-dangle -- injected global name is owned by the desktop host
+                  window.__LEMMA_SERVER_URL__;
         const stored =
-            typeof localStorage !== "undefined"
-                ? localStorage.getItem("lemma.serverUrl")
-                : null;
-        this.baseUrl = injected || stored || "/";
+            typeof localStorage === "undefined"
+                ? null
+                : localStorage.getItem("lemma.serverUrl");
+        this.baseUrl =
+            injected !== undefined && injected !== ""
+                ? injected
+                : stored !== null && stored !== ""
+                  ? stored
+                  : "/";
     }
 
     appPath(path: string): string {

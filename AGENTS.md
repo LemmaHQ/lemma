@@ -16,7 +16,7 @@ web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
-design/       design tokens (tokens.json) and the generator for web, desktop, and Android
+design/       the Android palette (tokens.json) and its generator
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
 scripts/      documentation checks: translation pairing, brief generator, repository references
@@ -28,10 +28,11 @@ scripts/      documentation checks: translation pairing, brief generator, reposi
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
 just desktop-dev         # build lemma-server, then launch Electron
-just design-gen          # regenerate design tokens for web, desktop, and Android
+just design-gen          # regenerate the Android palette
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 just docs-refs-check     # check recipe names and repository paths cited in Markdown
+just dup-check           # report copy-pasted code (jscpd, .jscpd.json)
 ```
 
 Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.

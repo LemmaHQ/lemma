@@ -1,0 +1,112 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "unicorn", "oxc", "import", "promise"],
+    "categories": {
+        "correctness": "error",
+        "suspicious": "error",
+        "pedantic": "error",
+        "perf": "error"
+    },
+    "options": {
+        "typeAware": true,
+        "reportUnusedDisableDirectives": "error"
+    },
+    "env": {
+        "builtin": true
+    },
+    "ignorePatterns": ["**/gen/**", "**/dist/**", "**/coverage/**"],
+    "rules": {
+        "eslint/max-depth": "off",
+        "eslint/max-lines": "off",
+        "eslint/max-lines-per-function": "off",
+        "eslint/no-negated-condition": "off",
+        "typescript/consistent-return": "off",
+        "unicorn/no-array-callback-reference": "off",
+        "import/max-dependencies": "off",
+        "import/no-named-as-default-member": "off",
+        "typescript/prefer-readonly-parameter-types": "off",
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "no-array-constructor": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_"
+            }
+        ],
+        "no-useless-constructor": "error",
+        "typescript/ban-ts-comment": [
+            "error",
+            { "minimumDescriptionLength": 10 }
+        ],
+        "typescript/consistent-type-imports": "error",
+        "typescript/no-confusing-void-expression": [
+            "error",
+            { "ignoreArrowShorthand": true }
+        ],
+        "typescript/no-dynamic-delete": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/no-extraneous-class": "error",
+        "typescript/no-invalid-void-type": "error",
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-assertion": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-unnecessary-condition": [
+            "error",
+            { "allowConstantLoopConditions": true }
+        ],
+        "typescript/no-unnecessary-type-conversion": "error",
+        "typescript/no-unnecessary-type-parameters": "error",
+        "typescript/no-useless-default-assignment": "error",
+        "typescript/prefer-literal-enum-member": "error",
+        "typescript/prefer-reduce-type-parameter": "error",
+        "typescript/prefer-return-this-type": "error",
+        "typescript/related-getter-setter-pairs": "error",
+        "typescript/restrict-plus-operands": [
+            "error",
+            {
+                "allowAny": false,
+                "allowBoolean": false,
+                "allowNullish": false,
+                "allowNumberAndString": false,
+                "allowRegExp": false
+            }
+        ],
+        "typescript/restrict-template-expressions": [
+            "error",
+            { "allowNumber": true, "allowBoolean": true }
+        ],
+        "typescript/return-await": ["error", "error-handling-correctness-only"],
+        "typescript/switch-exhaustiveness-check": [
+            "error",
+            { "considerDefaultExhaustiveForUnions": true }
+        ],
+        "typescript/strict-boolean-expressions": [
+            "error",
+            {
+                "allowString": false,
+                "allowNumber": false,
+                "allowNullableObject": false
+            }
+        ],
+        "typescript/unified-signatures": "error",
+        "typescript/use-unknown-in-catch-callback-variable": "error",
+        "unicorn/no-useless-undefined": ["error", { "checkArguments": false }]
+    },
+    "overrides": [
+        {
+            "files": ["**/*.test.ts", "**/*.test.tsx"],
+            "plugins": ["vitest"],
+            "rules": {
+                "typescript/no-non-null-assertion": "off",
+                "typescript/no-unnecessary-condition": "off",
+                "typescript/restrict-template-expressions": "off"
+            }
+        }
+    ]
+}

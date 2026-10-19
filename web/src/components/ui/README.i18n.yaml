@@ -6,11 +6,17 @@
   en: bee03c6a07fb576a
   zh: 507a58790c600fcc
 /shared-ui-components/summary:
-  en: ab419710d1795f63
-  zh: 8196216c4c917748
+  en: 2623712911bfa47d
+  zh: c3281d4e2002b544
 /shared-ui-components/component-catalog:
-  en: 1f188bf73cde1d7c
-  zh: 0e89ff269efe19f1
+  en: e1ddddabcdb5d2f1
+  zh: b0ce088f8dbaa6ca
+/shared-ui-components/conventions:
+  en: d068c0969ca2be5e
+  zh: b16b362106a3f71a
 /shared-ui-components/adding-a-component:
-  en: 599358845ffa40a4
-  zh: 42b953e5a9374dbf
+  en: c3c03f6d24ff37b9
+  zh: 1848294c0d6a8534
+/shared-ui-components/changing-the-preset:
+  en: 1b01e63c85a879fc
+  zh: 58a130e0687d4ce6

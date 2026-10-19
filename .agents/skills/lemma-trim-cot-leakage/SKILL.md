@@ -26,7 +26,7 @@ For every suspect passage ask: **could a reader at HEAD, with no access to any s
 
 - **Issue references:** `#123` or "issue #123 tracks the reconnect gap" resolve at HEAD; keep them on any surface.
 - **Commit message bodies:** the commit body is the sanctioned home for change history, alternatives, and decisions. Classes 1, 4, 5, and 8 still apply there; classes 2 and 3 do not.
-- **Suppression reasons:** an `eslint-disable … -- reason`, `#[allow(…)]` with its justification, or a `// SAFETY:` proof is required prose; fix a false reason, never delete it.
+- **Suppression reasons:** an `oxlint-disable … -- reason`, `#[allow(…)]` with its justification, or a `// SAFETY:` proof is required prose; fix a false reason, never delete it.
 - **Counterfactual-present regression pins:** "without X, Y happens", "a naive X would…".
 - **Measured bounds:** "(measured: …)" calibrating a constant; the word "measured" is load-bearing.
 - **Runtime old and new states:** "each refresh revokes the old token and issues a new pair" is runtime lifecycle, not change history.

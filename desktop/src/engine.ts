@@ -15,6 +15,16 @@ interface ReadyPayload {
     default_password: string;
 }
 
+const isReadyPayload = (value: unknown): value is ReadyPayload =>
+    typeof value === "object" &&
+    value !== null &&
+    "port" in value &&
+    typeof value.port === "number" &&
+    "default_username" in value &&
+    typeof value.default_username === "string" &&
+    "default_password" in value &&
+    typeof value.default_password === "string";
+
 const READY_PREFIX = "LEMMA_READY ";
 const READY_TIMEOUT_MS = 10_000;
 const STOP_GRACE_MS = 3_000;
@@ -38,7 +48,7 @@ export function getSkipCredentials(): SkipCredentials | null {
 }
 
 export async function start(): Promise<SkipCredentials> {
-    if (child) {
+    if (child !== null) {
         throw new Error("engine already running");
     }
 
@@ -89,17 +99,11 @@ export async function start(): Promise<SkipCredentials> {
         }
         clearTimeout(timer);
         try {
-            const payload = JSON.parse(
-                line.slice(READY_PREFIX.length),
-            ) as ReadyPayload;
-            if (
-                typeof payload.port !== "number" ||
-                typeof payload.default_username !== "string" ||
-                typeof payload.default_password !== "string"
-            ) {
-                throw new Error("invalid ready payload");
+            const parsed: unknown = JSON.parse(line.slice(READY_PREFIX.length));
+            if (!isReadyPayload(parsed)) {
+                throw new TypeError("invalid ready payload");
             }
-            ready.resolve(payload);
+            ready.resolve(parsed);
         } catch (err) {
             proc.kill();
             ready.reject(
@@ -120,17 +124,21 @@ export async function start(): Promise<SkipCredentials> {
 }
 
 export const serverUrl = (): string | null =>
-    skipCredentials ? `http://127.0.0.1:${skipCredentials.port}` : null;
+    skipCredentials === null
+        ? null
+        : `http://127.0.0.1:${skipCredentials.port}`;
 
 export async function stop(): Promise<void> {
     const proc = child;
-    if (!proc) {
+    if (proc === null) {
         return;
     }
     child = null;
     proc.stdin.end();
-    const grace = Promise.withResolvers<void>();
-    setTimeout(grace.resolve, STOP_GRACE_MS);
+    const grace = Promise.withResolvers<null>();
+    setTimeout(() => {
+        grace.resolve(null);
+    }, STOP_GRACE_MS);
     await Promise.race([exitWatcher, grace.promise]);
     if (!proc.killed) {
         proc.kill();

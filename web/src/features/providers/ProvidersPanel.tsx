@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { errorText } from "@/data/rpc/errors";
 
 import {
@@ -51,7 +52,7 @@ export function ProvidersPanel() {
     };
 
     return (
-        <>
+        <div className="flex min-h-0 flex-1">
             <ProviderListPane
                 providers={store.list}
                 selectedId={creating ? null : effectiveSelectedId}
@@ -61,13 +62,19 @@ export function ProvidersPanel() {
                 }}
                 onCreate={() => setCreating(true)}
             />
-            <main className="min-w-0 flex-1 overflow-y-auto rounded-lg border border-border bg-background">
+            <ScrollArea className="min-w-0 flex-1">
                 {creating ? (
                     <NewProviderForm
                         onSave={handleSaveNew}
                         onCancel={() => setCreating(false)}
                     />
-                ) : selected ? (
+                ) : selected === null ? (
+                    <div className="grid h-full place-items-center text-sm text-muted-foreground">
+                        {store.loaded
+                            ? t("providers.emptyList")
+                            : t("common.loading")}
+                    </div>
+                ) : (
                     <ProviderDetail
                         key={selected.id}
                         provider={selected}
@@ -91,14 +98,8 @@ export function ProvidersPanel() {
                         }
                         onDelete={() => handleDelete(selected.id)}
                     />
-                ) : (
-                    <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                        {store.loaded
-                            ? t("providers.emptyList")
-                            : t("common.loading")}
-                    </div>
                 )}
-            </main>
-        </>
+            </ScrollArea>
+        </div>
     );
 }

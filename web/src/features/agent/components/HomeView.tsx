@@ -1,29 +1,18 @@
-import { ArrowUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ModelSwitcher } from "./ModelSwitcher";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type {
     ModelOption,
     ModelSelection,
 } from "@/features/agent/useModelSelection";
-import { cn } from "@/lib/utils";
+
+import { ChatComposer } from "./ChatComposer";
 
 interface HomeViewProps {
     onSubmit: (text: string) => void;
     model: ModelSelection | null;
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
-}
-
-function autosize(el: HTMLTextAreaElement | null) {
-    if (!el) {
-        return;
-    }
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
 }
 
 export function HomeView({
@@ -34,68 +23,21 @@ export function HomeView({
 }: HomeViewProps) {
     const { t } = useTranslation();
     const [value, setValue] = useState("");
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        autosize(textareaRef.current);
-    }, [value]);
-
-    const canSend = value.trim().length > 0;
-    const submit = () => {
-        if (canSend) {
-            onSubmit(value.trim());
-        }
-    };
 
     return (
         <div className="grid flex-1 place-items-center px-6">
             <div className="w-full max-w-2xl">
-                <p className="mb-8 text-center text-headline font-semibold">
+                <h1 className="mb-8 text-center text-3xl font-semibold">
                     {t("common.appName")}
-                </p>
-                <div className="glass rounded-xl border border-border p-4 shadow-composer">
-                    <Textarea
-                        ref={textareaRef}
-                        value={value}
-                        rows={2}
-                        onChange={(e) => setValue(e.target.value)}
-                        onInput={(e) => autosize(e.currentTarget)}
-                        onKeyDown={(e) => {
-                            if (
-                                e.key === "Enter" &&
-                                !e.shiftKey &&
-                                !e.nativeEvent.isComposing
-                            ) {
-                                e.preventDefault();
-                                submit();
-                            }
-                        }}
-                        placeholder={t("chat.inputPlaceholder")}
-                        aria-label={t("chat.inputPlaceholder")}
-                        className="max-h-48 min-h-16 resize-none border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
-                    />
-                    <div className="mt-2 flex items-center justify-between">
-                        <ModelSwitcher
-                            selection={model}
-                            options={modelOptions}
-                            onSelect={onModelChange}
-                        />
-                        <Button
-                            size="icon"
-                            className={cn(
-                                "size-8 rounded-full",
-                                canSend
-                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                    : "bg-secondary text-muted-foreground",
-                            )}
-                            onClick={submit}
-                            disabled={!canSend}
-                            aria-label={t("chat.send")}
-                        >
-                            <ArrowUp className="size-4" />
-                        </Button>
-                    </div>
-                </div>
+                </h1>
+                <ChatComposer
+                    value={value}
+                    onChange={setValue}
+                    onSend={() => onSubmit(value.trim())}
+                    model={model}
+                    modelOptions={modelOptions}
+                    onModelChange={onModelChange}
+                />
             </div>
         </div>
     );

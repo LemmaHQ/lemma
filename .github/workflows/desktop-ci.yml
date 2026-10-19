@@ -8,10 +8,11 @@ on:
     paths:
       - "desktop/**"
       - "web/**"
-      - "design/**"
       - "package.json"
       - "package-lock.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
+      - ".prettierrc.json"
       - "justfile"
       - "mise.toml"
       - ".github/workflows/desktop-ci.yml"
@@ -19,10 +20,11 @@ on:
     paths:
       - "desktop/**"
       - "web/**"
-      - "design/**"
       - "package.json"
       - "package-lock.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
+      - ".prettierrc.json"
       - "justfile"
       - "mise.toml"
       - ".github/workflows/desktop-ci.yml"
@@ -56,9 +58,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate design tokens
-        run: just design-gen
 
       - name: Format check
         run: just desktop-fmt-check
@@ -96,9 +95,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate design tokens
-        run: just design-gen
 
       - name: Build
         run: just desktop-build

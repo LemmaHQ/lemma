@@ -32,11 +32,12 @@ if (write) {
     process.exit(failed ? 1 : 0);
 }
 
-const pairs = files.length ? files.map(pairOf) : listPairs();
+const pairs =
+    files.length > 0 ? files.map(pairOf) : listPairs();
 const problems = pairs.flatMap(checkPair);
 for (const problem of problems) {
     console.error(problem);
 }
 const checked = pairs.filter((pair) => !isExcluded(pair.en)).length;
 console.log(`${checked} pairs checked, ${problems.length} problems`);
-process.exit(problems.length ? 1 : 0);
+process.exit(problems.length > 0 ? 1 : 0);

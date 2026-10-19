@@ -24,11 +24,11 @@ async function doRefresh(): Promise<boolean> {
             return true;
         }
         const refreshToken = getRefreshToken();
-        if (!refreshToken) {
+        if (refreshToken === null || refreshToken === "") {
             return false;
         }
         const res = await auth.refresh({ refreshToken });
-        if (!res.tokens) {
+        if (res.tokens === undefined) {
             return false;
         }
         setTokens(res.tokens.accessToken, res.tokens.refreshToken);
@@ -50,7 +50,7 @@ function tryRefresh(): Promise<boolean> {
 const authInterceptor: Interceptor = (next) => async (req) => {
     if (!cookieMode) {
         const token = getAccessToken();
-        if (token) {
+        if (token !== null && token !== "") {
             req.header.set("Authorization", `Bearer ${token}`);
         }
     }
@@ -73,7 +73,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
         }
         if (!cookieMode) {
             const fresh = getAccessToken();
-            if (fresh) {
+            if (fresh !== null && fresh !== "") {
                 req.header.set("Authorization", `Bearer ${fresh}`);
             }
         }

@@ -56,7 +56,7 @@ export const useConversationsStore = create<ConversationsState>()(
 
         hydrateFromCache: async () => {
             const db = getDb();
-            if (!db) {
+            if (db === null) {
                 return;
             }
             const [list, archived] = await Promise.all([
@@ -82,11 +82,12 @@ export const useConversationsStore = create<ConversationsState>()(
 
         create: async () => {
             const res = await conversationClient.createConversation({});
-            if (!res.conversation) {
+            const conversation = res.conversation;
+            if (conversation === undefined) {
                 throw new Error("no conversation in response");
             }
-            set((s) => ({ list: [res.conversation!, ...s.list] }));
-            return res.conversation.id;
+            set((s) => ({ list: [conversation, ...s.list] }));
+            return conversation.id;
         },
 
         rename: async (id, title) => {
@@ -94,11 +95,12 @@ export const useConversationsStore = create<ConversationsState>()(
                 id,
                 title,
             });
-            if (!res.conversation) {
+            const conversation = res.conversation;
+            if (conversation === undefined) {
                 return;
             }
             set((s) => ({
-                list: s.list.map((c) => (c.id === id ? res.conversation! : c)),
+                list: s.list.map((c) => (c.id === id ? conversation : c)),
             }));
         },
 
@@ -107,7 +109,8 @@ export const useConversationsStore = create<ConversationsState>()(
             const item = get().list.find((c) => c.id === id);
             set((s) => ({
                 list: s.list.filter((c) => c.id !== id),
-                archived: item ? [item, ...s.archived] : s.archived,
+                archived:
+                    item === undefined ? s.archived : [item, ...s.archived],
             }));
         },
 
@@ -115,7 +118,10 @@ export const useConversationsStore = create<ConversationsState>()(
             const res = await conversationClient.restoreConversation({ id });
             set((s) => ({
                 archived: s.archived.filter((c) => c.id !== id),
-                list: res.conversation ? [res.conversation, ...s.list] : s.list,
+                list:
+                    res.conversation === undefined
+                        ? s.list
+                        : [res.conversation, ...s.list],
             }));
         },
 

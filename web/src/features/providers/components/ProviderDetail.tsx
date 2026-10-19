@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Trash2 } from "lucide-react";
+import { IconLock, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,37 +13,25 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
 
+import { ApiKeyInput } from "./ApiKeyInput";
 import { ModelList } from "./ModelList";
-
-function FieldRow({
-    label,
-    description,
-    children,
-}: {
-    label: string;
-    description: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <div className="flex items-center justify-between gap-6 border-b border-border/60 py-4">
-            <div className="min-w-0">
-                <p className="text-sm font-medium">{label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                    {description}
-                </p>
-            </div>
-            <div className="flex w-95 shrink-0 items-center justify-end gap-2">
-                {children}
-            </div>
-        </div>
-    );
-}
 
 interface ProviderDetailProps {
     provider: Provider;
@@ -68,7 +56,6 @@ export function ProviderDetail({
 }: ProviderDetailProps) {
     const { t } = useTranslation();
     const [apiKey, setApiKey] = useState(provider.apiKey);
-    const [showKey, setShowKey] = useState(false);
     const [name, setName] = useState(provider.name);
     const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
     const [savingKey, setSavingKey] = useState(false);
@@ -129,22 +116,25 @@ export function ProviderDetail({
     return (
         <div className="max-w-3xl px-8 py-6">
             <header className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border bg-background text-sm font-semibold">
-                    {provider.name.charAt(0).toUpperCase()}
-                </span>
+                <Avatar>
+                    <AvatarFallback>
+                        {provider.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
                 <h2 className="text-base font-semibold">{provider.name}</h2>
                 <div className="ml-auto flex items-center gap-3">
                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                aria-label={t("providers.deleteProvider")}
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
+                        <AlertDialogTrigger
+                            render={
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    aria-label={t("providers.deleteProvider")}
+                                />
+                            }
+                        >
+                            <IconTrash />
                         </AlertDialogTrigger>
                         <AlertDialogContent size="sm">
                             <AlertDialogHeader>
@@ -176,107 +166,110 @@ export function ProviderDetail({
                 </div>
             </header>
 
-            <section className="mt-4">
-                <FieldRow
-                    label={t("providers.identifier")}
-                    description={t("providers.identifierHint")}
-                >
+            <FieldGroup className="mt-6">
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="pd-identifier">
+                            {t("providers.identifier")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.identifierHint")}
+                        </FieldDescription>
+                    </FieldContent>
                     <Input
+                        id="pd-identifier"
                         value={provider.identifier}
                         readOnly
                         disabled
-                        className="flex-1 font-mono text-xs"
                     />
-                </FieldRow>
-
-                <FieldRow
-                    label={t("providers.name")}
-                    description={t("providers.nameDesc")}
-                >
-                    <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={t("providers.namePlaceholder")}
-                        className="flex-1"
-                    />
-                    <Button
-                        type="button"
-                        size="sm"
-                        disabled={!nameDirty || savingName}
-                        onClick={() => void saveName()}
-                    >
-                        {t("common.save")}
-                    </Button>
-                </FieldRow>
-
-                <FieldRow
-                    label={t("providers.apiKey")}
-                    description={t("providers.apiKeyDesc")}
-                >
-                    <div className="relative flex-1">
+                </Field>
+                <FieldSeparator />
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="pd-name">
+                            {t("providers.name")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.nameDesc")}
+                        </FieldDescription>
+                    </FieldContent>
+                    <ButtonGroup>
                         <Input
-                            type={showKey ? "text" : "password"}
+                            id="pd-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder={t("providers.namePlaceholder")}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={!nameDirty || savingName}
+                            onClick={() => void saveName()}
+                        >
+                            {t("common.save")}
+                        </Button>
+                    </ButtonGroup>
+                </Field>
+                <FieldSeparator />
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="pd-apikey">
+                            {t("providers.apiKey")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.apiKeyDesc")}
+                        </FieldDescription>
+                    </FieldContent>
+                    <ButtonGroup>
+                        <ApiKeyInput
+                            id="pd-apikey"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                             placeholder={t("providers.apiKeyPlaceholder")}
-                            className="pr-9 font-mono text-xs"
                         />
-                        <button
+                        <Button
                             type="button"
-                            onClick={() => setShowKey((v) => !v)}
-                            aria-label={
-                                showKey
-                                    ? t("providers.hideApiKey")
-                                    : t("providers.showApiKey")
-                            }
-                            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                            variant="outline"
+                            disabled={!apiKeyDirty || savingKey}
+                            onClick={() => void saveApiKey()}
                         >
-                            {showKey ? (
-                                <EyeOff className="size-4" />
-                            ) : (
-                                <Eye className="size-4" />
-                            )}
-                        </button>
-                    </div>
-                    <Button
-                        type="button"
-                        size="sm"
-                        disabled={!apiKeyDirty || savingKey}
-                        onClick={() => void saveApiKey()}
-                    >
-                        {t("common.save")}
-                    </Button>
-                </FieldRow>
-
-                <FieldRow
-                    label={t("providers.baseUrl")}
-                    description={t("providers.baseUrlDesc")}
-                >
-                    <Input
-                        value={baseUrl}
-                        onChange={(e) => setBaseUrl(e.target.value)}
-                        placeholder={t("providers.baseUrlPlaceholder")}
-                        className="flex-1 font-mono text-xs"
-                    />
-                    <Button
-                        type="button"
-                        size="sm"
-                        disabled={!baseUrlDirty || savingUrl}
-                        onClick={() => void saveBaseUrl()}
-                    >
-                        {t("common.save")}
-                    </Button>
-                </FieldRow>
-
-                {error && (
-                    <p className="pt-2 text-xs text-destructive">{error}</p>
-                )}
-
-                <p className="flex items-center gap-1.5 pt-4 text-xs text-muted-foreground">
-                    <Lock className="size-3.5" />
+                            {t("common.save")}
+                        </Button>
+                    </ButtonGroup>
+                </Field>
+                <FieldSeparator />
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="pd-baseurl">
+                            {t("providers.baseUrl")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.baseUrlDesc")}
+                        </FieldDescription>
+                    </FieldContent>
+                    <ButtonGroup>
+                        <Input
+                            id="pd-baseurl"
+                            value={baseUrl}
+                            onChange={(e) => setBaseUrl(e.target.value)}
+                            placeholder={t("providers.baseUrlPlaceholder")}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={!baseUrlDirty || savingUrl}
+                            onClick={() => void saveBaseUrl()}
+                        >
+                            {t("common.save")}
+                        </Button>
+                    </ButtonGroup>
+                </Field>
+                {error !== null && <FieldError>{error}</FieldError>}
+                <FieldDescription>
+                    <IconLock className="inline size-3.5" />{" "}
                     {t("providers.securityNote")}
-                </p>
-            </section>
+                </FieldDescription>
+            </FieldGroup>
 
             <ModelList
                 models={provider.models}

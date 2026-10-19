@@ -1,11 +1,32 @@
-import { Check, Plus, RefreshCw, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+    IconCheck,
+    IconPlus,
+    IconRefresh,
+    IconSearch,
+    IconX,
+} from "@tabler/icons-react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
+import { FieldDescription, FieldError } from "@/components/ui/field";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemGroup,
+    ItemSeparator,
+    ItemTitle,
+} from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import { errorText } from "@/data/rpc/errors";
-import { cn } from "@/lib/utils";
 
 interface ModelListProps {
     models: string[];
@@ -25,7 +46,9 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
 
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
-        return q ? models.filter((m) => m.toLowerCase().includes(q)) : models;
+        return q === ""
+            ? models
+            : models.filter((m) => m.toLowerCase().includes(q));
     }, [models, query]);
 
     const fetchRemote = async () => {
@@ -49,7 +72,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         const id = newModel.trim();
         setNewModel("");
         setAdding(false);
-        if (!id || models.includes(id)) {
+        if (id === "" || models.includes(id)) {
             return;
         }
         onChange([id, ...models]);
@@ -58,31 +81,29 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     const remove = (id: string) => onChange(models.filter((m) => m !== id));
 
     return (
-        <section className="pt-6">
+        <section className="flex flex-col gap-3 pt-6">
             <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold">
                     {t("providers.modelList")}
                 </h3>
                 <div className="ml-auto flex items-center gap-2">
-                    <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("providers.modelSearchPlaceholder")}
-                        className="h-8 w-48"
-                    />
+                    <InputGroup className="w-48">
+                        <InputGroupAddon>
+                            <IconSearch />
+                        </InputGroupAddon>
+                        <InputGroupInput
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={t("providers.modelSearchPlaceholder")}
+                        />
+                    </InputGroup>
                     <Button
                         type="button"
                         variant="outline"
-                        size="sm"
                         onClick={() => void fetchRemote()}
                         disabled={fetching}
                     >
-                        <RefreshCw
-                            className={cn(
-                                "size-3.5",
-                                fetching && "animate-spin",
-                            )}
-                        />
+                        {fetching ? <Spinner /> : <IconRefresh />}
                         {fetching
                             ? t("providers.fetchingModels")
                             : t("providers.fetchModelList")}
@@ -91,35 +112,27 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-8"
                         aria-label={t("providers.addModel")}
                         onClick={() => setAdding((v) => !v)}
                     >
-                        <Plus className="size-4" />
+                        <IconPlus />
                     </Button>
                 </div>
             </div>
 
-            {fetchMsg && (
-                <p
-                    className={cn(
-                        "pt-2 text-xs",
-                        fetchMsg.ok
-                            ? "text-muted-foreground"
-                            : "text-destructive",
-                    )}
-                >
-                    {fetchMsg.text}
-                </p>
-            )}
+            {fetchMsg !== null &&
+                (fetchMsg.ok ? (
+                    <FieldDescription>{fetchMsg.text}</FieldDescription>
+                ) : (
+                    <FieldError>{fetchMsg.text}</FieldError>
+                ))}
 
             {adding && (
-                <div className="flex items-center gap-2 border-b border-border/60 py-3">
-                    <Input
+                <InputGroup>
+                    <InputGroupInput
                         value={newModel}
                         onChange={(e) => setNewModel(e.target.value)}
                         placeholder={t("providers.modelPlaceholder")}
-                        className="h-8 flex-1 font-mono"
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
@@ -130,58 +143,61 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                             }
                         }}
                     />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="size-8 shrink-0"
-                        aria-label={t("providers.addModel")}
-                        onClick={confirmAdd}
-                        disabled={!newModel.trim()}
-                    >
-                        <Check className="size-4" />
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 shrink-0"
-                        aria-label={t("common.cancel")}
-                        onClick={() => {
-                            setNewModel("");
-                            setAdding(false);
-                        }}
-                    >
-                        <X className="size-4" />
-                    </Button>
-                </div>
+                    <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                            size="icon-xs"
+                            aria-label={t("providers.addModel")}
+                            onClick={confirmAdd}
+                            disabled={newModel.trim() === ""}
+                        >
+                            <IconCheck />
+                        </InputGroupButton>
+                        <InputGroupButton
+                            size="icon-xs"
+                            aria-label={t("common.cancel")}
+                            onClick={() => {
+                                setNewModel("");
+                                setAdding(false);
+                            }}
+                        >
+                            <IconX />
+                        </InputGroupButton>
+                    </InputGroupAddon>
+                </InputGroup>
             )}
 
             {visible.length > 0 ? (
-                visible.map((model) => (
-                    <div
-                        key={model}
-                        className="flex items-center gap-3 border-b border-border/60 py-3"
-                    >
-                        <span className="truncate font-mono text-sm">
-                            {model}
-                        </span>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                            aria-label={t("providers.removeModel")}
-                            onClick={() => remove(model)}
-                        >
-                            <X className="size-3.5" />
-                        </Button>
-                    </div>
-                ))
+                <ItemGroup>
+                    {visible.map((model, index) => (
+                        <Fragment key={model}>
+                            {index > 0 && <ItemSeparator />}
+                            <Item size="xs">
+                                <ItemContent>
+                                    <ItemTitle>{model}</ItemTitle>
+                                </ItemContent>
+                                <ItemActions>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={t("providers.removeModel")}
+                                        onClick={() => remove(model)}
+                                    >
+                                        <IconX />
+                                    </Button>
+                                </ItemActions>
+                            </Item>
+                        </Fragment>
+                    ))}
+                </ItemGroup>
             ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                    {t("providers.noModels")}
-                </p>
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyDescription>
+                            {t("providers.noModels")}
+                        </EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
             )}
         </section>
     );

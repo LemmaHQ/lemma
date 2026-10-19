@@ -13,10 +13,7 @@
                         (pref === "system" &&
                             window.matchMedia("(prefers-color-scheme: dark)")
                                 .matches);
-                    document.documentElement.setAttribute(
-                        "data-theme",
-                        dark ? "dark" : "light",
-                    );
+                    document.documentElement.classList.toggle("dark", dark);
                 } catch (e) {}
             })();
         </script>

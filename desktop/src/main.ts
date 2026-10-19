@@ -2,24 +2,22 @@ import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
 import * as engine from "./engine";
-import { themeColors } from "./gen/design-tokens";
+import { themeColors } from "./theme-colors";
 
 if (started) {
     app.quit();
 }
 
-if (process.env.LEMMA_DEBUG_PORT) {
-    app.commandLine.appendSwitch(
-        "remote-debugging-port",
-        process.env.LEMMA_DEBUG_PORT,
-    );
+const debugPort = process.env.LEMMA_DEBUG_PORT;
+if (debugPort !== undefined && debugPort !== "") {
+    app.commandLine.appendSwitch("remote-debugging-port", debugPort);
 }
 
 let mainWindow: BrowserWindow | null = null;
 let engineStopping = false;
 
 const loadFatalPage = (detail: string) => {
-    if (!mainWindow) {
+    if (mainWindow === null) {
         return;
     }
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lemma</title></head>
@@ -28,16 +26,22 @@ const loadFatalPage = (detail: string) => {
 <h1 style="font-size:18px;margin:0">Cannot start the local engine</h1>
 <p style="opacity:0.7;margin:0">${detail}</p>
 </main></body></html>`;
-    mainWindow.loadURL(
-        `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
-    );
+    mainWindow
+        .loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+        .catch((err: unknown) => {
+            console.error("fatal page failed to load:", err);
+        });
 };
 
 const loadApp = () => {
-    if (!mainWindow) {
+    if (mainWindow === null) {
         return;
     }
-    mainWindow.loadFile(path.join(__dirname, "../../web-dist/index.html"));
+    mainWindow
+        .loadFile(path.join(__dirname, "../../web-dist/index.html"))
+        .catch((err: unknown) => {
+            console.error("app page failed to load:", err);
+        });
 };
 
 interface TitleBarState {
@@ -55,6 +59,14 @@ const initialTitleBarState = (): TitleBarState => ({
     theme: nativeTheme.shouldUseDarkColors ? "dark" : "light",
     surface: "background",
 });
+
+const isTitleBarState = (value: unknown): value is TitleBarState =>
+    typeof value === "object" &&
+    value !== null &&
+    "theme" in value &&
+    (value.theme === "light" || value.theme === "dark") &&
+    "surface" in value &&
+    (value.surface === "sidebar" || value.surface === "background");
 const createWindow = () => {
     const initialState = initialTitleBarState();
     const window = new BrowserWindow({
@@ -87,11 +99,8 @@ const createWindow = () => {
     });
 };
 
-ipcMain.on("set-titlebar", (_event, state: TitleBarState) => {
-    if (
-        (state.theme !== "light" && state.theme !== "dark") ||
-        (state.surface !== "sidebar" && state.surface !== "background")
-    ) {
+ipcMain.on("set-titlebar", (_event, state: unknown) => {
+    if (!isTitleBarState(state)) {
         console.error("titlebar state rejected:", state);
         return;
     }
@@ -108,12 +117,12 @@ ipcMain.on("get-server-url-sync", (event) => {
 ipcMain.handle("get-skip-credentials", () => {
     const skip = engine.getSkipCredentials();
     const url = engine.serverUrl();
-    return url && skip
+    return url !== null && skip !== null
         ? { serverUrl: url, username: skip.username, password: skip.password }
         : null;
 });
 ipcMain.on("toggle-maximize", () => {
-    if (!mainWindow) {
+    if (mainWindow === null) {
         return;
     }
     if (mainWindow.isMaximized()) {
@@ -123,13 +132,22 @@ ipcMain.on("toggle-maximize", () => {
     }
 });
 
+const boot = async () => {
+    try {
+        await engine.start();
+        createWindow();
+        loadApp();
+    } catch (err) {
+        createWindow();
+        loadFatalPage(err instanceof Error ? err.message : String(err));
+    }
+};
+
 const gotTheLock = app.requestSingleInstanceLock();
 
-if (!gotTheLock) {
-    app.quit();
-} else {
+if (gotTheLock) {
     app.on("second-instance", () => {
-        if (mainWindow) {
+        if (mainWindow !== null) {
             if (mainWindow.isMinimized()) {
                 mainWindow.restore();
             }
@@ -137,16 +155,9 @@ if (!gotTheLock) {
         }
     });
 
-    app.on("ready", async () => {
+    app.on("ready", () => {
         Menu.setApplicationMenu(null);
-        try {
-            await engine.start();
-            createWindow();
-            loadApp();
-        } catch (err) {
-            createWindow();
-            loadFatalPage(err instanceof Error ? err.message : String(err));
-        }
+        void boot();
     });
 
     app.on("before-quit", (event) => {
@@ -155,7 +166,12 @@ if (!gotTheLock) {
         }
         event.preventDefault();
         engineStopping = true;
-        engine.stop().finally(() => app.quit());
+        engine
+            .stop()
+            .catch((err: unknown) => {
+                console.error("engine stop failed:", err);
+            })
+            .finally(() => app.quit());
     });
 
     app.on("window-all-closed", () => {
@@ -169,4 +185,6 @@ if (!gotTheLock) {
             createWindow();
         }
     });
+} else {
+    app.quit();
 }

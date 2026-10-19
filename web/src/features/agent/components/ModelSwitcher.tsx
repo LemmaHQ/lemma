@@ -1,18 +1,23 @@
-import { ChevronDown } from "lucide-react";
+import { IconCheck, IconChevronDown } from "@tabler/icons-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    ModelSelector,
+    ModelSelectorContent,
+    ModelSelectorEmpty,
+    ModelSelectorGroup,
+    ModelSelectorInput,
+    ModelSelectorItem,
+    ModelSelectorList,
+    ModelSelectorName,
+    ModelSelectorTrigger,
+} from "@/components/ai-elements/model-selector";
+import { PromptInputButton } from "@/components/ai-elements/prompt-input";
 import type {
     ModelOption,
     ModelSelection,
 } from "@/features/agent/useModelSelection";
-import { cn } from "@/lib/utils";
 
 interface ModelSwitcherProps {
     selection: ModelSelection | null;
@@ -26,44 +31,62 @@ export function ModelSwitcher({
     onSelect,
 }: ModelSwitcherProps) {
     const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const groups = [...Map.groupBy(options, (o) => o.providerName)];
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="h-7 px-2 text-xs text-muted-foreground"
-                    aria-label={t("chat.selectModel")}
-                    title={t("chat.selectModel")}
-                    disabled={options.length === 0}
-                >
-                    <span className="max-w-56 truncate font-mono">
-                        {selection ? selection.model : t("chat.noProvider")}
-                    </span>
-                    <ChevronDown className="size-3" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-                {options.map((o) => (
-                    <DropdownMenuItem
-                        key={`${o.providerId}/${o.model}`}
-                        onClick={() =>
-                            onSelect({
-                                providerId: o.providerId,
-                                model: o.model,
-                            })
-                        }
-                        className={cn(
-                            "font-mono text-xs",
-                            selection?.providerId === o.providerId &&
-                                selection.model === o.model &&
-                                "bg-accent",
-                        )}
-                    >
-                        {o.providerName} · {o.model}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <ModelSelector open={open} onOpenChange={setOpen}>
+            <ModelSelectorTrigger
+                render={
+                    <PromptInputButton
+                        aria-label={t("chat.selectModel")}
+                        disabled={options.length === 0}
+                    />
+                }
+            >
+                <ModelSelectorName>
+                    {selection === null
+                        ? t("chat.noProvider")
+                        : selection.model}
+                </ModelSelectorName>
+                <IconChevronDown />
+            </ModelSelectorTrigger>
+            <ModelSelectorContent title={t("chat.selectModel")}>
+                <ModelSelectorInput placeholder={t("chat.searchModel")} />
+                <ModelSelectorList>
+                    <ModelSelectorEmpty>
+                        {t("chat.noModelMatch")}
+                    </ModelSelectorEmpty>
+                    {groups.map(([providerName, models]) => (
+                        <ModelSelectorGroup
+                            key={providerName}
+                            heading={providerName}
+                        >
+                            {models.map((o) => (
+                                <ModelSelectorItem
+                                    key={`${o.providerId}/${o.model}`}
+                                    value={`${o.providerName} ${o.model}`}
+                                    onSelect={() => {
+                                        onSelect({
+                                            providerId: o.providerId,
+                                            model: o.model,
+                                        });
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <ModelSelectorName>
+                                        {o.model}
+                                    </ModelSelectorName>
+                                    {selection?.providerId === o.providerId &&
+                                        selection.model === o.model && (
+                                            <IconCheck />
+                                        )}
+                                </ModelSelectorItem>
+                            ))}
+                        </ModelSelectorGroup>
+                    ))}
+                </ModelSelectorList>
+            </ModelSelectorContent>
+        </ModelSelector>
     );
 }

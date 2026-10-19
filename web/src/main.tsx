@@ -7,7 +7,11 @@ import "./index.css";
 import { installCrossTabGuard } from "./app/cross-tab-account.ts";
 
 installCrossTabGuard();
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.querySelector("#root");
+if (rootElement === null) {
+    throw new Error("missing #root element");
+}
+createRoot(rootElement).render(
     <StrictMode>
         <App />
     </StrictMode>,

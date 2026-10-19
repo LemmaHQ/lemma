@@ -1,5 +1,12 @@
-import { Archive, ChevronRight, Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+    IconArchive,
+    IconChevronRight,
+    IconDots,
+    IconPencil,
+    IconRestore,
+    IconTrash,
+} from "@tabler/icons-react";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -7,8 +14,27 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+    DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarInput,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { groupSessions, type SessionSummary } from "./grouping";
 
@@ -23,7 +49,35 @@ interface ConversationListProps {
     onDeleteSession: (id: string) => void;
 }
 
-function SessionRow({
+function SessionActions({ children }: { children: ReactNode }) {
+    const { t } = useTranslation();
+    return (
+        <DropdownMenu>
+            <Tooltip>
+                <TooltipTrigger
+                    render={
+                        <DropdownMenuTrigger
+                            render={
+                                <SidebarMenuAction
+                                    showOnHover
+                                    aria-label={t("sessions.actions")}
+                                />
+                            }
+                        />
+                    }
+                >
+                    <IconDots />
+                </TooltipTrigger>
+                <TooltipContent>{t("sessions.actions")}</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent side="right" align="start">
+                {children}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function SessionItem({
     session,
     active,
     onOpen,
@@ -47,80 +101,59 @@ function SessionRow({
     const commit = () => {
         const title = inputRef.current?.value.trim() ?? "";
         setEditing(false);
-        if (title && title !== session.title) {
+        if (title !== "" && title !== session.title) {
             onRename(session.id, title);
         }
     };
 
     if (editing) {
         return (
-            <Input
-                ref={focusRef}
-                defaultValue={session.title}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        commit();
-                    } else if (e.key === "Escape") {
-                        setEditing(false);
-                    }
-                }}
-                className="h-7 rounded-md px-3 text-sm"
-            />
+            <SidebarMenuItem>
+                <SidebarInput
+                    ref={focusRef}
+                    defaultValue={session.title}
+                    aria-label={t("sessions.rename")}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            commit();
+                        } else if (e.key === "Escape") {
+                            setEditing(false);
+                        }
+                    }}
+                />
+            </SidebarMenuItem>
         );
     }
 
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onOpen(session.id)}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onOpen(session.id);
-                }
-            }}
-            className={cn(
-                "group flex w-full cursor-pointer items-center truncate rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/60",
-                active && "bg-sidebar-accent font-medium",
-            )}
-        >
-            <span className="flex-1 truncate text-left">
-                {session.title || t("sidebar.newChat")}
-            </span>
-            <span className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                    type="button"
-                    aria-label={t("sessions.rename")}
-                    title={t("sessions.rename")}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setEditing(true);
-                    }}
-                    className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
-                >
-                    <Pencil className="size-3" />
-                </button>
-                <button
-                    type="button"
-                    aria-label={t("sessions.archive")}
-                    title={t("sessions.archive")}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onArchive(session.id);
-                    }}
-                    className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
-                >
-                    <Archive className="size-3.5" />
-                </button>
-            </span>
-        </div>
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                isActive={active}
+                onClick={() => onOpen(session.id)}
+            >
+                <span>
+                    {session.title === ""
+                        ? t("sidebar.newChat")
+                        : session.title}
+                </span>
+            </SidebarMenuButton>
+            <SessionActions>
+                <DropdownMenuItem onClick={() => setEditing(true)}>
+                    <IconPencil />
+                    {t("sessions.rename")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onArchive(session.id)}>
+                    <IconArchive />
+                    {t("sessions.archive")}
+                </DropdownMenuItem>
+            </SessionActions>
+        </SidebarMenuItem>
     );
 }
 
-function ArchivedRow({
+function ArchivedItem({
     session,
     onRestore,
     onDelete,
@@ -131,34 +164,32 @@ function ArchivedRow({
 }) {
     const { t } = useTranslation();
     return (
-        <div className="group flex w-full items-center truncate rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/60">
-            <span className="flex-1 truncate text-left text-muted-foreground">
-                {session.title || t("sidebar.newChat")}
-            </span>
-            <span className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                    type="button"
-                    aria-label={t("sessions.restore")}
-                    title={t("sessions.restore")}
-                    onClick={() => onRestore(session.id)}
-                    className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
-                >
-                    <RotateCcw className="size-3" />
-                </button>
-                <button
-                    type="button"
-                    aria-label={t("sessions.delete")}
-                    title={t("sessions.delete")}
+        <SidebarMenuItem>
+            <SidebarMenuButton render={<div />}>
+                <span>
+                    {session.title === ""
+                        ? t("sidebar.newChat")
+                        : session.title}
+                </span>
+            </SidebarMenuButton>
+            <SessionActions>
+                <DropdownMenuItem onClick={() => onRestore(session.id)}>
+                    <IconRestore />
+                    {t("sessions.restore")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    variant="destructive"
                     onClick={() => onDelete(session.id)}
-                    className="grid size-5 place-items-center rounded text-muted-foreground hover:text-destructive"
                 >
-                    <Trash2 className="size-3.5" />
-                </button>
-            </span>
-        </div>
+                    <IconTrash />
+                    {t("sessions.delete")}
+                </DropdownMenuItem>
+            </SessionActions>
+        </SidebarMenuItem>
     );
 }
 
+/** Conversation groups by recency, followed by the collapsed archive. */
 export function ConversationList({
     sessions,
     archived,
@@ -173,47 +204,51 @@ export function ConversationList({
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
 
     return (
-        <div className="flex-1 overflow-y-auto px-2 pb-3">
+        <>
             {groups.map((group) => (
-                <div key={group.key}>
-                    <p className="px-3 pt-4 pb-1 text-xs text-muted-foreground">
+                <SidebarGroup key={group.key}>
+                    <SidebarGroupLabel>
                         {t(`sessions.${group.key}`)}
-                    </p>
-                    <div className="space-y-0.5">
-                        {group.items.map((session) => (
-                            <SessionRow
-                                key={session.id}
-                                session={session}
-                                active={session.id === activeSessionId}
-                                onOpen={onOpenSession}
-                                onArchive={onArchiveSession}
-                                onRename={onRenameSession}
-                            />
-                        ))}
-                    </div>
-                </div>
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {group.items.map((session) => (
+                                <SessionItem
+                                    key={session.id}
+                                    session={session}
+                                    active={session.id === activeSessionId}
+                                    onOpen={onOpenSession}
+                                    onArchive={onArchiveSession}
+                                    onRename={onRenameSession}
+                                />
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
             ))}
 
             {archived.length > 0 && (
-                <Collapsible>
-                    <CollapsibleTrigger className="group flex w-full items-center gap-1 px-3 pt-4 pb-1 text-xs text-muted-foreground">
-                        <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+                <Collapsible render={<SidebarGroup />}>
+                    <SidebarGroupLabel render={<CollapsibleTrigger />}>
                         {t("sessions.archived")} ({archived.length})
-                    </CollapsibleTrigger>
+                        <IconChevronRight className="ml-auto transition-transform in-data-panel-open:rotate-90" />
+                    </SidebarGroupLabel>
                     <CollapsibleContent>
-                        <div className="space-y-0.5">
-                            {archived.map((session) => (
-                                <ArchivedRow
-                                    key={session.id}
-                                    session={session}
-                                    onRestore={onRestoreSession}
-                                    onDelete={onDeleteSession}
-                                />
-                            ))}
-                        </div>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {archived.map((session) => (
+                                    <ArchivedItem
+                                        key={session.id}
+                                        session={session}
+                                        onRestore={onRestoreSession}
+                                        onDelete={onDeleteSession}
+                                    />
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
                     </CollapsibleContent>
                 </Collapsible>
             )}
-        </div>
+        </>
     );
 }

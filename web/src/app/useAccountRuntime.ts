@@ -14,13 +14,15 @@ export function useAccountRuntime() {
     const userId = useAuth((s) => s.user?.id ?? null);
 
     useEffect(() => {
-        if (!userId) {
-            return;
+        const hasUser = userId !== null && userId !== "";
+        if (hasUser) {
+            openDb(userId);
+            void useConversationsStore.getState().refresh();
         }
-        openDb(userId);
-        void useConversationsStore.getState().refresh();
         return () => {
-            closeDb();
+            if (hasUser) {
+                closeDb();
+            }
         };
     }, [userId]);
 }

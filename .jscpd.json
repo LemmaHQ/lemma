@@ -1,0 +1,15 @@
+{
+    "path": ["crates", "web/src", "desktop/src", "mobile", "scripts", "design"],
+    "ignore": [
+        "**/*.json",
+        "**/*.toml",
+        "**/*.xml",
+        "**/*.md",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/src/*Test/**",
+        "**/tests/**"
+    ],
+    "minTokens": 70,
+    "minLines": 8
+}

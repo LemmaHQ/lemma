@@ -10,7 +10,7 @@ Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language r
 ## Precedence
 
 1. The root `AGENTS.md` and the subtree `AGENTS.md` of the code being changed.
-2. Repository formatter and linter configuration: `rustfmt` defaults, `.prettierrc.json`, the ESLint configs, and ktfmt in kotlinlang style through Spotless in the root `build.gradle.kts`.
+2. Repository formatter and linter configuration: `rustfmt` defaults, `.prettierrc.json`, the `.oxlintrc.json` files, and ktfmt in kotlinlang style through Spotless in the root `build.gradle.kts`.
 3. The upstream guide under `references/`.
 4. The style of the surrounding code.
 
@@ -18,7 +18,7 @@ A higher source wins every conflict. Known conflicts:
 
 - **Comments.** Delivered code carries no comments by default; doc comments take only the forms the per-language `AGENTS.md` defines. Upstream requirements for file overviews, implementation comments, or KDoc on every public member do not apply.
 - **Indentation.** Four spaces in every language; YAML and `.proto` use two.
-- **TypeScript toolchain.** The Google-internal tooling in the TypeScript guide's "Toolchain requirements" section does not apply; Prettier and ESLint as configured in the repository are the formatter and linter.
+- **TypeScript toolchain.** The Google-internal tooling in the TypeScript guide's "Toolchain requirements" section does not apply; Prettier and oxlint as configured in the repository are the formatter and linter.
 - **Naming.** Identifiers use plain, standard terms; the Kotlin private backing property `_prop` is the one underscore prefix allowed.
 
 ## References

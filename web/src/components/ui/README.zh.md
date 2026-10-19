@@ -4,43 +4,68 @@
 
 ## 概要
 
-`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 Radix 原语的 shadcn/ui 组件，使用由 [`design/tokens.json`](../../../../design/tokens.json) 生成的语义 Tailwind 工具类设置样式。功能代码从 `@/components/ui/<name>` 导入它们，并通过 `@/lib/utils` 的 `cn()` 组合额外的类名。组件不包含面向用户的文案；调用方传入翻译后的文本。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
+`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件，由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-nova` 风格生成，并按生成结果直接使用。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
+
+同级目录 `web/src/components/ai-elements/` 存放来自 [AI Elements](https://ai-sdk.dev/elements) 的聊天组件，由同一 CLI 从 `@ai-elements` 注册表添加：`message` 通过 Streamdown 渲染 Markdown，`prompt-input`、`model-selector`、`reasoning`、`tool`、`code-block`、`suggestion` 与 `shimmer` 覆盖输入框面板与消息记录。
 
 <a id="component-catalog"></a>
 
 ## 组件目录
 
-在功能代码中编写控件之前先查阅此表。能用就复用；有意的视觉差异作为变体加在这里，而不是复制一份再改样式。
+在功能代码中编写控件之前先查看此列表，复用合适的控件。
 
-| 模块            | 导出                                                                                                                                                                                                                                                                                                                                                    | 用途                                                                                                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `alert-dialog`  | `AlertDialog`、`AlertDialogTrigger`、`AlertDialogContent`、`AlertDialogHeader`、`AlertDialogTitle`、`AlertDialogDescription`、`AlertDialogFooter`、`AlertDialogAction`、`AlertDialogCancel`、`AlertDialogMedia`                                                                                                                                         | 危险或不可撤销操作的模态确认。`AlertDialogContent` 接受 `size` 为 `default` 或 `sm`；`AlertDialogAction` 与 `AlertDialogCancel` 接受 `Button` 的 `variant` 与 `size`。可以由触发器打开；操作目标在别处选定时，用受控的 `open` 驱动。 |
-| `button`        | `Button`、`buttonVariants`                                                                                                                                                                                                                                                                                                                              | 可点击的操作。`variant`：`default`（主色蓝）、`secondary`、`outline`、`ghost`、`destructive`、`link`。`size`：`default`、`sm`、`lg`、`icon`、`icon-sm`、`icon-lg`。`asChild` 以按钮样式渲染子元素。                                  |
-| `card`          | `Card`、`CardHeader`、`CardTitle`、`CardDescription`、`CardAction`、`CardContent`、`CardFooter`                                                                                                                                                                                                                                                         | 带边框的内容卡片，含标题、正文与底部插槽。                                                                                                                                                                                           |
-| `collapsible`   | `Collapsible`、`CollapsibleTrigger`、`CollapsibleContent`                                                                                                                                                                                                                                                                                               | 无样式的展开与收起区域；触发器由调用方绘制。                                                                                                                                                                                         |
-| `dropdown-menu` | `DropdownMenu`、`DropdownMenuTrigger`、`DropdownMenuContent`、`DropdownMenuItem`、`DropdownMenuCheckboxItem`、`DropdownMenuRadioGroup`、`DropdownMenuRadioItem`、`DropdownMenuLabel`、`DropdownMenuSeparator`、`DropdownMenuShortcut`、`DropdownMenuGroup`、`DropdownMenuSub`、`DropdownMenuSubTrigger`、`DropdownMenuSubContent`、`DropdownMenuPortal` | 锚定在触发器上的操作或选项菜单。`DropdownMenuItem` 接受 `variant` 为 `destructive` 以及 `inset`。内容使用半透明菜单材质。                                                                                                            |
-| `input`         | `Input`                                                                                                                                                                                                                                                                                                                                                 | 单行文本框。                                                                                                                                                                                                                         |
-| `label`         | `Label`                                                                                                                                                                                                                                                                                                                                                 | 通过 `htmlFor` 绑定到控件的表单标签。                                                                                                                                                                                                |
-| `select`        | `Select`、`SelectTrigger`、`SelectValue`、`SelectContent`、`SelectItem`、`SelectGroup`、`SelectLabel`、`SelectSeparator`、`SelectScrollUpButton`、`SelectScrollDownButton`                                                                                                                                                                              | 表单中从列表里单选。`SelectTrigger` 接受 `size` 为 `default` 或 `sm`。列表使用半透明菜单材质。                                                                                                                                       |
-| `sonner`        | `Toaster`                                                                                                                                                                                                                                                                                                                                               | 提示消息的宿主，在 `App` 中挂载一次。通过 `sonner` 包的 `toast` 弹出提示，例如 `toast.error(errorText(e, t))`。宿主跟随 `data-theme` 属性。                                                                                          |
-| `switch`        | `Switch`                                                                                                                                                                                                                                                                                                                                                | 立即生效的两态开关。为它提供 `aria-label` 或 `Label`。                                                                                                                                                                               |
-| `tabs`          | `Tabs`、`TabsList`、`TabsTrigger`、`TabsContent`                                                                                                                                                                                                                                                                                                        | 在面板之间切换的分段标签列表；选中的标签以画布颜色浮起。                                                                                                                                                                             |
-| `textarea`      | `Textarea`                                                                                                                                                                                                                                                                                                                                              | 随内容增高的多行文本框。                                                                                                                                                                                                             |
-| `toggle`        | `Toggle`、`toggleVariants`                                                                                                                                                                                                                                                                                                                              | 可按下的两态按钮。`variant` 为 `default` 或 `outline`；`size` 为 `default`、`sm`、`lg`。                                                                                                                                             |
-| `toggle-group`  | `ToggleGroup`、`ToggleGroupItem`                                                                                                                                                                                                                                                                                                                        | 单选或多选的一排切换按钮，共用 `toggle` 的变体；`spacing` 为 0 时各项相连。                                                                                                                                                          |
-| `tooltip`       | `TooltipProvider`、`Tooltip`、`TooltipTrigger`、`TooltipContent`                                                                                                                                                                                                                                                                                        | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示。`App` 中唯一的 `TooltipProvider` 设定共享的延迟。在桌面端外壳中，`TooltipContent` 会避开标题栏。                                                                                   |
+| 模块            | 用途                                                                     |
+| --------------- | ------------------------------------------------------------------------ |
+| `alert-dialog`  | 破坏性或不可撤销操作之前的确认                                           |
+| `avatar`        | 用户或服务商的圆形首字母或图片；`AvatarBadge` 标示状态                   |
+| `badge`         | 简短的状态或计数标签                                                     |
+| `button`        | 可点击的操作                                                             |
+| `button-group`  | 一排相连的控件，例如输入框与其保存按钮                                   |
+| `card`          | 带边框的内容卡片                                                         |
+| `collapsible`   | 显示与隐藏区域；由调用方绘制触发器                                       |
+| `command`       | 可搜索的命令或选项列表；`model-selector` 基于它构建                      |
+| `dialog`        | 承载任务、保留下层页面的模态窗口                                         |
+| `dropdown-menu` | 锚定在触发器上的操作或选项菜单                                           |
+| `empty`         | 含图标、标题、描述与操作的空状态                                         |
+| `field`         | 表单布局：标签、控件、描述与错误，可分组与分隔                           |
+| `hover-card`    | 悬停时显示的预览卡片                                                     |
+| `input`         | 单行文本框                                                               |
+| `input-group`   | 附带图标、文字或按钮的文本框                                             |
+| `item`          | 列表或设置分组中的一行，含标题、描述与尾部操作                           |
+| `label`         | 通过 `htmlFor` 绑定到控件的表单标签                                      |
+| `select`        | 表单中从列表里单选                                                       |
+| `scroll-area`   | 带主题化覆盖式滚动条的滚动区域；窗格与面板通过它滚动                     |
+| `separator`     | 水平或垂直分隔线                                                         |
+| `sheet`         | 从屏幕边缘滑入的面板；`sidebar` 在窄屏上使用它                           |
+| `sidebar`       | 可折叠的应用导航，含 provider、菜单部件与切换按钮                        |
+| `skeleton`      | 内容加载期间显示的占位块                                                 |
+| `spinner`       | 按钮或行内的加载动画图标                                                 |
+| `sonner`        | 提示消息的宿主，在 `App` 中挂载一次；通过 `sonner` 包的 `toast` 弹出提示 |
+| `switch`        | 立即生效的两态开关                                                       |
+| `tabs`          | 在面板之间切换的标签列表                                                 |
+| `textarea`      | 多行文本框                                                               |
+| `toggle`        | 可按下的两态按钮                                                         |
+| `toggle-group`  | 设置一个或多个值的一排切换按钮                                           |
+| `tooltip`       | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示                         |
 
-有三对容易混淆：
+有三对组件容易混淆：
 
-- **`Tabs` 与 `ToggleGroup`。** `Tabs` 切换显示哪个面板，并通过 `TabsContent` 持有面板。`ToggleGroup` 设定一个值，例如主题偏好，不持有面板。
-- **`AlertDialog` 与提示消息。** `AlertDialog` 在操作之前询问，并阻塞直到用户回答。提示消息在操作执行之后报告结果，不阻塞任何内容。
+- **`Tabs` 与 `ToggleGroup`。** `Tabs` 切换显示哪个面板，并通过 `TabsContent` 拥有这些面板。`ToggleGroup` 设置一个值，例如主题偏好，不拥有面板。
+- **`AlertDialog` 与提示消息。** `AlertDialog` 在操作之前询问，并阻塞直到用户回答。提示消息在操作执行后报告结果，不阻塞任何内容。
 - **`Tooltip` 与 `title`。** `Tooltip` 在键盘聚焦时显示并跟随主题；`title` 属性两者都做不到。仅含图标的按钮使用 `Tooltip` 加 `aria-label`。
+
+## 约定
+
+- Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
+- 主题来自 `next-themes`，在 `App` 中以 `class` 属性与 `lemma.theme` 存储键挂载；`Toaster` 通过 `useTheme` 读取它。
+- 有四处本地修改，重新生成文件时须保留。在桌面端外壳中，`TooltipContent` 的碰撞内边距让工具提示避开标题栏。在 `Toaster` 中，主题类型断言写明三种主题，因为生成的 `ToasterProps["theme"]` 断言无法通过 `exactOptionalPropertyTypes` 检查。`scroll-area` 删除未使用的 `React` 导入，因为 `noUnusedLocals` 不允许它。`Spinner` 接收 Tabler 的 `IconProps`，因为生成的 SVG 属性无法通过 `exactOptionalPropertyTypes` 检查。
+- `ai-elements/tool.tsx` 中的状态标签以及参数与结果标题取自 i18next 的 `chat.toolCall`；重新生成该文件时须保留这处修改。
+- oxlint 跳过此目录、`src/components/ai-elements/` 以及 `src/lib/hooks/use-mobile.ts`（CLI 随 `sidebar` 添加的断点 hook），因为这些文件保持 CLI 写出的样子；Prettier 负责格式化。
 
 ## 添加组件
 
-在 `web/` 中用 CLI 添加 shadcn 组件：`npx shadcn add <name>`。拒绝覆盖已有文件。[`components.json`](../../../components.json) 把 `tailwind.config` 设为空字符串，以选用 Tailwind v4 模板。然后让生成的文件与现有组件保持一致：
+在 `web/` 中运行 `npx shadcn@latest add <name>`（AI Elements 用 `npx shadcn@latest add @ai-elements/<name>`），用 Prettier 格式化，并把模块加入上面的目录。
 
-- 从 `@/lib/utils` 导入 `cn`，从对应的 `@radix-ui/react-<name>` 包导入原语；如果 CLI 添加了 `radix-ui` 与 `cn` 包，将其移除；
-- 从 `data-theme` 读取主题，而不是使用 `next-themes`；
-- 用 Prettier 格式化；
-- 把组件加入上面的目录。
+## 更换预设
+
+在 `web/` 中运行 `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl`。CLI 会重新生成所有组件，并改写 `components.json`、`src/index.css` 与 `package.json`。保留它写入 `index.css` 的主题块（`@theme inline`、`:root`、`.dark`）；删除它添加的字体导入与 `--font-sans` 行，并撤销它对 `package.json` 与 lockfile 的修改。然后重新应用上文的本地修改，并把 `desktop/src/theme-colors.ts` 更新为新的背景、侧边栏与前景色。

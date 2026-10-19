@@ -3,7 +3,7 @@ import type { ParseKeys, TFunction } from "i18next";
 
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
-const reasonKeys: Record<ErrorReason, ParseKeys> = {
+const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.UNSPECIFIED]: "errors.unspecified",
     [ErrorReason.CREDENTIALS_INVALID]: "errors.credentialsInvalid",
     [ErrorReason.USERNAME_TAKEN]: "errors.usernameTaken",
@@ -29,7 +29,7 @@ const reasonKeys: Record<ErrorReason, ParseKeys> = {
     [ErrorReason.NOT_ASSISTANT_MESSAGE]: "errors.notAssistantMessage",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
-};
+} satisfies Record<ErrorReason, ParseKeys>;
 
 const codeKeys: Partial<Record<Code, ParseKeys>> = {
     [Code.Unavailable]: "errors.network",
@@ -40,9 +40,10 @@ const codeKeys: Partial<Record<Code, ParseKeys>> = {
 /** Localized text for a failed request; unmapped failures read as `errors.unspecified`. */
 export function errorText(e: unknown, t: TFunction): string {
     if (e instanceof ConnectError) {
-        const info = e.findDetails(ErrorInfoSchema)[0];
-        const key = info ? reasonKeys[info.reason] : undefined;
-        if (info && key) {
+        const info = e.findDetails(ErrorInfoSchema).at(0);
+        const key = info === undefined ? undefined : reasonKeys[info.reason];
+        if (info !== undefined && key !== undefined) {
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- TFunction overloads cannot be narrowed by a type guard
             const render = t as (
                 key: string,
                 options?: Record<string, string>,
