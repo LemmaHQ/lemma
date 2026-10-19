@@ -17,7 +17,7 @@
         "markdownlint-cli2": "^0.23.3",
         "oxlint": "^1.88.0",
         "oxlint-tsgolint": "^7.0.2004",
-        "typescript": "~6.0.3"
+        "typescript": "^7.0.2"
     },
     "allowScripts": {
         "electron-winstaller@5.4.4": true,
