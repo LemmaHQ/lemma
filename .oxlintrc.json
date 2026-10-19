@@ -23,6 +23,7 @@
         "typescript/consistent-return": "off",
         "unicorn/no-array-callback-reference": "off",
         "import/max-dependencies": "off",
+        "import/no-named-as-default-member": "off",
         "typescript/prefer-readonly-parameter-types": "off",
         "no-var": "error",
         "prefer-const": "error",
