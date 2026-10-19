@@ -104,54 +104,56 @@ export function AppSidebar({
                 />
             </SidebarContent>
 
-            <SidebarFooter className="flex-row items-center gap-1">
-                <SidebarMenu className="min-w-0 flex-1">
-                    <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger
-                                render={<SidebarMenuButton size="lg" />}
-                            >
-                                <Avatar size="sm">
-                                    <AvatarFallback>
-                                        {username.charAt(0)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <span className="min-w-0 flex-1 truncate">
-                                    {username}
-                                </span>
-                                <IconChevronDown />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="start"
-                                side="top"
-                                className="w-56"
-                            >
-                                <DropdownMenuGroup>
-                                    <DropdownMenuLabel>
+            <SidebarFooter>
+                <div className="flex items-center gap-1">
+                    <SidebarMenu className="min-w-0 flex-1">
+                        <SidebarMenuItem>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger
+                                    render={<SidebarMenuButton size="lg" />}
+                                >
+                                    <Avatar size="sm">
+                                        <AvatarFallback>
+                                            {username.charAt(0)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span className="min-w-0 flex-1 truncate">
                                         {username}
-                                    </DropdownMenuLabel>
-                                </DropdownMenuGroup>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    render={<Link to="/settings" />}
+                                    </span>
+                                    <IconChevronDown />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="start"
+                                    side="top"
+                                    className="w-56"
                                 >
-                                    <IconSettings />
-                                    {t("sidebar.appSettings")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => {
-                                        void logout();
-                                    }}
-                                >
-                                    <IconLogout />
-                                    {t("sidebar.signOut")}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-                <LanguageToggle />
-                <ThemeToggle />
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuLabel>
+                                            {username}
+                                        </DropdownMenuLabel>
+                                    </DropdownMenuGroup>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        render={<Link to="/settings" />}
+                                    >
+                                        <IconSettings />
+                                        {t("sidebar.appSettings")}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => {
+                                            void logout();
+                                        }}
+                                    >
+                                        <IconLogout />
+                                        {t("sidebar.signOut")}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                    <LanguageToggle />
+                    <ThemeToggle />
+                </div>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

@@ -243,7 +243,7 @@ export function AuthCard() {
                     </TabsContent>
                 </Tabs>
                 {platformAuth.canSkipAuth && (
-                    <FieldGroup className="pt-6">
+                    <FieldGroup className="mt-6">
                         <FieldSeparator>{t("auth.orDivider")}</FieldSeparator>
                         <Field>
                             <Button

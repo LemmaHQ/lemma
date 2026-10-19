@@ -15,7 +15,7 @@
         "react",
         "jsx-a11y"
     ],
-    "jsPlugins": ["oxlint-tailwindcss"],
+    "jsPlugins": ["oxlint-tailwindcss", "@shadcn/lint"],
     "env": {
         "builtin": true,
         "browser": true
@@ -41,11 +41,6 @@
         "tailwindcss/no-contradicting-variants": "error",
         "tailwindcss/no-dark-without-light": "error",
         "tailwindcss/no-duplicate-classes": "error",
-        "tailwindcss/no-dynamic-classes": "error",
-        "tailwindcss/no-unknown-classes": [
-            "error",
-            { "allowlist": ["desktop-titlebar"] }
-        ],
         "tailwindcss/enforce-canonical": "error",
         "tailwindcss/enforce-negative-arbitrary-values": "error",
         "tailwindcss/no-deprecated-classes": "error",
@@ -57,14 +52,17 @@
         "tailwindcss/enforce-consistent-variable-syntax": "error",
         "tailwindcss/enforce-shorthand": "error",
         "tailwindcss/no-unnecessary-whitespace": "error",
-        "tailwindcss/no-default-palette": "error",
-        "tailwindcss/no-hardcoded-colors": "error"
+        "shadcn/no-restyle": ["error", { "allow": ["layout"] }],
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-arbitrary-values": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": "error",
+        "shadcn/require-static-classes": "error"
     },
     "overrides": [
         {
             "files": ["src/app/**", "src/features/**"],
             "rules": {
-                "tailwindcss/no-arbitrary-value": "error",
                 "tailwindcss/no-restricted-classes": [
                     "error",
                     {

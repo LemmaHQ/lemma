@@ -27,7 +27,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 ## Styling
 
 - **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities of the shadcn theme in `src/index.css`, with no hex color, no arbitrary value, and no `dark:` variant.
-- **Tooling enforces the class rules:** Prettier sorts Tailwind classes, and oxlint-tailwindcss rejects unknown, conflicting, deprecated, and hard-coded color classes, plus arbitrary values and `dark:` variants in `src/app/` and `src/features/`.
+- **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes and `dark:` variants in `src/app/` and `src/features/`; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
 - **Controls reuse `src/components/ui/` and `src/components/ai-elements/`;** check the [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files

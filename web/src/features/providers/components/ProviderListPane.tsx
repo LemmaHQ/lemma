@@ -50,7 +50,7 @@ function ProviderGroup({
                     <Button
                         variant="ghost"
                         size="xs"
-                        className="w-full justify-start text-muted-foreground"
+                        className="w-full justify-start"
                     />
                 }
             >
@@ -58,7 +58,7 @@ function ProviderGroup({
                 {label}
                 <span className="ml-auto">{providers.length}</span>
             </CollapsibleTrigger>
-            <CollapsibleContent className="flex flex-col gap-0.5">
+            <CollapsibleContent className="flex flex-col">
                 {providers.map((provider) => (
                     <Button
                         key={provider.id}

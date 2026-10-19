@@ -133,7 +133,6 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         value={newModel}
                         onChange={(e) => setNewModel(e.target.value)}
                         placeholder={t("providers.modelPlaceholder")}
-                        className="font-mono"
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();

@@ -69,24 +69,30 @@ export function SettingsNav() {
     const { t } = useTranslation();
     return (
         <Sidebar variant="inset">
-            <SidebarHeader className="flex-row items-center gap-2">
-                <Tooltip>
-                    <TooltipTrigger
-                        render={
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={t("settings.backToHome")}
-                                render={<Link to="/" />}
-                                nativeButton={false}
-                            />
-                        }
-                    >
-                        <IconArrowLeft />
-                    </TooltipTrigger>
-                    <TooltipContent>{t("settings.backToHome")}</TooltipContent>
-                </Tooltip>
-                <h1 className="text-sm font-semibold">{t("settings.title")}</h1>
+            <SidebarHeader>
+                <div className="flex items-center gap-2">
+                    <Tooltip>
+                        <TooltipTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={t("settings.backToHome")}
+                                    render={<Link to="/" />}
+                                    nativeButton={false}
+                                />
+                            }
+                        >
+                            <IconArrowLeft />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {t("settings.backToHome")}
+                        </TooltipContent>
+                    </Tooltip>
+                    <h1 className="text-sm font-semibold">
+                        {t("settings.title")}
+                    </h1>
+                </div>
             </SidebarHeader>
             <SidebarContent>
                 <NavGroup label={t("settings.groupGeneral")}>

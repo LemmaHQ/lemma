@@ -181,7 +181,6 @@ export function ProviderDetail({
                         value={provider.identifier}
                         readOnly
                         disabled
-                        className="font-mono"
                     />
                 </Field>
                 <FieldSeparator />
@@ -254,7 +253,6 @@ export function ProviderDetail({
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
                             placeholder={t("providers.baseUrlPlaceholder")}
-                            className="font-mono"
                         />
                         <Button
                             type="button"

@@ -58,6 +58,7 @@
     "devDependencies": {
         "@bufbuild/protoc-gen-es": "^2.16.0",
         "@codecov/vite-plugin": "^2.0.1",
+        "@shadcn/lint": "0.2.3",
         "@tailwindcss/vite": "^4.3.3",
         "@types/node": "^26.6.5",
         "@types/react": "^19.3.0",
