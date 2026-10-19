@@ -55,7 +55,7 @@ Verify every menu, select, popover, and tooltip for all three:
 - **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the `.desktop-titlebar` drag region covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
 - **Unclipped:** it portals out of `overflow` ancestors and is never covered by neighboring elements or the titlebar.
 
-Scrollbars use the shared styles in [index.css](../../../web/src/index.css). Verify the bar is neither clipped by rounded corners nor flush against the container edge.
+Scrollable panes and panels use the shared `ScrollArea`, whose scrollbar overlays the content and follows the theme. Verify the bar is neither clipped by rounded corners nor flush against the container edge.
 
 ## Desktop window
 

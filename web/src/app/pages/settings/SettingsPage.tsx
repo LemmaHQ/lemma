@@ -2,6 +2,7 @@ import { Navigate, useParams } from "react-router";
 import { useEffect } from "react";
 
 import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppearancePanel } from "@/features/preferences/AppearancePanel";
 import { ProvidersPanel } from "@/features/providers/ProvidersPanel";
@@ -30,9 +31,9 @@ export function SettingsPage() {
                 {section === "providers" ? (
                     <ProvidersPanel />
                 ) : (
-                    <div className="min-h-0 flex-1 overflow-y-auto">
+                    <ScrollArea className="min-h-0 flex-1">
                         <AppearancePanel />
-                    </div>
+                    </ScrollArea>
                 )}
             </SidebarInset>
         </SidebarProvider>

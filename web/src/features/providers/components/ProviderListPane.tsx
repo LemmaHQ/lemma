@@ -9,6 +9,7 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { cn } from "@/lib/utils";
 import { IconChevronDown, IconPlus, IconSearch } from "@tabler/icons-react";
@@ -127,20 +128,22 @@ export function ProviderListPane({
                     <IconPlus className="size-4" />
                 </Button>
             </div>
-            <div className="flex-1 overflow-y-auto px-2 pb-3">
-                <ProviderGroup
-                    label={t("providers.enabledGroup")}
-                    providers={enabledProviders}
-                    selectedId={selectedId}
-                    onSelect={onSelect}
-                />
-                <ProviderGroup
-                    label={t("providers.disabledGroup")}
-                    providers={disabledProviders}
-                    selectedId={selectedId}
-                    onSelect={onSelect}
-                />
-            </div>
+            <ScrollArea className="min-h-0 flex-1">
+                <div className="px-2 pb-3">
+                    <ProviderGroup
+                        label={t("providers.enabledGroup")}
+                        providers={enabledProviders}
+                        selectedId={selectedId}
+                        onSelect={onSelect}
+                    />
+                    <ProviderGroup
+                        label={t("providers.disabledGroup")}
+                        providers={disabledProviders}
+                        selectedId={selectedId}
+                        onSelect={onSelect}
+                    />
+                </div>
+            </ScrollArea>
         </section>
     );
 }

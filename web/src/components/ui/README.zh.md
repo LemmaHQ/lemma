@@ -24,6 +24,7 @@
 | `item`          | 列表或设置分组中的一行，含标题、描述与尾部操作                           |
 | `label`         | 通过 `htmlFor` 绑定到控件的表单标签                                      |
 | `select`        | 表单中从列表里单选                                                       |
+| `scroll-area`   | 带主题化覆盖式滚动条的滚动区域；窗格与面板通过它滚动                     |
 | `separator`     | 水平或垂直分隔线                                                         |
 | `sheet`         | 从屏幕边缘滑入的面板；`sidebar` 在窄屏上使用它                           |
 | `sidebar`       | 可折叠的应用导航，含 provider、菜单部件与切换按钮                        |
@@ -46,7 +47,7 @@
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
 - 主题来自 `next-themes`，在 `App` 中以 `class` 属性与 `lemma.theme` 存储键挂载；`Toaster` 通过 `useTheme` 读取它。
-- 有两处本地修改，重新生成文件时须保留。在桌面端外壳中，`TooltipContent` 的碰撞内边距让工具提示避开标题栏。在 `Toaster` 中，主题类型断言写明三种主题，因为生成的 `ToasterProps["theme"]` 断言无法通过 `exactOptionalPropertyTypes` 检查。
+- 有三处本地修改，重新生成文件时须保留。在桌面端外壳中，`TooltipContent` 的碰撞内边距让工具提示避开标题栏。在 `Toaster` 中，主题类型断言写明三种主题，因为生成的 `ToasterProps["theme"]` 断言无法通过 `exactOptionalPropertyTypes` 检查。`scroll-area` 删除未使用的 `React` 导入，因为 `noUnusedLocals` 不允许它。
 - oxlint 跳过此目录以及 `src/lib/hooks/use-mobile.ts`（CLI 随 `sidebar` 添加的断点 hook），因为这些文件保持 CLI 写出的样子；Prettier 负责格式化。
 
 ## 添加组件
@@ -55,4 +56,4 @@
 
 ## 更换预设
 
-在 `web/` 中运行 `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl`。CLI 会重新生成所有组件，并改写 `components.json`、`src/index.css` 与 `package.json`。保留它写入 `index.css` 的主题块（`@theme inline`、`:root`、`.dark`）；删除它添加的字体导入与 `--font-sans` 行，并撤销它对 `package.json` 与 lockfile 的修改。然后重新应用上文的两处本地修改，并把 `desktop/src/theme-colors.ts` 更新为新的背景、侧边栏与前景色。
+在 `web/` 中运行 `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl`。CLI 会重新生成所有组件，并改写 `components.json`、`src/index.css` 与 `package.json`。保留它写入 `index.css` 的主题块（`@theme inline`、`:root`、`.dark`）；删除它添加的字体导入与 `--font-sans` 行，并撤销它对 `package.json` 与 lockfile 的修改。然后重新应用上文的本地修改，并把 `desktop/src/theme-colors.ts` 更新为新的背景、侧边栏与前景色。

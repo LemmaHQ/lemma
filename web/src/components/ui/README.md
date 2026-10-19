@@ -24,6 +24,7 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `item`          | Row with title, description, and trailing actions in a list or settings group              |
 | `label`         | Form label bound to a control by `htmlFor`                                                 |
 | `select`        | Single choice from a list in a form                                                        |
+| `scroll-area`   | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it      |
 | `separator`     | Horizontal or vertical divider line                                                        |
 | `sheet`         | Panel that slides in from a screen edge; `sidebar` uses it on narrow screens               |
 | `sidebar`       | Collapsible app navigation with its provider, menu parts, and toggle                       |
@@ -46,7 +47,7 @@ Three pairs are easy to confuse:
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
 - The theme comes from `next-themes`, mounted in `App` with the `class` attribute and the `lemma.theme` storage key; `Toaster` reads it through `useTheme`.
-- Two local edits survive regeneration; keep them when a file is regenerated. In the desktop shell, the `TooltipContent` collision padding keeps tooltips clear of the titlebar. In `Toaster`, the theme cast names the three themes, because the generated `ToasterProps["theme"]` cast fails `exactOptionalPropertyTypes`.
+- Three local edits survive regeneration; keep them when a file is regenerated. In the desktop shell, the `TooltipContent` collision padding keeps tooltips clear of the titlebar. In `Toaster`, the theme cast names the three themes, because the generated `ToasterProps["theme"]` cast fails `exactOptionalPropertyTypes`. `scroll-area` drops the unused `React` import, which `noUnusedLocals` rejects.
 - oxlint skips this directory and `src/lib/hooks/use-mobile.ts`, the breakpoint hook the CLI adds with `sidebar`, since the files stay as the CLI writes them; Prettier formats them.
 
 ## Adding a component
@@ -55,4 +56,4 @@ Run `npx shadcn@latest add <name>` from `web/`, format with Prettier, and add th
 
 ## Changing the preset
 
-Run `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl` from `web/`. The CLI regenerates every component and rewrites `components.json`, `src/index.css`, and `package.json`. Keep its theme blocks (`@theme inline`, `:root`, `.dark`) in `index.css`; drop the font import and the `--font-sans` line it adds, and revert its `package.json` and lockfile changes. Then re-apply the two local edits above, and update `desktop/src/theme-colors.ts` to the new background, sidebar, and foreground colors.
+Run `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl` from `web/`. The CLI regenerates every component and rewrites `components.json`, `src/index.css`, and `package.json`. Keep its theme blocks (`@theme inline`, `:root`, `.dark`) in `index.css`; drop the font import and the `--font-sans` line it adds, and revert its `package.json` and lockfile changes. Then re-apply the local edits above, and update `desktop/src/theme-colors.ts` to the new background, sidebar, and foreground colors.

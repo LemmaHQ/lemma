@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { errorText } from "@/data/rpc/errors";
 
 import {
@@ -61,7 +62,7 @@ export function ProvidersPanel() {
                 }}
                 onCreate={() => setCreating(true)}
             />
-            <div className="min-w-0 flex-1 overflow-y-auto">
+            <ScrollArea className="min-w-0 flex-1">
                 {creating ? (
                     <NewProviderForm
                         onSave={handleSaveNew}
@@ -98,7 +99,7 @@ export function ProvidersPanel() {
                         onDelete={() => handleDelete(selected.id)}
                     />
                 )}
-            </div>
+            </ScrollArea>
         </div>
     );
 }
