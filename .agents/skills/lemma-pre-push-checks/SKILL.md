@@ -21,25 +21,25 @@ The changed directories in that diff decide the checks; uncommitted work is not 
 
 Run the rows the diff reaches, in this order, once each. Every behavior change also needs its narrowest owning test, which may be a focused run instead of the full recipe.
 
-| Changed | Run |
-| --- | --- |
-| `crates/`, `Cargo.toml`, `Cargo.lock` | `just rust-fmt-check`, `just rust-lint-check`, `just rust-test` (or `cargo nextest run -p <crate>` when one crate changed and no dependent's behavior can change) |
-| `proto/` | `just proto-lint-check`, `just proto-fmt-check`, `just proto-build`, then the `web/`, `crates/`, and `mobile/` rows, since all three consume the contract |
-| `design/` | `just design-gen` (its reference and parity checks), `just scripts-type-check`, `just scripts-lint-check`, then the `web/` row; the `desktop/` and `mobile/` rows when a semantic color name changed |
-| `web/` | `just web-fmt-check`, `just web-lint-check`, `just web-build`, `just web-test`; also `just desktop-build`, since Desktop CI builds the renderer from `web/` |
-| `desktop/` | `just desktop-fmt-check`, `just desktop-lint-check`, `just desktop-build`, `just desktop-test` |
-| `mobile/` | `just mobile-fmt-check`, `just mobile-android-lint-check`, `just mobile-android-build`, `just mobile-android-test` |
-| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check`; for `scripts/`, also `just scripts-type-check` and `just scripts-lint-check` |
-| `.oxlintrc.json`, `.prettierrc.json`, `tsconfig.base.json` | the `web/` and `desktop/` rows; `just scripts-type-check` and `just scripts-lint-check` for the first and last |
-| `justfile`, `mise.toml` | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files |
-| `crates/`, `web/src/`, `desktop/src/`, `mobile/`, `scripts/`, `design/`, `.jscpd.json` | `just dup-check`; when a clone involves the changed code, extract the shared part instead of adding another copy |
-| `.github/workflows/` | read the changed workflow for path filters and job dependencies; it runs only in CI |
+| Changed                                                                                | Run                                                                                                                                                               |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `crates/`, `Cargo.toml`, `Cargo.lock`                                                  | `just rust-fmt-check`, `just rust-lint-check`, `just rust-test` (or `cargo nextest run -p <crate>` when one crate changed and no dependent's behavior can change) |
+| `proto/`                                                                               | `just proto-lint-check`, `just proto-fmt-check`, `just proto-build`, then the `web/`, `crates/`, and `mobile/` rows, since all three consume the contract         |
+| `design/`                                                                              | `just design-gen` (its palette checks), `just scripts-type-check`, `just scripts-lint-check`, then the `mobile/` row                                              |
+| `web/`                                                                                 | `just web-fmt-check`, `just web-lint-check`, `just web-build`, `just web-test`; also `just desktop-build`, since Desktop CI builds the renderer from `web/`       |
+| `desktop/`                                                                             | `just desktop-fmt-check`, `just desktop-lint-check`, `just desktop-build`, `just desktop-test`                                                                    |
+| `mobile/`                                                                              | `just mobile-fmt-check`, `just mobile-android-lint-check`, `just mobile-android-build`, `just mobile-android-test`                                                |
+| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md`                      | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check`; for `scripts/`, also `just scripts-type-check` and `just scripts-lint-check`           |
+| `.oxlintrc.json`, `.prettierrc.json`, `tsconfig.base.json`                             | the `web/` and `desktop/` rows; `just scripts-type-check` and `just scripts-lint-check` for the first and last                                                    |
+| `justfile`, `mise.toml`                                                                | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files                              |
+| `crates/`, `web/src/`, `desktop/src/`, `mobile/`, `scripts/`, `design/`, `.jscpd.json` | `just dup-check`; when a clone involves the changed code, extract the shared part instead of adding another copy                                                  |
+| `.github/workflows/`                                                                   | read the changed workflow for path filters and job dependencies; it runs only in CI                                                                               |
 
 Notes on the rows:
 
 - Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) need the user's consent first. Without it, report those rows as not run; never as passing.
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
-- Generated code is gitignored. The web npm scripts and Gradle regenerate the contract code before reading it; run `just design-gen` locally before a build that reads design tokens.
+- Generated code is gitignored. The web npm scripts and Gradle regenerate the contract code before reading it, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect `LemmaPalette.kt`.
 - Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode conversation against a real provider. Never print keys.
 - When the change adds or alters an async, resource-owning, or global-state test, apply [lemma-ci-test-reliability](../lemma-ci-test-reliability/SKILL.md) first.
 

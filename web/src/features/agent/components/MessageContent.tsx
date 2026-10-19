@@ -55,8 +55,8 @@ function CodeBlock({ children }: { children?: ReactNode }) {
     };
 
     return (
-        <div className="overflow-hidden rounded-md border border-code-border">
-            <div className="flex items-center justify-between bg-code px-3 py-1.5">
+        <div className="overflow-hidden rounded-md border">
+            <div className="flex items-center justify-between bg-muted px-3 py-1.5">
                 <span className="font-mono text-xs text-muted-foreground">
                     {language}
                 </span>
@@ -78,7 +78,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
             </div>
             <pre
                 ref={codeRef}
-                className="overflow-x-auto bg-code/60 p-4 font-mono text-xs leading-relaxed text-code-foreground"
+                className="overflow-x-auto bg-muted p-4 font-mono text-xs leading-relaxed"
             >
                 {children}
             </pre>
@@ -208,7 +208,7 @@ export function ToolCallCard({ call }: ToolCallCardProps) {
                         <p className="mb-1 text-xs font-medium text-muted-foreground">
                             {t("chat.toolCall.arguments")}
                         </p>
-                        <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-xs whitespace-pre-wrap text-code-foreground">
+                        <pre className="max-h-48 overflow-auto rounded-sm bg-muted p-2 font-mono text-xs whitespace-pre-wrap">
                             {call.arguments}
                         </pre>
                     </div>
@@ -217,7 +217,7 @@ export function ToolCallCard({ call }: ToolCallCardProps) {
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
                                 {t("chat.toolCall.output")}
                             </p>
-                            <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-xs whitespace-pre-wrap text-code-foreground">
+                            <pre className="max-h-48 overflow-auto rounded-sm bg-muted p-2 font-mono text-xs whitespace-pre-wrap">
                                 {call.output}
                             </pre>
                         </div>
@@ -234,7 +234,7 @@ interface MessageContentProps {
 
 export function MessageContent({ content }: MessageContentProps) {
     return (
-        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-xs [&_:not(pre)>code]:text-code-foreground">
+        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-xs">
             <ReactMarkdown
                 rehypePlugins={rehypePlugins}
                 components={components}

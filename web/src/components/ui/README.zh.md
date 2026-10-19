@@ -52,3 +52,7 @@
 ## 添加组件
 
 在 `web/` 中运行 `npx shadcn@latest add <name>`，用 Prettier 格式化，并把模块加入上面的目录。
+
+## 更换预设
+
+在 `web/` 中运行 `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl`。CLI 会重新生成所有组件，并改写 `components.json`、`src/index.css` 与 `package.json`。保留它写入 `index.css` 的主题块（`@theme inline`、`:root`、`.dark`）；删除它添加的字体导入与 `--font-sans` 行，并撤销它对 `package.json` 与 lockfile 的修改。然后重新应用上文的两处本地修改，并把 `desktop/src/theme-colors.ts` 更新为新的背景、侧边栏与前景色。

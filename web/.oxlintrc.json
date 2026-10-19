@@ -40,7 +40,7 @@
         "tailwindcss/no-dynamic-classes": "error",
         "tailwindcss/no-unknown-classes": [
             "error",
-            { "allowlist": ["glass", "desktop-titlebar"] }
+            { "allowlist": ["desktop-titlebar"] }
         ],
         "tailwindcss/enforce-canonical": "error",
         "tailwindcss/enforce-negative-arbitrary-values": "error",

@@ -3,308 +3,46 @@ import path from "node:path";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const TOKENS_PATH = path.join(ROOT_DIR, "design/tokens.json");
-const WEB_CSS_PATH = path.join(ROOT_DIR, "web/src/styles/tokens.css");
-const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/design-tokens.ts");
 const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
     "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaPalette.kt",
 );
-const THEMES = ["light", "dark"] as const;
 const NOTICE =
     "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
-const REFERENCE = /^\{([^}]+)\}$/u;
-const RADIUS_SCALE = [
-    ["sm", 0.6],
-    ["md", 0.8],
-    ["lg", 1],
-    ["xl", 1.4],
-    ["2xl", 1.8],
-    ["3xl", 2.2],
-    ["4xl", 2.6],
-] as const;
+const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/iu;
 
-type TokenValue =
-    string | number | boolean | TokenValue[] | { [key: string]: TokenValue };
-
-interface TokenSource {
-    $type?: string;
-    $value?: TokenValue;
-    [key: string]: unknown;
-}
-
-interface Token {
+interface Color {
     name: string[];
-    type: string | undefined;
-    value: TokenValue;
+    hex: string;
 }
 
-type TokenMap = Map<string, Token>;
-
-interface ShadowLayer {
-    [key: string]: TokenValue;
-    inset: boolean;
-    offsetX: string;
-    offsetY: string;
-    blur: string;
-    spread: string;
-    color: string;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isTokenSource(value: unknown): value is TokenSource {
-    return isRecord(value);
-}
-
-function stringValue(value: TokenValue, owner: string): string {
-    if (typeof value !== "string") {
-        throw new TypeError(`${owner} must be a string`);
-    }
-    return value;
-}
-
-function isShadowLayer(value: unknown): value is ShadowLayer {
-    if (!isRecord(value)) {
-        return false;
-    }
-    const { inset, offsetX, offsetY, blur, spread, color } = value;
-    return (
-        (inset === undefined || typeof inset === "boolean") &&
-        typeof offsetX === "string" &&
-        typeof offsetY === "string" &&
-        typeof blur === "string" &&
-        typeof spread === "string" &&
-        typeof color === "string"
-    );
-}
-
-function shadowValue(
-    value: TokenValue,
-    owner: string,
-): ShadowLayer | ShadowLayer[] {
-    if (isShadowLayer(value)) {
-        return value;
-    }
-    if (Array.isArray(value)) {
-        const layers = value.filter((layer): layer is ShadowLayer =>
-            isShadowLayer(layer),
-        );
-        if (layers.length === value.length) {
-            return layers;
-        }
-    }
-    throw new Error(
-        `${owner} must be a shadow layer or a list of shadow layers`,
-    );
-}
-
-function collectTokens(
-    source: TokenSource,
+function collectColors(
+    group: object,
     prefix: string[],
-    inheritedType: string | undefined,
-    tokens: TokenMap,
-): TokenMap {
-    const type = source.$type ?? inheritedType;
-    for (const [key, node] of Object.entries(source)) {
+    colors: Color[],
+): Color[] {
+    for (const key of Object.keys(group)) {
         if (key.startsWith("$")) {
             continue;
         }
-        if (!isTokenSource(node)) {
+        const name = [...prefix, key];
+        const node: unknown = Reflect.get(group, key);
+        if (typeof node !== "object" || node === null) {
+            throw new TypeError(`${name.join(".")} must be a token or group`);
+        }
+        if (!("$value" in node)) {
+            collectColors(node, name, colors);
+            continue;
+        }
+        const hex = node.$value;
+        if (typeof hex !== "string" || !HEX_COLOR.test(hex)) {
             throw new Error(
-                `${[...prefix, key].join(".")} must be a token or group`,
+                `${name.join(".")} must be a #rrggbb or #rrggbbaa color`,
             );
         }
-        const name = [...prefix, key];
-        if ("$value" in node) {
-            tokens.set(name.join("."), {
-                name,
-                type: node.$type ?? type,
-                value: node.$value,
-            });
-        } else {
-            collectTokens(node, name, type, tokens);
-        }
+        colors.push({ name, hex });
     }
-    return tokens;
-}
-
-function resolveValue(
-    value: TokenValue,
-    tokens: TokenMap,
-    owner: string,
-): TokenValue {
-    if (typeof value === "string") {
-        const match = REFERENCE.exec(value);
-        if (match === null) {
-            return value;
-        }
-        const reference = match[1];
-        if (reference === undefined) {
-            throw new Error(`${owner} references missing token ${value}`);
-        }
-        const target = tokens.get(reference);
-        if (target === undefined) {
-            throw new Error(`${owner} references missing token ${value}`);
-        }
-        return resolveValue(target.value, tokens, reference);
-    }
-    if (Array.isArray(value)) {
-        return value.map((item) => resolveValue(item, tokens, owner));
-    }
-    if (isRecord(value)) {
-        return Object.fromEntries(
-            Object.entries(value).map(([key, item]) => [
-                key,
-                resolveValue(item, tokens, owner),
-            ]),
-        );
-    }
-    return value;
-}
-
-function resolveAll(tokens: TokenMap): TokenMap {
-    const resolved: TokenMap = new Map();
-    for (const [key, token] of tokens) {
-        resolved.set(key, {
-            ...token,
-            value: resolveValue(token.value, tokens, key),
-        });
-    }
-    return resolved;
-}
-
-function group(tokens: TokenMap, prefix: string): [string, Token][] {
-    const entries: [string, Token][] = [];
-    const head = `${prefix}.`;
-    for (const [key, token] of tokens) {
-        if (key.startsWith(head)) {
-            entries.push([key.slice(head.length), token]);
-        }
-    }
-    return entries;
-}
-
-function checkThemeParity(tokens: TokenMap): void {
-    const [first, ...rest] = THEMES;
-    const reference = new Set(group(tokens, first).map(([key]) => key));
-    for (const theme of rest) {
-        const keys = new Set(group(tokens, theme).map(([key]) => key));
-        for (const key of keys) {
-            if (!reference.has(key)) {
-                throw new Error(
-                    `${theme}.${key} has no counterpart in ${first}`,
-                );
-            }
-        }
-        for (const key of reference) {
-            if (!keys.has(key)) {
-                throw new Error(
-                    `${first}.${key} has no counterpart in ${theme}`,
-                );
-            }
-        }
-    }
-}
-
-function pxToRem(px: string): string {
-    // oxlint-disable-next-line unicorn/prefer-number-coercion -- token values carry a px unit suffix, so Number() would yield NaN
-    return `${Number.parseFloat(px) / 16}rem`;
-}
-
-function cssShadow(value: ShadowLayer | ShadowLayer[]): string {
-    const layers = Array.isArray(value) ? value : [value];
-    return layers
-        .map((layer) =>
-            [
-                layer.inset ? "inset" : null,
-                layer.offsetX,
-                layer.offsetY,
-                layer.blur,
-                layer.spread,
-                layer.color,
-            ]
-                .filter(Boolean)
-                .join(" "),
-        )
-        .join(", ");
-}
-
-function themeDeclarations(tokens: TokenMap, theme: string): string[] {
-    const lines: string[] = [];
-    for (const [key, token] of group(tokens, `${theme}.color`)) {
-        lines.push(
-            `    --${key}: ${stringValue(token.value, `${theme}.color.${key}`)};`,
-        );
-    }
-    for (const [key, token] of group(tokens, `${theme}.shadow`)) {
-        lines.push(
-            `    --elevation-${key}: ${cssShadow(shadowValue(token.value, `${theme}.shadow.${key}`))};`,
-        );
-    }
-    return lines;
-}
-
-function generateWebCss(tokens: TokenMap): string {
-    const [light, ...darkThemes] = THEMES;
-    const radius = tokens.get("radius");
-    if (radius === undefined) {
-        throw new Error("radius is missing");
-    }
-    const rootLines = [
-        `    --radius: ${pxToRem(stringValue(radius.value, "radius"))};`,
-        ...themeDeclarations(tokens, light),
-    ];
-
-    const themeLines = group(tokens, `${light}.color`).map(
-        ([key]) => `    --color-${key}: var(--${key});`,
-    );
-    themeLines.push("", "    --font-heading: var(--font-sans);", "");
-    for (const [step, factor] of RADIUS_SCALE) {
-        themeLines.push(
-            `    --radius-${step}: ${factor === 1 ? "var(--radius)" : `calc(var(--radius) * ${factor})`};`,
-        );
-    }
-    themeLines.push("");
-    for (const [key] of group(tokens, `${light}.shadow`)) {
-        themeLines.push(`    --shadow-${key}: var(--elevation-${key});`);
-    }
-
-    const darkBlocks = darkThemes.map(
-        (theme) =>
-            `.${theme} {\n${themeDeclarations(tokens, theme).join("\n")}\n}\n`,
-    );
-
-    return `/* ${NOTICE} */
-
-:root {
-${rootLines.join("\n")}
-}
-
-${darkBlocks.join("\n")}
-@theme inline {
-${themeLines.join("\n")}
-}
-`;
-}
-
-function generateDesktopTs(tokens: TokenMap): string {
-    const colors = Object.fromEntries(
-        THEMES.map((theme) => [
-            theme,
-            Object.fromEntries(
-                group(tokens, `${theme}.color`).map(([key, token]) => [
-                    key,
-                    token.value,
-                ]),
-            ),
-        ]),
-    );
-    return `// ${NOTICE}
-
-export const themeColors = ${JSON.stringify(colors, null, 4)} as const;
-`;
+    return colors;
 }
 
 function kotlinName(parts: string[]): string {
@@ -320,10 +58,9 @@ function kotlinColor(hex: string): string {
     return `Color(0x${alpha}${digits.slice(0, 6)})`;
 }
 
-function generateAndroidKt(tokens: TokenMap): string {
-    const lines = group(tokens, "palette").map(
-        ([, token]) =>
-            `    val ${kotlinName(token.name.slice(1))} = ${kotlinColor(stringValue(token.value, token.name.join(".")))}`,
+function generateAndroidKt(colors: Color[]): string {
+    const lines = colors.map(
+        ({ name, hex }) => `    val ${kotlinName(name)} = ${kotlinColor(hex)}`,
     );
     return `// ${NOTICE}
 
@@ -337,24 +74,21 @@ ${lines.join("\n")}
 `;
 }
 
-function writeOutput(file: string, content: string): void {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, content, "utf8");
-    console.log(`Generated ${path.relative(ROOT_DIR, file)}`);
-}
-
 function main(): void {
-    const parsed: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
-    if (!isTokenSource(parsed)) {
-        throw new Error(`${TOKENS_PATH} must contain a token tree`);
+    const tokens: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
+    if (
+        typeof tokens !== "object" ||
+        tokens === null ||
+        !("palette" in tokens) ||
+        typeof tokens.palette !== "object" ||
+        tokens.palette === null
+    ) {
+        throw new Error(`${TOKENS_PATH} must contain a palette group`);
     }
-    const tokens = resolveAll(
-        collectTokens(parsed, [], undefined, new Map<string, Token>()),
-    );
-    checkThemeParity(tokens);
-    writeOutput(WEB_CSS_PATH, generateWebCss(tokens));
-    writeOutput(DESKTOP_TS_PATH, generateDesktopTs(tokens));
-    writeOutput(ANDROID_KT_PATH, generateAndroidKt(tokens));
+    const colors = collectColors(tokens.palette, [], []);
+    fs.mkdirSync(path.dirname(ANDROID_KT_PATH), { recursive: true });
+    fs.writeFileSync(ANDROID_KT_PATH, generateAndroidKt(colors), "utf8");
+    console.log(`Generated ${path.relative(ROOT_DIR, ANDROID_KT_PATH)}`);
 }
 
 main();

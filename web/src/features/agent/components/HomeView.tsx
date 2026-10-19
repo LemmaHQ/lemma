@@ -54,7 +54,7 @@ export function HomeView({
                 <p className="mb-8 text-center text-3xl font-semibold">
                     {t("common.appName")}
                 </p>
-                <div className="glass rounded-xl border border-border p-4 shadow-composer">
+                <div className="rounded-xl border bg-background p-4">
                     <Textarea
                         ref={textareaRef}
                         value={value}

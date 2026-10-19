@@ -26,13 +26,13 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Styling
 
-- **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities generated from [design/tokens.json](../design/tokens.json), with no hex color, no arbitrary value, and no `dark:` variant.
+- **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities of the shadcn theme in `src/index.css`, with no hex color, no arbitrary value, and no `dark:` variant.
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes, and oxlint-tailwindcss rejects unknown, conflicting, deprecated, and hard-coded color classes, plus arbitrary values and `dark:` variants in `src/app/` and `src/features/`.
 - **Controls reuse `src/components/ui/`;** check its [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 
-`src/gen/` comes from `proto/` through the `gen:proto` script, which `dev`, `build`, `lint`, and `test` run first; `src/styles/tokens.css` comes from [design/tokens.json](../design/tokens.json) through `design/gen-tokens.ts`, which `dev`, `build`, and `lint` run first. Git ignores both; edit their sources.
+`src/gen/` comes from `proto/` through the `gen:proto` script, which `dev`, `build`, `lint`, and `test` run first. Git ignores it; edit `proto/`.
 
 ## Commands
 

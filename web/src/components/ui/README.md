@@ -52,3 +52,7 @@ Three pairs are easy to confuse:
 ## Adding a component
 
 Run `npx shadcn@latest add <name>` from `web/`, format with Prettier, and add the module to the catalog above.
+
+## Changing the preset
+
+Run `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl` from `web/`. The CLI regenerates every component and rewrites `components.json`, `src/index.css`, and `package.json`. Keep its theme blocks (`@theme inline`, `:root`, `.dark`) in `index.css`; drop the font import and the `--font-sans` line it adds, and revert its `package.json` and lockfile changes. Then re-apply the two local edits above, and update `desktop/src/theme-colors.ts` to the new background, sidebar, and foreground colors.

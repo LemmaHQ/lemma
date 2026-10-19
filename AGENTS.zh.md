@@ -16,7 +16,7 @@ web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.
 desktop/      Electron 外壳，以本地引擎方式运行 lemma-server（desktop/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
-design/       设计 token（tokens.json）及面向 Web、桌面端与 Android 的生成器
+design/       Android 色板（tokens.json）及其生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
 scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
@@ -28,7 +28,7 @@ scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
 just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just desktop-dev         # 构建 lemma-server，再启动 Electron
-just design-gen          # 为 web、desktop 与 Android 重新生成设计 token
+just design-gen          # 重新生成 Android 色板
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径

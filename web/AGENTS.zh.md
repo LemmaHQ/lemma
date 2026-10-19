@@ -26,13 +26,13 @@
 
 ## 样式
 
-- **样式遵循 [web-styling.md](../docs/web-styling.zh.md)**，圆角遵循 [ui-radius.md](../docs/ui-radius.zh.md)。功能代码只使用由 [design/tokens.json](../design/tokens.json) 生成的语义工具类，不写十六进制颜色、任意值或 `dark:` 变体。
+- **样式遵循 [web-styling.md](../docs/web-styling.zh.md)**，圆角遵循 [ui-radius.md](../docs/ui-radius.zh.md)。功能代码只使用 `src/index.css` 中 shadcn 主题的语义工具类，不写十六进制颜色、任意值或 `dark:` 变体。
 - **工具负责执行类名规则：** Prettier 对 Tailwind 类名排序；oxlint-tailwindcss 拒绝未知、冲突、已弃用与硬编码颜色的类名，并在 `src/app/` 与 `src/features/` 中拒绝任意值与 `dark:` 变体。
 - **控件复用 `src/components/ui/`；** 先查阅其[组件目录](src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
 
 ## 生成文件
 
-`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成，`dev`、`build`、`lint` 与 `test` 会先运行它；`src/styles/tokens.css` 由 [design/tokens.json](../design/tokens.json) 经 `design/gen-tokens.ts` 生成，`dev`、`build` 与 `lint` 会先运行它。两者都被 Git 忽略；修改其来源。
+`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成，`dev`、`build`、`lint` 与 `test` 会先运行它。它被 Git 忽略；修改 `proto/`。
 
 ## 命令
 
