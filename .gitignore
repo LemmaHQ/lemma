@@ -17,8 +17,10 @@ lerna-debug.log*
 dist
 dist-ssr
 *.local
-# Generated code
+# Generated code and design tokens
 web/src/gen
+web/src/tokens.css
+desktop/src/gen/
 
 # Desktop (Electron Forge)
 desktop/out/

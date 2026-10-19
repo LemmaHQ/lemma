@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
 import * as engine from "./engine";
-import { themeColors } from "./theme-colors";
+import { themeColors } from "./gen/theme-colors";
 
 if (started) {
     app.quit();

@@ -64,8 +64,8 @@ Three pairs are easy to confuse:
 
 ## Adding a component
 
-Run `npx shadcn@latest add <name>` from `web/` (AI Elements: `npx shadcn@latest add @ai-elements/<name>`), format with Prettier, and add the module to the catalog above.
+Run `npx shadcn@latest add <name>` from `web/` (AI Elements: `npx shadcn@latest add @ai-elements/<name>`), format with Prettier, and add the module to the catalog above. Color variables the CLI writes into `src/index.css` move into [`design/tokens.json`](../../../../design/README.md).
 
 ## Changing the preset
 
-Run `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl` from `web/`. The CLI regenerates every component and rewrites `components.json`, `src/index.css`, and `package.json`. Keep its theme blocks (`@theme inline`, `:root`, `.dark`) in `index.css`; drop the font import and the `--font-sans` line it adds, and revert its `package.json` and lockfile changes. Then re-apply the local edits above, and update `desktop/src/theme-colors.ts` to the new background, sidebar, and foreground colors.
+Run `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl` from `web/`. The CLI regenerates every component and rewrites `components.json`, `src/index.css`, and `package.json`. Keep its `@theme inline` block and the `--radius` line in `index.css`, and move its `:root` and `.dark` colors into [`design/tokens.json`](../../../../design/README.md); drop the font import and the `--font-sans` line it adds, and revert its `package.json` and lockfile changes. Then re-apply the local edits above.

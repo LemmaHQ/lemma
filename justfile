@@ -206,7 +206,7 @@ mobile-android-test *args:
 mobile-android-cov:
     ./gradlew :mobile:androidApp:koverHtmlReport :mobile:androidApp:koverXmlReport
 
-# Generate the Android palette from design tokens
+# Generate the web theme, desktop window colors, and Android palette from design tokens
 [group('design')]
 design-gen:
     node design/gen-tokens.ts

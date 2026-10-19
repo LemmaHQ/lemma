@@ -2,11 +2,12 @@
 
 [English](web-styling.md) | 中文
 
-本文定义 `web/` 的样式归属与组件规则，`web/` 同时也是桌面端的渲染层。主题取值位于 [`web/src/index.css`](../web/src/index.css)；本文只命名角色与规则，不重复取值。
+本文定义 `web/` 的样式归属与组件规则，`web/` 同时也是桌面端的渲染层。主题颜色来自[设计 token](../design/README.zh.md)，其余主题取值位于 [`web/src/index.css`](../web/src/index.css)；本文只命名角色与规则，不重复取值。
 
 ## 归属
 
-- [`web/src/index.css`](../web/src/index.css) 拥有主题与全局样式。其中的主题块是 shadcn CLI 按 [`components.json`](../web/components.json) 中的预设写出的结果：两套主题的中性色、基础 `--radius`，以及颜色、标题字体与圆角刻度的 Tailwind `@theme` 映射。它还包含基础层、桌面端标题栏规则，以及 Streamdown 样式表的导入和让 Tailwind 扫描到 Streamdown 类名的 `@source` 行。字号、字体栈、动效与阴影使用 Tailwind 默认值。
+- [`design/tokens.json`](../design/tokens.json) 拥有主题颜色。设计 token 生成器把两套主题的颜色变量写入 `web/src/tokens.css`，该文件被 Git 忽略，由 `index.css` 导入。
+- [`web/src/index.css`](../web/src/index.css) 拥有其余主题与全局样式：[`components.json`](../web/components.json) 中 shadcn 预设的基础 `--radius`，以及颜色、标题字体与圆角刻度的 Tailwind `@theme` 映射。它还包含基础层、桌面端标题栏规则，以及 Streamdown 样式表的导入和让 Tailwind 扫描到 Streamdown 类名的 `@source` 行。字号、字体栈、动效与阴影使用 Tailwind 默认值。
 - [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体；`web/src/components/ai-elements/` 拥有聊天组件：输入框面板、消息、推理过程、工具调用、代码块与模型选择器。
 - `web/src/app/` 与 `web/src/features/` 中的功能代码组合工具类与控件，不定义全局样式，也不定义主题。
 
@@ -19,7 +20,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 | 原则                                       | Lemma 的写法                                                                            |
 | ------------------------------------------ | --------------------------------------------------------------------------------------- |
 | 组件使用语义 token，不使用色板值或字面颜色 | 来自主题的语义工具类：`bg-card`、`text-muted-foreground`、`border-border`、`rounded-md` |
-| 亮色与暗色的覆盖归主题所有者               | `index.css` 包含两套主题；功能代码中不出现 `dark:` 变体                                 |
+| 亮色与暗色的覆盖归主题所有者               | `tokens.json` 为每个颜色角色给出两套取值；功能代码中不出现 `dark:` 变体                 |
 | 共享控件集中在一个目录                     | `components/ui/` 中的 shadcn 组件，通过 `cn()` 组合                                     |
 | 悬停样式只作用于能悬停的指针设备           | Tailwind v4 已把 `hover:` 编译在 `@media (hover: hover)` 内                             |
 
@@ -40,7 +41,7 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 
 ### 颜色
 
-主题使用 shadcn 的 neutral 基础色，不带彩色强调色：`primary` 在亮色主题中接近黑色，在暗色主题中接近白色。`destructive` 标记删除操作与错误文字。共享组件自行定义悬停颜色。
+中性灰承担表面与文字。`primary` 与 `ring` 是品牌蓝，因此主要按钮与焦点环使用它；`destructive` 是红色，标记删除操作与错误文字。共享组件自行定义悬停颜色。
 
 | 角色       | 工具类                                  | 用途                                     |
 | ---------- | --------------------------------------- | ---------------------------------------- |
@@ -73,4 +74,4 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 
 ## 修改体系
 
-主题取值随预设变化：按[组件 README](../web/src/components/ui/README.zh.md) 所述重新运行 shadcn CLI，保留 CLI 写入 `index.css` 的主题块，并在同一次修改中把 `desktop/src/theme-colors.ts` 更新为新的背景、侧边栏与前景色。组件使用语义工具类。共享控件的变体或行为变化时，在同一次修改中更新[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。
+颜色在 `design/tokens.json` 中修改。Web 与桌面端的 npm 脚本在运行前重新生成输出，`just design-gen` 用于手动运行生成器。按[组件 README](../web/src/components/ui/README.zh.md) 所述重新运行 shadcn CLI 时，保留它写入 `index.css` 的 `@theme inline` 块与 `--radius`；它写入的颜色变量移入 `tokens.json`。组件使用语义工具类。共享控件的变体或行为变化时，在同一次修改中更新[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。

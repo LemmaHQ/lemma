@@ -25,7 +25,7 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `crates/`, `Cargo.toml`, `Cargo.lock`                                                  | `just rust-fmt-check`, `just rust-lint-check`, `just rust-test` (or `cargo nextest run -p <crate>` when one crate changed and no dependent's behavior can change) |
 | `proto/`                                                                               | `just proto-lint-check`, `just proto-fmt-check`, `just proto-build`, then the `web/`, `crates/`, and `mobile/` rows, since all three consume the contract         |
-| `design/`                                                                              | `just design-gen` (its palette checks), `just scripts-type-check`, `just scripts-lint-check`, then the `mobile/` row                                              |
+| `design/`                                                                              | `just design-gen` (its token checks), `just scripts-type-check`, `just scripts-lint-check`, then the `web/`, `desktop/`, and `mobile/` rows                       |
 | `web/`                                                                                 | `just web-fmt-check`, `just web-lint-check`, `just web-build`, `just web-test`; also `just desktop-build`, since Desktop CI builds the renderer from `web/`       |
 | `desktop/`                                                                             | `just desktop-fmt-check`, `just desktop-lint-check`, `just desktop-build`, `just desktop-test`                                                                    |
 | `mobile/`                                                                              | `just mobile-fmt-check`, `just mobile-android-lint-check`, `just mobile-android-build`, `just mobile-android-test`                                                |
@@ -39,7 +39,7 @@ Notes on the rows:
 
 - Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) need the user's consent first. Without it, report those rows as not run; never as passing.
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
-- Generated code is gitignored. The web npm scripts and Gradle regenerate the contract code before reading it, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect `LemmaPalette.kt`.
+- Generated code is gitignored. The web and desktop npm scripts regenerate the contract code and design token outputs before reading them, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect the outputs.
 - Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode conversation against a real provider. Never print keys.
 - When the change adds or alters an async, resource-owning, or global-state test, apply [lemma-ci-test-reliability](../lemma-ci-test-reliability/SKILL.md) first.
 

@@ -3,6 +3,8 @@ import path from "node:path";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const TOKENS_PATH = path.join(ROOT_DIR, "design/tokens.json");
+const WEB_CSS_PATH = path.join(ROOT_DIR, "web/src/tokens.css");
+const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/theme-colors.ts");
 const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
     "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaPalette.kt",
@@ -10,10 +12,28 @@ const ANDROID_KT_PATH = path.join(
 const NOTICE =
     "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
 const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/iu;
+const PALETTE_REFERENCE = /^\{palette\.(.+)\}$/u;
+const THEMES = ["light", "dark"] as const;
+const WINDOW_ROLES = ["background", "sidebar", "foreground"] as const;
+
+type ThemeName = (typeof THEMES)[number];
+type Theme = Map<string, string>;
 
 interface Color {
     name: string[];
     hex: string;
+}
+
+function readGroup(parent: object, key: string, label: string): object {
+    const group: unknown = Reflect.get(parent, key);
+    if (typeof group !== "object" || group === null) {
+        throw new Error(`${label} must contain a ${key} group`);
+    }
+    return group;
+}
+
+function tokenKeys(group: object): string[] {
+    return Object.keys(group).filter((key) => !key.startsWith("$"));
 }
 
 function collectColors(
@@ -21,10 +41,7 @@ function collectColors(
     prefix: string[],
     colors: Color[],
 ): Color[] {
-    for (const key of Object.keys(group)) {
-        if (key.startsWith("$")) {
-            continue;
-        }
+    for (const key of tokenKeys(group)) {
         const name = [...prefix, key];
         const node: unknown = Reflect.get(group, key);
         if (typeof node !== "object" || node === null) {
@@ -43,6 +60,79 @@ function collectColors(
         colors.push({ name, hex });
     }
     return colors;
+}
+
+function resolveTheme(
+    group: object,
+    themeName: ThemeName,
+    palette: Map<string, string>,
+): Theme {
+    const theme: Theme = new Map();
+    for (const role of tokenKeys(group)) {
+        const node: unknown = Reflect.get(group, role);
+        const value =
+            typeof node === "object" && node !== null && "$value" in node
+                ? node.$value
+                : undefined;
+        const reference =
+            typeof value === "string"
+                ? PALETTE_REFERENCE.exec(value)?.[1]
+                : undefined;
+        const hex =
+            reference === undefined ? undefined : palette.get(reference);
+        if (hex === undefined) {
+            throw new Error(
+                `${themeName}.${role} must reference a palette color as {palette.<name>}`,
+            );
+        }
+        theme.set(role, hex);
+    }
+    return theme;
+}
+
+function checkThemesMatch(light: Theme, dark: Theme): void {
+    const missing = [
+        ...[...light.keys()].filter((role) => !dark.has(role)),
+        ...[...dark.keys()].filter((role) => !light.has(role)),
+    ];
+    if (missing.length > 0) {
+        throw new Error(
+            `light and dark must define the same roles; mismatched: ${missing.join(", ")}`,
+        );
+    }
+    for (const role of WINDOW_ROLES) {
+        if (!light.has(role)) {
+            throw new Error(`light and dark must define ${role}`);
+        }
+    }
+}
+
+function generateWebCss(themes: Record<ThemeName, Theme>): string {
+    const block = (selector: string, theme: Theme): string => {
+        const lines = [...theme].map(
+            ([role, hex]) => `    --${role}: ${hex};`,
+        );
+        return `${selector} {\n${lines.join("\n")}\n}\n`;
+    };
+    return `/* ${NOTICE} */
+
+${block(":root", themes.light)}
+${block(".dark", themes.dark)}`;
+}
+
+function generateDesktopTs(themes: Record<ThemeName, Theme>): string {
+    const entry = (themeName: ThemeName): string => {
+        const colors = WINDOW_ROLES.map(
+            (role) => `${role}: "${themes[themeName].get(role)}"`,
+        );
+        return `    ${themeName}: { ${colors.join(", ")} },`;
+    };
+    return `// ${NOTICE}
+
+export const themeColors = {
+${THEMES.map(entry).join("\n")}
+} as const;
+`;
 }
 
 function kotlinName(parts: string[]): string {
@@ -76,19 +166,40 @@ ${lines.join("\n")}
 
 function main(): void {
     const tokens: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
-    if (
-        typeof tokens !== "object" ||
-        tokens === null ||
-        !("palette" in tokens) ||
-        typeof tokens.palette !== "object" ||
-        tokens.palette === null
-    ) {
-        throw new Error(`${TOKENS_PATH} must contain a palette group`);
+    if (typeof tokens !== "object" || tokens === null) {
+        throw new Error(`${TOKENS_PATH} must contain a token tree`);
     }
-    const colors = collectColors(tokens.palette, [], []);
-    fs.mkdirSync(path.dirname(ANDROID_KT_PATH), { recursive: true });
-    fs.writeFileSync(ANDROID_KT_PATH, generateAndroidKt(colors), "utf8");
-    console.log(`Generated ${path.relative(ROOT_DIR, ANDROID_KT_PATH)}`);
+    const colors = collectColors(
+        readGroup(tokens, "palette", TOKENS_PATH),
+        [],
+        [],
+    );
+    const palette = new Map(
+        colors.map(({ name, hex }) => [name.join("."), hex]),
+    );
+    const themes = {
+        light: resolveTheme(
+            readGroup(tokens, "light", TOKENS_PATH),
+            "light",
+            palette,
+        ),
+        dark: resolveTheme(
+            readGroup(tokens, "dark", TOKENS_PATH),
+            "dark",
+            palette,
+        ),
+    };
+    checkThemesMatch(themes.light, themes.dark);
+    const outputs: [string, string][] = [
+        [WEB_CSS_PATH, generateWebCss(themes)],
+        [DESKTOP_TS_PATH, generateDesktopTs(themes)],
+        [ANDROID_KT_PATH, generateAndroidKt(colors)],
+    ];
+    for (const [file, content] of outputs) {
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, content, "utf8");
+        console.log(`Generated ${path.relative(ROOT_DIR, file)}`);
+    }
 }
 
 main();

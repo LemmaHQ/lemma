@@ -3,14 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/web-styling.md
 /web-ui-style-reference:
-  en: 7a83e464617982b2
-  zh: 56b45296dc0f271a
+  en: d2a4fbf7486fba83
+  zh: 59187a190802e0a0
 /web-ui-style-reference/ownership:
-  en: 0a92102b3b102f2f
-  zh: 6dc56e116ca31c27
+  en: cacbec33bc08eccb
+  zh: f11cf0c217fe0b96
 /web-ui-style-reference/styling-stack:
-  en: 53924b7b57f17674
-  zh: 39952ad1b65383ab
+  en: db576f826ba564bd
+  zh: b3dbc650b29db09b
 /web-ui-style-reference/component-rules:
   en: c018ea35f11ede9c
   zh: 1cb21910e5c75a28
@@ -18,8 +18,8 @@
   en: 37fc3eb74b790cbb
   zh: 0c9919a2f338785f
 /web-ui-style-reference/visual-system/color:
-  en: 89000621ad03f866
-  zh: 1b9002cb4e364d43
+  en: 377b9104df37df10
+  zh: f23a08e3e8c2997d
 /web-ui-style-reference/visual-system/elevation:
   en: fc09528bc3948808
   zh: 3aaf3cb902d2376a
@@ -30,5 +30,5 @@
   en: 735ba261165a1070
   zh: 3a627053949bda33
 /web-ui-style-reference/changing-the-system:
-  en: ee374f330fbb1e27
-  zh: 38c7400c7b57d4f3
+  en: c04872b1dc98e14b
+  zh: ad40d8f6b7c51dc9

@@ -2,11 +2,12 @@
 
 English | [中文](web-styling.zh.md)
 
-This reference defines styling ownership and component rules for `web/`, which is also the desktop renderer. Theme values live in [`web/src/index.css`](../web/src/index.css); this document names roles and rules and does not repeat the values.
+This reference defines styling ownership and component rules for `web/`, which is also the desktop renderer. Theme colors come from the [design tokens](../design/README.md), and the remaining theme values live in [`web/src/index.css`](../web/src/index.css); this document names roles and rules and does not repeat the values.
 
 ## Ownership
 
-- [`web/src/index.css`](../web/src/index.css) owns the theme and the global styles. Its theme blocks are the shadcn CLI output for the preset in [`components.json`](../web/components.json): the neutral colors of both themes, the base `--radius`, and the Tailwind `@theme` mappings for colors, the heading font, and the radius scale. It also holds the base layer, the desktop titlebar rules, and the Streamdown stylesheet import with the `@source` lines that let Tailwind see Streamdown's classes. Type sizes, font stacks, motion, and shadows are Tailwind's defaults.
+- [`design/tokens.json`](../design/tokens.json) owns the theme colors. The design token generator writes the color variables of both themes into `web/src/tokens.css`, which Git ignores and `index.css` imports.
+- [`web/src/index.css`](../web/src/index.css) owns the rest of the theme and the global styles: the base `--radius` of the shadcn preset in [`components.json`](../web/components.json), and the Tailwind `@theme` mappings for colors, the heading font, and the radius scale. It also holds the base layer, the desktop titlebar rules, and the Streamdown stylesheet import with the `@source` lines that let Tailwind see Streamdown's classes. Type sizes, font stacks, motion, and shadows are Tailwind's defaults.
 - [`web/src/components/ui/`](../web/src/components/ui/README.md) owns the shared controls and their variants; `web/src/components/ai-elements/` owns the chat components: the composer, messages, reasoning, tool calls, code blocks, and the model selector.
 - Feature code in `web/src/app/` and `web/src/features/` composes utilities and controls. It defines no global style and no theme.
 
@@ -19,7 +20,7 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 | Principle                                                                  | Lemma form                                                                                           |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Components consume semantic tokens, never palette values or literal colors | Semantic utilities from the theme: `bg-card`, `text-muted-foreground`, `border-border`, `rounded-md` |
-| Light and dark overrides belong to the theme owner                         | `index.css` holds both themes; no `dark:` variant appears in feature code                            |
+| Light and dark overrides belong to the theme owner                         | `tokens.json` gives each color role both values; no `dark:` variant appears in feature code          |
 | Shared controls live in one catalog                                        | shadcn components in `components/ui/`, combined with `cn()`                                          |
 | Hover styles apply only to hover-capable pointers                          | Tailwind v4 already compiles `hover:` inside `@media (hover: hover)`                                 |
 
@@ -40,7 +41,7 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 
 ### Color
 
-The theme is shadcn's neutral base color and carries no chromatic accent: `primary` is near-black in the light theme and near-white in the dark theme. `destructive` marks delete actions and error text. Shared components define their own hover colors.
+Neutral grays carry the surfaces and text. `primary` and `ring` are the brand blue, so primary buttons and focus rings carry it; `destructive` is red and marks delete actions and error text. Shared components define their own hover colors.
 
 | Role              | Utilities                               | Use                                                                   |
 | ----------------- | --------------------------------------- | --------------------------------------------------------------------- |
@@ -73,4 +74,4 @@ The [corner-radius standard](ui-radius.md) defines the radius roles, nesting, an
 
 ## Changing the system
 
-Theme values change with the preset: rerun the shadcn CLI as the [component README](../web/src/components/ui/README.md) describes, keep the CLI's theme blocks in `index.css`, and update `desktop/src/theme-colors.ts` to the new background, sidebar, and foreground colors in the same change. Consume the semantic utility from components. When a shared control's variants or behavior change, update the [component catalog](../web/src/components/ui/README.md#component-catalog) in the same change.
+Colors change in `design/tokens.json`. The web and desktop npm scripts regenerate the outputs before they run, and `just design-gen` runs the generator by hand. Rerunning the shadcn CLI as the [component README](../web/src/components/ui/README.md) describes keeps its `@theme inline` block and `--radius` in `index.css`; color variables it writes move into `tokens.json`. Consume the semantic utility from components. When a shared control's variants or behavior change, update the [component catalog](../web/src/components/ui/README.md#component-catalog) in the same change.

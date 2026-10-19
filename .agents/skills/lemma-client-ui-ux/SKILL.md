@@ -59,7 +59,7 @@ Scrollable panes and panels use the shared `ScrollArea`, whose scrollbar overlay
 
 ## Desktop window
 
-- The desktop titlebar is a drag region painted by the web client; the shell's `titleBarOverlay` colors come from `themeColors` in `desktop/src/theme-colors.ts`. A new header element sets `-webkit-app-region: no-drag` on its interactive parts, and sits below or beside the window controls, never under them.
+- The desktop titlebar is a drag region painted by the web client; the shell's `titleBarOverlay` colors come from `themeColors`, which the [design tokens](../../../design/README.md) generate into `desktop/src/gen/theme-colors.ts`. A new header element sets `-webkit-app-region: no-drag` on its interactive parts, and sits below or beside the window controls, never under them.
 - The titlebar follows the surface beneath it, so a collapsed sidebar and an expanded one both look continuous at the top edge.
 - Desktop-only behavior goes through the web client's [platform layer](../../../web/src/platform/); feature code never reads `window.lemmaDesktop` directly.
 

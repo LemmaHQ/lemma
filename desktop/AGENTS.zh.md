@@ -10,7 +10,7 @@
 - **`src/engine.ts` 以子进程方式运行 `lemma-server`**，设置 `LEMMA_LOCAL_MODE=1`，并把 `LEMMA_DATA_DIR` 设为 Electron 的 `userData` 目录。未打包时从 `target/<profile>/` 取可执行文件，`LEMMA_ENGINE_PROFILE` 选择 profile（默认 `debug`）。
 - **引擎通过一行 stdout 宣告就绪**：`LEMMA_READY <json>`，携带端口与默认账号凭据。`engine.ts` 与 `crates/server/lemma-server/src/local.rs` 分别负责这次握手的两端，两者一起修改。
 - **`src/preload.ts` 向渲染层暴露 `__LEMMA_SERVER_URL__` 与 `lemmaDesktop`**；`web/src/platform/` 是它们唯一的使用方。
-- **`src/theme-colors.ts` 提供窗口颜色：** 即 `web/src/index.css` 中 Web 主题的背景、侧边栏与前景色，按主题以十六进制值给出。`src/main.ts` 从中读取标题栏与窗口背景颜色；Web 主题颜色变化时同步更新它。
+- **`src/gen/theme-colors.ts` 提供窗口颜色：** 即每套主题的背景、侧边栏与前景色，由 [design/tokens.json](../design/README.zh.md) 生成。它被 Git 忽略；`npm run lint`、`test` 与 `build` 会先生成它。`src/main.ts` 从中读取标题栏与窗口背景颜色。
 - `LEMMA_DEBUG_PORT` 开启 Chromium 远程调试。
 
 ## 命令

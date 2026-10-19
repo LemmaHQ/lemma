@@ -12,8 +12,12 @@
         "package": "electron-forge package",
         "make": "electron-forge make",
         "publish": "electron-forge publish",
+        "gen:tokens": "node ../design/gen-tokens.ts",
+        "prelint": "npm run gen:tokens",
         "lint": "oxlint",
+        "pretest": "npm run gen:tokens",
         "test": "vitest run",
+        "pretest:cov": "npm run gen:tokens",
         "test:cov": "vitest run --coverage",
         "format": "prettier --write . --ignore-path ../.gitignore",
         "format:check": "prettier --check . --ignore-path ../.gitignore"
