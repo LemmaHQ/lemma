@@ -136,6 +136,7 @@
         "type": "类型"
     },
     "sessions": {
+        "actions": "更多操作",
         "archive": "归档",
         "archived": "已归档",
         "delete": "彻底删除",

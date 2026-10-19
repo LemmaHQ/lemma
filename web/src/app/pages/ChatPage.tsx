@@ -1,11 +1,11 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
-import { IconLayoutSidebar } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { AppSidebar } from "@/app/shell/AppSidebar";
+import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
 import { ChatComposer } from "@/features/agent/components/ChatComposer";
 import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
@@ -20,13 +20,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { errorText } from "@/data/rpc/errors";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
-import { cn } from "@/lib/utils";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useChat as useChatStore } from "@/features/agent/store";
 import { setTitleBarSurface } from "@/features/preferences/theme";
 
@@ -51,17 +50,17 @@ export function ChatPage() {
     const navigate = useNavigate();
 
     const activeId = useParams().id ?? null;
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(
-        () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1",
+    const [sidebarOpen, setSidebarOpenState] = useState(
+        () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) !== "1",
     );
     const [draft, setDraft] = useState("");
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    const toggleSidebar = (collapsed: boolean) => {
-        setSidebarCollapsed(collapsed);
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+    const setSidebarOpen = (open: boolean) => {
+        setSidebarOpenState(open);
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, open ? "0" : "1");
     };
 
     const { model, options: modelOptions, selectModel } = useModelSelection();
@@ -168,114 +167,76 @@ export function ChatPage() {
 
     const activeSession = summaries.find((s) => s.id === activeId);
     return (
-        <div className="flex h-dvh bg-sidebar text-foreground">
-            <div
-                aria-hidden={sidebarCollapsed}
-                className={cn(
-                    "shrink-0 overflow-hidden transition-all duration-200 ease-out",
-                    sidebarCollapsed ? "w-0 opacity-0" : "w-65 opacity-100",
-                )}
-            >
-                <AppSidebar
-                    sessions={summaries}
-                    archived={archivedSummaries}
-                    activeSessionId={activeId}
-                    onGoHome={() => {
-                        void navigate("/");
-                    }}
-                    onOpenSession={(id) => {
-                        void navigate(`/conversations/${id}`);
-                    }}
-                    onArchiveSession={(id) => void handleArchive(id)}
-                    onRenameSession={(id, title) =>
-                        void runAction(() => conversations.rename(id, title))
-                    }
-                    onRestoreSession={(id) =>
-                        void runAction(() => conversations.restore(id))
-                    }
-                    onDeleteSession={setPendingDeleteId}
-                    onCollapse={() => toggleSidebar(true)}
-                />
-            </div>
+        <SidebarProvider
+            open={sidebarOpen}
+            onOpenChange={setSidebarOpen}
+            className="h-dvh"
+        >
+            <AppSidebar
+                sessions={summaries}
+                archived={archivedSummaries}
+                activeSessionId={activeId}
+                onGoHome={() => {
+                    void navigate("/");
+                }}
+                onOpenSession={(id) => {
+                    void navigate(`/conversations/${id}`);
+                }}
+                onArchiveSession={(id) => void handleArchive(id)}
+                onRenameSession={(id, title) =>
+                    void runAction(() => conversations.rename(id, title))
+                }
+                onRestoreSession={(id) =>
+                    void runAction(() => conversations.restore(id))
+                }
+                onDeleteSession={setPendingDeleteId}
+            />
 
-            <main
-                className={cn(
-                    "min-w-0 flex-1 duration-200 ease-out",
-                    // oxlint-disable-next-line tailwindcss/no-arbitrary-value -- no named Tailwind utility transitions only padding
-                    "transition-[padding]",
-                    sidebarCollapsed ? "p-2" : "py-2 pr-2",
-                )}
-            >
-                <div className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
-                    {activeId !== null && (
-                        <div className="glass absolute inset-x-0 top-0 z-20 flex h-12 items-center justify-start border-b border-border/80 px-3">
-                            <div className="flex min-w-0 items-center gap-2">
-                                {sidebarCollapsed && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        className="size-8 text-muted-foreground"
-                                        onClick={() => toggleSidebar(false)}
-                                        aria-label={t("sidebar.expand")}
-                                        title={t("sidebar.expand")}
-                                    >
-                                        <IconLayoutSidebar className="size-4" />
-                                    </Button>
-                                )}
-                                <span className="truncate text-sm font-medium text-foreground">
-                                    {activeSession !== undefined &&
-                                    activeSession.title !== ""
-                                        ? activeSession.title
-                                        : t("sidebar.newChat")}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                    {activeId === null && sidebarCollapsed && (
+            <SidebarInset className="overflow-hidden">
+                {activeId === null ? (
+                    <>
                         <div className="absolute top-3 left-3 z-10">
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="glass size-8 rounded-lg border border-border text-muted-foreground"
-                                onClick={() => toggleSidebar(false)}
-                                aria-label={t("sidebar.expand")}
-                                title={t("sidebar.expand")}
-                            >
-                                <IconLayoutSidebar className="size-4" />
-                            </Button>
+                            <SidebarRevealToggle />
                         </div>
-                    )}
-                    {activeId === null ? (
                         <HomeView
                             onSubmit={(text) => void sendText(text)}
                             model={model}
                             modelOptions={modelOptions}
                             onModelChange={selectModel}
                         />
-                    ) : (
-                        <>
-                            <MessageList
-                                items={chat.items}
-                                resetKey={activeId}
-                                providerNameById={providerNameById}
-                                onPickSuggestion={handlePickSuggestion}
-                                onRegenerate={handleRegenerate}
-                            />
-                            <ChatComposer
-                                value={draft}
-                                onChange={setDraft}
-                                onSend={handleSend}
-                                onStop={handleStop}
-                                streaming={chat.streaming}
-                                model={model}
-                                modelOptions={modelOptions}
-                                onModelChange={selectModel}
-                                inputRef={inputRef}
-                            />
-                        </>
-                    )}
-                </div>
-            </main>
+                    </>
+                ) : (
+                    <>
+                        <header className="glass absolute inset-x-0 top-0 z-20 flex h-12 items-center gap-2 border-b border-border/80 px-3">
+                            <SidebarRevealToggle />
+                            <span className="truncate text-sm font-medium text-foreground">
+                                {activeSession !== undefined &&
+                                activeSession.title !== ""
+                                    ? activeSession.title
+                                    : t("sidebar.newChat")}
+                            </span>
+                        </header>
+                        <MessageList
+                            items={chat.items}
+                            resetKey={activeId}
+                            providerNameById={providerNameById}
+                            onPickSuggestion={handlePickSuggestion}
+                            onRegenerate={handleRegenerate}
+                        />
+                        <ChatComposer
+                            value={draft}
+                            onChange={setDraft}
+                            onSend={handleSend}
+                            onStop={handleStop}
+                            streaming={chat.streaming}
+                            model={model}
+                            modelOptions={modelOptions}
+                            onModelChange={selectModel}
+                            inputRef={inputRef}
+                        />
+                    </>
+                )}
+            </SidebarInset>
 
             <AlertDialog
                 open={pendingDeleteId !== null}
@@ -315,6 +276,6 @@ export function ChatPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </SidebarProvider>
     );
 }

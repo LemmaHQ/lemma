@@ -4,7 +4,11 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { cn } from "@/lib/utils";
 import { IconChevronDown, IconPlus, IconSearch } from "@tabler/icons-react";
@@ -101,17 +105,18 @@ export function ProviderListPane({
     const disabledProviders = filtered.filter((p) => !p.enabled);
 
     return (
-        <section className="flex w-65 shrink-0 flex-col rounded-lg border border-border bg-background">
+        <section className="flex w-65 shrink-0 flex-col border-r">
             <div className="flex items-center gap-2 p-3">
-                <div className="relative flex-1">
-                    <IconSearch className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
+                <InputGroup className="flex-1">
+                    <InputGroupAddon>
+                        <IconSearch />
+                    </InputGroupAddon>
+                    <InputGroupInput
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t("providers.searchPlaceholder")}
-                        className="pl-8"
                     />
-                </div>
+                </InputGroup>
                 <Button
                     type="button"
                     variant="outline"

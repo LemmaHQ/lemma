@@ -136,6 +136,7 @@
         "type": "Type"
     },
     "sessions": {
+        "actions": "More actions",
         "archive": "Archive",
         "archived": "Archived",
         "delete": "Delete permanently",

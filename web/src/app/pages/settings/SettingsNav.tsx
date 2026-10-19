@@ -1,30 +1,50 @@
-import { cn } from "@/lib/utils";
 import { IconArrowLeft, IconPalette, IconRobot } from "@tabler/icons-react";
+import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useMatch } from "react-router";
 
-interface NavItemProps {
-    icon: React.ComponentType<{ className?: string }>;
+import { Button } from "@/components/ui/button";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+    useSidebar,
+} from "@/components/ui/sidebar";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+function NavItem({
+    icon: Icon,
+    label,
+    to,
+}: {
+    icon: ComponentType;
     label: string;
     to: string;
-}
-
-function NavItem({ icon: Icon, label, to }: NavItemProps) {
+}) {
+    const { setOpenMobile } = useSidebar();
+    const active = useMatch(to) !== null;
     return (
-        <NavLink
-            to={to}
-            className={({ isActive }) =>
-                cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-                    isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-accent/60",
-                )
-            }
-        >
-            <Icon className="size-4 shrink-0" />
-            <span className="truncate">{label}</span>
-        </NavLink>
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                isActive={active}
+                render={<NavLink to={to} />}
+                onClick={() => setOpenMobile(false)}
+            >
+                <Icon />
+                <span>{label}</span>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
     );
 }
 
@@ -36,32 +56,39 @@ function NavGroup({
     children: React.ReactNode;
 }) {
     return (
-        <div>
-            <p className="px-2 pt-4 pb-1 text-xs text-muted-foreground">
-                {label}
-            </p>
-            <div className="flex flex-col gap-0.5">{children}</div>
-        </div>
+        <SidebarGroup>
+            <SidebarGroupLabel>{label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+                <SidebarMenu>{children}</SidebarMenu>
+            </SidebarGroupContent>
+        </SidebarGroup>
     );
 }
 
 export function SettingsNav() {
     const { t } = useTranslation();
     return (
-        <aside className="flex w-55 shrink-0 flex-col bg-transparent p-3">
-            <div className="flex items-center gap-2 px-1 pb-2">
-                <Link
-                    to="/"
-                    aria-label={t("settings.backToHome")}
-                    className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-                >
-                    <IconArrowLeft className="size-4" />
-                </Link>
-                <h1 className="text-sm font-semibold text-sidebar-foreground">
-                    {t("settings.title")}
-                </h1>
-            </div>
-            <nav className="flex flex-col gap-0.5">
+        <Sidebar variant="inset">
+            <SidebarHeader className="flex-row items-center gap-2">
+                <Tooltip>
+                    <TooltipTrigger
+                        render={
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={t("settings.backToHome")}
+                                render={<Link to="/" />}
+                                nativeButton={false}
+                            />
+                        }
+                    >
+                        <IconArrowLeft />
+                    </TooltipTrigger>
+                    <TooltipContent>{t("settings.backToHome")}</TooltipContent>
+                </Tooltip>
+                <h1 className="text-sm font-semibold">{t("settings.title")}</h1>
+            </SidebarHeader>
+            <SidebarContent>
                 <NavGroup label={t("settings.groupGeneral")}>
                     <NavItem
                         icon={IconPalette}
@@ -76,7 +103,8 @@ export function SettingsNav() {
                         to="/settings/providers"
                     />
                 </NavGroup>
-            </nav>
-        </aside>
+            </SidebarContent>
+            <SidebarRail />
+        </Sidebar>
     );
 }

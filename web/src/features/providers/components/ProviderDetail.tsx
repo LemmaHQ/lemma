@@ -1,4 +1,4 @@
-import { IconEye, IconEyeOff, IconLock, IconTrash } from "@tabler/icons-react";
+import { IconLock, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
 
+import { ApiKeyInput } from "./ApiKeyInput";
 import { ModelList } from "./ModelList";
 
 function FieldRow({
@@ -68,7 +69,6 @@ export function ProviderDetail({
 }: ProviderDetailProps) {
     const { t } = useTranslation();
     const [apiKey, setApiKey] = useState(provider.apiKey);
-    const [showKey, setShowKey] = useState(false);
     const [name, setName] = useState(provider.name);
     const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
     const [savingKey, setSavingKey] = useState(false);
@@ -215,31 +215,12 @@ export function ProviderDetail({
                     label={t("providers.apiKey")}
                     description={t("providers.apiKeyDesc")}
                 >
-                    <div className="relative flex-1">
-                        <Input
-                            type={showKey ? "text" : "password"}
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={t("providers.apiKeyPlaceholder")}
-                            className="pr-9 font-mono text-xs"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowKey((v) => !v)}
-                            aria-label={
-                                showKey
-                                    ? t("providers.hideApiKey")
-                                    : t("providers.showApiKey")
-                            }
-                            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            {showKey ? (
-                                <IconEyeOff className="size-4" />
-                            ) : (
-                                <IconEye className="size-4" />
-                            )}
-                        </button>
-                    </div>
+                    <ApiKeyInput
+                        className="flex-1"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder={t("providers.apiKeyPlaceholder")}
+                    />
                     <Button
                         type="button"
                         size="sm"

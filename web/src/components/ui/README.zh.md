@@ -4,7 +4,7 @@
 
 ## 概要
 
-`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件，由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-rhea` 风格生成，并按生成结果直接使用。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
+`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件，由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-nova` 风格生成，并按生成结果直接使用。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
 
 <a id="component-catalog"></a>
 
@@ -20,8 +20,14 @@
 | `collapsible`   | 显示与隐藏区域；由调用方绘制触发器                                       |
 | `dropdown-menu` | 锚定在触发器上的操作或选项菜单                                           |
 | `input`         | 单行文本框                                                               |
+| `input-group`   | 附带图标、文字或按钮的文本框                                             |
+| `item`          | 列表或设置分组中的一行，含标题、描述与尾部操作                           |
 | `label`         | 通过 `htmlFor` 绑定到控件的表单标签                                      |
 | `select`        | 表单中从列表里单选                                                       |
+| `separator`     | 水平或垂直分隔线                                                         |
+| `sheet`         | 从屏幕边缘滑入的面板；`sidebar` 在窄屏上使用它                           |
+| `sidebar`       | 可折叠的应用导航，含 provider、菜单部件与切换按钮                        |
+| `skeleton`      | 内容加载期间显示的占位块                                                 |
 | `sonner`        | 提示消息的宿主，在 `App` 中挂载一次；通过 `sonner` 包的 `toast` 弹出提示 |
 | `switch`        | 立即生效的两态开关                                                       |
 | `tabs`          | 在面板之间切换的标签列表                                                 |
@@ -40,8 +46,8 @@
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
 - 主题来自 `next-themes`，在 `App` 中以 `class` 属性与 `lemma.theme` 存储键挂载；`Toaster` 通过 `useTheme` 读取它。
-- `TooltipContent` 是唯一的本地修改：在桌面端外壳中，它的碰撞内边距让工具提示避开标题栏。重新生成该文件时保留这处修改。
-- oxlint 跳过此目录，因为文件保持 CLI 写出的样子；Prettier 负责格式化。
+- 有两处本地修改，重新生成文件时须保留。在桌面端外壳中，`TooltipContent` 的碰撞内边距让工具提示避开标题栏。在 `Toaster` 中，主题类型断言写明三种主题，因为生成的 `ToasterProps["theme"]` 断言无法通过 `exactOptionalPropertyTypes` 检查。
+- oxlint 跳过此目录以及 `src/lib/hooks/use-mobile.ts`（CLI 随 `sidebar` 添加的断点 hook），因为这些文件保持 CLI 写出的样子；Prettier 负责格式化。
 
 ## 添加组件
 

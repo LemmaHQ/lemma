@@ -1,9 +1,28 @@
-import { IconCheck, IconPlus, IconRefresh, IconX } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import {
+    IconCheck,
+    IconPlus,
+    IconRefresh,
+    IconSearch,
+    IconX,
+} from "@tabler/icons-react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemGroup,
+    ItemSeparator,
+    ItemTitle,
+} from "@/components/ui/item";
 import { errorText } from "@/data/rpc/errors";
 import { cn } from "@/lib/utils";
 
@@ -66,12 +85,16 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                     {t("providers.modelList")}
                 </h3>
                 <div className="ml-auto flex items-center gap-2">
-                    <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("providers.modelSearchPlaceholder")}
-                        className="h-8 w-48"
-                    />
+                    <InputGroup className="w-48">
+                        <InputGroupAddon>
+                            <IconSearch />
+                        </InputGroupAddon>
+                        <InputGroupInput
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={t("providers.modelSearchPlaceholder")}
+                        />
+                    </InputGroup>
                     <Button
                         type="button"
                         variant="outline"
@@ -160,26 +183,29 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
             )}
 
             {visible.length > 0 ? (
-                visible.map((model) => (
-                    <div
-                        key={model}
-                        className="flex items-center gap-3 border-b border-border/60 py-3"
-                    >
-                        <span className="truncate font-mono text-sm">
-                            {model}
-                        </span>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                            aria-label={t("providers.removeModel")}
-                            onClick={() => remove(model)}
-                        >
-                            <IconX className="size-3.5" />
-                        </Button>
-                    </div>
-                ))
+                <ItemGroup>
+                    {visible.map((model, index) => (
+                        <Fragment key={model}>
+                            {index > 0 && <ItemSeparator />}
+                            <Item size="xs">
+                                <ItemContent>
+                                    <ItemTitle>{model}</ItemTitle>
+                                </ItemContent>
+                                <ItemActions>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={t("providers.removeModel")}
+                                        onClick={() => remove(model)}
+                                    >
+                                        <IconX />
+                                    </Button>
+                                </ItemActions>
+                            </Item>
+                        </Fragment>
+                    ))}
+                </ItemGroup>
             ) : (
                 <p className="py-8 text-center text-sm text-muted-foreground">
                     {t("providers.noModels")}

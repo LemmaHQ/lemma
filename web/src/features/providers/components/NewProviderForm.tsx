@@ -1,4 +1,3 @@
-import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +13,8 @@ import {
 } from "@/components/ui/select";
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
+
+import { ApiKeyInput } from "./ApiKeyInput";
 
 export interface NewProviderData {
     kind: ProviderKind;
@@ -43,7 +44,6 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const [identifier, setIdentifier] = useState("");
     const [baseUrl, setBaseUrl] = useState("");
     const [apiKey, setApiKey] = useState("");
-    const [showKey, setShowKey] = useState(false);
     const [busy, setBusy] = useState(false);
     const [failed, setFailed] = useState<string | null>(null);
 
@@ -144,32 +144,12 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="np-apikey">{t("providers.apiKey")}</Label>
-                    <div className="relative">
-                        <Input
-                            id="np-apikey"
-                            type={showKey ? "text" : "password"}
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={t("providers.apiKeyPlaceholder")}
-                            className="pr-9"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowKey((v) => !v)}
-                            aria-label={
-                                showKey
-                                    ? t("providers.hideApiKey")
-                                    : t("providers.showApiKey")
-                            }
-                            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            {showKey ? (
-                                <IconEyeOff className="size-4" />
-                            ) : (
-                                <IconEye className="size-4" />
-                            )}
-                        </button>
-                    </div>
+                    <ApiKeyInput
+                        id="np-apikey"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder={t("providers.apiKeyPlaceholder")}
+                    />
                 </div>
                 {failed !== null && (
                     <p className="text-xs text-destructive">{failed}</p>

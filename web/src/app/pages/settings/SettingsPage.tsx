@@ -1,6 +1,8 @@
 import { Navigate, useParams } from "react-router";
 import { useEffect } from "react";
 
+import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppearancePanel } from "@/features/preferences/AppearancePanel";
 import { ProvidersPanel } from "@/features/providers/ProvidersPanel";
 import { setTitleBarSurface } from "@/features/preferences/theme";
@@ -19,15 +21,20 @@ export function SettingsPage() {
     }
 
     return (
-        <div className="flex h-dvh gap-2 bg-sidebar p-2 text-foreground">
+        <SidebarProvider className="h-dvh">
             <SettingsNav />
-            {section === "providers" ? (
-                <ProvidersPanel />
-            ) : (
-                <main className="min-w-0 flex-1 overflow-y-auto rounded-lg border border-border bg-background">
-                    <AppearancePanel />
-                </main>
-            )}
-        </div>
+            <SidebarInset className="overflow-hidden">
+                <div className="absolute top-3 left-3 z-10">
+                    <SidebarRevealToggle />
+                </div>
+                {section === "providers" ? (
+                    <ProvidersPanel />
+                ) : (
+                    <div className="min-h-0 flex-1 overflow-y-auto">
+                        <AppearancePanel />
+                    </div>
+                )}
+            </SidebarInset>
+        </SidebarProvider>
     );
 }

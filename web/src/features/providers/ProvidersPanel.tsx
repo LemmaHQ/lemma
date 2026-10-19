@@ -51,7 +51,7 @@ export function ProvidersPanel() {
     };
 
     return (
-        <>
+        <div className="flex min-h-0 flex-1">
             <ProviderListPane
                 providers={store.list}
                 selectedId={creating ? null : effectiveSelectedId}
@@ -61,7 +61,7 @@ export function ProvidersPanel() {
                 }}
                 onCreate={() => setCreating(true)}
             />
-            <main className="min-w-0 flex-1 overflow-y-auto rounded-lg border border-border bg-background">
+            <div className="min-w-0 flex-1 overflow-y-auto">
                 {creating ? (
                     <NewProviderForm
                         onSave={handleSaveNew}
@@ -98,7 +98,7 @@ export function ProvidersPanel() {
                         onDelete={() => handleDelete(selected.id)}
                     />
                 )}
-            </main>
-        </>
+            </div>
+        </div>
     );
 }
