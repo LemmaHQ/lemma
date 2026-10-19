@@ -32,6 +32,7 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 | Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check`; for `scripts/`, also `just scripts-type-check` and `just scripts-lint-check` |
 | `.oxlintrc.json`, `.prettierrc.json`, `tsconfig.base.json` | the `web/` and `desktop/` rows; `just scripts-type-check` and `just scripts-lint-check` for the first and last |
 | `justfile`, `mise.toml` | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files |
+| `crates/`, `web/src/`, `desktop/src/`, `mobile/`, `scripts/`, `design/`, `.jscpd.json` | `just dup-check`; when a clone involves the changed code, extract the shared part instead of adding another copy |
 | `.github/workflows/` | read the changed workflow for path filters and job dependencies; it runs only in CI |
 
 Notes on the rows:

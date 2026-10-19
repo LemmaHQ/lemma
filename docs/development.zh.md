@@ -76,7 +76,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI 工作流
 
-[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI 与 Spec CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
+[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe。Rust CI、Web CI、Desktop CI、Mobile CI、Spec CI 与 Duplication CI 都以一个 `check` job 收尾，其中任一 job 失败它就失败。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
@@ -87,6 +87,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json` | prettier 检查与 oxlint，再在三个系统上运行 proto 与 token 生成、渲染层构建、桌面端类型检查与 vitest |
 | Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |
 | Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置、根目录 `package.json`、`package-lock.json`、`tsconfig.json`、`tsconfig.base.json`、`.oxlintrc.json` | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查、仓库引用检查，以及 `scripts/` 与 `design/` 的类型检查与 oxlint |
+| Duplication CI | `crates/`、`web/src/`、`desktop/src/`、`mobile/`、`scripts/`、`design/`、`.jscpd.json`、根目录 `package.json`、`package-lock.json` | 通过 `just dup-check` 生成 jscpd 复制粘贴报告；列出重复片段与重复行比例，不使运行失败 |
 | Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
 | CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译 |
 | mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |

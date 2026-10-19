@@ -257,3 +257,8 @@ scripts-lint-check:
 [group('scripts')]
 scripts-lint:
     npx --no-install oxlint --fix scripts design
+
+# Report copy-pasted code
+[group('dup')]
+dup-check:
+    npx --no-install jscpd

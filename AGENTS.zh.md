@@ -32,6 +32,7 @@ just design-gen          # 为 web、desktop 与 Android 重新生成设计 toke
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径
+just dup-check           # 报告复制粘贴的代码（jscpd，.jscpd.json）
 ```
 
 Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后缀的同名 recipe 会应用修复。CI 步骤调用 recipe，不重复其中的命令，因此本地运行可以复现 CI 步骤。各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。

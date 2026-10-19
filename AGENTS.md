@@ -32,6 +32,7 @@ just design-gen          # regenerate design tokens for web, desktop, and Androi
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 just docs-refs-check     # check recipe names and repository paths cited in Markdown
+just dup-check           # report copy-pasted code (jscpd, .jscpd.json)
 ```
 
 Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
