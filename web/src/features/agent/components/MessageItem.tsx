@@ -8,7 +8,7 @@ import type { AgentItem } from "@/features/agent/store";
 
 interface MessageItemProps {
     message: AgentItem;
-    source?: string;
+    source?: string | undefined;
     canRegenerate?: boolean;
     onRegenerate?: (id: string) => void;
 }
@@ -31,7 +31,7 @@ export function MessageItem({
     if (message.role === "user") {
         return (
             <div className="flex justify-end">
-                <div className="max-w-[75%] rounded-xl bg-muted px-4 py-2.5 text-sm wrap-break-word whitespace-pre-wrap">
+                <div className="max-w-3/4 rounded-xl bg-muted px-4 py-2.5 text-sm wrap-break-word whitespace-pre-wrap">
                     {message.content}
                 </div>
             </div>
@@ -39,9 +39,7 @@ export function MessageItem({
     }
 
     const handleCopy = async () => {
-        await navigator.clipboard
-            .writeText(message.content)
-            .catch(() => undefined);
+        await navigator.clipboard.writeText(message.content).catch(() => {});
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
     };
@@ -52,7 +50,7 @@ export function MessageItem({
                 <Sparkles className="size-3.5" />
             </div>
             <div className="min-w-0 flex-1">
-                {message.thinking && (
+                {message.thinking !== "" && (
                     <ThinkingBlock
                         thinking={message.thinking}
                         streaming={streaming}
@@ -67,6 +65,7 @@ export function MessageItem({
                     </div>
                 )}
                 {streaming && (
+                    // oxlint-disable-next-line tailwindcss/no-arbitrary-value -- ui-radius.md lets the streaming caret keep its own small radius
                     <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
                 )}
                 {message.status === "error" && (
@@ -74,11 +73,12 @@ export function MessageItem({
                         <p className="text-sm text-destructive">
                             {t("errors.agentFailed")}
                         </p>
-                        {message.error && (
-                            <p className="text-xs wrap-break-word text-muted-foreground">
-                                {message.error}
-                            </p>
-                        )}
+                        {message.error !== undefined &&
+                            message.error !== "" && (
+                                <p className="text-xs wrap-break-word text-muted-foreground">
+                                    {message.error}
+                                </p>
+                            )}
                     </div>
                 )}
                 {message.status === "aborted" && (
@@ -86,7 +86,7 @@ export function MessageItem({
                         {t("chat.abortedNotice")}
                     </p>
                 )}
-                {!streaming && source && (
+                {!streaming && source !== undefined && source !== "" && (
                     <p className="mt-3 text-xs text-muted-foreground">
                         {source}
                     </p>
@@ -97,7 +97,9 @@ export function MessageItem({
                             variant="ghost"
                             size="icon-sm"
                             className="size-7 text-muted-foreground"
-                            onClick={handleCopy}
+                            onClick={() => {
+                                void handleCopy();
+                            }}
                             aria-label={
                                 copied ? t("chat.copied") : t("chat.copy")
                             }
@@ -108,17 +110,18 @@ export function MessageItem({
                                 <Copy className="size-3.5" />
                             )}
                         </Button>
-                        {canRegenerate && onRegenerate && (
-                            <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="size-7 text-muted-foreground"
-                                onClick={() => onRegenerate(message.id)}
-                                aria-label={t("chat.regenerate")}
-                            >
-                                <RefreshCw className="size-3.5" />
-                            </Button>
-                        )}
+                        {canRegenerate === true &&
+                            onRegenerate !== undefined && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="size-7 text-muted-foreground"
+                                    onClick={() => onRegenerate(message.id)}
+                                    aria-label={t("chat.regenerate")}
+                                >
+                                    <RefreshCw className="size-3.5" />
+                                </Button>
+                            )}
                     </div>
                 )}
             </div>

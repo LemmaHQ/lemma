@@ -25,7 +25,7 @@ const config: ForgeConfig = {
         // Mirrors plugin-vite's default ignore (which only keeps .vite) and
         // additionally keeps the bundled web build.
         ignore: (file) => {
-            if (!file) return false;
+            if (file === "") return false;
             return !file.startsWith("/.vite") && !file.startsWith("/web-dist");
         },
     },

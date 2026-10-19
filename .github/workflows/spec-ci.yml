@@ -20,6 +20,7 @@ on:
       - "package-lock.json"
       - "tsconfig.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
       - ".github/workflows/spec-ci.yml"
   pull_request:
     paths:
@@ -37,6 +38,7 @@ on:
       - "package-lock.json"
       - "tsconfig.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
       - ".github/workflows/spec-ci.yml"
 
 concurrency:
@@ -106,6 +108,9 @@ jobs:
 
       - name: Type-check scripts
         run: just scripts-type-check
+
+      - name: Lint scripts
+        run: just scripts-lint-check
 
   check:
     name: check

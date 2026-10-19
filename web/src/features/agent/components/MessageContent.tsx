@@ -29,14 +29,21 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 
     let language = "";
     if (isValidElement(children)) {
-        const className = (children.props as { className?: string }).className;
-        language = /language-(\w+)/.exec(className ?? "")?.[1] ?? "";
+        const props: unknown = children.props;
+        const className =
+            typeof props === "object" &&
+            props !== null &&
+            "className" in props &&
+            typeof props.className === "string"
+                ? props.className
+                : "";
+        language = /language-(\w+)/u.exec(className)?.[1] ?? "";
     }
 
     const handleCopy = async () => {
         await navigator.clipboard
             .writeText(codeRef.current?.textContent ?? "")
-            .catch(() => undefined);
+            .catch(() => {});
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
     };
@@ -51,7 +58,9 @@ function CodeBlock({ children }: { children?: ReactNode }) {
                     variant="ghost"
                     size="icon"
                     className="size-6"
-                    onClick={handleCopy}
+                    onClick={() => {
+                        void handleCopy();
+                    }}
                     aria-label={copied ? t("chat.copied") : t("chat.copy")}
                 >
                     {copied ? (
@@ -74,14 +83,20 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 const components: Components = {
     pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
     p: ({ node: _node, ...props }) => <p {...props} />,
-    h1: ({ node: _node, ...props }) => (
-        <h2 className="mt-6 mb-2 text-base font-semibold" {...props} />
+    h1: ({ node: _node, children, ...props }) => (
+        <h2 className="mt-6 mb-2 text-base font-semibold" {...props}>
+            {children}
+        </h2>
     ),
-    h2: ({ node: _node, ...props }) => (
-        <h2 className="mt-6 mb-2 text-base font-semibold" {...props} />
+    h2: ({ node: _node, children, ...props }) => (
+        <h2 className="mt-6 mb-2 text-base font-semibold" {...props}>
+            {children}
+        </h2>
     ),
-    h3: ({ node: _node, ...props }) => (
-        <h3 className="mt-4 mb-1.5 text-sm font-semibold" {...props} />
+    h3: ({ node: _node, children, ...props }) => (
+        <h3 className="mt-4 mb-1.5 text-sm font-semibold" {...props}>
+            {children}
+        </h3>
     ),
     ul: ({ node: _node, ...props }) => (
         <ul
@@ -101,13 +116,15 @@ const components: Components = {
             {...props}
         />
     ),
-    a: ({ node: _node, ...props }) => (
+    a: ({ node: _node, children, ...props }) => (
         <a
             className="text-primary underline underline-offset-2"
             target="_blank"
             rel="noreferrer"
             {...props}
-        />
+        >
+            {children}
+        </a>
     ),
 };
 

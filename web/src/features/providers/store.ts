@@ -51,11 +51,12 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
 
     create: async (input) => {
         const res = await providerClient.createProvider(input);
-        if (!res.provider) {
+        const provider = res.provider;
+        if (provider === undefined) {
             throw new Error("no provider in response");
         }
-        set((s) => ({ list: [...s.list, res.provider!] }));
-        return res.provider;
+        set((s) => ({ list: [...s.list, provider] }));
+        return provider;
     },
 
     update: async (id, patch) => {
@@ -65,15 +66,19 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
             baseUrl: patch.baseUrl,
             apiKey: patch.apiKey,
             enabled: patch.enabled,
-            models: patch.models ? { models: patch.models } : undefined,
+            models:
+                patch.models === undefined
+                    ? undefined
+                    : { models: patch.models },
             apiPath: patch.apiPath,
             modelsPath: patch.modelsPath,
         });
-        if (!res.provider) {
+        const provider = res.provider;
+        if (provider === undefined) {
             return;
         }
         set((s) => ({
-            list: s.list.map((p) => (p.id === id ? res.provider! : p)),
+            list: s.list.map((p) => (p.id === id ? provider : p)),
         }));
     },
 

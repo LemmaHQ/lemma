@@ -43,7 +43,7 @@ function ProviderGroup({
                     )}
                 />
                 {label}
-                <span className="ml-auto text-[11px]">{providers.length}</span>
+                <span className="ml-auto text-caption">{providers.length}</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-0.5">
                 {providers.map((provider) => (
@@ -60,7 +60,9 @@ function ProviderGroup({
                         )}
                     >
                         <span className="grid size-7 shrink-0 place-items-center rounded-md border border-border bg-background text-xs font-semibold">
-                            {(provider.name || "?").charAt(0).toUpperCase()}
+                            {(provider.name === "" ? "?" : provider.name)
+                                .charAt(0)
+                                .toUpperCase()}
                         </span>
                         <span className="flex-1 truncate">{provider.name}</span>
                         <span
@@ -89,7 +91,7 @@ export function ProviderListPane({
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        if (!q) {
+        if (q === "") {
             return providers;
         }
         return providers.filter((p) => p.name.toLowerCase().includes(q));

@@ -14,6 +14,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
 - **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/` and `design/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
+- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/` and `design/`. `web/.oxlintrc.json` and `desktop/.oxlintrc.json` extend it with their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
 
 ## Layout
 
@@ -26,18 +27,19 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 ## Styling
 
 - **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities generated from [design/tokens.json](../design/tokens.json), with no hex color, no arbitrary value, and no `dark:` variant.
+- **Tooling enforces the class rules:** Prettier sorts Tailwind classes, and oxlint-tailwindcss rejects unknown, conflicting, deprecated, and hard-coded color classes, plus arbitrary values and `dark:` variants in `src/app/` and `src/features/`.
 - **Controls reuse `src/components/ui/`;** check its [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 
-`src/gen/` comes from `proto/` through the `gen:proto` script, which `dev`, `build`, `lint`, and `test` run first; `src/styles/tokens.css` comes from [design/tokens.json](../design/tokens.json) through `design/gen-tokens.ts`, which `dev` and `build` run first. Git ignores both; edit their sources.
+`src/gen/` comes from `proto/` through the `gen:proto` script, which `dev`, `build`, `lint`, and `test` run first; `src/styles/tokens.css` comes from [design/tokens.json](../design/tokens.json) through `design/gen-tokens.ts`, which `dev`, `build`, and `lint` run first. Git ignores both; edit their sources.
 
 ## Commands
 
 ```sh
 just web-dev            # Vite dev server
 just web-test           # vitest
-just web-lint-check     # eslint; web-lint applies fixes
+just web-lint-check     # oxlint; web-lint applies fixes
 just web-fmt-check      # prettier --check; web-fmt formats
 just web-cov            # vitest coverage
 ```

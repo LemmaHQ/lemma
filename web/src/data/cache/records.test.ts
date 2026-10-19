@@ -1,10 +1,11 @@
 import "fake-indexeddb/auto";
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import Dexie from "dexie";
+import { Dexie } from "dexie";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { closeDb, LemmaDb, openDb } from "@/data/cache/database";
+import type { LemmaDb } from "@/data/cache/database";
+import { closeDb, openDb } from "@/data/cache/database";
 import {
     conversationToRow,
     deleteConversationCascade,

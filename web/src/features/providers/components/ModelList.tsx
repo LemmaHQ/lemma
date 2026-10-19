@@ -25,7 +25,9 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
 
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
-        return q ? models.filter((m) => m.toLowerCase().includes(q)) : models;
+        return q === ""
+            ? models
+            : models.filter((m) => m.toLowerCase().includes(q));
     }, [models, query]);
 
     const fetchRemote = async () => {
@@ -49,7 +51,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         const id = newModel.trim();
         setNewModel("");
         setAdding(false);
-        if (!id || models.includes(id)) {
+        if (id === "" || models.includes(id)) {
             return;
         }
         onChange([id, ...models]);
@@ -100,7 +102,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                 </div>
             </div>
 
-            {fetchMsg && (
+            {fetchMsg !== null && (
                 <p
                     className={cn(
                         "pt-2 text-xs",
@@ -137,7 +139,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         className="size-8 shrink-0"
                         aria-label={t("providers.addModel")}
                         onClick={confirmAdd}
-                        disabled={!newModel.trim()}
+                        disabled={newModel.trim() === ""}
                     >
                         <Check className="size-4" />
                     </Button>

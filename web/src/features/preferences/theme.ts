@@ -39,7 +39,7 @@ function notifyTitleBar() {
 
 export function applyTheme(pref: ThemePreference) {
     const resolved = resolveTheme(pref);
-    document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.dataset.theme = resolved;
     notifyTitleBar();
 }
 

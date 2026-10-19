@@ -49,7 +49,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
 
     const handleKindChange = (value: string) => {
         const option = KIND_OPTIONS.find((o) => o.value === value);
-        if (!option) {
+        if (option === undefined) {
             return;
         }
         setKind(option.kind);
@@ -57,11 +57,11 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
 
     const handleSave = async () => {
         const trimmedIdentifier = identifier.trim();
-        if (!/^[\x20-\x7E]+$/.test(trimmedIdentifier)) {
+        if (!/^[\u0020-\u007E]+$/u.test(trimmedIdentifier)) {
             setFailed(t("providers.identifierInvalid"));
             return;
         }
-        if (!baseUrl.trim()) {
+        if (baseUrl.trim() === "") {
             setFailed(t("errors.providerFieldsRequired"));
             return;
         }
@@ -71,7 +71,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
             await onSave({
                 kind,
                 identifier: trimmedIdentifier,
-                name: name.trim() || trimmedIdentifier,
+                name: name.trim() === "" ? trimmedIdentifier : name.trim(),
                 baseUrl: baseUrl.trim(),
                 apiKey: apiKey.trim(),
             });
@@ -171,7 +171,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         </button>
                     </div>
                 </div>
-                {failed && <p className="text-xs text-destructive">{failed}</p>}
+                {failed !== null && (
+                    <p className="text-xs text-destructive">{failed}</p>
+                )}
                 <div className="flex items-center gap-2 pt-2">
                     <Button
                         type="button"

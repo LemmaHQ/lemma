@@ -25,11 +25,12 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 | --- | --- |
 | `crates/`, `Cargo.toml`, `Cargo.lock` | `just rust-fmt-check`, `just rust-lint-check`, `just rust-test` (or `cargo nextest run -p <crate>` when one crate changed and no dependent's behavior can change) |
 | `proto/` | `just proto-lint-check`, `just proto-fmt-check`, `just proto-build`, then the `web/`, `crates/`, and `mobile/` rows, since all three consume the contract |
-| `design/` | `just design-gen` (its reference and parity checks), then the `web/` row; the `desktop/` and `mobile/` rows when a semantic color name changed |
+| `design/` | `just design-gen` (its reference and parity checks), `just scripts-type-check`, `just scripts-lint-check`, then the `web/` row; the `desktop/` and `mobile/` rows when a semantic color name changed |
 | `web/` | `just web-fmt-check`, `just web-lint-check`, `just web-build`, `just web-test`; also `just desktop-build`, since Desktop CI builds the renderer from `web/` |
 | `desktop/` | `just desktop-fmt-check`, `just desktop-lint-check`, `just desktop-build`, `just desktop-test` |
 | `mobile/` | `just mobile-fmt-check`, `just mobile-android-lint-check`, `just mobile-android-build`, `just mobile-android-test` |
-| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check` |
+| Any `*.md`, `*.i18n.yaml`, `scripts/`, `docs/i18n/terminology.md` | `just docs-pairing-check`, `just docs-lint-check`, `just docs-refs-check`; for `scripts/`, also `just scripts-type-check` and `just scripts-lint-check` |
+| `.oxlintrc.json`, `.prettierrc.json`, `tsconfig.base.json` | the `web/` and `desktop/` rows; `just scripts-type-check` and `just scripts-lint-check` for the first and last |
 | `justfile`, `mise.toml` | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files |
 | `.github/workflows/` | read the changed workflow for path filters and job dependencies; it runs only in CI |
 

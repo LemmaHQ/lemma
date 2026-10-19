@@ -268,7 +268,7 @@ export function ProviderDetail({
                     </Button>
                 </FieldRow>
 
-                {error && (
+                {error !== null && (
                     <p className="pt-2 text-xs text-destructive">{error}</p>
                 )}
 

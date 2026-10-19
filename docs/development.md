@@ -83,10 +83,10 @@ Steps whose result depends on the host operating system run on Linux, Windows, a
 | Workflow | Paths | Runs |
 | --- | --- | --- |
 | Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied on three systems, and `cargo nextest` on three systems, with a PostgreSQL service on Linux |
-| Web CI | `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json` | proto and token generation, prettier check, eslint, build with type check, vitest |
-| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json` | prettier check and eslint, then proto and token generation, renderer build, desktop type check, and vitest on three systems |
+| Web CI | `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json`, `.oxlintrc.json`, `.prettierrc.json` | proto and token generation, prettier check, oxlint, build with type check, vitest |
+| Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json`, `.oxlintrc.json`, `.prettierrc.json` | prettier check and oxlint, then proto and token generation, renderer build, desktop type check, and vitest on three systems |
 | Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, and debug APK build, plus host tests on three systems |
-| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check, the repository-reference check |
+| Spec CI | `proto/`, `design/`, `docs/`, `scripts/`, every Markdown file and pairing record, the markdownlint and autocorrect configs, root `package.json`, `package-lock.json`, `tsconfig.json`, `tsconfig.base.json`, `.oxlintrc.json` | `buf lint`, `buf format`, and `buf build`, the token generator's checks, the docs lint, the translation-pairing check, the repository-reference check, and the type check and oxlint of `scripts/` and `design/` |
 | Coverage | all | Rust, web, desktop, and Android coverage, uploaded to Codecov ([testing.md](testing.md#coverage)) |
 | CodeQL | all, plus weekly | code scanning for Rust, JavaScript/TypeScript, GitHub Actions, and Kotlin; the Kotlin scan compiles through `just mobile-android-test` |
 | mise-upgrade | daily schedule | bumps the pins in `mise.toml`, syncs the Dockerfile's Node version, and opens a pull request |

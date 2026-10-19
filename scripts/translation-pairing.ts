@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 export interface Pair {
     en: string;
@@ -36,17 +35,14 @@ export type EntriesResult =
     | { entries: Entry[]; error?: undefined }
     | { entries?: undefined; error: string };
 
-export const ROOT_DIR = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "..",
-);
+export const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const EXCLUDED = [
-    /^\.agents\/skills\/[^/]+\//,
-    /^docs\/i18n\/terminology\.md$/,
+    /^\.agents\/skills\/[^/]+\//u,
+    /^docs\/i18n\/terminology\.md$/u,
 ];
-const FENCE = /^ {0,3}(`{3,}|~{3,})/;
-const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
-const RECORD_LINE = /^(\/\S*):$|^ {2}(en|zh): ([0-9a-f]{16})$/;
+const FENCE = /^ {0,3}(`{3,}|~{3,})/u;
+const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/u;
+const RECORD_LINE = /^(\/\S*):$|^ {2}(en|zh): ([0-9a-f]{16})$/u;
 
 export function git(args: string[]): string {
     return execFileSync("git", args, {
@@ -62,7 +58,7 @@ export const isExcluded = (file: string): boolean =>
 export function readText(file: string): string | null {
     const absolute = path.join(ROOT_DIR, file);
     return fs.existsSync(absolute)
-        ? fs.readFileSync(absolute, "utf8").replace(/\r\n/g, "\n")
+        ? fs.readFileSync(absolute, "utf8").replaceAll("\r\n", "\n")
         : null;
 }
 
@@ -71,7 +67,7 @@ export function pairOf(arg: string): Pair {
         .relative(ROOT_DIR, path.resolve(arg))
         .split(path.sep)
         .join("/");
-    const stem = file.replace(/(\.zh)?\.md$|\.i18n\.yaml$/, "");
+    const stem = file.replace(/(\.zh)?\.md$|\.i18n\.yaml$/u, "");
     return {
         en: `${stem}.md`,
         zh: `${stem}.zh.md`,
@@ -91,57 +87,65 @@ export function listPairs(): Pair[] {
         "*.i18n.yaml",
     ])
         .split("\0")
-        .filter((file) => file && fs.existsSync(path.join(ROOT_DIR, file)));
+        .filter(
+            (file) => file !== "" && fs.existsSync(path.join(ROOT_DIR, file)),
+        );
     const pairs = new Map<string, Pair>();
     for (const file of files) {
         const pair = pairOf(path.join(ROOT_DIR, file));
         pairs.set(pair.en, pair);
     }
-    return [...pairs.values()].sort((a, b) => a.en.localeCompare(b.en));
+    return [...pairs.values()].toSorted((a, b) => a.en.localeCompare(b.en));
 }
 
-export function splitSections(text: string): Section[] {
-    const sections: Section[] = [
+export function splitSections(text: string): [Section, ...Section[]] {
+    const sections: [Section, ...Section[]] = [
         { level: 0, title: "", start: 1, lines: [], end: 0, hash: null },
     ];
     let fence: string | null = null;
     text.split("\n").forEach((line, index) => {
-        const fenceMatch = FENCE.exec(line);
-        if (fence) {
-            if (
-                fenceMatch &&
-                fenceMatch[1][0] === fence[0] &&
-                fenceMatch[1].length >= fence.length
-            ) {
-                fence = null;
+        const marker = FENCE.exec(line)?.[1];
+        if (fence === null) {
+            if (marker === undefined) {
+                const heading = HEADING.exec(line);
+                const hashes = heading?.[1];
+                const title = heading?.[2];
+                if (hashes !== undefined && title !== undefined) {
+                    sections.push({
+                        level: hashes.length,
+                        title,
+                        start: index + 1,
+                        lines: [],
+                        end: 0,
+                        hash: null,
+                    });
+                }
+            } else {
+                fence = marker;
             }
-        } else if (fenceMatch) {
-            fence = fenceMatch[1];
-        } else {
-            const heading = HEADING.exec(line);
-            if (heading) {
-                sections.push({
-                    level: heading[1].length,
-                    title: heading[2],
-                    start: index + 1,
-                    lines: [],
-                    end: 0,
-                    hash: null,
-                });
-            }
+        } else if (
+            marker !== undefined &&
+            marker[0] === fence[0] &&
+            marker.length >= fence.length
+        ) {
+            fence = null;
         }
-        sections.at(-1)!.lines.push(line);
+        const current = sections.at(-1);
+        if (current !== undefined) {
+            current.lines.push(line);
+        }
     });
     for (const section of sections) {
         const body = section.lines
             .map((line) => line.trimEnd())
             .join("\n")
-            .replace(/\n{3,}/g, "\n\n")
+            .replaceAll(/\n{3,}/gu, "\n\n")
             .trim();
         section.end = section.start + section.lines.length - 1;
-        section.hash = body
-            ? createHash("sha256").update(body).digest("hex").slice(0, 16)
-            : null;
+        section.hash =
+            body === ""
+                ? null
+                : createHash("sha256").update(body).digest("hex").slice(0, 16);
     }
     return sections;
 }
@@ -149,9 +153,9 @@ export function splitSections(text: string): Section[] {
 const slug = (title: string): string =>
     title
         .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+        .replaceAll(/[^\p{L}\p{N}\s_-]/gu, "")
         .trim()
-        .replace(/\s/g, "-");
+        .replaceAll(/\s/gu, "-");
 
 export function sectionKeys(sections: Section[]): string[] {
     const stack: string[] = [];
@@ -168,19 +172,26 @@ export function sectionKeys(sections: Section[]): string[] {
     });
 }
 
-export function structureError(en: Section[], zh: Section[]): string | null {
+export function structureError(
+    en: [Section, ...Section[]],
+    zh: [Section, ...Section[]],
+): string | null {
     if (Boolean(en[0].hash) !== Boolean(zh[0].hash)) {
-        return `text before the first heading exists on the ${en[0].hash ? "en" : "zh"} side only`;
+        return `text before the first heading exists on the ${en[0].hash === null ? "zh" : "en"} side only`;
     }
     const limit = Math.max(en.length, zh.length);
     for (let index = 1; index < limit; index += 1) {
-        const left: Section | undefined = en[index];
-        const right: Section | undefined = zh[index];
-        if (!left || !right || left.level !== right.level) {
+        const left: Section | undefined = en.at(index);
+        const right: Section | undefined = zh.at(index);
+        if (
+            left === undefined ||
+            right === undefined ||
+            left.level !== right.level
+        ) {
             const describe = (section: Section | undefined, side: string) =>
-                section
-                    ? `"${"#".repeat(section.level)} ${section.title}" (${side} line ${section.start})`
-                    : `nothing (${side})`;
+                section === undefined
+                    ? `nothing (${side})`
+                    : `"${"#".repeat(section.level)} ${section.title}" (${side} line ${section.start})`;
             return `heading structure differs at heading ${index}: ${describe(left, "en")} vs ${describe(right, "zh")}`;
         }
     }
@@ -191,18 +202,24 @@ export function computeEntries(enText: string, zhText: string): EntriesResult {
     const en = splitSections(enText);
     const zh = splitSections(zhText);
     const error = structureError(en, zh);
-    if (error) {
+    if (error !== null) {
         return { error };
     }
     const keys = sectionKeys(en);
     const entries: Entry[] = [];
     en.forEach((section, index) => {
-        if (section.hash) {
+        const key = keys.at(index);
+        const target = zh.at(index);
+        if (
+            section.hash !== null &&
+            key !== undefined &&
+            target !== undefined
+        ) {
             entries.push({
-                key: keys[index],
+                key,
                 index,
                 en: section.hash,
-                zh: zh[index].hash,
+                zh: target.hash,
             });
         }
     });
@@ -223,16 +240,22 @@ export const formatRecord = (pair: Pair, entries: Entry[]): string =>
         "",
     ].join("\n");
 
+const isSide = (value: string): value is "en" | "zh" =>
+    value === "en" || value === "zh";
+
 export function parseRecord(text: string): RecordEntry[] {
     const entries: RecordEntry[] = [];
     for (const line of text.split("\n")) {
         const match = RECORD_LINE.exec(line);
-        if (!match) continue;
+        if (match === null) continue;
         const [, key, side, hash] = match;
-        if (key) {
+        if (key !== undefined) {
             entries.push({ key });
-        } else if (side && hash && entries.length) {
-            entries.at(-1)![side as "en" | "zh"] = hash;
+        } else if (side !== undefined && hash !== undefined && isSide(side)) {
+            const last = entries.at(-1);
+            if (last !== undefined) {
+                last[side] = hash;
+            }
         }
     }
     return entries;
@@ -245,12 +268,12 @@ export function checkPair(pair: Pair): string[] {
     if (isExcluded(pair.en)) {
         return zhText !== null || recordText !== null
             ? [
-                  `${pair.en} is excluded from pairing but has ${zhText !== null ? pair.zh : pair.record}`,
+                  `${pair.en} is excluded from pairing but has ${zhText === null ? pair.record : pair.zh}`,
               ]
             : [];
     }
     if (enText === null) {
-        return [`${zhText !== null ? pair.zh : pair.record} has no ${pair.en}`];
+        return [`${zhText === null ? pair.record : pair.zh} has no ${pair.en}`];
     }
     if (zhText === null) {
         return [`${pair.en} has no ${pair.zh}`];
@@ -272,20 +295,22 @@ export function checkPair(pair: Pair): string[] {
     const current = new Set(entries.map((entry) => entry.key));
     const changes = entries.flatMap(({ key, en, zh }) => {
         const entry = recorded.get(key);
-        if (!entry) {
+        if (entry === undefined) {
             return [`${key} (new)`];
         }
         const sides = [entry.en !== en && "en", entry.zh !== zh && "zh"].filter(
             Boolean,
         );
-        return sides.length ? [`${key} (${sides.join(" and ")} changed)`] : [];
+        return sides.length > 0
+            ? [`${key} (${sides.join(" and ")} changed)`]
+            : [];
     });
     const removed = [...recorded.keys()]
         .filter((key) => !current.has(key))
         .map((key) => `${key} (removed)`);
     const detail = [...changes, ...removed];
     return [
-        `${pair.en} is out of sync with ${pair.record}: ${detail.length ? detail.join(", ") : "record is not canonical"}`,
+        `${pair.en} is out of sync with ${pair.record}: ${detail.length > 0 ? detail.join(", ") : "record is not canonical"}`,
     ];
 }
 

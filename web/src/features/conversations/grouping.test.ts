@@ -34,7 +34,7 @@ describe("groupSessions", () => {
             "last7Days",
             "earlier",
         ]);
-        expect(groups[0].items.map((s) => s.id)).toEqual(["a"]);
+        expect(groups[0]!.items.map((s) => s.id)).toEqual(["a"]);
     });
 
     it("sorts sessions descending by updatedAtMs within each group", () => {
@@ -43,6 +43,6 @@ describe("groupSessions", () => {
             mk("old", now - 2 * 60_000),
             mk("new", now - 60_000),
         ]);
-        expect(groups[0].items.map((s) => s.id)).toEqual(["new", "old"]);
+        expect(groups[0]!.items.map((s) => s.id)).toEqual(["new", "old"]);
     });
 });

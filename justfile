@@ -68,13 +68,13 @@ rust-test:
 rust-cov *args="--summary-only":
     cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto {{args}}
 
-# Run eslint
+# Run oxlint
 [group('web')]
 [working-directory('web')]
 web-lint-check:
     npm run lint
 
-# Apply eslint fixes
+# Apply oxlint fixes
 [group('web')]
 [working-directory('web')]
 web-lint:
@@ -116,13 +116,13 @@ web-test:
 web-cov *args:
     npm run test:cov -- {{args}}
 
-# Run eslint
+# Run oxlint
 [group('desktop')]
 [working-directory('desktop')]
 desktop-lint-check:
     npm run lint
 
-# Apply eslint fixes
+# Apply oxlint fixes
 [group('desktop')]
 [working-directory('desktop')]
 desktop-lint:
@@ -247,3 +247,13 @@ docs-refs-check:
 [group('scripts')]
 scripts-type-check:
     npx --no-install tsc -p .
+
+# Lint the repository scripts in scripts/ and design/
+[group('scripts')]
+scripts-lint-check:
+    npx --no-install oxlint scripts design
+
+# Apply oxlint fixes to the repository scripts
+[group('scripts')]
+scripts-lint:
+    npx --no-install oxlint --fix scripts design

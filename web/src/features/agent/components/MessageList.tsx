@@ -24,26 +24,25 @@ export function MessageList({
 
     useEffect(() => {
         const el = scrollRef.current;
-        if (el) {
+        if (el !== null) {
             el.scrollTop = el.scrollHeight;
         }
+        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- items and resetKey are deliberate scroll triggers
     }, [items, resetKey]);
 
-    const lastAssistantId = useMemo(() => {
-        for (let i = items.length - 1; i >= 0; i--) {
-            if (items[i].role === "assistant") {
-                return items[i].id;
-            }
-        }
-        return null;
-    }, [items]);
+    const lastAssistantId = useMemo(
+        () => items.findLast((m) => m.role === "assistant")?.id ?? null,
+        [items],
+    );
 
-    const sourceOf = (m: AgentItem) => {
-        if (!m.model) {
+    const sourceOf = (m: AgentItem): string | undefined => {
+        if (m.model === "") {
             return undefined;
         }
         const name = providerNameById.get(m.providerId);
-        return name ? `${name} · ${m.model}` : m.model;
+        return name !== undefined && name !== ""
+            ? `${name} · ${m.model}`
+            : m.model;
     };
 
     return (

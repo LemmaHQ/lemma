@@ -7,7 +7,13 @@ export function installCrossTabGuard(): void {
         }
         const prev = event.oldValue;
         const next = event.newValue;
-        if (prev && next && prev !== next) {
+        if (
+            prev !== null &&
+            prev !== "" &&
+            next !== null &&
+            next !== "" &&
+            prev !== next
+        ) {
             window.location.reload();
         }
     });

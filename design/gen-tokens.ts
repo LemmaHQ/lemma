@@ -1,11 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const ROOT_DIR = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "..",
-);
+const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const TOKENS_PATH = path.join(ROOT_DIR, "design/tokens.json");
 const WEB_CSS_PATH = path.join(ROOT_DIR, "web/src/styles/tokens.css");
 const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/design-tokens.ts");
@@ -13,10 +9,10 @@ const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
     "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaPalette.kt",
 );
-const THEMES = ["light", "dark"];
+const THEMES = ["light", "dark"] as const;
 const NOTICE =
     "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
-const REFERENCE = /^\{([^}]+)\}$/;
+const REFERENCE = /^\{([^}]+)\}$/u;
 
 type TokenValue =
     string | number | boolean | TokenValue[] | { [key: string]: TokenValue };
@@ -47,34 +43,136 @@ interface ShadowLayer {
 
 interface TypographyValue {
     [key: string]: TokenValue;
-    fontFamily: string;
+    fontFamily: string | string[];
     fontSize: string;
     fontWeight: number;
     lineHeight: number;
     letterSpacing: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isTokenSource(value: unknown): value is TokenSource {
+    return isRecord(value);
+}
+
+function stringValue(value: TokenValue, owner: string): string {
+    if (typeof value !== "string") {
+        throw new TypeError(`${owner} must be a string`);
+    }
+    return value;
+}
+
+function isStringArray(value: unknown): value is string[] {
+    return (
+        Array.isArray(value) && value.every((item) => typeof item === "string")
+    );
+}
+
+function stringArrayValue(value: TokenValue, owner: string): string[] {
+    if (!isStringArray(value)) {
+        throw new Error(`${owner} must be a list of strings`);
+    }
+    return value;
+}
+
+function isNumberArray(value: unknown): value is number[] {
+    return (
+        Array.isArray(value) && value.every((item) => typeof item === "number")
+    );
+}
+
+function numberArrayValue(value: TokenValue, owner: string): number[] {
+    if (!isNumberArray(value)) {
+        throw new Error(`${owner} must be a list of numbers`);
+    }
+    return value;
+}
+
+function isShadowLayer(value: unknown): value is ShadowLayer {
+    if (!isRecord(value)) {
+        return false;
+    }
+    const { inset, offsetX, offsetY, blur, spread, color } = value;
+    return (
+        (inset === undefined || typeof inset === "boolean") &&
+        typeof offsetX === "string" &&
+        typeof offsetY === "string" &&
+        typeof blur === "string" &&
+        typeof spread === "string" &&
+        typeof color === "string"
+    );
+}
+
+function shadowValue(
+    value: TokenValue,
+    owner: string,
+): ShadowLayer | ShadowLayer[] {
+    if (isShadowLayer(value)) {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        const layers = value.filter((layer): layer is ShadowLayer =>
+            isShadowLayer(layer),
+        );
+        if (layers.length === value.length) {
+            return layers;
+        }
+    }
+    throw new Error(
+        `${owner} must be a shadow layer or a list of shadow layers`,
+    );
+}
+
+function isTypographyValue(value: unknown): value is TypographyValue {
+    if (!isRecord(value)) {
+        return false;
+    }
+    const { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing } =
+        value;
+    return (
+        (typeof fontFamily === "string" || isStringArray(fontFamily)) &&
+        typeof fontSize === "string" &&
+        typeof fontWeight === "number" &&
+        typeof lineHeight === "number" &&
+        typeof letterSpacing === "string"
+    );
+}
+
+function typographyValue(value: TokenValue, owner: string): TypographyValue {
+    if (!isTypographyValue(value)) {
+        throw new Error(`${owner} must be a typography token`);
+    }
+    return value;
+}
+
 function collectTokens(
-    group: TokenSource,
+    source: TokenSource,
     prefix: string[],
     inheritedType: string | undefined,
     tokens: TokenMap,
 ): TokenMap {
-    const type = group.$type ?? inheritedType;
-    for (const [key, node] of Object.entries(group)) {
+    const type = source.$type ?? inheritedType;
+    for (const [key, node] of Object.entries(source)) {
         if (key.startsWith("$")) {
             continue;
         }
-        const child = node as TokenSource;
+        if (!isTokenSource(node)) {
+            throw new Error(
+                `${[...prefix, key].join(".")} must be a token or group`,
+            );
+        }
         const name = [...prefix, key];
-        if ("$value" in child) {
+        if ("$value" in node) {
             tokens.set(name.join("."), {
                 name,
-                type: child.$type ?? type,
-                value: child.$value as TokenValue,
+                type: node.$type ?? type,
+                value: node.$value,
             });
         } else {
-            collectTokens(child, name, type, tokens);
+            collectTokens(node, name, type, tokens);
         }
     }
     return tokens;
@@ -87,19 +185,23 @@ function resolveValue(
 ): TokenValue {
     if (typeof value === "string") {
         const match = REFERENCE.exec(value);
-        if (!match) {
+        if (match === null) {
             return value;
         }
-        const target = tokens.get(match[1] as string);
-        if (!target) {
+        const reference = match[1];
+        if (reference === undefined) {
             throw new Error(`${owner} references missing token ${value}`);
         }
-        return resolveValue(target.value, tokens, match[1] as string);
+        const target = tokens.get(reference);
+        if (target === undefined) {
+            throw new Error(`${owner} references missing token ${value}`);
+        }
+        return resolveValue(target.value, tokens, reference);
     }
     if (Array.isArray(value)) {
         return value.map((item) => resolveValue(item, tokens, owner));
     }
-    if (typeof value === "object" && value !== null) {
+    if (isRecord(value)) {
         return Object.fromEntries(
             Object.entries(value).map(([key, item]) => [
                 key,
@@ -154,21 +256,26 @@ function checkThemeParity(tokens: TokenMap): void {
     }
 }
 
+function pxNumber(px: string): number {
+    // oxlint-disable-next-line unicorn/prefer-number-coercion -- token values carry a px unit suffix, so Number() would yield NaN
+    return Number.parseFloat(px);
+}
+
 function pxToRem(px: string): string {
-    return `${Number.parseFloat(px) / 16}rem`;
+    return `${pxNumber(px) / 16}rem`;
 }
 
 function pxToEm(letterSpacing: string, fontSize: string): string {
-    const spacing = Number.parseFloat(letterSpacing);
-    if (!spacing) {
+    const spacing = pxNumber(letterSpacing);
+    if (spacing === 0) {
         return "0";
     }
-    return `${Number((spacing / Number.parseFloat(fontSize)).toFixed(4))}em`;
+    return `${Number((spacing / pxNumber(fontSize)).toFixed(4))}em`;
 }
 
 function cssFontFamily(families: string[]): string {
     return families
-        .map((family) => (/\s/.test(family) ? `"${family}"` : family))
+        .map((family) => (/\s/u.test(family) ? `"${family}"` : family))
         .join(", ");
 }
 
@@ -193,11 +300,13 @@ function cssShadow(value: ShadowLayer | ShadowLayer[]): string {
 function themeDeclarations(tokens: TokenMap, theme: string): string[] {
     const lines: string[] = [];
     for (const [key, token] of group(tokens, `${theme}.color`)) {
-        lines.push(`    --${key}: ${token.value};`);
+        lines.push(
+            `    --${key}: ${stringValue(token.value, `${theme}.color.${key}`)};`,
+        );
     }
     for (const [key, token] of group(tokens, `${theme}.shadow`)) {
         lines.push(
-            `    --elevation-${key}: ${cssShadow(token.value as ShadowLayer | ShadowLayer[])};`,
+            `    --elevation-${key}: ${cssShadow(shadowValue(token.value, `${theme}.shadow.${key}`))};`,
         );
     }
     return lines;
@@ -208,11 +317,13 @@ function generateWebCss(tokens: TokenMap): string {
     const rootLines = themeDeclarations(tokens, light);
     rootLines.push("");
     for (const [key, token] of group(tokens, "duration")) {
-        rootLines.push(`    --motion-${key}: ${token.value};`);
+        rootLines.push(
+            `    --motion-${key}: ${stringValue(token.value, `duration.${key}`)};`,
+        );
     }
     for (const [key, token] of group(tokens, "easing")) {
         rootLines.push(
-            `    --ease-${key}: cubic-bezier(${(token.value as number[]).join(", ")});`,
+            `    --ease-${key}: cubic-bezier(${numberArrayValue(token.value, `easing.${key}`).join(", ")});`,
         );
     }
 
@@ -223,7 +334,7 @@ function generateWebCss(tokens: TokenMap): string {
     themeLines.push("", "    /* font */");
     for (const [key, token] of group(tokens, "font")) {
         themeLines.push(
-            `    --font-${key}: ${cssFontFamily(token.value as string[])};`,
+            `    --font-${key}: ${cssFontFamily(stringArrayValue(token.value, `font.${key}`))};`,
         );
     }
     themeLines.push("", "    /* shadow */");
@@ -233,8 +344,8 @@ function generateWebCss(tokens: TokenMap): string {
 
     themeLines.push("", "    /* typography */");
     const bodySm = tokens.get("typography.body-sm");
-    if (bodySm) {
-        const bodySmValue = bodySm.value as TypographyValue;
+    if (bodySm !== undefined) {
+        const bodySmValue = typographyValue(bodySm.value, "typography.body-sm");
         themeLines.push(
             `    --text-sm: ${pxToRem(bodySmValue.fontSize)};`,
             `    --text-sm--line-height: ${bodySmValue.lineHeight};`,
@@ -242,9 +353,11 @@ function generateWebCss(tokens: TokenMap): string {
     }
     for (const [key, token] of group(tokens, "typography")) {
         const { fontSize, fontWeight, lineHeight, letterSpacing } =
-            token.value as TypographyValue;
-        themeLines.push(`    --text-${key}: ${pxToRem(fontSize)};`);
-        themeLines.push(`    --text-${key}--line-height: ${lineHeight};`);
+            typographyValue(token.value, `typography.${key}`);
+        themeLines.push(
+            `    --text-${key}: ${pxToRem(fontSize)};`,
+            `    --text-${key}--line-height: ${lineHeight};`,
+        );
         const spacing = pxToEm(letterSpacing, fontSize);
         if (spacing !== "0") {
             themeLines.push(`    --text-${key}--letter-spacing: ${spacing};`);
@@ -254,11 +367,15 @@ function generateWebCss(tokens: TokenMap): string {
 
     themeLines.push("", "    /* radius */");
     const radiusLg = tokens.get("radius.lg");
-    if (radiusLg) {
-        themeLines.push(`    --radius: ${pxToRem(radiusLg.value as string)};`);
+    if (radiusLg !== undefined) {
+        themeLines.push(
+            `    --radius: ${pxToRem(stringValue(radiusLg.value, "radius.lg"))};`,
+        );
     }
     for (const [key, token] of group(tokens, "radius")) {
-        themeLines.push(`    --radius-${key}: ${token.value};`);
+        themeLines.push(
+            `    --radius-${key}: ${stringValue(token.value, `radius.${key}`)};`,
+        );
     }
 
     const darkBlocks = darkThemes.map(
@@ -313,7 +430,7 @@ function kotlinColor(hex: string): string {
 function generateAndroidKt(tokens: TokenMap): string {
     const lines = group(tokens, "palette").map(
         ([, token]) =>
-            `    val ${kotlinName(token.name.slice(1))} = ${kotlinColor(token.value as string)}`,
+            `    val ${kotlinName(token.name.slice(1))} = ${kotlinColor(stringValue(token.value, token.name.join(".")))}`,
     );
     return `// ${NOTICE}
 
@@ -334,11 +451,12 @@ function writeOutput(file: string, content: string): void {
 }
 
 function main(): void {
-    const source = JSON.parse(
-        fs.readFileSync(TOKENS_PATH, "utf8"),
-    ) as TokenSource;
+    const parsed: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
+    if (!isTokenSource(parsed)) {
+        throw new Error(`${TOKENS_PATH} must contain a token tree`);
+    }
     const tokens = resolveAll(
-        collectTokens(source, [], undefined, new Map<string, Token>()),
+        collectTokens(parsed, [], undefined, new Map<string, Token>()),
     );
     checkThemeParity(tokens);
     writeOutput(WEB_CSS_PATH, generateWebCss(tokens));

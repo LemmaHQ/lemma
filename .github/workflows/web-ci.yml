@@ -11,6 +11,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
+      - ".prettierrc.json"
       - "justfile"
       - "mise.toml"
       - ".github/workflows/web-ci.yml"
@@ -21,6 +23,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tsconfig.base.json"
+      - ".oxlintrc.json"
+      - ".prettierrc.json"
       - "justfile"
       - "mise.toml"
       - ".github/workflows/web-ci.yml"
@@ -56,7 +60,7 @@ jobs:
         run: npm ci
 
       # tokens.css is generated from design/tokens.json and gitignored;
-      # eslint's tailwindcss plugin resolves it via cssConfigPath.
+      # oxlint-tailwindcss and the Prettier class sorter read it.
       - name: Generate design tokens
         run: just design-gen
 

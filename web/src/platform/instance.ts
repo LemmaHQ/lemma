@@ -5,7 +5,7 @@ import type { PlatformAdapter } from "./types";
 let currentPlatform: PlatformAdapter | null = null;
 
 export function getPlatform(): PlatformAdapter {
-    if (!currentPlatform) {
+    if (currentPlatform === null) {
         const isElectron =
             typeof window !== "undefined" && window.lemmaDesktop !== undefined;
         currentPlatform = isElectron

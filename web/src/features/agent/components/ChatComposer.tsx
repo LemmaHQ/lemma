@@ -25,7 +25,7 @@ interface ChatComposerProps {
 }
 
 function autosize(el: HTMLTextAreaElement | null) {
-    if (!el) {
+    if (el === null) {
         return;
     }
     el.style.height = "auto";
@@ -49,6 +49,7 @@ export function ChatComposer({
 
     useEffect(() => {
         autosize(textareaRef.current);
+        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- value is a deliberate autosize trigger
     }, [value, textareaRef]);
 
     const noModel = model === null;
@@ -121,11 +122,7 @@ export function ChatComposer({
                 </div>
             </div>
             <p className="mx-auto max-w-3xl pt-2 text-center text-xs text-muted-foreground">
-                {model ? (
-                    <>
-                        {model.model} · {t("chat.disclaimer")}
-                    </>
-                ) : (
+                {model === null ? (
                     <>
                         {t("chat.noModelHint")}{" "}
                         <Link
@@ -134,6 +131,10 @@ export function ChatComposer({
                         >
                             {t("chat.noModelAction")}
                         </Link>
+                    </>
+                ) : (
+                    <>
+                        {model.model} · {t("chat.disclaimer")}
                     </>
                 )}
             </p>

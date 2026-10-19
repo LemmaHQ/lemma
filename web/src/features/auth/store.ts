@@ -37,18 +37,18 @@ export const useAuth = create<AuthState>()((set) => ({
             try {
                 const res = await authClient.me({});
                 const user = res.user ?? null;
-                if (user) {
+                if (user !== null) {
                     setStoredUserId(user.id);
                 }
                 set({ user });
             } catch {
                 set({ user: null });
             }
-        } else if (getAccessToken()) {
+        } else if (getAccessToken() !== null) {
             try {
                 const res = await authClient.me({});
                 const user = res.user ?? null;
-                if (user) {
+                if (user !== null) {
                     setStoredUserId(user.id);
                 }
                 set({ user });
@@ -66,13 +66,13 @@ export const useAuth = create<AuthState>()((set) => ({
             : { username: identifier, password };
         const res = await authClient.login(req);
         if (!cookieMode) {
-            if (!res.tokens) {
+            if (res.tokens === undefined) {
                 throw new Error("no tokens in response");
             }
             setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         }
         const user = res.user ?? null;
-        if (user) {
+        if (user !== null) {
             setStoredUserId(user.id);
         }
         set({ user });
@@ -81,13 +81,13 @@ export const useAuth = create<AuthState>()((set) => ({
     signup: async (username, email, password) => {
         const res = await authClient.signUp({ username, email, password });
         if (!cookieMode) {
-            if (!res.tokens) {
+            if (res.tokens === undefined) {
                 throw new Error("no tokens in response");
             }
             setTokens(res.tokens.accessToken, res.tokens.refreshToken);
         }
         const user = res.user ?? null;
-        if (user) {
+        if (user !== null) {
             setStoredUserId(user.id);
         }
         set({ user });
@@ -97,10 +97,10 @@ export const useAuth = create<AuthState>()((set) => ({
         const refreshToken = getRefreshToken();
         const request = cookieMode
             ? authClient.logout({})
-            : refreshToken
-              ? authClient.logout({ refreshToken })
-              : null;
-        await request?.catch(() => undefined);
+            : refreshToken === null
+              ? null
+              : authClient.logout({ refreshToken });
+        await request?.catch(() => {});
         clearTokens();
         clearStoredUserId();
         set({ user: null });

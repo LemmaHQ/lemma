@@ -1,5 +1,5 @@
 import { Bot } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function AuthCard() {
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    const handleLogin = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         setBusy(true);
         setError("");
@@ -43,7 +43,7 @@ export function AuthCard() {
         }
     };
 
-    const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSignup = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (password !== confirm) {
             setError(t("auth.passwordMismatch"));
@@ -62,7 +62,7 @@ export function AuthCard() {
 
     const handleSkip = async () => {
         const skip = await platformAuth.getSkipCredentials();
-        if (!skip) {
+        if (skip === null) {
             return;
         }
         setBusy(true);
@@ -101,7 +101,9 @@ export function AuthCard() {
                     <TabsContent value="login">
                         <form
                             className="flex flex-col gap-4 pt-4"
-                            onSubmit={handleLogin}
+                            onSubmit={(event) => {
+                                void handleLogin(event);
+                            }}
                         >
                             <div className="grid gap-2">
                                 <Label htmlFor="login-identifier">
@@ -137,7 +139,7 @@ export function AuthCard() {
                                     required
                                 />
                             </div>
-                            {error && (
+                            {error !== "" && (
                                 <p className="text-xs text-destructive">
                                     {error}
                                 </p>
@@ -155,7 +157,9 @@ export function AuthCard() {
                     <TabsContent value="register">
                         <form
                             className="flex flex-col gap-4 pt-4"
-                            onSubmit={handleSignup}
+                            onSubmit={(event) => {
+                                void handleSignup(event);
+                            }}
                         >
                             <div className="grid gap-2">
                                 <Label htmlFor="register-username">
@@ -219,7 +223,7 @@ export function AuthCard() {
                                     required
                                 />
                             </div>
-                            {error && (
+                            {error !== "" && (
                                 <p className="text-xs text-destructive">
                                     {error}
                                 </p>
@@ -248,7 +252,9 @@ export function AuthCard() {
                             variant="outline"
                             className="w-full"
                             disabled={busy}
-                            onClick={handleSkip}
+                            onClick={() => {
+                                void handleSkip();
+                            }}
                         >
                             {t("auth.skipDesktop")}
                         </Button>

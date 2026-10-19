@@ -1,22 +1,31 @@
+import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { getSkipCredentials, serverUrl, start, stop } from "./engine";
 
+type SpawnMock = (
+    binary: string,
+    args: string[],
+    options: { env: Record<string, string | undefined> },
+) => FakeProcess;
+
 const mocks = vi.hoisted(() => ({
-    spawn: vi.fn(),
+    spawn: vi.fn<SpawnMock>(),
     app: { isPackaged: false, getPath: (name: string) => `/${name}` },
 }));
 
 vi.mock("electron", () => ({ app: mocks.app }));
 vi.mock("node:child_process", () => ({ spawn: mocks.spawn }));
 
+// oxlint-disable-next-line unicorn/prefer-event-target -- fakes Node ChildProcess, an EventEmitter API
 class FakeProcess extends EventEmitter {
+    // oxlint-disable-next-line unicorn/prefer-event-target -- fakes ChildProcess stdout stream, an EventEmitter API
     stdout = new EventEmitter();
-    stdin = { end: vi.fn() };
+    stdin = { end: vi.fn<() => void>() };
     killed = false;
-    kill = vi.fn(() => {
+    kill = vi.fn<() => boolean>(() => {
         this.killed = true;
         return true;
     });
@@ -68,7 +77,9 @@ it("starts the engine in local mode with the userData directory", async () => {
     proc.print(READY_LINE);
     await started;
 
-    const [, , options] = mocks.spawn.mock.calls[0];
+    const call = mocks.spawn.mock.calls[0];
+    assert.ok(call !== undefined, "expected spawn to have been called");
+    const [, , options] = call;
     expect(options.env).toMatchObject({
         LEMMA_LOCAL_MODE: "1",
         LEMMA_DATA_DIR: "/userData",
@@ -81,8 +92,10 @@ it("takes an unpackaged binary from the selected cargo profile", async () => {
     proc.print(READY_LINE);
     await started;
 
-    const [binary] = mocks.spawn.mock.calls[0];
-    expect(path.dirname(binary)).toMatch(/target[\\/]release$/);
+    const call = mocks.spawn.mock.calls[0];
+    assert.ok(call !== undefined, "expected spawn to have been called");
+    const [binary] = call;
+    expect(path.dirname(binary)).toMatch(/target[\\/]release$/u);
 });
 
 it("rejects and kills the engine on a payload missing a field", async () => {
@@ -105,6 +118,7 @@ it("rejects and kills the engine on an unparseable payload", async () => {
 it("rejects and kills the engine when readiness takes over 10s", async () => {
     vi.useFakeTimers();
     const started = start();
+    // oxlint-disable-next-line vitest/valid-expect -- rejection handler must attach before timers advance; awaited below
     const outcome = expect(started).rejects.toThrow("within 10s");
 
     vi.advanceTimersByTime(9_999);

@@ -19,7 +19,7 @@ interface HomeViewProps {
 }
 
 function autosize(el: HTMLTextAreaElement | null) {
-    if (!el) {
+    if (el === null) {
         return;
     }
     el.style.height = "auto";
@@ -38,6 +38,7 @@ export function HomeView({
 
     useEffect(() => {
         autosize(textareaRef.current);
+        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- value is a deliberate autosize trigger
     }, [value]);
 
     const canSend = value.trim().length > 0;

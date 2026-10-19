@@ -15,7 +15,7 @@ export function LoginPage() {
     useEffect(() => {
         setTitleBarSurface("background");
     }, []);
-    if (user) {
+    if (user !== null) {
         return <Navigate to="/" replace />;
     }
 

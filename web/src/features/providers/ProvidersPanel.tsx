@@ -67,7 +67,13 @@ export function ProvidersPanel() {
                         onSave={handleSaveNew}
                         onCancel={() => setCreating(false)}
                     />
-                ) : selected ? (
+                ) : selected === null ? (
+                    <div className="grid h-full place-items-center text-sm text-muted-foreground">
+                        {store.loaded
+                            ? t("providers.emptyList")
+                            : t("common.loading")}
+                    </div>
+                ) : (
                     <ProviderDetail
                         key={selected.id}
                         provider={selected}
@@ -91,12 +97,6 @@ export function ProvidersPanel() {
                         }
                         onDelete={() => handleDelete(selected.id)}
                     />
-                ) : (
-                    <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                        {store.loaded
-                            ? t("providers.emptyList")
-                            : t("common.loading")}
-                    </div>
                 )}
             </main>
         </>

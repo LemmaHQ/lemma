@@ -38,7 +38,9 @@ export function ModelSwitcher({
                     disabled={options.length === 0}
                 >
                     <span className="max-w-56 truncate font-mono">
-                        {selection ? selection.model : t("chat.noProvider")}
+                        {selection === null
+                            ? t("chat.noProvider")
+                            : selection.model}
                     </span>
                     <ChevronDown className="size-3" />
                 </Button>
@@ -47,12 +49,12 @@ export function ModelSwitcher({
                 {options.map((o) => (
                     <DropdownMenuItem
                         key={`${o.providerId}/${o.model}`}
-                        onClick={() =>
+                        onClick={() => {
                             onSelect({
                                 providerId: o.providerId,
                                 model: o.model,
-                            })
-                        }
+                            });
+                        }}
                         className={cn(
                             "font-mono text-xs",
                             selection?.providerId === o.providerId &&

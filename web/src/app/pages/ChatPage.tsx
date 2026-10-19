@@ -36,7 +36,10 @@ function toSummary(c: Conversation): SessionSummary {
     return {
         id: c.id,
         title: c.title,
-        updatedAtMs: c.updatedAt ? timestampDate(c.updatedAt).getTime() : 0,
+        updatedAtMs:
+            c.updatedAt === undefined
+                ? 0
+                : timestampDate(c.updatedAt).getTime(),
     };
 }
 
@@ -65,7 +68,7 @@ export function ChatPage() {
 
     const openConversation = useChatStore((s) => s.open);
     useEffect(() => {
-        if (activeId) {
+        if (activeId !== null) {
             void openConversation(activeId);
         }
     }, [activeId, openConversation]);
@@ -78,15 +81,15 @@ export function ChatPage() {
         if (chat.streaming) {
             return;
         }
-        if (!model) {
-            navigate("/settings/providers");
+        if (model === null) {
+            void navigate("/settings/providers");
             return;
         }
         try {
             let cid = activeId;
-            if (!cid) {
+            if (cid === null) {
                 cid = await conversations.create();
-                navigate(`/conversations/${cid}`);
+                void navigate(`/conversations/${cid}`);
                 await chat.open(cid);
             }
             await chat.send(model.providerId, model.model, text);
@@ -97,7 +100,7 @@ export function ChatPage() {
 
     const handleSend = () => {
         const text = draft.trim();
-        if (!text) {
+        if (text === "") {
             return;
         }
         setDraft("");
@@ -109,7 +112,7 @@ export function ChatPage() {
     };
 
     const handleRegenerate = (messageId: string) => {
-        if (chat.streaming || !model) {
+        if (chat.streaming || model === null) {
             return;
         }
         const idx = chat.items.findIndex((m) => m.id === messageId);
@@ -118,7 +121,7 @@ export function ChatPage() {
         }
         for (let i = idx - 1; i >= 0; i--) {
             const prev = chat.items[i];
-            if (prev.role === "user") {
+            if (prev !== undefined && prev.role === "user") {
                 void chat.send(model.providerId, model.model, prev.content);
                 return;
             }
@@ -137,7 +140,7 @@ export function ChatPage() {
         runAction(async () => {
             await conversations.archive(id);
             if (id === activeId) {
-                navigate("/");
+                void navigate("/");
             }
         });
 
@@ -177,8 +180,12 @@ export function ChatPage() {
                     sessions={summaries}
                     archived={archivedSummaries}
                     activeSessionId={activeId}
-                    onGoHome={() => navigate("/")}
-                    onOpenSession={(id) => navigate(`/conversations/${id}`)}
+                    onGoHome={() => {
+                        void navigate("/");
+                    }}
+                    onOpenSession={(id) => {
+                        void navigate(`/conversations/${id}`);
+                    }}
                     onArchiveSession={(id) => void handleArchive(id)}
                     onRenameSession={(id, title) =>
                         void runAction(() => conversations.rename(id, title))
@@ -193,7 +200,9 @@ export function ChatPage() {
 
             <main
                 className={cn(
-                    "min-w-0 flex-1 transition-[padding] duration-200 ease-out",
+                    "min-w-0 flex-1 duration-200 ease-out",
+                    // oxlint-disable-next-line tailwindcss/no-arbitrary-value -- no named Tailwind utility transitions only padding
+                    "transition-[padding]",
                     sidebarCollapsed ? "p-2" : "py-2 pr-2",
                 )}
             >
@@ -214,8 +223,10 @@ export function ChatPage() {
                                     </Button>
                                 )}
                                 <span className="truncate text-sm font-medium text-foreground">
-                                    {activeSession?.title ||
-                                        t("sidebar.newChat")}
+                                    {activeSession !== undefined &&
+                                    activeSession.title !== ""
+                                        ? activeSession.title
+                                        : t("sidebar.newChat")}
                                 </span>
                             </div>
                         </div>
@@ -290,7 +301,7 @@ export function ChatPage() {
                         <AlertDialogAction
                             variant="destructive"
                             onClick={() => {
-                                if (pendingDeleteId) {
+                                if (pendingDeleteId !== null) {
                                     void runAction(() =>
                                         conversations.deleteArchived(
                                             pendingDeleteId,

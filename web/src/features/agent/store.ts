@@ -26,9 +26,9 @@ export interface AgentItem {
     providerId: string;
     model: string;
     toolCalls: ToolCallItem[];
-    toolCallId?: string;
-    toolIsError?: boolean;
-    error?: string;
+    toolCallId?: string | undefined;
+    toolIsError?: boolean | undefined;
+    error?: string | undefined;
 }
 
 interface ChatState {
@@ -89,7 +89,7 @@ function protoToItem(m: Message): AgentItem {
         })),
         toolCallId: m.toolResult?.toolCallId,
         toolIsError: m.toolResult?.isError,
-        error: m.error || undefined,
+        error: m.error === "" ? undefined : m.error,
     };
 }
 
@@ -104,7 +104,7 @@ function rowToItem(m: MessageRow): AgentItem {
                   : "assistant",
         content: m.content,
         thinking: "",
-        status: statusFromProto(m.status as MessageStatus),
+        status: statusFromProto(m.status),
         providerId: m.providerId,
         model: m.model,
         toolCalls: [],
@@ -113,20 +113,20 @@ function rowToItem(m: MessageRow): AgentItem {
 
 function hydrateToolResults(items: AgentItem[]): AgentItem[] {
     const resultByCallId = new Map<string, AgentItem>();
-    for (const it of items) {
-        if (it.role === "tool" && it.toolCallId) {
-            resultByCallId.set(it.toolCallId, it);
+    for (const entry of items) {
+        if (entry.role === "tool" && entry.toolCallId !== undefined) {
+            resultByCallId.set(entry.toolCallId, entry);
         }
     }
-    return items.map((it) => {
-        if (it.role !== "assistant" || it.toolCalls.length === 0) {
-            return it;
+    return items.map((entry) => {
+        if (entry.role !== "assistant" || entry.toolCalls.length === 0) {
+            return entry;
         }
         return {
-            ...it,
-            toolCalls: it.toolCalls.map((tc) => {
+            ...entry,
+            toolCalls: entry.toolCalls.map((tc) => {
                 const res = resultByCallId.get(tc.id);
-                if (!res) {
+                if (res === undefined) {
                     return tc;
                 }
                 return {
@@ -148,7 +148,7 @@ export const useChat = create<ChatState>()((set, get) => ({
 
     open: async (conversationId) => {
         const db = getDb();
-        if (db) {
+        if (db !== null) {
             const rows = await listMessages(db, conversationId);
             if (rows.length > 0) {
                 set({
@@ -165,7 +165,9 @@ export const useChat = create<ChatState>()((set, get) => ({
         });
         set({
             conversationId,
-            items: hydrateToolResults(res.messages.map(protoToItem).reverse()),
+            items: hydrateToolResults(
+                res.messages.map(protoToItem).toReversed(),
+            ),
             hasMore: res.hasMore,
         });
     },
@@ -173,7 +175,7 @@ export const useChat = create<ChatState>()((set, get) => ({
     syncFromCache: async () => {
         const { conversationId, streaming } = get();
         const db = getDb();
-        if (!db || !conversationId || streaming) {
+        if (db === null || conversationId === null || streaming) {
             return;
         }
         const rows = await listMessages(db, conversationId);
@@ -185,17 +187,20 @@ export const useChat = create<ChatState>()((set, get) => ({
 
     loadMore: async () => {
         const { conversationId, items, hasMore } = get();
-        if (!conversationId || !hasMore || items.length === 0) {
+        const first = items.at(0);
+        if (conversationId === null || !hasMore || first === undefined) {
             return;
         }
         const res = await conversationClient.listMessages({
             conversationId,
-            beforeId: items[0].id,
+            beforeId: first.id,
             limit: PAGE_SIZE,
         });
         set((s) => ({
             items: [
-                ...hydrateToolResults(res.messages.map(protoToItem).reverse()),
+                ...hydrateToolResults(
+                    res.messages.map(protoToItem).toReversed(),
+                ),
                 ...s.items,
             ],
             hasMore: res.hasMore,
@@ -204,7 +209,7 @@ export const useChat = create<ChatState>()((set, get) => ({
 
     send: async (providerId, model, content) => {
         const { conversationId, streaming } = get();
-        if (!conversationId || streaming) {
+        if (conversationId === null || streaming) {
             return;
         }
 
@@ -243,13 +248,14 @@ export const useChat = create<ChatState>()((set, get) => ({
             ],
         }));
 
-        const updateCurrent = (patch: Partial<AgentItem>) =>
+        const updateCurrent = (patch: Partial<AgentItem>) => {
             set((s) => ({
                 items: s.items.map((it) =>
                     it.id === currentId ? { ...it, ...patch } : it,
                 ),
             }));
-        const appendText = (chunk: string) =>
+        };
+        const appendText = (chunk: string) => {
             set((s) => ({
                 items: s.items.map((it) =>
                     it.id === currentId
@@ -257,7 +263,8 @@ export const useChat = create<ChatState>()((set, get) => ({
                         : it,
                 ),
             }));
-        const appendThinking = (chunk: string) =>
+        };
+        const appendThinking = (chunk: string) => {
             set((s) => ({
                 items: s.items.map((it) =>
                     it.id === currentId
@@ -265,7 +272,8 @@ export const useChat = create<ChatState>()((set, get) => ({
                         : it,
                 ),
             }));
-        const addToolCall = (call: ToolCallItem) =>
+        };
+        const addToolCall = (call: ToolCallItem) => {
             set((s) => ({
                 items: s.items.map((it) =>
                     it.id === currentId
@@ -273,17 +281,18 @@ export const useChat = create<ChatState>()((set, get) => ({
                         : it,
                 ),
             }));
+        };
         const finishToolCall = (
             callId: string,
             output: string,
             isError: boolean,
-        ) =>
+        ) => {
             set((s) => ({
-                items: s.items.map((it) =>
-                    it.id === currentId
+                items: s.items.map((entry) =>
+                    entry.id === currentId
                         ? {
-                              ...it,
-                              toolCalls: it.toolCalls.map((tc) =>
+                              ...entry,
+                              toolCalls: entry.toolCalls.map((tc) =>
                                   tc.id === callId
                                       ? {
                                             ...tc,
@@ -294,15 +303,16 @@ export const useChat = create<ChatState>()((set, get) => ({
                                       : tc,
                               ),
                           }
-                        : it,
+                        : entry,
                 ),
             }));
+        };
 
         const startTurn = (messageId: string) => {
             activeMessageId = messageId;
             const current = get().items.find((it) => it.id === currentId);
             const empty =
-                current &&
+                current !== undefined &&
                 current.role === "assistant" &&
                 current.content === "" &&
                 current.thinking === "" &&
@@ -336,7 +346,7 @@ export const useChat = create<ChatState>()((set, get) => ({
 
         const applyEvent = (event?: AgentEvent) => {
             const kind = event?.kind;
-            if (!kind) {
+            if (kind === undefined) {
                 return;
             }
             switch (kind.case) {
@@ -384,63 +394,66 @@ export const useChat = create<ChatState>()((set, get) => ({
                         error: kind.value.message,
                     });
                     break;
+                case undefined:
+                    break;
+            }
+        };
+
+        const openStream = (): AsyncIterable<{
+            event?: AgentEvent | undefined;
+        }> => {
+            const resumeId = activeMessageId;
+            if (resumeId !== null) {
+                const current =
+                    get().items.find((it) => it.id === currentId)?.content ??
+                    "";
+                return agentClient.resumeStream(
+                    {
+                        messageId: resumeId,
+                        offset: BigInt(charLen(current)),
+                    },
+                    { signal },
+                );
+            }
+            return agentClient.sendMessage(
+                {
+                    conversationId,
+                    content,
+                    providerId,
+                    model,
+                    clientMsgId,
+                },
+                { signal },
+            );
+        };
+
+        const attempt = async (resumes: number): Promise<void> => {
+            try {
+                for await (const res of openStream()) {
+                    applyEvent(res.event);
+                }
+            } catch (e) {
+                if (userAborted || signal.aborted) {
+                    updateCurrent({ status: "aborted" });
+                    return;
+                }
+                const next = resumes + 1;
+                if (activeMessageId === null || next > MAX_RESUME) {
+                    updateCurrent({
+                        status: "error",
+                        error: errorText(e, i18n.t),
+                    });
+                    return;
+                }
+                await new Promise<void>((resolve) => {
+                    setTimeout(resolve, 500 * next);
+                });
+                await attempt(next);
             }
         };
 
         try {
-            let resumes = 0;
-            for (;;) {
-                try {
-                    if (!activeMessageId) {
-                        const stream = agentClient.sendMessage(
-                            {
-                                conversationId,
-                                content,
-                                providerId,
-                                model,
-                                clientMsgId,
-                            },
-                            { signal },
-                        );
-                        for await (const res of stream) {
-                            applyEvent(res.event);
-                        }
-                    } else {
-                        const current =
-                            get().items.find((it) => it.id === currentId)
-                                ?.content ?? "";
-                        const stream = agentClient.resumeStream(
-                            {
-                                messageId: activeMessageId,
-                                offset: BigInt(charLen(current)),
-                            },
-                            { signal },
-                        );
-                        for await (const res of stream) {
-                            applyEvent(res.event);
-                        }
-                    }
-                    break;
-                } catch (e) {
-                    if (userAborted || signal.aborted) {
-                        throw e;
-                    }
-                    resumes += 1;
-                    if (!activeMessageId || resumes > MAX_RESUME) {
-                        throw e;
-                    }
-                    await new Promise((r) => setTimeout(r, 500 * resumes));
-                }
-            }
-        } catch (e) {
-            if (userAborted || signal.aborted) {
-                updateCurrent({ status: "aborted" });
-            } else {
-                updateCurrent({
-                    status: "error",
-                    error: errorText(e, i18n.t),
-                });
-            }
+            await attempt(0);
         } finally {
             controller = null;
             activeMessageId = null;
@@ -451,10 +464,8 @@ export const useChat = create<ChatState>()((set, get) => ({
     abort: async () => {
         userAborted = true;
         const id = activeMessageId;
-        if (id) {
-            await agentClient
-                .abortMessage({ messageId: id })
-                .catch(() => undefined);
+        if (id !== null) {
+            await agentClient.abortMessage({ messageId: id }).catch(() => {});
         }
         controller?.abort();
     },

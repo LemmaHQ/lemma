@@ -1,12 +1,11 @@
-import i18n from "i18next";
+import i18n, { use as addI18nPlugin } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
 import en from "./locales/en.json";
 import zh from "./locales/zh.json";
 
-void i18n
-    .use(LanguageDetector)
+void addI18nPlugin(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources: {

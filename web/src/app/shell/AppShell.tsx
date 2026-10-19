@@ -8,12 +8,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     const windowCaps = usePlatformWindow();
 
     useEffect(() => {
-        if (platform.isDesktop) {
-            document.documentElement.classList.add("desktop");
-            return () => {
-                document.documentElement.classList.remove("desktop");
-            };
-        }
+        document.documentElement.classList.toggle(
+            "desktop",
+            platform.isDesktop,
+        );
+        return () => {
+            document.documentElement.classList.remove("desktop");
+        };
     }, [platform.isDesktop]);
 
     return (

@@ -21,6 +21,18 @@ function readTheme(): "light" | "dark" {
     return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
+const toasterStyle: React.CSSProperties & {
+    "--normal-bg": string;
+    "--normal-text": string;
+    "--normal-border": string;
+    "--border-radius": string;
+} = {
+    "--normal-bg": "var(--popover)",
+    "--normal-text": "var(--popover-foreground)",
+    "--normal-border": "var(--border)",
+    "--border-radius": "var(--radius)",
+};
+
 function Toaster({ ...props }: ToasterProps) {
     const theme = React.useSyncExternalStore(subscribeTheme, readTheme);
 
@@ -34,14 +46,7 @@ function Toaster({ ...props }: ToasterProps) {
                 error: <OctagonXIcon className="size-4" />,
                 loading: <Loader2Icon className="size-4 animate-spin" />,
             }}
-            style={
-                {
-                    "--normal-bg": "var(--popover)",
-                    "--normal-text": "var(--popover-foreground)",
-                    "--normal-border": "var(--border)",
-                    "--border-radius": "var(--radius)",
-                } as React.CSSProperties
-            }
+            style={toasterStyle}
             {...props}
         />
     );

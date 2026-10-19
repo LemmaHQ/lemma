@@ -14,7 +14,7 @@ export function SettingsPage() {
     useEffect(() => {
         setTitleBarSurface("sidebar");
     }, []);
-    if (!section) {
+    if (section === null) {
         return <Navigate to="/settings/appearance" replace />;
     }
 

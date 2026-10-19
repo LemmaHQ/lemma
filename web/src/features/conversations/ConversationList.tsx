@@ -47,7 +47,7 @@ function SessionRow({
     const commit = () => {
         const title = inputRef.current?.value.trim() ?? "";
         setEditing(false);
-        if (title && title !== session.title) {
+        if (title !== "" && title !== session.title) {
             onRename(session.id, title);
         }
     };
@@ -71,6 +71,7 @@ function SessionRow({
         );
     }
 
+    // oxlint-disable jsx-a11y/prefer-tag-over-role -- row wraps nested action buttons, a real button cannot contain them
     return (
         <div
             role="button"
@@ -88,7 +89,7 @@ function SessionRow({
             )}
         >
             <span className="flex-1 truncate text-left">
-                {session.title || t("sidebar.newChat")}
+                {session.title === "" ? t("sidebar.newChat") : session.title}
             </span>
             <span className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
@@ -118,6 +119,7 @@ function SessionRow({
             </span>
         </div>
     );
+    // oxlint-enable jsx-a11y/prefer-tag-over-role
 }
 
 function ArchivedRow({
@@ -133,7 +135,7 @@ function ArchivedRow({
     return (
         <div className="group flex w-full items-center truncate rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/60">
             <span className="flex-1 truncate text-left text-muted-foreground">
-                {session.title || t("sidebar.newChat")}
+                {session.title === "" ? t("sidebar.newChat") : session.title}
             </span>
             <span className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
                 <button

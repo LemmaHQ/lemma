@@ -19,7 +19,7 @@ export function groupSessions(
 ): { key: GroupKey; items: SessionSummary[] }[] {
     const byGroup = new Map<GroupKey, SessionSummary[]>();
     const today = startOfDayMs(Date.now());
-    const sorted = [...sessions].sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    const sorted = sessions.toSorted((a, b) => b.updatedAtMs - a.updatedAtMs);
     for (const s of sorted) {
         const diff = Math.round((today - startOfDayMs(s.updatedAtMs)) / DAY_MS);
         const key: GroupKey =
@@ -34,8 +34,12 @@ export function groupSessions(
         items.push(s);
         byGroup.set(key, items);
     }
-    return GROUP_ORDER.filter((key) => byGroup.has(key)).map((key) => ({
-        key,
-        items: byGroup.get(key)!,
-    }));
+    const groups: { key: GroupKey; items: SessionSummary[] }[] = [];
+    for (const key of GROUP_ORDER) {
+        const items = byGroup.get(key);
+        if (items !== undefined) {
+            groups.push({ key, items });
+        }
+    }
+    return groups;
 }
