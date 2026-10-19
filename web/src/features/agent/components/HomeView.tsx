@@ -51,7 +51,7 @@ export function HomeView({
     return (
         <div className="grid flex-1 place-items-center px-6">
             <div className="w-full max-w-2xl">
-                <p className="mb-8 text-center text-headline font-semibold">
+                <p className="mb-8 text-center text-3xl font-semibold">
                     {t("common.appName")}
                 </p>
                 <div className="glass rounded-xl border border-border p-4 shadow-composer">

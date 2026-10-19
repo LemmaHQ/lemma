@@ -6,12 +6,12 @@ This reference defines styling ownership and component rules for `web/`, which i
 
 ## Ownership
 
-- [`design/tokens.json`](../design/tokens.json) owns the static palette, the semantic aliases of each theme, type roles, radii, motion, font stacks, and elevation shadows. The generator turns them into `web/src/styles/tokens.css`.
-- [`web/src/styles/`](../web/src/styles/README.md) owns global styles: font faces, the base layer, the glass and menu materials, and scrollbar colors.
+- [`design/tokens.json`](../design/tokens.json) owns the static palette, the semantic aliases of each theme, the base radius, and the shadows Tailwind's scale lacks. The generator turns them into `web/src/styles/tokens.css`. Type sizes, font stacks, motion, and the other shadows are Tailwind's defaults.
+- [`web/src/styles/`](../web/src/styles/README.md) owns global styles: the base layer, the glass and menu materials, and scrollbar colors.
 - [`web/src/components/ui/`](../web/src/components/ui/README.md) owns the shared controls and their variants.
 - Feature code in `web/src/app/` and `web/src/features/` composes utilities and controls. It defines no global style and no theme.
 
-The theme is the `data-theme` attribute on `<html>`, `light` or `dark`. An inline script in `index.html` sets it before first paint, and `features/preferences/theme.ts` updates it when the preference or the system scheme changes.
+The theme is the `dark` class on `<html>`; without it the light theme applies. An inline script in `index.html` sets it before first paint, and `features/preferences/theme.ts` updates it when the preference or the system scheme changes.
 
 ## Styling stack
 
@@ -29,12 +29,12 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 - Reuse the control before restyling one: check the [component catalog](../web/src/components/ui/README.md#component-catalog). A visual difference that more than one feature needs becomes a variant of the shared component, not a second copy.
 - Use semantic utilities only. Do not write hex colors, palette values, or arbitrary values such as `bg-[#fff]`, `text-[13px]`, or `w-[372px]`. Arbitrary values are limited to geometry no scale step expresses, such as Radix CSS variables (`origin-(--radix-…)`) and `calc()` over theme values.
 - Do not write `dark:`. A difference between themes is a semantic token with different light and dark values.
-- Use the type role utilities (`text-sm`, `text-caption`, `text-mono`); each carries its line height. Use weights 400 and 500 only (`font-normal`, `font-medium`); hierarchy comes from size, weight, and the two text colors, not from more grays or heavier weights.
+- Use Tailwind's type scale (`text-xs`, `text-sm`, `text-xl`); each size carries its line height. Use weights 400 and 500 only (`font-normal`, `font-medium`); hierarchy comes from size, weight, and the two text colors, not from more grays or heavier weights.
 - Keep keyboard focus visible: interactive elements show the `ring` color on `focus-visible`.
 - A control revealed on hover, such as a row's inline actions, is also revealed on keyboard focus within its row and stays visible on devices without hover.
-- Transitions use the motion tokens and respect reduced motion: wrap movement in `motion-safe:` or remove it under `motion-reduce:`.
+- Transitions use Tailwind's duration and easing utilities and respect reduced motion: wrap movement in `motion-safe:` or remove it under `motion-reduce:`.
 - Flat surfaces separate by hairline borders: neutral borders (`border-border`, `border-input`) draw at 0.5px. Dashed affordances and state-colored borders keep 1px.
-- Elevated surfaces (menus, selects, alert dialogs, the composer) take `border-0` and an elevation shadow (`shadow-md`, `shadow-composer`) whose first layer is the 0.5px hairline stroke. Never pair a neutral border with an elevation shadow.
+- Elevated surfaces (menus, selects, alert dialogs, the composer) take an elevation shadow: `shadow-md`, or `shadow-composer` for the composer.
 - Dropdown menus and select lists use the translucent menu material owned by `styles/theme.css`, the popover color plus a backdrop blur; feature code does not override it. Alert dialog masks stay dark and translucent without blur.
 - Rounded corners use the superellipse curve where the engine supports `corner-shape`; full-round shapes pair `rounded-full` with `corner-shape: round`.
 - Icons come from Lucide at `size-4`, `size-3.5` in dense rows, and `size-3` for sidebar inline actions. Every icon-only button has an accessible name and a `Tooltip`, not a `title` attribute.
@@ -70,22 +70,9 @@ Text has two levels: `text-foreground` for primary text and `text-muted-foregrou
 
 The tooltip is the one inverse surface: `bg-foreground` with `text-background`, no shadow.
 
-### Type roles
+### Type
 
-| Role | Use |
-| --- | --- |
-| `display-xl`, `display-lg`, `display-md` | Reserved for landing pages |
-| `headline` | Page-level titles |
-| `card-title` | Card and empty-state titles |
-| `subhead` | Lead paragraphs |
-| `body-lg`, `body` | Emphasized and default long-form body text |
-| `body-sm` (`text-sm`) | The default UI text: lists, forms, chat messages |
-| `caption` | Captions, metadata, group headers |
-| `button` | Button and tab labels |
-| `eyebrow` | Uppercase category labels |
-| `mono`, `mono-sm` | Code blocks; model IDs and inline code |
-
-Sarasa UI SC carries all UI text, including Chinese; Maple Mono NF CN carries machine text. Both are self-hosted. Letter spacing tightens as the size grows and is zero from `body-sm` down; `eyebrow` alone uses positive tracking.
+Text uses Tailwind's type scale and its system font stacks (`font-sans`, `font-mono`). `text-sm` is the default UI text: lists, forms, chat messages. `text-xs` carries captions, metadata, and code; `text-xl` and `text-3xl` carry empty-state and page titles.
 
 ## Corner radii
 

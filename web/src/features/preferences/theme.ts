@@ -39,7 +39,7 @@ function notifyTitleBar() {
 
 export function applyTheme(pref: ThemePreference) {
     const resolved = resolveTheme(pref);
-    document.documentElement.dataset.theme = resolved;
+    document.documentElement.classList.toggle("dark", resolved === "dark");
     notifyTitleBar();
 }
 

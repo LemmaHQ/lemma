@@ -13,6 +13,15 @@ const THEMES = ["light", "dark"] as const;
 const NOTICE =
     "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
 const REFERENCE = /^\{([^}]+)\}$/u;
+const RADIUS_SCALE = [
+    ["sm", 0.6],
+    ["md", 0.8],
+    ["lg", 1],
+    ["xl", 1.4],
+    ["2xl", 1.8],
+    ["3xl", 2.2],
+    ["4xl", 2.6],
+] as const;
 
 type TokenValue =
     string | number | boolean | TokenValue[] | { [key: string]: TokenValue };
@@ -41,15 +50,6 @@ interface ShadowLayer {
     color: string;
 }
 
-interface TypographyValue {
-    [key: string]: TokenValue;
-    fontFamily: string | string[];
-    fontSize: string;
-    fontWeight: number;
-    lineHeight: number;
-    letterSpacing: string;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -61,32 +61,6 @@ function isTokenSource(value: unknown): value is TokenSource {
 function stringValue(value: TokenValue, owner: string): string {
     if (typeof value !== "string") {
         throw new TypeError(`${owner} must be a string`);
-    }
-    return value;
-}
-
-function isStringArray(value: unknown): value is string[] {
-    return (
-        Array.isArray(value) && value.every((item) => typeof item === "string")
-    );
-}
-
-function stringArrayValue(value: TokenValue, owner: string): string[] {
-    if (!isStringArray(value)) {
-        throw new Error(`${owner} must be a list of strings`);
-    }
-    return value;
-}
-
-function isNumberArray(value: unknown): value is number[] {
-    return (
-        Array.isArray(value) && value.every((item) => typeof item === "number")
-    );
-}
-
-function numberArrayValue(value: TokenValue, owner: string): number[] {
-    if (!isNumberArray(value)) {
-        throw new Error(`${owner} must be a list of numbers`);
     }
     return value;
 }
@@ -124,28 +98,6 @@ function shadowValue(
     throw new Error(
         `${owner} must be a shadow layer or a list of shadow layers`,
     );
-}
-
-function isTypographyValue(value: unknown): value is TypographyValue {
-    if (!isRecord(value)) {
-        return false;
-    }
-    const { fontFamily, fontSize, fontWeight, lineHeight, letterSpacing } =
-        value;
-    return (
-        (typeof fontFamily === "string" || isStringArray(fontFamily)) &&
-        typeof fontSize === "string" &&
-        typeof fontWeight === "number" &&
-        typeof lineHeight === "number" &&
-        typeof letterSpacing === "string"
-    );
-}
-
-function typographyValue(value: TokenValue, owner: string): TypographyValue {
-    if (!isTypographyValue(value)) {
-        throw new Error(`${owner} must be a typography token`);
-    }
-    return value;
 }
 
 function collectTokens(
@@ -256,27 +208,9 @@ function checkThemeParity(tokens: TokenMap): void {
     }
 }
 
-function pxNumber(px: string): number {
-    // oxlint-disable-next-line unicorn/prefer-number-coercion -- token values carry a px unit suffix, so Number() would yield NaN
-    return Number.parseFloat(px);
-}
-
 function pxToRem(px: string): string {
-    return `${pxNumber(px) / 16}rem`;
-}
-
-function pxToEm(letterSpacing: string, fontSize: string): string {
-    const spacing = pxNumber(letterSpacing);
-    if (spacing === 0) {
-        return "0";
-    }
-    return `${Number((spacing / pxNumber(fontSize)).toFixed(4))}em`;
-}
-
-function cssFontFamily(families: string[]): string {
-    return families
-        .map((family) => (/\s/u.test(family) ? `"${family}"` : family))
-        .join(", ");
+    // oxlint-disable-next-line unicorn/prefer-number-coercion -- token values carry a px unit suffix, so Number() would yield NaN
+    return `${Number.parseFloat(px) / 16}rem`;
 }
 
 function cssShadow(value: ShadowLayer | ShadowLayer[]): string {
@@ -314,73 +248,32 @@ function themeDeclarations(tokens: TokenMap, theme: string): string[] {
 
 function generateWebCss(tokens: TokenMap): string {
     const [light, ...darkThemes] = THEMES;
-    const rootLines = themeDeclarations(tokens, light);
-    rootLines.push("");
-    for (const [key, token] of group(tokens, "duration")) {
-        rootLines.push(
-            `    --motion-${key}: ${stringValue(token.value, `duration.${key}`)};`,
-        );
+    const radius = tokens.get("radius");
+    if (radius === undefined) {
+        throw new Error("radius is missing");
     }
-    for (const [key, token] of group(tokens, "easing")) {
-        rootLines.push(
-            `    --ease-${key}: cubic-bezier(${numberArrayValue(token.value, `easing.${key}`).join(", ")});`,
-        );
-    }
+    const rootLines = [
+        `    --radius: ${pxToRem(stringValue(radius.value, "radius"))};`,
+        ...themeDeclarations(tokens, light),
+    ];
 
-    const themeLines: string[] = [];
-    for (const [key] of group(tokens, `${light}.color`)) {
-        themeLines.push(`    --color-${key}: var(--${key});`);
-    }
-    themeLines.push("", "    /* font */");
-    for (const [key, token] of group(tokens, "font")) {
+    const themeLines = group(tokens, `${light}.color`).map(
+        ([key]) => `    --color-${key}: var(--${key});`,
+    );
+    themeLines.push("");
+    for (const [step, factor] of RADIUS_SCALE) {
         themeLines.push(
-            `    --font-${key}: ${cssFontFamily(stringArrayValue(token.value, `font.${key}`))};`,
+            `    --radius-${step}: ${factor === 1 ? "var(--radius)" : `calc(var(--radius) * ${factor})`};`,
         );
     }
-    themeLines.push("", "    /* shadow */");
+    themeLines.push("");
     for (const [key] of group(tokens, `${light}.shadow`)) {
         themeLines.push(`    --shadow-${key}: var(--elevation-${key});`);
     }
 
-    themeLines.push("", "    /* typography */");
-    const bodySm = tokens.get("typography.body-sm");
-    if (bodySm !== undefined) {
-        const bodySmValue = typographyValue(bodySm.value, "typography.body-sm");
-        themeLines.push(
-            `    --text-sm: ${pxToRem(bodySmValue.fontSize)};`,
-            `    --text-sm--line-height: ${bodySmValue.lineHeight};`,
-        );
-    }
-    for (const [key, token] of group(tokens, "typography")) {
-        const { fontSize, fontWeight, lineHeight, letterSpacing } =
-            typographyValue(token.value, `typography.${key}`);
-        themeLines.push(
-            `    --text-${key}: ${pxToRem(fontSize)};`,
-            `    --text-${key}--line-height: ${lineHeight};`,
-        );
-        const spacing = pxToEm(letterSpacing, fontSize);
-        if (spacing !== "0") {
-            themeLines.push(`    --text-${key}--letter-spacing: ${spacing};`);
-        }
-        themeLines.push(`    --text-${key}--font-weight: ${fontWeight};`);
-    }
-
-    themeLines.push("", "    /* radius */");
-    const radiusLg = tokens.get("radius.lg");
-    if (radiusLg !== undefined) {
-        themeLines.push(
-            `    --radius: ${pxToRem(stringValue(radiusLg.value, "radius.lg"))};`,
-        );
-    }
-    for (const [key, token] of group(tokens, "radius")) {
-        themeLines.push(
-            `    --radius-${key}: ${stringValue(token.value, `radius.${key}`)};`,
-        );
-    }
-
     const darkBlocks = darkThemes.map(
         (theme) =>
-            `[data-theme="${theme}"] {\n${themeDeclarations(tokens, theme).join("\n")}\n}\n`,
+            `.${theme} {\n${themeDeclarations(tokens, theme).join("\n")}\n}\n`,
     );
 
     return `/* ${NOTICE} */

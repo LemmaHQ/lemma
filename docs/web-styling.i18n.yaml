@@ -6,14 +6,14 @@
   en: 90a2c0639e2688ac
   zh: 29842c4069cb223b
 /web-ui-style-reference/ownership:
-  en: a5edbf92aa75ce73
-  zh: 6e23db5e2dcbc527
+  en: 9ff8b8d8565819f0
+  zh: 03f8f14d7fe4503a
 /web-ui-style-reference/styling-stack:
   en: 95a6806bcf27312e
   zh: 5b4bf9ad36b27c3b
 /web-ui-style-reference/component-rules:
-  en: 9431b1f81f32261f
-  zh: ea95560d7b9e9557
+  en: adba84e807ec4083
+  zh: e605caf87885324d
 /web-ui-style-reference/visual-system:
   en: 37fc3eb74b790cbb
   zh: 0c9919a2f338785f
@@ -23,9 +23,9 @@
 /web-ui-style-reference/visual-system/elevation:
   en: 4a5c394a5c38c307
   zh: 50a1c4fc357d2963
-/web-ui-style-reference/visual-system/type-roles:
-  en: 9fd0ba15dda90adc
-  zh: 3e0c12391a5619a7
+/web-ui-style-reference/visual-system/type:
+  en: 434cf64c9c607c80
+  zh: a1c951b3bd92572f
 /web-ui-style-reference/corner-radii:
   en: 735ba261165a1070
   zh: 3a627053949bda33

@@ -72,7 +72,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
             </div>
             <pre
                 ref={codeRef}
-                className="overflow-x-auto bg-code/60 p-4 font-mono text-eyebrow leading-relaxed text-code-foreground"
+                className="overflow-x-auto bg-code/60 p-4 font-mono text-xs leading-relaxed text-code-foreground"
             >
                 {children}
             </pre>
@@ -202,7 +202,7 @@ export function ToolCallCard({ call }: ToolCallCardProps) {
                         <p className="mb-1 text-xs font-medium text-muted-foreground">
                             {t("chat.toolCall.arguments")}
                         </p>
-                        <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-eyebrow whitespace-pre-wrap text-code-foreground">
+                        <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-xs whitespace-pre-wrap text-code-foreground">
                             {call.arguments}
                         </pre>
                     </div>
@@ -211,7 +211,7 @@ export function ToolCallCard({ call }: ToolCallCardProps) {
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
                                 {t("chat.toolCall.output")}
                             </p>
-                            <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-eyebrow whitespace-pre-wrap text-code-foreground">
+                            <pre className="max-h-48 overflow-auto rounded-sm bg-code/60 p-2 font-mono text-xs whitespace-pre-wrap text-code-foreground">
                                 {call.output}
                             </pre>
                         </div>
@@ -228,7 +228,7 @@ interface MessageContentProps {
 
 export function MessageContent({ content }: MessageContentProps) {
     return (
-        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-eyebrow [&_:not(pre)>code]:text-code-foreground">
+        <div className="space-y-3 text-sm leading-relaxed [&_:not(pre)>code]:rounded [&_:not(pre)>code]:border [&_:not(pre)>code]:border-code-border [&_:not(pre)>code]:bg-code [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-xs [&_:not(pre)>code]:text-code-foreground">
             <ReactMarkdown
                 rehypePlugins={rehypePlugins}
                 components={components}

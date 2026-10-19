@@ -6,12 +6,12 @@
 
 ## 归属
 
-- [`design/tokens.json`](../design/tokens.json) 拥有静态色板、各主题的语义别名、字体角色、圆角、动效、字体栈与层级阴影。生成器把它们转换为 `web/src/styles/tokens.css`。
-- [`web/src/styles/`](../web/src/styles/README.zh.md) 拥有全局样式：字体声明、基础层、毛玻璃与菜单材质，以及滚动条颜色。
+- [`design/tokens.json`](../design/tokens.json) 拥有静态色板、各主题的语义别名、基础圆角，以及 Tailwind 刻度中没有的阴影。生成器把它们转换为 `web/src/styles/tokens.css`。字号、字体栈、动效与其他阴影使用 Tailwind 默认值。
+- [`web/src/styles/`](../web/src/styles/README.zh.md) 拥有全局样式：基础层、毛玻璃与菜单材质，以及滚动条颜色。
 - [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体。
 - `web/src/app/` 与 `web/src/features/` 中的功能代码组合工具类与控件，不定义全局样式，也不定义主题。
 
-主题是 `<html>` 上的 `data-theme` 属性，取值 `light` 或 `dark`。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由 `features/preferences/theme.ts` 更新。
+主题是 `<html>` 上的 `dark` 类；没有该类时使用亮色主题。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由 `features/preferences/theme.ts` 更新。
 
 ## 样式技术栈
 
@@ -29,12 +29,12 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 - 先复用控件，再考虑改样式：查阅[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是第二份副本。
 - 只使用语义工具类。不写十六进制颜色、色板值或任意值，例如 `bg-[#fff]`、`text-[13px]`、`w-[372px]`。任意值只用于刻度无法表达的几何，例如 Radix 的 CSS 变量（`origin-(--radix-…)`）以及基于主题取值的 `calc()`。
 - 不写 `dark:`。两套主题之间的差异是一个亮暗取值不同的语义 token。
-- 使用字体角色工具类（`text-sm`、`text-caption`、`text-mono`）；每个角色自带行高。只使用 400 与 500 两种字重（`font-normal`、`font-medium`）；层级来自字号、字重与两种文字颜色，而不是更多灰色或更粗的字重。
+- 使用 Tailwind 的字号刻度（`text-xs`、`text-sm`、`text-xl`）；每个字号自带行高。只使用 400 与 500 两种字重（`font-normal`、`font-medium`）；层级来自字号、字重与两种文字颜色，而不是更多灰色或更粗的字重。
 - 保持键盘焦点可见：交互元素在 `focus-visible` 时显示 `ring` 颜色。
 - 悬停时才出现的控件（例如列表行的行内操作）在该行内获得键盘焦点时同样出现，并在不支持悬停的设备上始终可见。
-- 过渡使用动效 token，并尊重减弱动效设置：位移包在 `motion-safe:` 中，或在 `motion-reduce:` 下移除。
+- 过渡使用 Tailwind 的时长与缓动工具类，并尊重减弱动效设置：位移包在 `motion-safe:` 中，或在 `motion-reduce:` 下移除。
 - 平面表面之间用细线边框分隔：中性边框（`border-border`、`border-input`）绘制为 0.5px。虚线提示与状态色边框保持 1px。
-- 浮起的表面（菜单、选择列表、确认对话框、输入框面板）使用 `border-0` 与层级阴影（`shadow-md`、`shadow-composer`），阴影的第一层就是 0.5px 细线描边。中性边框绝不与层级阴影同时使用。
+- 浮起的表面（菜单、选择列表、确认对话框、输入框面板）使用层级阴影：`shadow-md`，输入框面板使用 `shadow-composer`。
 - 下拉菜单与选择列表使用 `styles/theme.css` 拥有的半透明菜单材质，即弹出层颜色加背景模糊；功能代码不覆盖它。确认对话框的遮罩保持深色半透明，不加模糊。
 - 在支持 `corner-shape` 的引擎上，圆角使用超椭圆曲线；全圆形状把 `rounded-full` 与 `corner-shape: round` 配对。
 - 图标来自 Lucide：默认 `size-4`，紧凑行中 `size-3.5`，侧边栏行内操作 `size-3`。每个仅含图标的按钮都有无障碍名称和 `Tooltip`，而不是 `title` 属性。
@@ -70,22 +70,9 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 
 工具提示是唯一的反色表面：`bg-foreground` 配 `text-background`，无阴影。
 
-### 字体角色
+### 字体
 
-| 角色 | 用途 |
-| --- | --- |
-| `display-xl`、`display-lg`、`display-md` | 保留给落地页 |
-| `headline` | 页面级标题 |
-| `card-title` | 卡片与空状态的标题 |
-| `subhead` | 引导段落 |
-| `body-lg`、`body` | 强调正文与默认长篇正文 |
-| `body-sm`（`text-sm`） | 默认界面文字：列表、表单、对话消息 |
-| `caption` | 说明、元信息、分组标题 |
-| `button` | 按钮与标签页文字 |
-| `eyebrow` | 大写的分类标签 |
-| `mono`、`mono-sm` | 代码块；模型 ID 与行内代码 |
-
-Sarasa UI SC 承载全部界面文字，包括中文；Maple Mono NF CN 承载机器文本。两者都是自托管字体。字距随字号增大而收紧，从 `body-sm` 往下为零；只有 `eyebrow` 使用正字距。
+文字使用 Tailwind 的字号刻度与系统字体栈（`font-sans`、`font-mono`）。`text-sm` 是默认界面文字：列表、表单、对话消息。`text-xs` 用于说明、元信息与代码；`text-xl` 与 `text-3xl` 用于空状态与页面标题。
 
 ## 圆角
 

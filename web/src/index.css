@@ -3,7 +3,7 @@
 @import "./styles/tokens.css";
 @import "./styles/theme.css";
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dark (&:is(.dark *));
 
 .desktop-titlebar {
     position: fixed;

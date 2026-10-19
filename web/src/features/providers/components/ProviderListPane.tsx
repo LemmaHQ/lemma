@@ -43,7 +43,7 @@ function ProviderGroup({
                     )}
                 />
                 {label}
-                <span className="ml-auto text-caption">{providers.length}</span>
+                <span className="ml-auto">{providers.length}</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-0.5">
                 {providers.map((provider) => (
