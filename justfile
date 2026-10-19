@@ -56,7 +56,7 @@ rust-build:
 # Run the dev server
 [group('rust')]
 rust-dev:
-    cargo run
+    cargo run --package lemma-server
 
 # Run tests with nextest
 [group('rust')]
