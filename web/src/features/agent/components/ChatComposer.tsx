@@ -1,35 +1,33 @@
-import { IconArrowUp, IconPlayerStopFilled } from "@tabler/icons-react";
-import { useEffect, useRef } from "react";
+import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { ModelSwitcher } from "./ModelSwitcher";
+import {
+    PromptInput,
+    PromptInputBody,
+    PromptInputFooter,
+    PromptInputSubmit,
+    PromptInputTextarea,
+    PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type {
     ModelOption,
     ModelSelection,
 } from "@/features/agent/useModelSelection";
-import { cn } from "@/lib/utils";
+
+import { ModelSwitcher } from "./ModelSwitcher";
 
 interface ChatComposerProps {
     value: string;
     onChange: (value: string) => void;
     onSend: () => void;
-    onStop: () => void;
-    streaming: boolean;
+    onStop?: () => void;
+    streaming?: boolean;
     model: ModelSelection | null;
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
-    inputRef?: React.RefObject<HTMLTextAreaElement | null>;
-}
-
-function autosize(el: HTMLTextAreaElement | null) {
-    if (el === null) {
-        return;
-    }
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 export function ChatComposer({
@@ -37,105 +35,76 @@ export function ChatComposer({
     onChange,
     onSend,
     onStop,
-    streaming,
+    streaming = false,
     model,
     modelOptions,
     onModelChange,
     inputRef,
 }: ChatComposerProps) {
     const { t } = useTranslation();
-    const innerRef = useRef<HTMLTextAreaElement>(null);
-    const textareaRef = inputRef ?? innerRef;
-
-    useEffect(() => {
-        autosize(textareaRef.current);
-        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- value is a deliberate autosize trigger
-    }, [value, textareaRef]);
-
-    const noModel = model === null;
-    const canSend = !noModel && value.trim().length > 0;
+    const canSend = model !== null && value.trim() !== "" && !streaming;
 
     return (
-        <div className="px-6 pb-6">
-            <div className="mx-auto max-w-3xl rounded-xl border bg-background">
-                <Textarea
-                    ref={textareaRef}
-                    value={value}
-                    rows={1}
-                    disabled={noModel}
-                    onChange={(e) => onChange(e.target.value)}
-                    onInput={(e) => autosize(e.currentTarget)}
-                    onKeyDown={(e) => {
-                        if (
-                            e.key === "Enter" &&
-                            !e.shiftKey &&
-                            !e.nativeEvent.isComposing
-                        ) {
-                            e.preventDefault();
-                            if (canSend && !streaming) {
-                                onSend();
-                            }
-                        }
-                    }}
-                    placeholder={
-                        noModel
-                            ? t("chat.noModelPlaceholder")
-                            : t("chat.inputPlaceholder")
+        <div className="flex flex-col gap-2">
+            <PromptInput
+                onSubmit={() => {
+                    if (canSend) {
+                        onSend();
                     }
-                    aria-label={t("chat.inputPlaceholder")}
-                    className="max-h-40 min-h-13 resize-none border-0 bg-transparent px-4 pt-3.5 shadow-none focus-visible:ring-0"
-                />
-                <div className="flex items-center justify-between px-3 pb-2.5">
-                    <ModelSwitcher
-                        selection={model}
-                        options={modelOptions}
-                        onSelect={onModelChange}
+                }}
+            >
+                <PromptInputBody>
+                    <PromptInputTextarea
+                        ref={inputRef}
+                        value={value}
+                        onChange={(e) => onChange(e.currentTarget.value)}
+                        disabled={model === null}
+                        placeholder={
+                            model === null
+                                ? t("chat.noModelPlaceholder")
+                                : t("chat.inputPlaceholder")
+                        }
+                        aria-label={t("chat.inputPlaceholder")}
                     />
-                    <div className="flex items-center gap-1">
-                        {streaming ? (
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="size-8 rounded-full"
-                                onClick={onStop}
-                                aria-label={t("chat.stop")}
-                            >
-                                <IconPlayerStopFilled className="size-3.5" />
-                            </Button>
-                        ) : (
-                            <Button
-                                size="icon"
-                                className={cn(
-                                    "size-8 rounded-full",
-                                    canSend
-                                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                        : "bg-secondary text-muted-foreground",
-                                )}
-                                onClick={onSend}
-                                disabled={!canSend}
-                                aria-label={t("chat.send")}
-                            >
-                                <IconArrowUp className="size-4" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
-            <p className="mx-auto max-w-3xl pt-2 text-center text-xs text-muted-foreground">
+                </PromptInputBody>
+                <PromptInputFooter>
+                    <PromptInputTools>
+                        <ModelSwitcher
+                            selection={model}
+                            options={modelOptions}
+                            onSelect={onModelChange}
+                        />
+                    </PromptInputTools>
+                    {streaming ? (
+                        <PromptInputSubmit
+                            status="streaming"
+                            type="button"
+                            onClick={onStop}
+                            aria-label={t("chat.stop")}
+                        />
+                    ) : (
+                        <PromptInputSubmit
+                            disabled={!canSend}
+                            aria-label={t("chat.send")}
+                        />
+                    )}
+                </PromptInputFooter>
+            </PromptInput>
+            <p className="text-center text-xs text-muted-foreground">
                 {model === null ? (
                     <>
                         {t("chat.noModelHint")}{" "}
-                        <Link
-                            to="/settings/providers"
-                            className="text-primary underline underline-offset-2"
+                        <Button
+                            variant="link"
+                            size="xs"
+                            nativeButton={false}
+                            render={<Link to="/settings/providers" />}
                         >
                             {t("chat.noModelAction")}
-                        </Link>
+                        </Button>
                     </>
                 ) : (
-                    <>
-                        {model.model} · {t("chat.disclaimer")}
-                    </>
+                    t("chat.disclaimer")
                 )}
             </p>
         </div>

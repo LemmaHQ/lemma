@@ -21,14 +21,14 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/app/` holds routing, pages, and the application shell; `src/features/<domain>/` holds each domain's components, store, and hooks.
 - `src/data/rpc/` creates the ConnectRPC clients and maps errors; `src/data/cache/` is the IndexedDB cache.
 - `src/platform/` selects the browser or desktop adapter; code outside it reaches desktop capabilities only through that adapter.
-- `src/components/ui/` holds shadcn components, added through the shadcn CLI.
+- `src/components/ui/` holds shadcn components and `src/components/ai-elements/` holds AI Elements chat components, both added through the shadcn CLI.
 - User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
 
 ## Styling
 
 - **Styling follows [web-styling.md](../docs/web-styling.md)** and radii follow [ui-radius.md](../docs/ui-radius.md). Feature code uses only the semantic utilities of the shadcn theme in `src/index.css`, with no hex color, no arbitrary value, and no `dark:` variant.
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes, and oxlint-tailwindcss rejects unknown, conflicting, deprecated, and hard-coded color classes, plus arbitrary values and `dark:` variants in `src/app/` and `src/features/`.
-- **Controls reuse `src/components/ui/`;** check its [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
+- **Controls reuse `src/components/ui/` and `src/components/ai-elements/`;** check the [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 

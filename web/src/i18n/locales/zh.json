@@ -36,8 +36,10 @@
         "noModelAction": "前往设置",
         "noModelHint": "先在设置中配置服务商与模型。",
         "noModelPlaceholder": "配置服务商与模型后开始对话…",
+        "noModelMatch": "没有匹配的模型",
         "noProvider": "暂无服务商",
         "regenerate": "重新生成",
+        "searchModel": "搜索模型…",
         "selectModel": "选择模型",
         "send": "发送",
         "stop": "停止生成",
@@ -48,9 +50,14 @@
         "thinkingInProgress": "正在思考…",
         "toolCall": {
             "arguments": "参数",
+            "awaitingApproval": "等待批准",
+            "denied": "已拒绝",
             "done": "已完成",
+            "error": "错误",
             "failed": "失败",
             "output": "输出",
+            "pending": "等待中",
+            "responded": "已响应",
             "running": "运行中"
         }
     },

@@ -1,4 +1,3 @@
-import { IconRobot } from "@tabler/icons-react";
 import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,8 +9,14 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorText } from "@/data/rpc/errors";
 import { useAuth } from "@/features/auth/store";
@@ -77,19 +82,14 @@ export function AuthCard() {
     };
 
     return (
-        <Card className="w-full max-w-95">
-            <CardHeader className="flex flex-col items-center gap-2 text-center">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-                    <IconRobot className="size-5" />
-                </div>
-                <CardTitle className="text-lg">
-                    {t("auth.productName")}
-                </CardTitle>
+        <Card className="w-full max-w-sm">
+            <CardHeader className="text-center">
+                <CardTitle>{t("auth.productName")}</CardTitle>
                 <CardDescription>{t("auth.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="login">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="w-full">
                         <TabsTrigger value="login">
                             {t("auth.loginTab")}
                         </TabsTrigger>
@@ -100,165 +100,164 @@ export function AuthCard() {
 
                     <TabsContent value="login">
                         <form
-                            className="flex flex-col gap-4 pt-4"
                             onSubmit={(event) => {
                                 void handleLogin(event);
                             }}
                         >
-                            <div className="grid gap-2">
-                                <Label htmlFor="login-identifier">
-                                    {t("auth.identifier")}
-                                </Label>
-                                <Input
-                                    id="login-identifier"
-                                    type="text"
-                                    autoComplete="username"
-                                    placeholder={t(
-                                        "auth.identifierPlaceholder",
-                                    )}
-                                    value={identifier}
-                                    onChange={(e) =>
-                                        setIdentifier(e.target.value)
-                                    }
-                                    required
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="login-password">
-                                    {t("auth.password")}
-                                </Label>
-                                <Input
-                                    id="login-password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    placeholder={t("auth.passwordPlaceholder")}
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    required
-                                />
-                            </div>
-                            {error !== "" && (
-                                <p className="text-xs text-destructive">
-                                    {error}
-                                </p>
-                            )}
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={busy}
-                            >
-                                {t("auth.signIn")}
-                            </Button>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel htmlFor="login-identifier">
+                                        {t("auth.identifier")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="login-identifier"
+                                        type="text"
+                                        autoComplete="username"
+                                        placeholder={t(
+                                            "auth.identifierPlaceholder",
+                                        )}
+                                        value={identifier}
+                                        onChange={(e) =>
+                                            setIdentifier(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="login-password">
+                                        {t("auth.password")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="login-password"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        placeholder={t(
+                                            "auth.passwordPlaceholder",
+                                        )}
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                {error !== "" && (
+                                    <FieldError>{error}</FieldError>
+                                )}
+                                <Field>
+                                    <Button type="submit" disabled={busy}>
+                                        {t("auth.signIn")}
+                                    </Button>
+                                </Field>
+                            </FieldGroup>
                         </form>
                     </TabsContent>
 
                     <TabsContent value="register">
                         <form
-                            className="flex flex-col gap-4 pt-4"
                             onSubmit={(event) => {
                                 void handleSignup(event);
                             }}
                         >
-                            <div className="grid gap-2">
-                                <Label htmlFor="register-username">
-                                    {t("auth.username")}
-                                </Label>
-                                <Input
-                                    id="register-username"
-                                    type="text"
-                                    autoComplete="username"
-                                    placeholder={t("auth.usernamePlaceholder")}
-                                    value={username}
-                                    onChange={(e) =>
-                                        setUsername(e.target.value)
-                                    }
-                                    required
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="register-email">
-                                    {t("auth.email")}
-                                </Label>
-                                <Input
-                                    id="register-email"
-                                    type="email"
-                                    autoComplete="email"
-                                    placeholder={t("auth.emailPlaceholder")}
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="register-password">
-                                    {t("auth.password")}
-                                </Label>
-                                <Input
-                                    id="register-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    placeholder={t("auth.passwordPlaceholder")}
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    required
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="register-confirm">
-                                    {t("auth.confirmPassword")}
-                                </Label>
-                                <Input
-                                    id="register-confirm"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    placeholder={t(
-                                        "auth.confirmPasswordPlaceholder",
-                                    )}
-                                    value={confirm}
-                                    onChange={(e) => setConfirm(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            {error !== "" && (
-                                <p className="text-xs text-destructive">
-                                    {error}
-                                </p>
-                            )}
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={busy}
-                            >
-                                {t("auth.createAccount")}
-                            </Button>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel htmlFor="register-username">
+                                        {t("auth.username")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="register-username"
+                                        type="text"
+                                        autoComplete="username"
+                                        placeholder={t(
+                                            "auth.usernamePlaceholder",
+                                        )}
+                                        value={username}
+                                        onChange={(e) =>
+                                            setUsername(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="register-email">
+                                        {t("auth.email")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="register-email"
+                                        type="email"
+                                        autoComplete="email"
+                                        placeholder={t("auth.emailPlaceholder")}
+                                        value={email}
+                                        onChange={(e) =>
+                                            setEmail(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="register-password">
+                                        {t("auth.password")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="register-password"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        placeholder={t(
+                                            "auth.passwordPlaceholder",
+                                        )}
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="register-confirm">
+                                        {t("auth.confirmPassword")}
+                                    </FieldLabel>
+                                    <Input
+                                        id="register-confirm"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        placeholder={t(
+                                            "auth.confirmPasswordPlaceholder",
+                                        )}
+                                        value={confirm}
+                                        onChange={(e) =>
+                                            setConfirm(e.target.value)
+                                        }
+                                        required
+                                    />
+                                </Field>
+                                {error !== "" && (
+                                    <FieldError>{error}</FieldError>
+                                )}
+                                <Field>
+                                    <Button type="submit" disabled={busy}>
+                                        {t("auth.createAccount")}
+                                    </Button>
+                                </Field>
+                            </FieldGroup>
                         </form>
                     </TabsContent>
                 </Tabs>
                 {platformAuth.canSkipAuth && (
-                    <div className="flex flex-col gap-4 pt-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-px flex-1 bg-border" />
-                            <span className="text-xs text-muted-foreground">
-                                {t("auth.orDivider")}
-                            </span>
-                            <div className="h-px flex-1 bg-border" />
-                        </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            disabled={busy}
-                            onClick={() => {
-                                void handleSkip();
-                            }}
-                        >
-                            {t("auth.skipDesktop")}
-                        </Button>
-                    </div>
+                    <FieldGroup className="pt-6">
+                        <FieldSeparator>{t("auth.orDivider")}</FieldSeparator>
+                        <Field>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={busy}
+                                onClick={() => {
+                                    void handleSkip();
+                                }}
+                            >
+                                {t("auth.skipDesktop")}
+                            </Button>
+                        </Field>
+                    </FieldGroup>
                 )}
             </CardContent>
         </Card>

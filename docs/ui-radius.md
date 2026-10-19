@@ -24,23 +24,24 @@ This reference defines the radius scale for `web/` and its component rules; the 
 
 ## Select the radius
 
-Choose the component role first. Height, width, label length, and wrapping do not select a larger radius: a taller instance of a role keeps the role's radius.
+The generated components in `web/src/components/ui/` and `web/src/components/ai-elements/` carry these radii; feature code composes them and sets no radius of its own. Choose the component role first when reviewing a generated component or adding one. Height, width, label length, and wrapping do not select a larger radius: a taller instance of a role keeps the role's radius.
 
-| Role                      | Members                                                                                           | Utility        | At the 10px base |
-| ------------------------- | ------------------------------------------------------------------------------------------------- | -------------- | ---------------- |
-| Small detail              | Inline code, menu and select items, tool-call argument and output blocks                          | `rounded-sm`   | 6px              |
-| Control or row            | Buttons, inputs, selects, tooltips, menus, session and settings rows, code blocks, tool panels    | `rounded-md`   | 8px              |
-| Pane or standalone chrome | Page canvas panels, alert dialogs, the tabs track, the new-chat button, the sidebar expand button | `rounded-lg`   | 10px             |
-| Content card              | Cards, user bubbles, the composer                                                                 | `rounded-xl`   | 14px             |
-| Circle or capsule         | Avatars, the switch, round icon buttons (send, stop), status dots                                 | `rounded-full` | 9999px           |
+| Role              | Members                                                                                                            | Utility                       | At the 10px base |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ---------------- |
+| Item or detail    | Menu, select, and command items; tab triggers, tooltips, code blocks, tool panels, tool argument and result blocks | `rounded-md`                  | 8px              |
+| Control           | Buttons, inputs, input groups including the composer, menus, popovers, the tabs track, user message bubbles        | `rounded-lg`                  | 10px             |
+| Surface           | Cards, dialogs, alert dialogs, the command palette behind the model selector, empty states                         | `rounded-xl`                  | 14px             |
+| Circle or capsule | Avatars, the switch, badges, suggestions                                                                           | `rounded-full`, `rounded-4xl` | fully round      |
+
+The `xs` and `sm` button sizes compute their radius as `min()` of `rounded-md` and a pixel cap, so short buttons take the item radius, 8px at the 10px base.
 
 <a id="shapes"></a>
 
 ## Reuse tokens and preserve deliberate shapes
 
-Reuse the controls in `web/src/components/ui/` before adding feature-owned geometry. Filled, outline, ghost, loading, and disabled variants keep the same radius; hover, pressed, selected, and focus states do not change it.
+Reuse the controls in `web/src/components/ui/` and `web/src/components/ai-elements/` before adding feature-owned geometry. Filled, outline, ghost, loading, and disabled variants keep the same radius; hover, pressed, selected, and focus states do not change it.
 
-Use the named utilities instead of arbitrary values such as `rounded-[10px]`. Drawing details, such as the streaming caret or the tooltip arrow, may keep their own small radius; they do not justify arbitrary radii on surrounding controls.
+Use the named utilities instead of arbitrary values such as `rounded-[10px]`; the generated components' `min()` and `calc()` radii are the exception. Drawing details, such as the tooltip arrow, may keep their own small radius; they do not justify arbitrary radii on surrounding controls.
 
 Keep circles and capsules for the members listed above. A small rectangular button does not become a capsule because it is short.
 

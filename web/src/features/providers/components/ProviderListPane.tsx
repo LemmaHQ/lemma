@@ -1,3 +1,4 @@
+import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     Collapsible,
@@ -11,8 +12,12 @@ import {
 } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
-import { cn } from "@/lib/utils";
-import { IconChevronDown, IconPlus, IconSearch } from "@tabler/icons-react";
+import {
+    IconChevronDown,
+    IconChevronRight,
+    IconPlus,
+    IconSearch,
+} from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -40,45 +45,40 @@ function ProviderGroup({
     }
     return (
         <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/60">
-                <IconChevronDown
-                    className={cn(
-                        "size-3.5 transition-transform",
-                        !open && "-rotate-90",
-                    )}
-                />
+            <CollapsibleTrigger
+                render={
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        className="w-full justify-start text-muted-foreground"
+                    />
+                }
+            >
+                {open ? <IconChevronDown /> : <IconChevronRight />}
                 {label}
                 <span className="ml-auto">{providers.length}</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-0.5">
                 {providers.map((provider) => (
-                    <button
+                    <Button
                         key={provider.id}
-                        type="button"
+                        variant={
+                            provider.id === selectedId ? "secondary" : "ghost"
+                        }
+                        className="w-full justify-start"
                         onClick={() => onSelect(provider.id)}
                         aria-pressed={provider.id === selectedId}
-                        className={cn(
-                            "flex w-full items-center gap-2.5 rounded-md p-2 text-left text-sm transition-colors",
-                            provider.id === selectedId
-                                ? "bg-accent"
-                                : "hover:bg-accent/60",
-                        )}
                     >
-                        <span className="grid size-7 shrink-0 place-items-center rounded-md border border-border bg-background text-xs font-semibold">
-                            {(provider.name === "" ? "?" : provider.name)
-                                .charAt(0)
-                                .toUpperCase()}
-                        </span>
-                        <span className="flex-1 truncate">{provider.name}</span>
-                        <span
-                            className={cn(
-                                "size-1.5 shrink-0 rounded-full",
-                                provider.enabled
-                                    ? "bg-primary"
-                                    : "bg-muted-foreground/40",
-                            )}
-                        />
-                    </button>
+                        <Avatar size="sm">
+                            <AvatarFallback>
+                                {(provider.name === "" ? "?" : provider.name)
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </AvatarFallback>
+                            {provider.enabled && <AvatarBadge />}
+                        </Avatar>
+                        <span className="truncate">{provider.name}</span>
+                    </Button>
                 ))}
             </CollapsibleContent>
         </Collapsible>

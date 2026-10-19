@@ -6,8 +6,8 @@ This reference defines styling ownership and component rules for `web/`, which i
 
 ## Ownership
 
-- [`web/src/index.css`](../web/src/index.css) owns the theme and the global styles. Its theme blocks are the shadcn CLI output for the preset in [`components.json`](../web/components.json): the neutral colors of both themes, the base `--radius`, and the Tailwind `@theme` mappings for colors, the heading font, and the radius scale. It also holds the base layer and the desktop titlebar rules. Type sizes, font stacks, motion, and shadows are Tailwind's defaults.
-- [`web/src/components/ui/`](../web/src/components/ui/README.md) owns the shared controls and their variants.
+- [`web/src/index.css`](../web/src/index.css) owns the theme and the global styles. Its theme blocks are the shadcn CLI output for the preset in [`components.json`](../web/components.json): the neutral colors of both themes, the base `--radius`, and the Tailwind `@theme` mappings for colors, the heading font, and the radius scale. It also holds the base layer, the desktop titlebar rules, and the Streamdown stylesheet import with the `@source` lines that let Tailwind see Streamdown's classes. Type sizes, font stacks, motion, and shadows are Tailwind's defaults.
+- [`web/src/components/ui/`](../web/src/components/ui/README.md) owns the shared controls and their variants; `web/src/components/ai-elements/` owns the chat components: the composer, messages, reasoning, tool calls, code blocks, and the model selector.
 - Feature code in `web/src/app/` and `web/src/features/` composes utilities and controls. It defines no global style and no theme.
 
 The theme is the `dark` class on `<html>`; without it the light theme applies. An inline script in `index.html` sets it before first paint, and `next-themes`, mounted in `App`, updates it when the preference or the system scheme changes.

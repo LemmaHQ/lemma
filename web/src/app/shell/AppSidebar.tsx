@@ -7,6 +7,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -110,9 +111,11 @@ export function AppSidebar({
                             <DropdownMenuTrigger
                                 render={<SidebarMenuButton size="lg" />}
                             >
-                                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs">
-                                    {username.charAt(0)}
-                                </span>
+                                <Avatar size="sm">
+                                    <AvatarFallback>
+                                        {username.charAt(0)}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <span className="min-w-0 flex-1 truncate">
                                     {username}
                                 </span>

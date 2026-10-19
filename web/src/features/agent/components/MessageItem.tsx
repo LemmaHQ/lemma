@@ -1,21 +1,73 @@
-import {
-    IconCheck,
-    IconCopy,
-    IconRefresh,
-    IconSparkles,
-} from "@tabler/icons-react";
+import { cjk } from "@streamdown/cjk";
+import { code } from "@streamdown/code";
+import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { MessageContent, ThinkingBlock, ToolCallCard } from "./MessageContent";
-import { Button } from "@/components/ui/button";
-import type { AgentItem } from "@/features/agent/store";
+import {
+    Message,
+    MessageAction,
+    MessageActions,
+    MessageContent,
+    MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+    Reasoning,
+    ReasoningContent,
+    ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
+import {
+    Tool,
+    ToolContent,
+    ToolHeader,
+    ToolInput,
+    ToolOutput,
+} from "@/components/ai-elements/tool";
+import type { AgentItem, ToolCallItem } from "@/features/agent/store";
+
+const STREAMDOWN_PLUGINS = { code, cjk };
 
 interface MessageItemProps {
     message: AgentItem;
     source?: string | undefined;
     canRegenerate?: boolean;
     onRegenerate?: (id: string) => void;
+}
+
+function parseArguments(text: string): unknown {
+    try {
+        const value: unknown = JSON.parse(text);
+        return value;
+    } catch {
+        return text;
+    }
+}
+
+function ToolCall({ call }: { call: ToolCallItem }) {
+    const state =
+        call.state === "running"
+            ? "input-available"
+            : call.isError
+              ? "output-error"
+              : "output-available";
+    return (
+        <Tool defaultOpen={call.state === "running"}>
+            <ToolHeader
+                title={call.name}
+                type={`tool-${call.name}`}
+                state={state}
+            />
+            <ToolContent>
+                <ToolInput input={parseArguments(call.arguments)} />
+                {call.state === "done" && (
+                    <ToolOutput
+                        output={call.isError ? undefined : call.output}
+                        errorText={call.isError ? call.output : undefined}
+                    />
+                )}
+            </ToolContent>
+        </Tool>
+    );
 }
 
 export function MessageItem({
@@ -35,11 +87,11 @@ export function MessageItem({
 
     if (message.role === "user") {
         return (
-            <div className="flex justify-end">
-                <div className="max-w-3/4 rounded-xl bg-muted px-4 py-2.5 text-sm wrap-break-word whitespace-pre-wrap">
+            <Message from="user">
+                <MessageContent className="whitespace-pre-wrap">
                     {message.content}
-                </div>
-            </div>
+                </MessageContent>
+            </Message>
         );
     }
 
@@ -50,86 +102,75 @@ export function MessageItem({
     };
 
     return (
-        <div className="flex gap-3">
-            <div className="grid size-7 shrink-0 place-items-center rounded-full bg-foreground text-background">
-                <IconSparkles className="size-3.5" />
-            </div>
-            <div className="min-w-0 flex-1">
+        <Message from="assistant">
+            <MessageContent>
                 {message.thinking !== "" && (
-                    <ThinkingBlock
-                        thinking={message.thinking}
-                        streaming={streaming}
-                    />
+                    <Reasoning
+                        isStreaming={streaming && message.content === ""}
+                        defaultOpen={streaming}
+                    >
+                        <ReasoningTrigger
+                            getThinkingMessage={(thinking) =>
+                                thinking
+                                    ? t("chat.thinkingInProgress")
+                                    : t("chat.thinking")
+                            }
+                        />
+                        <ReasoningContent>{message.thinking}</ReasoningContent>
+                    </Reasoning>
                 )}
-                <MessageContent content={message.content} />
-                {message.toolCalls.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                        {message.toolCalls.map((call) => (
-                            <ToolCallCard key={call.id} call={call} />
-                        ))}
-                    </div>
-                )}
-                {streaming && (
-                    // oxlint-disable-next-line tailwindcss/no-arbitrary-value -- ui-radius.md lets the streaming caret keep its own small radius
-                    <span className="mt-1 inline-block h-4 w-1.75 animate-pulse rounded-[1px] bg-foreground/70 align-text-bottom" />
-                )}
+                <MessageResponse
+                    plugins={STREAMDOWN_PLUGINS}
+                    isAnimating={streaming}
+                    caret="block"
+                >
+                    {message.content}
+                </MessageResponse>
+                {message.toolCalls.map((call) => (
+                    <ToolCall key={call.id} call={call} />
+                ))}
                 {message.status === "error" && (
-                    <div className="mt-2 space-y-1">
-                        <p className="text-sm text-destructive">
-                            {t("errors.agentFailed")}
-                        </p>
+                    <p className="text-destructive">
+                        {t("errors.agentFailed")}
                         {message.error !== undefined &&
                             message.error !== "" && (
-                                <p className="text-xs wrap-break-word text-muted-foreground">
+                                <span className="block text-xs text-muted-foreground">
                                     {message.error}
-                                </p>
+                                </span>
                             )}
-                    </div>
+                    </p>
                 )}
                 {message.status === "aborted" && (
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                         {t("chat.abortedNotice")}
                     </p>
                 )}
-                {!streaming && source !== undefined && source !== "" && (
-                    <p className="mt-3 text-xs text-muted-foreground">
-                        {source}
-                    </p>
-                )}
-                {!streaming && (
-                    <div className="mt-2 flex gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="size-7 text-muted-foreground"
-                            onClick={() => {
-                                void handleCopy();
-                            }}
-                            aria-label={
-                                copied ? t("chat.copied") : t("chat.copy")
-                            }
+            </MessageContent>
+            {!streaming && (
+                <MessageActions>
+                    <MessageAction
+                        tooltip={copied ? t("chat.copied") : t("chat.copy")}
+                        onClick={() => {
+                            void handleCopy();
+                        }}
+                    >
+                        {copied ? <IconCheck /> : <IconCopy />}
+                    </MessageAction>
+                    {canRegenerate === true && onRegenerate !== undefined && (
+                        <MessageAction
+                            tooltip={t("chat.regenerate")}
+                            onClick={() => onRegenerate(message.id)}
                         >
-                            {copied ? (
-                                <IconCheck className="size-3.5" />
-                            ) : (
-                                <IconCopy className="size-3.5" />
-                            )}
-                        </Button>
-                        {canRegenerate === true &&
-                            onRegenerate !== undefined && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    className="size-7 text-muted-foreground"
-                                    onClick={() => onRegenerate(message.id)}
-                                    aria-label={t("chat.regenerate")}
-                                >
-                                    <IconRefresh className="size-3.5" />
-                                </Button>
-                            )}
-                    </div>
-                )}
-            </div>
-        </div>
+                            <IconRefresh />
+                        </MessageAction>
+                    )}
+                    {source !== undefined && source !== "" && (
+                        <span className="text-xs text-muted-foreground">
+                            {source}
+                        </span>
+                    )}
+                </MessageActions>
+            )}
+        </Message>
     );
 }

@@ -21,14 +21,14 @@
 - `src/app/` 存放路由、页面与应用外壳；`src/features/<domain>/` 存放各领域的组件、store 与 hook。
 - `src/data/rpc/` 创建 ConnectRPC 客户端并映射错误；`src/data/cache/` 是 IndexedDB 缓存。
 - `src/platform/` 选择浏览器或桌面适配器；它之外的代码只通过该适配器使用桌面能力。
-- `src/components/ui/` 存放 shadcn 组件，通过 shadcn CLI 添加。
+- `src/components/ui/` 存放 shadcn 组件，`src/components/ai-elements/` 存放 AI Elements 聊天组件，两者都通过 shadcn CLI 添加。
 - 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。
 
 ## 样式
 
 - **样式遵循 [web-styling.md](../docs/web-styling.zh.md)**，圆角遵循 [ui-radius.md](../docs/ui-radius.zh.md)。功能代码只使用 `src/index.css` 中 shadcn 主题的语义工具类，不写十六进制颜色、任意值或 `dark:` 变体。
 - **工具负责执行类名规则：** Prettier 对 Tailwind 类名排序；oxlint-tailwindcss 拒绝未知、冲突、已弃用与硬编码颜色的类名，并在 `src/app/` 与 `src/features/` 中拒绝任意值与 `dark:` 变体。
-- **控件复用 `src/components/ui/`；** 先查阅其[组件目录](src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
+- **控件复用 `src/components/ui/` 与 `src/components/ai-elements/`；** 先查阅[组件目录](src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
 
 ## 生成文件
 

@@ -36,8 +36,10 @@
         "noModelAction": "Open settings",
         "noModelHint": "Set up a provider and model in Settings first.",
         "noModelPlaceholder": "Configure a provider and model to start chatting…",
+        "noModelMatch": "No matching models",
         "noProvider": "No provider",
         "regenerate": "Regenerate",
+        "searchModel": "Search models…",
         "selectModel": "Select model",
         "send": "Send",
         "stop": "Stop generating",
@@ -48,9 +50,14 @@
         "thinkingInProgress": "Thinking…",
         "toolCall": {
             "arguments": "Arguments",
+            "awaitingApproval": "Awaiting approval",
+            "denied": "Denied",
             "done": "Done",
+            "error": "Error",
             "failed": "Failed",
             "output": "Output",
+            "pending": "Pending",
+            "responded": "Responded",
             "running": "Running"
         }
     },

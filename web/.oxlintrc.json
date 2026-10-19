@@ -1,7 +1,11 @@
 {
     "$schema": "../node_modules/oxlint/configuration_schema.json",
     "extends": ["../.oxlintrc.json"],
-    "ignorePatterns": ["src/components/ui/**", "src/lib/hooks/use-mobile.ts"],
+    "ignorePatterns": [
+        "src/components/ui/**",
+        "src/components/ai-elements/**",
+        "src/lib/hooks/use-mobile.ts"
+    ],
     "plugins": [
         "typescript",
         "unicorn",

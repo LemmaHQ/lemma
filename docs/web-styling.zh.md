@@ -6,8 +6,8 @@
 
 ## 归属
 
-- [`web/src/index.css`](../web/src/index.css) 拥有主题与全局样式。其中的主题块是 shadcn CLI 按 [`components.json`](../web/components.json) 中的预设写出的结果：两套主题的中性色、基础 `--radius`，以及颜色、标题字体与圆角刻度的 Tailwind `@theme` 映射。它还包含基础层与桌面端标题栏规则。字号、字体栈、动效与阴影使用 Tailwind 默认值。
-- [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体。
+- [`web/src/index.css`](../web/src/index.css) 拥有主题与全局样式。其中的主题块是 shadcn CLI 按 [`components.json`](../web/components.json) 中的预设写出的结果：两套主题的中性色、基础 `--radius`，以及颜色、标题字体与圆角刻度的 Tailwind `@theme` 映射。它还包含基础层、桌面端标题栏规则，以及 Streamdown 样式表的导入和让 Tailwind 扫描到 Streamdown 类名的 `@source` 行。字号、字体栈、动效与阴影使用 Tailwind 默认值。
+- [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体；`web/src/components/ai-elements/` 拥有聊天组件：输入框面板、消息、推理过程、工具调用、代码块与模型选择器。
 - `web/src/app/` 与 `web/src/features/` 中的功能代码组合工具类与控件，不定义全局样式，也不定义主题。
 
 主题是 `<html>` 上的 `dark` 类；没有该类时使用亮色主题。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由挂载在 `App` 中的 `next-themes` 更新。

@@ -223,17 +223,19 @@ export function ChatPage() {
                             onPickSuggestion={handlePickSuggestion}
                             onRegenerate={handleRegenerate}
                         />
-                        <ChatComposer
-                            value={draft}
-                            onChange={setDraft}
-                            onSend={handleSend}
-                            onStop={handleStop}
-                            streaming={chat.streaming}
-                            model={model}
-                            modelOptions={modelOptions}
-                            onModelChange={selectModel}
-                            inputRef={inputRef}
-                        />
+                        <div className="mx-auto w-full max-w-3xl px-6 pb-6">
+                            <ChatComposer
+                                value={draft}
+                                onChange={setDraft}
+                                onSend={handleSend}
+                                onStop={handleStop}
+                                streaming={chat.streaming}
+                                model={model}
+                                modelOptions={modelOptions}
+                                onModelChange={selectModel}
+                                inputRef={inputRef}
+                            />
+                        </div>
                     </>
                 )}
             </SidebarInset>
