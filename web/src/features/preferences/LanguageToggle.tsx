@@ -1,4 +1,4 @@
-import { Languages } from "lucide-react";
+import { IconLanguage } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -19,27 +19,31 @@ export function LanguageToggle() {
     return (
         <DropdownMenu>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t("language.toggle")}
-                        >
-                            <Languages className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
+                <TooltipTrigger
+                    render={
+                        <DropdownMenuTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("language.toggle")}
+                                />
+                            }
+                        />
+                    }
+                >
+                    <IconLanguage />
                 </TooltipTrigger>
                 <TooltipContent>{t("language.toggle")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                    onSelect={() => void i18n.changeLanguage("zh")}
+                    onClick={() => void i18n.changeLanguage("zh")}
                 >
                     中文
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                    onSelect={() => void i18n.changeLanguage("en")}
+                    onClick={() => void i18n.changeLanguage("en")}
                 >
                     English
                 </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { MessageSquare } from "lucide-react";
+import { IconMessage } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 const SUGGESTION_KEYS = [
@@ -16,9 +16,9 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
 
     return (
         <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-            <MessageSquare
+            <IconMessage
                 className="size-8 text-muted-foreground/50"
-                strokeWidth={1.5}
+                stroke={1.5}
             />
             <h1 className="text-xl font-medium">{t("chat.emptyTitle")}</h1>
             <p className="text-sm text-muted-foreground">

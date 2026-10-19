@@ -1,4 +1,5 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -13,42 +14,49 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useThemePreference } from "@/features/preferences/theme";
 
 export function ThemeToggle() {
     const { t } = useTranslation();
-    const [preference, select] = useThemePreference();
+    const { theme, setTheme } = useTheme();
 
     const Icon =
-        preference === "light" ? Sun : preference === "dark" ? Moon : Monitor;
+        theme === "light"
+            ? IconSun
+            : theme === "dark"
+              ? IconMoon
+              : IconDeviceDesktop;
 
     return (
         <DropdownMenu>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t("theme.toggle")}
-                        >
-                            <Icon className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
+                <TooltipTrigger
+                    render={
+                        <DropdownMenuTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("theme.toggle")}
+                                />
+                            }
+                        />
+                    }
+                >
+                    <Icon />
                 </TooltipTrigger>
                 <TooltipContent>{t("theme.toggle")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => select("light")}>
-                    <Sun className="size-4" />
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <IconSun />
                     {t("theme.light")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => select("dark")}>
-                    <Moon className="size-4" />
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <IconMoon />
                     {t("theme.dark")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => select("system")}>
-                    <Monitor className="size-4" />
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <IconDeviceDesktop />
                     {t("theme.system")}
                 </DropdownMenuItem>
             </DropdownMenuContent>

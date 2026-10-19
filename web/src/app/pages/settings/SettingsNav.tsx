@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Bot, Palette } from "lucide-react";
+import { IconArrowLeft, IconPalette, IconRobot } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink } from "react-router";
 
@@ -55,7 +55,7 @@ export function SettingsNav() {
                     aria-label={t("settings.backToHome")}
                     className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
                 >
-                    <ArrowLeft className="size-4" />
+                    <IconArrowLeft className="size-4" />
                 </Link>
                 <h1 className="text-sm font-semibold text-sidebar-foreground">
                     {t("settings.title")}
@@ -64,14 +64,14 @@ export function SettingsNav() {
             <nav className="flex flex-col gap-0.5">
                 <NavGroup label={t("settings.groupGeneral")}>
                     <NavItem
-                        icon={Palette}
+                        icon={IconPalette}
                         label={t("settings.appearance")}
                         to="/settings/appearance"
                     />
                 </NavGroup>
                 <NavGroup label={t("settings.groupAgent")}>
                     <NavItem
-                        icon={Bot}
+                        icon={IconRobot}
                         label={t("settings.aiProviders")}
                         to="/settings/providers"
                     />

@@ -260,7 +260,7 @@ function generateWebCss(tokens: TokenMap): string {
     const themeLines = group(tokens, `${light}.color`).map(
         ([key]) => `    --color-${key}: var(--${key});`,
     );
-    themeLines.push("");
+    themeLines.push("", "    --font-heading: var(--font-sans);", "");
     for (const [step, factor] of RADIUS_SCALE) {
         themeLines.push(
             `    --radius-${step}: ${factor === 1 ? "var(--radius)" : `calc(var(--radius) * ${factor})`};`,

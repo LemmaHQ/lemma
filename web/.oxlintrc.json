@@ -1,6 +1,7 @@
 {
     "$schema": "../node_modules/oxlint/configuration_schema.json",
     "extends": ["../.oxlintrc.json"],
+    "ignorePatterns": ["src/components/ui/**"],
     "plugins": [
         "typescript",
         "unicorn",
@@ -56,12 +57,6 @@
         "tailwindcss/no-hardcoded-colors": "error"
     },
     "overrides": [
-        {
-            "files": ["src/components/ui/**"],
-            "rules": {
-                "react/only-export-components": "off"
-            }
-        },
         {
             "files": ["src/app/**", "src/features/**"],
             "rules": {

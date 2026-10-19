@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from "lucide-react";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +47,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const [busy, setBusy] = useState(false);
     const [failed, setFailed] = useState<string | null>(null);
 
-    const handleKindChange = (value: string) => {
+    const handleKindChange = (value: string | null) => {
         const option = KIND_OPTIONS.find((o) => o.value === value);
         if (option === undefined) {
             return;
@@ -164,9 +164,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                             className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {showKey ? (
-                                <EyeOff className="size-4" />
+                                <IconEyeOff className="size-4" />
                             ) : (
-                                <Eye className="size-4" />
+                                <IconEye className="size-4" />
                             )}
                         </button>
                     </div>

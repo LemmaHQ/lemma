@@ -24,7 +24,7 @@ Semantic aliases come in two layers: a feature reads `muted-foreground`, and the
 
 | Output | Consumer | Contents |
 | --- | --- | --- |
-| `web/src/styles/tokens.css` | Web client and desktop renderer | Semantic colors and shadows as CSS variables on `:root` and `.dark`, the base `--radius`, and the Tailwind `@theme` mappings for colors, the radius scale, and shadows |
+| `web/src/styles/tokens.css` | Web client and desktop renderer | Semantic colors and shadows as CSS variables on `:root` and `.dark`, the base `--radius`, and the Tailwind `@theme` mappings for colors, the heading font, the radius scale, and shadows |
 | `desktop/src/gen/design-tokens.ts` | Electron main process | `themeColors`: the semantic colors of each theme, for the titlebar overlay and the window background |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android app | `LemmaPalette`: the static palette as Compose `Color` values; `theme/Scheme.kt` maps it onto the app's color roles |
 

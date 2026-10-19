@@ -11,7 +11,7 @@ This reference defines styling ownership and component rules for `web/`, which i
 - [`web/src/components/ui/`](../web/src/components/ui/README.md) owns the shared controls and their variants.
 - Feature code in `web/src/app/` and `web/src/features/` composes utilities and controls. It defines no global style and no theme.
 
-The theme is the `dark` class on `<html>`; without it the light theme applies. An inline script in `index.html` sets it before first paint, and `features/preferences/theme.ts` updates it when the preference or the system scheme changes.
+The theme is the `dark` class on `<html>`; without it the light theme applies. An inline script in `index.html` sets it before first paint, and `next-themes`, mounted in `App`, updates it when the preference or the system scheme changes.
 
 ## Styling stack
 
@@ -20,14 +20,14 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 | Principle | Lemma form |
 | --- | --- |
 | Components consume semantic tokens, never palette values or literal colors | Semantic utilities generated from the tokens: `bg-card`, `text-muted-foreground`, `border-border`, `rounded-md` |
-| Light and dark overrides belong to the theme owner | `tokens.css` holds both themes; no `dark:` variant appears in feature code or in `components/ui/` |
+| Light and dark overrides belong to the theme owner | `tokens.css` holds both themes; no `dark:` variant appears in feature code |
 | Shared controls live in one catalog | shadcn components in `components/ui/`, combined with `cn()` |
 | Hover styles apply only to hover-capable pointers | Tailwind v4 already compiles `hover:` inside `@media (hover: hover)` |
 
 ## Component rules
 
 - Reuse the control before restyling one: check the [component catalog](../web/src/components/ui/README.md#component-catalog). A visual difference that more than one feature needs becomes a variant of the shared component, not a second copy.
-- Use semantic utilities only. Do not write hex colors, palette values, or arbitrary values such as `bg-[#fff]`, `text-[13px]`, or `w-[372px]`. Arbitrary values are limited to geometry no scale step expresses, such as Radix CSS variables (`origin-(--radix-…)`) and `calc()` over theme values.
+- Use semantic utilities only. Do not write hex colors, palette values, or arbitrary values such as `bg-[#fff]`, `text-[13px]`, or `w-[372px]`. Arbitrary values are limited to geometry no scale step expresses, such as Base UI CSS variables (`origin-(--transform-origin)`) and `calc()` over theme values.
 - Do not write `dark:`. A difference between themes is a semantic token with different light and dark values.
 - Use Tailwind's type scale (`text-xs`, `text-sm`, `text-xl`); each size carries its line height. Use weights 400 and 500 only (`font-normal`, `font-medium`); hierarchy comes from size, weight, and the two text colors, not from more grays or heavier weights.
 - Keep keyboard focus visible: interactive elements show the `ring` color on `focus-visible`.
@@ -35,9 +35,9 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 - Transitions use Tailwind's duration and easing utilities and respect reduced motion: wrap movement in `motion-safe:` or remove it under `motion-reduce:`.
 - Flat surfaces separate by hairline borders: neutral borders (`border-border`, `border-input`) draw at 0.5px. Dashed affordances and state-colored borders keep 1px.
 - Elevated surfaces (menus, selects, alert dialogs, the composer) take an elevation shadow: `shadow-md`, or `shadow-composer` for the composer.
-- Dropdown menus and select lists use the translucent menu material owned by `styles/theme.css`, the popover color plus a backdrop blur; feature code does not override it. Alert dialog masks stay dark and translucent without blur.
+- Dropdown menus and select lists use the translucent menu of the shadcn `default-translucent` menu style, the popover color plus a backdrop blur; feature code does not override it.
 - Rounded corners use the superellipse curve where the engine supports `corner-shape`; full-round shapes pair `rounded-full` with `corner-shape: round`.
-- Icons come from Lucide at `size-4`, `size-3.5` in dense rows, and `size-3` for sidebar inline actions. Every icon-only button has an accessible name and a `Tooltip`, not a `title` attribute.
+- Icons come from Tabler. Inside shared controls they take the control's default size; elsewhere use `size-4`, `size-3.5` in dense rows, and `size-3` for sidebar inline actions. Every icon-only button has an accessible name and a `Tooltip`, not a `title` attribute.
 
 ## Visual system
 

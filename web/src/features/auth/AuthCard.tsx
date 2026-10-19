@@ -1,4 +1,4 @@
-import { Bot } from "lucide-react";
+import { IconRobot } from "@tabler/icons-react";
 import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -80,7 +80,7 @@ export function AuthCard() {
         <Card className="w-full max-w-95">
             <CardHeader className="flex flex-col items-center gap-2 text-center">
                 <div className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-                    <Bot className="size-5" />
+                    <IconRobot className="size-5" />
                 </div>
                 <CardTitle className="text-lg">
                     {t("auth.productName")}

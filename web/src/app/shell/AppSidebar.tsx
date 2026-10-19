@@ -1,4 +1,10 @@
-import { ChevronDown, LogOut, PanelLeft, Plus, Settings } from "lucide-react";
+import {
+    IconChevronDown,
+    IconLayoutSidebar,
+    IconLogout,
+    IconPlus,
+    IconSettings,
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
@@ -57,7 +63,7 @@ export function AppSidebar({
                     aria-label={t("sidebar.collapse")}
                     title={t("sidebar.collapse")}
                 >
-                    <PanelLeft className="size-4" />
+                    <IconLayoutSidebar />
                 </Button>
             </div>
 
@@ -67,7 +73,7 @@ export function AppSidebar({
                     onClick={onGoHome}
                     className="flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-sm transition-colors hover:bg-accent"
                 >
-                    <Plus className="size-4" />
+                    <IconPlus className="size-4" />
                     {t("sidebar.newChat")}
                 </button>
             </div>
@@ -85,19 +91,14 @@ export function AppSidebar({
 
             <div className="flex items-center gap-2 border-t border-sidebar-border p-3">
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button
-                            type="button"
-                            className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 transition-colors hover:bg-sidebar-accent"
-                        >
-                            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs">
-                                {username.charAt(0)}
-                            </span>
-                            <span className="flex-1 truncate text-left text-sm">
-                                {username}
-                            </span>
-                            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-                        </button>
+                    <DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 transition-colors hover:bg-sidebar-accent">
+                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs">
+                            {username.charAt(0)}
+                        </span>
+                        <span className="flex-1 truncate text-left text-sm">
+                            {username}
+                        </span>
+                        <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="start"
@@ -108,18 +109,16 @@ export function AppSidebar({
                             <p className="text-sm font-medium">{username}</p>
                         </div>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link to="/settings">
-                                <Settings className="size-4" />
-                                {t("sidebar.appSettings")}
-                            </Link>
+                        <DropdownMenuItem render={<Link to="/settings" />}>
+                            <IconSettings />
+                            {t("sidebar.appSettings")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => {
                                 void logout();
                             }}
                         >
-                            <LogOut className="size-4" />
+                            <IconLogout />
                             {t("sidebar.signOut")}
                         </DropdownMenuItem>
                     </DropdownMenuContent>

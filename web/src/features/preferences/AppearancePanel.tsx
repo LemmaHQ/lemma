@@ -1,12 +1,13 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useThemePreference } from "@/features/preferences/theme";
+import { isThemePreference } from "@/features/preferences/theme";
 
 export function AppearancePanel() {
     const { i18n, t } = useTranslation();
-    const [preference, select] = useThemePreference();
+    const { theme, setTheme } = useTheme();
 
     return (
         <div className="max-w-3xl px-8 py-6">
@@ -23,16 +24,11 @@ export function AppearancePanel() {
                     </p>
                 </div>
                 <ToggleGroup
-                    type="single"
                     variant="outline"
-                    value={preference}
-                    onValueChange={(value) => {
-                        if (
-                            value === "light" ||
-                            value === "dark" ||
-                            value === "system"
-                        ) {
-                            select(value);
+                    value={isThemePreference(theme) ? [theme] : []}
+                    onValueChange={([value]) => {
+                        if (isThemePreference(value)) {
+                            setTheme(value);
                         }
                     }}
                     aria-label={t("settings.themeLabel")}
@@ -41,18 +37,18 @@ export function AppearancePanel() {
                         value="light"
                         aria-label={t("theme.light")}
                     >
-                        <Sun className="size-4" />
+                        <IconSun />
                         {t("theme.light")}
                     </ToggleGroupItem>
                     <ToggleGroupItem value="dark" aria-label={t("theme.dark")}>
-                        <Moon className="size-4" />
+                        <IconMoon />
                         {t("theme.dark")}
                     </ToggleGroupItem>
                     <ToggleGroupItem
                         value="system"
                         aria-label={t("theme.system")}
                     >
-                        <Monitor className="size-4" />
+                        <IconDeviceDesktop />
                         {t("theme.system")}
                     </ToggleGroupItem>
                 </ToggleGroup>
@@ -67,10 +63,9 @@ export function AppearancePanel() {
                     </p>
                 </div>
                 <ToggleGroup
-                    type="single"
                     variant="outline"
-                    value={i18n.language.startsWith("zh") ? "zh" : "en"}
-                    onValueChange={(value) => {
+                    value={[i18n.language.startsWith("zh") ? "zh" : "en"]}
+                    onValueChange={([value]) => {
                         if (value === "zh" || value === "en") {
                             void i18n.changeLanguage(value);
                         }

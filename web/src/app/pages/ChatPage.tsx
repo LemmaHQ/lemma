@@ -1,5 +1,5 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
-import { PanelLeft } from "lucide-react";
+import { IconLayoutSidebar } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
@@ -219,7 +219,7 @@ export function ChatPage() {
                                         aria-label={t("sidebar.expand")}
                                         title={t("sidebar.expand")}
                                     >
-                                        <PanelLeft className="size-4" />
+                                        <IconLayoutSidebar className="size-4" />
                                     </Button>
                                 )}
                                 <span className="truncate text-sm font-medium text-foreground">
@@ -241,7 +241,7 @@ export function ChatPage() {
                                 aria-label={t("sidebar.expand")}
                                 title={t("sidebar.expand")}
                             >
-                                <PanelLeft className="size-4" />
+                                <IconLayoutSidebar className="size-4" />
                             </Button>
                         </div>
                     )}

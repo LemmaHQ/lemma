@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Trash2 } from "lucide-react";
+import { IconEye, IconEyeOff, IconLock, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -135,16 +135,18 @@ export function ProviderDetail({
                 <h2 className="text-base font-semibold">{provider.name}</h2>
                 <div className="ml-auto flex items-center gap-3">
                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                aria-label={t("providers.deleteProvider")}
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
+                        <AlertDialogTrigger
+                            render={
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-muted-foreground hover:text-destructive"
+                                    aria-label={t("providers.deleteProvider")}
+                                />
+                            }
+                        >
+                            <IconTrash className="size-4" />
                         </AlertDialogTrigger>
                         <AlertDialogContent size="sm">
                             <AlertDialogHeader>
@@ -232,9 +234,9 @@ export function ProviderDetail({
                             className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {showKey ? (
-                                <EyeOff className="size-4" />
+                                <IconEyeOff className="size-4" />
                             ) : (
-                                <Eye className="size-4" />
+                                <IconEye className="size-4" />
                             )}
                         </button>
                     </div>
@@ -273,7 +275,7 @@ export function ProviderDetail({
                 )}
 
                 <p className="flex items-center gap-1.5 pt-4 text-xs text-muted-foreground">
-                    <Lock className="size-3.5" />
+                    <IconLock className="size-3.5" />
                     {t("providers.securityNote")}
                 </p>
             </section>

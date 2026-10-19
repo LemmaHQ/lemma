@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -29,21 +29,23 @@ export function ModelSwitcher({
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="h-7 px-2 text-xs text-muted-foreground"
-                    aria-label={t("chat.selectModel")}
-                    title={t("chat.selectModel")}
-                    disabled={options.length === 0}
-                >
-                    <span className="max-w-56 truncate font-mono">
-                        {selection === null
-                            ? t("chat.noProvider")
-                            : selection.model}
-                    </span>
-                    <ChevronDown className="size-3" />
-                </Button>
+            <DropdownMenuTrigger
+                render={
+                    <Button
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-muted-foreground"
+                        aria-label={t("chat.selectModel")}
+                        title={t("chat.selectModel")}
+                        disabled={options.length === 0}
+                    />
+                }
+            >
+                <span className="max-w-56 truncate font-mono">
+                    {selection === null
+                        ? t("chat.noProvider")
+                        : selection.model}
+                </span>
+                <IconChevronDown className="size-3" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
                 {options.map((o) => (

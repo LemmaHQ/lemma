@@ -1,4 +1,10 @@
-import { Check, ChevronRight, Copy, Loader2, Wrench } from "lucide-react";
+import {
+    IconCheck,
+    IconChevronRight,
+    IconCopy,
+    IconLoader2,
+    IconTool,
+} from "@tabler/icons-react";
 import {
     type ComponentProps,
     isValidElement,
@@ -64,9 +70,9 @@ function CodeBlock({ children }: { children?: ReactNode }) {
                     aria-label={copied ? t("chat.copied") : t("chat.copy")}
                 >
                     {copied ? (
-                        <Check className="size-3.5" />
+                        <IconCheck className="size-3.5" />
                     ) : (
-                        <Copy className="size-3.5" />
+                        <IconCopy className="size-3.5" />
                     )}
                 </Button>
             </div>
@@ -151,7 +157,7 @@ export function ThinkingBlock({ thinking, streaming }: ThinkingBlockProps) {
             className="mb-3 overflow-hidden rounded-md border border-border"
         >
             <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
-                <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+                <IconChevronRight className="size-3 transition-transform group-data-panel-open:rotate-90" />
                 {streaming ? t("chat.thinkingInProgress") : t("chat.thinking")}
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -178,12 +184,12 @@ export function ToolCallCard({ call }: ToolCallCardProps) {
             className="overflow-hidden rounded-md border border-border"
         >
             <CollapsibleTrigger className="group flex w-full items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
-                <ChevronRight className="size-3 shrink-0 transition-transform group-data-[state=open]:rotate-90" />
-                <Wrench className="size-3 shrink-0" />
+                <IconChevronRight className="size-3 shrink-0 transition-transform group-data-panel-open:rotate-90" />
+                <IconTool className="size-3 shrink-0" />
                 <span className="truncate font-mono">{call.name}</span>
                 {call.state === "running" ? (
                     <span className="ml-auto flex shrink-0 items-center gap-1">
-                        <Loader2 className="size-3 animate-spin" />
+                        <IconLoader2 className="size-3 animate-spin" />
                         {t("chat.toolCall.running")}
                     </span>
                 ) : call.isError ? (

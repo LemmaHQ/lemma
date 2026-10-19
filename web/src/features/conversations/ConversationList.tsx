@@ -1,4 +1,10 @@
-import { Archive, ChevronRight, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import {
+    IconArchive,
+    IconChevronRight,
+    IconPencil,
+    IconRestore,
+    IconTrash,
+} from "@tabler/icons-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -102,7 +108,7 @@ function SessionRow({
                     }}
                     className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
                 >
-                    <Pencil className="size-3" />
+                    <IconPencil className="size-3" />
                 </button>
                 <button
                     type="button"
@@ -114,7 +120,7 @@ function SessionRow({
                     }}
                     className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
                 >
-                    <Archive className="size-3.5" />
+                    <IconArchive className="size-3.5" />
                 </button>
             </span>
         </div>
@@ -145,7 +151,7 @@ function ArchivedRow({
                     onClick={() => onRestore(session.id)}
                     className="grid size-5 place-items-center rounded text-muted-foreground hover:text-foreground"
                 >
-                    <RotateCcw className="size-3" />
+                    <IconRestore className="size-3" />
                 </button>
                 <button
                     type="button"
@@ -154,7 +160,7 @@ function ArchivedRow({
                     onClick={() => onDelete(session.id)}
                     className="grid size-5 place-items-center rounded text-muted-foreground hover:text-destructive"
                 >
-                    <Trash2 className="size-3.5" />
+                    <IconTrash className="size-3.5" />
                 </button>
             </span>
         </div>
@@ -199,7 +205,7 @@ export function ConversationList({
             {archived.length > 0 && (
                 <Collapsible>
                     <CollapsibleTrigger className="group flex w-full items-center gap-1 px-3 pt-4 pb-1 text-xs text-muted-foreground">
-                        <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+                        <IconChevronRight className="size-3 transition-transform group-data-panel-open:rotate-90" />
                         {t("sessions.archived")} ({archived.length})
                     </CollapsibleTrigger>
                     <CollapsibleContent>

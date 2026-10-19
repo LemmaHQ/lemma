@@ -24,7 +24,7 @@
 
 | 输出 | 使用方 | 内容 |
 | --- | --- | --- |
-| `web/src/styles/tokens.css` | Web 客户端与桌面端渲染层 | `:root` 与 `.dark` 上作为 CSS 变量的语义颜色与阴影、基础 `--radius`，以及颜色、圆角刻度与阴影的 Tailwind `@theme` 映射 |
+| `web/src/styles/tokens.css` | Web 客户端与桌面端渲染层 | `:root` 与 `.dark` 上作为 CSS 变量的语义颜色与阴影、基础 `--radius`，以及颜色、标题字体、圆角刻度与阴影的 Tailwind `@theme` 映射 |
 | `desktop/src/gen/design-tokens.ts` | Electron 主进程 | `themeColors`：各主题的语义颜色，供标题栏覆盖层与窗口背景使用 |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Android 应用 | `LemmaPalette`：以 Compose `Color` 表示的静态色板；`theme/Scheme.kt` 把它映射到应用的颜色角色 |
 

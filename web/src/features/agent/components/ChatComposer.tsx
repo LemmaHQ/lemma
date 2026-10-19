@@ -1,4 +1,4 @@
-import { ArrowUp, Square } from "lucide-react";
+import { IconArrowUp, IconPlayerStopFilled } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -100,7 +100,7 @@ export function ChatComposer({
                                 onClick={onStop}
                                 aria-label={t("chat.stop")}
                             >
-                                <Square className="size-3.5" />
+                                <IconPlayerStopFilled className="size-3.5" />
                             </Button>
                         ) : (
                             <Button
@@ -115,7 +115,7 @@ export function ChatComposer({
                                 disabled={!canSend}
                                 aria-label={t("chat.send")}
                             >
-                                <ArrowUp className="size-4" />
+                                <IconArrowUp className="size-4" />
                             </Button>
                         )}
                     </div>

@@ -1,4 +1,4 @@
-import { ArrowUp } from "lucide-react";
+import { IconArrowUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -93,7 +93,7 @@ export function HomeView({
                             disabled={!canSend}
                             aria-label={t("chat.send")}
                         >
-                            <ArrowUp className="size-4" />
+                            <IconArrowUp className="size-4" />
                         </Button>
                     </div>
                 </div>

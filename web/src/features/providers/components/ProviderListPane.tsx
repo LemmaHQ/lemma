@@ -7,7 +7,7 @@ import {
 import { Input } from "@/components/ui/input";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { IconChevronDown, IconPlus, IconSearch } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -36,7 +36,7 @@ function ProviderGroup({
     return (
         <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/60">
-                <ChevronDown
+                <IconChevronDown
                     className={cn(
                         "size-3.5 transition-transform",
                         !open && "-rotate-90",
@@ -104,7 +104,7 @@ export function ProviderListPane({
         <section className="flex w-65 shrink-0 flex-col rounded-lg border border-border bg-background">
             <div className="flex items-center gap-2 p-3">
                 <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <IconSearch className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -119,7 +119,7 @@ export function ProviderListPane({
                     aria-label={t("providers.newProvider")}
                     onClick={onCreate}
                 >
-                    <Plus className="size-4" />
+                    <IconPlus className="size-4" />
                 </Button>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">

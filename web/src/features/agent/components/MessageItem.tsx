@@ -1,4 +1,9 @@
-import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
+import {
+    IconCheck,
+    IconCopy,
+    IconRefresh,
+    IconSparkles,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +52,7 @@ export function MessageItem({
     return (
         <div className="flex gap-3">
             <div className="grid size-7 shrink-0 place-items-center rounded-full bg-foreground text-background">
-                <Sparkles className="size-3.5" />
+                <IconSparkles className="size-3.5" />
             </div>
             <div className="min-w-0 flex-1">
                 {message.thinking !== "" && (
@@ -105,9 +110,9 @@ export function MessageItem({
                             }
                         >
                             {copied ? (
-                                <Check className="size-3.5" />
+                                <IconCheck className="size-3.5" />
                             ) : (
-                                <Copy className="size-3.5" />
+                                <IconCopy className="size-3.5" />
                             )}
                         </Button>
                         {canRegenerate === true &&
@@ -119,7 +124,7 @@ export function MessageItem({
                                     onClick={() => onRegenerate(message.id)}
                                     aria-label={t("chat.regenerate")}
                                 >
-                                    <RefreshCw className="size-3.5" />
+                                    <IconRefresh className="size-3.5" />
                                 </Button>
                             )}
                     </div>

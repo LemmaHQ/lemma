@@ -11,7 +11,7 @@
 - [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体。
 - `web/src/app/` 与 `web/src/features/` 中的功能代码组合工具类与控件，不定义全局样式，也不定义主题。
 
-主题是 `<html>` 上的 `dark` 类；没有该类时使用亮色主题。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由 `features/preferences/theme.ts` 更新。
+主题是 `<html>` 上的 `dark` 类；没有该类时使用亮色主题。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由挂载在 `App` 中的 `next-themes` 更新。
 
 ## 样式技术栈
 
@@ -20,14 +20,14 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 | 原则 | Lemma 的写法 |
 | --- | --- |
 | 组件使用语义 token，不使用色板值或字面颜色 | 由 token 生成的语义工具类：`bg-card`、`text-muted-foreground`、`border-border`、`rounded-md` |
-| 亮色与暗色的覆盖归主题所有者 | `tokens.css` 包含两套主题；功能代码与 `components/ui/` 中不出现 `dark:` 变体 |
+| 亮色与暗色的覆盖归主题所有者 | `tokens.css` 包含两套主题；功能代码中不出现 `dark:` 变体 |
 | 共享控件集中在一个目录 | `components/ui/` 中的 shadcn 组件，通过 `cn()` 组合 |
 | 悬停样式只作用于能悬停的指针设备 | Tailwind v4 已把 `hover:` 编译在 `@media (hover: hover)` 内 |
 
 ## 组件规则
 
 - 先复用控件，再考虑改样式：查阅[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是第二份副本。
-- 只使用语义工具类。不写十六进制颜色、色板值或任意值，例如 `bg-[#fff]`、`text-[13px]`、`w-[372px]`。任意值只用于刻度无法表达的几何，例如 Radix 的 CSS 变量（`origin-(--radix-…)`）以及基于主题取值的 `calc()`。
+- 只使用语义工具类。不写十六进制颜色、色板值或任意值，例如 `bg-[#fff]`、`text-[13px]`、`w-[372px]`。任意值只用于刻度无法表达的几何，例如 Base UI 的 CSS 变量（`origin-(--transform-origin)`）以及基于主题取值的 `calc()`。
 - 不写 `dark:`。两套主题之间的差异是一个亮暗取值不同的语义 token。
 - 使用 Tailwind 的字号刻度（`text-xs`、`text-sm`、`text-xl`）；每个字号自带行高。只使用 400 与 500 两种字重（`font-normal`、`font-medium`）；层级来自字号、字重与两种文字颜色，而不是更多灰色或更粗的字重。
 - 保持键盘焦点可见：交互元素在 `focus-visible` 时显示 `ring` 颜色。
@@ -35,9 +35,9 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 - 过渡使用 Tailwind 的时长与缓动工具类，并尊重减弱动效设置：位移包在 `motion-safe:` 中，或在 `motion-reduce:` 下移除。
 - 平面表面之间用细线边框分隔：中性边框（`border-border`、`border-input`）绘制为 0.5px。虚线提示与状态色边框保持 1px。
 - 浮起的表面（菜单、选择列表、确认对话框、输入框面板）使用层级阴影：`shadow-md`，输入框面板使用 `shadow-composer`。
-- 下拉菜单与选择列表使用 `styles/theme.css` 拥有的半透明菜单材质，即弹出层颜色加背景模糊；功能代码不覆盖它。确认对话框的遮罩保持深色半透明，不加模糊。
+- 下拉菜单与选择列表使用 shadcn `default-translucent` 菜单风格的半透明菜单，即弹出层颜色加背景模糊；功能代码不覆盖它。
 - 在支持 `corner-shape` 的引擎上，圆角使用超椭圆曲线；全圆形状把 `rounded-full` 与 `corner-shape: round` 配对。
-- 图标来自 Lucide：默认 `size-4`，紧凑行中 `size-3.5`，侧边栏行内操作 `size-3`。每个仅含图标的按钮都有无障碍名称和 `Tooltip`，而不是 `title` 属性。
+- 图标来自 Tabler。共享控件内的图标使用控件的默认尺寸；其他位置默认 `size-4`，紧凑行中 `size-3.5`，侧边栏行内操作 `size-3`。每个仅含图标的按钮都有无障碍名称和 `Tooltip`，而不是 `title` 属性。
 
 ## 视觉体系
 

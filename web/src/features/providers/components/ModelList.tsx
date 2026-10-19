@@ -1,4 +1,4 @@
-import { Check, Plus, RefreshCw, X } from "lucide-react";
+import { IconCheck, IconPlus, IconRefresh, IconX } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -79,7 +79,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         onClick={() => void fetchRemote()}
                         disabled={fetching}
                     >
-                        <RefreshCw
+                        <IconRefresh
                             className={cn(
                                 "size-3.5",
                                 fetching && "animate-spin",
@@ -97,7 +97,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         aria-label={t("providers.addModel")}
                         onClick={() => setAdding((v) => !v)}
                     >
-                        <Plus className="size-4" />
+                        <IconPlus className="size-4" />
                     </Button>
                 </div>
             </div>
@@ -141,7 +141,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         onClick={confirmAdd}
                         disabled={newModel.trim() === ""}
                     >
-                        <Check className="size-4" />
+                        <IconCheck className="size-4" />
                     </Button>
                     <Button
                         type="button"
@@ -154,7 +154,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                             setAdding(false);
                         }}
                     >
-                        <X className="size-4" />
+                        <IconX className="size-4" />
                     </Button>
                 </div>
             )}
@@ -176,7 +176,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                             aria-label={t("providers.removeModel")}
                             onClick={() => remove(model)}
                         >
-                            <X className="size-3.5" />
+                            <IconX className="size-3.5" />
                         </Button>
                     </div>
                 ))
