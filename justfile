@@ -66,7 +66,7 @@ rust-test:
 # Coverage under nextest; args replace the terminal summary
 [group('rust')]
 rust-cov *args="--summary-only":
-    cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto {{args}}
+    cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto {{ args }}
 
 # Run oxlint
 [group('web')]
@@ -114,7 +114,7 @@ web-test:
 [group('web')]
 [working-directory('web')]
 web-cov *args:
-    npm run test:cov -- {{args}}
+    npm run test:cov -- {{ args }}
 
 # Run oxlint
 [group('desktop')]
@@ -162,7 +162,7 @@ desktop-test:
 [group('desktop')]
 [working-directory('desktop')]
 desktop-cov *args:
-    npm run test:cov -- {{args}}
+    npm run test:cov -- {{ args }}
 
 # Package the app
 [group('desktop')]
@@ -199,7 +199,7 @@ mobile-android-build:
 # Run androidApp unit tests and shared host tests (commonTest on the JVM)
 [group('mobile')]
 mobile-android-test *args:
-    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest {{args}}
+    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest {{ args }}
 
 # Kover HTML and XML reports for androidApp and shared
 [group('mobile')]
@@ -214,29 +214,29 @@ design-gen:
 # Lint Markdown (markdownlint + autocorrect)
 [group('docs')]
 docs-lint-check:
-    npx --no-install markdownlint-cli2 $({{md_files}})
-    npx --no-install autocorrect --lint $({{md_files}})
+    npx --no-install markdownlint-cli2 $({{ md_files }})
+    npx --no-install autocorrect --lint $({{ md_files }})
 
 # Fix Markdown (autocorrect, then markdownlint)
 [group('docs')]
 docs-lint:
-    npx --no-install autocorrect --fix $({{md_files}})
-    npx --no-install markdownlint-cli2 --fix $({{md_files}})
+    npx --no-install autocorrect --fix $({{ md_files }})
+    npx --no-install markdownlint-cli2 --fix $({{ md_files }})
 
 # Check bilingual pairs against their records
 [group('docs')]
 docs-pairing-check *files:
-    node scripts/verify-translation-pairing.ts {{files}}
+    node scripts/verify-translation-pairing.ts {{ files }}
 
 # Record bilingual pairs; takes files or --all
 [group('docs')]
 docs-pairing *files:
-    node scripts/verify-translation-pairing.ts --write {{files}}
+    node scripts/verify-translation-pairing.ts --write {{ files }}
 
 # Print translation briefs for out-of-sync pairs
 [group('docs')]
 docs-brief *files:
-    node scripts/gen-translation-brief.ts {{files}}
+    node scripts/gen-translation-brief.ts {{ files }}
 
 # Check recipe names and repository paths cited in Markdown
 [group('docs')]
