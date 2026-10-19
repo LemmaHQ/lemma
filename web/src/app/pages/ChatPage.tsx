@@ -207,7 +207,7 @@ export function ChatPage() {
                     </>
                 ) : (
                     <>
-                        <header className="absolute inset-x-0 top-0 z-20 flex h-12 items-center gap-2 border-b bg-background px-3">
+                        <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3">
                             <SidebarRevealToggle />
                             <span className="truncate text-sm font-medium text-foreground">
                                 {activeSession !== undefined &&

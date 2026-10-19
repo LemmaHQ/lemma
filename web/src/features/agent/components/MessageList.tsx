@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { AgentItem } from "@/features/agent/store";
 
 import { EmptyState } from "./EmptyState";
@@ -20,12 +21,14 @@ export function MessageList({
     onPickSuggestion,
     onRegenerate,
 }: MessageListProps) {
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const el = scrollRef.current;
-        if (el !== null) {
-            el.scrollTop = el.scrollHeight;
+        const viewport = contentRef.current?.closest(
+            '[data-slot="scroll-area-viewport"]',
+        );
+        if (viewport !== null && viewport !== undefined) {
+            viewport.scrollTop = viewport.scrollHeight;
         }
         // oxlint-disable-next-line react/exhaustive-effect-dependencies -- items and resetKey are deliberate scroll triggers
     }, [items, resetKey]);
@@ -46,12 +49,12 @@ export function MessageList({
     };
 
     return (
-        <div className="relative min-h-0 flex-1">
-            <div ref={scrollRef} className="h-full overflow-y-auto">
+        <ScrollArea className="min-h-0 flex-1">
+            <div ref={contentRef} className="h-full">
                 {items.length === 0 ? (
                     <EmptyState onPickSuggestion={onPickSuggestion} />
                 ) : (
-                    <div className="mx-auto w-full max-w-3xl space-y-8 px-6 pt-16 pb-6">
+                    <div className="mx-auto w-full max-w-3xl space-y-8 px-6 pt-4 pb-6">
                         {items.map((m) => (
                             <MessageItem
                                 key={m.id}
@@ -64,7 +67,6 @@ export function MessageList({
                     </div>
                 )}
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-background to-transparent" />
-        </div>
+        </ScrollArea>
     );
 }
