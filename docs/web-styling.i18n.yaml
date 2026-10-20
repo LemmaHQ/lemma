@@ -3,17 +3,17 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/web-styling.md
 /web-ui-style-reference:
-  en: d2a4fbf7486fba83
-  zh: 59187a190802e0a0
+  en: 7164d6173b6377e5
+  zh: 25e1e7c44e47655a
 /web-ui-style-reference/ownership:
-  en: cacbec33bc08eccb
-  zh: f11cf0c217fe0b96
+  en: 3d0c04c24e54daf3
+  zh: c1be6a2c699b13f3
 /web-ui-style-reference/styling-stack:
   en: db576f826ba564bd
   zh: b3dbc650b29db09b
 /web-ui-style-reference/component-rules:
-  en: c018ea35f11ede9c
-  zh: 1cb21910e5c75a28
+  en: d3a3d02076fdc179
+  zh: 097f278f13268cd2
 /web-ui-style-reference/visual-system:
   en: 37fc3eb74b790cbb
   zh: 0c9919a2f338785f
@@ -21,14 +21,20 @@
   en: 377b9104df37df10
   zh: f23a08e3e8c2997d
 /web-ui-style-reference/visual-system/elevation:
-  en: fc09528bc3948808
-  zh: 3aaf3cb902d2376a
+  en: ccffe96559c2e237
+  zh: e27810224e5f0761
 /web-ui-style-reference/visual-system/type:
   en: 434cf64c9c607c80
   zh: a1c951b3bd92572f
+/web-ui-style-reference/visual-system/motion:
+  en: 16c256101f94f1c5
+  zh: 0a331a22b7cdc607
+/web-ui-style-reference/visual-system/density:
+  en: a5e86e4323966337
+  zh: 6d1a583da0b3b2fb
 /web-ui-style-reference/corner-radii:
   en: 735ba261165a1070
   zh: 3a627053949bda33
 /web-ui-style-reference/changing-the-system:
-  en: c04872b1dc98e14b
-  zh: ad40d8f6b7c51dc9
+  en: 8994f14a34928aa5
+  zh: f0f5b61aa34cd7a6

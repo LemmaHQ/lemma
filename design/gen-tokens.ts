@@ -24,6 +24,11 @@ interface Color {
     hex: string;
 }
 
+interface Motion {
+    durations: Map<string, number>;
+    easings: Map<string, number[]>;
+}
+
 function readGroup(parent: object, key: string, label: string): object {
     const group: unknown = Reflect.get(parent, key);
     if (typeof group !== "object" || group === null) {
@@ -107,17 +112,107 @@ function checkThemesMatch(light: Theme, dark: Theme): void {
     }
 }
 
-function generateWebCss(themes: Record<ThemeName, Theme>): string {
-    const block = (selector: string, theme: Theme): string => {
-        const lines = [...theme].map(
-            ([role, hex]) => `    --${role}: ${hex};`,
-        );
-        return `${selector} {\n${lines.join("\n")}\n}\n`;
+function readTokenValues(group: object, label: string): Map<string, unknown> {
+    const values = new Map<string, unknown>();
+    for (const key of tokenKeys(group)) {
+        const node: unknown = Reflect.get(group, key);
+        if (typeof node !== "object" || node === null || !("$value" in node)) {
+            throw new Error(`${label}.${key} must be a token with a $value`);
+        }
+        values.set(key, node.$value);
+    }
+    return values;
+}
+
+function readDurations(group: object): Map<string, number> {
+    const durations = new Map<string, number>();
+    for (const [name, value] of readTokenValues(group, "motion.duration")) {
+        const isObject = typeof value === "object" && value !== null;
+        const amount: unknown = isObject
+            ? Reflect.get(value, "value")
+            : undefined;
+        const unit: unknown = isObject ? Reflect.get(value, "unit") : undefined;
+        if (typeof amount !== "number" || amount < 0 || unit !== "ms") {
+            throw new Error(
+                `motion.duration.${name} must be { "value": <milliseconds>, "unit": "ms" }`,
+            );
+        }
+        durations.set(name, amount);
+    }
+    return durations;
+}
+
+function isCubicBezier(value: unknown): value is number[] {
+    if (!Array.isArray(value) || value.length !== 4) {
+        return false;
+    }
+    const points: unknown[] = value;
+    const [x1, , x2] = points;
+    return (
+        points.every(
+            (point) => typeof point === "number" && Number.isFinite(point),
+        ) &&
+        typeof x1 === "number" &&
+        typeof x2 === "number" &&
+        x1 >= 0 &&
+        x1 <= 1 &&
+        x2 >= 0 &&
+        x2 <= 1
+    );
+}
+
+function readEasings(group: object): Map<string, number[]> {
+    const easings = new Map<string, number[]>();
+    for (const [name, value] of readTokenValues(group, "motion.easing")) {
+        if (!isCubicBezier(value)) {
+            throw new Error(
+                `motion.easing.${name} must be [x1, y1, x2, y2] with x1 and x2 between 0 and 1`,
+            );
+        }
+        easings.set(name, value);
+    }
+    return easings;
+}
+
+function readMotion(tokens: object): Motion {
+    const motion = readGroup(tokens, "motion", TOKENS_PATH);
+    return {
+        durations: readDurations(readGroup(motion, "duration", "motion")),
+        easings: readEasings(readGroup(motion, "easing", "motion")),
     };
+}
+
+function cssBlock(
+    selector: string,
+    variables: Iterable<[string, string]>,
+): string {
+    const lines = [...variables].map(
+        ([name, value]) => `    --${name}: ${value};`,
+    );
+    return `${selector} {\n${lines.join("\n")}\n}\n`;
+}
+
+function generateWebCss(
+    themes: Record<ThemeName, Theme>,
+    motion: Motion,
+): string {
+    const motionVariables: [string, string][] = [
+        ...[...motion.durations].map(
+            ([name, milliseconds]): [string, string] => [
+                `motion-duration-${name}`,
+                `${milliseconds}ms`,
+            ],
+        ),
+        ...[...motion.easings].map(([name, points]): [string, string] => [
+            `motion-easing-${name}`,
+            `cubic-bezier(${points.join(", ")})`,
+        ]),
+    ];
     return `/* ${NOTICE} */
 
-${block(":root", themes.light)}
-${block(".dark", themes.dark)}`;
+${cssBlock(":root", motionVariables)}
+${cssBlock(":root", themes.light)}
+${cssBlock(".dark", themes.dark)}`;
 }
 
 function generateDesktopTs(themes: Record<ThemeName, Theme>): string {
@@ -190,8 +285,9 @@ function main(): void {
         ),
     };
     checkThemesMatch(themes.light, themes.dark);
+    const motion = readMotion(tokens);
     const outputs: [string, string][] = [
-        [WEB_CSS_PATH, generateWebCss(themes)],
+        [WEB_CSS_PATH, generateWebCss(themes, motion)],
         [DESKTOP_TS_PATH, generateDesktopTs(themes)],
         [ANDROID_KT_PATH, generateAndroidKt(colors)],
     ];
