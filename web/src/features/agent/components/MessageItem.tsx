@@ -19,6 +19,9 @@ import {
 import {
     Tool,
     ToolContent,
+    ToolGroup,
+    ToolGroupContent,
+    ToolGroupTrigger,
     ToolHeader,
     ToolInput,
     ToolOutput,
@@ -63,6 +66,27 @@ function ToolCall({ call }: { call: ToolCallItem }) {
                 )}
             </ToolContent>
         </Tool>
+    );
+}
+
+function ToolCalls({ calls }: { calls: ToolCallItem[] }) {
+    const running = calls.some((call) => call.state === "running");
+    const failed = calls.filter(
+        (call) => call.state === "done" && call.isError,
+    ).length;
+    return (
+        <ToolGroup>
+            <ToolGroupTrigger
+                count={calls.length}
+                failed={failed}
+                running={running}
+            />
+            <ToolGroupContent>
+                {calls.map((call) => (
+                    <ToolCall key={call.id} call={call} />
+                ))}
+            </ToolGroupContent>
+        </ToolGroup>
     );
 }
 
@@ -116,9 +140,9 @@ export function MessageItem({
                 >
                     {message.content}
                 </MessageResponse>
-                {message.toolCalls.map((call) => (
-                    <ToolCall key={call.id} call={call} />
-                ))}
+                {message.toolCalls.length > 0 && (
+                    <ToolCalls calls={message.toolCalls} />
+                )}
                 {message.status === "error" && (
                     <p className="text-destructive">
                         {t("errors.agentFailed")}

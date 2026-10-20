@@ -19,8 +19,12 @@ import {
 } from "@/components/ui/collapsible";
 
 import { CodeBlock } from "./code-block";
+import { Shimmer } from "./shimmer";
 
 type ToolState = ToolUIPart["state"];
+
+const PANEL_MOTION =
+    "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-medium ease-move data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none";
 
 const STATUS = {
     "input-streaming": {
@@ -60,13 +64,79 @@ const STATUS = {
     },
 } as const satisfies Record<ToolState, unknown>;
 
+export function ToolGroup({
+    className,
+    ...props
+}: ComponentProps<typeof Collapsible>) {
+    return <Collapsible className={cn("w-full", className)} {...props} />;
+}
+
+type ToolGroupTriggerProps = Omit<
+    ComponentProps<typeof CollapsibleTrigger>,
+    "children"
+> & {
+    count: number;
+    failed: number;
+    running: boolean;
+};
+
+export function ToolGroupTrigger({
+    className,
+    count,
+    failed,
+    running,
+    ...props
+}: ToolGroupTriggerProps) {
+    const { t } = useTranslation();
+    return (
+        <CollapsibleTrigger
+            className={cn(
+                "flex w-full items-center gap-2 text-sm text-muted-foreground transition-colors duration-fast hover:text-foreground",
+                className,
+            )}
+            {...props}
+        >
+            <IconTool className="size-4" />
+            {running ? (
+                <Shimmer>{t("chat.toolGroup.running", { count })}</Shimmer>
+            ) : (
+                <span>{t("chat.toolGroup.used", { count })}</span>
+            )}
+            {failed > 0 && (
+                <span className="flex items-center gap-1 text-destructive">
+                    <IconCircleX className="size-4" />
+                    {t("chat.toolGroup.failed", { count: failed })}
+                </span>
+            )}
+            <IconChevronDown className="size-4 transition-transform duration-medium ease-move in-data-panel-open:rotate-180 motion-reduce:transition-none" />
+        </CollapsibleTrigger>
+    );
+}
+
+export function ToolGroupContent({
+    className,
+    children,
+    ...props
+}: ComponentProps<typeof CollapsibleContent>) {
+    return (
+        <CollapsibleContent
+            className={cn(PANEL_MOTION, "outline-none", className)}
+            {...props}
+        >
+            <div className="mt-3 flex flex-col gap-2 border-l-2 border-muted pl-4">
+                {children}
+            </div>
+        </CollapsibleContent>
+    );
+}
+
 export function Tool({
     className,
     ...props
 }: ComponentProps<typeof Collapsible>) {
     return (
         <Collapsible
-            className={cn("mb-4 w-full rounded-md border", className)}
+            className={cn("w-full rounded-md border", className)}
             {...props}
         />
     );
@@ -102,7 +172,7 @@ export function ToolHeader({ className, title, state }: ToolHeaderProps) {
                     {t(status.label)}
                 </Badge>
             </div>
-            <IconChevronDown className="size-4 text-muted-foreground transition-transform in-data-panel-open:rotate-180" />
+            <IconChevronDown className="size-4 text-muted-foreground transition-transform duration-medium ease-move in-data-panel-open:rotate-180 motion-reduce:transition-none" />
         </CollapsibleTrigger>
     );
 }
@@ -113,7 +183,11 @@ export function ToolContent({
 }: ComponentProps<typeof CollapsibleContent>) {
     return (
         <CollapsibleContent
-            className={cn("text-popover-foreground outline-none", className)}
+            className={cn(
+                PANEL_MOTION,
+                "text-popover-foreground outline-none",
+                className,
+            )}
             {...props}
         />
     );

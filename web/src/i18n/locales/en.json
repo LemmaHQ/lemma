@@ -60,6 +60,13 @@
             "pending": "Pending",
             "responded": "Responded",
             "running": "Running"
+        },
+        "toolGroup": {
+            "failed": "{{count}} failed",
+            "running_one": "Using {{count}} tool…",
+            "running_other": "Using {{count}} tools…",
+            "used_one": "Used {{count}} tool",
+            "used_other": "Used {{count}} tools"
         }
     },
     "common": {

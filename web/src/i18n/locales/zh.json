@@ -60,6 +60,13 @@
             "pending": "等待中",
             "responded": "已响应",
             "running": "运行中"
+        },
+        "toolGroup": {
+            "failed": "{{count}} 个失败",
+            "running_one": "正在使用 {{count}} 个工具…",
+            "running_other": "正在使用 {{count}} 个工具…",
+            "used_one": "使用了 {{count}} 个工具",
+            "used_other": "使用了 {{count}} 个工具"
         }
     },
     "common": {
