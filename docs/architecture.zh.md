@@ -11,9 +11,9 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 层 | Crate | 负责 |
 | --- | --- | --- |
 | 契约 | `lemma-proto`、`lemma-core`、`lemma-model` | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
-| 引擎 | `lemma-adapter`、`lemma-session`、`lemma-tools`、`lemma-agent-loop` | 厂商协议格式与模型列表；消息树及其 `TraceStore` trait；工具注册表、审批策略与执行环境；turn 循环 |
+| 引擎 | `lemma-adapter`、`lemma-session`、`lemma-tools`、`lemma-agent-loop` | 厂商协议格式与模型列表；消息树及其 `TraceStore` trait；工具注册表、审批策略与执行环境；turn 循环及其取消 |
 | 领域 | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号与令牌；会话生命周期与消息分页；provider 配置与模型列表；API key 加密 |
-| Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、trace 存储、工作区工具）并运行它 |
+| Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、trace 存储、工作区工具）并运行它，以及中止正在运行的 turn |
 | 存储 | `lemma-db-sqlite`、`lemma-db-pgsql` | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现 |
 | 宿主 | `lemma-mobile`、`crates/server/rpc/*`、`lemma-server` | 面向 Android 的 UniFFI 门面；每个 proto service 对应一个 ConnectRPC 服务；服务端可执行文件 |
 
@@ -49,7 +49,7 @@ Web 客户端按用户维护一份会话与消息的 IndexedDB 缓存（Dexie）
 
 ## 一次 turn 的完整链路
 
-一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、或模型流失败时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，两个宿主都只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。RPC 宿主把它的 `TurnEvent` 映射为 `AgentEvent` 消息，移动端宿主把它们映射为 `MobileAgentEvent`。
+一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，两个宿主都只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。RPC 宿主把它的 `TurnEvent` 映射为 `AgentEvent` 消息，移动端宿主把它们映射为 `MobileAgentEvent`。
 
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
@@ -60,10 +60,12 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:
+    aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
     Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
+    aborted during the stream -> end the turn                             -> aborted
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
@@ -78,7 +80,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
 
-`AbortMessage` 与 `ResumeStream` 认证调用者后，分别返回空响应与空流；循环没有取消路径。
+`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。`LemmaEngine` 没有中止方法。`ResumeStream` 认证调用者后返回空流。
 
 ## 持久化
 

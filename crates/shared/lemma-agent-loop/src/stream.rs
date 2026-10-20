@@ -4,8 +4,16 @@ use lemma_core::{
 };
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 
+use crate::cancel::CancelToken;
 use crate::event::{TurnEvent, TurnObserver};
 use crate::persist::now_ms;
+
+/// How one model stream ended.
+pub(crate) enum StepEnd {
+    Completed,
+    Failed(String),
+    Aborted,
+}
 
 /// Settled result of one model stream: accumulated blocks, terminal
 /// state, and timing marks.
@@ -14,7 +22,7 @@ pub(crate) struct StepOutcome {
     pub(crate) stop_reason: StopReason,
     pub(crate) usage: Option<Usage>,
     pub(crate) first_token_at: Option<i64>,
-    pub(crate) error: Option<String>,
+    pub(crate) end: StepEnd,
 }
 
 impl StepOutcome {
@@ -177,13 +185,14 @@ impl Accumulator<'_> {
     }
 }
 
-/// Runs one model stream to completion, accumulating content blocks and
-/// forwarding deltas to `observer`.
+/// Runs one model stream to completion or cancellation, accumulating
+/// content blocks and forwarding deltas to `observer`.
 pub(crate) async fn run_stream(
     adapter: &dyn Adapter,
     req: ModelRequest,
     started_at: i64,
     observer: TurnObserver<'_>,
+    cancel: &CancelToken,
 ) -> StepOutcome {
     let mut acc = Accumulator {
         blocks: Vec::new(),
@@ -197,14 +206,24 @@ pub(crate) async fn run_stream(
     let streamed = async {
         let stream = adapter.stream(req).await.map_err(|e| e.message)?;
         acc.drain(stream).await
-    }
-    .await;
+    };
+    let end = tokio::select! {
+        result = streamed => match result {
+            Ok(()) => StepEnd::Completed,
+            Err(message) => StepEnd::Failed(message),
+        },
+        () = cancel.cancelled() => StepEnd::Aborted,
+    };
     acc.close_open(None);
+    let stop_reason = match end {
+        StepEnd::Aborted => StopReason::Aborted,
+        StepEnd::Completed | StepEnd::Failed(_) => acc.stop_reason,
+    };
     StepOutcome {
         blocks: acc.blocks,
-        stop_reason: acc.stop_reason,
+        stop_reason,
         usage: acc.usage,
         first_token_at: acc.first_token_at,
-        error: streamed.err(),
+        end,
     }
 }

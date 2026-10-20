@@ -8,4 +8,4 @@ mod error;
 
 pub use agent::{Agent, TraceStoreFactory, Turn, TurnRequest};
 pub use error::AgentError;
-pub use lemma_agent_loop::TurnEvent;
+pub use lemma_agent_loop::{TurnEnd, TurnEvent};

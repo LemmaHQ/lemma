@@ -15,7 +15,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## Agent 循环
 
-- **turn** — 由一条用户消息启动的工作：一个或多个 step，在某个 step 不再请求工具或流失败时结束。由 `lemma-agent` 中的 `Agent` 组装，由 `lemma-agent-loop` 中的 `AgentLoop::run_turn` 运行。
+- **turn** — 由一条用户消息启动的工作：一个或多个 step，在某个 step 不再请求工具、流失败或 turn 被中止时结束。由 `lemma-agent` 中的 `Agent` 组装，由 `lemma-agent-loop` 中的 `AgentLoop::run_turn` 运行。
 - **step** — 一次模型请求，以及其响应所请求的工具调用。每个 step 写入一条 assistant 消息，并为每个工具调用写入一条工具结果消息。
 - **占位消息（placeholder）** — step 在调用模型前以 `streaming` 状态追加的 assistant 消息，之后用最终内容、状态与用量定稿。
 - **流事件（stream event）** — 一个 `StreamEvent`：每个适配器都会产出的、与厂商无关的封闭事件集合（文本、思考与工具调用的开始、增量与结束；`Done`；`Error`）。

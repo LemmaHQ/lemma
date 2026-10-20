@@ -7,14 +7,14 @@ use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
 use futures::stream;
-use lemma_agent::{Agent, TurnEvent, TurnRequest};
+use lemma_agent::{Agent, TurnEnd, TurnEvent, TurnRequest};
 use lemma_auth_rpc::require_user;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted,
-    AgentTurnStarted, ErrorReason, ResumeStreamResponse, SendMessageRequest, SendMessageResponse,
-    TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted, agent_delta,
-    agent_event,
+    AbortMessageResponse, AgentAborted, AgentDelta, AgentDone, AgentError, AgentEvent,
+    AgentStarted, AgentTurnStarted, ErrorReason, ResumeStreamResponse, SendMessageRequest,
+    SendMessageResponse, TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted,
+    agent_delta, agent_event,
 };
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -81,8 +81,10 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
                     ..Default::default()
                 }));
             };
-            if let Err(e) = turn.run(|ev| send(turn_event(ev, &client_msg_id))).await {
-                send(error_event(&e.to_string()));
+            match turn.run(|ev| send(turn_event(ev, &client_msg_id))).await {
+                Ok(TurnEnd::Done) => {}
+                Ok(TurnEnd::Aborted) => send(aborted_event()),
+                Err(e) => send(error_event(&e.to_string())),
             }
         });
 
@@ -92,9 +94,10 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
     async fn abort_message(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::AbortMessageRequest>,
+        request: ServiceRequest<'_, lemma_proto::lemma::v1::AbortMessageRequest>,
     ) -> ServiceResult<AbortMessageResponse> {
-        let _user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        self.agent.abort(user_id, parse_uuid(request.message_id)?);
         Ok(Response::new(AbortMessageResponse {
             ..Default::default()
         }))
@@ -128,6 +131,15 @@ fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
             is_error,
         } => tool_call_finished_event(&id, &name, &content, is_error),
         TurnEvent::AssistantDone { usage, .. } => done_event(usage),
+    }
+}
+
+fn aborted_event() -> AgentEvent {
+    AgentEvent {
+        kind: Some(agent_event::Kind::Aborted(Box::new(AgentAborted {
+            ..Default::default()
+        }))),
+        ..Default::default()
     }
 }
 

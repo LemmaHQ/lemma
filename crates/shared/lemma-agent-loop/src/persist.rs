@@ -2,7 +2,7 @@ use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
 use lemma_session::{MessageStatus, MessageUpdate, StoredMessage};
 use uuid::Uuid;
 
-use crate::stream::StepOutcome;
+use crate::stream::{StepEnd, StepOutcome};
 
 pub(crate) fn now_ms() -> i64 {
     std::time::SystemTime::now()
@@ -65,9 +65,10 @@ pub(crate) fn placeholder(
 
 /// The final state of a placeholder once its stream has settled.
 pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
-    let status = match outcome.error {
-        None => MessageStatus::Done,
-        Some(_) => MessageStatus::Error,
+    let (status, error) = match &outcome.end {
+        StepEnd::Completed => (MessageStatus::Done, None),
+        StepEnd::Failed(message) => (MessageStatus::Error, Some(message.clone())),
+        StepEnd::Aborted => (MessageStatus::Aborted, None),
     };
     MessageUpdate {
         message: Message::Assistant {
@@ -76,7 +77,7 @@ pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
             usage: outcome.usage,
         },
         status,
-        error: outcome.error.clone(),
+        error,
         first_token_at: outcome.first_token_at,
         finished_at: now_ms(),
     }

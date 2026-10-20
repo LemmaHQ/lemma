@@ -4,6 +4,7 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
+dashmap.workspace = true
 lemma-agent-loop.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true

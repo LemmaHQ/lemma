@@ -3,13 +3,15 @@
 //! no vendor, credential, or host.
 
 mod agent_loop;
+mod cancel;
 mod error;
 mod event;
 mod persist;
 mod stream;
 mod tool;
 
-pub use agent_loop::{AgentConfig, AgentLoop, TurnInput};
+pub use agent_loop::{AgentConfig, AgentLoop, TurnEnd, TurnInput};
+pub use cancel::CancelToken;
 pub use error::LoopError;
 pub use event::{TurnEvent, TurnObserver};
 pub use tool::ToolRuntime;

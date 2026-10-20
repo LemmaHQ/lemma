@@ -11,9 +11,9 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Layer | Crates | Owns |
 | --- | --- | --- |
 | Contracts | `lemma-proto`, `lemma-core`, `lemma-model` | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
-| Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop |
+| Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
 | Domains | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts and tokens; conversation lifecycle and message pages; provider configuration and model lists; API-key sealing |
-| Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, trace store, workspace tools) and running it |
+| Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, trace store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
 | Hosts | `lemma-mobile`, `crates/server/rpc/*`, `lemma-server` | The UniFFI facade for Android; one ConnectRPC service per proto service; the server binary |
 
@@ -49,7 +49,7 @@ A business error carries an `ErrorReason` from the closed enum in `errors.proto`
 
 ## The path of one turn
 
-A **turn** starts from one user message and ends when the model stops without requesting tools or its stream fails. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and both hosts call only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. The RPC host maps its `TurnEvent`s onto `AgentEvent` messages, and the mobile host maps them onto `MobileAgentEvent`.
+A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and both hosts call only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. The RPC host maps its `TurnEvent`s onto `AgentEvent` messages, and the mobile host maps them onto `MobileAgentEvent`.
 
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
@@ -60,10 +60,12 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:
+    aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
     Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
+    aborted during the stream -> end the turn                             -> aborted
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
@@ -78,7 +80,7 @@ The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnec
 
 Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.
 
-`AbortMessage` and `ResumeStream` authenticate the caller and return an empty response and an empty stream; the loop has no cancellation path.
+`AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`. `LemmaEngine` has no abort method. `ResumeStream` authenticates the caller and returns an empty stream.
 
 ## Persistence
 

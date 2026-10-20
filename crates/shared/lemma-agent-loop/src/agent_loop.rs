@@ -5,10 +5,11 @@ use lemma_model::{Adapter, ModelRequest};
 use lemma_session::{LastModel, StoredMessage, TraceStore, build_context_path};
 use uuid::Uuid;
 
+use crate::cancel::CancelToken;
 use crate::error::LoopError;
 use crate::event::{TurnEvent, TurnObserver};
 use crate::persist::{now_ms, placeholder, settle, settled, tool_result};
-use crate::stream::run_stream;
+use crate::stream::{StepEnd, run_stream};
 use crate::tool::ToolRuntime;
 
 /// Model selection of one turn.
@@ -32,6 +33,15 @@ pub struct TurnInput {
     pub user_message: Message,
     /// Model selection.
     pub config: AgentConfig,
+}
+
+/// How a turn ended without failing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TurnEnd {
+    /// A step ended without requesting tools.
+    Done,
+    /// The turn's cancel token fired.
+    Aborted,
 }
 
 /// Runs turns: assembles each step's context from the session tree, streams
@@ -60,12 +70,15 @@ impl AgentLoop {
     }
 
     /// Appends the user message under the active leaf and runs steps until
-    /// one requests no tools or a stream fails.
+    /// one requests no tools, a stream fails, or `cancel` fires. Cancelling
+    /// interrupts a model stream and stops before the next step; a running
+    /// tool call completes first.
     pub async fn run_turn(
         &self,
         input: TurnInput,
         observer: TurnObserver<'_>,
-    ) -> Result<(), LoopError> {
+        cancel: &CancelToken,
+    ) -> Result<TurnEnd, LoopError> {
         let TurnInput {
             conversation_id,
             user_message_id,
@@ -103,6 +116,9 @@ impl AgentLoop {
 
         let mut leaf_id = user_message_id;
         loop {
+            if cancel.is_cancelled() {
+                return Ok(TurnEnd::Aborted);
+            }
             let entries = self.store.list_messages(conversation_id).await?;
             let messages = build_context_path(&entries, leaf_id)?;
 
@@ -125,13 +141,16 @@ impl AgentLoop {
                 tools: tool_specs.clone(),
                 thinking_effort: config.thinking_effort.clone(),
             };
-            let outcome = run_stream(self.adapter.as_ref(), req, started_at, observer).await;
+            let outcome =
+                run_stream(self.adapter.as_ref(), req, started_at, observer, cancel).await;
             self.store
                 .update_message(assistant_id, settle(&outcome))
                 .await?;
 
-            if let Some(message) = outcome.error.clone() {
-                return Err(LoopError::Model(message));
+            match outcome.end {
+                StepEnd::Completed => {}
+                StepEnd::Failed(message) => return Err(LoopError::Model(message)),
+                StepEnd::Aborted => return Ok(TurnEnd::Aborted),
             }
 
             let tool_calls = outcome.tool_calls();
@@ -147,7 +166,7 @@ impl AgentLoop {
                         full_text: outcome.full_text(),
                         usage: outcome.usage,
                     });
-                    return Ok(());
+                    return Ok(TurnEnd::Done);
                 }
             };
 

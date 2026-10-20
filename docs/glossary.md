@@ -15,7 +15,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Agent loop
 
-- **turn** — the work started by one user message: one or more steps, ending when a step requests no tools or a stream fails. `Agent` in `lemma-agent` assembles it and `AgentLoop::run_turn` in `lemma-agent-loop` runs it.
+- **turn** — the work started by one user message: one or more steps, ending when a step requests no tools, a stream fails, or the turn is aborted. `Agent` in `lemma-agent` assembles it and `AgentLoop::run_turn` in `lemma-agent-loop` runs it.
 - **step** — one model request and the tool calls its response requests. Each step writes one assistant message and one tool result message per tool call.
 - **placeholder** — the assistant message a step appends with status `streaming` before calling the model, and settles with the final content, status, and usage afterwards.
 - **stream event** — one `StreamEvent`: the closed, vendor-independent set of events every adapter emits (text, thinking, and tool-call start, delta, and end; `Done`; `Error`).
