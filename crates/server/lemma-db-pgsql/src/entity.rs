@@ -6,6 +6,7 @@
 #![allow(missing_docs)]
 
 use chrono::{DateTime, Utc};
+use lemma_conversation::LastModel;
 use sqlx::types::Json;
 use uuid::Uuid;
 
@@ -63,13 +64,6 @@ pub struct Provider {
     pub enabled: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct LastModel {
-    pub provider_id: Uuid,
-    pub model: String,
-    pub thinking_effort: Option<String>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

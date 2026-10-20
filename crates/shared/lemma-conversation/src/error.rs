@@ -16,6 +16,8 @@ pub enum ConversationError {
     NotArchived,
     /// Target archived conversation is absent for this user.
     ArchivedNotFound,
+    /// Target conversation or message node is absent from the message tree.
+    Missing(String),
     /// The storage backend failed.
     Store(String),
 }
@@ -28,6 +30,7 @@ impl fmt::Display for ConversationError {
             Self::NotActive => write!(f, "conversation not active"),
             Self::NotArchived => write!(f, "conversation not archived"),
             Self::ArchivedNotFound => write!(f, "archived conversation not found"),
+            Self::Missing(e) => write!(f, "not found: {e}"),
             Self::Store(e) => write!(f, "db: {e}"),
         }
     }

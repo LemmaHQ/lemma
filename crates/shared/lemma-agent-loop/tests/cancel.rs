@@ -2,20 +2,21 @@
 
 use std::sync::{Arc, Mutex, PoisonError};
 
+use chrono::DateTime;
 use futures::stream;
 use lemma_agent_loop::{AgentConfig, AgentLoop, CancelToken, TurnEnd, TurnEvent, TurnInput};
+use lemma_conversation::{
+    BoxConversationFuture, Conversation, ConversationError, ConversationStore, LastModel,
+    Message as StoredMessage, MessageStatus, MessageUpdate,
+};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use lemma_model::{Adapter, BoxModelFuture, ModelRequest};
-use lemma_session::{
-    BoxStoreFuture, ConversationMeta, LastModel, MessageStatus, MessageUpdate, SessionError,
-    StoredMessage, TraceStore,
-};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
 #[derive(Default)]
 struct MemoryStore {
-    meta: Mutex<Option<ConversationMeta>>,
+    meta: Mutex<Option<Conversation>>,
     messages: Mutex<Vec<StoredMessage>>,
 }
 
@@ -36,27 +37,56 @@ impl MemoryStore {
     }
 }
 
-impl TraceStore for MemoryStore {
-    fn create_conversation<'a>(
+impl ConversationStore for MemoryStore {
+    fn insert<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Conversation> {
+        Box::pin(async move {
+            self.create(user_id, Uuid::new_v4(), String::new(), false)
+                .await
+        })
+    }
+
+    fn create<'a>(
         &'a self,
+        user_id: Uuid,
         id: Uuid,
         title: String,
         local_only: bool,
-    ) -> BoxStoreFuture<'a, ConversationMeta> {
-        let meta = ConversationMeta {
+    ) -> BoxConversationFuture<'a, Conversation> {
+        let meta = Conversation {
             id,
+            user_id,
             title,
+            status: "active".into(),
             leaf_id: None,
-            local_only,
             last_model: None,
-            created_at: 0,
-            updated_at: 0,
+            local_only,
+            archived_at: None,
+            created_at: DateTime::UNIX_EPOCH,
+            updated_at: DateTime::UNIX_EPOCH,
         };
         *self.meta.lock().unwrap_or_else(PoisonError::into_inner) = Some(meta.clone());
         Box::pin(async move { Ok(meta) })
     }
 
-    fn get_conversation<'a>(&'a self, id: Uuid) -> BoxStoreFuture<'a, Option<ConversationMeta>> {
+    fn list_active_by_user<'a>(
+        &'a self,
+        _user_id: Uuid,
+    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
+        Box::pin(async { Ok(vec![]) })
+    }
+
+    fn list_archived_by_user<'a>(
+        &'a self,
+        _user_id: Uuid,
+    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
+        Box::pin(async { Ok(vec![]) })
+    }
+
+    fn find_by_id_and_user<'a>(
+        &'a self,
+        id: Uuid,
+        _user_id: Uuid,
+    ) -> BoxConversationFuture<'a, Option<Conversation>> {
         let meta = self
             .meta
             .lock()
@@ -66,7 +96,41 @@ impl TraceStore for MemoryStore {
         Box::pin(async move { Ok(meta) })
     }
 
-    fn update_leaf<'a>(&'a self, _id: Uuid, leaf_id: Uuid) -> BoxStoreFuture<'a, ()> {
+    fn rename<'a>(
+        &'a self,
+        _id: Uuid,
+        _user_id: Uuid,
+        _title: &'a str,
+    ) -> BoxConversationFuture<'a, Option<Conversation>> {
+        Box::pin(async { Ok(None) })
+    }
+
+    fn archive<'a>(
+        &'a self,
+        _id: Uuid,
+        _user_id: Uuid,
+    ) -> BoxConversationFuture<'a, Option<Conversation>> {
+        Box::pin(async { Ok(None) })
+    }
+
+    fn restore<'a>(
+        &'a self,
+        _id: Uuid,
+        _user_id: Uuid,
+    ) -> BoxConversationFuture<'a, Option<Conversation>> {
+        Box::pin(async { Ok(None) })
+    }
+
+    fn delete_archived<'a>(&'a self, _id: Uuid, _user_id: Uuid) -> BoxConversationFuture<'a, bool> {
+        Box::pin(async { Ok(false) })
+    }
+
+    fn update_leaf<'a>(
+        &'a self,
+        _id: Uuid,
+        _user_id: Uuid,
+        leaf_id: Uuid,
+    ) -> BoxConversationFuture<'a, ()> {
         if let Some(meta) = self
             .meta
             .lock()
@@ -78,22 +142,12 @@ impl TraceStore for MemoryStore {
         Box::pin(async { Ok(()) })
     }
 
-    fn update_message<'a>(&'a self, id: Uuid, update: MessageUpdate) -> BoxStoreFuture<'a, ()> {
-        let mut messages = self.messages.lock().unwrap_or_else(PoisonError::into_inner);
-        let Some(entry) = messages.iter_mut().find(|m| m.id == id) else {
-            return Box::pin(async move { Err(SessionError::NotFound(id.to_string())) });
-        };
-        entry.message = update.message;
-        entry.status = update.status;
-        entry.error = update.error;
-        Box::pin(async { Ok(()) })
-    }
-
-    fn update_conversation_model<'a>(
+    fn update_last_model<'a>(
         &'a self,
         _id: Uuid,
+        _user_id: Uuid,
         last_model: LastModel,
-    ) -> BoxStoreFuture<'a, ()> {
+    ) -> BoxConversationFuture<'a, ()> {
         if let Some(meta) = self
             .meta
             .lock()
@@ -105,7 +159,7 @@ impl TraceStore for MemoryStore {
         Box::pin(async { Ok(()) })
     }
 
-    fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxStoreFuture<'a, ()> {
+    fn append_message<'a>(&'a self, entry: StoredMessage) -> BoxConversationFuture<'a, ()> {
         self.messages
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -113,12 +167,36 @@ impl TraceStore for MemoryStore {
         Box::pin(async { Ok(()) })
     }
 
+    fn update_message<'a>(
+        &'a self,
+        id: Uuid,
+        update: MessageUpdate,
+    ) -> BoxConversationFuture<'a, ()> {
+        let mut messages = self.messages.lock().unwrap_or_else(PoisonError::into_inner);
+        let Some(entry) = messages.iter_mut().find(|m| m.id == id) else {
+            return Box::pin(async move { Err(ConversationError::Missing(id.to_string())) });
+        };
+        entry.message = update.message;
+        entry.status = update.status;
+        entry.error = update.error;
+        Box::pin(async { Ok(()) })
+    }
+
     fn list_messages<'a>(
         &'a self,
         _conversation_id: Uuid,
-    ) -> BoxStoreFuture<'a, Vec<StoredMessage>> {
+    ) -> BoxConversationFuture<'a, Vec<StoredMessage>> {
         let messages = self.messages();
         Box::pin(async move { Ok(messages) })
+    }
+
+    fn list_messages_page<'a>(
+        &'a self,
+        _conversation_id: Uuid,
+        _before_id: Option<Uuid>,
+        _limit: i64,
+    ) -> BoxConversationFuture<'a, (Vec<StoredMessage>, bool)> {
+        Box::pin(async { Ok((vec![], false)) })
     }
 }
 
@@ -139,8 +217,9 @@ impl Adapter for StalledAdapter {
     }
 }
 
-fn input(conversation_id: Uuid) -> TurnInput {
+fn input(user_id: Uuid, conversation_id: Uuid) -> TurnInput {
     TurnInput {
+        user_id,
         conversation_id,
         user_message_id: Uuid::new_v4(),
         user_message: Message::User {
@@ -160,9 +239,10 @@ fn input(conversation_id: Uuid) -> TurnInput {
 async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dyn std::error::Error>>
 {
     let store = Arc::new(MemoryStore::default());
+    let user_id = Uuid::new_v4();
     let conversation_id = Uuid::new_v4();
     store
-        .create_conversation(conversation_id, String::new(), true)
+        .create(user_id, conversation_id, String::new(), true)
         .await?;
     let agent_loop = AgentLoop::new(store.clone(), Arc::new(StalledAdapter));
     let cancel = CancelToken::new();
@@ -171,7 +251,7 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
         let _ = tx.send(ev);
     };
 
-    let run = agent_loop.run_turn(input(conversation_id), &observer, &cancel);
+    let run = agent_loop.run_turn(input(user_id, conversation_id), &observer, &cancel);
     let watch = async {
         while let Some(ev) = rx.recv().await {
             if matches!(ev, TurnEvent::Delta { .. }) {
@@ -207,22 +287,23 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
 async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn std::error::Error>>
 {
     let store = Arc::new(MemoryStore::default());
+    let user_id = Uuid::new_v4();
     let conversation_id = Uuid::new_v4();
     store
-        .create_conversation(conversation_id, String::new(), true)
+        .create(user_id, conversation_id, String::new(), true)
         .await?;
     let agent_loop = AgentLoop::new(store.clone(), Arc::new(StalledAdapter));
     let cancel = CancelToken::new();
     cancel.cancel();
 
-    let turn = input(conversation_id);
-    let user_id = turn.user_message_id;
+    let turn = input(user_id, conversation_id);
+    let user_message_id = turn.user_message_id;
     let end = agent_loop.run_turn(turn, &|_| {}, &cancel).await?;
 
     assert_eq!(end, TurnEnd::Aborted);
     let messages = store.messages();
     assert_eq!(messages.len(), 1);
-    assert_eq!(messages[0].id, user_id);
-    assert_eq!(store.leaf(), Some(user_id));
+    assert_eq!(messages[0].id, user_message_id);
+    assert_eq!(store.leaf(), Some(user_message_id));
     Ok(())
 }

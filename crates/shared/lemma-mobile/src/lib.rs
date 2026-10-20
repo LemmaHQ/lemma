@@ -7,16 +7,13 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use lemma_adapter::{HttpConnector, ReqwestTransport};
-use lemma_agent::{Agent, AgentError, TraceStoreFactory, TurnEvent, TurnRequest};
+use lemma_agent::{Agent, AgentError, TurnEvent, TurnRequest};
 use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use lemma_auth::{AuthService, AuthStore, AuthTokens, Session, User};
-use lemma_conversation::{Conversation, ConversationService, Message};
-use lemma_db_sqlite::{
-    SqliteAuthStore, SqliteConversationStore, SqliteProviderStore, SqliteTraceStore,
-};
+use lemma_conversation::{Conversation, ConversationService, ConversationStore, Message};
+use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
 use lemma_model::{Connector, ProviderKind};
 use lemma_provider::{CreateInput, ProviderService, ProviderView, UpdateInput};
-use lemma_session::TraceStore;
 use uuid::Uuid;
 
 uniffi::setup_scaffolding!();
@@ -193,15 +190,16 @@ fn visible_text(content: &serde_json::Value) -> String {
 
 impl From<Message> for MobileMessage {
     fn from(m: Message) -> Self {
+        let content_json = serde_json::to_value(&m.message).unwrap_or_default();
         Self {
             id: m.id.to_string(),
             parent_id: m.parent_id.map(|id| id.to_string()),
-            role: m.role,
-            text: visible_text(&m.content_json),
-            content_json: m.content_json.to_string(),
+            role: m.role().to_string(),
+            text: visible_text(&content_json),
+            content_json: content_json.to_string(),
             provider_id: m.provider_id.map(|id| id.to_string()),
             model: m.model,
-            status: m.status,
+            status: m.status.as_str().to_string(),
             error: m.error,
             created_at_seconds: m.created_at.timestamp(),
         }
@@ -436,8 +434,9 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Storage(e.to_string()))?;
         let auth_store = Arc::new(SqliteAuthStore::new(pool.clone()));
         let auth = AuthService::new(auth_store.clone(), jwt_secret);
-        let conversations =
-            ConversationService::new(Arc::new(SqliteConversationStore::new(pool.clone())));
+        let store: Arc<dyn ConversationStore> =
+            Arc::new(SqliteConversationStore::new(pool.clone()));
+        let conversations = ConversationService::new(Arc::clone(&store));
         let connector: Arc<dyn Connector> =
             Arc::new(HttpConnector::new(Arc::new(ReqwestTransport::new())));
         let providers = Arc::new(ProviderService::new(
@@ -445,11 +444,8 @@ impl LemmaEngine {
             None,
             Arc::clone(&connector),
         ));
-        let traces: TraceStoreFactory = Arc::new(move |user_id| {
-            Arc::new(SqliteTraceStore::new(pool.clone(), user_id)) as Arc<dyn TraceStore>
-        });
         let agent = Agent::new(
-            traces,
+            store,
             Arc::clone(&providers),
             connector,
             Some(data_dir.join("workspaces")),
@@ -754,7 +750,7 @@ impl LemmaEngine {
 
     /// Runs one agent turn: appends the user message, streams model and tool
     /// events to `listener`, and persists the settled assistant messages.
-    /// The stream terminates with a `Done` or `Error` event.
+    /// The stream terminates with a `Done`, `Aborted`, or `Error` event.
     #[allow(clippy::too_many_arguments)]
     pub async fn send_message(
         &self,

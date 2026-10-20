@@ -4,10 +4,11 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
+chrono.workspace = true
 futures.workspace = true
+lemma-conversation.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true
-lemma-session.workspace = true
 lemma-tools.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

@@ -1837,10 +1837,10 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "lemma-agent-loop",
+ "lemma-conversation",
  "lemma-core",
  "lemma-model",
  "lemma-provider",
- "lemma-session",
  "lemma-tools",
  "tokio",
  "uuid",
@@ -1850,10 +1850,11 @@ dependencies = [
 name = "lemma-agent-loop"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "futures",
+ "lemma-conversation",
  "lemma-core",
  "lemma-model",
- "lemma-session",
  "lemma-tools",
  "serde_json",
  "tokio",
@@ -1907,6 +1908,8 @@ name = "lemma-conversation"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lemma-core",
+ "serde",
  "serde_json",
  "uuid",
 ]
@@ -1952,7 +1955,6 @@ dependencies = [
  "lemma-conversation",
  "lemma-core",
  "lemma-provider",
- "lemma-session",
  "serde",
  "serde_json",
  "sqlx",
@@ -1969,7 +1971,6 @@ dependencies = [
  "lemma-conversation",
  "lemma-core",
  "lemma-provider",
- "lemma-session",
  "serde",
  "serde_json",
  "sqlx",
@@ -1988,7 +1989,6 @@ dependencies = [
  "lemma-db-sqlite",
  "lemma-model",
  "lemma-provider",
- "lemma-session",
  "serde_json",
  "sqlx",
  "tokio",
@@ -2053,13 +2053,13 @@ dependencies = [
  "lemma-agent-rpc",
  "lemma-auth",
  "lemma-auth-rpc",
+ "lemma-conversation",
  "lemma-conversation-rpc",
  "lemma-db-pgsql",
  "lemma-db-sqlite",
  "lemma-model",
  "lemma-provider",
  "lemma-provider-rpc",
- "lemma-session",
  "rand 0.10.3",
  "rust-embed",
  "serde",
@@ -2067,16 +2067,6 @@ dependencies = [
  "sqlx",
  "tokio",
  "tower-http 0.7.1",
- "uuid",
-]
-
-[[package]]
-name = "lemma-session"
-version = "0.1.0"
-dependencies = [
- "lemma-core",
- "serde",
- "serde_json",
  "uuid",
 ]
 

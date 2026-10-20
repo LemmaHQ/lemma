@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use lemma_conversation::{
+    ConversationStore, LastModel, Message as StoredMessage, build_context_path,
+};
 use lemma_core::{Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
-use lemma_session::{LastModel, StoredMessage, TraceStore, build_context_path};
 use uuid::Uuid;
 
 use crate::cancel::CancelToken;
@@ -25,6 +27,8 @@ pub struct AgentConfig {
 
 /// One user message and where it goes.
 pub struct TurnInput {
+    /// Authenticated caller the store scopes conversation queries to.
+    pub user_id: Uuid,
     /// Conversation the turn continues from its active leaf.
     pub conversation_id: Uuid,
     /// Id the user message is stored under.
@@ -44,18 +48,18 @@ pub enum TurnEnd {
     Aborted,
 }
 
-/// Runs turns: assembles each step's context from the session tree, streams
+/// Runs turns: assembles each step's context from the message tree, streams
 /// the model through its adapter, executes requested tool calls, and
 /// persists every message as it settles.
 pub struct AgentLoop {
-    store: Arc<dyn TraceStore>,
+    store: Arc<dyn ConversationStore>,
     adapter: Arc<dyn Adapter>,
     tools: Option<ToolRuntime>,
 }
 
 impl AgentLoop {
     /// Creates a loop that calls the model without tools.
-    pub fn new(store: Arc<dyn TraceStore>, adapter: Arc<dyn Adapter>) -> Self {
+    pub fn new(store: Arc<dyn ConversationStore>, adapter: Arc<dyn Adapter>) -> Self {
         Self {
             store,
             adapter,
@@ -80,26 +84,32 @@ impl AgentLoop {
         cancel: &CancelToken,
     ) -> Result<TurnEnd, LoopError> {
         let TurnInput {
+            user_id,
             conversation_id,
             user_message_id,
             user_message,
             config,
         } = input;
-        let Some(meta) = self.store.get_conversation(conversation_id).await? else {
+        let Some(meta) = self
+            .store
+            .find_by_id_and_user(conversation_id, user_id)
+            .await?
+        else {
             return Err(LoopError::NotFound(format!(
                 "conversation {conversation_id} not found"
             )));
         };
 
         let user_entry = settled(user_message_id, conversation_id, meta.leaf_id, user_message);
-        self.append(user_entry).await?;
+        self.append(user_id, user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
         });
 
         self.store
-            .update_conversation_model(
+            .update_last_model(
                 conversation_id,
+                user_id,
                 LastModel {
                     provider_id: config.provider_id,
                     model: config.model.clone(),
@@ -124,14 +134,17 @@ impl AgentLoop {
 
             let assistant_id = Uuid::new_v4();
             let started_at = now_ms();
-            self.append(placeholder(
-                assistant_id,
-                conversation_id,
-                leaf_id,
-                &config.model,
-                config.provider_id,
-                started_at,
-            ))
+            self.append(
+                user_id,
+                placeholder(
+                    assistant_id,
+                    conversation_id,
+                    leaf_id,
+                    &config.model,
+                    config.provider_id,
+                    started_at,
+                ),
+            )
             .await?;
             observer(TurnEvent::AssistantStarted { id: assistant_id });
 
@@ -185,22 +198,25 @@ impl AgentLoop {
                     is_error,
                 });
                 let result_id = Uuid::new_v4();
-                self.append(settled(
-                    result_id,
-                    conversation_id,
-                    Some(leaf_id),
-                    tool_result(call, text, is_error),
-                ))
+                self.append(
+                    user_id,
+                    settled(
+                        result_id,
+                        conversation_id,
+                        Some(leaf_id),
+                        tool_result(call, text, is_error),
+                    ),
+                )
                 .await?;
                 leaf_id = result_id;
             }
         }
     }
 
-    async fn append(&self, entry: StoredMessage) -> Result<(), LoopError> {
+    async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
         let (conversation_id, id) = (entry.conversation_id, entry.id);
         self.store.append_message(entry).await?;
-        self.store.update_leaf(conversation_id, id).await?;
+        self.store.update_leaf(conversation_id, user_id, id).await?;
         Ok(())
     }
 }

@@ -11,13 +11,13 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Layer | Crates | Owns |
 | --- | --- | --- |
 | Contracts | `lemma-proto`, `lemma-core`, `lemma-model` | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
-| Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
-| Domains | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts and tokens; conversation lifecycle and message pages; provider configuration and model lists; API-key sealing |
-| Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, trace store, workspace tools), running it, and aborting running turns |
+| Domains | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts and tokens; conversations, the message tree, and their `ConversationStore` trait; provider configuration and model lists; API-key sealing |
+| Engine | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
+| Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, conversation store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
 | Hosts | `lemma-mobile`, `crates/server/rpc/*`, `lemma-server` | The UniFFI facade for Android; one ConnectRPC service per proto service; the server binary |
 
-The engine, domain, and agent layers contain no SQL. They define store traits (`TraceStore`, `ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
+The domain, engine, and agent layers contain no SQL. They define store traits (`ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
 Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/server/` build only into `lemma-server` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
@@ -86,10 +86,7 @@ Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its 
 
 Both backends share one logical schema: `users`, `auth_credentials`, `refresh_tokens`, `providers`, `settings`, `conversations`, and `messages`. Each backend owns a `migrations/` directory of reversible pairs, and a schema change adds a migration to both ([crates/AGENTS.md](../crates/AGENTS.md#layout)). Every host runs migrations when it opens its pool.
 
-A conversation is a tree of messages. Each message row stores its `parent_id`, the serialized canonical message, its status (`streaming`, `done`, `aborted`, `error`), the provider and model that produced it, token usage, and timing marks. The conversation row stores the active `leaf_id` and the last model selection. Two traits read these tables:
-
-- `TraceStore` (`lemma-session`) is the turn loop's view: append, settle, move the leaf, list a conversation's messages.
-- `ConversationStore` (`lemma-conversation`) is the lifecycle view: create, rename, archive, restore, delete archived, and keyset-paginate messages newest first.
+A conversation is a tree of messages. Each message row stores its `parent_id`, the serialized canonical message, its status (`streaming`, `done`, `aborted`, `error`), the provider and model that produced it, token usage, and timing marks. The conversation row stores the active `leaf_id` and the last model selection. `ConversationStore` in `lemma-conversation` is the only trait over these tables; the turn loop appends, settles, and moves the leaf through it, and the conversation service creates, renames, archives, restores, deletes, and pages through it. Every operation on a conversation takes the caller's user id and touches only that user's rows.
 
 A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 

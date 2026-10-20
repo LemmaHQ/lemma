@@ -9,7 +9,7 @@ use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, Service
 use lemma_auth_rpc::require_user;
 use lemma_conversation::{
     Conversation as DomainConversation, ConversationError, ConversationService as DomainService,
-    ConversationStore, Message as DomainMessage,
+    ConversationStore, Message as DomainMessage, MessageStatus as DomainMessageStatus,
 };
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
@@ -56,51 +56,40 @@ fn conversation_to_proto(c: &DomainConversation) -> Conversation {
 }
 
 fn message_to_proto(m: &DomainMessage) -> Message {
-    let core_msg = serde_json::from_value::<lemma_core::Message>(m.content_json.clone()).ok();
+    let core_msg = &m.message;
     Message {
         id: m.id.to_string(),
         conversation_id: m.conversation_id.to_string(),
         parent_id: m.parent_id.map(|p| p.to_string()).unwrap_or_default(),
-        role: m.role.clone(),
-        content: core_msg
-            .as_ref()
-            .map(|msg| msg.visible_text())
-            .unwrap_or_default(),
+        role: m.role().to_string(),
+        content: core_msg.visible_text(),
         thinking: core_msg
-            .as_ref()
-            .map(|msg| {
-                msg.content()
-                    .iter()
-                    .filter_map(|b| match b {
-                        lemma_core::ContentBlock::Thinking(t) => Some(t.thinking.as_str()),
-                        _ => None,
-                    })
-                    .collect::<String>()
+            .content()
+            .iter()
+            .filter_map(|b| match b {
+                lemma_core::ContentBlock::Thinking(t) => Some(t.thinking.as_str()),
+                _ => None,
             })
-            .unwrap_or_default(),
+            .collect::<String>(),
         provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
         model: m.model.clone().unwrap_or_default(),
         tool_calls: core_msg
-            .as_ref()
-            .map(|msg| {
-                msg.tool_calls()
-                    .into_iter()
-                    .map(|c| ToolCall {
-                        id: c.id.clone(),
-                        name: c.name.clone(),
-                        arguments: serde_json::to_string(&c.arguments).unwrap_or_default(),
-                        ..Default::default()
-                    })
-                    .collect()
+            .tool_calls()
+            .into_iter()
+            .map(|c| ToolCall {
+                id: c.id.clone(),
+                name: c.name.clone(),
+                arguments: serde_json::to_string(&c.arguments).unwrap_or_default(),
+                ..Default::default()
             })
-            .unwrap_or_default(),
-        tool_result: match core_msg.as_ref() {
-            Some(lemma_core::Message::ToolResult {
+            .collect(),
+        tool_result: match core_msg {
+            lemma_core::Message::ToolResult {
                 tool_call_id,
                 tool_name,
                 is_error,
                 ..
-            }) => MessageField::some(ToolResultMeta {
+            } => MessageField::some(ToolResultMeta {
                 tool_call_id: tool_call_id.clone(),
                 name: tool_name.clone(),
                 is_error: *is_error,
@@ -108,11 +97,11 @@ fn message_to_proto(m: &DomainMessage) -> Message {
             }),
             _ => MessageField::none(),
         },
-        status: match m.status.as_str() {
-            "streaming" => MessageStatus::Streaming,
-            "aborted" => MessageStatus::Aborted,
-            "error" => MessageStatus::Error,
-            _ => MessageStatus::Done,
+        status: match m.status {
+            DomainMessageStatus::Streaming => MessageStatus::Streaming,
+            DomainMessageStatus::Aborted => MessageStatus::Aborted,
+            DomainMessageStatus::Error => MessageStatus::Error,
+            DomainMessageStatus::Done => MessageStatus::Done,
         }
         .into(),
         error: m.error.clone().unwrap_or_default(),
@@ -133,6 +122,7 @@ fn map_domain(e: ConversationError) -> ConnectError {
         ConversationError::NotActive => app_error(ErrorReason::ConversationNotActive),
         ConversationError::NotArchived => app_error(ErrorReason::ConversationNotArchived),
         ConversationError::ArchivedNotFound => app_error(ErrorReason::ArchivedConversationNotFound),
+        ConversationError::Missing(m) => ConnectError::internal(format!("not found: {m}")),
         ConversationError::Store(m) => ConnectError::internal(format!("db: {m}")),
     }
 }

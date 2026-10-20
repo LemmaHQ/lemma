@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use lemma_adapter::{HttpConnector, ReqwestTransport};
-use lemma_agent::{Agent, TraceStoreFactory};
+use lemma_agent::Agent;
 use lemma_agent_rpc::AgentRpc;
 use lemma_auth_rpc::AuthRpc;
+use lemma_conversation::ConversationStore;
 use lemma_conversation_rpc::ConversationRpc;
 use lemma_model::Connector;
 use lemma_provider::{ProviderService, ProviderStore};
 use lemma_provider_rpc::ProviderRpc;
-use uuid::Uuid;
 
 use crate::config::{Config, DatabaseBackend};
 
@@ -37,17 +37,12 @@ impl AppState {
             DatabaseBackend::Postgres => {
                 let pool = lemma_db_pgsql::connect(&config.database_url).await?;
                 lemma_db_pgsql::migrate(&pool).await?;
-                let traces: TraceStoreFactory = {
-                    let pool = pool.clone();
-                    Arc::new(move |user_id: Uuid| {
-                        Arc::new(lemma_db_pgsql::PgTraceStore::new(pool.clone(), user_id))
-                            as Arc<dyn lemma_session::TraceStore>
-                    })
-                };
+                let conversations: Arc<dyn ConversationStore> =
+                    Arc::new(lemma_db_pgsql::PgConversationStore::new(pool.clone()));
                 let (providers, agent) = Self::domain(
                     Arc::new(lemma_db_pgsql::PgProviderStore::new(pool.clone())),
                     config.secret_key.clone(),
-                    traces,
+                    Arc::clone(&conversations),
                     None,
                 );
                 Ok(Self {
@@ -57,7 +52,7 @@ impl AppState {
                     )),
                     providers: Arc::new(ProviderRpc::new(providers, config.jwt_secret.clone())),
                     conversations: Arc::new(ConversationRpc::new(
-                        Arc::new(lemma_db_pgsql::PgConversationStore::new(pool.clone())),
+                        conversations,
                         config.jwt_secret.clone(),
                     )),
                     agent: Arc::new(AgentRpc::new(agent, config.jwt_secret.clone())),
@@ -78,7 +73,7 @@ impl AppState {
     fn domain(
         store: Arc<dyn ProviderStore>,
         secret_key: Arc<str>,
-        traces: TraceStoreFactory,
+        conversations: Arc<dyn ConversationStore>,
         workspaces_dir: Option<std::path::PathBuf>,
     ) -> (Arc<ProviderService>, Arc<Agent>) {
         let connector: Arc<dyn Connector> =
@@ -89,7 +84,7 @@ impl AppState {
             Arc::clone(&connector),
         ));
         let agent = Arc::new(Agent::new(
-            traces,
+            conversations,
             Arc::clone(&providers),
             connector,
             workspaces_dir,
@@ -125,28 +120,18 @@ impl AppState {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let auth_store: Arc<dyn lemma_auth::AuthStore> =
             Arc::new(lemma_db_sqlite::SqliteAuthStore::new(pool.clone()));
-        let traces: TraceStoreFactory = {
-            let pool = pool.clone();
-            Arc::new(move |user_id: Uuid| {
-                Arc::new(lemma_db_sqlite::SqliteTraceStore::new(
-                    pool.clone(),
-                    user_id,
-                )) as Arc<dyn lemma_session::TraceStore>
-            })
-        };
+        let conversations: Arc<dyn ConversationStore> =
+            Arc::new(lemma_db_sqlite::SqliteConversationStore::new(pool.clone()));
         let (providers, agent) = Self::domain(
             Arc::new(lemma_db_sqlite::SqliteProviderStore::new(pool.clone())),
             secret_key,
-            traces,
+            Arc::clone(&conversations),
             workspaces_dir,
         );
         Ok(Self {
             auth: Arc::new(AuthRpc::new(auth_store.clone(), jwt_secret.clone())),
             providers: Arc::new(ProviderRpc::new(providers, jwt_secret.clone())),
-            conversations: Arc::new(ConversationRpc::new(
-                Arc::new(lemma_db_sqlite::SqliteConversationStore::new(pool.clone())),
-                jwt_secret.clone(),
-            )),
+            conversations: Arc::new(ConversationRpc::new(conversations, jwt_secret.clone())),
             agent: Arc::new(AgentRpc::new(agent, jwt_secret)),
             local_auth_store: local.then_some(auth_store),
             local_secrets: None,

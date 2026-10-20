@@ -23,7 +23,6 @@ lemma-conversation.workspace = true
 lemma-db-sqlite.workspace = true
 lemma-model.workspace = true
 lemma-provider.workspace = true
-lemma-session.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true

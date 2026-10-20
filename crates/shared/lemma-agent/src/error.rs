@@ -1,8 +1,8 @@
 use std::fmt;
 
 use lemma_agent_loop::LoopError;
+use lemma_conversation::ConversationError;
 use lemma_provider::ProviderError;
-use lemma_session::SessionError;
 
 /// Failure preparing or running a turn.
 #[derive(Debug)]
@@ -15,8 +15,8 @@ pub enum AgentError {
     ProviderNotFound,
     /// The provider domain failed, e.g. opening the API key.
     Provider(ProviderError),
-    /// The trace store failed while preparing the turn.
-    Store(SessionError),
+    /// The conversation store failed while preparing the turn.
+    Store(ConversationError),
     /// The conversation's tool workspace could not be created.
     Workspace(String),
     /// The running turn failed.
@@ -48,8 +48,8 @@ impl From<ProviderError> for AgentError {
     }
 }
 
-impl From<SessionError> for AgentError {
-    fn from(err: SessionError) -> Self {
+impl From<ConversationError> for AgentError {
+    fn from(err: ConversationError) -> Self {
         Self::Store(err)
     }
 }

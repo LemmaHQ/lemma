@@ -79,7 +79,7 @@ impl ConversationService {
             limit.min(MAX_PAGE_LIMIT)
         };
         self.store
-            .list_messages(conversation_id, before_id, limit as i64)
+            .list_messages_page(conversation_id, before_id, limit as i64)
             .await
     }
 

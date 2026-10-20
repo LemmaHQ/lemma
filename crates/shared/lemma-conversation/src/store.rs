@@ -5,7 +5,7 @@ use std::pin::Pin;
 use uuid::Uuid;
 
 use crate::error::ConversationError;
-use crate::record::{Conversation, Message};
+use crate::record::{Conversation, LastModel, Message, MessageUpdate};
 
 /// Future returned by asynchronous conversation store operations.
 pub type BoxConversationFuture<'a, T> =
@@ -14,9 +14,22 @@ pub type BoxConversationFuture<'a, T> =
 /// Storage backend for conversations and messages. Implemented by both
 /// db crates (`PgConversationStore`, `SqliteConversationStore`) so the
 /// domain runs identically on server and local modes.
+///
+/// User isolation is per call: every conversation-scoped operation takes
+/// the owning `user_id`; message operations address messages by id.
 pub trait ConversationStore: Send + Sync {
     /// Creates an empty conversation and returns it.
     fn insert<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Conversation>;
+
+    /// Creates a conversation with an explicit id, title, and local-only
+    /// flag, and returns it.
+    fn create<'a>(
+        &'a self,
+        user_id: Uuid,
+        id: Uuid,
+        title: String,
+        local_only: bool,
+    ) -> BoxConversationFuture<'a, Conversation>;
 
     /// Lists a user's active conversations, most recently updated first.
     fn list_active_by_user<'a>(
@@ -66,10 +79,46 @@ pub trait ConversationStore: Send + Sync {
     /// removed. Deletion is restricted exclusively to archived conversations.
     fn delete_archived<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool>;
 
+    /// Updates the active leaf pointer of a conversation owned by the
+    /// given user.
+    fn update_leaf<'a>(
+        &'a self,
+        id: Uuid,
+        user_id: Uuid,
+        leaf_id: Uuid,
+    ) -> BoxConversationFuture<'a, ()>;
+
+    /// Records the model selection used by a turn on a conversation owned
+    /// by the given user.
+    fn update_last_model<'a>(
+        &'a self,
+        id: Uuid,
+        user_id: Uuid,
+        last_model: LastModel,
+    ) -> BoxConversationFuture<'a, ()>;
+
+    /// Appends a new message node into the tree.
+    fn append_message<'a>(&'a self, entry: Message) -> BoxConversationFuture<'a, ()>;
+
+    /// Finalizes a placeholder message with its settled body, status and
+    /// timing marks.
+    fn update_message<'a>(
+        &'a self,
+        id: Uuid,
+        update: MessageUpdate,
+    ) -> BoxConversationFuture<'a, ()>;
+
+    /// Retrieves all messages recorded for a conversation, chronological
+    /// order.
+    fn list_messages<'a>(
+        &'a self,
+        conversation_id: Uuid,
+    ) -> BoxConversationFuture<'a, Vec<Message>>;
+
     /// Keyset-paginates a conversation's messages newest-first. `before_id`
     /// selects messages older than that message; one extra row is fetched
     /// to compute `has_more`.
-    fn list_messages<'a>(
+    fn list_messages_page<'a>(
         &'a self,
         conversation_id: Uuid,
         before_id: Option<Uuid>,

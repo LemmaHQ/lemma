@@ -5,17 +5,14 @@ use dashmap::DashMap;
 use lemma_agent_loop::{
     AgentConfig, AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, TurnInput,
 };
+use lemma_conversation::ConversationStore;
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::Connector;
 use lemma_provider::ProviderService;
-use lemma_session::TraceStore;
 use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use uuid::Uuid;
 
 use crate::error::AgentError;
-
-/// Opens the trace store scoped to one user.
-pub type TraceStoreFactory = Arc<dyn Fn(Uuid) -> Arc<dyn TraceStore> + Send + Sync>;
 
 /// What a user asks one turn to do.
 pub struct TurnRequest {
@@ -43,7 +40,7 @@ type RunningTurns = DashMap<Uuid, (Uuid, CancelToken)>;
 /// `write_file`, `bash`) run in `<workspaces_dir>/<conversation id>`;
 /// without it, turns call the model without tools.
 pub struct Agent {
-    traces: TraceStoreFactory,
+    store: Arc<dyn ConversationStore>,
     providers: Arc<ProviderService>,
     connector: Arc<dyn Connector>,
     workspaces_dir: Option<PathBuf>,
@@ -51,15 +48,15 @@ pub struct Agent {
 }
 
 impl Agent {
-    /// Creates the agent over its stores, provider domain, and connector.
+    /// Creates the agent over its store, provider domain, and connector.
     pub fn new(
-        traces: TraceStoreFactory,
+        store: Arc<dyn ConversationStore>,
         providers: Arc<ProviderService>,
         connector: Arc<dyn Connector>,
         workspaces_dir: Option<PathBuf>,
     ) -> Self {
         Self {
-            traces,
+            store,
             providers,
             connector,
             workspaces_dir,
@@ -81,17 +78,17 @@ impl Agent {
             .providers
             .endpoint(req.user_id, req.provider_id)
             .await?;
-        let traces = (self.traces)(req.user_id);
         let thinking_effort = match req.thinking_effort {
             Some(effort) if !effort.is_empty() => Some(effort),
-            _ => traces
-                .get_conversation(req.conversation_id)
+            _ => self
+                .store
+                .find_by_id_and_user(req.conversation_id, req.user_id)
                 .await?
-                .and_then(|meta| meta.last_model)
+                .and_then(|c| c.last_model)
                 .and_then(|m| m.thinking_effort),
         };
 
-        let agent_loop = AgentLoop::new(traces, self.connector.connect(endpoint));
+        let agent_loop = AgentLoop::new(Arc::clone(&self.store), self.connector.connect(endpoint));
         let agent_loop = match &self.workspaces_dir {
             Some(dir) => {
                 let workspace = dir.join(req.conversation_id.to_string());
@@ -117,6 +114,7 @@ impl Agent {
         Ok(Turn {
             agent_loop,
             input: TurnInput {
+                user_id: req.user_id,
                 conversation_id: req.conversation_id,
                 user_message_id,
                 user_message: Message::User {

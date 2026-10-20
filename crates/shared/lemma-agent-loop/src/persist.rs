@@ -1,5 +1,6 @@
+use chrono::{DateTime, Utc};
+use lemma_conversation::{Message as StoredMessage, MessageStatus, MessageUpdate};
 use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
-use lemma_session::{MessageStatus, MessageUpdate, StoredMessage};
 use uuid::Uuid;
 
 use crate::stream::{StepEnd, StepOutcome};
@@ -18,7 +19,7 @@ pub(crate) fn settled(
     parent_id: Option<Uuid>,
     message: Message,
 ) -> StoredMessage {
-    let now = now_ms();
+    let now = Utc::now();
     StoredMessage {
         id,
         conversation_id,
@@ -28,8 +29,8 @@ pub(crate) fn settled(
         error: None,
         model: None,
         provider_id: None,
-        started_at: now,
         created_at: now,
+        updated_at: now,
     }
 }
 
@@ -43,6 +44,7 @@ pub(crate) fn placeholder(
     provider_id: Uuid,
     started_at: i64,
 ) -> StoredMessage {
+    let created = DateTime::from_timestamp_millis(started_at).unwrap_or(DateTime::UNIX_EPOCH);
     StoredMessage {
         id,
         conversation_id,
@@ -58,8 +60,8 @@ pub(crate) fn placeholder(
         error: None,
         model: Some(model.to_string()),
         provider_id: Some(provider_id),
-        started_at,
-        created_at: started_at,
+        created_at: created,
+        updated_at: created,
     }
 }
 

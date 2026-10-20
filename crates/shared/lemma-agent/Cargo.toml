@@ -6,10 +6,10 @@ version.workspace = true
 [dependencies]
 dashmap.workspace = true
 lemma-agent-loop.workspace = true
+lemma-conversation.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true
 lemma-provider.workspace = true
-lemma-session.workspace = true
 lemma-tools.workspace = true
 tokio.workspace = true
 uuid.workspace = true

@@ -5,6 +5,7 @@
 
 #![allow(missing_docs)]
 
+use lemma_conversation::LastModel;
 use sqlx::types::Json;
 use uuid::Uuid;
 
@@ -62,13 +63,6 @@ pub struct Provider {
     pub enabled: bool,
     pub created_at: i64,
     pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct LastModel {
-    pub provider_id: Uuid,
-    pub model: String,
-    pub thinking_effort: Option<String>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
