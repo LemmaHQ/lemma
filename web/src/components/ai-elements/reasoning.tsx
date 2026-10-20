@@ -108,7 +108,7 @@ export function ReasoningTrigger({
             )}
             <IconChevronDown
                 className={cn(
-                    "size-4 transition-transform",
+                    "size-4 transition-transform duration-medium ease-move motion-reduce:transition-none",
                     isOpen && "rotate-180",
                 )}
             />
@@ -131,12 +131,14 @@ export const ReasoningContent = memo(function ReasoningContent({
     return (
         <CollapsibleContent
             className={cn(
-                "mt-4 text-sm text-muted-foreground outline-none",
+                "h-(--collapsible-panel-height) overflow-hidden text-sm text-muted-foreground transition-[height] duration-medium ease-move outline-none data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none",
                 className,
             )}
             {...props}
         >
-            <Streamdown>{children}</Streamdown>
+            <div className="pt-4">
+                <Streamdown>{children}</Streamdown>
+            </div>
         </CollapsibleContent>
     );
 });
