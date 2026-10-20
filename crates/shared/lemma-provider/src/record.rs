@@ -24,7 +24,7 @@ pub struct ProviderRecord {
     pub base_url: String,
     /// API key in the backend's storage encoding.
     pub api_key: String,
-    /// Chat endpoint path override; empty means the adapter default.
+    /// Generation endpoint path override; empty means the adapter default.
     pub api_path: String,
     /// Model-list endpoint path override; empty means `/models`.
     pub models_path: String,
@@ -53,7 +53,7 @@ pub struct NewProvider {
     pub base_url: String,
     /// API key in the backend's storage encoding.
     pub api_key: String,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: String,
     /// Model-list endpoint path override.
     pub models_path: String,
@@ -71,7 +71,7 @@ pub struct ProviderPatch {
     pub base_url: Option<String>,
     /// API key in the backend's storage encoding.
     pub api_key: Option<String>,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: Option<String>,
     /// Model-list endpoint path override.
     pub models_path: Option<String>,

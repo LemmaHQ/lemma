@@ -1,42 +1,61 @@
 use std::fmt;
 
-/// Errors produced during agent execution and storage operations.
+use lemma_agent_loop::LoopError;
+use lemma_provider::ProviderError;
+use lemma_session::SessionError;
+
+/// Failure preparing or running a turn.
 #[derive(Debug)]
 pub enum AgentError {
-    /// Failure communicating with the upstream model provider.
-    Provider(String),
-    /// Failure persisting or querying the underlying trace store.
-    Store(String),
-    /// Target conversation or message node is absent.
-    NotFound(String),
-    /// Invalid argument or malformed message structure.
-    InvalidInput(String),
+    /// The message content is empty after trimming.
+    ContentRequired,
+    /// The model id is empty after trimming.
+    ModelRequired,
+    /// The provider is absent for this user.
+    ProviderNotFound,
+    /// The provider domain failed, e.g. opening the API key.
+    Provider(ProviderError),
+    /// The trace store failed while preparing the turn.
+    Store(SessionError),
+    /// The conversation's tool workspace could not be created.
+    Workspace(String),
+    /// The running turn failed.
+    Loop(LoopError),
 }
 
 impl fmt::Display for AgentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Provider(e) => write!(f, "provider error: {e}"),
-            Self::Store(e) => write!(f, "store error: {e}"),
-            Self::NotFound(e) => write!(f, "not found: {e}"),
-            Self::InvalidInput(e) => write!(f, "invalid input: {e}"),
+            Self::ContentRequired => f.write_str("content required"),
+            Self::ModelRequired => f.write_str("model required"),
+            Self::ProviderNotFound => f.write_str("provider not found"),
+            Self::Provider(e) => write!(f, "provider: {e}"),
+            Self::Store(e) => e.fmt(f),
+            Self::Workspace(e) => write!(f, "create workspace: {e}"),
+            Self::Loop(e) => e.fmt(f),
         }
     }
 }
 
 impl std::error::Error for AgentError {}
 
-impl From<lemma_adapter::ProviderError> for AgentError {
-    fn from(err: lemma_adapter::ProviderError) -> Self {
-        Self::Provider(err.message)
+impl From<ProviderError> for AgentError {
+    fn from(err: ProviderError) -> Self {
+        match err {
+            ProviderError::NotFound => Self::ProviderNotFound,
+            other => Self::Provider(other),
+        }
     }
 }
 
-impl From<lemma_session::SessionError> for AgentError {
-    fn from(err: lemma_session::SessionError) -> Self {
-        match err {
-            lemma_session::SessionError::Store(e) => Self::Store(e),
-            lemma_session::SessionError::NotFound(e) => Self::NotFound(e),
-        }
+impl From<SessionError> for AgentError {
+    fn from(err: SessionError) -> Self {
+        Self::Store(err)
+    }
+}
+
+impl From<LoopError> for AgentError {
+    fn from(err: LoopError) -> Self {
+        Self::Loop(err)
     }
 }

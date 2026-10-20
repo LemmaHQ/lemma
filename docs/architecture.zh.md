@@ -10,13 +10,14 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 | 层 | Crate | 负责 |
 | --- | --- | --- |
-| 契约 | `lemma-proto`、`lemma-core` | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage` |
-| 引擎 | `lemma-adapter`、`lemma-session`、`lemma-tools`、`lemma-agent` | 厂商协议格式；消息树及其 `TraceStore` trait；工具注册表、审批策略与执行环境；turn 循环 |
+| 契约 | `lemma-proto`、`lemma-core`、`lemma-model` | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
+| 引擎 | `lemma-adapter`、`lemma-session`、`lemma-tools`、`lemma-agent-loop` | 厂商协议格式与模型列表；消息树及其 `TraceStore` trait；工具注册表、审批策略与执行环境；turn 循环 |
 | 领域 | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号与令牌；会话生命周期与消息分页；provider 配置与模型列表；API key 加密 |
+| Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、trace 存储、工作区工具）并运行它 |
 | 存储 | `lemma-db-sqlite`、`lemma-db-pgsql` | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现 |
 | 宿主 | `lemma-mobile`、`crates/server/rpc/*`、`lemma-server` | 面向 Android 的 UniFFI 门面；每个 proto service 对应一个 ConnectRPC 服务；服务端可执行文件 |
 
-引擎层与领域层不含 SQL。它们定义存储 trait（`TraceStore`、`ConversationStore`、`ProviderStore`、`AuthStore`），由各宿主传入 SQLite 或 PostgreSQL 实现。`lemma-adapter` 通过可注入的 `HttpTransport` trait 发送 HTTP；默认实现是 `ReqwestTransport`。
+引擎层、领域层与 agent 层不含 SQL。它们定义存储 trait（`TraceStore`、`ConversationStore`、`ProviderStore`、`AuthStore`），由各宿主传入 SQLite 或 PostgreSQL 实现。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
 `crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/server/` 下的 crate 只编入 `lemma-server`（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
@@ -48,19 +49,20 @@ Web 客户端按用户维护一份会话与消息的 IndexedDB 缓存（Dexie）
 
 ## 一次 turn 的完整链路
 
-一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、或模型流失败时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。循环是 `lemma-agent` 中的 `AgentLoop::run_turn_observed`；RPC 宿主把它的 `TurnEvent` 映射为 `AgentEvent` 消息，移动端宿主把它们映射为 `MobileAgentEvent`。
+一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、或模型流失败时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，两个宿主都只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。RPC 宿主把它的 `TurnEvent` 映射为 `AgentEvent` 消息，移动端宿主把它们映射为 `MobileAgentEvent`。
 
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
   require_user -> user id
-  load the provider row, open its API key, choose the adapter by provider kind
+  ProviderService::endpoint opens the provider's API key
+  Connector::connect binds the adapter for the provider kind
   thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:
     fold the path from root to leaf into Vec<Message>
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
-    Provider::stream(ChatRequest) -> StreamEvent*                         -> delta (text | thinking)
+    Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
@@ -72,9 +74,9 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 消息随过程持久化：用户消息与每个占位消息在调用模型之前写入，每条工具结果在下一个 step 之前写入。流失败时，占位消息保留 `error` 状态与失败文本。
 
-provider 层把每个厂商的流规范化为 `StreamEvent`：`DispatchProvider` 按 `ProviderKind` 选择 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
+适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有宿主挂上 `ToolRuntime` 时工具才会运行。本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
 
 `AbortMessage` 与 `ResumeStream` 认证调用者后，分别返回空响应与空流；循环没有取消路径。
 
@@ -87,7 +89,7 @@ provider 层把每个厂商的流规范化为 `StreamEvent`：`DispatchProvider`
 - `TraceStore`（`lemma-session`）是 turn 循环的视图：追加、定稿、移动叶子、列出会话的全部消息。
 - `ConversationStore`（`lemma-conversation`）是生命周期的视图：创建、重命名、归档、恢复、删除已归档会话，以及按新到旧对消息做键集分页。
 
-分支是挂在较早父消息下的一条新消息；已有消息从不改写。`run_turn` 以覆盖参数接收这个父消息，`AgentService` 与 `LemmaEngine` 始终从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
+分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 
 provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它派生的密钥以 AES-256-GCM 加密；没有密钥时（Android 引擎）以明文存储。refresh 令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
 
@@ -97,11 +99,11 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 
 | 目标 | 机制 |
 | --- | --- |
-| 新增厂商协议 | 在 `lemma-adapter` 中实现 `Provider`，在适配器与领域中各加一个 `ProviderKind` 变体，在 `DispatchProvider` 中路由，并在各宿主的 `kind_of` 中映射 |
-| 新增面向模型的工具 | 在 `lemma-tools` 中实现 `Tool`，并在宿主构建 `ToolRegistry` 处注册（`lemma-agent-rpc`、`lemma-mobile`） |
+| 新增厂商协议 | 在 `lemma-model` 中加一个 `ProviderKind` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定 |
+| 新增面向模型的工具 | 在 `lemma-tools` 中实现 `Tool`，并在 `Agent` 构建 `ToolRegistry` 处注册（`lemma-agent`） |
 | 管控工具调用 | 实现 `ApprovalPolicy` 并设置到 `ToolRuntime` 上 |
 | 在别处运行工具 | 实现 `ExecEnv` |
-| 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造适配器 |
+| 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector` |
 | 新增 RPC | 修改 `.proto`，在对应的 `crates/server/rpc/` crate 中实现，并重新生成客户端代码 |
 | 新增 RPC 服务 | 新增 `.proto` 与 `crates/server/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-server` 中路由 |
 | 新增面向用户的错误 | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |

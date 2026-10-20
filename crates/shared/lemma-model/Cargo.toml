@@ -1,0 +1,11 @@
+[package]
+name = "lemma-model"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+futures.workspace = true
+lemma-core.workspace = true
+
+[lints]
+workspace = true

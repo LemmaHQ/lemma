@@ -15,6 +15,8 @@ members = [
     "crates/shared/lemma-core",
     "crates/shared/lemma-adapter",
     "crates/shared/lemma-agent",
+    "crates/shared/lemma-agent-loop",
+    "crates/shared/lemma-model",
     "crates/shared/lemma-session",
     "crates/shared/lemma-tools",
     "crates/shared/lemma-mobile",
@@ -43,6 +45,7 @@ http = "1.5.0"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }
+lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
 lemma-auth = { path = "crates/shared/lemma-auth" }
 lemma-auth-rpc = { path = "crates/server/rpc/lemma-auth-rpc" }
 lemma-conversation = { path = "crates/shared/lemma-conversation" }
@@ -57,6 +60,7 @@ lemma-provider-rpc = { path = "crates/server/rpc/lemma-provider-rpc" }
 lemma-session = { path = "crates/shared/lemma-session" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
+lemma-model = { path = "crates/shared/lemma-model" }
 parking_lot = "0.12.5"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }

@@ -6,11 +6,10 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use lemma_crypto::{derive_key, open, seal};
+use lemma_model::{Connector, Endpoint, ProviderKind};
 use uuid::Uuid;
 
 use crate::error::ProviderError;
-use crate::kind::ProviderKind;
-use crate::models::fetch_models;
 use crate::record::{NewProvider, ProviderPatch, ProviderRecord};
 use crate::store::ProviderStore;
 
@@ -34,7 +33,7 @@ pub struct ProviderView {
     pub models: Vec<String>,
     /// Enabled flag.
     pub enabled: bool,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: String,
     /// Model-list endpoint path override.
     pub models_path: String,
@@ -56,7 +55,7 @@ pub struct CreateInput {
     pub base_url: String,
     /// Plaintext API key.
     pub api_key: String,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: String,
     /// Model-list endpoint path override.
     pub models_path: String,
@@ -74,7 +73,7 @@ pub struct UpdateInput {
     pub base_url: Option<String>,
     /// Plaintext replacement API key.
     pub api_key: Option<String>,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: Option<String>,
     /// Model-list endpoint path override.
     pub models_path: Option<String>,
@@ -88,16 +87,25 @@ pub struct UpdateInput {
 ///
 /// `secret_key` selects the API-key storage encoding: `Some` seals keys
 /// with lemma-crypto (server), `None` stores plaintext (local storage
-/// stays inspectable).
+/// stays inspectable). `connector` fetches live model lists.
 pub struct ProviderService {
     store: Arc<dyn ProviderStore>,
     secret_key: Option<Arc<str>>,
+    connector: Arc<dyn Connector>,
 }
 
 impl ProviderService {
     /// Creates the service over a store backend.
-    pub fn new(store: Arc<dyn ProviderStore>, secret_key: Option<Arc<str>>) -> Self {
-        Self { store, secret_key }
+    pub fn new(
+        store: Arc<dyn ProviderStore>,
+        secret_key: Option<Arc<str>>,
+        connector: Arc<dyn Connector>,
+    ) -> Self {
+        Self {
+            store,
+            secret_key,
+            connector,
+        }
     }
 
     fn seal_key(&self, plain: &str) -> Result<String, ProviderError> {
@@ -128,7 +136,7 @@ impl ProviderService {
         let api_key = self.open_key(&r.api_key).unwrap_or_default();
         ProviderView {
             id: r.id,
-            kind: ProviderKind::from_str(&r.kind).unwrap_or(ProviderKind::OpenAiCompatible),
+            kind: kind_of(r),
             identifier: r.identifier.clone(),
             name: r.name.clone(),
             base_url: r.base_url.clone(),
@@ -224,26 +232,31 @@ impl ProviderService {
         Ok(())
     }
 
+    /// Returns a stored provider's connection details with its API key
+    /// opened.
+    pub async fn endpoint(&self, user_id: Uuid, id: Uuid) -> Result<Endpoint, ProviderError> {
+        let record = self
+            .store
+            .get(user_id, id)
+            .await?
+            .ok_or(ProviderError::NotFound)?;
+        Ok(Endpoint {
+            kind: kind_of(&record),
+            api_key: self.open_key(&record.api_key)?,
+            base_url: record.base_url,
+            api_path: record.api_path,
+            models_path: record.models_path,
+        })
+    }
+
     /// Fetches the live model list using a stored provider's key.
     pub async fn fetch_models_for(
         &self,
         user_id: Uuid,
         id: Uuid,
     ) -> Result<Vec<String>, ProviderError> {
-        let record = self
-            .store
-            .get(user_id, id)
-            .await?
-            .ok_or(ProviderError::NotFound)?;
-        let plain = self.open_key(&record.api_key)?;
-        fetch_models(
-            ProviderKind::from_str(&record.kind).unwrap_or(ProviderKind::OpenAiCompatible),
-            &record.base_url,
-            &plain,
-            &record.models_path,
-        )
-        .await
-        .map_err(ProviderError::Fetch)
+        let endpoint = self.endpoint(user_id, id).await?;
+        self.fetch(endpoint).await
     }
 
     /// Fetches the live model list for ad-hoc connection details.
@@ -254,13 +267,24 @@ impl ProviderService {
         api_key: &str,
         models_path: &str,
     ) -> Result<Vec<String>, ProviderError> {
-        fetch_models(
+        self.fetch(Endpoint {
             kind,
-            base_url.trim().trim_end_matches('/'),
-            api_key,
-            models_path.trim(),
-        )
+            base_url: base_url.trim().trim_end_matches('/').to_string(),
+            api_path: String::new(),
+            models_path: models_path.trim().to_string(),
+            api_key: api_key.to_string(),
+        })
         .await
-        .map_err(ProviderError::Fetch)
     }
+
+    async fn fetch(&self, endpoint: Endpoint) -> Result<Vec<String>, ProviderError> {
+        self.connector
+            .list_models(endpoint)
+            .await
+            .map_err(|e| ProviderError::Fetch(e.message))
+    }
+}
+
+fn kind_of(record: &ProviderRecord) -> ProviderKind {
+    ProviderKind::from_str(&record.kind).unwrap_or(ProviderKind::OpenAiCompatible)
 }

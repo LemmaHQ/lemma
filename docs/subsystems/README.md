@@ -7,8 +7,8 @@ One page per subsystem of Lemma: what it is, the data structures it moves, and t
 | Page | Owns |
 | --- | --- |
 | `core.md` | the shared domain types in `lemma-core`: messages, content blocks, stream events, tool calls, token usage |
-| `agent.md` | the shared agent engine in `lemma-agent` and its `AgentService` exposure: the turn loop, ordered stream events, abort and resume |
-| `adapter.md` | provider adapters in `lemma-adapter`: request assembly, dispatch, transport, and SSE parsing for OpenAI, Anthropic, and Gemini |
+| `agent.md` | the agent in `lemma-agent` and the turn loop in `lemma-agent-loop`, with its `AgentService` exposure: turn assembly, ordered stream events, abort and resume |
+| `adapter.md` | the model interface in `lemma-model` and the adapters in `lemma-adapter`: request assembly, the connector, transport, model lists, and SSE parsing for OpenAI, Anthropic, and Gemini |
 | `session.md` | the message tree in `lemma-session`: message rows, the leaf pointer, branching, and path folding into provider input |
 | `tools.md` | the tool registry in `lemma-tools`: tool definitions, execution tiers, approval policy, the workspace environment, built-in tools |
 | `conversation.md` | conversation records and the conversation service in `lemma-conversation` |

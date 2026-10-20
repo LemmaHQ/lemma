@@ -7,15 +7,13 @@ use std::sync::Arc;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_auth_rpc::require_user;
+use lemma_model::ProviderKind;
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
     CreateProviderResponse, DeleteProviderResponse, ErrorReason, FetchModelsResponse,
     ListProvidersResponse, Provider, UpdateProviderResponse,
 };
-use lemma_provider::{
-    CreateInput, ProviderError, ProviderKind, ProviderService, ProviderStore, ProviderView,
-    UpdateInput,
-};
+use lemma_provider::{CreateInput, ProviderError, ProviderService, ProviderView, UpdateInput};
 use uuid::Uuid;
 
 /// Maps a proto kind to the domain kind. Returns `None` for unspecified
@@ -46,22 +44,18 @@ pub fn kind_to_str(kind: lemma_proto::lemma::v1::ProviderKind) -> Option<&'stati
 
 /// Connect handler implementing the ProviderService RPCs.
 ///
-/// `jwt_secret` authenticates requests; `secret_key` is handed to the
-/// domain to seal provider API keys at rest.
+/// `jwt_secret` authenticates requests; `domain` seals API keys at rest
+/// and fetches model lists.
 pub struct ProviderRpc {
-    domain: ProviderService,
+    domain: Arc<ProviderService>,
     jwt_secret: Arc<str>,
 }
 
 impl ProviderRpc {
-    /// Creates the handler over a provider store backend.
-    pub fn new(
-        store: Arc<dyn ProviderStore>,
-        jwt_secret: impl Into<Arc<str>>,
-        secret_key: impl Into<Arc<str>>,
-    ) -> Self {
+    /// Creates the handler over the provider domain service.
+    pub fn new(domain: Arc<ProviderService>, jwt_secret: impl Into<Arc<str>>) -> Self {
         Self {
-            domain: ProviderService::new(store, Some(secret_key.into())),
+            domain,
             jwt_secret: jwt_secret.into(),
         }
     }

@@ -6,21 +6,17 @@ use std::fmt;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use lemma_adapter::{DispatchProvider, Provider, ProviderKind as AdapterKind};
-use lemma_agent::{AgentConfig, AgentLoop, ToolRuntime, TurnEvent};
+use lemma_adapter::{HttpConnector, ReqwestTransport};
+use lemma_agent::{Agent, AgentError, TraceStoreFactory, TurnEvent, TurnRequest};
 use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use lemma_auth::{AuthService, AuthStore, AuthTokens, Session, User};
 use lemma_conversation::{Conversation, ConversationService, Message};
-use lemma_core::{ContentBlock, Message as CoreMessage, TextContent};
 use lemma_db_sqlite::{
     SqliteAuthStore, SqliteConversationStore, SqliteProviderStore, SqliteTraceStore,
 };
-use lemma_provider::{
-    CreateInput, ProviderKind as DomainKind, ProviderService, ProviderStore, ProviderView,
-    UpdateInput,
-};
+use lemma_model::{Connector, ProviderKind};
+use lemma_provider::{CreateInput, ProviderService, ProviderView, UpdateInput};
 use lemma_session::TraceStore;
-use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use uuid::Uuid;
 
 uniffi::setup_scaffolding!();
@@ -240,7 +236,7 @@ pub struct MobileProvider {
     pub models: Vec<String>,
     /// Enabled flag.
     pub enabled: bool,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: String,
     /// Model-list endpoint path override.
     pub models_path: String,
@@ -272,7 +268,7 @@ pub struct ProviderUpdate {
     pub base_url: Option<String>,
     /// Plaintext replacement API key.
     pub api_key: Option<String>,
-    /// Chat endpoint path override.
+    /// Generation endpoint path override.
     pub api_path: Option<String>,
     /// Model-list endpoint path override.
     pub models_path: Option<String>,
@@ -362,12 +358,16 @@ pub trait AgentEventListener: Send + Sync {
     fn on_event(&self, event: MobileAgentEvent);
 }
 
-/// Maps the domain provider kind onto the adapter provider kind.
-fn kind_of(kind: DomainKind) -> AdapterKind {
-    match kind {
-        DomainKind::Anthropic => AdapterKind::Anthropic,
-        DomainKind::Gemini => AdapterKind::Gemini,
-        DomainKind::OpenAiCompatible => AdapterKind::OpenAiCompatible,
+fn prepare_error(e: AgentError) -> EngineError {
+    match e {
+        AgentError::ContentRequired | AgentError::ModelRequired => {
+            EngineError::Validation(e.to_string())
+        }
+        AgentError::Store(_) | AgentError::Workspace(_) => EngineError::Storage(e.to_string()),
+        AgentError::ProviderNotFound | AgentError::Provider(_) => {
+            EngineError::Provider(e.to_string())
+        }
+        AgentError::Loop(_) => EngineError::Agent(e.to_string()),
     }
 }
 
@@ -416,11 +416,8 @@ pub struct LemmaEngine {
     auth: AuthService,
     auth_store: Arc<SqliteAuthStore>,
     conversations: ConversationService,
-    providers: ProviderService,
-    provider_store: Arc<SqliteProviderStore>,
-    pool: sqlx::SqlitePool,
-    dispatch: Arc<dyn Provider>,
-    workspaces_dir: std::path::PathBuf,
+    providers: Arc<ProviderService>,
+    agent: Agent,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -441,17 +438,28 @@ impl LemmaEngine {
         let auth = AuthService::new(auth_store.clone(), jwt_secret);
         let conversations =
             ConversationService::new(Arc::new(SqliteConversationStore::new(pool.clone())));
-        let provider_store = Arc::new(SqliteProviderStore::new(pool.clone()));
-        let providers = ProviderService::new(provider_store.clone(), None);
+        let connector: Arc<dyn Connector> =
+            Arc::new(HttpConnector::new(Arc::new(ReqwestTransport::new())));
+        let providers = Arc::new(ProviderService::new(
+            Arc::new(SqliteProviderStore::new(pool.clone())),
+            None,
+            Arc::clone(&connector),
+        ));
+        let traces: TraceStoreFactory = Arc::new(move |user_id| {
+            Arc::new(SqliteTraceStore::new(pool.clone(), user_id)) as Arc<dyn TraceStore>
+        });
+        let agent = Agent::new(
+            traces,
+            Arc::clone(&providers),
+            connector,
+            Some(data_dir.join("workspaces")),
+        );
         Ok(Arc::new(Self {
             auth,
             auth_store,
             conversations,
             providers,
-            provider_store,
-            pool,
-            dispatch: Arc::new(DispatchProvider::new()),
-            workspaces_dir: data_dir.join("workspaces"),
+            agent,
         }))
     }
 
@@ -669,7 +677,7 @@ impl LemmaEngine {
         models_path: String,
         models: Vec<String>,
     ) -> Result<MobileProvider, EngineError> {
-        let kind = DomainKind::from_str(&kind)
+        let kind = ProviderKind::from_str(&kind)
             .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
         self.providers
             .create(
@@ -736,7 +744,7 @@ impl LemmaEngine {
         api_key: String,
         models_path: String,
     ) -> Result<Vec<String>, EngineError> {
-        let kind = DomainKind::from_str(&kind)
+        let kind = ProviderKind::from_str(&kind)
             .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
         self.providers
             .fetch_models_adhoc(kind, &base_url, &api_key, &models_path)
@@ -758,72 +766,19 @@ impl LemmaEngine {
         thinking_effort: Option<String>,
         listener: Arc<dyn AgentEventListener>,
     ) -> Result<(), EngineError> {
-        let user_id = parse_id(&user_id)?;
-        let conversation_id = parse_id(&conversation_id)?;
-        let provider_id = parse_id(&provider_id)?;
-        if content.trim().is_empty() {
-            return Err(EngineError::Validation("content required".to_string()));
-        }
-        if model.trim().is_empty() {
-            return Err(EngineError::Validation("model required".to_string()));
-        }
-
-        let record = self
-            .provider_store
-            .get(user_id, provider_id)
+        let turn = self
+            .agent
+            .prepare(TurnRequest {
+                user_id: parse_id(&user_id)?,
+                conversation_id: parse_id(&conversation_id)?,
+                provider_id: parse_id(&provider_id)?,
+                model,
+                content,
+                thinking_effort,
+            })
             .await
-            .map_err(|e| EngineError::Storage(e.to_string()))?
-            .ok_or_else(|| EngineError::Provider(format!("provider {provider_id} not found")))?;
-        let kind = DomainKind::from_str(&record.kind).map_err(|()| {
-            EngineError::Provider(format!("unknown provider kind: {}", record.kind))
-        })?;
-
-        let traces: Arc<dyn TraceStore> =
-            Arc::new(SqliteTraceStore::new(self.pool.clone(), user_id));
-        let thinking_effort = match thinking_effort {
-            Some(effort) if !effort.is_empty() => Some(effort),
-            _ => traces
-                .get_conversation(conversation_id)
-                .await
-                .map_err(|e| EngineError::Storage(e.to_string()))?
-                .and_then(|meta| meta.last_model)
-                .and_then(|m| m.thinking_effort),
-        };
-
-        let config = AgentConfig {
-            kind: kind_of(kind),
-            base_url: record.base_url,
-            api_path: record.api_path,
-            api_key: record.api_key,
-            model,
-            provider_id: record.id,
-            thinking_effort,
-        };
-
-        let workspace = self.workspaces_dir.join(conversation_id.to_string());
-        std::fs::create_dir_all(&workspace)
-            .map_err(|e| EngineError::Storage(format!("create workspace: {e}")))?;
-        let mut registry = ToolRegistry::new();
-        registry.register(Arc::new(ReadFileTool));
-        registry.register(Arc::new(WriteFileTool));
-        registry.register(Arc::new(BashTool));
-        let agent = AgentLoop::new(traces, self.dispatch.clone()).with_tools(ToolRuntime::new(
-            registry,
-            Arc::new(LocalExecEnv::new(workspace)),
-        ));
-
-        let user_msg = CoreMessage::User {
-            content: vec![ContentBlock::Text(TextContent { text: content })],
-        };
-
-        let observer: Arc<dyn Fn(TurnEvent) + Send + Sync> = {
-            let listener = listener.clone();
-            Arc::new(move |ev| listener.on_event(map_event(ev)))
-        };
-        if let Err(e) = agent
-            .run_turn_observed(conversation_id, user_msg, None, config, Some(observer))
-            .await
-        {
+            .map_err(prepare_error)?;
+        if let Err(e) = turn.run(|ev| listener.on_event(map_event(ev))).await {
             listener.on_event(MobileAgentEvent::Error {
                 message: e.to_string(),
             });

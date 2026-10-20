@@ -15,7 +15,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## Agent 循环
 
-- **turn** — 由一条用户消息启动的工作：一个或多个 step，在某个 step 不再请求工具或流失败时结束。由 `lemma-agent` 中的 `AgentLoop::run_turn_observed` 运行。
+- **turn** — 由一条用户消息启动的工作：一个或多个 step，在某个 step 不再请求工具或流失败时结束。由 `lemma-agent` 中的 `Agent` 组装，由 `lemma-agent-loop` 中的 `AgentLoop::run_turn` 运行。
 - **step** — 一次模型请求，以及其响应所请求的工具调用。每个 step 写入一条 assistant 消息，并为每个工具调用写入一条工具结果消息。
 - **占位消息（placeholder）** — step 在调用模型前以 `streaming` 状态追加的 assistant 消息，之后用最终内容、状态与用量定稿。
 - **流事件（stream event）** — 一个 `StreamEvent`：每个适配器都会产出的、与厂商无关的封闭事件集合（文本、思考与工具调用的开始、增量与结束；`Done`；`Error`）。
@@ -27,10 +27,11 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 ## Provider 与适配器
 
 - **provider** — 由 `lemma-provider` 存储的、用户配置的模型端点：类型、标识符、显示名称、base URL、API key、路径覆盖、缓存的模型 id，以及启用标志。
-- **provider 类型（provider kind）** — provider 的 API 方言：`openai`（OpenAI chat completions 及兼容 API）、`anthropic` 或 `gemini`。`lemma-provider` 与 `lemma-adapter` 各自定义一个 `ProviderKind` 枚举；宿主负责二者之间的映射。
+- **provider 类型（provider kind）** — provider 的 API 方言：`openai`（OpenAI chat completions 及兼容 API）、`anthropic` 或 `gemini`。`lemma-model` 定义唯一的 `ProviderKind` 枚举。
 - **provider 标识符（provider identifier）** — provider 的机器名：非空 ASCII，在同一用户下唯一，创建后不可修改。
-- **适配器（adapter）** — 针对某一 provider 类型对 `lemma_adapter::Provider` trait 的实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ChatRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`DispatchProvider` 按请求选择适配器。
-- **模型列表（model list）** — provider 端点报告的模型 id，由 `fetch_models` 实时获取。provider 行另行保存一份模型 id 列表。
+- **端点（endpoint）** — 一个 `Endpoint`：由 `ProviderService::endpoint` 打开的 provider 类型、base URL、路径覆盖与明文 API key。
+- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应类型的适配器。
+- **模型列表（model list）** — provider 端点报告的模型 id，由 `Connector::list_models` 实时获取。provider 行另行保存一份模型 id 列表。
 
 ## 工具
 

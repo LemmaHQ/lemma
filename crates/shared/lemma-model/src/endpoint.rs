@@ -1,8 +1,6 @@
-//! Provider protocol families.
-
 use std::str::FromStr;
 
-/// Vendor family selecting the API dialect of a provider.
+/// API dialect of a provider, selecting the adapter that speaks it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProviderKind {
     /// OpenAI chat-completions and compatible APIs.
@@ -35,4 +33,20 @@ impl FromStr for ProviderKind {
             _ => Err(()),
         }
     }
+}
+
+/// Connection details of one provider, with its API key in plaintext.
+#[derive(Debug, Clone)]
+pub struct Endpoint {
+    /// API dialect.
+    pub kind: ProviderKind,
+    /// Base URL, e.g. `https://api.openai.com/v1`; empty selects the
+    /// vendor default.
+    pub base_url: String,
+    /// Generation endpoint path override; empty selects the adapter default.
+    pub api_path: String,
+    /// Model-list endpoint path override; empty selects the adapter default.
+    pub models_path: String,
+    /// Plaintext API key; empty sends no credentials.
+    pub api_key: String,
 }

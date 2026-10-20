@@ -10,13 +10,14 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 
 | Layer | Crates | Owns |
 | --- | --- | --- |
-| Contracts | `lemma-proto`, `lemma-core` | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage` |
-| Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent` | Vendor wire formats; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop |
+| Contracts | `lemma-proto`, `lemma-core`, `lemma-model` | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
+| Engine | `lemma-adapter`, `lemma-session`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the message tree and its `TraceStore` trait; the tool registry, approval policy, and execution environment; the turn loop |
 | Domains | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts and tokens; conversation lifecycle and message pages; provider configuration and model lists; API-key sealing |
+| Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, trace store, workspace tools) and running it |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
 | Hosts | `lemma-mobile`, `crates/server/rpc/*`, `lemma-server` | The UniFFI facade for Android; one ConnectRPC service per proto service; the server binary |
 
-The engine and domain layers contain no SQL. They define store traits (`TraceStore`, `ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-adapter` sends HTTP through the injectable `HttpTransport` trait; `ReqwestTransport` is the default.
+The engine, domain, and agent layers contain no SQL. They define store traits (`TraceStore`, `ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
 Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/server/` build only into `lemma-server` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
@@ -48,19 +49,20 @@ A business error carries an `ErrorReason` from the closed enum in `errors.proto`
 
 ## The path of one turn
 
-A **turn** starts from one user message and ends when the model stops without requesting tools or its stream fails. A **step** is one model request; a turn with tool calls runs several steps. The loop is `AgentLoop::run_turn_observed` in `lemma-agent`; the RPC host maps its `TurnEvent`s onto `AgentEvent` messages, and the mobile host maps them onto `MobileAgentEvent`.
+A **turn** starts from one user message and ends when the model stops without requesting tools or its stream fails. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and both hosts call only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. The RPC host maps its `TurnEvent`s onto `AgentEvent` messages, and the mobile host maps them onto `MobileAgentEvent`.
 
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
   require_user -> user id
-  load the provider row, open its API key, choose the adapter by provider kind
+  ProviderService::endpoint opens the provider's API key
+  Connector::connect binds the adapter for the provider kind
   thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:
     fold the path from root to leaf into Vec<Message>
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
-    Provider::stream(ChatRequest) -> StreamEvent*                         -> delta (text | thinking)
+    Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
@@ -72,9 +74,9 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 Messages persist as they happen: the user message and each placeholder are written before the model call, and every tool result is written before the next step. A failed stream leaves its placeholder with status `error` and the failure text.
 
-The provider layer normalizes every vendor stream into `StreamEvent`: `DispatchProvider` selects `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
+The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
-Tools run only when the host attaches a `ToolRuntime`. The local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.
+Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.
 
 `AbortMessage` and `ResumeStream` authenticate the caller and return an empty response and an empty stream; the loop has no cancellation path.
 
@@ -87,7 +89,7 @@ A conversation is a tree of messages. Each message row stores its `parent_id`, t
 - `TraceStore` (`lemma-session`) is the turn loop's view: append, settle, move the leaf, list a conversation's messages.
 - `ConversationStore` (`lemma-conversation`) is the lifecycle view: create, rename, archive, restore, delete archived, and keyset-paginate messages newest first.
 
-A branch is a message appended under an earlier parent; past messages are never rewritten. `run_turn` accepts that parent as an override, and `AgentService` and `LemmaEngine` always continue from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
+A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 
 Provider API keys pass through `ProviderService`, which seals them with AES-256-GCM under a key derived from the configured secret when it has one, and stores plaintext when it has none (the Android engine). Refresh tokens are stored as SHA-256 hashes; passwords as Argon2 hashes.
 
@@ -97,11 +99,11 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 
 | Goal | Mechanism |
 | --- | --- |
-| Add a vendor protocol | implement `Provider` in `lemma-adapter`, add a `ProviderKind` variant to the adapter and the domain, route it in `DispatchProvider`, and map it in each host's `kind_of` |
-| Add a model-facing tool | implement `Tool` in `lemma-tools` and register it where the hosts build their `ToolRegistry` (`lemma-agent-rpc`, `lemma-mobile`) |
+| Add a vendor protocol | add a `ProviderKind` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector` |
+| Add a model-facing tool | implement `Tool` in `lemma-tools` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`) |
 | Gate tool calls | implement `ApprovalPolicy` and set it on the `ToolRuntime` |
 | Run tools somewhere else | implement `ExecEnv` |
-| Send provider traffic through another stack | implement `HttpTransport` and construct the adapters with it |
+| Send provider traffic through another stack | implement `HttpTransport` and construct the `HttpConnector` with it |
 | Add an RPC | change the `.proto`, implement it in the matching `crates/server/rpc/` crate, and regenerate the clients |
 | Add an RPC service | add a `.proto` and a new crate under `crates/server/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-server` |
 | Add a user-facing error | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/data/rpc/errors.ts` and both locale files |

@@ -1,12 +1,11 @@
-//! Platform-agnostic agent orchestration core.
-//!
-//! This crate contains the core execution loop that drives conversations
-//! and invokes providers. Session tree topology and persistence contracts
-//! live in `lemma-session`; this crate depends only on `lemma-core`,
-//! `lemma-adapter`, and `lemma-session`.
+//! The agent: assembles one turn from a user's request (provider endpoint,
+//! adapter, conversation store, workspace tools) and runs it on the agent
+//! loop. Hosts call only this crate and map its [`TurnEvent`]s onto their
+//! own event types.
 
+mod agent;
 mod error;
-mod loop_core;
 
+pub use agent::{Agent, TraceStoreFactory, Turn, TurnRequest};
 pub use error::AgentError;
-pub use loop_core::{AgentConfig, AgentLoop, BoxTurnObserver, ToolRuntime, TurnEvent};
+pub use lemma_agent_loop::TurnEvent;

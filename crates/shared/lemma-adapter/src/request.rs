@@ -1,37 +1,4 @@
-use lemma_core::{ContentBlock, Message, ToolSpec};
-
-/// Vendor family selecting the wire protocol of a chat request.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProviderKind {
-    /// OpenAI chat-completions and compatible APIs.
-    OpenAiCompatible,
-    /// Anthropic Messages API.
-    Anthropic,
-    /// Google Gemini generateContent API.
-    Gemini,
-}
-
-/// One streaming chat call against a provider.
-#[derive(Debug, Clone)]
-pub struct ChatRequest {
-    /// Vendor family selecting the adapter.
-    pub kind: ProviderKind,
-    /// Provider base URL, e.g. `https://api.openai.com/v1`.
-    pub base_url: String,
-    /// API path override; empty selects the adapter default.
-    pub api_path: String,
-    /// Plaintext key, opened from its sealed form just before the call.
-    pub api_key: String,
-    /// Model id as the vendor expects it.
-    pub model: String,
-    /// Conversation history in canonical form.
-    pub messages: Vec<Message>,
-    /// Tool definitions advertised to the model; empty disables tool use.
-    pub tools: Vec<ToolSpec>,
-    /// Reasoning effort knob (`low`/`medium`/`high` or a numeric budget),
-    /// forwarded to the vendor's thinking control when set and non-empty.
-    pub thinking_effort: Option<String>,
-}
+use lemma_core::{ContentBlock, Message};
 
 /// Joins the text blocks of a content list into one string.
 pub(crate) fn text_of(content: &[ContentBlock]) -> String {

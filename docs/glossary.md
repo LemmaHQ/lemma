@@ -15,7 +15,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Agent loop
 
-- **turn** — the work started by one user message: one or more steps, ending when a step requests no tools or a stream fails. `AgentLoop::run_turn_observed` in `lemma-agent` runs it.
+- **turn** — the work started by one user message: one or more steps, ending when a step requests no tools or a stream fails. `Agent` in `lemma-agent` assembles it and `AgentLoop::run_turn` in `lemma-agent-loop` runs it.
 - **step** — one model request and the tool calls its response requests. Each step writes one assistant message and one tool result message per tool call.
 - **placeholder** — the assistant message a step appends with status `streaming` before calling the model, and settles with the final content, status, and usage afterwards.
 - **stream event** — one `StreamEvent`: the closed, vendor-independent set of events every adapter emits (text, thinking, and tool-call start, delta, and end; `Done`; `Error`).
@@ -27,10 +27,11 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 ## Providers and adapters
 
 - **provider** — a user-configured model endpoint stored by `lemma-provider`: kind, identifier, display name, base URL, API key, path overrides, cached model ids, and an enabled flag.
-- **provider kind** — the API dialect of a provider: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-provider` and `lemma-adapter` each define a `ProviderKind` enum; the hosts map one onto the other.
+- **provider kind** — the API dialect of a provider: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-model` defines the one `ProviderKind` enum.
 - **provider identifier** — a provider's machine name: non-empty ASCII, unique per user, immutable after creation.
-- **adapter** — an implementation of the `lemma_adapter::Provider` trait for one provider kind: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ChatRequest` into the vendor's wire format and the vendor's stream into stream events. `DispatchProvider` selects the adapter per request.
-- **model list** — the model ids a provider's endpoint reports, fetched live by `fetch_models`. A provider row stores its own list of model ids.
+- **endpoint** — an `Endpoint`: a provider's kind, base URL, path overrides, and plaintext API key, as `ProviderService::endpoint` opens them.
+- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its kind.
+- **model list** — the model ids a provider's endpoint reports, fetched live by `Connector::list_models`. A provider row stores its own list of model ids.
 
 ## Tools
 

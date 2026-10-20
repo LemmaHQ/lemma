@@ -4,40 +4,34 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
+use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
-use crate::error::ProviderError;
-use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, anthropic_messages, thinking_budget};
+use crate::error;
+use crate::request::{anthropic_messages, thinking_budget};
 use crate::sse::{SseParser, events_from_sse};
-use crate::transport::{HttpTransport, ReqwestTransport};
+use crate::timing::timed;
+use crate::transport::HttpTransport;
 
 /// Required by the API; acts as a fixed response-length ceiling.
 const MAX_TOKENS: u32 = 8192;
 /// Pinned API version header.
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 
-/// Streams via `POST <base_url><api_path>/messages` with an `x-api-key`
-/// header.
+/// Streams via `POST <base_url>/messages`, or the endpoint's `api_path`
+/// in place of the path, with an `x-api-key` header.
 pub struct AnthropicMessages {
     transport: Arc<dyn HttpTransport>,
+    endpoint: Endpoint,
 }
 
 impl AnthropicMessages {
-    /// Creates the adapter with the default reqwest transport.
-    pub fn new() -> Self {
-        Self::with_transport(Arc::new(ReqwestTransport::new()))
-    }
-
-    /// Creates the adapter with an injected transport.
-    pub fn with_transport(transport: Arc<dyn HttpTransport>) -> Self {
-        Self { transport }
-    }
-}
-
-impl Default for AnthropicMessages {
-    fn default() -> Self {
-        Self::new()
+    /// Creates the adapter for `endpoint` over `transport`.
+    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+        Self {
+            transport,
+            endpoint,
+        }
     }
 }
 
@@ -225,9 +219,9 @@ impl Parser {
 }
 
 impl SseParser for Parser {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ProviderError> {
-        let event: Event = serde_json::from_str(data)
-            .map_err(|e| ProviderError::protocol(format!("bad event: {e}")))?;
+    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
+        let event: Event =
+            serde_json::from_str(data).map_err(|e| error::protocol(format!("bad event: {e}")))?;
         match event.kind.as_str() {
             "content_block_start" => Ok(match event.content_block {
                 Some(block) => self.block_start(block),
@@ -258,7 +252,7 @@ impl SseParser for Parser {
                 usage: self.usage(),
                 ttft_ms: None,
             }]),
-            "error" => Err(ProviderError::protocol(format!(
+            "error" => Err(error::protocol(format!(
                 "anthropic error: {}",
                 event.error.map(|e| e.message).unwrap_or_default()
             ))),
@@ -271,59 +265,60 @@ impl SseParser for Parser {
     }
 }
 
-impl Provider for AnthropicMessages {
-    fn stream(&self, req: ChatRequest) -> BoxChatFuture {
+impl Adapter for AnthropicMessages {
+    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+        let endpoint = &self.endpoint;
+        let base_url = if endpoint.base_url.is_empty() {
+            "https://api.anthropic.com/v1"
+        } else {
+            endpoint.base_url.as_str()
+        };
+        let path = if endpoint.api_path.is_empty() {
+            "/messages"
+        } else {
+            &endpoint.api_path
+        };
+        let url = format!("{}{}", base_url.trim_end_matches('/'), path);
+        let effort = req.thinking_effort.as_deref().filter(|e| !e.is_empty());
+        let budget = effort.map(thinking_budget);
+        let max_tokens = match budget {
+            Some(budget) => MAX_TOKENS.max(budget + 8192),
+            None => MAX_TOKENS,
+        };
+        let mut body = serde_json::json!({
+            "model": req.model,
+            "max_tokens": max_tokens,
+            "messages": anthropic_messages(&req.messages),
+            "stream": true,
+        });
+        if !req.tools.is_empty() {
+            body["tools"] = req
+                .tools
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "name": t.name,
+                        "description": t.description,
+                        "input_schema": t.parameters,
+                    })
+                })
+                .collect();
+        }
+        if let Some(budget) = budget {
+            body["thinking"] = serde_json::json!({
+                "type": "enabled",
+                "budget_tokens": budget,
+            });
+        }
+        let mut headers = vec![(
+            "anthropic-version".to_string(),
+            ANTHROPIC_VERSION.to_string(),
+        )];
+        if !endpoint.api_key.is_empty() {
+            headers.push(("x-api-key".to_string(), endpoint.api_key.clone()));
+        }
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            let base_url = if req.base_url.is_empty() {
-                "https://api.anthropic.com/v1"
-            } else {
-                req.base_url.as_str()
-            };
-            let path = if req.api_path.is_empty() {
-                "/messages"
-            } else {
-                &req.api_path
-            };
-            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            let effort = req.thinking_effort.as_deref().filter(|e| !e.is_empty());
-            let budget = effort.map(thinking_budget);
-            let max_tokens = match budget {
-                Some(budget) => MAX_TOKENS.max(budget + 8192),
-                None => MAX_TOKENS,
-            };
-            let mut body = serde_json::json!({
-                "model": req.model,
-                "max_tokens": max_tokens,
-                "messages": anthropic_messages(&req.messages),
-                "stream": true,
-            });
-            if !req.tools.is_empty() {
-                body["tools"] = req
-                    .tools
-                    .iter()
-                    .map(|t| {
-                        serde_json::json!({
-                            "name": t.name,
-                            "description": t.description,
-                            "input_schema": t.parameters,
-                        })
-                    })
-                    .collect();
-            }
-            if let Some(budget) = budget {
-                body["thinking"] = serde_json::json!({
-                    "type": "enabled",
-                    "budget_tokens": budget,
-                });
-            }
-            let mut headers = vec![(
-                "anthropic-version".to_string(),
-                ANTHROPIC_VERSION.to_string(),
-            )];
-            if !req.api_key.is_empty() {
-                headers.push(("x-api-key".to_string(), req.api_key.clone()));
-            }
             let start = Instant::now();
             let bytes = transport.post_stream(url, headers, body).await?;
             Ok(timed(
@@ -361,8 +356,8 @@ mod tests {
         }
     }
 
-    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ProviderError> {
-        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ProviderError>(
+    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ModelError> {
+        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
         events_from_sse(bytes, parser())
@@ -373,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn thinking_text_and_tool_use_stream() -> Result<(), ProviderError> {
+    fn thinking_text_and_tool_use_stream() -> Result<(), ModelError> {
         let sse = "\
 event: message_start\n\
 data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":25,\"output_tokens\":1}}}\n\

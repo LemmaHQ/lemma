@@ -10,14 +10,13 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt, stream};
 use lemma_core::{StopReason, StreamEvent, Usage};
+use lemma_model::{BoxEventStream, ModelError};
 
-use crate::error::ProviderError;
-use crate::provider::BoxEventStream;
 use crate::transport::ByteStream;
 
 /// Parses a provider's SSE `data:` payloads into canonical events.
 pub(crate) trait SseParser: Send + 'static {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ProviderError>;
+    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError>;
     /// Flushes pending state when the stream reaches EOF directly;
     /// extracts token usage from APIs providing usage metrics on the last chunk.
     fn on_eof(&mut self) -> Option<Usage> {
@@ -35,7 +34,7 @@ pub(crate) trait SseParser: Send + 'static {
     }
 }
 
-type ByteLines = Pin<Box<dyn Stream<Item = Result<String, ProviderError>> + Send>>;
+type ByteLines = Pin<Box<dyn Stream<Item = Result<String, ModelError>> + Send>>;
 
 fn lines(bytes: ByteStream) -> ByteLines {
     Box::pin(stream::try_unfold(

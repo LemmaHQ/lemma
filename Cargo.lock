@@ -992,7 +992,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1805,6 +1805,7 @@ version = "0.1.0"
 dependencies = [
  "futures",
  "lemma-core",
+ "lemma-model",
  "reqwest",
  "serde",
  "serde_json",
@@ -1814,14 +1815,26 @@ dependencies = [
 name = "lemma-agent"
 version = "0.1.0"
 dependencies = [
- "futures",
- "lemma-adapter",
+ "lemma-agent-loop",
  "lemma-core",
+ "lemma-model",
+ "lemma-provider",
  "lemma-session",
  "lemma-tools",
- "serde",
- "serde_json",
  "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-agent-loop"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "lemma-core",
+ "lemma-model",
+ "lemma-session",
+ "lemma-tools",
+ "serde_json",
  "uuid",
 ]
 
@@ -1830,18 +1843,12 @@ name = "lemma-agent-rpc"
 version = "0.1.0"
 dependencies = [
  "buffa",
- "buffa-types",
  "connectrpc",
  "futures",
- "lemma-adapter",
  "lemma-agent",
  "lemma-auth-rpc",
  "lemma-core",
- "lemma-crypto",
  "lemma-proto",
- "lemma-provider",
- "lemma-session",
- "lemma-tools",
  "tokio",
  "tokio-stream",
  "uuid",
@@ -1956,16 +1963,23 @@ dependencies = [
  "lemma-agent",
  "lemma-auth",
  "lemma-conversation",
- "lemma-core",
  "lemma-db-sqlite",
+ "lemma-model",
  "lemma-provider",
  "lemma-session",
- "lemma-tools",
  "serde_json",
  "sqlx",
  "tokio",
  "uniffi",
  "uuid",
+]
+
+[[package]]
+name = "lemma-model"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "lemma-core",
 ]
 
 [[package]]
@@ -1987,8 +2001,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "lemma-crypto",
- "reqwest",
- "serde",
+ "lemma-model",
  "uuid",
 ]
 
@@ -1999,6 +2012,7 @@ dependencies = [
  "buffa-types",
  "connectrpc",
  "lemma-auth-rpc",
+ "lemma-model",
  "lemma-proto",
  "lemma-provider",
  "uuid",
@@ -2013,12 +2027,15 @@ dependencies = [
  "dotenvy",
  "hex",
  "lemma-adapter",
+ "lemma-agent",
  "lemma-agent-rpc",
  "lemma-auth",
  "lemma-auth-rpc",
  "lemma-conversation-rpc",
  "lemma-db-pgsql",
  "lemma-db-sqlite",
+ "lemma-model",
+ "lemma-provider",
  "lemma-provider-rpc",
  "lemma-session",
  "rand 0.10.3",
@@ -2563,7 +2580,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2794,7 +2811,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2852,7 +2869,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3492,7 +3509,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4153,7 +4170,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

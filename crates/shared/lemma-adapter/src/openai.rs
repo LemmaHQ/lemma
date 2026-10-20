@@ -4,35 +4,29 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
+use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
-use crate::error::ProviderError;
-use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, openai_messages};
+use crate::error;
+use crate::request::openai_messages;
 use crate::sse::{SseParser, events_from_sse};
-use crate::transport::{HttpTransport, ReqwestTransport};
+use crate::timing::timed;
+use crate::transport::HttpTransport;
 
-/// Streams via `POST <base_url><api_path>/chat/completions` with a
-/// bearer token.
+/// Streams via `POST <base_url>/chat/completions`, or the endpoint's
+/// `api_path` in place of the path, with a bearer token.
 pub struct OpenAiCompatible {
     transport: Arc<dyn HttpTransport>,
+    endpoint: Endpoint,
 }
 
 impl OpenAiCompatible {
-    /// Creates the adapter with the default reqwest transport.
-    pub fn new() -> Self {
-        Self::with_transport(Arc::new(ReqwestTransport::new()))
-    }
-
-    /// Creates the adapter with an injected transport.
-    pub fn with_transport(transport: Arc<dyn HttpTransport>) -> Self {
-        Self { transport }
-    }
-}
-
-impl Default for OpenAiCompatible {
-    fn default() -> Self {
-        Self::new()
+    /// Creates the adapter for `endpoint` over `transport`.
+    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+        Self {
+            transport,
+            endpoint,
+        }
     }
 }
 
@@ -181,7 +175,7 @@ impl Parser {
 }
 
 impl SseParser for Parser {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ProviderError> {
+    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
         if data == "[DONE]" {
             let mut events = Vec::new();
             self.close_thinking(&mut events);
@@ -193,8 +187,8 @@ impl SseParser for Parser {
             });
             return Ok(events);
         }
-        let chunk: StreamChunk = serde_json::from_str(data)
-            .map_err(|e| ProviderError::protocol(format!("bad chunk: {e}")))?;
+        let chunk: StreamChunk =
+            serde_json::from_str(data).map_err(|e| error::protocol(format!("bad chunk: {e}")))?;
         if let Some(usage) = chunk.usage {
             self.usage = Some(usage);
             return Ok(Vec::new());
@@ -242,54 +236,55 @@ impl SseParser for Parser {
     }
 }
 
-impl Provider for OpenAiCompatible {
-    fn stream(&self, req: ChatRequest) -> BoxChatFuture {
+impl Adapter for OpenAiCompatible {
+    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+        let endpoint = &self.endpoint;
+        let base_url = if endpoint.base_url.is_empty() {
+            "https://api.openai.com/v1"
+        } else {
+            endpoint.base_url.as_str()
+        };
+        let path = if endpoint.api_path.is_empty() {
+            "/chat/completions"
+        } else {
+            &endpoint.api_path
+        };
+        let url = format!("{}{}", base_url.trim_end_matches('/'), path);
+        let mut body = serde_json::json!({
+            "model": req.model,
+            "messages": openai_messages(&req.messages),
+            "stream": true,
+            "stream_options": { "include_usage": true },
+        });
+        if !req.tools.is_empty() {
+            body["tools"] = req
+                .tools
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.parameters,
+                        },
+                    })
+                })
+                .collect();
+        }
+        if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
+            body["reasoning_effort"] = serde_json::Value::String(effort.to_string());
+        }
+        let headers = if endpoint.api_key.is_empty() {
+            Vec::new()
+        } else {
+            vec![(
+                "authorization".to_string(),
+                format!("Bearer {}", endpoint.api_key),
+            )]
+        };
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            let base_url = if req.base_url.is_empty() {
-                "https://api.openai.com/v1"
-            } else {
-                req.base_url.as_str()
-            };
-            let path = if req.api_path.is_empty() {
-                "/chat/completions"
-            } else {
-                &req.api_path
-            };
-            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            let mut body = serde_json::json!({
-                "model": req.model,
-                "messages": openai_messages(&req.messages),
-                "stream": true,
-                "stream_options": { "include_usage": true },
-            });
-            if !req.tools.is_empty() {
-                body["tools"] = req
-                    .tools
-                    .iter()
-                    .map(|t| {
-                        serde_json::json!({
-                            "type": "function",
-                            "function": {
-                                "name": t.name,
-                                "description": t.description,
-                                "parameters": t.parameters,
-                            },
-                        })
-                    })
-                    .collect();
-            }
-            if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
-                body["reasoning_effort"] = serde_json::Value::String(effort.to_string());
-            }
-            let headers = if req.api_key.is_empty() {
-                Vec::new()
-            } else {
-                vec![(
-                    "authorization".to_string(),
-                    format!("Bearer {}", req.api_key),
-                )]
-            };
             let start = Instant::now();
             let bytes = transport.post_stream(url, headers, body).await?;
             Ok(timed(
@@ -325,8 +320,8 @@ mod tests {
         }
     }
 
-    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ProviderError> {
-        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ProviderError>(
+    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ModelError> {
+        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
         events_from_sse(bytes, parser())
@@ -337,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn plain_text_stream() -> Result<(), ProviderError> {
+    fn plain_text_stream() -> Result<(), ModelError> {
         let sse = "\
 data: {\"choices\":[{\"delta\":{\"content\":\"你好\"},\"finish_reason\":null}]}\n\
 data: {\"choices\":[{\"delta\":{\"content\":\"世界\"},\"finish_reason\":null}]}\n\
@@ -373,7 +368,7 @@ data: [DONE]\n";
     }
 
     #[test]
-    fn thinking_text_and_tool_call_stream() -> Result<(), ProviderError> {
+    fn thinking_text_and_tool_call_stream() -> Result<(), ModelError> {
         let sse = "\
 data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"让我\"},\"finish_reason\":null}]}\n\
 data: {\"choices\":[{\"delta\":{\"reasoning\":\"想想\"},\"finish_reason\":null}]}\n\

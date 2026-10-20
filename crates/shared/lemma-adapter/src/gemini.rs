@@ -4,35 +4,29 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
+use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
-use crate::error::ProviderError;
-use crate::provider::{BoxChatFuture, Provider, timed};
-use crate::request::{ChatRequest, gemini_contents, thinking_budget};
+use crate::error;
+use crate::request::{gemini_contents, thinking_budget};
 use crate::sse::{SseParser, events_from_sse};
-use crate::transport::{HttpTransport, ReqwestTransport};
+use crate::timing::timed;
+use crate::transport::HttpTransport;
 
 /// Streams via `:streamGenerateContent?alt=sse` with an `x-goog-api-key`
 /// header. Usage metrics accompany the terminal chunk and flush at EOF.
 pub struct GeminiGenerate {
     transport: Arc<dyn HttpTransport>,
+    endpoint: Endpoint,
 }
 
 impl GeminiGenerate {
-    /// Creates the adapter with the default reqwest transport.
-    pub fn new() -> Self {
-        Self::with_transport(Arc::new(ReqwestTransport::new()))
-    }
-
-    /// Creates the adapter with an injected transport.
-    pub fn with_transport(transport: Arc<dyn HttpTransport>) -> Self {
-        Self { transport }
-    }
-}
-
-impl Default for GeminiGenerate {
-    fn default() -> Self {
-        Self::new()
+    /// Creates the adapter for `endpoint` over `transport`.
+    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+        Self {
+            transport,
+            endpoint,
+        }
     }
 }
 
@@ -160,9 +154,9 @@ impl Parser {
 }
 
 impl SseParser for Parser {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ProviderError> {
-        let chunk: Chunk = serde_json::from_str(data)
-            .map_err(|e| ProviderError::protocol(format!("bad chunk: {e}")))?;
+    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
+        let chunk: Chunk =
+            serde_json::from_str(data).map_err(|e| error::protocol(format!("bad chunk: {e}")))?;
         if let Some(u) = chunk.usage {
             self.usage = Some(u);
         }
@@ -204,42 +198,43 @@ impl SseParser for Parser {
     }
 }
 
-impl Provider for GeminiGenerate {
-    fn stream(&self, req: ChatRequest) -> BoxChatFuture {
+impl Adapter for GeminiGenerate {
+    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+        let endpoint = &self.endpoint;
+        let base_url = if endpoint.base_url.is_empty() {
+            "https://generativelanguage.googleapis.com/v1beta"
+        } else {
+            endpoint.base_url.as_str()
+        };
+        let path = if endpoint.api_path.is_empty() {
+            format!("/models/{}:streamGenerateContent?alt=sse", req.model)
+        } else {
+            endpoint.api_path.replace("{model}", &req.model)
+        };
+        let url = format!("{}{}", base_url.trim_end_matches('/'), path);
+        let mut body = serde_json::json!({
+            "contents": gemini_contents(&req.messages),
+        });
+        if !req.tools.is_empty() {
+            body["tools"] = serde_json::json!([{
+                "functionDeclarations": req.tools.iter().map(|t| serde_json::json!({
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.parameters,
+                })).collect::<Vec<_>>(),
+            }]);
+        }
+        if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
+            body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
+                serde_json::json!(thinking_budget(effort));
+        }
+        let headers = if endpoint.api_key.is_empty() {
+            Vec::new()
+        } else {
+            vec![("x-goog-api-key".to_string(), endpoint.api_key.clone())]
+        };
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            let base_url = if req.base_url.is_empty() {
-                "https://generativelanguage.googleapis.com/v1beta"
-            } else {
-                req.base_url.as_str()
-            };
-            let path = if req.api_path.is_empty() {
-                format!("/models/{}:streamGenerateContent?alt=sse", req.model)
-            } else {
-                req.api_path.replace("{model}", &req.model)
-            };
-            let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            let mut body = serde_json::json!({
-                "contents": gemini_contents(&req.messages),
-            });
-            if !req.tools.is_empty() {
-                body["tools"] = serde_json::json!([{
-                    "functionDeclarations": req.tools.iter().map(|t| serde_json::json!({
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.parameters,
-                    })).collect::<Vec<_>>(),
-                }]);
-            }
-            if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
-                body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
-                    serde_json::json!(thinking_budget(effort));
-            }
-            let headers = if req.api_key.is_empty() {
-                Vec::new()
-            } else {
-                vec![("x-goog-api-key".to_string(), req.api_key.clone())]
-            };
             let start = Instant::now();
             let bytes = transport.post_stream(url, headers, body).await?;
             Ok(timed(
@@ -279,8 +274,8 @@ mod tests {
         }
     }
 
-    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ProviderError> {
-        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ProviderError>(
+    async fn collect(sse: &str) -> Result<Vec<StreamEvent>, ModelError> {
+        let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
         events_from_sse(bytes, parser())
@@ -291,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn thought_text_and_function_call_stream() -> Result<(), ProviderError> {
+    fn thought_text_and_function_call_stream() -> Result<(), ModelError> {
         let sse = "\
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"想想\",\"thought\":true}]}}]}\n\
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"一下\",\"thought\":true,\"thoughtSignature\":\"sig_xyz\"}]}}]}\n\

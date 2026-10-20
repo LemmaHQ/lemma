@@ -1,0 +1,25 @@
+use std::fmt;
+
+/// Any model call failure, reduced to a message.
+#[derive(Debug)]
+pub struct ModelError {
+    /// Human-readable failure description.
+    pub message: String,
+}
+
+impl ModelError {
+    /// Creates an error carrying `message`.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
+}
+
+impl fmt::Display for ModelError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for ModelError {}

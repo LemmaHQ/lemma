@@ -6,8 +6,7 @@ name = "lemma-provider"
 [dependencies]
 chrono.workspace = true
 lemma-crypto.workspace = true
-reqwest.workspace = true
-serde.workspace = true
+lemma-model.workspace = true
 uuid.workspace = true
 
 [lints]

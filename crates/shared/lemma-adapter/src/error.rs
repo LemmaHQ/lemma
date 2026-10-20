@@ -1,27 +1,15 @@
-/// Any provider failure, reduced to a message. These surface to clients
-/// exclusively as in-band error events.
-#[derive(Debug)]
-pub struct ProviderError {
-    /// Human-readable failure description.
-    pub message: String,
+use std::fmt::Display;
+
+use lemma_model::ModelError;
+
+pub(crate) fn transport(e: impl Display) -> ModelError {
+    ModelError::new(format!("transport: {e}"))
 }
 
-impl ProviderError {
-    pub(crate) fn transport(e: impl std::fmt::Display) -> Self {
-        Self {
-            message: format!("transport: {e}"),
-        }
-    }
+pub(crate) fn http(status: u16, body: String) -> ModelError {
+    ModelError::new(format!("upstream {status}: {body}"))
+}
 
-    pub(crate) fn http(status: u16, body: String) -> Self {
-        Self {
-            message: format!("upstream {status}: {body}"),
-        }
-    }
-
-    pub(crate) fn protocol(msg: impl Into<String>) -> Self {
-        Self {
-            message: msg.into(),
-        }
-    }
+pub(crate) fn protocol(msg: impl Into<String>) -> ModelError {
+    ModelError::new(msg)
 }

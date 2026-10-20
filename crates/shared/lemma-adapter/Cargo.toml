@@ -6,6 +6,7 @@ version.workspace = true
 [dependencies]
 futures.workspace = true
 lemma-core.workspace = true
+lemma-model.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
