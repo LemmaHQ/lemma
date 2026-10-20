@@ -1,0 +1,19 @@
+# Translation-pairing record for adapter.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing docs/subsystems/adapter.md
+/adapter:
+  en: 336a75f571ed0c95
+  zh: 4cdb9685d13dc367
+/adapter/interface-lemma-model:
+  en: 06e7c7acae6a4725
+  zh: 20c2647d604c7744
+/adapter/implementation-lemma-adapter:
+  en: fe7d23ff81ec9b44
+  zh: 071ae1b7aa4ed5ea
+/adapter/stream-invariants:
+  en: 451119e9acfa8cb0
+  zh: 8bb66c020381d58f
+/adapter/failures:
+  en: 8d99e20722d50ce8
+  zh: ce0cca5b9a6df778

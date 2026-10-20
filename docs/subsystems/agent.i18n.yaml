@@ -1,0 +1,22 @@
+# Translation-pairing record for agent.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing docs/subsystems/agent.md
+/agent:
+  en: 4f84290cf996a50e
+  zh: 61647c42113c32ff
+/agent/turn-assembly:
+  en: ca6f3c3575120e4c
+  zh: a923c3e53d598aa0
+/agent/turn-events:
+  en: 5c352d7b53ef5b14
+  zh: 3b4f50ea9b85a88d
+/agent/abort:
+  en: 85d8026abfa11928
+  zh: 6330826301cca590
+/agent/streams-and-resume:
+  en: 4419bc40ffeba99b
+  zh: 0c36ec2a9bec0dc2
+/agent/errors:
+  en: 21a371e80e18ccc4
+  zh: 1a8063efe713143e
