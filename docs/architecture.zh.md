@@ -80,7 +80,9 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
 
-`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。`LemmaEngine` 没有中止方法。`ResumeStream` 认证调用者后返回空流。
+`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。`LemmaEngine` 没有中止方法。
+
+无论客户端是否读取它的流，turn 都会运行到结束。`lemma-agent-rpc` 记录每个正在运行的 turn 的 `AgentEvent`；`SendMessage` 与 `ResumeStream` 都读取这份记录，因此读取较慢的客户端不会漏掉事件。丢失流的客户端用用户消息 id 和已收到的事件数调用 `ResumeStream`，先收到其余事件，再接着收到实时事件。turn 结束后，`ResumeStream` 以 `ERROR_REASON_TURN_NOT_RUNNING` 失败，客户端改为读取已定稿的消息。
 
 ## 持久化
 

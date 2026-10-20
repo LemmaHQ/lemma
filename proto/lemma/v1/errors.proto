@@ -34,6 +34,9 @@ enum ErrorReason {
   ERROR_REASON_NOT_ASSISTANT_MESSAGE = 27; // Operation restricted exclusively to assistant messages
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
+
+  // Agent
+  ERROR_REASON_TURN_NOT_RUNNING = 30; // No running turn for the message: it ended or never started
 }
 
 // Structured error details carried on ConnectError; rendered by client i18n based on reason.

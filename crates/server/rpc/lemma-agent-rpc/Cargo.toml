@@ -6,13 +6,13 @@ name = "lemma-agent-rpc"
 [dependencies]
 buffa.workspace = true
 connectrpc.workspace = true
+dashmap.workspace = true
 futures.workspace = true
 lemma-agent.workspace = true
 lemma-auth-rpc.workspace = true
 lemma-core.workspace = true
 lemma-proto.workspace = true
 tokio.workspace = true
-tokio-stream.workspace = true
 uuid.workspace = true
 
 [lints]

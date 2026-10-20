@@ -97,15 +97,18 @@ message SendMessageResponse {
 }
 
 message AbortMessageRequest {
+  // User message id from the started event.
   string message_id = 1;
 }
 
 message AbortMessageResponse {}
 
-// Stream resumption: the server replays past content from offset and continues live streaming.
+// Stream resumption: the server replays the running turn's events from offset and continues live streaming.
+// A turn that is no longer running fails with ERROR_REASON_TURN_NOT_RUNNING.
 message ResumeStreamRequest {
+  // User message id from the started event.
   string message_id = 1;
-  // Character count already received by the client.
+  // Number of the turn's stream events the client already received.
   int64 offset = 2;
 }
 

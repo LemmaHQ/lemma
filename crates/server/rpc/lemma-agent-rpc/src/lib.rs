@@ -1,12 +1,14 @@
 //! Connect RPC shell exposing `lemma_agent::Agent` as the AgentService.
 
+mod live;
+
 use std::sync::Arc;
 
 use buffa::MessageField;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use futures::stream;
+use futures::StreamExt;
 use lemma_agent::{Agent, TurnEnd, TurnEvent, TurnRequest};
 use lemma_auth_rpc::require_user;
 use lemma_proto::app_error;
@@ -16,14 +18,19 @@ use lemma_proto::lemma::v1::{
     SendMessageResponse, TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted,
     agent_delta, agent_event,
 };
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
 use uuid::Uuid;
 
+use crate::live::LiveTurns;
+
 /// Connect handler implementing the AgentService RPCs.
+///
+/// A turn runs to its end independently of its streams: a client that loses
+/// the `SendMessage` stream resumes it with `ResumeStream`, and only
+/// `AbortMessage` stops the turn early.
 pub struct AgentRpc {
     agent: Arc<Agent>,
     jwt_secret: Arc<str>,
+    live: Arc<LiveTurns>,
 }
 
 impl AgentRpc {
@@ -32,6 +39,7 @@ impl AgentRpc {
         Self {
             agent,
             jwt_secret: jwt_secret.into(),
+            live: Arc::default(),
         }
     }
 }
@@ -72,23 +80,26 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
             .await
             .map_err(prepare_error)?;
 
-        let (tx, rx) = mpsc::channel::<Result<SendMessageResponse, ConnectError>>(100);
+        let user_message_id = turn.user_message_id();
+        let (writer, events) = self.live.start(user_id, user_message_id);
         let client_msg_id = request.client_msg_id.to_string();
         tokio::spawn(async move {
-            let send = |event: AgentEvent| {
-                let _ = tx.try_send(Ok(SendMessageResponse {
-                    event: MessageField::some(event),
-                    ..Default::default()
-                }));
-            };
-            match turn.run(|ev| send(turn_event(ev, &client_msg_id))).await {
+            match turn
+                .run(|ev| writer.push(turn_event(ev, &client_msg_id)))
+                .await
+            {
                 Ok(TurnEnd::Done) => {}
-                Ok(TurnEnd::Aborted) => send(aborted_event()),
-                Err(e) => send(error_event(&e.to_string())),
+                Ok(TurnEnd::Aborted) => writer.push(aborted_event()),
+                Err(e) => writer.push(error_event(&e.to_string())),
             }
         });
 
-        Response::stream_ok(Box::pin(ReceiverStream::new(rx)))
+        Response::stream_ok(Box::pin(events.map(|event| {
+            Ok(SendMessageResponse {
+                event: MessageField::some(event),
+                ..Default::default()
+            })
+        })))
     }
 
     async fn abort_message(
@@ -106,10 +117,21 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
     async fn resume_stream(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ResumeStreamRequest>,
+        request: ServiceRequest<'_, lemma_proto::lemma::v1::ResumeStreamRequest>,
     ) -> ServiceResult<ServiceStream<ResumeStreamResponse>> {
-        let _user_id = require_user(&self.jwt_secret, &ctx)?;
-        Response::stream_ok(Box::pin(stream::empty()))
+        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let offset = usize::try_from(request.offset)
+            .map_err(|_| ConnectError::invalid_argument("offset is negative"))?;
+        let events = self
+            .live
+            .follow(user_id, parse_uuid(request.message_id)?, offset)
+            .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_TURN_NOT_RUNNING))?;
+        Response::stream_ok(Box::pin(events.map(|event| {
+            Ok(ResumeStreamResponse {
+                event: MessageField::some(event),
+                ..Default::default()
+            })
+        })))
     }
 }
 

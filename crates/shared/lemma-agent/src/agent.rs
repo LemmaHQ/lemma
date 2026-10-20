@@ -154,6 +154,12 @@ pub struct Turn {
 }
 
 impl Turn {
+    /// The id of the user message this turn appends; abort and resume
+    /// address the turn by it.
+    pub fn user_message_id(&self) -> Uuid {
+        self.input.user_message_id
+    }
+
     /// Runs the turn to its end, reporting progress to `observer`.
     pub async fn run(
         self,

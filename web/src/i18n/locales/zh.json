@@ -105,6 +105,7 @@
         "timeout": "请求超时，请重试。",
         "titleRequired": "标题不能为空。",
         "tokenInvalid": "登录状态已失效，请重新登录。",
+        "turnNotRunning": "该回复已结束。",
         "unspecified": "操作失败，请重试。",
         "userNotFound": "用户不存在。",
         "usernameTaken": "用户名或邮箱已被占用。"

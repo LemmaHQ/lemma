@@ -105,6 +105,7 @@
         "timeout": "The request timed out. Please try again.",
         "titleRequired": "Title is required.",
         "tokenInvalid": "Your session has expired. Please sign in again.",
+        "turnNotRunning": "This reply has already finished.",
         "unspecified": "Something went wrong. Please try again.",
         "userNotFound": "User not found.",
         "usernameTaken": "Username or email is already taken."

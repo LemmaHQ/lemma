@@ -29,6 +29,7 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.NOT_ASSISTANT_MESSAGE]: "errors.notAssistantMessage",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
+    [ErrorReason.TURN_NOT_RUNNING]: "errors.turnNotRunning",
 } satisfies Record<ErrorReason, ParseKeys>;
 
 const codeKeys: Partial<Record<Code, ParseKeys>> = {
@@ -36,6 +37,13 @@ const codeKeys: Partial<Record<Code, ParseKeys>> = {
     [Code.DeadlineExceeded]: "errors.timeout",
     [Code.Unauthenticated]: "errors.tokenInvalid",
 };
+
+/** The business reason a failed request carries, if any. */
+export function errorReason(e: unknown): ErrorReason | undefined {
+    return e instanceof ConnectError
+        ? e.findDetails(ErrorInfoSchema).at(0)?.reason
+        : undefined;
+}
 
 /** Localized text for a failed request; unmapped failures read as `errors.unspecified`. */
 export function errorText(e: unknown, t: TFunction): string {

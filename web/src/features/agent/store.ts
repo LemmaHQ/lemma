@@ -3,9 +3,10 @@ import { create } from "zustand";
 import { getDb } from "@/data/cache/database";
 import { listMessages, type MessageRow } from "@/data/cache/records";
 import { agentClient, conversationClient } from "@/data/rpc/clients";
-import { errorText } from "@/data/rpc/errors";
+import { errorReason, errorText } from "@/data/rpc/errors";
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
+import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { i18n } from "@/i18n";
 
 export interface ToolCallItem {
@@ -46,8 +47,6 @@ interface ChatState {
 let controller: AbortController | null = null;
 let activeMessageId: string | null = null;
 let userAborted = false;
-
-const charLen = (s: string) => Array.from(s).length;
 
 const PAGE_SIZE = 50;
 const MAX_RESUME = 3;
@@ -140,6 +139,19 @@ function hydrateToolResults(items: AgentItem[]): AgentItem[] {
     });
 }
 
+async function latestPage(
+    conversationId: string,
+): Promise<Pick<ChatState, "items" | "hasMore">> {
+    const res = await conversationClient.listMessages({
+        conversationId,
+        limit: PAGE_SIZE,
+    });
+    return {
+        items: hydrateToolResults(res.messages.map(protoToItem).toReversed()),
+        hasMore: res.hasMore,
+    };
+}
+
 export const useChat = create<ChatState>()((set, get) => ({
     conversationId: null,
     items: [],
@@ -159,17 +171,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                 return;
             }
         }
-        const res = await conversationClient.listMessages({
-            conversationId,
-            limit: PAGE_SIZE,
-        });
-        set({
-            conversationId,
-            items: hydrateToolResults(
-                res.messages.map(protoToItem).toReversed(),
-            ),
-            hasMore: res.hasMore,
-        });
+        set({ conversationId, ...(await latestPage(conversationId)) });
     },
 
     syncFromCache: async () => {
@@ -309,7 +311,6 @@ export const useChat = create<ChatState>()((set, get) => ({
         };
 
         const startTurn = (messageId: string) => {
-            activeMessageId = messageId;
             const current = get().items.find((it) => it.id === currentId);
             const empty =
                 current !== undefined &&
@@ -399,19 +400,14 @@ export const useChat = create<ChatState>()((set, get) => ({
             }
         };
 
+        let received = 0;
         const openStream = (): AsyncIterable<{
             event?: AgentEvent | undefined;
         }> => {
             const resumeId = activeMessageId;
             if (resumeId !== null) {
-                const current =
-                    get().items.find((it) => it.id === currentId)?.content ??
-                    "";
                 return agentClient.resumeStream(
-                    {
-                        messageId: resumeId,
-                        offset: BigInt(charLen(current)),
-                    },
+                    { messageId: resumeId, offset: BigInt(received) },
                     { signal },
                 );
             }
@@ -430,11 +426,16 @@ export const useChat = create<ChatState>()((set, get) => ({
         const attempt = async (resumes: number): Promise<void> => {
             try {
                 for await (const res of openStream()) {
+                    received += 1;
                     applyEvent(res.event);
                 }
             } catch (e) {
                 if (userAborted || signal.aborted) {
                     updateCurrent({ status: "aborted" });
+                    return;
+                }
+                if (errorReason(e) === ErrorReason.TURN_NOT_RUNNING) {
+                    set(await latestPage(conversationId));
                     return;
                 }
                 const next = resumes + 1;

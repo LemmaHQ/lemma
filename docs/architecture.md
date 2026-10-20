@@ -80,7 +80,9 @@ The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnec
 
 Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.
 
-`AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`. `LemmaEngine` has no abort method. `ResumeStream` authenticates the caller and returns an empty stream.
+`AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`. `LemmaEngine` has no abort method.
+
+A turn runs to its end whether or not a client reads its stream. `lemma-agent-rpc` records each running turn's `AgentEvent`s; `SendMessage` and `ResumeStream` both read that record, so a slow client misses no event. A client that loses its stream calls `ResumeStream` with the user message id and the number of events it already received, and gets the rest followed by the live events. Once the turn ends, `ResumeStream` fails with `ERROR_REASON_TURN_NOT_RUNNING`, and the client reads the settled messages instead.
 
 ## Persistence
 
