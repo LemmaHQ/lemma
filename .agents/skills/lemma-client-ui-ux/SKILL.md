@@ -20,7 +20,7 @@ The web client is also the desktop renderer, so every web rule applies to deskto
 ## Reuse before adding
 
 - **Extend an existing component, container, or interaction before creating a new one.** An extra menu item or a new variant on a shared control beats a parallel element stacked beside it. A shadcn component not yet in the catalog is added through the shadcn CLI, then listed in the catalog.
-- **Icons come from Lucide on web.** Pick the semantically closest existing icon. On Android, use vector icons, not text glyphs or emoji standing in for icons.
+- **Icons come from Tabler on web.** Pick the semantically closest existing icon. On Android, use vector icons, not text glyphs or emoji standing in for icons.
 - **Icon-only actions get an accessible name and a tooltip.** Web uses `aria-label` plus the shared `Tooltip`, never a `title` attribute. Compose sets `contentDescription` and wraps the action in `TooltipBox` with a `PlainTooltip`, which shows on long-press.
 
 ## Feedback surfaces
