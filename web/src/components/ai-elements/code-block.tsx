@@ -13,17 +13,18 @@ export function CodeBlock({
     className,
     ...props
 }: CodeBlockProps) {
-    const [html, setHtml] = useState({ light: "", dark: "" });
+    const [html, setHtml] = useState("");
 
     useEffect(() => {
         let current = true;
         const highlight = async () => {
-            const [light, dark] = await Promise.all([
-                codeToHtml(code, { lang: language, theme: "one-light" }),
-                codeToHtml(code, { lang: language, theme: "one-dark-pro" }),
-            ]);
+            const highlighted = await codeToHtml(code, {
+                lang: language,
+                themes: { light: "one-light", dark: "one-dark-pro" },
+                defaultColor: "light-dark()",
+            });
             if (current) {
-                setHtml({ light, dark });
+                setHtml(highlighted);
             }
         };
         void highlight();
@@ -41,12 +42,8 @@ export function CodeBlock({
             {...props}
         >
             <div
-                className="overflow-auto dark:hidden [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:bg-background! [&>pre]:p-4 [&>pre]:text-sm [&>pre]:text-foreground!"
-                dangerouslySetInnerHTML={{ __html: html.light }}
-            />
-            <div
-                className="hidden overflow-auto dark:block [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:bg-background! [&>pre]:p-4 [&>pre]:text-sm [&>pre]:text-foreground!"
-                dangerouslySetInnerHTML={{ __html: html.dark }}
+                className="overflow-auto [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:bg-background! [&>pre]:p-4 [&>pre]:text-sm [&>pre]:text-foreground!"
+                dangerouslySetInnerHTML={{ __html: html }}
             />
         </div>
     );

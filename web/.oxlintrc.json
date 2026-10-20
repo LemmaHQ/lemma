@@ -47,6 +47,33 @@
         "tailwindcss/enforce-consistent-variable-syntax": "error",
         "tailwindcss/enforce-shorthand": "error",
         "tailwindcss/no-unnecessary-whitespace": "error",
+        "tailwindcss/no-restricted-classes": [
+            "error",
+            {
+                "patterns": [
+                    {
+                        "pattern": "(^|:)dark:",
+                        "message": "semantic tokens already switch with the theme"
+                    },
+                    {
+                        "pattern": "(^|:)duration-\\d+$",
+                        "message": "use a motion duration: duration-fast, duration-base, duration-medium, or duration-slow"
+                    },
+                    {
+                        "pattern": "(^|:)ease-(in|out|in-out|linear)$",
+                        "message": "use a motion easing: ease-enter, ease-exit, or ease-move"
+                    },
+                    {
+                        "pattern": "(^|:)shadow-(2xs|xs|sm|md|lg|xl|2xl)$",
+                        "message": "use an elevation shadow: shadow-raised, shadow-overlay, or shadow-modal"
+                    },
+                    {
+                        "pattern": "(^|:)[a-z-]+-(black|white)(/|$)",
+                        "message": "use a semantic color role"
+                    }
+                ]
+            }
+        ],
         "shadcn/no-restyle": ["error", { "allow": ["layout"] }],
         "shadcn/no-raw-colors": "error",
         "shadcn/no-arbitrary-values": "error",
@@ -55,22 +82,6 @@
         "shadcn/require-static-classes": "error"
     },
     "overrides": [
-        {
-            "files": ["src/app/**", "src/features/**"],
-            "rules": {
-                "tailwindcss/no-restricted-classes": [
-                    "error",
-                    {
-                        "patterns": [
-                            {
-                                "pattern": "(^|:)dark:",
-                                "message": "semantic tokens already switch with the theme"
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
         {
             "files": ["src/components/**"],
             "rules": {

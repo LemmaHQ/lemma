@@ -20,7 +20,7 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 | Principle                                                                  | Lemma form                                                                                           |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Components consume semantic tokens, never palette values or literal colors | Semantic utilities from the theme: `bg-card`, `text-muted-foreground`, `border-border`, `rounded-md` |
-| Light and dark overrides belong to the theme owner                         | `tokens.json` gives each color role both values; no `dark:` variant appears in feature code          |
+| Light and dark overrides belong to the theme owner                         | `tokens.json` gives each color role both values; oxlint rejects `dark:` variants in `web/src`        |
 | Shared controls live in one catalog                                        | shadcn components in `components/ui/`, combined with `cn()`                                          |
 | Hover styles apply only to hover-capable pointers                          | Tailwind v4 already compiles `hover:` inside `@media (hover: hover)`                                 |
 
@@ -28,20 +28,20 @@ Lemma keeps the principles of the DeepSeek Harness styling reference and express
 
 - Reuse the control before restyling one: check the [component catalog](../web/src/components/ui/README.md#component-catalog). A visual difference that more than one feature needs becomes a variant of the shared component, not a second copy.
 - Use semantic utilities only. Do not write hex colors, palette values, or arbitrary values such as `bg-[#fff]`, `text-[13px]`, or `w-[372px]`. Arbitrary values are limited to geometry no scale step expresses, such as Base UI CSS variables (`origin-(--transform-origin)`) and `calc()` over theme values.
-- Do not write `dark:`. A difference between themes is a semantic token with different light and dark values.
+- Do not write `dark:`. A difference between themes is a semantic token with different light and dark values. The avatar's edge blend mode, which no color token carries, is the one suppressed use.
 - Use Tailwind's type scale (`text-xs`, `text-sm`, `text-xl`); each size carries its line height. Use weights 400 and 500 only (`font-normal`, `font-medium`); hierarchy comes from size, weight, and the two text colors, not from more grays or heavier weights.
 - Keep keyboard focus visible: interactive elements show the `ring` color on `focus-visible`.
 - A control revealed on hover, such as a row's inline actions, is also revealed on keyboard focus within its row and stays visible on devices without hover.
 - Transitions and animations use the motion tokens and follow the [motion rules](#motion).
 - Borders, shadows, and corner radii of a control come from its shared component; feature code adds none.
-- Dropdown menus and select lists use the translucent menu of the shadcn `default-translucent` menu style, the popover color plus a backdrop blur; feature code does not override it.
+- Dropdown menus and select lists use the translucent menu of the shadcn `default-translucent` menu style, the popover color plus a backdrop blur; feature code does not override it. The blur sits on the popup itself, so it stays while the menu animates.
 - Icons come from Tabler. Inside shared controls they take the control's default size; elsewhere use `size-4`, `size-3.5` in dense rows, and `size-3` for sidebar inline actions. Every icon-only button has an accessible name and a `Tooltip`, not a `title` attribute.
 
 ## Visual system
 
 ### Color
 
-Neutral grays carry the surfaces and text. `primary` and `ring` are the brand blue, so primary buttons and focus rings carry it; `destructive` is red and marks delete actions and error text. Shared components define their own hover colors.
+Neutral grays carry the surfaces and text. `primary` and `ring` are the brand blue, so primary buttons and focus rings carry it; `destructive` is red and marks delete actions and error text.
 
 | Role              | Utilities                               | Use                                                                   |
 | ----------------- | --------------------------------------- | --------------------------------------------------------------------- |
@@ -50,21 +50,32 @@ Neutral grays carry the surfaces and text. `primary` and `ring` are the brand bl
 | Panel and overlay | `bg-card`, `bg-popover`                 | Cards, menus, selects, dialogs                                        |
 | Fills             | `bg-secondary`, `bg-muted`, `bg-accent` | The secondary button, the user bubble, code, hover and selected fills |
 
+The states of shared controls are roles too, so a control's light and dark appearance changes in `tokens.json`:
+
+| Role        | Utilities                                                                                                    | Use                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Control     | `bg-control`, `bg-control-hover`, `bg-control-disabled`                                                      | Fields, selects, outline buttons, the selected tab; ghost and outline hover |
+| Secondary   | `bg-secondary-hover`                                                                                         | The secondary button on hover                                               |
+| Switch      | `bg-track`, `bg-thumb`                                                                                       | The unchecked track and the thumb                                           |
+| Selection   | `bg-selected`, `border-selected-border`                                                                      | A checked choice card                                                       |
+| Destructive | `border-destructive-border`, `ring-destructive-ring`, `bg-destructive-subtle`, `bg-destructive-subtle-hover` | Invalid fields, the destructive button and badge, destructive menu items    |
+| Scrim       | `bg-scrim`                                                                                                   | The backdrop behind dialogs and sheets                                      |
+
 Text has two levels: `text-foreground` for primary text and `text-muted-foreground` for captions, metadata, group headers, and placeholders. Each surface has a matching `*-foreground` color.
 
 ### Elevation
 
-| Level      | Treatment                                                       | Use                                              |
-| ---------- | --------------------------------------------------------------- | ------------------------------------------------ |
-| Flat       | No border, no shadow                                            | Body text, assistant messages, sidebar rows      |
-| Panel      | `bg-card` or `bg-background` with a border                      | Cards, panes, settings panels                    |
-| Raised     | `shadow-raised`                                                 | The floating and inset sidebar, the selected tab |
-| Fill shift | `bg-accent` or `bg-muted`                                       | Hovered and selected rows, ghost buttons         |
-| Overlay    | `bg-popover`, a `ring-foreground/10` edge, and `shadow-overlay` | Menus, selects, popovers, hover cards            |
-| Modal      | `bg-popover` over a dimmed backdrop; sheets add `shadow-modal`  | Dialogs, alert dialogs, sheets                   |
-| Focus      | `ring` color on `focus-visible`                                 | Focused controls                                 |
+| Level      | Treatment                                                                                                   | Use                                              |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Flat       | No border, no shadow                                                                                        | Body text, assistant messages, sidebar rows      |
+| Panel      | `bg-card` or `bg-background` with a border                                                                  | Cards, panes, settings panels                    |
+| Raised     | `shadow-raised`, with a `border-raised-border` edge that shows in the dark theme, where shadows do not read | The floating and inset sidebar, the selected tab |
+| Fill shift | `bg-accent` or `bg-muted`                                                                                   | Hovered and selected rows, ghost buttons         |
+| Overlay    | `bg-popover`, a `ring-foreground/10` edge, and `shadow-overlay`                                             | Menus, selects, popovers, hover cards            |
+| Modal      | `bg-popover` over a `bg-scrim` backdrop; sheets add `shadow-modal`                                          | Dialogs, alert dialogs, sheets                   |
+| Focus      | `ring` color on `focus-visible`                                                                             | Focused controls                                 |
 
-The tooltip is the one inverse surface: `bg-foreground` with `text-background`, no shadow. Shadows come only from the three levels above; Tailwind's shadow scale (`shadow-sm`, `shadow-md`) is not used.
+The tooltip is the one inverse surface: `bg-foreground` with `text-background`, no shadow. Shadows come only from the three levels above; oxlint rejects Tailwind's shadow scale (`shadow-sm`, `shadow-md`) and its black and white colors.
 
 ### Type
 
@@ -78,8 +89,8 @@ Motion shows where an element came from, confirms that an action registered, or 
 | -------- | ----------------- | ---------------------------------------------------------------------- |
 | `fast`   | `duration-fast`   | Hover and press feedback; small overlays closing                       |
 | `base`   | `duration-base`   | Small overlays opening: tooltips, menus, selects, popovers; icon swaps |
-| `medium` | `duration-medium` | Regions expanding and collapsing; dialogs                              |
-| `slow`   | `duration-slow`   | Sheets and the sidebar sliding in and out                              |
+| `medium` | `duration-medium` | Regions expanding and collapsing, the sidebar collapsing; dialogs      |
+| `slow`   | `duration-slow`   | Sheets sliding in and out                                              |
 
 | Easing  | Utility      | Use                                                    |
 | ------- | ------------ | ------------------------------------------------------ |
@@ -89,8 +100,8 @@ Motion shows where an element came from, confirms that an action registered, or 
 
 - A transition without a duration or easing utility uses `base` and `move`.
 - An element leaves one duration step faster than it entered: a menu opens with `duration-base` and closes with `duration-fast`.
-- Tailwind's numeric durations (`duration-150`) and default easings (`ease-out`, `ease-in-out`) are not used.
-- Under `prefers-reduced-motion: reduce`, `index.css` cancels the translation, scale, rotation, and blur of `animate-in` and `animate-out`, so overlays only fade. A transition that moves or resizes an element adds `motion-reduce:transition-none`.
+- oxlint rejects Tailwind's numeric durations (`duration-150`) and default easings (`ease-out`, `ease-in-out`).
+- Under `prefers-reduced-motion: reduce`, `index.css` cancels the translation, scale, rotation, and blur of `animate-in` and `animate-out`, so overlays only fade. A transition that moves or resizes an element adds `motion-reduce:transition-none`; a sheet keeps its fade with `motion-reduce:transition-opacity`.
 - CSS transitions and the tw-animate-css `animate-in` and `animate-out` utilities carry overlays, collapsing regions, and state changes. The Motion library is reserved for effects CSS cannot express, such as the text shimmer.
 
 ### Density

@@ -10,8 +10,8 @@ English | [中文](README.zh.md)
 
 `tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has four groups:
 
-- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, the gray steps of the Android app, the neutral steps of the web theme, blue and red steps, and alpha tiers of black and white. Palette names describe the color, not its use.
-- `light` and `dark` hold the same color roles, named after the shadcn theme variables such as `background`, `primary`, and `sidebar-border`. Each role references a palette entry, for example `{palette.blue.500}`.
+- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, the gray steps of the Android app, the neutral steps of the web theme, blue and red steps with their alpha tiers, and alpha tiers of black and white. Palette names describe the color, not its use.
+- `light` and `dark` hold the same color roles: the shadcn theme variables such as `background`, `primary`, and `sidebar-border`, plus the state roles of the shared web controls such as `control-hover` and `destructive-ring`. Each role references a palette entry, for example `{palette.blue.500}`.
 - `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`. [Web styling](../docs/web-styling.md#motion) defines what each step and easing is for.
 
 ## Output

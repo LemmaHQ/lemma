@@ -10,8 +10,8 @@
 
 `tokens.json` 遵循 [W3C Design Tokens Community Group 格式](https://www.designtokens.org/tr/drafts/format/)：token 是带 `$value` 的对象，分组通过 `$type` 为其后代设定类型。它有四个分组：
 
-- `palette` 以 `#rrggbb` 或 `#rrggbbaa` 字符串存放静态颜色：白、Android 应用的灰阶、Web 主题的中性灰阶、蓝与红的色阶，以及黑与白的透明度阶。色板名称描述颜色本身，而不是用途。
-- `light` 与 `dark` 存放同一组颜色角色，以 shadcn 主题变量命名，例如 `background`、`primary` 与 `sidebar-border`。每个角色引用一个色板条目，例如 `{palette.blue.500}`。
+- `palette` 以 `#rrggbb` 或 `#rrggbbaa` 字符串存放静态颜色：白、透明、Android 应用的灰阶、Web 主题的中性灰阶、蓝与红的色阶及其透明度阶，以及黑与白的透明度阶。色板名称描述颜色本身，而不是用途。
+- `light` 与 `dark` 存放同一组颜色角色：以 shadcn 主题变量命名的角色，例如 `background`、`primary` 与 `sidebar-border`，以及 Web 共享控件的状态角色，例如 `control-hover` 与 `destructive-ring`。每个角色引用一个色板条目，例如 `{palette.blue.500}`。
 - `motion` 存放 `duration` token，写作 `{ "value": <毫秒数>, "unit": "ms" }`，以及 `easing` token，写作三次贝塞尔控制点 `[x1, y1, x2, y2]`。[Web 样式参考](../docs/web-styling.zh.md#动效)定义每个时长档与缓动的用途。
 
 ## 输出
