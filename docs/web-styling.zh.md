@@ -8,7 +8,7 @@
 
 - [`design/tokens.json`](../design/tokens.json) 拥有主题颜色以及动效的时长与缓动。设计 token 生成器把两套主题的颜色变量和动效变量写入 `web/src/tokens.css`，该文件被 Git 忽略，由 `index.css` 导入。
 - [`web/src/index.css`](../web/src/index.css) 拥有其余主题与全局样式：[`components.json`](../web/components.json) 中 shadcn 预设的基础 `--radius`、阴影级别，以及颜色、动效、标题字体与圆角刻度的 Tailwind `@theme` 映射。它还包含基础层、减弱动效规则、读取时长 token 的 `duration-*` 工具类、桌面端标题栏规则，以及 Streamdown 样式表的导入和让 Tailwind 扫描到 Streamdown 类名的 `@source` 行。字号与字体栈使用 Tailwind 默认值。
-- [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体；`web/src/components/ai-elements/` 拥有聊天组件：输入框面板、消息、推理过程、工具调用、代码块与模型选择器。
+- [`web/src/components/ui/`](../web/src/components/ui/README.zh.md) 拥有共享控件及其变体；`web/src/components/ai-elements/` 拥有聊天组件：消息记录滚动、输入框面板、消息、推理过程、工具调用、代码块与模型选择器。
 - `web/src/app/` 与 `web/src/features/` 中的功能代码组合工具类与控件，不定义全局样式，也不定义主题。
 
 主题是 `<html>` 上的 `dark` 类；没有该类时使用亮色主题。`index.html` 中的内联脚本在首次绘制前设置它，偏好或系统配色变化时由挂载在 `App` 中的 `next-themes` 更新。

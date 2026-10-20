@@ -39,6 +39,7 @@
         "noModelMatch": "No matching models",
         "noProvider": "No provider",
         "regenerate": "Regenerate",
+        "scrollToBottom": "Scroll to latest",
         "searchModel": "Search models…",
         "selectModel": "Select model",
         "send": "Send",

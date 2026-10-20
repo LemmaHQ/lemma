@@ -6,7 +6,7 @@ English | [中文](README.zh.md)
 
 `web/src/components/ui/` holds the shared controls of the web client: shadcn/ui components on [Base UI](https://base-ui.com/) primitives. The shadcn CLI wrote their first version from the `base-nova` style in [`components.json`](../../../components.json); Lemma owns them since and edits them in place. Icons come from Tabler. Feature code imports a control from `@/components/ui/<name>`; the [shadcn docs](https://ui.shadcn.com/docs/components) describe each component's props and composition. Styling rules are in [Web styling](../../../../docs/web-styling.md).
 
-The sibling `web/src/components/ai-elements/` holds the chat components, first added from the `@ai-elements` registry of [AI Elements](https://ai-sdk.dev/elements) and cut down to the parts Lemma renders: `message` renders Markdown through Streamdown, and `prompt-input`, `model-selector`, `reasoning`, `tool`, `code-block`, `suggestion`, and `shimmer` cover the composer and the transcript.
+The sibling `web/src/components/ai-elements/` holds the chat components, first added from the `@ai-elements` registry of [AI Elements](https://ai-sdk.dev/elements) and cut down to the parts Lemma renders: `message` renders Markdown through Streamdown, `conversation` keeps the transcript at its newest message until the reader scrolls up, and `prompt-input`, `model-selector`, `reasoning`, `tool`, `code-block`, `suggestion`, and `shimmer` cover the composer and the rest of the transcript.
 
 <a id="component-catalog"></a>
 

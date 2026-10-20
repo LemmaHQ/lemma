@@ -218,7 +218,7 @@ export function ChatPage() {
                         </header>
                         <MessageList
                             items={chat.items}
-                            resetKey={activeId}
+                            conversationId={chat.conversationId}
                             providerNameById={providerNameById}
                             onPickSuggestion={handlePickSuggestion}
                             onRegenerate={handleRegenerate}

@@ -6,7 +6,7 @@
 
 `web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件。它们的第一版由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-nova` 风格写出，此后归 Lemma 所有，直接在原文件上修改。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
 
-同级目录 `web/src/components/ai-elements/` 存放聊天组件，最初从 [AI Elements](https://ai-sdk.dev/elements) 的 `@ai-elements` 注册表添加，并删减到 Lemma 实际渲染的部分：`message` 通过 Streamdown 渲染 Markdown，`prompt-input`、`model-selector`、`reasoning`、`tool`、`code-block`、`suggestion` 与 `shimmer` 覆盖输入框面板与消息记录。
+同级目录 `web/src/components/ai-elements/` 存放聊天组件，最初从 [AI Elements](https://ai-sdk.dev/elements) 的 `@ai-elements` 注册表添加，并删减到 Lemma 实际渲染的部分：`message` 通过 Streamdown 渲染 Markdown，`conversation` 让消息记录停在最新消息处，直到读者向上滚动，`prompt-input`、`model-selector`、`reasoning`、`tool`、`code-block`、`suggestion` 与 `shimmer` 覆盖输入框面板与消息记录的其余部分。
 
 <a id="component-catalog"></a>
 
