@@ -4,7 +4,6 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
-lemma-proto.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 

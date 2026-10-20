@@ -1901,7 +1901,6 @@ dependencies = [
 name = "lemma-core"
 version = "0.1.0"
 dependencies = [
- "lemma-proto",
  "serde",
  "serde_json",
 ]
