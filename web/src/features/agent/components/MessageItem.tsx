@@ -52,11 +52,7 @@ function ToolCall({ call }: { call: ToolCallItem }) {
               : "output-available";
     return (
         <Tool defaultOpen={call.state === "running"}>
-            <ToolHeader
-                title={call.name}
-                type={`tool-${call.name}`}
-                state={state}
-            />
+            <ToolHeader title={call.name} state={state} />
             <ToolContent>
                 <ToolInput input={parseArguments(call.arguments)} />
                 {call.state === "done" && (
@@ -109,13 +105,7 @@ export function MessageItem({
                         isStreaming={streaming && message.content === ""}
                         defaultOpen={streaming}
                     >
-                        <ReasoningTrigger
-                            getThinkingMessage={(thinking) =>
-                                thinking
-                                    ? t("chat.thinkingInProgress")
-                                    : t("chat.thinking")
-                            }
-                        />
+                        <ReasoningTrigger />
                         <ReasoningContent>{message.thinking}</ReasoningContent>
                     </Reasoning>
                 )}

@@ -26,13 +26,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-    useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/features/auth/store";
 import { ConversationList } from "@/features/conversations/ConversationList";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { LanguageToggle } from "@/features/preferences/LanguageToggle";
 import { ThemeToggle } from "@/features/preferences/ThemeToggle";
+import { useSidebar } from "@/lib/hooks/use-sidebar";
 
 import { SidebarToggle } from "./SidebarToggle";
 

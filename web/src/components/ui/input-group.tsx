@@ -47,16 +47,24 @@ function InputGroupAddon({
     ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
     return (
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- pointer shortcut to the control, which keyboard users reach with Tab
         <div
             role="group"
             data-slot="input-group-addon"
             data-align={align}
             className={cn(inputGroupAddonVariants({ align }), className)}
-            onClick={(e) => {
-                if ((e.target as HTMLElement).closest("button")) {
+            onClick={(event) => {
+                if (
+                    event.target instanceof Element &&
+                    event.target.closest("button") !== null
+                ) {
                     return;
                 }
-                e.currentTarget.parentElement?.querySelector("input")?.focus();
+                event.currentTarget.parentElement
+                    ?.querySelector<HTMLElement>(
+                        "[data-slot=input-group-control]",
+                    )
+                    ?.focus();
             }}
             {...props}
         />

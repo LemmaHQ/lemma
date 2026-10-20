@@ -4,9 +4,9 @@
 
 ## 概要
 
-`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件，由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-nova` 风格生成，并按生成结果直接使用。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
+`web/src/components/ui/` 存放 Web 客户端的共享控件：基于 [Base UI](https://base-ui.com/) 原语的 shadcn/ui 组件。它们的第一版由 shadcn CLI 按 [`components.json`](../../../components.json) 中的 `base-nova` 风格写出，此后归 Lemma 所有，直接在原文件上修改。图标来自 Tabler。功能代码从 `@/components/ui/<name>` 导入控件；各组件的属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。样式规则见 [Web 样式参考](../../../../docs/web-styling.zh.md)。
 
-同级目录 `web/src/components/ai-elements/` 存放来自 [AI Elements](https://ai-sdk.dev/elements) 的聊天组件，由同一 CLI 从 `@ai-elements` 注册表添加：`message` 通过 Streamdown 渲染 Markdown，`prompt-input`、`model-selector`、`reasoning`、`tool`、`code-block`、`suggestion` 与 `shimmer` 覆盖输入框面板与消息记录。
+同级目录 `web/src/components/ai-elements/` 存放聊天组件，最初从 [AI Elements](https://ai-sdk.dev/elements) 的 `@ai-elements` 注册表添加，并删减到 Lemma 实际渲染的部分：`message` 通过 Streamdown 渲染 Markdown，`prompt-input`、`model-selector`、`reasoning`、`tool`、`code-block`、`suggestion` 与 `shimmer` 覆盖输入框面板与消息记录。
 
 <a id="component-catalog"></a>
 
@@ -58,14 +58,10 @@
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
 - 主题来自 `next-themes`，在 `App` 中以 `class` 属性与 `lemma.theme` 存储键挂载；`Toaster` 通过 `useTheme` 读取它。
-- 有四处本地修改，重新生成文件时须保留。在桌面端外壳中，`TooltipContent` 的碰撞内边距让工具提示避开标题栏。在 `Toaster` 中，主题类型断言写明三种主题，因为生成的 `ToasterProps["theme"]` 断言无法通过 `exactOptionalPropertyTypes` 检查。`scroll-area` 删除未使用的 `React` 导入，因为 `noUnusedLocals` 不允许它。`Spinner` 接收 Tabler 的 `IconProps`，因为生成的 SVG 属性无法通过 `exactOptionalPropertyTypes` 检查。
-- `ai-elements/tool.tsx` 中的状态标签以及参数与结果标题取自 i18next 的 `chat.toolCall`；重新生成该文件时须保留这处修改。
-- oxlint 跳过此目录、`src/components/ai-elements/` 以及 `src/lib/hooks/use-mobile.ts`（CLI 随 `sidebar` 添加的断点 hook），因为这些文件保持 CLI 写出的样子；Prettier 负责格式化。
+- `useSidebar` 从 [`src/lib/hooks/use-sidebar.ts`](../../lib/hooks/use-sidebar.ts) 读取外层 `SidebarProvider` 的状态，因此 `sidebar.tsx` 只导出组件。
+- oxlint 按功能代码的规则检查这两个目录。[`web/.oxlintrc.json`](../../../.oxlintrc.json) 中针对 `src/components/**` 的覆盖项允许它们改写所组合控件的样式、为几何尺寸使用任意值、用 `cva` 构造类名，以及直接设置 ARIA 角色。
+- 用户可见文字（包括无障碍名称）取自 i18next；颜色取自主题角色，不使用 Tailwind 色板。
 
 ## 添加组件
 
-在 `web/` 中运行 `npx shadcn@latest add <name>`（AI Elements 用 `npx shadcn@latest add @ai-elements/<name>`），用 Prettier 格式化，并把模块加入上面的目录。CLI 写入 `src/index.css` 的颜色变量移入 [`design/tokens.json`](../../../../design/README.zh.md)。
-
-## 更换预设
-
-在 `web/` 中运行 `npx shadcn init -b base -p <preset> --force --reinstall --no-rtl`。CLI 会重新生成所有组件，并改写 `components.json`、`src/index.css` 与 `package.json`。保留它写入 `index.css` 的 `@theme inline` 块与 `--radius` 行，把它的 `:root` 与 `.dark` 颜色移入 [`design/tokens.json`](../../../../design/README.zh.md)；删除它添加的字体导入与 `--font-sans` 行，并撤销它对 `package.json` 与 lockfile 的修改。然后重新应用上文的本地修改。
+在 `web/` 中运行 `npx shadcn@latest add <name>`（AI Elements 用 `npx shadcn@latest add @ai-elements/<name>`），并让新文件符合上述规则：从 `cn` 导入 `cn`，删除 `"use client"`，删掉 Lemma 不用的部分，把文字移入语言文件，并把色板颜色换成主题角色。CLI 写入 `src/index.css` 的颜色变量移入 [`design/tokens.json`](../../../../design/README.zh.md)。然后把模块加入上面的目录。已有组件通过直接编辑来修改；CLI 不再覆盖它们。

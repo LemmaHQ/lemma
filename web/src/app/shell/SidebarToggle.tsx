@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
 
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSidebar } from "@/lib/hooks/use-sidebar";
 
 /** Sidebar trigger labeled with the action it performs. */
 export function SidebarToggle() {

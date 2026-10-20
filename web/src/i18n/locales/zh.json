@@ -64,6 +64,7 @@
     "common": {
         "appName": "Lemma",
         "cancel": "取消",
+        "close": "关闭",
         "copied": "已复制",
         "copy": "复制",
         "delete": "删除",
@@ -173,7 +174,9 @@
         "collapse": "收起侧边栏",
         "expand": "展开侧边栏",
         "newChat": "新会话",
-        "signOut": "退出登录"
+        "signOut": "退出登录",
+        "title": "侧边栏",
+        "toggle": "切换侧边栏"
     },
     "stats": {
         "messages": "消息",

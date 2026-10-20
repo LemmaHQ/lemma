@@ -15,13 +15,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-    useSidebar,
 } from "@/components/ui/sidebar";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSidebar } from "@/lib/hooks/use-sidebar";
 
 function NavItem({
     icon: Icon,

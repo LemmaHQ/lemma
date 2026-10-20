@@ -64,6 +64,7 @@
     "common": {
         "appName": "Lemma",
         "cancel": "Cancel",
+        "close": "Close",
         "copied": "Copied",
         "copy": "Copy",
         "delete": "Delete",
@@ -173,7 +174,9 @@
         "collapse": "Collapse sidebar",
         "expand": "Expand sidebar",
         "newChat": "New chat",
-        "signOut": "Sign out"
+        "signOut": "Sign out",
+        "title": "Sidebar",
+        "toggle": "Toggle sidebar"
     },
     "stats": {
         "messages": "Messages",

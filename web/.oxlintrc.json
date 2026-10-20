@@ -1,11 +1,6 @@
 {
     "$schema": "../node_modules/oxlint/configuration_schema.json",
     "extends": ["../.oxlintrc.json"],
-    "ignorePatterns": [
-        "src/components/ui/**",
-        "src/components/ai-elements/**",
-        "src/lib/hooks/use-mobile.ts"
-    ],
     "plugins": [
         "typescript",
         "unicorn",
@@ -74,6 +69,21 @@
                         ]
                     }
                 ]
+            }
+        },
+        {
+            "files": ["src/components/**"],
+            "rules": {
+                "shadcn/no-restyle": "off",
+                "shadcn/no-arbitrary-values": "off",
+                "jsx-a11y/prefer-tag-over-role": "off",
+                "shadcn/require-static-classes": "off"
+            }
+        },
+        {
+            "files": ["**/*.d.ts"],
+            "rules": {
+                "import/no-unassigned-import": "off"
             }
         }
     ]

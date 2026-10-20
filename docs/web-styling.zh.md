@@ -105,4 +105,4 @@ Lemma 保留 DeepSeek Harness 样式参考的原则，用 Tailwind CSS v4 与 sh
 
 ## 修改体系
 
-颜色与动效取值在 `design/tokens.json` 中修改；阴影级别在 `index.css` 中修改。Web 与桌面端的 npm 脚本在运行前重新生成输出，`just design-gen` 用于手动运行生成器。按[组件 README](../web/src/components/ui/README.zh.md) 所述重新运行 shadcn CLI 时，保留它写入 `index.css` 的 `@theme inline` 块与 `--radius`；它写入的颜色变量移入 `tokens.json`。组件使用语义工具类。共享控件的变体或行为变化时，在同一次修改中更新[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。
+颜色与动效取值在 `design/tokens.json` 中修改；阴影级别在 `index.css` 中修改。Web 与桌面端的 npm 脚本在运行前重新生成输出，`just design-gen` 用于手动运行生成器。通过 shadcn CLI 添加的组件按[组件 README](../web/src/components/ui/README.zh.md#添加组件) 处理；它写入的颜色变量移入 `tokens.json`。组件使用语义工具类。共享控件的变体或行为变化时，在同一次修改中更新[组件目录](../web/src/components/ui/README.zh.md#component-catalog)。
