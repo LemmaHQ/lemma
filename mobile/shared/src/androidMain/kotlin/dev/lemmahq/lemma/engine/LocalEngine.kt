@@ -48,7 +48,10 @@ class LocalEngine private constructor() {
     }
 }
 
-/** Runs one agent turn locally, streaming events until `Done` or `Error`, then completing. */
+/**
+ * Runs one agent turn locally, streaming events until `Done`, `Aborted`, or `Error`, then
+ * completing.
+ */
 fun LemmaEngine.sendMessageEvents(
     userId: String,
     conversationId: String,

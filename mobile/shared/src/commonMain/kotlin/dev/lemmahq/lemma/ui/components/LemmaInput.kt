@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
 
@@ -24,6 +26,9 @@ fun LemmaInput(
     onSend: () -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "Type a message...",
+    isStreaming: Boolean = false,
+    onStop: () -> Unit = {},
+    stopDescription: String = "",
 ) {
     val canSend = value.isNotBlank()
 
@@ -54,21 +59,41 @@ fun LemmaInput(
             )
         }
 
-        Box(
-            modifier =
-                Modifier.size(32.dp)
-                    .clip(LemmaTheme.shapes.full)
-                    .background(if (canSend) LemmaTheme.colors.primary else LemmaTheme.colors.fill3)
-                    .clickable(enabled = canSend, onClick = onSend),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = "↑",
-                color =
-                    if (canSend) LemmaTheme.colors.userBubbleText
-                    else LemmaTheme.colors.textQuaternary,
-                style = LemmaTheme.typography.bodyMedium,
-            )
+        if (isStreaming) {
+            Box(
+                modifier =
+                    Modifier.size(32.dp)
+                        .clip(LemmaTheme.shapes.full)
+                        .background(LemmaTheme.colors.primary)
+                        .clickable(onClick = onStop)
+                        .semantics { contentDescription = stopDescription },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "■",
+                    color = LemmaTheme.colors.userBubbleText,
+                    style = LemmaTheme.typography.bodyMedium,
+                )
+            }
+        } else {
+            Box(
+                modifier =
+                    Modifier.size(32.dp)
+                        .clip(LemmaTheme.shapes.full)
+                        .background(
+                            if (canSend) LemmaTheme.colors.primary else LemmaTheme.colors.fill3
+                        )
+                        .clickable(enabled = canSend, onClick = onSend),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "↑",
+                    color =
+                        if (canSend) LemmaTheme.colors.userBubbleText
+                        else LemmaTheme.colors.textQuaternary,
+                    style = LemmaTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }

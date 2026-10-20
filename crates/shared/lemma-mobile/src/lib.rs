@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use lemma_adapter::{HttpConnector, ReqwestTransport};
-use lemma_agent::{Agent, AgentError, TurnEvent, TurnRequest};
+use lemma_agent::{Agent, AgentError, TurnEnd, TurnEvent, TurnRequest};
 use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use lemma_auth::{AuthService, AuthStore, AuthTokens, Session, User};
 use lemma_conversation::{Conversation, ConversationService, ConversationStore, Message};
@@ -342,6 +342,8 @@ pub enum MobileAgentEvent {
         /// Response tokens produced, zero when unreported.
         output_tokens: i64,
     },
+    /// The turn was aborted by the user.
+    Aborted,
     /// The turn failed.
     Error {
         /// Failure description.
@@ -748,6 +750,14 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Provider(e.to_string()))
     }
 
+    /// Aborts the user's running turn started by `message_id`; a turn that
+    /// is not running is a no-op.
+    pub fn abort_message(&self, user_id: String, message_id: String) -> Result<(), EngineError> {
+        self.agent
+            .abort(parse_id(&user_id)?, parse_id(&message_id)?);
+        Ok(())
+    }
+
     /// Runs one agent turn: appends the user message, streams model and tool
     /// events to `listener`, and persists the settled assistant messages.
     /// The stream terminates with a `Done`, `Aborted`, or `Error` event.
@@ -774,10 +784,12 @@ impl LemmaEngine {
             })
             .await
             .map_err(prepare_error)?;
-        if let Err(e) = turn.run(|ev| listener.on_event(map_event(ev))).await {
-            listener.on_event(MobileAgentEvent::Error {
+        match turn.run(|ev| listener.on_event(map_event(ev))).await {
+            Ok(TurnEnd::Done) => {}
+            Ok(TurnEnd::Aborted) => listener.on_event(MobileAgentEvent::Aborted),
+            Err(e) => listener.on_event(MobileAgentEvent::Error {
                 message: e.to_string(),
-            });
+            }),
         }
         Ok(())
     }

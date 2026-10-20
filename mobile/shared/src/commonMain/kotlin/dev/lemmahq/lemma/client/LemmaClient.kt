@@ -86,6 +86,9 @@ sealed interface AgentStreamEvent {
     /** The turn completed and the assistant message persisted. */
     data class Done(val promptTokens: Long, val completionTokens: Long) : AgentStreamEvent
 
+    /** The turn was aborted by the user. */
+    data object Aborted : AgentStreamEvent
+
     /** The turn failed. */
     data class Error(val message: String) : AgentStreamEvent
 }
@@ -132,7 +135,8 @@ interface LemmaClient {
     suspend fun listMessages(conversationId: String): List<ClientMessage>
 
     /**
-     * Streams one agent turn, terminating with [AgentStreamEvent.Done] or [AgentStreamEvent.Error].
+     * Streams one agent turn, terminating with [AgentStreamEvent.Done], [AgentStreamEvent.Aborted],
+     * or [AgentStreamEvent.Error].
      */
     fun sendMessage(
         conversationId: String,
@@ -141,4 +145,9 @@ interface LemmaClient {
         model: String,
         clientMsgId: String,
     ): Flow<AgentStreamEvent>
+
+    /**
+     * Aborts the running turn started by the user message [messageId]; a settled turn is a no-op.
+     */
+    suspend fun abortMessage(messageId: String)
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="agent_stop">停止</string>
+    <string name="agent_aborted_notice">生成已停止。</string>
+</resources>

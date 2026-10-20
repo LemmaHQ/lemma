@@ -51,6 +51,10 @@ import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import dev.lemmahq.lemma.ui.components.LemmaInput
 import kotlinx.coroutines.launch
+import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.agent_aborted_notice
+import lemma.mobile.shared.generated.resources.agent_stop
+import org.jetbrains.compose.resources.stringResource
 
 data class UiMessage(
     val id: String,
@@ -76,6 +80,10 @@ fun MainChatScreen(
     val messages = remember { mutableStateListOf<UiMessage>() }
     var inputText by remember { mutableStateOf("") }
     var isStreaming by remember { mutableStateOf(false) }
+    var streamingMessageId by remember { mutableStateOf<String?>(null) }
+
+    val stopDescription = stringResource(Res.string.agent_stop)
+    val abortedNotice = stringResource(Res.string.agent_aborted_notice)
     var isLoadingConversations by remember { mutableStateOf(false) }
 
     var providers by remember { mutableStateOf<List<ClientProvider>>(emptyList()) }
@@ -431,6 +439,18 @@ fun MainChatScreen(
                 LemmaInput(
                     value = inputText,
                     onValueChange = { inputText = it },
+                    isStreaming = isStreaming && streamingMessageId != null,
+                    stopDescription = stopDescription,
+                    onStop = {
+                        val messageId = streamingMessageId ?: return@LemmaInput
+                        scope.launch {
+                            try {
+                                client.abortMessage(messageId)
+                            } catch (e: Exception) {
+                                bannerErrorMessage = ErrorFormatter.format(e)
+                            }
+                        }
+                    },
                     onSend = {
                         val text = inputText.trim()
                         if (text.isBlank() || isStreaming) return@LemmaInput
@@ -486,6 +506,9 @@ fun MainChatScreen(
                                     .collect { event ->
                                         val lastIdx = messages.indexOfLast { it.id == aiMsgId }
                                         when (event) {
+                                            is AgentStreamEvent.Started -> {
+                                                streamingMessageId = event.messageId
+                                            }
                                             is AgentStreamEvent.Delta -> {
                                                 if (lastIdx >= 0) {
                                                     val old = messages[lastIdx]
@@ -505,6 +528,18 @@ fun MainChatScreen(
                                                         createdAt = 0L,
                                                         updatedAt = 0L,
                                                     )
+                                                }
+                                            }
+                                            is AgentStreamEvent.Aborted -> {
+                                                if (lastIdx >= 0) {
+                                                    val old = messages[lastIdx]
+                                                    messages[lastIdx] =
+                                                        old.copy(
+                                                            text =
+                                                                if (old.text.isBlank())
+                                                                    "[$abortedNotice]"
+                                                                else old.text + "\n[$abortedNotice]"
+                                                        )
                                                 }
                                             }
                                             is AgentStreamEvent.Error -> {
@@ -539,6 +574,7 @@ fun MainChatScreen(
                                 }
                             } finally {
                                 isStreaming = false
+                                streamingMessageId = null
                             }
                         }
                     },

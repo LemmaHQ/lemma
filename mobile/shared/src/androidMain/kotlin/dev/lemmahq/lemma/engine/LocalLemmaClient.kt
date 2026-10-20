@@ -137,6 +137,10 @@ private constructor(
             .map { it.toStreamEvent() }
     }
 
+    override suspend fun abortMessage(messageId: String) {
+        engine.abortMessage(userId(), messageId)
+    }
+
     private fun userId(): String {
         return settings.getLocalUserId()
             ?: throw IllegalStateException("No local session; sign in first")
@@ -174,6 +178,7 @@ private fun MobileAgentEvent.toStreamEvent(): AgentStreamEvent {
         is MobileAgentEvent.ToolFinished ->
             AgentStreamEvent.ToolFinished(id, name, content, isError)
         is MobileAgentEvent.Done -> AgentStreamEvent.Done(inputTokens, outputTokens)
+        is MobileAgentEvent.Aborted -> AgentStreamEvent.Aborted
         is MobileAgentEvent.Error -> AgentStreamEvent.Error(message)
     }
 }

@@ -3,6 +3,7 @@ package dev.lemmahq.lemma.client
 import com.connectrpc.ResponseMessage
 import dev.lemmahq.gen.lemma.v1.Provider
 import dev.lemmahq.gen.lemma.v1.ProviderKind
+import dev.lemmahq.gen.lemma.v1.abortMessageRequest
 import dev.lemmahq.gen.lemma.v1.createConversationRequest
 import dev.lemmahq.gen.lemma.v1.createProviderRequest
 import dev.lemmahq.gen.lemma.v1.deleteProviderRequest
@@ -222,8 +223,17 @@ class RemoteLemmaClient(
                             completionTokens = event.done.usage.completionTokens.toLong(),
                         )
                     )
+                event.hasAborted() -> emit(AgentStreamEvent.Aborted)
                 event.hasError() -> emit(AgentStreamEvent.Error(event.error.message))
             }
+        }
+    }
+
+    override suspend fun abortMessage(messageId: String) {
+        val request = abortMessageRequest { this.messageId = messageId }
+        when (val response = rpc.agent.abortMessage(request, emptyMap())) {
+            is ResponseMessage.Success -> Unit
+            is ResponseMessage.Failure -> throw response.cause
         }
     }
 
