@@ -176,7 +176,6 @@ impl AgentLoop {
                 _ => {
                     observer(TurnEvent::AssistantDone {
                         id: assistant_id,
-                        full_text: outcome.full_text(),
                         usage: outcome.usage,
                     });
                     return Ok(TurnEnd::Done);

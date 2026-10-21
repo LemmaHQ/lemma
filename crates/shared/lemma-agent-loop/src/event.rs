@@ -48,8 +48,6 @@ pub enum TurnEvent {
     AssistantDone {
         /// Message ID.
         id: Uuid,
-        /// Full text content.
-        full_text: String,
         /// Token usage if provided.
         usage: Option<Usage>,
     },
