@@ -1,6 +1,6 @@
 [tools]
 node = "26.12.0"
-java = "temurin-25"
+java = "temurin-25.0.4+101.0.LTS"
 just = "1.59.0"
 buf = "1.74.0"
 protobuf = "36.2"

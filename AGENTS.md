@@ -45,6 +45,7 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 
 - **Formatting:** 4-space indentation (YAML and `.proto` use 2), no trailing whitespace, exactly one trailing newline, UTF-8.
 - **Scaffold with generators.** Initialize configuration files and project skeletons with their tool's generator (`cargo new`, `buf init`, `npm create`).
+- **Dependency versions** are compatible-update ranges written to every component the release has (`^44.8.0`, not `^44`; `0.64` for a release numbered `0.64`). npm writes the `^`, Cargo's bare version (`"1.53.1"`) means the same range, and Gradle catalogs and `mise.toml` write the plain version. Action tags, container image tags, and Android SDK levels follow their publisher's scheme.
 - **Names:** types use `PascalCase`; constants and environment variables use `UPPER_SNAKE_CASE`; identifiers use plain, standard terms. Crates and concept directories are singular; directories that hold entries of one kind are plural (`crates/`, `migrations/`).
 - **Names and types explain themselves** instead of comments that restate them.
 - **Delivered code carries no comments by default.** Design and constraint explanations stay in the conversation, docs, or commit messages; known issues go to GitHub issues, never to `TODO`, `FIXME`, or similar markers. Doc comments take the compact forms each subtree `AGENTS.md` defines.

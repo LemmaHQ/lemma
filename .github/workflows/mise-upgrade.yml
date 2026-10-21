@@ -32,10 +32,10 @@ jobs:
       - name: Install remaining tools
         uses: jdx/mise-action@v4
         with:
-          install_args: node just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-ndk
+          install_args: node java just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-ndk
 
       - name: Bump pinned versions
-        run: mise upgrade --bump node just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-ndk cargo:cargo-binstall
+        run: mise upgrade --bump node java just buf protobuf cargo:sqlx-cli cargo:cargo-llvm-cov cargo:cargo-nextest cargo:cargo-ndk cargo:cargo-binstall
 
       - name: Sync Dockerfile node base image
         run: |
