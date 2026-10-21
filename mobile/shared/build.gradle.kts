@@ -117,8 +117,6 @@ kotlin {
                 implementation(libs.compose.ui)
                 implementation(libs.compose.components.resources)
                 implementation(libs.compose.uiToolingPreview)
-                implementation(libs.androidx.lifecycle.viewmodelCompose)
-                implementation(libs.androidx.lifecycle.runtimeCompose)
                 implementation(libs.multiplatform.settings)
                 implementation(libs.multiplatform.settings.no.arg)
                 implementation(libs.connect.kotlin)
@@ -129,7 +127,6 @@ kotlin {
                 implementation(libs.protobuf.kotlin.lite)
                 implementation(libs.markdown.renderer)
                 implementation(libs.markdown.renderer.m3)
-                implementation(libs.sqldelight.coroutines)
             }
         }
         commonTest.dependencies {
