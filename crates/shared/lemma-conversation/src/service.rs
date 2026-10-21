@@ -1,6 +1,5 @@
-//! Conversation business flows: lifecycle (create, rename, archive,
-//! restore, delete) and message pagination over a [`ConversationStore`]
-//! backend.
+//! Conversation business flows: lifecycle (create, rename, delete) and
+//! message pagination over a [`ConversationStore`] backend.
 
 use std::sync::Arc;
 
@@ -18,7 +17,7 @@ pub const MAX_PAGE_LIMIT: i32 = 100;
 
 /// Conversation domain service over a [`ConversationStore`] backend.
 ///
-/// Archiving is a storage-only status flip; messages stay in place.
+/// Deletion removes a conversation together with its messages.
 pub struct ConversationService {
     store: Arc<dyn ConversationStore>,
 }
@@ -29,12 +28,12 @@ impl ConversationService {
         Self { store }
     }
 
-    /// Lists the user's active conversations.
+    /// Lists the user's conversations.
     pub async fn list_conversations(
         &self,
         user_id: Uuid,
     ) -> Result<Vec<Conversation>, ConversationError> {
-        self.store.list_active_by_user(user_id).await
+        self.store.list_by_user(user_id).await
     }
 
     /// Creates an empty conversation for the user.
@@ -83,42 +82,11 @@ impl ConversationService {
             .await
     }
 
-    /// Archives an active conversation owned by the user.
-    pub async fn archive(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-    ) -> Result<Conversation, ConversationError> {
-        self.store
-            .archive(id, user_id)
-            .await?
-            .ok_or(ConversationError::NotActive)
-    }
-
-    /// Restores an archived conversation owned by the user.
-    pub async fn restore(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-    ) -> Result<Conversation, ConversationError> {
-        self.store
-            .restore(id, user_id)
-            .await?
-            .ok_or(ConversationError::NotArchived)
-    }
-
-    /// Lists the user's archived conversations.
-    pub async fn list_archived(
-        &self,
-        user_id: Uuid,
-    ) -> Result<Vec<Conversation>, ConversationError> {
-        self.store.list_archived_by_user(user_id).await
-    }
-
-    /// Deletes an archived conversation owned by the user.
-    pub async fn delete_archived(&self, user_id: Uuid, id: Uuid) -> Result<(), ConversationError> {
-        if !self.store.delete_archived(id, user_id).await? {
-            return Err(ConversationError::ArchivedNotFound);
+    /// Permanently deletes a conversation owned by the user together
+    /// with its messages.
+    pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ConversationError> {
+        if !self.store.delete(id, user_id).await? {
+            return Err(ConversationError::NotFound);
         }
         Ok(())
     }

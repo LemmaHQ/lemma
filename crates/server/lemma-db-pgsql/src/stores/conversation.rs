@@ -31,11 +31,9 @@ fn into_conversation(c: entity::Conversation) -> Conversation {
         id: c.id,
         user_id: c.user_id,
         title: c.title,
-        status: c.status,
         leaf_id: c.leaf_id,
         last_model: c.last_model.map(|Json(m)| m),
         local_only: c.local_only,
-        archived_at: c.archived_at,
         created_at: c.created_at,
         updated_at: c.updated_at,
     }
@@ -106,8 +104,8 @@ impl ConversationStore for PgConversationStore {
         Box::pin(async move {
             let row = sqlx::query_as::<_, entity::Conversation>(
                 r#"
-                INSERT INTO conversations (id, user_id, title, leaf_id, status, local_only, created_at, updated_at)
-                VALUES ($1, $2, $3, NULL, 'active', $4, NOW(), NOW())
+                INSERT INTO conversations (id, user_id, title, leaf_id, local_only, created_at, updated_at)
+                VALUES ($1, $2, $3, NULL, $4, NOW(), NOW())
                 RETURNING *
                 "#,
             )
@@ -123,24 +121,9 @@ impl ConversationStore for PgConversationStore {
         })
     }
 
-    fn list_active_by_user<'a>(
-        &'a self,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
+    fn list_by_user<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Vec<Conversation>> {
         Box::pin(async move {
-            conversations::list_active_by_user(&self.pool, user_id)
-                .await
-                .map(|rows| rows.into_iter().map(into_conversation).collect())
-                .map_err(store_err)
-        })
-    }
-
-    fn list_archived_by_user<'a>(
-        &'a self,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
-        Box::pin(async move {
-            conversations::list_archived_by_user(&self.pool, user_id)
+            conversations::list_by_user(&self.pool, user_id)
                 .await
                 .map(|rows| rows.into_iter().map(into_conversation).collect())
                 .map_err(store_err)
@@ -174,35 +157,9 @@ impl ConversationStore for PgConversationStore {
         })
     }
 
-    fn archive<'a>(
-        &'a self,
-        id: Uuid,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>> {
+    fn delete<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool> {
         Box::pin(async move {
-            conversations::archive(&self.pool, id, user_id)
-                .await
-                .map(|row| row.map(into_conversation))
-                .map_err(store_err)
-        })
-    }
-
-    fn restore<'a>(
-        &'a self,
-        id: Uuid,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>> {
-        Box::pin(async move {
-            conversations::restore(&self.pool, id, user_id)
-                .await
-                .map(|row| row.map(into_conversation))
-                .map_err(store_err)
-        })
-    }
-
-    fn delete_archived<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool> {
-        Box::pin(async move {
-            conversations::delete_archived(&self.pool, id, user_id)
+            conversations::delete(&self.pool, id, user_id)
                 .await
                 .map_err(store_err)
         })

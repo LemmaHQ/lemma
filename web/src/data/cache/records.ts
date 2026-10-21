@@ -7,8 +7,6 @@ import type { LemmaDb } from "./database";
 export interface ConversationRow {
     id: string;
     title: string;
-    status: number;
-    archivedAtMs: number | null;
     createdAtMs: number;
     updatedAtMs: number;
 }
@@ -36,8 +34,6 @@ export function conversationToRow(c: Conversation): ConversationRow {
     return {
         id: c.id,
         title: c.title,
-        status: c.status,
-        archivedAtMs: c.archivedAt === undefined ? null : ms(c.archivedAt),
         createdAtMs: ms(c.createdAt),
         updatedAtMs: ms(c.updatedAt),
     };
@@ -60,16 +56,7 @@ export async function listConversations(
     db: LemmaDb,
 ): Promise<ConversationRow[]> {
     const rows = await db.conversations.toArray();
-    return rows
-        .filter((r) => r.status !== 2)
-        .toSorted((a, b) => b.updatedAtMs - a.updatedAtMs);
-}
-
-export async function listArchived(db: LemmaDb): Promise<ConversationRow[]> {
-    const rows = await db.conversations.toArray();
-    return rows
-        .filter((r) => r.status === 2)
-        .toSorted((a, b) => (b.archivedAtMs ?? 0) - (a.archivedAtMs ?? 0));
+    return rows.toSorted((a, b) => b.updatedAtMs - a.updatedAtMs);
 }
 
 export async function listMessages(
@@ -96,28 +83,13 @@ export async function upsertMessages(
     await db.messages.bulkPut(rows);
 }
 
-export async function replaceArchived(
-    db: LemmaDb,
-    rows: ConversationRow[],
-): Promise<string[]> {
-    return await db.transaction("rw", db.conversations, async () => {
-        const keep = new Set(rows.map((r) => r.id));
-        const stale = await db.conversations
-            .filter((r) => r.status === 2 && !keep.has(r.id))
-            .toArray();
-        await db.conversations.bulkDelete(stale.map((r) => r.id));
-        await db.conversations.bulkPut(rows);
-        return stale.map((r) => r.id);
-    });
-}
-
-export async function pruneActiveExcept(
+export async function pruneExcept(
     db: LemmaDb,
     keepIds: Set<string>,
 ): Promise<string[]> {
     return await db.transaction("rw", db.conversations, async () => {
         const stale = await db.conversations
-            .filter((r) => r.status !== 2 && !keepIds.has(r.id))
+            .filter((r) => !keepIds.has(r.id))
             .toArray();
         await db.conversations.bulkDelete(stale.map((r) => r.id));
         return stale.map((r) => r.id);

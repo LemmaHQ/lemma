@@ -13,16 +13,12 @@ pub struct Conversation {
     pub user_id: Uuid,
     /// Display title.
     pub title: String,
-    /// Lifecycle status: `active` or `archived`.
-    pub status: String,
     /// Active branch leaf message id; `None` when empty.
     pub leaf_id: Option<Uuid>,
     /// Model last used in this conversation; `None` before the first turn.
     pub last_model: Option<LastModel>,
     /// Whether this conversation is restricted to local-only mode.
     pub local_only: bool,
-    /// Archive time, if archived.
-    pub archived_at: Option<DateTime<Utc>>,
     /// Creation time.
     pub created_at: DateTime<Utc>,
     /// Last update time.

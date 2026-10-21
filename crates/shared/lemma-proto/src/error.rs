@@ -19,9 +19,6 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         ErrorReason::UserNotFound
         | ErrorReason::ProviderNotFound
         | ErrorReason::ConversationNotFound
-        | ErrorReason::ConversationNotActive
-        | ErrorReason::ConversationNotArchived
-        | ErrorReason::ArchivedConversationNotFound
         | ErrorReason::MessageNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
         _ => ErrorCode::InvalidArgument,
@@ -47,9 +44,6 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::IdInvalid => "invalid id",
         ErrorReason::TitleRequired => "title required",
         ErrorReason::ConversationNotFound => "conversation not found",
-        ErrorReason::ConversationNotActive => "conversation not found or already archived",
-        ErrorReason::ConversationNotArchived => "conversation not found or not archived",
-        ErrorReason::ArchivedConversationNotFound => "archived conversation not found",
         ErrorReason::MessageNotFound => "message not found",
         ErrorReason::NotAssistantMessage => "not an assistant message",
         ErrorReason::ContentRequired => "content required",

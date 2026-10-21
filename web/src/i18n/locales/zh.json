@@ -83,10 +83,7 @@
     },
     "errors": {
         "agentFailed": "模型请求失败。",
-        "archivedConversationNotFound": "归档会话不存在。",
         "contentRequired": "消息内容不能为空。",
-        "conversationNotActive": "会话不存在或已归档。",
-        "conversationNotArchived": "会话不存在或未归档。",
         "conversationNotFound": "会话不存在。",
         "credentialsInvalid": "用户名或密码错误。",
         "idInvalid": "无效的 ID。",
@@ -154,15 +151,12 @@
     },
     "sessions": {
         "actions": "更多操作",
-        "archive": "归档",
-        "archived": "已归档",
         "delete": "彻底删除",
         "deleteDescription": "此操作不可恢复。",
         "deleteTitle": "彻底删除该会话？",
         "earlier": "更早",
         "last7Days": "近 7 天",
         "rename": "重命名",
-        "restore": "恢复",
         "today": "今天",
         "yesterday": "昨天"
     },

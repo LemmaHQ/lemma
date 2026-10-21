@@ -1,5 +1,5 @@
-//! Conversation domain: lifecycle (create, rename, archive, restore,
-//! delete), message pagination, and turn persistence, generic over a
+//! Conversation domain: lifecycle (create, rename, delete), message
+//! pagination, and turn persistence, generic over a
 //! [`ConversationStore`] backend. Contains the in-memory message tree
 //! projection, branching navigation, and context assembly. Zero I/O and
 //! zero runtime bindings: hosts (server, desktop, mobile) supply concrete

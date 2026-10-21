@@ -83,10 +83,7 @@
     },
     "errors": {
         "agentFailed": "The model request failed.",
-        "archivedConversationNotFound": "Archived conversation not found.",
         "contentRequired": "Message content is required.",
-        "conversationNotActive": "Conversation not found or already archived.",
-        "conversationNotArchived": "Conversation not found or not archived.",
         "conversationNotFound": "Conversation not found.",
         "credentialsInvalid": "Incorrect username or password.",
         "idInvalid": "Invalid ID.",
@@ -154,15 +151,12 @@
     },
     "sessions": {
         "actions": "More actions",
-        "archive": "Archive",
-        "archived": "Archived",
         "delete": "Delete permanently",
         "deleteDescription": "This cannot be undone.",
         "deleteTitle": "Permanently delete this conversation?",
         "earlier": "Earlier",
         "last7Days": "Last 7 days",
         "rename": "Rename",
-        "restore": "Restore",
         "today": "Today",
         "yesterday": "Yesterday"
     },

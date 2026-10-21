@@ -1,19 +1,7 @@
-import {
-    IconArchive,
-    IconChevronRight,
-    IconDots,
-    IconPencil,
-    IconRestore,
-    IconTrash,
-} from "@tabler/icons-react";
+import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,12 +28,9 @@ import { groupSessions, type SessionSummary } from "./grouping";
 
 interface ConversationListProps {
     sessions: SessionSummary[];
-    archived: SessionSummary[];
     activeSessionId: string | null;
     onOpenSession: (id: string) => void;
-    onArchiveSession: (id: string) => void;
     onRenameSession: (id: string, title: string) => void;
-    onRestoreSession: (id: string) => void;
     onDeleteSession: (id: string) => void;
 }
 
@@ -81,13 +66,13 @@ function SessionItem({
     session,
     active,
     onOpen,
-    onArchive,
+    onDelete,
     onRename,
 }: {
     session: SessionSummary;
     active: boolean;
     onOpen: (id: string) => void;
-    onArchive: (id: string) => void;
+    onDelete: (id: string) => void;
     onRename: (id: string, title: string) => void;
 }) {
     const { t } = useTranslation();
@@ -144,39 +129,6 @@ function SessionItem({
                     <IconPencil />
                     {t("sessions.rename")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onArchive(session.id)}>
-                    <IconArchive />
-                    {t("sessions.archive")}
-                </DropdownMenuItem>
-            </SessionActions>
-        </SidebarMenuItem>
-    );
-}
-
-function ArchivedItem({
-    session,
-    onRestore,
-    onDelete,
-}: {
-    session: SessionSummary;
-    onRestore: (id: string) => void;
-    onDelete: (id: string) => void;
-}) {
-    const { t } = useTranslation();
-    return (
-        <SidebarMenuItem>
-            <SidebarMenuButton render={<div />}>
-                <span>
-                    {session.title === ""
-                        ? t("sidebar.newChat")
-                        : session.title}
-                </span>
-            </SidebarMenuButton>
-            <SessionActions>
-                <DropdownMenuItem onClick={() => onRestore(session.id)}>
-                    <IconRestore />
-                    {t("sessions.restore")}
-                </DropdownMenuItem>
                 <DropdownMenuItem
                     variant="destructive"
                     onClick={() => onDelete(session.id)}
@@ -189,15 +141,12 @@ function ArchivedItem({
     );
 }
 
-/** Conversation groups by recency, followed by the collapsed archive. */
+/** Conversation groups by recency. */
 export function ConversationList({
     sessions,
-    archived,
     activeSessionId,
     onOpenSession,
-    onArchiveSession,
     onRenameSession,
-    onRestoreSession,
     onDeleteSession,
 }: ConversationListProps) {
     const { t } = useTranslation();
@@ -218,7 +167,7 @@ export function ConversationList({
                                     session={session}
                                     active={session.id === activeSessionId}
                                     onOpen={onOpenSession}
-                                    onArchive={onArchiveSession}
+                                    onDelete={onDeleteSession}
                                     onRename={onRenameSession}
                                 />
                             ))}
@@ -226,29 +175,6 @@ export function ConversationList({
                     </SidebarGroupContent>
                 </SidebarGroup>
             ))}
-
-            {archived.length > 0 && (
-                <Collapsible render={<SidebarGroup />}>
-                    <SidebarGroupLabel render={<CollapsibleTrigger />}>
-                        {t("sessions.archived")} ({archived.length})
-                        <IconChevronRight className="ml-auto transition-transform in-data-panel-open:rotate-90" />
-                    </SidebarGroupLabel>
-                    <CollapsibleContent>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {archived.map((session) => (
-                                    <ArchivedItem
-                                        key={session.id}
-                                        session={session}
-                                        onRestore={onRestoreSession}
-                                        onDelete={onDeleteSession}
-                                    />
-                                ))}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </CollapsibleContent>
-                </Collapsible>
-            )}
         </>
     );
 }

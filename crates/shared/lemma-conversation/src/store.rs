@@ -31,19 +31,10 @@ pub trait ConversationStore: Send + Sync {
         local_only: bool,
     ) -> BoxConversationFuture<'a, Conversation>;
 
-    /// Lists a user's active conversations, most recently updated first.
-    fn list_active_by_user<'a>(
-        &'a self,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>>;
+    /// Lists a user's conversations, most recently updated first.
+    fn list_by_user<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Vec<Conversation>>;
 
-    /// Lists a user's archived conversations, most recently archived first.
-    fn list_archived_by_user<'a>(
-        &'a self,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>>;
-
-    /// Finds a conversation owned by the given user, any status.
+    /// Finds a conversation owned by the given user.
     fn find_by_id_and_user<'a>(
         &'a self,
         id: Uuid,
@@ -58,26 +49,9 @@ pub trait ConversationStore: Send + Sync {
         title: &'a str,
     ) -> BoxConversationFuture<'a, Option<Conversation>>;
 
-    /// Archives an active conversation while preserving its messages intact.
-    /// Returns `Some` exclusively when the conversation is active.
-    fn archive<'a>(
-        &'a self,
-        id: Uuid,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>>;
-
-    /// Restores an archived conversation to active, clearing the archive
-    /// metadata. Returns `Some` exclusively when the conversation is currently
-    /// archived.
-    fn restore<'a>(
-        &'a self,
-        id: Uuid,
-        user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>>;
-
-    /// Deletes an archived conversation, returning whether a row was
-    /// removed. Deletion is restricted exclusively to archived conversations.
-    fn delete_archived<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool>;
+    /// Deletes a conversation owned by the user together with its
+    /// messages, returning whether a row was removed.
+    fn delete<'a>(&'a self, id: Uuid, user_id: Uuid) -> BoxConversationFuture<'a, bool>;
 
     /// Updates the active leaf pointer of a conversation owned by the
     /// given user.

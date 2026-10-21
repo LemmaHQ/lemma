@@ -27,39 +27,20 @@ where
     .await
 }
 
-/// Lists a user's active conversations, most recently updated first.
-pub async fn list_active_by_user<'e, E>(
-    executor: E,
-    user_id: Uuid,
-) -> sqlx::Result<Vec<Conversation>>
+/// Lists a user's conversations, most recently updated first.
+pub async fn list_by_user<'e, E>(executor: E, user_id: Uuid) -> sqlx::Result<Vec<Conversation>>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
 {
     sqlx::query_as::<_, Conversation>(
-        "SELECT * FROM conversations WHERE user_id = ? AND status = 'active' ORDER BY updated_at DESC",
+        "SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC",
     )
     .bind(user_id)
     .fetch_all(executor)
     .await
 }
 
-/// Lists a user's archived conversations, most recently archived first.
-pub async fn list_archived_by_user<'e, E>(
-    executor: E,
-    user_id: Uuid,
-) -> sqlx::Result<Vec<Conversation>>
-where
-    E: sqlx::Executor<'e, Database = Sqlite>,
-{
-    sqlx::query_as::<_, Conversation>(
-        "SELECT * FROM conversations WHERE user_id = ? AND status = 'archived' ORDER BY archived_at DESC",
-    )
-    .bind(user_id)
-    .fetch_all(executor)
-    .await
-}
-
-/// Finds a conversation owned by the given user, any status.
+/// Finds a conversation owned by the given user.
 pub async fn find_by_id_and_user<'e, E>(
     executor: E,
     id: Uuid,
@@ -101,69 +82,13 @@ where
     .await
 }
 
-/// Archives an active conversation while preserving its messages intact.
-/// Returns `Some` exclusively when the conversation is active.
-pub async fn archive<'e, E>(
-    executor: E,
-    id: Uuid,
-    user_id: Uuid,
-) -> sqlx::Result<Option<Conversation>>
+/// Deletes a conversation owned by the given user; messages cascade.
+/// Returns whether a row was removed.
+pub async fn delete<'e, E>(executor: E, id: Uuid, user_id: Uuid) -> sqlx::Result<bool>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
 {
-    let now = now_ms();
-    sqlx::query_as::<_, Conversation>(
-        r#"
-        UPDATE conversations
-        SET status = 'archived',
-            archived_at = ?,
-            updated_at = ?
-        WHERE id = ? AND user_id = ? AND status = 'active'
-        RETURNING *
-        "#,
-    )
-    .bind(now)
-    .bind(now)
-    .bind(id)
-    .bind(user_id)
-    .fetch_optional(executor)
-    .await
-}
-
-/// Restores an archived conversation to active, clearing the archive
-/// metadata. Returns `Some` exclusively when the conversation is currently
-/// archived.
-pub async fn restore<'e, E>(
-    executor: E,
-    id: Uuid,
-    user_id: Uuid,
-) -> sqlx::Result<Option<Conversation>>
-where
-    E: sqlx::Executor<'e, Database = Sqlite>,
-{
-    sqlx::query_as::<_, Conversation>(
-        r#"
-        UPDATE conversations
-        SET status = 'active', archived_at = NULL,
-            updated_at = ?
-        WHERE id = ? AND user_id = ? AND status = 'archived'
-        RETURNING *
-        "#,
-    )
-    .bind(now_ms())
-    .bind(id)
-    .bind(user_id)
-    .fetch_optional(executor)
-    .await
-}
-
-/// Deletes an archived conversation. Deletion is restricted exclusively
-/// to archived conversations.
-pub async fn delete_archived<'e, E>(executor: E, id: Uuid, user_id: Uuid) -> sqlx::Result<bool>
-where
-    E: sqlx::Executor<'e, Database = Sqlite>,
-{
-    sqlx::query("DELETE FROM conversations WHERE id = ? AND user_id = ? AND status = 'archived'")
+    sqlx::query("DELETE FROM conversations WHERE id = ? AND user_id = ?")
         .bind(id)
         .bind(user_id)
         .execute(executor)

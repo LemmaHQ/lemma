@@ -4,13 +4,6 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// Conversation lifecycle status visible to clients.
-enum ConversationStatus {
-  CONVERSATION_STATUS_UNSPECIFIED = 0;
-  CONVERSATION_STATUS_ACTIVE = 1;
-  CONVERSATION_STATUS_ARCHIVED = 2;
-}
-
 // Message lifecycle status.
 enum MessageStatus {
   MESSAGE_STATUS_UNSPECIFIED = 0;
@@ -21,11 +14,11 @@ enum MessageStatus {
 }
 
 message Conversation {
+  reserved 3, 4;
+  reserved "status", "archived_at";
+
   string id = 1;
   string title = 2;
-  ConversationStatus status = 3;
-  // Timestamp recorded when the conversation transitions to archived status.
-  google.protobuf.Timestamp archived_at = 4;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
 }
@@ -102,45 +95,17 @@ message ListMessagesResponse {
   bool has_more = 2;
 }
 
-message ArchiveConversationRequest {
+message DeleteConversationRequest {
   string id = 1;
 }
 
-message ArchiveConversationResponse {
-  Conversation conversation = 1;
-}
-
-message RestoreConversationRequest {
-  string id = 1;
-}
-
-message RestoreConversationResponse {
-  Conversation conversation = 1;
-}
-
-message ListArchivedRequest {}
-
-message ListArchivedResponse {
-  repeated Conversation conversations = 1;
-}
-
-message DeleteArchivedRequest {
-  string id = 1;
-}
-
-message DeleteArchivedResponse {}
+message DeleteConversationResponse {}
 
 service ConversationService {
   rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
   rpc RenameConversation(RenameConversationRequest) returns (RenameConversationResponse);
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
-  // Archives an active conversation in place, preserving messages intact.
-  rpc ArchiveConversation(ArchiveConversationRequest) returns (ArchiveConversationResponse);
-  // Restores an archived conversation back to active status.
-  rpc RestoreConversation(RestoreConversationRequest) returns (RestoreConversationResponse);
-  // Lists all archived conversations.
-  rpc ListArchived(ListArchivedRequest) returns (ListArchivedResponse);
-  // Permanently purges an archived conversation and its records.
-  rpc DeleteArchived(DeleteArchivedRequest) returns (DeleteArchivedResponse);
+  // Permanently deletes a conversation and all of its messages.
+  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
 }

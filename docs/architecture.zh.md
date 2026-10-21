@@ -88,7 +88,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 两个后端共用同一逻辑 schema：`users`、`auth_credentials`、`refresh_tokens`、`providers`、`settings`、`conversations` 与 `messages`。每个后端各有一个由可回滚迁移对组成的 `migrations/` 目录，schema 改动要在两边各加一个迁移（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。每个宿主打开连接池时都会运行迁移。
 
-一个会话是一棵消息树。每条消息行保存它的 `parent_id`、序列化后的规范化消息、状态（`streaming`、`done`、`aborted`、`error`）、产生它的 provider 与模型、token 用量，以及时间标记。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-conversation` 中的 `ConversationStore` 是这些表上唯一的 trait：turn 循环通过它追加、定稿消息并移动叶子，会话服务通过它创建、重命名、归档、恢复、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
+一个会话是一棵消息树。每条消息行保存它的 `parent_id`、序列化后的规范化消息、状态（`streaming`、`done`、`aborted`、`error`）、产生它的 provider 与模型、token 用量，以及时间标记。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-conversation` 中的 `ConversationStore` 是这些表上唯一的 trait：turn 循环通过它追加、定稿消息并移动叶子，会话服务通过它创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
 
 分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 

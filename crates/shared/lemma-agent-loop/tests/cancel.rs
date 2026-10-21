@@ -56,11 +56,9 @@ impl ConversationStore for MemoryStore {
             id,
             user_id,
             title,
-            status: "active".into(),
             leaf_id: None,
             last_model: None,
             local_only,
-            archived_at: None,
             created_at: DateTime::UNIX_EPOCH,
             updated_at: DateTime::UNIX_EPOCH,
         };
@@ -68,17 +66,7 @@ impl ConversationStore for MemoryStore {
         Box::pin(async move { Ok(meta) })
     }
 
-    fn list_active_by_user<'a>(
-        &'a self,
-        _user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
-        Box::pin(async { Ok(vec![]) })
-    }
-
-    fn list_archived_by_user<'a>(
-        &'a self,
-        _user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Vec<Conversation>> {
+    fn list_by_user<'a>(&'a self, _user_id: Uuid) -> BoxConversationFuture<'a, Vec<Conversation>> {
         Box::pin(async { Ok(vec![]) })
     }
 
@@ -105,23 +93,7 @@ impl ConversationStore for MemoryStore {
         Box::pin(async { Ok(None) })
     }
 
-    fn archive<'a>(
-        &'a self,
-        _id: Uuid,
-        _user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>> {
-        Box::pin(async { Ok(None) })
-    }
-
-    fn restore<'a>(
-        &'a self,
-        _id: Uuid,
-        _user_id: Uuid,
-    ) -> BoxConversationFuture<'a, Option<Conversation>> {
-        Box::pin(async { Ok(None) })
-    }
-
-    fn delete_archived<'a>(&'a self, _id: Uuid, _user_id: Uuid) -> BoxConversationFuture<'a, bool> {
+    fn delete<'a>(&'a self, _id: Uuid, _user_id: Uuid) -> BoxConversationFuture<'a, bool> {
         Box::pin(async { Ok(false) })
     }
 

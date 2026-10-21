@@ -38,25 +38,19 @@ import { SidebarToggle } from "./SidebarToggle";
 
 interface AppSidebarProps {
     sessions: SessionSummary[];
-    archived: SessionSummary[];
     activeSessionId: string | null;
     onGoHome: () => void;
     onOpenSession: (id: string) => void;
-    onArchiveSession: (id: string) => void;
     onRenameSession: (id: string, title: string) => void;
-    onRestoreSession: (id: string) => void;
     onDeleteSession: (id: string) => void;
 }
 
 export function AppSidebar({
     sessions,
-    archived,
     activeSessionId,
     onGoHome,
     onOpenSession,
-    onArchiveSession,
     onRenameSession,
-    onRestoreSession,
     onDeleteSession,
 }: AppSidebarProps) {
     const { t } = useTranslation();
@@ -91,15 +85,12 @@ export function AppSidebar({
             <SidebarContent>
                 <ConversationList
                     sessions={sessions}
-                    archived={archived}
                     activeSessionId={activeSessionId}
                     onOpenSession={(id) => {
                         setOpenMobile(false);
                         onOpenSession(id);
                     }}
-                    onArchiveSession={onArchiveSession}
                     onRenameSession={onRenameSession}
-                    onRestoreSession={onRestoreSession}
                     onDeleteSession={onDeleteSession}
                 />
             </SidebarContent>

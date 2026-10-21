@@ -9,11 +9,9 @@ import { closeDb, openDb } from "@/data/cache/database";
 import {
     conversationToRow,
     deleteConversationCascade,
-    listArchived,
     listConversations,
     listMessages,
     messageToRow,
-    replaceArchived,
     upsertConversations,
     upsertMessages,
     type ConversationRow,
@@ -31,8 +29,6 @@ function conv(
     return {
         id,
         title: "t",
-        status: 0,
-        archivedAtMs: null,
         createdAtMs: 1000,
         updatedAtMs: 1000,
         ...over,
@@ -89,18 +85,6 @@ describe("db", () => {
         expect(rows.map((r) => r.id)).toEqual(["m-a", "m-b"]);
     });
 
-    it("cleans up archived rows not present in full refresh", async () => {
-        await upsertConversations(db, [
-            conv("a1", { status: 2, archivedAtMs: 1000 }),
-            conv("a2", { status: 2, archivedAtMs: 2000 }),
-        ]);
-        await replaceArchived(db, [
-            conv("a2", { status: 2, archivedAtMs: 2000 }),
-        ]);
-        const archived = await listArchived(db);
-        expect(archived.map((r) => r.id)).toEqual(["a2"]);
-    });
-
     it("deletes conversation cascade including all messages", async () => {
         await upsertConversations(db, [conv("c1")]);
         await upsertMessages(db, [msg("m1", "c1"), msg("m2", "c1")]);
@@ -109,11 +93,10 @@ describe("db", () => {
         expect(await listMessages(db, "c1")).toEqual([]);
     });
 
-    it("excludes archived conversations from active list sorted descending by updatedAtMs", async () => {
+    it("lists conversations sorted descending by updatedAtMs", async () => {
         await upsertConversations(db, [
             conv("c1", { updatedAtMs: 1000 }),
             conv("c2", { updatedAtMs: 3000 }),
-            conv("a1", { status: 2, archivedAtMs: 5000 }),
         ]);
         const rows = await listConversations(db);
         expect(rows.map((r) => r.id)).toEqual(["c2", "c1"]);
@@ -124,7 +107,6 @@ describe("db", () => {
             create(ConversationSchema, {
                 id: "c1",
                 title: "t",
-                status: 1,
                 createdAt: timestampFromDate(new Date(1700000001000)),
                 updatedAt: timestampFromDate(new Date(1700000002000)),
             }),
@@ -144,15 +126,6 @@ describe("db", () => {
         );
         expect(msgRow.createdAtMs).toBe(1700000003000);
         expect(msgRow.content).toBe("hi");
-    });
-
-    it("tolerates missing archivedAtMs in archived list", async () => {
-        await upsertConversations(db, [
-            conv("a1", { status: 2, archivedAtMs: null }),
-            conv("a2", { status: 2, archivedAtMs: 2000 }),
-        ]);
-        const rows = await listArchived(db);
-        expect(rows.map((r) => r.id)).toEqual(["a2", "a1"]);
     });
 
     it("clears messages cached under the seq index on v3 upgrade", async () => {

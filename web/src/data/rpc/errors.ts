@@ -21,10 +21,6 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.ID_INVALID]: "errors.idInvalid",
     [ErrorReason.TITLE_REQUIRED]: "errors.titleRequired",
     [ErrorReason.CONVERSATION_NOT_FOUND]: "errors.conversationNotFound",
-    [ErrorReason.CONVERSATION_NOT_ACTIVE]: "errors.conversationNotActive",
-    [ErrorReason.CONVERSATION_NOT_ARCHIVED]: "errors.conversationNotArchived",
-    [ErrorReason.ARCHIVED_CONVERSATION_NOT_FOUND]:
-        "errors.archivedConversationNotFound",
     [ErrorReason.MESSAGE_NOT_FOUND]: "errors.messageNotFound",
     [ErrorReason.NOT_ASSISTANT_MESSAGE]: "errors.notAssistantMessage",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",

@@ -133,8 +133,6 @@ pub struct MobileConversation {
     pub id: String,
     /// Display title.
     pub title: String,
-    /// Lifecycle status: `active` or `archived`.
-    pub status: String,
     /// Last update time, RFC 3339.
     pub updated_at: String,
 }
@@ -144,7 +142,6 @@ impl From<Conversation> for MobileConversation {
         Self {
             id: c.id.to_string(),
             title: c.title,
-            status: c.status,
             updated_at: c.updated_at.to_rfc3339(),
         }
     }
@@ -548,25 +545,13 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Conversation(e.to_string()))
     }
 
-    /// Lists the user's active conversations.
+    /// Lists the user's conversations.
     pub async fn list_conversations(
         &self,
         user_id: String,
     ) -> Result<Vec<MobileConversation>, EngineError> {
         self.conversations
             .list_conversations(parse_id(&user_id)?)
-            .await
-            .map(|cs| cs.into_iter().map(Into::into).collect())
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Lists the user's archived conversations.
-    pub async fn list_archived(
-        &self,
-        user_id: String,
-    ) -> Result<Vec<MobileConversation>, EngineError> {
-        self.conversations
-            .list_archived(parse_id(&user_id)?)
             .await
             .map(|cs| cs.into_iter().map(Into::into).collect())
             .map_err(|e| EngineError::Conversation(e.to_string()))
@@ -586,40 +571,15 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Conversation(e.to_string()))
     }
 
-    /// Archives an active conversation owned by the user.
-    pub async fn archive_conversation(
-        &self,
-        user_id: String,
-        conversation_id: String,
-    ) -> Result<MobileConversation, EngineError> {
-        self.conversations
-            .archive(parse_id(&user_id)?, parse_id(&conversation_id)?)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Restores an archived conversation owned by the user.
-    pub async fn restore_conversation(
-        &self,
-        user_id: String,
-        conversation_id: String,
-    ) -> Result<MobileConversation, EngineError> {
-        self.conversations
-            .restore(parse_id(&user_id)?, parse_id(&conversation_id)?)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Deletes an archived conversation owned by the user.
-    pub async fn delete_archived_conversation(
+    /// Permanently deletes a conversation owned by the user together with
+    /// its messages.
+    pub async fn delete_conversation(
         &self,
         user_id: String,
         conversation_id: String,
     ) -> Result<(), EngineError> {
         self.conversations
-            .delete_archived(parse_id(&user_id)?, parse_id(&conversation_id)?)
+            .delete(parse_id(&user_id)?, parse_id(&conversation_id)?)
             .await
             .map_err(|e| EngineError::Conversation(e.to_string()))
     }

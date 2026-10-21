@@ -13,10 +13,9 @@ use lemma_conversation::{
 };
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    ArchiveConversationResponse, Conversation, ConversationStatus, CreateConversationResponse,
-    DeleteArchivedResponse, ErrorReason, ListArchivedResponse, ListConversationsResponse,
-    ListMessagesResponse, Message, MessageStatus, RenameConversationResponse,
-    RestoreConversationResponse, ToolCall, ToolResultMeta,
+    Conversation, CreateConversationResponse, DeleteConversationResponse, ErrorReason,
+    ListConversationsResponse, ListMessagesResponse, Message, MessageStatus,
+    RenameConversationResponse, ToolCall, ToolResultMeta,
 };
 use uuid::Uuid;
 
@@ -40,15 +39,6 @@ fn conversation_to_proto(c: &DomainConversation) -> Conversation {
     Conversation {
         id: c.id.to_string(),
         title: c.title.clone(),
-        status: match c.status.as_str() {
-            "archived" => ConversationStatus::Archived,
-            _ => ConversationStatus::Active,
-        }
-        .into(),
-        archived_at: match c.archived_at {
-            Some(t) => MessageField::some(Timestamp::from(t)),
-            None => MessageField::none(),
-        },
         created_at: Timestamp::from(c.created_at).into(),
         updated_at: Timestamp::from(c.updated_at).into(),
         ..Default::default()
@@ -119,9 +109,6 @@ fn map_domain(e: ConversationError) -> ConnectError {
     match e {
         ConversationError::TitleRequired => app_error(ErrorReason::TitleRequired),
         ConversationError::NotFound => app_error(ErrorReason::ConversationNotFound),
-        ConversationError::NotActive => app_error(ErrorReason::ConversationNotActive),
-        ConversationError::NotArchived => app_error(ErrorReason::ConversationNotArchived),
-        ConversationError::ArchivedNotFound => app_error(ErrorReason::ArchivedConversationNotFound),
         ConversationError::Missing(m) => ConnectError::internal(format!("not found: {m}")),
         ConversationError::Store(m) => ConnectError::internal(format!("db: {m}")),
     }
@@ -201,62 +188,14 @@ impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
         })
     }
 
-    async fn archive_conversation(
+    async fn delete_conversation(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ArchiveConversationRequest>,
-    ) -> ServiceResult<ArchiveConversationResponse> {
+        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteConversationRequest>,
+    ) -> ServiceResult<DeleteConversationResponse> {
         let user_id = require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
-        let conversation = self.domain.archive(user_id, id).await.map_err(map_domain)?;
-        Response::ok(ArchiveConversationResponse {
-            conversation: conversation_to_proto(&conversation).into(),
-            ..Default::default()
-        })
-    }
-
-    async fn restore_conversation(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::RestoreConversationRequest>,
-    ) -> ServiceResult<RestoreConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        let conversation = self.domain.restore(user_id, id).await.map_err(map_domain)?;
-        Response::ok(RestoreConversationResponse {
-            conversation: conversation_to_proto(&conversation).into(),
-            ..Default::default()
-        })
-    }
-
-    async fn list_archived(
-        &self,
-        ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListArchivedRequest>,
-    ) -> ServiceResult<ListArchivedResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let list = self
-            .domain
-            .list_archived(user_id)
-            .await
-            .map_err(map_domain)?;
-        Response::ok(ListArchivedResponse {
-            conversations: list.iter().map(conversation_to_proto).collect(),
-            ..Default::default()
-        })
-    }
-
-    async fn delete_archived(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteArchivedRequest>,
-    ) -> ServiceResult<DeleteArchivedResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
-        let id = parse_id(request.id)?;
-        self.domain
-            .delete_archived(user_id, id)
-            .await
-            .map_err(map_domain)?;
-        Response::ok(DeleteArchivedResponse::default())
+        self.domain.delete(user_id, id).await.map_err(map_domain)?;
+        Response::ok(DeleteConversationResponse::default())
     }
 }

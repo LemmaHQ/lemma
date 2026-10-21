@@ -135,14 +135,6 @@ export function ChatPage() {
         }
     };
 
-    const handleArchive = (id: string) =>
-        runAction(async () => {
-            await conversations.archive(id);
-            if (id === activeId) {
-                void navigate("/");
-            }
-        });
-
     const handlePickSuggestion = (text: string) => {
         setDraft(text);
         inputRef.current?.focus();
@@ -151,10 +143,6 @@ export function ChatPage() {
     const summaries = useMemo(
         () => conversations.list.map(toSummary),
         [conversations.list],
-    );
-    const archivedSummaries = useMemo(
-        () => conversations.archived.map(toSummary),
-        [conversations.archived],
     );
 
     const providerNameById = useMemo(() => {
@@ -174,7 +162,6 @@ export function ChatPage() {
         >
             <AppSidebar
                 sessions={summaries}
-                archived={archivedSummaries}
                 activeSessionId={activeId}
                 onGoHome={() => {
                     void navigate("/");
@@ -182,12 +169,8 @@ export function ChatPage() {
                 onOpenSession={(id) => {
                     void navigate(`/conversations/${id}`);
                 }}
-                onArchiveSession={(id) => void handleArchive(id)}
                 onRenameSession={(id, title) =>
                     void runAction(() => conversations.rename(id, title))
-                }
-                onRestoreSession={(id) =>
-                    void runAction(() => conversations.restore(id))
                 }
                 onDeleteSession={setPendingDeleteId}
             />
@@ -266,9 +249,7 @@ export function ChatPage() {
                             onClick={() => {
                                 if (pendingDeleteId !== null) {
                                     void runAction(() =>
-                                        conversations.deleteArchived(
-                                            pendingDeleteId,
-                                        ),
+                                        conversations.delete(pendingDeleteId),
                                     );
                                 }
                             }}

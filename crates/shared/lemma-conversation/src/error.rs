@@ -10,12 +10,6 @@ pub enum ConversationError {
     TitleRequired,
     /// Target conversation is absent for this user.
     NotFound,
-    /// Target conversation remains in an archived state.
-    NotActive,
-    /// Target conversation remains in an active state.
-    NotArchived,
-    /// Target archived conversation is absent for this user.
-    ArchivedNotFound,
     /// Target conversation or message node is absent from the message tree.
     Missing(String),
     /// The storage backend failed.
@@ -27,9 +21,6 @@ impl fmt::Display for ConversationError {
         match self {
             Self::TitleRequired => write!(f, "title required"),
             Self::NotFound => write!(f, "conversation not found"),
-            Self::NotActive => write!(f, "conversation not active"),
-            Self::NotArchived => write!(f, "conversation not archived"),
-            Self::ArchivedNotFound => write!(f, "archived conversation not found"),
             Self::Missing(e) => write!(f, "not found: {e}"),
             Self::Store(e) => write!(f, "db: {e}"),
         }

@@ -6,7 +6,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Conversation tree
 
-- **conversation** — a user-owned tree of messages with a title, a status (`active` or `archived`), an active leaf, and the last model selection. Archiving flips the status and keeps every message; only archived conversations can be deleted. `lemma-conversation` owns the lifecycle and the tree.
+- **conversation** — a user-owned tree of messages with a title, an active leaf, and the last model selection. Deleting a conversation removes it with all its messages. `lemma-conversation` owns the lifecycle and the tree.
 - **message** — one node of the tree: a canonical `lemma_core::Message` (`user`, `assistant`, or `tool_result`) plus its parent id, status, provider, model, and timing marks. The stored form is `lemma_conversation::Message`.
 - **leaf** — the message `leaf_id` points at; the next user message is appended under it, and every append in a turn moves it.
 - **branch** — a message appended under an earlier parent instead of the leaf. Branches add nodes; they never rewrite existing ones.

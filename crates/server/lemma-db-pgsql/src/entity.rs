@@ -72,10 +72,8 @@ pub struct Conversation {
     pub user_id: Uuid,
     pub title: String,
     pub leaf_id: Option<Uuid>,
-    pub status: String,
     pub last_model: Option<Json<LastModel>>,
     pub local_only: bool,
-    pub archived_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

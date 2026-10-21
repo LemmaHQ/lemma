@@ -70,11 +70,9 @@ pub struct Conversation {
     pub id: Uuid,
     pub user_id: Uuid,
     pub title: String,
-    pub status: String,
     pub leaf_id: Option<Uuid>,
     pub last_model: Option<Json<LastModel>>,
     pub local_only: bool,
-    pub archived_at: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
