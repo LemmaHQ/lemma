@@ -9,7 +9,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 - **Rust**（`just rust-test`，在本地与 CI 中都运行 `cargo nextest run --workspace`）：这一层覆盖 provider 适配器的流解析器；存储、turn 循环、领域服务与 RPC 服务没有测试。单元测试写在被测源文件底部的 `#[cfg(test)] mod tests` 中；集成测试放在 crate 的 `tests/` 目录，只使用其公开 API。
 - **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键；没有测试渲染 React 组件。
 - **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：`src/engine.test.ts` 在 mock 掉 `electron` 与 `node:child_process` 的情况下覆盖 `src/engine.ts` 中的引擎握手：就绪行、载荷校验、启动超时、提前退出与停止。
-- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。
+- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集；以及 SQLDelight 迁移校验，它对已提交的结构快照执行 `.sqm` 迁移，再与 `LemmaDatabase.sq` 比对。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。
 
 ## 覆盖率
 

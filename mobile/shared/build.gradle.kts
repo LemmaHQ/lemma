@@ -144,6 +144,8 @@ sqldelight {
     databases {
         create("LemmaDatabase") {
             packageName.set("dev.lemmahq.lemma.db")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

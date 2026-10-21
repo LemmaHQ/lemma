@@ -9,7 +9,7 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 - **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): the tier covers the provider adapters' stream parsers; storage, the turn loop, the domain services, and the RPC services have no tests. Unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; an integration test goes in the crate's `tests/` directory and uses only its public API.
 - **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules, plus a check that `en.json` and `zh.json` hold the same keys; no test renders a React component.
 - **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): `src/engine.test.ts` covers the engine handshake in `src/engine.ts` with `electron` and `node:child_process` mocked: the ready line, payload validation, the startup timeout, an early exit, and stop.
-- **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device, locally and in Mobile CI.
+- **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set, and the SQLDelight migration check, which applies the `.sqm` migrations to the committed schema snapshots and compares the result with `LemmaDatabase.sq`. These run on the JVM with no device, locally and in Mobile CI.
 
 ## Coverage
 
