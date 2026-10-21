@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.RemoteLemmaClient
 import dev.lemmahq.lemma.data.DefaultSettingsRepository
-import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
@@ -29,7 +28,7 @@ import dev.lemmahq.lemma.ui.setup.SetupScreen
 
 @Composable
 fun App(
-    localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
+    localChatRepository: LocalChatRepository,
     localClientFactory: (suspend (SettingsRepository) -> LemmaClient)? = null,
 ) {
     val settingsRepository = remember { DefaultSettingsRepository() }

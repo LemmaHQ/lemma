@@ -40,7 +40,6 @@ import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientConversation
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.LemmaClient
-import dev.lemmahq.lemma.data.InMemoryLocalChatRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
@@ -68,7 +67,7 @@ fun MainChatScreen(
     settingsRepository: SettingsRepository,
     onLogout: () -> Unit,
     onManageProviders: () -> Unit,
-    localChatRepository: LocalChatRepository = remember { InMemoryLocalChatRepository() },
+    localChatRepository: LocalChatRepository,
     modifier: Modifier = Modifier,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -112,17 +111,6 @@ fun MainChatScreen(
     }
 
     LaunchedEffect(Unit) {
-        val cached = localChatRepository.getConversations()
-        if (cached.isNotEmpty() && conversations.isEmpty()) {
-            val restored = cached.map { c ->
-                ClientConversation(id = c.id, title = c.title)
-            }
-            conversations.addAll(restored)
-            if (currentConversation == null) {
-                currentConversation = restored.first()
-            }
-        }
-
         isLoadingConversations = true
         try {
             val loaded = client.listProviders()

@@ -9,49 +9,18 @@ import kotlinx.coroutines.runBlocking
 class LocalChatRepositoryTest {
 
     @Test
-    fun testConversationAndMessageCaching() = runBlocking {
+    fun savedMessagesListPerConversationInCreationOrder() = runBlocking {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         LemmaDatabase.Schema.create(driver)
-        val database = LemmaDatabase(driver)
-        val repo = SqlDelightLocalChatRepository(database)
+        val repo = LocalChatRepository(LemmaDatabase(driver))
 
-        assertEquals(0L, repo.getCursor())
-        repo.setCursor(42L)
-        assertEquals(42L, repo.getCursor())
-
-        assertEquals(0, repo.getConversations().size)
-
-        repo.saveConversation(
-            id = "conv_1",
-            title = "Test Conversation",
-            createdAt = 1000L,
-            updatedAt = 2000L,
-            syncSeq = 10L,
-        )
-
-        val convs = repo.getConversations()
-        assertEquals(1, convs.size)
-        assertEquals("Test Conversation", convs.first().title)
-        assertEquals(10L, convs.first().sync_seq)
-
-        repo.saveMessage(
-            id = "msg_1",
-            conversationId = "conv_1",
-            role = 1,
-            content = "Hello offline world",
-            status = 2,
-            createdAt = 1000L,
-            updatedAt = 1000L,
-            syncSeq = 11L,
-        )
+        repo.saveMessage("msg_2", "conv_1", 2, "second", 2, 2000L, 2000L)
+        repo.saveMessage("msg_1", "conv_1", 1, "first", 2, 1000L, 1000L)
+        repo.saveMessage("msg_3", "conv_2", 1, "other", 2, 500L, 500L)
+        repo.saveMessage("msg_1", "conv_1", 1, "first, edited", 2, 1000L, 1500L)
 
         val msgs = repo.getMessages("conv_1")
-        assertEquals(1, msgs.size)
-        assertEquals("Hello offline world", msgs.first().content)
-        assertEquals(11L, msgs.first().sync_seq)
-
-        repo.pruneConversationsNotIn(listOf("conv_other"))
-        assertEquals(0, repo.getConversations().size)
-        assertEquals(0, repo.getMessages("conv_1").size)
+        assertEquals(listOf("msg_1", "msg_2"), msgs.map { it.id })
+        assertEquals("first, edited", msgs.first().content)
     }
 }

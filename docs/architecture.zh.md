@@ -37,7 +37,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `LemmaEngine`，直接调用领域服务，不经过 RPC；turn 事件经 `AgentEventListener` 回调送达。同一个 Android 应用还有远程模式，通过 Connect Kotlin 访问服务端。两种模式都实现 Kotlin 的 `LemmaClient` 接口（`RemoteLemmaClient`、`LocalLemmaClient`）。
 
-Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端维护一份它们的 SQLDelight 缓存；缓存归客户端所有，宿主的存储才是记录本身。
+Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息缓存在 SQLDelight 中；缓存归客户端所有，宿主的存储才是记录本身。
 
 ## 跨线路的契约
 

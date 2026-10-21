@@ -1,0 +1,20 @@
+DROP TABLE sync_state;
+
+DROP TABLE cached_conversation;
+
+CREATE TABLE cached_message_new (
+    id TEXT NOT NULL PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    role INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+INSERT INTO cached_message_new (id, conversation_id, role, content, status, created_at, updated_at)
+SELECT id, conversation_id, role, content, status, created_at, updated_at FROM cached_message;
+
+DROP TABLE cached_message;
+
+ALTER TABLE cached_message_new RENAME TO cached_message;

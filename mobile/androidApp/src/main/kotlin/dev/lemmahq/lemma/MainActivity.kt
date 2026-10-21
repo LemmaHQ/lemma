@@ -4,11 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.tooling.preview.Preview
 import dev.lemmahq.lemma.data.DriverFactory
-import dev.lemmahq.lemma.data.SqlDelightLocalChatRepository
+import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.db.LemmaDatabase
 import dev.lemmahq.lemma.engine.LocalLemmaClient
 
@@ -21,7 +19,7 @@ class MainActivity : ComponentActivity() {
             val repo = remember {
                 val driver = DriverFactory(applicationContext).createDriver()
                 val db = LemmaDatabase(driver)
-                SqlDelightLocalChatRepository(db)
+                LocalChatRepository(db)
             }
             App(
                 localChatRepository = repo,
@@ -31,10 +29,4 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

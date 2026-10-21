@@ -37,7 +37,7 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 
 **In-process** is the Android local mode. Kotlin opens `LemmaEngine` through generated UniFFI bindings and calls the domain services directly, with no RPC hop; turn events arrive through the `AgentEventListener` callback. The same Android app has a remote mode that talks to a server through Connect Kotlin. Both modes implement the Kotlin `LemmaClient` interface (`RemoteLemmaClient`, `LocalLemmaClient`).
 
-The web client fetches conversations and messages from the host on each view. The Android client keeps a SQLDelight cache of them; the cache belongs to the client, and the host's store remains the record.
+The web client fetches conversations and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown; the cache belongs to the client, and the host's store remains the record.
 
 ## Contracts across the wire
 
