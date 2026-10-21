@@ -5,7 +5,6 @@
         "createAccount": "Create account",
         "email": "Email",
         "emailPlaceholder": "you@example.com",
-        "forgotPassword": "Forgot password?",
         "identifier": "Email or username",
         "identifierPlaceholder": "you@example.com",
         "loginTab": "Sign in",
@@ -19,7 +18,6 @@
         "skipDesktop": "Skip sign-in — use the local account",
         "signIn": "Sign in",
         "subtitle": "Sign in or create an account to continue.",
-        "tagline": "Your models, your data, your rules.",
         "username": "Username",
         "usernamePlaceholder": "Pick a username"
     },
@@ -28,11 +26,9 @@
         "copied": "Copied",
         "copy": "Copy",
         "disclaimer": "AI can make mistakes. Verify important information.",
-        "dislike": "Bad response",
         "emptySubtitle": "Ask anything, or pick a suggestion below.",
         "emptyTitle": "How can I help you today?",
         "inputPlaceholder": "Message the assistant…",
-        "like": "Good response",
         "noModelAction": "Open settings",
         "noModelHint": "Set up a provider and model in Settings first.",
         "noModelPlaceholder": "Configure a provider and model to start chatting…",
@@ -176,14 +172,6 @@
         "signOut": "Sign out",
         "title": "Sidebar",
         "toggle": "Toggle sidebar"
-    },
-    "stats": {
-        "messages": "Messages",
-        "sessions": "Sessions",
-        "topics": "Topics"
-    },
-    "sync": {
-        "offline": "Offline — showing cached data"
     },
     "theme": {
         "dark": "Dark",
