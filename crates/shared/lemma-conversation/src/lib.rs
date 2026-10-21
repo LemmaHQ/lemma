@@ -15,4 +15,4 @@ pub use error::ConversationError;
 pub use record::{Conversation, LastModel, Message, MessageStatus, MessageUpdate};
 pub use service::{ConversationService, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use store::{BoxConversationFuture, ConversationStore};
-pub use tree::{MessageTree, build_context_path};
+pub use tree::build_context_path;
