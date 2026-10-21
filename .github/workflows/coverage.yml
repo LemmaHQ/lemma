@@ -22,22 +22,6 @@ jobs:
   rust:
     name: Rust
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: paradedb/paradedb:pg18
-        env:
-          POSTGRES_DB: lemma-db
-          POSTGRES_USER: lemma
-          POSTGRES_PASSWORD: lemma
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -h 127.0.0.1 -U lemma -d lemma-db"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
-    env:
-      DATABASE_URL: postgres://lemma:lemma@127.0.0.1:5432/lemma-db
     steps:
       - uses: actions/checkout@v7
 

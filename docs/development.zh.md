@@ -82,7 +82,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 | 工作流 | 路径 | 运行内容 |
 | --- | --- | --- |
-| Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest`，Linux 上带 PostgreSQL 服务 |
+| Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest` |
 | Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json` | proto 与 token 生成、prettier 检查、oxlint、带类型检查的构建、vitest |
 | Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json` | prettier 检查与 oxlint，再在三个系统上运行 proto 与 token 生成、渲染层构建、桌面端类型检查与 vitest |
 | Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |

@@ -19,7 +19,7 @@ Classify from recorded evidence, not from the eventual fix:
 - **Platform or entry-path mismatch:** the failure follows an operating system, filesystem rule, or runner. CI runs Linux; a pass on a Windows workstation says nothing about the CI lane, and the reverse.
 - **Product concurrency defect:** the test controls its resources, reproduces deterministically with explicit overlap, and exposes a race in shipped behavior.
 - **External-provider transience:** the failure belongs to a live vendor API, which only a local `#[ignore]` test may call.
-- **Runner infrastructure:** checkout, toolchain install, dependency download, or the PostgreSQL service fails independently of the test command. Require direct runner evidence before assigning this class.
+- **Runner infrastructure:** checkout, toolchain install, or dependency download fails independently of the test command. Require direct runner evidence before assigning this class.
 
 If evidence supports more than one independent fact, report each one.
 
@@ -30,7 +30,7 @@ Start with the owning test and increase concurrency only to the first topology t
 1. one test alone (`cargo nextest run -p <crate> <name>`, `npx vitest run <file> -t <name>`);
 2. the crate's tests as threads under `cargo test -p <crate>`;
 3. the crate or file set in parallel processes under nextest or vitest;
-4. the whole workspace as CI runs it, with `DATABASE_URL` pointing at a PostgreSQL server.
+4. the whole workspace as CI runs it.
 
 Match the CI environment: Linux, the toolchain pinned in `mise.toml`, the same environment variables. When the signature belongs to a platform the host cannot run, record that limit and use CI as the reproduction, changing one suspected owner per run.
 

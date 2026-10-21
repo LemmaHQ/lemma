@@ -21,7 +21,7 @@ The same test runs under more than one runner, and each layer can overlap with t
 3. **vitest** (`just web-test`, `just desktop-test`, Web CI, Desktop CI, Coverage): files run in parallel workers in the `node` environment; tests in one file share module state.
 4. **Gradle** host tests for Android run on the JVM, locally and in Mobile CI, Coverage, and the CodeQL Kotlin scan.
 
-A test must pass under both Rust runners: correct under nextest alone can still race under `cargo test` threads, and the reverse. CI jobs run on separate GitHub-hosted runners, so cross-job host sharing does not apply; the PostgreSQL service is shared by every test in its job.
+A test must pass under both Rust runners: correct under nextest alone can still race under `cargo test` threads, and the reverse. CI jobs run on separate GitHub-hosted runners, so cross-job host sharing does not apply.
 
 For every acquired resource, identify its owner, its atomic allocation, an observable readiness signal, registered cleanup, and a completion signal. Do not serialize a whole suite because one fixture lacks isolation; narrow the exclusive scope or change the allocation first.
 

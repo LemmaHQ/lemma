@@ -82,7 +82,7 @@ Steps whose result depends on the host operating system run on Linux, Windows, a
 
 | Workflow | Paths | Runs |
 | --- | --- | --- |
-| Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied on three systems, and `cargo nextest` on three systems, with a PostgreSQL service on Linux |
+| Rust CI | `Cargo.toml`, `Cargo.lock`, `crates/`, `proto/` | builds `web/dist` for the embed, then `cargo fmt --check`, clippy with warnings denied on three systems, and `cargo nextest` on three systems |
 | Web CI | `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json`, `.oxlintrc.json`, `.prettierrc.json` | proto and token generation, prettier check, oxlint, build with type check, vitest |
 | Desktop CI | `desktop/`, `web/`, `design/`, root `package.json`, `package-lock.json`, `tsconfig.base.json`, `.oxlintrc.json`, `.prettierrc.json` | prettier check and oxlint, then proto and token generation, renderer build, desktop type check, and vitest on three systems |
 | Mobile CI | `mobile/`, `crates/shared/`, `proto/`, `design/`, root `Cargo.toml`, `Cargo.lock`, the Gradle build files | ktfmt check, Android Lint, and debug APK build, plus host tests on three systems |
