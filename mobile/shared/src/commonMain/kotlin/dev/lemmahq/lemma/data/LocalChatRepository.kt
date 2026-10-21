@@ -16,7 +16,6 @@ interface LocalChatRepository {
     suspend fun saveConversation(
         id: String,
         title: String,
-        status: Long,
         createdAt: Long,
         updatedAt: Long,
         syncSeq: Long = 0L,
@@ -61,13 +60,12 @@ class SqlDelightLocalChatRepository(private val database: LemmaDatabase) : Local
     override suspend fun saveConversation(
         id: String,
         title: String,
-        status: Long,
         createdAt: Long,
         updatedAt: Long,
         syncSeq: Long,
     ) {
         withContext(Dispatchers.Default) {
-            queries.insertOrReplaceConversation(id, title, status, createdAt, updatedAt, syncSeq)
+            queries.insertOrReplaceConversation(id, title, createdAt, updatedAt, syncSeq)
         }
     }
 

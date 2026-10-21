@@ -24,7 +24,6 @@ class LocalChatRepositoryTest {
         repo.saveConversation(
             id = "conv_1",
             title = "Test Conversation",
-            status = 1,
             createdAt = 1000L,
             updatedAt = 2000L,
             syncSeq = 10L,

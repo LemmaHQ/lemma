@@ -1,0 +1,14 @@
+CREATE TABLE cached_conversation_new (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    sync_seq INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT INTO cached_conversation_new (id, title, created_at, updated_at, sync_seq)
+SELECT id, title, created_at, updated_at, sync_seq FROM cached_conversation;
+
+DROP TABLE cached_conversation;
+
+ALTER TABLE cached_conversation_new RENAME TO cached_conversation;

@@ -21,13 +21,12 @@ class InMemoryLocalChatRepository : LocalChatRepository {
     override suspend fun saveConversation(
         id: String,
         title: String,
-        status: Long,
         createdAt: Long,
         updatedAt: Long,
         syncSeq: Long,
     ) {
         conversations.removeAll { it.id == id }
-        conversations.add(Cached_conversation(id, title, status, createdAt, updatedAt, syncSeq))
+        conversations.add(Cached_conversation(id, title, createdAt, updatedAt, syncSeq))
     }
 
     override suspend fun deleteConversation(id: String) {
