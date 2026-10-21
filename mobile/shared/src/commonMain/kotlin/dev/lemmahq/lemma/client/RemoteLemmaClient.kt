@@ -28,11 +28,7 @@ class RemoteLemmaClient(
 
     override suspend fun login(login: String, password: String) {
         val request = loginRequest {
-            if (login.contains("@")) {
-                this.email = login.trim()
-            } else {
-                this.username = login.trim()
-            }
+            this.login = login.trim()
             this.password = password
         }
         when (val response = rpc.auth.login(request, emptyMap())) {

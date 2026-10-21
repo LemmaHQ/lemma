@@ -31,7 +31,6 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::SignupFieldsRequired => {
             "username and email required, password at least 8 chars"
         }
-        ErrorReason::LoginTargetRequired => "provide exactly one of username or email",
         ErrorReason::TokenInvalid => "invalid token",
         ErrorReason::UserNotFound => "user not found",
         ErrorReason::ProviderFieldsRequired => "name, base_url and api_key required",

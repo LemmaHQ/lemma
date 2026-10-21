@@ -33,9 +33,11 @@ message SignUpResponse {
 }
 
 message LoginRequest {
-  // Accepts either username or email as the login identifier.
-  string username = 1;
-  string email = 2;
+  reserved 1, 2;
+  reserved "username", "email";
+
+  // Username or email of the account.
+  string login = 4;
   string password = 3;
 }
 

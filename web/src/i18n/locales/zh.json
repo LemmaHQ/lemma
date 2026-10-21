@@ -79,7 +79,6 @@
         "conversationNotFound": "会话不存在。",
         "credentialsInvalid": "用户名或密码错误。",
         "idInvalid": "无效的 ID。",
-        "loginTargetRequired": "登录须且仅须提供用户名或邮箱之一。",
         "modelRequired": "请先选择模型。",
         "network": "无法连接服务器，请检查网络后重试。",
         "providerFieldsRequired": "请填写 Base URL。",

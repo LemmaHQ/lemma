@@ -28,8 +28,6 @@ impl std::error::Error for AuthStoreError {}
 pub enum AuthError {
     /// A required signup field was empty or the password was too short.
     SignupFieldsRequired,
-    /// Exactly one of username or email must identify the account.
-    LoginTargetRequired,
     /// Provided credentials failed authentication.
     CredentialsInvalid,
     /// The refresh token was missing, expired, rotated, or revoked.
@@ -50,7 +48,6 @@ impl fmt::Display for AuthError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::SignupFieldsRequired => write!(f, "signup fields required"),
-            Self::LoginTargetRequired => write!(f, "login target required"),
             Self::CredentialsInvalid => write!(f, "credentials invalid"),
             Self::TokenInvalid => write!(f, "token invalid"),
             Self::UserNotFound => write!(f, "user not found"),

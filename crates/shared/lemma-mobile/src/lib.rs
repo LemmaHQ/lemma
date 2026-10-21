@@ -441,7 +441,7 @@ impl LemmaEngine {
         password: String,
     ) -> Result<MobileSession, EngineError> {
         self.auth
-            .login(&login, "", &password)
+            .login(&login, &password)
             .await
             .map(Into::into)
             .map_err(|e| EngineError::Auth(e.to_string()))
@@ -463,7 +463,7 @@ impl LemmaEngine {
                 .map_err(|e| EngineError::Auth(e.to_string()))?;
         }
         self.auth
-            .login(DEFAULT_USERNAME, "", DEFAULT_PASSWORD)
+            .login(DEFAULT_USERNAME, DEFAULT_PASSWORD)
             .await
             .map(Into::into)
             .map_err(|e| EngineError::Auth(e.to_string()))

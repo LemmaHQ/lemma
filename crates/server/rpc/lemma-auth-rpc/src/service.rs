@@ -114,7 +114,6 @@ fn tokens_to_proto(t: AuthTokens) -> lemma_proto::lemma::v1::AuthTokens {
 fn map_domain(e: AuthError) -> ConnectError {
     match e {
         AuthError::SignupFieldsRequired => app_error(ErrorReason::SignupFieldsRequired),
-        AuthError::LoginTargetRequired => app_error(ErrorReason::LoginTargetRequired),
         AuthError::CredentialsInvalid => app_error(ErrorReason::CredentialsInvalid),
         AuthError::TokenInvalid => app_error(ErrorReason::TokenInvalid),
         AuthError::UserNotFound => app_error(ErrorReason::UserNotFound),
@@ -155,7 +154,7 @@ impl lemma_proto::lemma::v1::AuthService for AuthRpc {
     ) -> ServiceResult<LoginResponse> {
         let session = self
             .domain
-            .login(request.username, request.email, request.password)
+            .login(request.login, request.password)
             .await
             .map_err(map_domain)?;
         let cookies = session_cookies(&session.tokens, cookie_secure(&ctx));

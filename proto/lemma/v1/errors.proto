@@ -11,7 +11,8 @@ enum ErrorReason {
   ERROR_REASON_CREDENTIALS_INVALID = 1; // Invalid credentials provided
   ERROR_REASON_USERNAME_TAKEN = 2; // Username or email is already registered
   ERROR_REASON_SIGNUP_FIELDS_REQUIRED = 3; // Required signup fields missing or password length below minimum
-  ERROR_REASON_LOGIN_TARGET_REQUIRED = 4; // Login requires exactly one identifier: username or email
+  reserved 4;
+  reserved "ERROR_REASON_LOGIN_TARGET_REQUIRED";
   ERROR_REASON_TOKEN_INVALID = 5; // Token is missing, expired, or invalid
   ERROR_REASON_USER_NOT_FOUND = 6;
 

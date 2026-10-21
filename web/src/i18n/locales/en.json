@@ -79,7 +79,6 @@
         "conversationNotFound": "Conversation not found.",
         "credentialsInvalid": "Incorrect username or password.",
         "idInvalid": "Invalid ID.",
-        "loginTargetRequired": "Provide exactly one of username or email.",
         "modelRequired": "Please select a model.",
         "network": "Can't reach the server. Check your connection and try again.",
         "providerFieldsRequired": "Base URL is required.",

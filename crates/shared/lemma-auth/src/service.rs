@@ -92,19 +92,8 @@ impl AuthService {
     }
 
     /// Authenticates by username or email and opens a session.
-    pub async fn login(
-        &self,
-        username: &str,
-        email: &str,
-        password: &str,
-    ) -> Result<Session, AuthError> {
-        let username = username.trim();
-        let email = email.trim();
-        let login = match (username.is_empty(), email.is_empty()) {
-            (false, true) => username,
-            (true, false) => email,
-            _ => return Err(AuthError::LoginTargetRequired),
-        };
+    pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
+        let login = login.trim();
         let user = self
             .store
             .find_user_by_login(login)
