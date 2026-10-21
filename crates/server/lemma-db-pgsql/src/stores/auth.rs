@@ -124,11 +124,10 @@ impl AuthStore for PgAuthStore {
         token_hash: &'a str,
         label: Option<&'a str>,
         expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, RefreshToken> {
+    ) -> BoxAuthFuture<'a, ()> {
         Box::pin(async move {
             tokens::insert(&self.pool, id, user_id, token_hash, label, expires_at)
                 .await
-                .map(into_token)
                 .map_err(store_err)
         })
     }
@@ -151,19 +150,20 @@ impl AuthStore for PgAuthStore {
         new_id: Uuid,
         new_token_hash: &'a str,
         new_expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, RefreshToken> {
+    ) -> BoxAuthFuture<'a, ()> {
         Box::pin(async move {
             let mut tx = self.pool.begin().await.map_err(store_err)?;
-            let token =
+            let inserted =
                 tokens::insert_successor(&mut *tx, id, new_id, new_token_hash, new_expires_at)
                     .await
-                    .map_err(store_err)?
-                    .ok_or_else(|| AuthStoreError::Db(format!("refresh token not found: {id}")))?;
+                    .map_err(store_err)?;
+            if inserted == 0 {
+                return Err(AuthStoreError::Db(format!("refresh token not found: {id}")));
+            }
             tokens::mark_replaced(&mut *tx, id, new_id)
                 .await
                 .map_err(store_err)?;
-            tx.commit().await.map_err(store_err)?;
-            Ok(into_token(token))
+            tx.commit().await.map_err(store_err)
         })
     }
 

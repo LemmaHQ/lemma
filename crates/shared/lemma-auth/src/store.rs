@@ -36,7 +36,7 @@ pub trait AuthStore: Send + Sync {
     /// Returns the account's password hash, when credentials exist.
     fn password_hash<'a>(&'a self, user_id: Uuid) -> BoxAuthFuture<'a, Option<String>>;
 
-    /// Inserts a refresh token row and returns it.
+    /// Inserts a refresh token row.
     fn insert_refresh_token<'a>(
         &'a self,
         id: Uuid,
@@ -44,7 +44,7 @@ pub trait AuthStore: Send + Sync {
         token_hash: &'a str,
         label: Option<&'a str>,
         expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, RefreshToken>;
+    ) -> BoxAuthFuture<'a, ()>;
 
     /// Looks up a token row by its SHA-256 hash.
     fn find_refresh_token_by_hash<'a>(
@@ -60,7 +60,7 @@ pub trait AuthStore: Send + Sync {
         new_id: Uuid,
         new_token_hash: &'a str,
         new_expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, RefreshToken>;
+    ) -> BoxAuthFuture<'a, ()>;
 
     /// Revokes a single token. Idempotent.
     fn revoke_refresh_token<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, u64>;

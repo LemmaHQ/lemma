@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::entity::RefreshToken;
 use crate::now_ms;
 
-/// Inserts a refresh token row and returns it.
+/// Inserts a refresh token row.
 pub async fn insert<'e, E>(
     executor: E,
     id: Uuid,
@@ -14,15 +14,14 @@ pub async fn insert<'e, E>(
     token_hash: &str,
     label: Option<&str>,
     expires_at: i64,
-) -> sqlx::Result<RefreshToken>
+) -> sqlx::Result<()>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
 {
-    sqlx::query_as::<_, RefreshToken>(
+    sqlx::query(
         r#"
         INSERT INTO refresh_tokens (id, user_id, token_hash, label, created_at, expires_at)
         VALUES (?, ?, ?, ?, ?, ?)
-        RETURNING *
         "#,
     )
     .bind(id)
@@ -31,27 +30,27 @@ where
     .bind(label)
     .bind(now_ms())
     .bind(expires_at)
-    .fetch_one(executor)
+    .execute(executor)
     .await
+    .map(|_| ())
 }
 
 /// Inserts the rotation successor of a consumed token, inheriting its
-/// owner. Returns `Some` exclusively when the consumed token exists.
+/// owner. Returns the number of rows inserted: zero when the consumed token is missing.
 pub async fn insert_successor<'e, E>(
     executor: E,
     id: Uuid,
     new_id: Uuid,
     new_token_hash: &str,
     new_expires_at: i64,
-) -> sqlx::Result<Option<RefreshToken>>
+) -> sqlx::Result<u64>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
 {
-    sqlx::query_as::<_, RefreshToken>(
+    sqlx::query(
         r#"
         INSERT INTO refresh_tokens (id, user_id, token_hash, created_at, expires_at)
         SELECT ?, user_id, ?, ?, ? FROM refresh_tokens WHERE id = ?
-        RETURNING *
         "#,
     )
     .bind(new_id)
@@ -59,8 +58,9 @@ where
     .bind(now_ms())
     .bind(new_expires_at)
     .bind(id)
-    .fetch_optional(executor)
+    .execute(executor)
     .await
+    .map(|r| r.rows_affected())
 }
 
 /// Looks up a token row by its SHA-256 hash.
