@@ -66,8 +66,6 @@ pub struct MobileUser {
     pub username: String,
     /// Contact email.
     pub email: String,
-    /// Role string: `owner` or `normal`.
-    pub role: String,
 }
 
 impl From<User> for MobileUser {
@@ -76,7 +74,6 @@ impl From<User> for MobileUser {
             id: u.id.to_string(),
             username: u.username,
             email: u.email,
-            role: u.role,
         }
     }
 }

@@ -19,7 +19,6 @@ fn into_user(u: entity::User) -> Result<User, AuthStoreError> {
         id: u.id,
         username: u.username,
         email: u.email,
-        role: u.role,
         created_at: timestamp(u.created_at)?,
         updated_at: timestamp(u.updated_at)?,
     })
@@ -65,33 +64,22 @@ impl AuthStore for SqliteAuthStore {
         password_hash: &'a str,
     ) -> BoxAuthFuture<'a, User> {
         Box::pin(async move {
-            const ATTEMPTS: u32 = 3;
-            for attempt in 1..=ATTEMPTS {
-                let mut tx = self.pool.begin().await.map_err(store_err)?;
-                let result = async {
-                    let user = users::insert(&mut *tx, username, email).await?;
-                    credentials::upsert(&mut *tx, user.id, password_hash).await?;
-                    Ok::<_, sqlx::Error>(user)
-                }
-                .await;
-                let user = match result {
-                    Ok(user) => user,
-                    Err(e) => {
-                        if unique_violation(&e, "users.username")
-                            || unique_violation(&e, "users.email")
-                        {
-                            return Err(AuthStoreError::UsernameTaken);
-                        }
-                        if unique_violation(&e, "users_owner_unique") && attempt < ATTEMPTS {
-                            continue;
-                        }
-                        return Err(store_err(e));
+            let mut tx = self.pool.begin().await.map_err(store_err)?;
+            let user = users::insert(&mut *tx, username, email)
+                .await
+                .map_err(|e| {
+                    if unique_violation(&e, "users.username") || unique_violation(&e, "users.email")
+                    {
+                        AuthStoreError::UsernameTaken
+                    } else {
+                        store_err(e)
                     }
-                };
-                tx.commit().await.map_err(store_err)?;
-                return into_user(user);
-            }
-            unreachable!()
+                })?;
+            credentials::upsert(&mut *tx, user.id, password_hash)
+                .await
+                .map_err(store_err)?;
+            tx.commit().await.map_err(store_err)?;
+            into_user(user)
         })
     }
 

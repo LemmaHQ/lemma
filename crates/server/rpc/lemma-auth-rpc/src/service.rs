@@ -11,7 +11,7 @@ use lemma_auth::{
 };
 use lemma_proto::app_error;
 use lemma_proto::lemma::v1::{
-    ErrorReason, LoginResponse, LogoutResponse, MeResponse, RefreshResponse, Role, SignUpResponse,
+    ErrorReason, LoginResponse, LogoutResponse, MeResponse, RefreshResponse, SignUpResponse,
 };
 
 const REFRESH_COOKIE: &str = "lemma_refresh";
@@ -97,11 +97,6 @@ fn user_to_proto(u: &User) -> lemma_proto::lemma::v1::User {
         id: u.id.to_string(),
         username: u.username.clone(),
         email: u.email.clone(),
-        role: match u.role.as_str() {
-            "owner" => Role::Owner,
-            _ => Role::Normal,
-        }
-        .into(),
         created_at: Timestamp::from(u.created_at).into(),
         ..Default::default()
     }

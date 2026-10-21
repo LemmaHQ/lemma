@@ -6,8 +6,7 @@ use uuid::Uuid;
 use crate::entity::User;
 use crate::now_ms;
 
-/// Inserts a user and returns it. The very first user becomes the owner;
-/// everyone after that is normal.
+/// Inserts a user and returns it.
 pub async fn insert<'e, E>(executor: E, username: &str, email: &str) -> sqlx::Result<User>
 where
     E: sqlx::Executor<'e, Database = Sqlite>,
@@ -15,11 +14,8 @@ where
     let now = now_ms();
     sqlx::query_as::<_, User>(
         r#"
-        INSERT INTO users (id, username, email, role, created_at, updated_at)
-        VALUES (?, ?, ?,
-            CASE WHEN EXISTS (SELECT 1 FROM users WHERE role = 'owner')
-                THEN 'normal' ELSE 'owner' END,
-            ?, ?)
+        INSERT INTO users (id, username, email, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
         RETURNING *
         "#,
     )

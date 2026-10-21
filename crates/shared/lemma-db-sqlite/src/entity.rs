@@ -14,7 +14,6 @@ pub struct User {
     pub id: Uuid,
     pub username: String,
     pub email: String,
-    pub role: String,
     pub created_at: i64,
     pub updated_at: i64,
 }

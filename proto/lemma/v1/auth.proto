@@ -4,18 +4,13 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// User role: owner is assigned to the initial registered user, sharing privileges with normal users.
-enum Role {
-  ROLE_UNSPECIFIED = 0;
-  ROLE_OWNER = 1;
-  ROLE_NORMAL = 2;
-}
-
 message User {
+  reserved 4;
+  reserved "role";
+
   string id = 1;
   string username = 2;
   string email = 3;
-  Role role = 4;
   google.protobuf.Timestamp created_at = 5;
 }
 
@@ -70,7 +65,7 @@ message MeResponse {
 }
 
 service AuthService {
-  // Registers a new user account, assigning owner role to the initial registration.
+  // Registers a new user account.
   rpc SignUp(SignUpRequest) returns (SignUpResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   // Token rotation: revokes the previous refresh token and issues a new pair.

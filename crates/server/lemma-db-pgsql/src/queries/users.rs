@@ -2,25 +2,16 @@
 
 use crate::entity::User;
 
-/// Inserts a user and returns it. The very first user becomes the owner;
-/// everyone after that is normal.
+/// Inserts a user and returns it.
 pub async fn insert<'e, E>(executor: E, username: &str, email: &str) -> sqlx::Result<User>
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
-    sqlx::query_as::<_, User>(
-        r#"
-        INSERT INTO users (username, email, role)
-        VALUES ($1, $2,
-            CASE WHEN EXISTS (SELECT 1 FROM users WHERE role = 'owner')
-                THEN 'normal' ELSE 'owner' END)
-        RETURNING *
-        "#,
-    )
-    .bind(username)
-    .bind(email)
-    .fetch_one(executor)
-    .await
+    sqlx::query_as::<_, User>("INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *")
+        .bind(username)
+        .bind(email)
+        .fetch_one(executor)
+        .await
 }
 
 /// Finds a user by username or email; `login` matches either column.

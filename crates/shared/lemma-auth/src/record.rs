@@ -13,8 +13,6 @@ pub struct User {
     pub username: String,
     /// Contact email.
     pub email: String,
-    /// Role string: `owner` or `normal`.
-    pub role: String,
     /// Creation time.
     pub created_at: DateTime<Utc>,
     /// Last update time.

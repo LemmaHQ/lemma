@@ -17,9 +17,8 @@ pub type BoxAuthFuture<'a, T> =
 /// identically on server and local modes.
 pub trait AuthStore: Send + Sync {
     /// Creates a user and stores its password hash in one transaction.
-    /// The first user becomes the owner; a lost owner race is retried
-    /// inside the implementation. Returns [`AuthStoreError::UsernameTaken`]
-    /// on a duplicate username or email.
+    /// Returns [`AuthStoreError::UsernameTaken`] on a duplicate username
+    /// or email.
     fn create_user_with_credential<'a>(
         &'a self,
         username: &'a str,
