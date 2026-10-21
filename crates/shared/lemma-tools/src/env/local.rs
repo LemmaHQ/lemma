@@ -1,6 +1,6 @@
 use std::path::{Component, Path, PathBuf};
 
-use super::{BoxEnvFuture, ExecCommandResult, ExecEnv, FileMeta};
+use super::{BoxEnvFuture, ExecCommandResult, ExecEnv};
 use crate::error::ToolError;
 
 /// Host execution environment rooted at a workspace directory.
@@ -59,32 +59,6 @@ impl ExecEnv for LocalExecEnv {
             tokio::fs::write(&resolved, content)
                 .await
                 .map_err(|e| ToolError::Execution(format!("write {}: {e}", path.display())))
-        })
-    }
-
-    fn list_dir<'a>(&'a self, path: &'a Path) -> BoxEnvFuture<'a, Vec<FileMeta>> {
-        Box::pin(async move {
-            let resolved = self.resolve(path)?;
-            let mut entries = tokio::fs::read_dir(&resolved)
-                .await
-                .map_err(|e| ToolError::Execution(format!("list {}: {e}", path.display())))?;
-            let mut metas = Vec::new();
-            while let Some(entry) = entries
-                .next_entry()
-                .await
-                .map_err(|e| ToolError::Execution(format!("list {}: {e}", path.display())))?
-            {
-                let meta = entry
-                    .metadata()
-                    .await
-                    .map_err(|e| ToolError::Execution(format!("stat entry: {e}")))?;
-                metas.push(FileMeta {
-                    name: entry.file_name().to_string_lossy().into_owned(),
-                    is_dir: meta.is_dir(),
-                    size: meta.len(),
-                });
-            }
-            Ok(metas)
         })
     }
 
