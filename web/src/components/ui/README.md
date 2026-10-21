@@ -28,7 +28,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `dropdown-menu` | Menu of actions or choices anchored to a trigger                                           |
 | `empty`         | Empty state with icon, title, description, and actions                                     |
 | `field`         | Form layout: label, control, description, and error, grouped and separated                 |
-| `hover-card`    | Preview card shown on hover                                                                |
 | `input`         | Single-line text field                                                                     |
 | `input-group`   | Text field with attached icons, text, or buttons                                           |
 | `item`          | Row with title, description, and trailing actions in a list or settings group              |
@@ -38,7 +37,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `separator`     | Horizontal or vertical divider line                                                        |
 | `sheet`         | Panel that slides in from a screen edge; `sidebar` uses it on narrow screens               |
 | `sidebar`       | Collapsible app navigation with its provider, menu parts, and toggle                       |
-| `skeleton`      | Placeholder block shown while content loads                                                |
 | `spinner`       | Animated loading icon inside a button or row                                               |
 | `sonner`        | The toast host, mounted once in `App`; raise toasts with `toast` from the `sonner` package |
 | `switch`        | Two-state toggle that applies immediately                                                  |
