@@ -59,7 +59,6 @@ lemma-provider-rpc = { path = "crates/server/rpc/lemma-provider-rpc" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }
-parking_lot = "0.12.5"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 rust-embed = { version = "8.12.0", features = ["mime-guess"] }
@@ -78,7 +77,6 @@ sqlx = { version = "0.9.0", features = [
     "json",
 ] }
 tokio = { version = "1.53.1", features = ["full"] }
-tokio-stream = { version = "0.1.19", features = ["sync"] }
 tower-http = { version = "0.7.1", features = ["cors"] }
 uniffi = { version = "0.32.2", features = ["tokio"] }
 uuid = { version = "1.25.0", features = ["v4", "serde"] }
