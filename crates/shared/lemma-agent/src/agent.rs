@@ -2,10 +2,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use lemma_agent_loop::{
-    AgentConfig, AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, TurnInput,
-};
-use lemma_conversation::ConversationStore;
+use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, TurnInput};
+use lemma_conversation::{ConversationStore, LastModel};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::Connector;
 use lemma_provider::ProviderService;
@@ -120,9 +118,9 @@ impl Agent {
                 user_message: Message::User {
                     content: vec![ContentBlock::Text(TextContent { text: req.content })],
                 },
-                config: AgentConfig {
-                    model: req.model,
+                model: LastModel {
                     provider_id: req.provider_id,
+                    model: req.model,
                     thinking_effort,
                 },
             },

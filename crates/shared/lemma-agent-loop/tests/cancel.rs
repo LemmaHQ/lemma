@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use chrono::DateTime;
 use futures::stream;
-use lemma_agent_loop::{AgentConfig, AgentLoop, CancelToken, TurnEnd, TurnEvent, TurnInput};
+use lemma_agent_loop::{AgentLoop, CancelToken, TurnEnd, TurnEvent, TurnInput};
 use lemma_conversation::{
     BoxConversationFuture, Conversation, ConversationError, ConversationStore, LastModel,
     Message as StoredMessage, MessageStatus, MessageUpdate,
@@ -199,9 +199,9 @@ fn input(user_id: Uuid, conversation_id: Uuid) -> TurnInput {
                 text: "hello".into(),
             })],
         },
-        config: AgentConfig {
-            model: "m".into(),
+        model: LastModel {
             provider_id: Uuid::new_v4(),
+            model: "m".into(),
             thinking_effort: None,
         },
     }

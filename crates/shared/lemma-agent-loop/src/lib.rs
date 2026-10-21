@@ -10,7 +10,7 @@ mod persist;
 mod stream;
 mod tool;
 
-pub use agent_loop::{AgentConfig, AgentLoop, TurnEnd, TurnInput};
+pub use agent_loop::{AgentLoop, TurnEnd, TurnInput};
 pub use cancel::CancelToken;
 pub use error::LoopError;
 pub use event::{TurnEvent, TurnObserver};

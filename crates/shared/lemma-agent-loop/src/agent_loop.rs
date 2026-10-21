@@ -14,17 +14,6 @@ use crate::persist::{now_ms, placeholder, settle, settled, tool_result};
 use crate::stream::{StepEnd, run_stream};
 use crate::tool::ToolRuntime;
 
-/// Model selection of one turn.
-#[derive(Debug, Clone)]
-pub struct AgentConfig {
-    /// Target model identifier.
-    pub model: String,
-    /// Provider row the turn is dispatched to.
-    pub provider_id: Uuid,
-    /// Reasoning effort level, when the model exposes one.
-    pub thinking_effort: Option<String>,
-}
-
 /// One user message and where it goes.
 pub struct TurnInput {
     /// Authenticated caller the store scopes conversation queries to.
@@ -35,8 +24,8 @@ pub struct TurnInput {
     pub user_message_id: Uuid,
     /// The user message.
     pub user_message: Message,
-    /// Model selection.
-    pub config: AgentConfig,
+    /// Model selection, also recorded as the conversation's last model.
+    pub model: LastModel,
 }
 
 /// How a turn ended without failing.
@@ -88,7 +77,7 @@ impl AgentLoop {
             conversation_id,
             user_message_id,
             user_message,
-            config,
+            model,
         } = input;
         let Some(meta) = self
             .store
@@ -107,15 +96,7 @@ impl AgentLoop {
         });
 
         self.store
-            .update_last_model(
-                conversation_id,
-                user_id,
-                LastModel {
-                    provider_id: config.provider_id,
-                    model: config.model.clone(),
-                    thinking_effort: config.thinking_effort.clone(),
-                },
-            )
+            .update_last_model(conversation_id, user_id, model.clone())
             .await?;
 
         let tool_specs = self
@@ -140,8 +121,8 @@ impl AgentLoop {
                     assistant_id,
                     conversation_id,
                     leaf_id,
-                    &config.model,
-                    config.provider_id,
+                    &model.model,
+                    model.provider_id,
                     started_at,
                 ),
             )
@@ -149,10 +130,10 @@ impl AgentLoop {
             observer(TurnEvent::AssistantStarted { id: assistant_id });
 
             let req = ModelRequest {
-                model: config.model.clone(),
+                model: model.model.clone(),
                 messages,
                 tools: tool_specs.clone(),
-                thinking_effort: config.thinking_effort.clone(),
+                thinking_effort: model.thinking_effort.clone(),
             };
             let outcome =
                 run_stream(self.adapter.as_ref(), req, started_at, observer, cancel).await;
