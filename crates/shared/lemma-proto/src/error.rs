@@ -19,7 +19,6 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         ErrorReason::UserNotFound
         | ErrorReason::ProviderNotFound
         | ErrorReason::ConversationNotFound
-        | ErrorReason::MessageNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
         _ => ErrorCode::InvalidArgument,
     }
@@ -38,14 +37,11 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::ProviderFieldsRequired => "name, base_url and api_key required",
         ErrorReason::ProviderKindInvalid => "invalid provider kind",
         ErrorReason::ProviderNotFound => "provider not found",
-        ErrorReason::ProviderDisabled => "provider disabled",
         ErrorReason::ProviderIdentifierInvalid => "identifier must be non-empty ASCII",
         ErrorReason::ProviderIdentifierTaken => "identifier already taken",
         ErrorReason::IdInvalid => "invalid id",
         ErrorReason::TitleRequired => "title required",
         ErrorReason::ConversationNotFound => "conversation not found",
-        ErrorReason::MessageNotFound => "message not found",
-        ErrorReason::NotAssistantMessage => "not an assistant message",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
         ErrorReason::TurnNotRunning => "turn not running",
