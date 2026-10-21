@@ -42,7 +42,6 @@ pub trait AuthStore: Send + Sync {
         id: Uuid,
         user_id: Uuid,
         token_hash: &'a str,
-        label: Option<&'a str>,
         expires_at: DateTime<Utc>,
     ) -> BoxAuthFuture<'a, ()>;
 

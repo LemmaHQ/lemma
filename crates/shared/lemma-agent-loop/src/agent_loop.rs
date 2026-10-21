@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::cancel::CancelToken;
 use crate::error::LoopError;
 use crate::event::{TurnEvent, TurnObserver};
-use crate::persist::{now_ms, placeholder, settle, settled, tool_result};
+use crate::persist::{placeholder, settle, settled, tool_result};
 use crate::stream::{StepEnd, run_stream};
 use crate::tool::ToolRuntime;
 
@@ -114,7 +114,6 @@ impl AgentLoop {
             let messages = build_context_path(&entries, leaf_id)?;
 
             let assistant_id = Uuid::new_v4();
-            let started_at = now_ms();
             self.append(
                 user_id,
                 placeholder(
@@ -123,7 +122,6 @@ impl AgentLoop {
                     leaf_id,
                     &model.model,
                     model.provider_id,
-                    started_at,
                 ),
             )
             .await?;
@@ -135,8 +133,7 @@ impl AgentLoop {
                 tools: tool_specs.clone(),
                 thinking_effort: model.thinking_effort.clone(),
             };
-            let outcome =
-                run_stream(self.adapter.as_ref(), req, started_at, observer, cancel).await;
+            let outcome = run_stream(self.adapter.as_ref(), req, observer, cancel).await;
             self.store
                 .update_message(assistant_id, settle(&outcome))
                 .await?;

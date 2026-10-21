@@ -31,8 +31,6 @@ pub struct RefreshToken {
     pub user_id: Uuid,
     /// SHA-256 hash of the plaintext token.
     pub token_hash: String,
-    /// Optional user-facing label.
-    pub label: Option<String>,
     /// Rotation successor, set when the token was consumed by a refresh.
     pub replaced_by: Option<Uuid>,
     /// Revocation time, if revoked.

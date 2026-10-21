@@ -20,17 +20,6 @@ pub type BoxConversationFuture<'a, T> =
 pub trait ConversationStore: Send + Sync {
     /// Creates an empty conversation and returns it.
     fn insert<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Conversation>;
-
-    /// Creates a conversation with an explicit id, title, and local-only
-    /// flag, and returns it.
-    fn create<'a>(
-        &'a self,
-        user_id: Uuid,
-        id: Uuid,
-        title: String,
-        local_only: bool,
-    ) -> BoxConversationFuture<'a, Conversation>;
-
     /// Lists a user's conversations, most recently updated first.
     fn list_by_user<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Vec<Conversation>>;
 
@@ -74,8 +63,7 @@ pub trait ConversationStore: Send + Sync {
     /// Appends a new message node into the tree.
     fn append_message<'a>(&'a self, entry: Message) -> BoxConversationFuture<'a, ()>;
 
-    /// Finalizes a placeholder message with its settled body, status and
-    /// timing marks.
+    /// Finalizes a placeholder message with its settled body and status.
     fn update_message<'a>(
         &'a self,
         id: Uuid,

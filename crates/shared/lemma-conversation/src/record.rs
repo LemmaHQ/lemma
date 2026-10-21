@@ -17,8 +17,6 @@ pub struct Conversation {
     pub leaf_id: Option<Uuid>,
     /// Model last used in this conversation; `None` before the first turn.
     pub last_model: Option<LastModel>,
-    /// Whether this conversation is restricted to local-only mode.
-    pub local_only: bool,
     /// Creation time.
     pub created_at: DateTime<Utc>,
     /// Last update time.
@@ -110,8 +108,4 @@ pub struct MessageUpdate {
     pub status: MessageStatus,
     /// Failure reason when status is `Error`; `None` otherwise.
     pub error: Option<String>,
-    /// First-token timestamp in Unix epoch milliseconds.
-    pub first_token_at: Option<i64>,
-    /// Turn end timestamp in Unix epoch milliseconds.
-    pub finished_at: i64,
 }

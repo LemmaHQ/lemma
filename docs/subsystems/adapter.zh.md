@@ -40,7 +40,7 @@ token 预算由思考强度换算：数字原样使用，`low` 为 2048，`high`
 - 流以 `Start` 开始。只解析 `data:` 行。
 - 文本增量位于一对 `TextStart`/`TextEnd` 之间。思考块开始、工具调用开始以及 `Done` 之前，打开的文本块会先关闭。
 - 任何厂商的思考都以 `ThinkingStart`、若干增量、`ThinkingEnd` 的形式到达；Anthropic 与 Gemini 在 `ThinkingEnd` 上携带厂商签名，供下一次请求回放该块。
-- 流以一个 `Done` 结束，携带停止原因与 token 用量；厂商在没有终止分块的情况下关闭响应体时，SSE 层根据解析器已看到的内容补发 `Done`。`Done.ttft_ms` 是从发送请求到第一个文本、思考或工具调用增量的时间。
+- 流以一个 `Done` 结束，携带停止原因与 token 用量；厂商在没有终止分块的情况下关闭响应体时，SSE 层根据解析器已看到的内容补发 `Done`。
 
 ## 失败
 

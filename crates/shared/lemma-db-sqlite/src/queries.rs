@@ -3,5 +3,4 @@
 pub mod auth;
 pub mod conversations;
 pub mod providers;
-pub mod settings;
 pub mod users;

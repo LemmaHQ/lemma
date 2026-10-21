@@ -30,7 +30,6 @@ fn into_token(t: entity::RefreshToken) -> Result<RefreshToken, AuthStoreError> {
         id: t.id,
         user_id: t.user_id,
         token_hash: t.token_hash,
-        label: t.label,
         replaced_by: t.replaced_by,
         revoked_at: t.revoked_at.map(timestamp).transpose()?,
         created_at: timestamp(t.created_at)?,
@@ -129,7 +128,6 @@ impl AuthStore for SqliteAuthStore {
         id: Uuid,
         user_id: Uuid,
         token_hash: &'a str,
-        label: Option<&'a str>,
         expires_at: DateTime<Utc>,
     ) -> BoxAuthFuture<'a, ()> {
         Box::pin(async move {
@@ -138,7 +136,6 @@ impl AuthStore for SqliteAuthStore {
                 id,
                 user_id,
                 token_hash,
-                label,
                 expires_at.timestamp_millis(),
             )
             .await

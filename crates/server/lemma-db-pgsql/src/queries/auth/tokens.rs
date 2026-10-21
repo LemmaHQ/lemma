@@ -11,7 +11,6 @@ pub async fn insert<'e, E>(
     id: Uuid,
     user_id: Uuid,
     token_hash: &str,
-    label: Option<&str>,
     expires_at: DateTime<Utc>,
 ) -> sqlx::Result<()>
 where
@@ -19,14 +18,13 @@ where
 {
     sqlx::query(
         r#"
-        INSERT INTO refresh_tokens (id, user_id, token_hash, label, expires_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+        VALUES ($1, $2, $3, $4)
         "#,
     )
     .bind(id)
     .bind(user_id)
     .bind(token_hash)
-    .bind(label)
     .bind(expires_at)
     .execute(executor)
     .await

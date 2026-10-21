@@ -151,11 +151,7 @@ pub(crate) fn events_from_sse(bytes: ByteStream, parser: impl SseParser) -> BoxE
                         let usage = state.parser.on_eof();
                         let stop_reason = state.parser.on_stop_reason();
                         let mut events = state.parser.flush();
-                        events.push(StreamEvent::Done {
-                            stop_reason,
-                            usage,
-                            ttft_ms: None,
-                        });
+                        events.push(StreamEvent::Done { stop_reason, usage });
                         pending = state.wrap(events).into_iter();
                     }
                 }

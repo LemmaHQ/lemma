@@ -16,7 +16,6 @@ mod models;
 mod openai;
 mod request;
 mod sse;
-mod timing;
 mod transport;
 
 pub use anthropic::AnthropicMessages;

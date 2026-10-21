@@ -1,7 +1,6 @@
 //! Adapter for the Gemini generateContent API.
 
 use std::sync::Arc;
-use std::time::Instant;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
 use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
@@ -10,7 +9,6 @@ use serde::Deserialize;
 use crate::error;
 use crate::request::{gemini_contents, thinking_budget};
 use crate::sse::{SseParser, events_from_sse};
-use crate::timing::timed;
 use crate::transport::HttpTransport;
 
 /// Streams via `:streamGenerateContent?alt=sse` with an `x-goog-api-key`
@@ -235,21 +233,17 @@ impl Adapter for GeminiGenerate {
         };
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            let start = Instant::now();
             let bytes = transport.post_stream(url, headers, body).await?;
-            Ok(timed(
-                start,
-                events_from_sse(
-                    bytes,
-                    Parser {
-                        usage: None,
-                        stop: StopReason::Stop,
-                        thinking_open: false,
-                        signature: None,
-                        next_call: 0,
-                        called_tool: false,
-                    },
-                ),
+            Ok(events_from_sse(
+                bytes,
+                Parser {
+                    usage: None,
+                    stop: StopReason::Stop,
+                    thinking_open: false,
+                    signature: None,
+                    next_call: 0,
+                    called_tool: false,
+                },
             ))
         })
     }
@@ -331,7 +325,6 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"ge
                         cache_read: None,
                         cache_write: None,
                     }),
-                    ttft_ms: None,
                 },
             ]
         );

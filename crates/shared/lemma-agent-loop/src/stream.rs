@@ -6,7 +6,6 @@ use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 
 use crate::cancel::CancelToken;
 use crate::event::{TurnEvent, TurnObserver};
-use crate::persist::now_ms;
 
 /// How one model stream ended.
 pub(crate) enum StepEnd {
@@ -15,13 +14,12 @@ pub(crate) enum StepEnd {
     Aborted,
 }
 
-/// Settled result of one model stream: accumulated blocks, terminal
-/// state, and timing marks.
+/// Settled result of one model stream: accumulated blocks and terminal
+/// state.
 pub(crate) struct StepOutcome {
     pub(crate) blocks: Vec<ContentBlock>,
     pub(crate) stop_reason: StopReason,
     pub(crate) usage: Option<Usage>,
-    pub(crate) first_token_at: Option<i64>,
     pub(crate) end: StepEnd,
 }
 
@@ -98,8 +96,6 @@ struct Accumulator<'a> {
     open: Option<OpenBlock>,
     usage: Option<Usage>,
     stop_reason: StopReason,
-    first_token_at: Option<i64>,
-    started_at: i64,
     observer: TurnObserver<'a>,
 }
 
@@ -120,9 +116,6 @@ impl Accumulator<'_> {
             StreamEvent::Start => {}
             StreamEvent::TextStart => self.reopen(OpenBlock::Text(String::new())),
             StreamEvent::TextDelta { delta } => {
-                if self.first_token_at.is_none() {
-                    self.first_token_at = Some(now_ms());
-                }
                 if !matches!(self.open, Some(OpenBlock::Text(_))) {
                     self.reopen(OpenBlock::Text(String::new()));
                 }
@@ -161,16 +154,9 @@ impl Accumulator<'_> {
                 }
                 self.blocks.push(ContentBlock::ToolCall(call));
             }
-            StreamEvent::Done {
-                stop_reason,
-                usage,
-                ttft_ms,
-            } => {
+            StreamEvent::Done { stop_reason, usage } => {
                 self.stop_reason = stop_reason;
                 self.usage = usage;
-                if let Some(ttft) = ttft_ms {
-                    self.first_token_at = Some(self.started_at + ttft as i64);
-                }
             }
             StreamEvent::Error { message } => return Err(message),
         }
@@ -190,7 +176,6 @@ impl Accumulator<'_> {
 pub(crate) async fn run_stream(
     adapter: &dyn Adapter,
     req: ModelRequest,
-    started_at: i64,
     observer: TurnObserver<'_>,
     cancel: &CancelToken,
 ) -> StepOutcome {
@@ -199,8 +184,6 @@ pub(crate) async fn run_stream(
         open: None,
         usage: None,
         stop_reason: StopReason::Stop,
-        first_token_at: None,
-        started_at,
         observer,
     };
     let streamed = async {
@@ -223,7 +206,6 @@ pub(crate) async fn run_stream(
         blocks: acc.blocks,
         stop_reason,
         usage: acc.usage,
-        first_token_at: acc.first_token_at,
         end,
     }
 }

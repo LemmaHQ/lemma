@@ -40,7 +40,7 @@ Each adapter parses the vendor's server-sent events into `StreamEvent`s, which [
 - The stream opens with `Start`. Only `data:` lines are parsed.
 - Text deltas arrive inside a `TextStart`/`TextEnd` pair. An open text block closes before a thinking block, before a tool call, and before `Done`.
 - Thinking from any vendor arrives as `ThinkingStart`, deltas, and `ThinkingEnd`; Anthropic and Gemini carry the vendor signature on `ThinkingEnd` so the next request can replay the block.
-- The stream ends with one `Done` carrying the stop reason and token usage; when the vendor closes the body without a terminal chunk, the layer emits `Done` from what the parser has seen. `Done.ttft_ms` is the time from sending the request to the first text, thinking, or tool-call delta.
+- The stream ends with one `Done` carrying the stop reason and token usage; when the vendor closes the body without a terminal chunk, the layer emits `Done` from what the parser has seen.
 
 ## Failures
 

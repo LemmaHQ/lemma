@@ -35,7 +35,6 @@ fn into_conversation(c: entity::Conversation) -> Result<Conversation, Conversati
         title: c.title,
         leaf_id: c.leaf_id,
         last_model: c.last_model.map(|Json(m)| m),
-        local_only: c.local_only,
         created_at: timestamp(c.created_at)?,
         updated_at: timestamp(c.updated_at)?,
     })
@@ -56,18 +55,6 @@ fn into_message(m: entity::Message) -> Result<Message, ConversationError> {
         created_at: timestamp(m.created_at)?,
         updated_at: timestamp(m.updated_at)?,
     })
-}
-
-fn usage_of(message: &lemma_core::Message) -> Option<Json<entity::TokenUsage>> {
-    match message {
-        lemma_core::Message::Assistant { usage: Some(u), .. } => Some(Json(entity::TokenUsage {
-            input: u.input,
-            output: u.output,
-            cache_read: u.cache_read,
-            cache_write: u.cache_write,
-        })),
-        _ => None,
-    }
 }
 
 fn store_err(e: sqlx::Error) -> ConversationError {
@@ -93,36 +80,6 @@ impl ConversationStore for SqliteConversationStore {
                 .await
                 .map_err(store_err)
                 .and_then(into_conversation)
-        })
-    }
-
-    fn create<'a>(
-        &'a self,
-        user_id: Uuid,
-        id: Uuid,
-        title: String,
-        local_only: bool,
-    ) -> BoxConversationFuture<'a, Conversation> {
-        Box::pin(async move {
-            let now = now_ms();
-            let row = sqlx::query_as::<_, entity::Conversation>(
-                r#"
-                INSERT INTO conversations (id, user_id, title, leaf_id, local_only, created_at, updated_at)
-                VALUES (?, ?, ?, NULL, ?, ?, ?)
-                RETURNING *
-                "#,
-            )
-            .bind(id)
-            .bind(user_id)
-            .bind(&title)
-            .bind(local_only)
-            .bind(now)
-            .bind(now)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(store_err)?;
-
-            into_conversation(row)
         })
     }
 
@@ -230,15 +187,14 @@ impl ConversationStore for SqliteConversationStore {
                 serde_json::to_value(&entry.message)
                     .map_err(|e| ConversationError::Store(format!("serialize message: {e}")))?,
             );
-            let usage = usage_of(&entry.message);
             let now = now_ms();
             let created = entry.created_at.timestamp_millis();
 
             sqlx::query(
                 r#"
                 INSERT INTO messages (id, conversation_id, parent_id, role, content_json, model,
-                                      provider_id, status, error, token_usage, started_at, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                      provider_id, status, error, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
             .bind(entry.id)
@@ -250,8 +206,6 @@ impl ConversationStore for SqliteConversationStore {
             .bind(entry.provider_id)
             .bind(entry.status.as_str())
             .bind(entry.error)
-            .bind(usage)
-            .bind(created)
             .bind(created)
             .bind(now)
             .execute(&self.pool)
@@ -272,22 +226,17 @@ impl ConversationStore for SqliteConversationStore {
                 serde_json::to_value(&update.message)
                     .map_err(|e| ConversationError::Store(format!("serialize message: {e}")))?,
             );
-            let usage = usage_of(&update.message);
 
             sqlx::query(
                 r#"
                 UPDATE messages
-                SET content_json = ?, status = ?, error = ?, token_usage = ?,
-                    first_token_at = ?, finished_at = ?, updated_at = ?
+                SET content_json = ?, status = ?, error = ?, updated_at = ?
                 WHERE id = ?
                 "#,
             )
             .bind(content)
             .bind(update.status.as_str())
             .bind(update.error)
-            .bind(usage)
-            .bind(update.first_token_at)
-            .bind(update.finished_at)
             .bind(now_ms())
             .bind(id)
             .execute(&self.pool)

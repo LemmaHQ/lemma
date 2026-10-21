@@ -1,7 +1,6 @@
 //! Adapter for OpenAI-compatible chat completions APIs.
 
 use std::sync::Arc;
-use std::time::Instant;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
 use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
@@ -10,7 +9,6 @@ use serde::Deserialize;
 use crate::error;
 use crate::request::openai_messages;
 use crate::sse::{SseParser, events_from_sse};
-use crate::timing::timed;
 use crate::transport::HttpTransport;
 
 /// Streams via `POST <base_url>/chat/completions`, or the endpoint's
@@ -183,7 +181,6 @@ impl SseParser for Parser {
             events.push(StreamEvent::Done {
                 stop_reason: self.stop,
                 usage: self.usage(),
-                ttft_ms: None,
             });
             return Ok(events);
         }
@@ -285,19 +282,15 @@ impl Adapter for OpenAiCompatible {
         };
         let transport = Arc::clone(&self.transport);
         Box::pin(async move {
-            let start = Instant::now();
             let bytes = transport.post_stream(url, headers, body).await?;
-            Ok(timed(
-                start,
-                events_from_sse(
-                    bytes,
-                    Parser {
-                        usage: None,
-                        stop: StopReason::Stop,
-                        thinking_open: false,
-                        tools: Vec::new(),
-                    },
-                ),
+            Ok(events_from_sse(
+                bytes,
+                Parser {
+                    usage: None,
+                    stop: StopReason::Stop,
+                    thinking_open: false,
+                    tools: Vec::new(),
+                },
             ))
         })
     }
@@ -360,7 +353,6 @@ data: [DONE]\n";
                         cache_read: None,
                         cache_write: None,
                     }),
-                    ttft_ms: None,
                 },
             ]
         );
@@ -418,7 +410,6 @@ data: [DONE]\n";
                 StreamEvent::Done {
                     stop_reason: StopReason::ToolUse,
                     usage: None,
-                    ttft_ms: None,
                 },
             ]
         );

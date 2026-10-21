@@ -25,7 +25,6 @@ fn into_token(t: entity::RefreshToken) -> RefreshToken {
         id: t.id,
         user_id: t.user_id,
         token_hash: t.token_hash,
-        label: t.label,
         replaced_by: t.replaced_by,
         revoked_at: t.revoked_at,
         created_at: t.created_at,
@@ -122,11 +121,10 @@ impl AuthStore for PgAuthStore {
         id: Uuid,
         user_id: Uuid,
         token_hash: &'a str,
-        label: Option<&'a str>,
         expires_at: DateTime<Utc>,
     ) -> BoxAuthFuture<'a, ()> {
         Box::pin(async move {
-            tokens::insert(&self.pool, id, user_id, token_hash, label, expires_at)
+            tokens::insert(&self.pool, id, user_id, token_hash, expires_at)
                 .await
                 .map_err(store_err)
         })

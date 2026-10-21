@@ -39,26 +39,12 @@ impl MemoryStore {
 
 impl ConversationStore for MemoryStore {
     fn insert<'a>(&'a self, user_id: Uuid) -> BoxConversationFuture<'a, Conversation> {
-        Box::pin(async move {
-            self.create(user_id, Uuid::new_v4(), String::new(), false)
-                .await
-        })
-    }
-
-    fn create<'a>(
-        &'a self,
-        user_id: Uuid,
-        id: Uuid,
-        title: String,
-        local_only: bool,
-    ) -> BoxConversationFuture<'a, Conversation> {
         let meta = Conversation {
-            id,
+            id: Uuid::new_v4(),
             user_id,
-            title,
+            title: String::new(),
             leaf_id: None,
             last_model: None,
-            local_only,
             created_at: DateTime::UNIX_EPOCH,
             updated_at: DateTime::UNIX_EPOCH,
         };
@@ -212,10 +198,7 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
 {
     let store = Arc::new(MemoryStore::default());
     let user_id = Uuid::new_v4();
-    let conversation_id = Uuid::new_v4();
-    store
-        .create(user_id, conversation_id, String::new(), true)
-        .await?;
+    let conversation_id = store.insert(user_id).await?.id;
     let agent_loop = AgentLoop::new(store.clone(), Arc::new(StalledAdapter));
     let cancel = CancelToken::new();
     let (tx, mut rx) = mpsc::unbounded_channel();
@@ -260,10 +243,7 @@ async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn
 {
     let store = Arc::new(MemoryStore::default());
     let user_id = Uuid::new_v4();
-    let conversation_id = Uuid::new_v4();
-    store
-        .create(user_id, conversation_id, String::new(), true)
-        .await?;
+    let conversation_id = store.insert(user_id).await?.id;
     let agent_loop = AgentLoop::new(store.clone(), Arc::new(StalledAdapter));
     let cancel = CancelToken::new();
     cancel.cancel();

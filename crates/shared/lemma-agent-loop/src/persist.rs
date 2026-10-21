@@ -1,15 +1,9 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use lemma_conversation::{Message as StoredMessage, MessageStatus, MessageUpdate};
 use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
 use uuid::Uuid;
 
 use crate::stream::{StepEnd, StepOutcome};
-
-pub(crate) fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_millis() as i64)
-}
 
 /// A settled message without model attribution: the user message or a
 /// tool result.
@@ -42,9 +36,8 @@ pub(crate) fn placeholder(
     parent_id: Uuid,
     model: &str,
     provider_id: Uuid,
-    started_at: i64,
 ) -> StoredMessage {
-    let created = DateTime::from_timestamp_millis(started_at).unwrap_or(DateTime::UNIX_EPOCH);
+    let now = Utc::now();
     StoredMessage {
         id,
         conversation_id,
@@ -60,8 +53,8 @@ pub(crate) fn placeholder(
         error: None,
         model: Some(model.to_string()),
         provider_id: Some(provider_id),
-        created_at: created,
-        updated_at: created,
+        created_at: now,
+        updated_at: now,
     }
 }
 
@@ -80,8 +73,6 @@ pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
         },
         status,
         error,
-        first_token_at: outcome.first_token_at,
-        finished_at: now_ms(),
     }
 }
 

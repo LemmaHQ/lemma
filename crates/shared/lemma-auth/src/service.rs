@@ -60,7 +60,6 @@ impl AuthService {
                 Uuid::new_v4(),
                 user_id,
                 &hash_token(&refresh),
-                None,
                 Utc::now() + Duration::days(REFRESH_TTL_DAYS),
             )
             .await?;

@@ -86,9 +86,9 @@ A turn runs to its end whether or not a client reads its stream. `lemma-agent-rp
 
 ## Persistence
 
-Both backends share one logical schema: `users`, `auth_credentials`, `refresh_tokens`, `providers`, `settings`, `conversations`, and `messages`. Each backend owns a `migrations/` directory of reversible pairs, and a schema change adds a migration to both ([crates/AGENTS.md](../crates/AGENTS.md#layout)). Every host runs migrations when it opens its pool.
+Both backends share one logical schema: `users`, `auth_credentials`, `refresh_tokens`, `providers`, `conversations`, and `messages`. Each backend owns a `migrations/` directory of reversible pairs, and a schema change adds a migration to both ([crates/AGENTS.md](../crates/AGENTS.md#layout)). Every host runs migrations when it opens its pool.
 
-A conversation is a tree of messages. Each message row stores its `parent_id`, the serialized canonical message, its status (`streaming`, `done`, `aborted`, `error`), the provider and model that produced it, token usage, and timing marks. The conversation row stores the active `leaf_id` and the last model selection. `ConversationStore` in `lemma-conversation` is the only trait over these tables; the turn loop appends, settles, and moves the leaf through it, and the conversation service creates, renames, deletes, and pages through it. Every operation on a conversation takes the caller's user id and touches only that user's rows.
+A conversation is a tree of messages. Each message row stores its `parent_id`, the serialized canonical message with its token usage, its status (`streaming`, `done`, `aborted`, `error`), and the provider and model that produced it. The conversation row stores the active `leaf_id` and the last model selection. `ConversationStore` in `lemma-conversation` is the only trait over these tables; the turn loop appends, settles, and moves the leaf through it, and the conversation service creates, renames, deletes, and pages through it. Every operation on a conversation takes the caller's user id and touches only that user's rows.
 
 A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 
