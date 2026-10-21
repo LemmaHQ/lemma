@@ -31,7 +31,7 @@
 
 token 预算由思考强度换算：数字原样使用，`low` 为 2048，`high` 为 16384，其他值为 8192。Anthropic 请求的 `max_tokens` 为 8192；开启思考时为预算加 8192。Gemini 的路径覆盖可以包含 `{model}`，它会被替换为模型 id。
 
-模型列表对 `/models`（OpenAI 与 Anthropic，使用相同的默认 base URL）或 `/v1beta/models`（Gemini）发送 `GET`，凭据相同，时限 10 秒。Gemini 的 id 会去掉 `models/` 前缀。
+模型列表在与生成相同的 base URL 下对 `/models` 发送 `GET`，凭据相同，时限 10 秒。Gemini 的 id 会去掉 `models/` 前缀。
 
 ## 流不变量
 

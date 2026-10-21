@@ -28,19 +28,17 @@ struct NameOnly {
 /// kind: bearer token for OpenAI-compatible APIs, `x-api-key` plus a
 /// pinned `anthropic-version` for Anthropic, `x-goog-api-key` for Gemini.
 ///
-/// An empty `models_path` selects the kind's default path. Gemini returns
-/// names as `models/<id>`; the prefix is stripped.
+/// An empty `models_path` selects `/models` under the base URL that
+/// generation uses. Gemini returns names as `models/<id>`; the prefix is
+/// stripped.
 pub(crate) async fn list_models(
     transport: &dyn HttpTransport,
     endpoint: Endpoint,
 ) -> Result<Vec<String>, ModelError> {
-    let (default_base, default_path) = match endpoint.kind {
-        ProviderKind::OpenAiCompatible => ("https://api.openai.com/v1", "/models"),
-        ProviderKind::Anthropic => ("https://api.anthropic.com/v1", "/models"),
-        ProviderKind::Gemini => (
-            "https://generativelanguage.googleapis.com",
-            "/v1beta/models",
-        ),
+    let default_base = match endpoint.kind {
+        ProviderKind::OpenAiCompatible => "https://api.openai.com/v1",
+        ProviderKind::Anthropic => "https://api.anthropic.com/v1",
+        ProviderKind::Gemini => "https://generativelanguage.googleapis.com/v1beta",
     };
     let base = if endpoint.base_url.is_empty() {
         default_base
@@ -48,7 +46,7 @@ pub(crate) async fn list_models(
         endpoint.base_url.trim_end_matches('/')
     };
     let path = if endpoint.models_path.is_empty() {
-        default_path
+        "/models"
     } else {
         &endpoint.models_path
     };
@@ -88,5 +86,67 @@ pub(crate) async fn list_models(
             let list: ModelsList = serde_json::from_value(body).map_err(bad_body)?;
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Mutex;
+
+    use super::*;
+    use crate::transport::{BoxTransportFuture, ByteStream};
+
+    #[derive(Default)]
+    struct RecordingTransport {
+        urls: Mutex<Vec<String>>,
+    }
+
+    impl HttpTransport for RecordingTransport {
+        fn post_stream(
+            &self,
+            _url: String,
+            _headers: Vec<(String, String)>,
+            _body: serde_json::Value,
+        ) -> BoxTransportFuture<'_, ByteStream> {
+            Box::pin(async { Err(error::protocol("unused".to_string())) })
+        }
+
+        fn get_json(
+            &self,
+            url: String,
+            _headers: Vec<(String, String)>,
+        ) -> BoxTransportFuture<'_, serde_json::Value> {
+            if let Ok(mut urls) = self.urls.lock() {
+                urls.push(url);
+            }
+            Box::pin(async { Ok(serde_json::json!({ "models": [{ "name": "models/gemini-x" }] })) })
+        }
+    }
+
+    #[test]
+    fn gemini_lists_models_under_the_base_url_used_for_generation() -> Result<(), ModelError> {
+        let transport = RecordingTransport::default();
+        for base_url in ["", "https://generativelanguage.googleapis.com/v1beta/"] {
+            let models = futures::executor::block_on(list_models(
+                &transport,
+                Endpoint {
+                    kind: ProviderKind::Gemini,
+                    base_url: base_url.to_string(),
+                    api_path: String::new(),
+                    models_path: String::new(),
+                    api_key: String::new(),
+                },
+            ))?;
+            assert_eq!(models, ["gemini-x"]);
+        }
+        let urls = transport.urls.lock().map(|u| u.clone()).unwrap_or_default();
+        assert_eq!(
+            urls,
+            [
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                "https://generativelanguage.googleapis.com/v1beta/models",
+            ]
+        );
+        Ok(())
     }
 }
