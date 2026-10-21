@@ -9,7 +9,7 @@ use std::sync::Arc;
 use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_agent::{Agent, AgentError, TurnEnd, TurnEvent, TurnRequest};
 use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
-use lemma_auth::{AuthService, AuthStore, AuthTokens, Session, User};
+use lemma_auth::{AuthService, AuthStore, Session, User};
 use lemma_conversation::{Conversation, ConversationService, ConversationStore, Message};
 use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
 use lemma_model::{Connector, ProviderKind};
@@ -101,27 +101,6 @@ impl From<Session> for MobileSession {
             access_token: s.tokens.access_token,
             access_token_expires_at: s.tokens.access_token_expires_at.to_rfc3339(),
             refresh_token: s.tokens.refresh_token,
-        }
-    }
-}
-
-/// A rotated access + refresh token pair.
-#[derive(uniffi::Record)]
-pub struct MobileTokens {
-    /// Signed access token.
-    pub access_token: String,
-    /// Access-token expiry time, RFC 3339.
-    pub access_token_expires_at: String,
-    /// Plaintext refresh token.
-    pub refresh_token: String,
-}
-
-impl From<AuthTokens> for MobileTokens {
-    fn from(t: AuthTokens) -> Self {
-        Self {
-            access_token: t.access_token,
-            access_token_expires_at: t.access_token_expires_at.to_rfc3339(),
-            refresh_token: t.refresh_token,
         }
     }
 }
@@ -485,32 +464,6 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Auth(e.to_string()))
     }
 
-    /// Rotates a refresh token and returns a fresh token pair.
-    pub async fn refresh(&self, refresh_token: String) -> Result<MobileTokens, EngineError> {
-        self.auth
-            .refresh(&refresh_token)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Auth(e.to_string()))
-    }
-
-    /// Revokes the presented refresh token, when it exists.
-    pub async fn logout(&self, refresh_token: Option<String>) -> Result<(), EngineError> {
-        self.auth
-            .logout(refresh_token.as_deref())
-            .await
-            .map_err(|e| EngineError::Auth(e.to_string()))
-    }
-
-    /// Returns the account for an authenticated user id.
-    pub async fn me(&self, user_id: String) -> Result<MobileUser, EngineError> {
-        self.auth
-            .me(parse_id(&user_id)?)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Auth(e.to_string()))
-    }
-
     /// Opens a session on the default local account, provisioning it on
     /// first use. Shared by every local-mode runtime.
     pub async fn use_default_account(&self) -> Result<MobileSession, EngineError> {
@@ -542,45 +495,6 @@ impl LemmaEngine {
             .create(parse_id(&user_id)?)
             .await
             .map(Into::into)
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Lists the user's conversations.
-    pub async fn list_conversations(
-        &self,
-        user_id: String,
-    ) -> Result<Vec<MobileConversation>, EngineError> {
-        self.conversations
-            .list_conversations(parse_id(&user_id)?)
-            .await
-            .map(|cs| cs.into_iter().map(Into::into).collect())
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Renames a conversation owned by the user.
-    pub async fn rename_conversation(
-        &self,
-        user_id: String,
-        conversation_id: String,
-        title: String,
-    ) -> Result<MobileConversation, EngineError> {
-        self.conversations
-            .rename(parse_id(&user_id)?, parse_id(&conversation_id)?, &title)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Permanently deletes a conversation owned by the user together with
-    /// its messages.
-    pub async fn delete_conversation(
-        &self,
-        user_id: String,
-        conversation_id: String,
-    ) -> Result<(), EngineError> {
-        self.conversations
-            .delete(parse_id(&user_id)?, parse_id(&conversation_id)?)
-            .await
             .map_err(|e| EngineError::Conversation(e.to_string()))
     }
 
