@@ -3,7 +3,7 @@
     "productName": "Lemma",
     "version": "0.1.0",
     "description": "Lemma desktop client",
-    "main": ".vite/build/main.js",
+    "main": ".vite/build/main.cjs",
     "private": true,
     "scripts": {
         "build": "npm --workspace=web run build:desktop && tsc",

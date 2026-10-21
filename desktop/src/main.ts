@@ -76,7 +76,7 @@ const createWindow = () => {
         titleBarStyle: "hidden",
         titleBarOverlay: titleBarOverlay(initialState),
         webPreferences: {
-            preload: path.join(__dirname, "preload.js"),
+            preload: path.join(__dirname, "preload.cjs"),
         },
     });
     mainWindow = window;
