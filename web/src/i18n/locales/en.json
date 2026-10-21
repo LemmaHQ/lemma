@@ -51,14 +51,10 @@
         "thinkingInProgress": "Thinking…",
         "toolCall": {
             "arguments": "Arguments",
-            "awaitingApproval": "Awaiting approval",
-            "denied": "Denied",
             "done": "Done",
             "error": "Error",
             "failed": "Failed",
             "output": "Output",
-            "pending": "Pending",
-            "responded": "Responded",
             "running": "Running"
         },
         "toolGroup": {

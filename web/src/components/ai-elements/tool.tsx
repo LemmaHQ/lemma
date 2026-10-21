@@ -1,12 +1,10 @@
 import {
     IconChevronDown,
-    IconCircle,
     IconCircleCheck,
     IconCircleX,
     IconClock,
     IconTool,
 } from "@tabler/icons-react";
-import type { ToolUIPart } from "ai";
 import { cn } from "cn";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,31 +19,16 @@ import {
 import { CodeBlock } from "./code-block";
 import { Shimmer } from "./shimmer";
 
-type ToolState = ToolUIPart["state"];
+type ToolState = "input-available" | "output-available" | "output-error";
 
 const PANEL_MOTION =
     "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-medium ease-move data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none";
 
 const STATUS = {
-    "input-streaming": {
-        icon: IconCircle,
-        iconClassName: "",
-        label: "chat.toolCall.pending",
-    },
     "input-available": {
         icon: IconClock,
         iconClassName: "animate-pulse",
         label: "chat.toolCall.running",
-    },
-    "approval-requested": {
-        icon: IconClock,
-        iconClassName: "text-primary",
-        label: "chat.toolCall.awaitingApproval",
-    },
-    "approval-responded": {
-        icon: IconCircleCheck,
-        iconClassName: "",
-        label: "chat.toolCall.responded",
     },
     "output-available": {
         icon: IconCircleCheck,
@@ -56,11 +39,6 @@ const STATUS = {
         icon: IconCircleX,
         iconClassName: "text-destructive",
         label: "chat.toolCall.failed",
-    },
-    "output-denied": {
-        icon: IconCircleX,
-        iconClassName: "text-muted-foreground",
-        label: "chat.toolCall.denied",
     },
 } as const satisfies Record<ToolState, unknown>;
 
