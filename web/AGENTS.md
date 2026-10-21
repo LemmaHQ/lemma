@@ -19,7 +19,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 ## Layout
 
 - `src/app/` holds routing, pages, and the application shell; `src/features/<domain>/` holds each domain's components, store, and hooks.
-- `src/data/rpc/` creates the ConnectRPC clients and maps errors; `src/data/cache/` is the IndexedDB cache.
+- `src/data/rpc/` creates the ConnectRPC clients and maps errors.
 - `src/platform/` selects the browser or desktop adapter; code outside it reaches desktop capabilities only through that adapter.
 - `src/components/ui/` holds shadcn components and `src/components/ai-elements/` holds AI Elements chat components. The shadcn CLI wrote their first version; they are owned code under the same lint and i18n rules, edited in place ([component README](src/components/ui/README.md)).
 - User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.

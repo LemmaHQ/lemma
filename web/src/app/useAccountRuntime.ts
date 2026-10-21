@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 
-import { closeDb, openDb } from "@/data/cache/database";
 import { useAuth } from "@/features/auth/store";
 import { useConversationsStore } from "@/features/conversations/store";
 
@@ -14,15 +13,8 @@ export function useAccountRuntime() {
     const userId = useAuth((s) => s.user?.id ?? null);
 
     useEffect(() => {
-        const hasUser = userId !== null && userId !== "";
-        if (hasUser) {
-            openDb(userId);
+        if (userId !== null && userId !== "") {
             void useConversationsStore.getState().refresh();
         }
-        return () => {
-            if (hasUser) {
-                closeDb();
-            }
-        };
     }, [userId]);
 }

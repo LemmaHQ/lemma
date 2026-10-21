@@ -23,7 +23,7 @@
     "rules": {
         "import/no-unassigned-import": [
             "error",
-            { "allow": ["**/*.css", "./i18n", "fake-indexeddb/auto"] }
+            { "allow": ["**/*.css", "./i18n"] }
         ],
         "react/react-in-jsx-scope": "off",
         "react/rules-of-hooks": "error",

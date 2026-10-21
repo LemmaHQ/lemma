@@ -1,7 +1,5 @@
 import { create } from "zustand";
 
-import { getDb } from "@/data/cache/database";
-import { listMessages, type MessageRow } from "@/data/cache/records";
 import { agentClient, conversationClient } from "@/data/rpc/clients";
 import { errorReason, errorText } from "@/data/rpc/errors";
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
@@ -38,7 +36,6 @@ interface ChatState {
     streaming: boolean;
     hasMore: boolean;
     open: (conversationId: string) => Promise<void>;
-    syncFromCache: () => Promise<void>;
     loadMore: () => Promise<void>;
     send: (providerId: string, model: string, content: string) => Promise<void>;
     abort: () => Promise<void>;
@@ -92,24 +89,6 @@ function protoToItem(m: Message): AgentItem {
     };
 }
 
-function rowToItem(m: MessageRow): AgentItem {
-    return {
-        id: m.id,
-        role:
-            m.role === "user"
-                ? "user"
-                : m.role === "tool"
-                  ? "tool"
-                  : "assistant",
-        content: m.content,
-        thinking: "",
-        status: statusFromProto(m.status),
-        providerId: m.providerId,
-        model: m.model,
-        toolCalls: [],
-    };
-}
-
 function hydrateToolResults(items: AgentItem[]): AgentItem[] {
     const resultByCallId = new Map<string, AgentItem>();
     for (const entry of items) {
@@ -159,32 +138,7 @@ export const useChat = create<ChatState>()((set, get) => ({
     hasMore: false,
 
     open: async (conversationId) => {
-        const db = getDb();
-        if (db !== null) {
-            const rows = await listMessages(db, conversationId);
-            if (rows.length > 0) {
-                set({
-                    conversationId,
-                    items: hydrateToolResults(rows.map(rowToItem)),
-                    hasMore: false,
-                });
-                return;
-            }
-        }
         set({ conversationId, ...(await latestPage(conversationId)) });
-    },
-
-    syncFromCache: async () => {
-        const { conversationId, streaming } = get();
-        const db = getDb();
-        if (db === null || conversationId === null || streaming) {
-            return;
-        }
-        const rows = await listMessages(db, conversationId);
-        set({
-            items: hydrateToolResults(rows.map(rowToItem)),
-            hasMore: false,
-        });
     },
 
     loadMore: async () => {

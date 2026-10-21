@@ -1,6 +1,6 @@
 ---
 name: lemma-ci-test-reliability
-description: Use when designing, reviewing, or diagnosing Lemma tests and fixtures that can fail nondeterministically — Rust tests under cargo test threads and nextest processes, PostgreSQL and SQLite store tests, tokio tasks and streams, vitest fake timers and globals, fake-indexeddb, environment variables, ports, temporary paths, or async teardown — and when investigating flaky CI.
+description: Use when designing, reviewing, or diagnosing Lemma tests and fixtures that can fail nondeterministically — Rust tests under cargo test threads and nextest processes, PostgreSQL and SQLite store tests, tokio tasks and streams, vitest fake timers and globals, environment variables, ports, temporary paths, or async teardown — and when investigating flaky CI.
 ---
 
 # Reliable Lemma CI tests
@@ -30,7 +30,6 @@ For every acquired resource, identify its owner, its atomic allocation, an obser
 - Network fixtures bind `127.0.0.1:0` and read the assigned port from the bound listener, as the local engine does. Never pick a free port and bind it later.
 - Store tests use a private database: SQLite through `lemma_db_sqlite::connect_in_memory()`, PostgreSQL through a new database per test named uniquely, dropped on teardown.
 - Temporary directories come from a per-test unique root, such as `tempfile::tempdir` in Rust or `fs.mkdtemp` in Node; never a predictable shared path.
-- Web cache tests import `fake-indexeddb/auto`; Vitest's default per-file isolation gives each test file its own in-memory IndexedDB. Within a file, delete the database in `beforeEach` before opening it, and give a test that needs a different schema its own database name.
 - Literal paths and URLs used only as parser inputs or expected values are not acquired resources; leave them.
 
 ## Contain process-global state

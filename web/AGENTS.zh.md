@@ -19,7 +19,7 @@
 ## 布局
 
 - `src/app/` 存放路由、页面与应用外壳；`src/features/<domain>/` 存放各领域的组件、store 与 hook。
-- `src/data/rpc/` 创建 ConnectRPC 客户端并映射错误；`src/data/cache/` 是 IndexedDB 缓存。
+- `src/data/rpc/` 创建 ConnectRPC 客户端并映射错误。
 - `src/platform/` 选择浏览器或桌面适配器；它之外的代码只通过该适配器使用桌面能力。
 - `src/components/ui/` 存放 shadcn 组件，`src/components/ai-elements/` 存放 AI Elements 聊天组件。它们的第一版由 shadcn CLI 写出，此后是受同样 lint 与 i18n 规则约束的自有代码，直接在原文件上修改（[组件 README](src/components/ui/README.zh.md)）。
 - 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。

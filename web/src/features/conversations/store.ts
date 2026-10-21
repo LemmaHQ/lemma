@@ -1,53 +1,20 @@
-import { create as createMessage } from "@bufbuild/protobuf";
-import { type Timestamp, TimestampSchema } from "@bufbuild/protobuf/wkt";
 import { create } from "zustand";
 
-import { getDb } from "@/data/cache/database";
-import { type ConversationRow, listConversations } from "@/data/cache/records";
 import { conversationClient } from "@/data/rpc/clients";
-import {
-    type Conversation,
-    ConversationSchema,
-} from "@/gen/lemma/v1/conversation_pb";
+import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 
 interface ConversationsState {
     list: Conversation[];
     loaded: boolean;
-    hydrateFromCache: () => Promise<void>;
     refresh: () => Promise<void>;
     create: () => Promise<string>;
     rename: (id: string, title: string) => Promise<void>;
     delete: (id: string) => Promise<void>;
 }
 
-function toTimestamp(ms: number): Timestamp {
-    return createMessage(TimestampSchema, {
-        seconds: BigInt(Math.floor(ms / 1000)),
-        nanos: (ms % 1000) * 1_000_000,
-    });
-}
-
-function rowToConversation(r: ConversationRow): Conversation {
-    return createMessage(ConversationSchema, {
-        id: r.id,
-        title: r.title,
-        createdAt: toTimestamp(r.createdAtMs),
-        updatedAt: toTimestamp(r.updatedAtMs),
-    });
-}
-
 export const useConversationsStore = create<ConversationsState>()((set) => ({
     list: [],
     loaded: false,
-
-    hydrateFromCache: async () => {
-        const db = getDb();
-        if (db === null) {
-            return;
-        }
-        const list = await listConversations(db);
-        set({ list: list.map(rowToConversation), loaded: true });
-    },
 
     refresh: async () => {
         const res = await conversationClient.listConversations({});

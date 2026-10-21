@@ -33,6 +33,5 @@ Compiling the workspace includes `lemma-server`, which embeds `web/dist`; Rust C
 Tests replace only the model boundary, with vendor output written into the test; everything behind it runs the shipping code, on an in-memory backend where the code needs storage:
 
 - Provider adapter tests feed a vendor SSE payload written in the test through the adapter's parser as a byte stream and compare the complete `StreamEvent` sequence.
-- The web cache tests run the real Dexie database on `fake-indexeddb`.
 - The Android repository tests run the real SQLDelight schema on `JdbcSqliteDriver.IN_MEMORY`, and settings tests use `MapSettings`.
 - Time-dependent web logic fixes the clock with vitest fake timers.

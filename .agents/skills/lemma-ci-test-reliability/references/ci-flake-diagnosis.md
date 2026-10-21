@@ -12,7 +12,7 @@ Compare several failing and passing runs. Prefer runs of the same SHA; otherwise
 
 Classify from recorded evidence, not from the eventual fix:
 
-- **Shared-resource collision:** the same port, path, PostgreSQL database, or IndexedDB name is acquired by concurrent tests.
+- **Shared-resource collision:** the same port, path, or PostgreSQL database is acquired by concurrent tests.
 - **Incomplete lifecycle:** teardown returns before spawned tasks, servers, or streams reach quiescence; later output or mutations appear in another test.
 - **Process-global contamination:** the outcome depends on test order or leaked environment variables, the current directory, fake timers, mocks, or statics. A failure under `cargo test` that never appears under nextest points here.
 - **Load-sensitive synchronization:** a sleep, polling interval, or assumed scheduler turn substitutes for observable readiness or completion.

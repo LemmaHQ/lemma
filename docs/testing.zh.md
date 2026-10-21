@@ -33,6 +33,5 @@ Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop` 
 只替换模型这一边界，用写在测试中的厂商输出代替；边界之后全部运行交付代码，需要存储时使用内存后端：
 
 - provider 适配器测试把写在测试中的厂商 SSE 载荷以字节流形式送入适配器的解析器，并比对完整的 `StreamEvent` 序列。
-- Web 缓存测试在 `fake-indexeddb` 上运行真实的 Dexie 数据库。
 - Android 仓库层测试在 `JdbcSqliteDriver.IN_MEMORY` 上运行真实的 SQLDelight schema，设置测试使用 `MapSettings`。
 - 依赖时间的 Web 逻辑用 vitest 的 fake timers 固定时钟。
