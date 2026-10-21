@@ -15,7 +15,6 @@ use crate::config::{Config, DatabaseBackend};
 enum Backend {
     Postgres(sqlx::PgPool),
     Sqlite(sqlx::SqlitePool),
-    Local(sqlx::SqlitePool),
 }
 
 pub struct AppState {
@@ -24,11 +23,6 @@ pub struct AppState {
     pub providers: Arc<ProviderRpc>,
     pub conversations: Arc<ConversationRpc>,
     pub agent: Arc<AgentRpc>,
-    /// Local mode only: the store behind `auth`, used to provision the
-    /// default account. `None` in server mode.
-    pub local_auth_store: Option<Arc<dyn lemma_auth::AuthStore>>,
-    /// Local mode only: engine-managed signing secrets.
-    pub local_secrets: Option<crate::local::LocalSecrets>,
 }
 
 impl AppState {
@@ -56,15 +50,13 @@ impl AppState {
                         config.jwt_secret.clone(),
                     )),
                     agent: Arc::new(AgentRpc::new(agent, config.jwt_secret.clone())),
-                    local_auth_store: None,
-                    local_secrets: None,
                     backend: Backend::Postgres(pool),
                 })
             }
             DatabaseBackend::Sqlite => {
                 let pool = lemma_db_sqlite::connect(config.sqlite_path()?).await?;
                 lemma_db_sqlite::migrate(&pool).await?;
-                Self::sqlite_state(pool, config.jwt_secret, config.secret_key, false, None)
+                Self::sqlite_state(pool, config.jwt_secret, config.secret_key, None)
             }
         }
     }
@@ -93,29 +85,29 @@ impl AppState {
     }
 
     /// Embedded local engine: SQLite and engine-managed secrets under one
-    /// data directory, serving loopback only.
+    /// data directory, serving loopback only, with the default account
+    /// provisioned.
     pub async fn local(data_dir: &std::path::Path) -> Result<Self, Box<dyn std::error::Error>> {
         let secrets = crate::local::load_or_create_secrets(data_dir)?;
         let pool = lemma_db_sqlite::connect(crate::local::database_path(data_dir)).await?;
         lemma_db_sqlite::migrate(&pool).await?;
-        let mut state = Self::sqlite_state(
+        let jwt_secret: Arc<str> = Arc::from(secrets.jwt_secret.as_str());
+        let auth_store = Arc::new(lemma_db_sqlite::SqliteAuthStore::new(pool.clone()));
+        let auth = lemma_auth::AuthService::new(auth_store.clone(), Arc::clone(&jwt_secret));
+        crate::local::ensure_default_account(auth_store.as_ref(), &auth).await?;
+        Self::sqlite_state(
             pool,
-            Arc::from(secrets.jwt_secret.as_str()),
+            jwt_secret,
             Arc::from(secrets.secret_key.as_str()),
-            true,
             Some(data_dir.join("workspaces")),
-        )?;
-        state.local_secrets = Some(secrets);
-        Ok(state)
+        )
     }
 
-    /// Wires all four services over the SQLite backend. `local` keeps the
-    /// auth store reachable for default-account provisioning.
+    /// Wires all four services over the SQLite backend.
     fn sqlite_state(
         pool: sqlx::SqlitePool,
         jwt_secret: Arc<str>,
         secret_key: Arc<str>,
-        local: bool,
         workspaces_dir: Option<std::path::PathBuf>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let auth_store: Arc<dyn lemma_auth::AuthStore> =
@@ -129,24 +121,18 @@ impl AppState {
             workspaces_dir,
         );
         Ok(Self {
-            auth: Arc::new(AuthRpc::new(auth_store.clone(), jwt_secret.clone())),
+            auth: Arc::new(AuthRpc::new(auth_store, jwt_secret.clone())),
             providers: Arc::new(ProviderRpc::new(providers, jwt_secret.clone())),
             conversations: Arc::new(ConversationRpc::new(conversations, jwt_secret.clone())),
             agent: Arc::new(AgentRpc::new(agent, jwt_secret)),
-            local_auth_store: local.then_some(auth_store),
-            local_secrets: None,
-            backend: if local {
-                Backend::Local(pool)
-            } else {
-                Backend::Sqlite(pool)
-            },
+            backend: Backend::Sqlite(pool),
         })
     }
 
     pub async fn close(&self) {
         match &self.backend {
             Backend::Postgres(pool) => pool.close().await,
-            Backend::Sqlite(pool) | Backend::Local(pool) => pool.close().await,
+            Backend::Sqlite(pool) => pool.close().await,
         }
     }
 }

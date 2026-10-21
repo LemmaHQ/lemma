@@ -49,16 +49,6 @@ async fn run_local() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|_| "LEMMA_DATA_DIR is required when LEMMA_LOCAL_MODE is set")?;
     let data_dir = std::path::PathBuf::from(data_dir);
     let state = state::AppState::local(&data_dir).await?;
-
-    if let Some(store) = &state.local_auth_store {
-        let secrets = state
-            .local_secrets
-            .as_ref()
-            .ok_or("local secrets missing")?;
-        let service = lemma_auth::AuthService::new(store.clone(), secrets.jwt_secret.as_str());
-        local::ensure_default_account(store.as_ref(), &service).await?;
-    }
-
     let app = routes::router(&state)
         .fallback(web::handler)
         .layer(cors_layer());
