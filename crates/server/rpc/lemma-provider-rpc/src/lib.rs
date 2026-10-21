@@ -36,12 +36,6 @@ pub fn kind_to_proto(kind: ProviderKind) -> lemma_proto::lemma::v1::ProviderKind
     }
 }
 
-/// Maps a proto kind to its stored string. Returns `None` for
-/// unspecified or unknown values.
-pub fn kind_to_str(kind: lemma_proto::lemma::v1::ProviderKind) -> Option<&'static str> {
-    kind_from_proto(kind).map(|k| k.as_str())
-}
-
 /// Connect handler implementing the ProviderService RPCs.
 ///
 /// `jwt_secret` authenticates requests; `domain` seals API keys at rest
