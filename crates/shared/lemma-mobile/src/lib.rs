@@ -151,28 +151,14 @@ pub struct MobileMessage {
     pub created_at_seconds: i64,
 }
 
-fn visible_text(content: &serde_json::Value) -> String {
-    content
-        .as_array()
-        .map(|blocks| {
-            blocks
-                .iter()
-                .filter(|b| b.get("type").and_then(|t| t.as_str()) == Some("text"))
-                .filter_map(|b| b.get("text").and_then(|t| t.as_str()))
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
 impl From<Message> for MobileMessage {
     fn from(m: Message) -> Self {
-        let content_json = serde_json::to_value(&m.message).unwrap_or_default();
         Self {
             id: m.id.to_string(),
             parent_id: m.parent_id.map(|id| id.to_string()),
             role: m.role().to_string(),
-            text: visible_text(&content_json),
-            content_json: content_json.to_string(),
+            text: m.message.visible_text(),
+            content_json: serde_json::to_string(&m.message).unwrap_or_default(),
             provider_id: m.provider_id.map(|id| id.to_string()),
             model: m.model,
             status: m.status.as_str().to_string(),
