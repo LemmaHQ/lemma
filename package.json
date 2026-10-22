@@ -14,7 +14,7 @@
     "devDependencies": {
         "@types/node": "^26.6.5",
         "autocorrect-node": "^2.14.0",
-        "jscpd": "^5.4.1",
+        "jscpd": "^5.4.2",
         "markdownlint-cli2": "^0.23.3",
         "oxlint": "^1.88.0",
         "oxlint-tsgolint": "^7.0.2004",
