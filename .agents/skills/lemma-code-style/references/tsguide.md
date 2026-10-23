@@ -83,8 +83,8 @@ There are four variants of import statements in ES6 and TypeScript:
 
 | Import type | Example | Use for |
 | --- | --- | --- |
-| module[^1] | `import * as foo from '...';` | TypeScript imports |
-| named[^2] | `import {SomeThing} from '...';` | TypeScript imports |
+| module (also called module import) | `import * as foo from '...';` | TypeScript imports |
+| named (also called destructuring import) | `import {SomeThing} from '...';` | TypeScript imports |
 | default | `import SomeThing from '...';` | Only for other external code that requires them |
 | side-effect | `import '...';` | Only to import libraries for their side-effects on load (such as custom elements) |
 
@@ -3002,7 +3002,3 @@ The following points are the exceptions, which are the reasons we have some glob
     If it's possible to implement your rule as an automated check that is often a good sign. This also supports principle 3.
 
     If it really just doesn't matter that much -- if it's an obscure corner of the language or if it avoids a bug that is unlikely to occur -- it's probably worth leaving out.
-
-[^1]: Namespace imports are often called 'module imports'.
-
-[^2]: Named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments.
