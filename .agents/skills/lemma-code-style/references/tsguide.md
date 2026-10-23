@@ -81,12 +81,12 @@ Example:
 
 There are four variants of import statements in ES6 and TypeScript:
 
-  Import type                       Example                            Use for
-  --------------------------------- ---------------------------------- -----------------------------------------------------------------------------------
-  module\[^module_import\]^         `import * as foo from '...';`      TypeScript imports
-  named\[^destructuring_import\]^   `import {SomeThing} from '...';`   TypeScript imports
-  default                           `import SomeThing from '...';`     Only for other external code that requires them
-  side-effect                       `import '...';`                    Only to import libraries for their side-effects on load (such as custom elements)
+| Import type | Example | Use for |
+| --- | --- | --- |
+| module[^1] | `import * as foo from '...';` | TypeScript imports |
+| named[^2] | `import {SomeThing} from '...';` | TypeScript imports |
+| default | `import SomeThing from '...';` | Only for other external code that requires them |
+| side-effect | `import '...';` | Only to import libraries for their side-effects on load (such as custom elements) |
 
 ``` {.ts .good}
 // Good: choose between two options as appropriate (see below).
@@ -2095,12 +2095,12 @@ Identifiers *should not* generally use `$`, except when required by naming conve
 
 Most identifier names should follow the casing in the table below, based on the identifier's type.
 
-  Style              Category
-  ------------------ ------------------------------------------------------------------------------------------------------------------------
-  `UpperCamelCase`   class / interface / type / enum / decorator / type parameters / component functions in TSX / JSXElement type parameter
-  `lowerCamelCase`   variable / parameter / function / method / property / module alias
-  `CONSTANT_CASE`    global constant values, including enum values. See [Constants](#constants) below.
-  `#ident`           private identifiers are never used.
+| Style | Category |
+| --- | --- |
+| `UpperCamelCase` | class / interface / type / enum / decorator / type parameters / component functions in TSX / JSXElement type parameter |
+| `lowerCamelCase` | variable / parameter / function / method / property / module alias |
+| `CONSTANT_CASE` | global constant values, including enum values. See [Constants](#constants) below. |
+| `#ident` | private identifiers are never used. |
 
 #### Type parameters
 
@@ -2699,7 +2699,7 @@ Google-style TypeScript must abide by any applicable global or framework-local c
 
 ## Comments and documentation
 
-#### JSDoc versus comments
+### JSDoc versus comments
 
 There are two types of comments, JSDoc (`/** ... */`) and non-JSDoc ordinary comments (`// ...` or `/* ... */`).
 
@@ -2770,7 +2770,9 @@ This means that tooling parsing JSDoc will ignore plain text formatting, so if y
 
 it will be rendered like this:
 
-    Computes weight based on three factors: items sent items received last timestamp
+```text
+Computes weight based on three factors: items sent items received last timestamp
+```
 
 Instead, write a Markdown list:
 
@@ -3001,12 +3003,6 @@ The following points are the exceptions, which are the reasons we have some glob
 
     If it really just doesn't matter that much -- if it's an obscure corner of the language or if it avoids a bug that is unlikely to occur -- it's probably worth leaving out.
 
-------------------------------------------------------------------------
+[^1]: Namespace imports are often called 'module imports'.
 
-1.
-
-    Namespace imports are often called 'module imports' <a href="#fnref1" rev="footnote">↩︎</a>
-
-1.
-
-    named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments. <a href="#fnref2" rev="footnote">↩︎</a>
+[^2]: Named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments.

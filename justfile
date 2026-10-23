@@ -1,4 +1,4 @@
-md_files := "git ls-files '*.md' ':!:.agents/skills/lemma-code-style/references/'"
+md_files := "git ls-files '*.md'"
 
 # List all recipes
 default:

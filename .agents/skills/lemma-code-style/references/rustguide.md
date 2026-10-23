@@ -912,7 +912,7 @@ Follow these guidelines when naming initialization functions:
 
 * Value-to-value conversions: Use `from_foo()` with an associated `From` impl.
     See
-    [here](https://doc.rust-lang.org/std/convert/trait.From.html#when-to-implement-from)
+    [when to implement `From`](https://doc.rust-lang.org/std/convert/trait.From.html#when-to-implement-from)
     for details on when an operation can be considered to be a value-to-value
     conversion.
 
@@ -979,7 +979,7 @@ Exceptions:
 * It is generally okay to omit documentation on individual enum variants,
     especially if their name is self-explanatory.
 
-**How to format documentation comments**
+### How to format documentation comments
 
 Follow these guidelines when writing documentation comments:
 
@@ -1404,7 +1404,7 @@ situations:
 
 Examples
 
-**Explaining why an assertion should hold**
+#### Explaining why an assertion should hold
 
 Good:
 
@@ -1415,7 +1415,7 @@ Good:
     );
 ```
 
-**Logging a value to clarify why the assertion failed**
+#### Logging a value to clarify why the assertion failed
 
 Good:
 
@@ -1423,7 +1423,7 @@ Good:
 assert!(refund > 0, "Refund must be positive, got {refund:?});
 ```
 
-**Flagging misuse of an API**
+#### Flagging misuse of an API
 
 Good:
 
@@ -1439,7 +1439,7 @@ impl Database {
 }
 ```
 
-**Don't use the context string merely to repeat the condition**
+#### Don't use the context string merely to repeat the condition
 
 Bad:
 
@@ -1466,7 +1466,7 @@ written out in the corresponding `for` loop.
 
 Examples
 
-**Complex combinator chains**
+#### Complex combinator chains
 
 Here's an example of a combinator chain that is hard to read because it involves
 conditionals and mutates external state:
@@ -1504,7 +1504,7 @@ for item in items {
 }
 ```
 
-**Combinator chains in for loops**
+#### Combinator chains in for loops
 
 Avoid constructing a combinator chain in the header of a `for` loop:
 
@@ -1536,7 +1536,7 @@ for bug in urgent_bugs {
 }
 ```
 
-**When to prefer a combinator chain**
+#### When to prefer a combinator chain
 
 Here's an example where a combinator chain is preferable:
 
