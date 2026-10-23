@@ -1,5 +1,5 @@
 # Stage 1: frontend (proto generation + vite build).
-ARG NODE_VERSION=26.12.0
+ARG NODE_VERSION=26.12.1
 FROM node:${NODE_VERSION}-trixie-slim AS web-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
