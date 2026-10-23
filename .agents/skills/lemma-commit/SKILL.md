@@ -27,15 +27,15 @@ Risk: <if destructive or migration>
 
 ## Subject line — `<type>(<scope>): <imperative>`
 
-| Rule              | Detail                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `<type>`          | One of `feat fix refactor perf docs test style chore build ci revert`. Lowercase.                                              |
-| `(<scope>)`       | Optional. Lowercase, kebab-case. Closest meaningful unit — file basename, module, feature area. Skip when genuinely repo-wide. |
-| `:`               | Colon + single space.                                                                                                          |
-| Summary           | Imperative mood (`add`, not `added`). Lowercase first letter. No trailing period.                                              |
-| Length            | ≤ 72 chars total. Aim for ≤ 50. Hard limit 72 (GitHub truncation).                                                             |
-| Banned in subject | Emoji, AI footers, past tense                                                                                                  |
-| One concern       | Names one change. " and ", commas, or slashes joining separable changes mean split; " and " within one change is fine.         |
+| Rule              | Detail                                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `<type>`          | One of `feat fix refactor perf docs test style chore build ci revert`. Lowercase.                                                        |
+| `(<scope>)`       | Required unless the change is genuinely repo-wide. Lowercase, kebab-case. Closest meaningful unit — file basename, module, feature area. |
+| `:`               | Colon + single space.                                                                                                                    |
+| Summary           | Imperative mood (`add`, not `added`): it completes "If applied, this commit will …". Lowercase first letter. No trailing period.         |
+| Length            | ≤ 72 chars total, prefix included. Aim for ≤ 50. Hard limit 72 (GitHub truncation).                                                      |
+| Banned in subject | Emoji, AI footers, past tense                                                                                                            |
+| One concern       | Names one change. " and ", commas, or slashes joining separable changes mean split; " and " within one change is fine.                   |
 
 ## Type taxonomy
 
@@ -57,8 +57,8 @@ Risk: <if destructive or migration>
 
 - Blank line after subject.
 - Wrap at 72 chars (allow up to 100 for URLs / paths).
-- **Lead with why.** Motivation in 1-2 sentences before describing what.
-- Then _what_ changed at a level the diff doesn't show — invariants, rationale, alternatives considered.
+- **Lead with why.** Motivation in 1-2 sentences before describing what: how things worked before the change and what was wrong with that.
+- Then _what_ changed at a level the diff doesn't show — how things work now, invariants, why this approach over the alternatives considered.
 - Then _notes/risks/follow-ups_ if any.
 - 2-4 short paragraphs max. More = the change is too big for one commit.
 - Don't restate the diff. Reviewers can read the diff.
@@ -88,7 +88,7 @@ Risk: <if destructive or migration>
 - **One concern per commit.** Two changes are separate concerns when either could be reverted alone and leave the repository coherent; split them. A conjunction in the subject is the usual sign, not the rule.
 - **Tests for behavior changes ship in the same commit.** Not a follow-up.
 - **Squash WIP before push.** A 6-commit branch with `wip: testing`, `wip: more`, `oops typo` should land as 1-2 clean commits.
-- **Don't amend a published commit on a shared branch.** Follow up with a `style:` commit instead.
+- **Don't amend a published commit on a shared branch.** Follow up with a new commit instead.
 - **Merge commits stay rare.** Prefer rebase.
 
 ## Good examples
@@ -120,9 +120,8 @@ warehouse mis-pick. The endpoint takes a list of order IDs and a
 required reason code; cancellation is best-effort with a per-ID result
 list, not transactional.
 
-Risk: bad reason code or partial failure can leave orders mixed.
-Mitigation: response includes per-ID outcome; dashboard surfaces partial
-failures; worker requeues retryable IDs.
+Risk: partial failure can leave orders mixed; the response reports
+  per-ID outcomes and the worker requeues retryable IDs.
 
 Refs: #1820
 ```
@@ -156,12 +155,12 @@ _Each " and " joins a change that could be reverted alone: three commits hiding 
 fix: corrected the issue where the user was unable to login
 ```
 
-_Too long, past tense ("corrected" not "fix"), restates the diff._
+_Past tense ("corrected" not "fix"), no scope, and it restates the symptom instead of naming the change._
 
 ## Pre-commit checklist
 
 1. **Subject ≤ 72?** Aim for 50.
-2. **Imperative mood?** "add", not "added" or "adds".
+2. **Imperative mood?** "add", not "added" or "adds"; the subject completes "If applied, this commit will …".
 3. **Lowercase first letter, no trailing period?**
 4. **Type chosen deliberately?** Not `chore` because you're lazy.
 5. **Scope present and meaningful?** Or genuinely repo-wide.
