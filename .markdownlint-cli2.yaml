@@ -5,3 +5,5 @@ config:
   MD033: false
   MD040: false
   MD041: true
+ignores:
+  - .agents/skills/security-audit/**

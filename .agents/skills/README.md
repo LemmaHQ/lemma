@@ -10,3 +10,4 @@ Skills are reusable workflows and specialized decision standards that an agent l
 - `SKILL.md` opens with frontmatter: `name` equals the directory name, and `description` states when to load the skill.
 - Material needed only for some tasks, such as an upstream style guide, calibration examples, or a diagnosis workflow, lives under `references/` inside the skill directory and is read on demand.
 - Skills are English only, per the [bilingual contract](../../docs/i18n/README.md#scope-and-exclusions).
+- Third-party skills keep their upstream directory name and content. `npx skills add <source> --skill <name> -a universal --copy` installs one, `skills-lock.json` records its source and hash, and `npx skills update` refreshes it. Markdownlint ignores them through `.markdownlint-cli2.yaml`; installed now: `security-audit` from `cloudflare/security-audit-skill`.
