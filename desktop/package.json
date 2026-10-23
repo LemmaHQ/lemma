@@ -35,10 +35,10 @@
         "@types/electron-squirrel-startup": "^1.0.2",
         "@types/node": "^26.6.5",
         "@vitest/coverage-v8": "^5.0.5",
-        "electron": "44.8.0",
+        "electron": "44.9.1",
         "prettier": "^3.9.10",
         "typescript": "^7.0.2",
-        "vite": "^8.3.4",
+        "vite": "^8.3.5",
         "vitest": "^5.0.5"
     },
     "dependencies": {
