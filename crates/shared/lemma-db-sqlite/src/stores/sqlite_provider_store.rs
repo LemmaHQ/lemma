@@ -1,11 +1,9 @@
 //! `ProviderStore` implementation over the providers queries.
 
 use chrono::{DateTime, Utc};
+use lemma_provider::{NewProvider, ProviderError, ProviderPatch, ProviderRecord, ProviderStore};
+use sqlx::SqlitePool;
 use uuid::Uuid;
-
-use lemma_provider::{
-    BoxProviderFuture, NewProvider, ProviderError, ProviderPatch, ProviderRecord, ProviderStore,
-};
 
 use crate::entity::Provider;
 use crate::queries::providers;
@@ -33,10 +31,12 @@ fn into_record(p: Provider) -> Result<ProviderRecord, ProviderError> {
     })
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "used as a map_err function")]
 fn store_err(e: sqlx::Error) -> ProviderError {
     ProviderError::Store(e.to_string())
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "used as a map_err function")]
 fn insert_err(e: sqlx::Error) -> ProviderError {
     match &e {
         sqlx::Error::Database(db) if db.is_unique_violation() => ProviderError::IdentifierTaken,
@@ -45,72 +45,64 @@ fn insert_err(e: sqlx::Error) -> ProviderError {
 }
 
 /// [`ProviderStore`] backed by a SQLite pool.
+#[derive(Debug, Clone)]
 pub struct SqliteProviderStore {
-    pool: sqlx::SqlitePool,
+    pool: SqlitePool,
 }
 
 impl SqliteProviderStore {
     /// Creates the store over a pool.
-    pub fn new(pool: sqlx::SqlitePool) -> Self {
+    #[must_use]
+    pub fn new(pool: SqlitePool) -> Self {
         Self { pool }
     }
 }
 
 impl ProviderStore for SqliteProviderStore {
-    fn insert<'a>(
-        &'a self,
+    async fn insert(
+        &self,
         user_id: Uuid,
-        new: &'a NewProvider,
-    ) -> BoxProviderFuture<'a, ProviderRecord> {
-        Box::pin(async move {
-            providers::insert(&self.pool, user_id, new)
-                .await
-                .map_err(insert_err)
-                .and_then(into_record)
-        })
+        new: &NewProvider,
+    ) -> Result<ProviderRecord, ProviderError> {
+        providers::insert(&self.pool, user_id, new)
+            .await
+            .map_err(insert_err)
+            .and_then(into_record)
     }
 
-    fn list<'a>(&'a self, user_id: Uuid) -> BoxProviderFuture<'a, Vec<ProviderRecord>> {
-        Box::pin(async move {
-            providers::list_by_user(&self.pool, user_id)
-                .await
-                .map_err(store_err)?
-                .into_iter()
-                .map(into_record)
-                .collect()
-        })
+    async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderRecord>, ProviderError> {
+        providers::list_by_user(&self.pool, user_id)
+            .await
+            .map_err(store_err)?
+            .into_iter()
+            .map(into_record)
+            .collect()
     }
 
-    fn get<'a>(&'a self, user_id: Uuid, id: Uuid) -> BoxProviderFuture<'a, Option<ProviderRecord>> {
-        Box::pin(async move {
-            providers::find_by_id_and_user(&self.pool, id, user_id)
-                .await
-                .map_err(store_err)?
-                .map(into_record)
-                .transpose()
-        })
+    async fn get(&self, user_id: Uuid, id: Uuid) -> Result<Option<ProviderRecord>, ProviderError> {
+        providers::find_by_id_and_user(&self.pool, id, user_id)
+            .await
+            .map_err(store_err)?
+            .map(into_record)
+            .transpose()
     }
 
-    fn update<'a>(
-        &'a self,
+    async fn update(
+        &self,
         user_id: Uuid,
         id: Uuid,
-        patch: ProviderPatch,
-    ) -> BoxProviderFuture<'a, Option<ProviderRecord>> {
-        Box::pin(async move {
-            providers::update(&self.pool, id, user_id, patch)
-                .await
-                .map_err(store_err)?
-                .map(into_record)
-                .transpose()
-        })
+        patch: &ProviderPatch,
+    ) -> Result<Option<ProviderRecord>, ProviderError> {
+        providers::update(&self.pool, id, user_id, patch)
+            .await
+            .map_err(store_err)?
+            .map(into_record)
+            .transpose()
     }
 
-    fn delete<'a>(&'a self, user_id: Uuid, id: Uuid) -> BoxProviderFuture<'a, bool> {
-        Box::pin(async move {
-            providers::delete(&self.pool, id, user_id)
-                .await
-                .map_err(store_err)
-        })
+    async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<bool, ProviderError> {
+        providers::delete(&self.pool, id, user_id)
+            .await
+            .map_err(store_err)
     }
 }

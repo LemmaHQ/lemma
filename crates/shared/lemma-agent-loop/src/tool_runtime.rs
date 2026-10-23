@@ -1,22 +1,36 @@
-use std::sync::Arc;
-
 use lemma_core::ToolCall;
 use lemma_tools::{ApprovalDecision, ApprovalPolicy, ExecEnv, ToolRegistry};
 
 /// Tool execution wiring available to the loop: registry, environment and
 /// an optional approval gate.
-pub struct ToolRuntime {
+#[derive(Debug)]
+pub struct ToolRuntime<E> {
     /// Tools advertised to the model and dispatched on calls.
-    pub registry: ToolRegistry,
+    pub registry: ToolRegistry<E>,
     /// Environment tool executions run inside.
-    pub env: Arc<dyn ExecEnv>,
+    pub env: E,
     /// Optional approval gate consulted before every execution.
-    pub approval: Option<Arc<dyn ApprovalPolicy>>,
+    pub approval: Option<Box<dyn ApprovalPolicy>>,
 }
 
-impl ToolRuntime {
+/// Result text of one tool call.
+pub(crate) struct ToolOutcome {
+    pub(crate) text: String,
+    pub(crate) is_error: bool,
+}
+
+impl ToolOutcome {
+    fn error(text: String) -> Self {
+        Self {
+            text,
+            is_error: true,
+        }
+    }
+}
+
+impl<E: ExecEnv> ToolRuntime<E> {
     /// Creates a runtime executing turns autonomously.
-    pub fn new(registry: ToolRegistry, env: Arc<dyn ExecEnv>) -> Self {
+    pub fn new(registry: ToolRegistry<E>, env: E) -> Self {
         Self {
             registry,
             env,
@@ -24,32 +38,28 @@ impl ToolRuntime {
         }
     }
 
-    /// Executes one tool call through the approval gate and registry,
-    /// returning the result text and whether it represents a failure.
-    pub(crate) async fn run(&self, call: &ToolCall) -> (String, bool) {
+    /// Executes one tool call through the approval gate and registry.
+    pub(crate) async fn run(&self, call: &ToolCall) -> ToolOutcome {
         let Some(tool) = self.registry.get(&call.name) else {
-            return (format!("tool not found: {}", call.name), true);
+            return ToolOutcome::error(format!("tool not found: {}", call.name));
         };
         if let Some(policy) = &self.approval {
             match policy.evaluate(&call.name, tool.tier(), &call.arguments) {
                 ApprovalDecision::Allow => {}
                 ApprovalDecision::Prompt(reason) => {
-                    return (format!("tool call requires approval: {reason}"), true);
+                    return ToolOutcome::error(format!("tool call requires approval: {reason}"));
                 }
                 ApprovalDecision::Deny(reason) => {
-                    return (format!("tool call denied: {reason}"), true);
+                    return ToolOutcome::error(format!("tool call denied: {reason}"));
                 }
             }
         }
-        match tool
-            .execute(call.arguments.clone(), self.env.as_ref())
-            .await
-        {
-            Ok(value) => match serde_json::to_string_pretty(&value) {
-                Ok(text) => (text, false),
-                Err(_) => (value.to_string(), false),
+        match tool.execute(call.arguments.clone(), &self.env).await {
+            Ok(value) => ToolOutcome {
+                text: serde_json::to_string_pretty(&value).unwrap_or_else(|_| value.to_string()),
+                is_error: false,
             },
-            Err(e) => (e.to_string(), true),
+            Err(e) => ToolOutcome::error(e.to_string()),
         }
     }
 }

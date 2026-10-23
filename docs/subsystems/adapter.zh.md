@@ -14,14 +14,14 @@
 | `Endpoint` | 一个 provider 的类型、base URL、生成路径覆盖、模型列表路径覆盖与明文 API 密钥。 |
 | `ModelRequest` | 一次流式调用：模型 id、规范消息、工具定义，以及可选的思考强度。 |
 | `Adapter` | `stream(ModelRequest)` 发起上游调用，产出 `Result<StreamEvent, ModelError>` 条目。 |
-| `Connector` | `connect(Endpoint)` 返回与该 endpoint 类型对应的适配器；`list_models(Endpoint)` 获取该 endpoint 报告的模型 id。 |
+| `Connector` | `connect(Endpoint)` 返回绑定到该 endpoint 的 connector 自身的 `Adapter` 类型；`list_models(Endpoint)` 获取该 endpoint 报告的模型 id。 |
 | `ModelError` | 任何失败，都归结为一条消息。 |
 
-`lemma-provider` 中的 `ProviderService::endpoint` 从已存储的 provider 构造 `Endpoint` 并解密其密钥；provider 服务也调用 `Connector::list_models`。base URL 或路径为空时使用厂商默认值；API 密钥为空时不发送凭据。
+`lemma-provider` 中的 `ProviderService::adapter` 从已存储的 provider 构造 `Endpoint`、解密其密钥，并通过 `Connector::connect` 绑定适配器；provider 服务也调用 `Connector::list_models`。base URL 或路径为空时使用厂商默认值；API 密钥为空时不发送凭据。
 
 ## 实现：`lemma-adapter`
 
-`HttpConnector` 按类型把 endpoint 绑定到一个适配器。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
+`HttpConnector` 按类型把 endpoint 绑定到一个适配器，并以 `ModelAdapter` 变体的形式返回。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
 
 | 类型 | 适配器 | 默认请求 | 凭据 | 思考强度 |
 | --- | --- | --- | --- | --- |

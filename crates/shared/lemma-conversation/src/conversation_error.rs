@@ -1,5 +1,6 @@
 //! Error type for the conversation domain.
 
+use std::error::Error;
 use std::fmt;
 
 /// Errors surfaced by the conversation domain. The RPC shell maps these
@@ -27,4 +28,4 @@ impl fmt::Display for ConversationError {
     }
 }
 
-impl std::error::Error for ConversationError {}
+impl Error for ConversationError {}

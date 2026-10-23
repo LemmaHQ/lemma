@@ -1,17 +1,15 @@
 //! Provider domain service: validation, API-key sealing, and
 //! orchestration over a [`ProviderStore`].
 
-use std::str::FromStr;
-use std::sync::Arc;
+use std::fmt::{self, Debug};
 
 use chrono::{DateTime, Utc};
-use lemma_crypto::{derive_key, open, seal};
 use lemma_model::{Connector, Endpoint, ProviderKind};
 use uuid::Uuid;
 
-use crate::error::ProviderError;
+use crate::provider_error::ProviderError;
+use crate::provider_store::ProviderStore;
 use crate::record::{NewProvider, ProviderPatch, ProviderRecord};
-use crate::store::ProviderStore;
 
 /// A provider as presented to callers: the API key is masked for
 /// display.
@@ -44,6 +42,7 @@ pub struct ProviderView {
 }
 
 /// Input for creating a provider. `api_key` is plaintext.
+#[derive(Debug)]
 pub struct CreateInput {
     /// Provider kind.
     pub kind: ProviderKind,
@@ -65,7 +64,7 @@ pub struct CreateInput {
 
 /// Input for updating a provider. An absent or empty `api_key` keeps the
 /// current key; a non-empty one is a plaintext replacement.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct UpdateInput {
     /// Display name.
     pub name: Option<String>,
@@ -87,20 +86,26 @@ pub struct UpdateInput {
 ///
 /// `secret_key` selects the API-key storage encoding: `Some` seals keys
 /// with lemma-crypto (server), `None` stores plaintext (local storage
-/// stays inspectable). `connector` fetches live model lists.
-pub struct ProviderService {
-    store: Arc<dyn ProviderStore>,
-    secret_key: Option<Arc<str>>,
-    connector: Arc<dyn Connector>,
+/// stays inspectable). `connector` binds providers to adapters and fetches
+/// live model lists.
+pub struct ProviderService<P, C> {
+    store: P,
+    secret_key: Option<String>,
+    connector: C,
 }
 
-impl ProviderService {
+impl<P: Debug, C: Debug> Debug for ProviderService<P, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProviderService")
+            .field("store", &self.store)
+            .field("connector", &self.connector)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     /// Creates the service over a store backend.
-    pub fn new(
-        store: Arc<dyn ProviderStore>,
-        secret_key: Option<Arc<str>>,
-        connector: Arc<dyn Connector>,
-    ) -> Self {
+    pub fn new(store: P, secret_key: Option<String>, connector: C) -> Self {
         Self {
             store,
             secret_key,
@@ -113,9 +118,8 @@ impl ProviderService {
             return Ok(String::new());
         }
         match &self.secret_key {
-            Some(secret) => {
-                seal(&derive_key(secret), plain).map_err(|e| ProviderError::Crypto(e.to_string()))
-            }
+            Some(secret) => lemma_crypto::seal(&lemma_crypto::derive_key(secret), plain)
+                .map_err(|e| ProviderError::Crypto(e.to_string())),
             None => Ok(plain.to_string()),
         }
     }
@@ -125,9 +129,8 @@ impl ProviderService {
             return Ok(String::new());
         }
         match &self.secret_key {
-            Some(secret) => {
-                open(&derive_key(secret), stored).map_err(|e| ProviderError::Crypto(e.to_string()))
-            }
+            Some(secret) => lemma_crypto::open(&lemma_crypto::derive_key(secret), stored)
+                .map_err(|e| ProviderError::Crypto(e.to_string())),
             None => Ok(stored.to_string()),
         }
     }
@@ -151,12 +154,23 @@ impl ProviderService {
     }
 
     /// Lists the user's providers with masked keys.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the store's [`ProviderError`].
     pub async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderView>, ProviderError> {
         let records = self.store.list(user_id).await?;
         Ok(records.iter().map(|r| self.view(r)).collect())
     }
 
     /// Validates and stores a new provider.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::IdentifierInvalid`] for an empty or non-ASCII
+    /// identifier, [`ProviderError::FieldsRequired`] for an empty base URL,
+    /// [`ProviderError::Crypto`] when sealing the key fails; otherwise
+    /// propagates the store's error.
     pub async fn create(
         &self,
         user_id: Uuid,
@@ -195,6 +209,12 @@ impl ProviderService {
     }
 
     /// Applies an update to a provider owned by the user.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::NotFound`] when the user owns no such provider,
+    /// [`ProviderError::Crypto`] when sealing the key fails; otherwise
+    /// propagates the store's error.
     pub async fn update(
         &self,
         user_id: Uuid,
@@ -218,13 +238,18 @@ impl ProviderService {
         };
         let record = self
             .store
-            .update(user_id, id, patch)
+            .update(user_id, id, &patch)
             .await?
             .ok_or(ProviderError::NotFound)?;
         Ok(self.view(&record))
     }
 
     /// Deletes a provider owned by the user.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::NotFound`] when the user owns no such provider;
+    /// otherwise propagates the store's error.
     pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
         if !self.store.delete(user_id, id).await? {
             return Err(ProviderError::NotFound);
@@ -232,9 +257,20 @@ impl ProviderService {
         Ok(())
     }
 
-    /// Returns a stored provider's connection details with its API key
-    /// opened.
-    pub async fn endpoint(&self, user_id: Uuid, id: Uuid) -> Result<Endpoint, ProviderError> {
+    /// Returns the adapter of a stored provider, bound to its connection
+    /// details with the API key opened.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::NotFound`] when the user owns no such provider,
+    /// [`ProviderError::Crypto`] when opening the key fails; otherwise
+    /// propagates the store's error.
+    pub async fn adapter(&self, user_id: Uuid, id: Uuid) -> Result<C::Adapter, ProviderError> {
+        let endpoint = self.endpoint(user_id, id).await?;
+        Ok(self.connector.connect(endpoint))
+    }
+
+    async fn endpoint(&self, user_id: Uuid, id: Uuid) -> Result<Endpoint, ProviderError> {
         let record = self
             .store
             .get(user_id, id)
@@ -250,6 +286,13 @@ impl ProviderService {
     }
 
     /// Fetches the live model list using a stored provider's key.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::NotFound`] when the user owns no such provider,
+    /// [`ProviderError::Crypto`] when opening the key fails,
+    /// [`ProviderError::Fetch`] when the endpoint request fails; otherwise
+    /// propagates the store's error.
     pub async fn fetch_models_for(
         &self,
         user_id: Uuid,
@@ -260,6 +303,10 @@ impl ProviderService {
     }
 
     /// Fetches the live model list for ad-hoc connection details.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::Fetch`] when the endpoint request fails.
     pub async fn fetch_models_adhoc(
         &self,
         kind: ProviderKind,
@@ -286,5 +333,7 @@ impl ProviderService {
 }
 
 fn kind_of(record: &ProviderRecord) -> ProviderKind {
+    use std::str::FromStr;
+
     ProviderKind::from_str(&record.kind).unwrap_or(ProviderKind::OpenAiCompatible)
 }

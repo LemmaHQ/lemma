@@ -1,69 +1,82 @@
 //! Storage contract for the auth domain.
 
-use std::pin::Pin;
-
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::error::AuthStoreError;
+use crate::auth_error::AuthStoreError;
 use crate::record::{RefreshToken, User};
-
-/// Future returned by asynchronous auth store operations.
-pub type BoxAuthFuture<'a, T> =
-    Pin<Box<dyn Future<Output = Result<T, AuthStoreError>> + Send + 'a>>;
 
 /// Storage backend for accounts and refresh tokens. Implemented by both
 /// db crates (`PgAuthStore`, `SqliteAuthStore`) so the domain runs
-/// identically on server and local modes.
-pub trait AuthStore: Send + Sync {
+/// identically on server and local modes. Clones share one connection
+/// pool.
+///
+/// Every operation fails with [`AuthStoreError::Db`] when the backend
+/// fails.
+pub trait AuthStore: Clone + Send + Sync + 'static {
     /// Creates a user and stores its password hash in one transaction.
-    /// Returns [`AuthStoreError::UsernameTaken`] on a duplicate username
+    /// Fails with [`AuthStoreError::UsernameTaken`] on a duplicate username
     /// or email.
-    fn create_user_with_credential<'a>(
-        &'a self,
-        username: &'a str,
-        email: &'a str,
-        password_hash: &'a str,
-    ) -> BoxAuthFuture<'a, User>;
+    fn create_user_with_credential(
+        &self,
+        username: &str,
+        email: &str,
+        password_hash: &str,
+    ) -> impl Future<Output = Result<User, AuthStoreError>> + Send;
 
     /// Finds a user by username or email; `login` matches either column.
-    fn find_user_by_login<'a>(&'a self, login: &'a str) -> BoxAuthFuture<'a, Option<User>>;
+    fn find_user_by_login(
+        &self,
+        login: &str,
+    ) -> impl Future<Output = Result<Option<User>, AuthStoreError>> + Send;
 
     /// Finds a user by id.
-    fn find_user_by_id<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, Option<User>>;
+    fn find_user_by_id(
+        &self,
+        id: Uuid,
+    ) -> impl Future<Output = Result<Option<User>, AuthStoreError>> + Send;
 
     /// Returns the account's password hash, when credentials exist.
-    fn password_hash<'a>(&'a self, user_id: Uuid) -> BoxAuthFuture<'a, Option<String>>;
+    fn password_hash(
+        &self,
+        user_id: Uuid,
+    ) -> impl Future<Output = Result<Option<String>, AuthStoreError>> + Send;
 
     /// Inserts a refresh token row.
-    fn insert_refresh_token<'a>(
-        &'a self,
+    fn insert_refresh_token(
+        &self,
         id: Uuid,
         user_id: Uuid,
-        token_hash: &'a str,
+        token_hash: &str,
         expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, ()>;
+    ) -> impl Future<Output = Result<(), AuthStoreError>> + Send;
 
     /// Looks up a token row by its SHA-256 hash.
-    fn find_refresh_token_by_hash<'a>(
-        &'a self,
-        token_hash: &'a str,
-    ) -> BoxAuthFuture<'a, Option<RefreshToken>>;
+    fn find_refresh_token_by_hash(
+        &self,
+        token_hash: &str,
+    ) -> impl Future<Output = Result<Option<RefreshToken>, AuthStoreError>> + Send;
 
     /// Atomically inserts the rotation successor and marks the consumed
     /// token replaced by it.
-    fn rotate_refresh_token<'a>(
-        &'a self,
+    fn rotate_refresh_token(
+        &self,
         id: Uuid,
         new_id: Uuid,
-        new_token_hash: &'a str,
+        new_token_hash: &str,
         new_expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, ()>;
+    ) -> impl Future<Output = Result<(), AuthStoreError>> + Send;
 
     /// Revokes a single token. Idempotent.
-    fn revoke_refresh_token<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, u64>;
+    fn revoke_refresh_token(
+        &self,
+        id: Uuid,
+    ) -> impl Future<Output = Result<u64, AuthStoreError>> + Send;
 
     /// Revokes a token and every successor in its rotation chain,
     /// following `replaced_by` recursively.
-    fn revoke_refresh_chain<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, u64>;
+    fn revoke_refresh_chain(
+        &self,
+        id: Uuid,
+    ) -> impl Future<Output = Result<u64, AuthStoreError>> + Send;
 }

@@ -2,7 +2,7 @@ use lemma_model::{Endpoint, ModelError, ProviderKind};
 use serde::Deserialize;
 
 use crate::error;
-use crate::transport::HttpTransport;
+use crate::http_transport::HttpTransport;
 
 #[derive(Deserialize)]
 struct ModelsList {
@@ -31,8 +31,8 @@ struct NameOnly {
 /// An empty `models_path` selects `/models` under the base URL that
 /// generation uses. Gemini returns names as `models/<id>`; the prefix is
 /// stripped.
-pub(crate) async fn list_models(
-    transport: &dyn HttpTransport,
+pub(crate) async fn list_models<T: HttpTransport>(
+    transport: &T,
     endpoint: Endpoint,
 ) -> Result<Vec<String>, ModelError> {
     let default_base = match endpoint.kind {
@@ -91,35 +91,36 @@ pub(crate) async fn list_models(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Mutex;
+    use futures::executor;
+    use std::sync::{Arc, Mutex};
 
     use super::*;
-    use crate::transport::{BoxTransportFuture, ByteStream};
+    use crate::http_transport::ByteStream;
 
-    #[derive(Default)]
+    #[derive(Clone, Default)]
     struct RecordingTransport {
-        urls: Mutex<Vec<String>>,
+        urls: Arc<Mutex<Vec<String>>>,
     }
 
     impl HttpTransport for RecordingTransport {
-        fn post_stream(
+        async fn post_stream(
             &self,
             _url: String,
             _headers: Vec<(String, String)>,
             _body: serde_json::Value,
-        ) -> BoxTransportFuture<'_, ByteStream> {
-            Box::pin(async { Err(error::protocol("unused".to_string())) })
+        ) -> Result<ByteStream, ModelError> {
+            Err(error::protocol("unused".to_string()))
         }
 
-        fn get_json(
+        async fn get_json(
             &self,
             url: String,
             _headers: Vec<(String, String)>,
-        ) -> BoxTransportFuture<'_, serde_json::Value> {
+        ) -> Result<serde_json::Value, ModelError> {
             if let Ok(mut urls) = self.urls.lock() {
                 urls.push(url);
             }
-            Box::pin(async { Ok(serde_json::json!({ "models": [{ "name": "models/gemini-x" }] })) })
+            Ok(serde_json::json!({ "models": [{ "name": "models/gemini-x" }] }))
         }
     }
 
@@ -127,7 +128,7 @@ mod tests {
     fn gemini_lists_models_under_the_base_url_used_for_generation() -> Result<(), ModelError> {
         let transport = RecordingTransport::default();
         for base_url in ["", "https://generativelanguage.googleapis.com/v1beta/"] {
-            let models = futures::executor::block_on(list_models(
+            let models = executor::block_on(list_models(
                 &transport,
                 Endpoint {
                     kind: ProviderKind::Gemini,

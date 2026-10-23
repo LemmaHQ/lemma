@@ -4,11 +4,16 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
-use crate::error::ConversationError;
+use crate::conversation_error::ConversationError;
 use crate::record::Message;
 
 /// Follows parent pointers from `leaf_id` to the root and returns the canonical
 /// messages on that path, root first.
+///
+/// # Errors
+///
+/// [`ConversationError::Missing`] when a message on the path is absent from
+/// `entries`.
 pub fn build_context_path(
     entries: &[Message],
     leaf_id: Uuid,

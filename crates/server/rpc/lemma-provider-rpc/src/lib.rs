@@ -2,56 +2,67 @@
 //! proto mapping, and wire error mapping. All behavior lives in
 //! `lemma-provider`.
 
+use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_auth_rpc::require_user;
-use lemma_model::ProviderKind;
-use lemma_proto::app_error;
+use lemma_model::{Connector, ProviderKind};
+use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    CreateProviderResponse, DeleteProviderResponse, ErrorReason, FetchModelsResponse,
-    ListProvidersResponse, Provider, UpdateProviderResponse,
+    CreateProviderRequest, CreateProviderResponse, DeleteProviderRequest, DeleteProviderResponse,
+    ErrorReason, FetchModelsRequest, FetchModelsResponse, ListProvidersRequest,
+    ListProvidersResponse, Provider, UpdateProviderRequest, UpdateProviderResponse,
 };
-use lemma_provider::{CreateInput, ProviderError, ProviderService, ProviderView, UpdateInput};
+use lemma_provider::{
+    CreateInput, ProviderError, ProviderService, ProviderStore, ProviderView, UpdateInput,
+};
 use uuid::Uuid;
 
 /// Maps a proto kind to the domain kind. Returns `None` for unspecified
 /// or unknown values.
-pub fn kind_from_proto(kind: lemma_proto::lemma::v1::ProviderKind) -> Option<ProviderKind> {
+#[must_use]
+pub fn kind_from_proto(kind: v1::ProviderKind) -> Option<ProviderKind> {
     match kind {
-        lemma_proto::lemma::v1::ProviderKind::Openai => Some(ProviderKind::OpenAiCompatible),
-        lemma_proto::lemma::v1::ProviderKind::Anthropic => Some(ProviderKind::Anthropic),
-        lemma_proto::lemma::v1::ProviderKind::Gemini => Some(ProviderKind::Gemini),
+        v1::ProviderKind::Openai => Some(ProviderKind::OpenAiCompatible),
+        v1::ProviderKind::Anthropic => Some(ProviderKind::Anthropic),
+        v1::ProviderKind::Gemini => Some(ProviderKind::Gemini),
         _ => None,
     }
 }
 
 /// Maps a domain kind to its proto enum.
-pub fn kind_to_proto(kind: ProviderKind) -> lemma_proto::lemma::v1::ProviderKind {
+#[must_use]
+pub fn kind_to_proto(kind: ProviderKind) -> v1::ProviderKind {
     match kind {
-        ProviderKind::OpenAiCompatible => lemma_proto::lemma::v1::ProviderKind::Openai,
-        ProviderKind::Anthropic => lemma_proto::lemma::v1::ProviderKind::Anthropic,
-        ProviderKind::Gemini => lemma_proto::lemma::v1::ProviderKind::Gemini,
+        ProviderKind::OpenAiCompatible => v1::ProviderKind::Openai,
+        ProviderKind::Anthropic => v1::ProviderKind::Anthropic,
+        ProviderKind::Gemini => v1::ProviderKind::Gemini,
     }
 }
 
-/// Connect handler implementing the ProviderService RPCs.
+/// Connect handler implementing the `ProviderService` RPCs.
 ///
 /// `jwt_secret` authenticates requests; `domain` seals API keys at rest
 /// and fetches model lists.
-pub struct ProviderRpc {
-    domain: Arc<ProviderService>,
-    jwt_secret: Arc<str>,
+pub struct ProviderRpc<P, C> {
+    domain: Arc<ProviderService<P, C>>,
+    jwt_secret: String,
 }
 
-impl ProviderRpc {
-    /// Creates the handler over the provider domain service.
-    pub fn new(domain: Arc<ProviderService>, jwt_secret: impl Into<Arc<str>>) -> Self {
-        Self {
-            domain,
-            jwt_secret: jwt_secret.into(),
-        }
+impl<P: Debug, C: Debug> Debug for ProviderRpc<P, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProviderRpc")
+            .field("domain", &self.domain)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<P: ProviderStore, C: Connector> ProviderRpc<P, C> {
+    /// Creates the handler over the provider domain service, which the
+    /// agent shares.
+    pub fn new(domain: Arc<ProviderService<P, C>>, jwt_secret: String) -> Self {
+        Self { domain, jwt_secret }
     }
 }
 
@@ -74,15 +85,21 @@ fn to_proto(v: ProviderView) -> Provider {
 }
 
 fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
+    Uuid::parse_str(id).map_err(|_| lemma_proto::app_error(ErrorReason::IdInvalid))
 }
 
 fn map_domain(e: ProviderError) -> ConnectError {
     match e {
-        ProviderError::FieldsRequired => app_error(ErrorReason::ProviderFieldsRequired),
-        ProviderError::IdentifierInvalid => app_error(ErrorReason::ProviderIdentifierInvalid),
-        ProviderError::IdentifierTaken => app_error(ErrorReason::ProviderIdentifierTaken),
-        ProviderError::NotFound => app_error(ErrorReason::ProviderNotFound),
+        ProviderError::FieldsRequired => {
+            lemma_proto::app_error(ErrorReason::ProviderFieldsRequired)
+        }
+        ProviderError::IdentifierInvalid => {
+            lemma_proto::app_error(ErrorReason::ProviderIdentifierInvalid)
+        }
+        ProviderError::IdentifierTaken => {
+            lemma_proto::app_error(ErrorReason::ProviderIdentifierTaken)
+        }
+        ProviderError::NotFound => lemma_proto::app_error(ErrorReason::ProviderNotFound),
         ProviderError::Crypto(m) => ConnectError::internal(format!("crypto: {m}")),
         ProviderError::Store(m) => ConnectError::internal(format!("db: {m}")),
         ProviderError::Fetch(m) => ConnectError::internal(format!("fetch models: {m}")),
@@ -90,13 +107,13 @@ fn map_domain(e: ProviderError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
+impl<P: ProviderStore, C: Connector> v1::ProviderService for ProviderRpc<P, C> {
     async fn list_providers(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListProvidersRequest>,
+        _request: ServiceRequest<'_, ListProvidersRequest>,
     ) -> ServiceResult<ListProvidersResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let providers = self.domain.list(user_id).await.map_err(map_domain)?;
         Response::ok(ListProvidersResponse {
             providers: providers.into_iter().map(to_proto).collect(),
@@ -107,14 +124,14 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
     async fn create_provider(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::CreateProviderRequest>,
+        request: ServiceRequest<'_, CreateProviderRequest>,
     ) -> ServiceResult<CreateProviderResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let kind = request
             .kind
             .as_known()
             .and_then(kind_from_proto)
-            .ok_or_else(|| app_error(ErrorReason::ProviderKindInvalid))?;
+            .ok_or_else(|| lemma_proto::app_error(ErrorReason::ProviderKindInvalid))?;
         let input = CreateInput {
             kind,
             identifier: request.identifier.to_string(),
@@ -123,7 +140,7 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
             api_key: request.api_key.to_string(),
             api_path: request.api_path.to_string(),
             models_path: request.models_path.to_string(),
-            models: request.models.iter().map(|s| s.to_string()).collect(),
+            models: request.models.iter().map(ToString::to_string).collect(),
         };
         let provider = self
             .domain
@@ -139,21 +156,21 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
     async fn update_provider(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::UpdateProviderRequest>,
+        request: ServiceRequest<'_, UpdateProviderRequest>,
     ) -> ServiceResult<UpdateProviderResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
         let input = UpdateInput {
-            name: request.name.map(|s| s.to_string()),
-            base_url: request.base_url.map(|s| s.to_string()),
-            api_key: request.api_key.map(|s| s.to_string()),
-            api_path: request.api_path.map(|s| s.to_string()),
-            models_path: request.models_path.map(|s| s.to_string()),
+            name: request.name.map(ToString::to_string),
+            base_url: request.base_url.map(ToString::to_string),
+            api_key: request.api_key.map(ToString::to_string),
+            api_path: request.api_path.map(ToString::to_string),
+            models_path: request.models_path.map(ToString::to_string),
             enabled: request.enabled,
             models: request
                 .models
                 .as_option()
-                .map(|m| m.models.iter().map(|s| s.to_string()).collect()),
+                .map(|m| m.models.iter().map(ToString::to_string).collect()),
         };
         let provider = self
             .domain
@@ -169,9 +186,9 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
     async fn delete_provider(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteProviderRequest>,
+        request: ServiceRequest<'_, DeleteProviderRequest>,
     ) -> ServiceResult<DeleteProviderResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
         self.domain.delete(user_id, id).await.map_err(map_domain)?;
         Response::ok(DeleteProviderResponse::default())
@@ -180,15 +197,15 @@ impl lemma_proto::lemma::v1::ProviderService for ProviderRpc {
     async fn fetch_models(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::FetchModelsRequest>,
+        request: ServiceRequest<'_, FetchModelsRequest>,
     ) -> ServiceResult<FetchModelsResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let models = if request.id.is_empty() {
             let kind = request
                 .kind
                 .as_known()
                 .and_then(kind_from_proto)
-                .ok_or_else(|| app_error(ErrorReason::ProviderKindInvalid))?;
+                .ok_or_else(|| lemma_proto::app_error(ErrorReason::ProviderKindInvalid))?;
             self.domain
                 .fetch_models_adhoc(kind, request.base_url, request.api_key, request.models_path)
                 .await

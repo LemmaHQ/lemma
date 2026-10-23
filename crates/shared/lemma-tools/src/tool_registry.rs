@@ -1,35 +1,45 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
-use crate::tool::{Tool, ToolSpec};
+use lemma_core::ToolSpec;
 
-/// Registry storing enabled tools.
-#[derive(Default, Clone)]
-pub struct ToolRegistry {
-    tools: HashMap<String, Arc<dyn Tool>>,
+use crate::tool::Tool;
+
+/// Registry storing the tools enabled for an `E` environment.
+#[derive(Debug)]
+pub struct ToolRegistry<E> {
+    tools: HashMap<String, Box<dyn Tool<E>>>,
 }
 
-impl ToolRegistry {
+impl<E> ToolRegistry<E> {
     /// Creates an empty registry.
+    #[must_use]
     pub fn new() -> Self {
-        Self {
-            tools: HashMap::new(),
-        }
+        Self::default()
     }
 
-    /// Registers a tool instance.
-    pub fn register(&mut self, tool: Arc<dyn Tool>) {
+    /// Registers a tool under its wire name.
+    pub fn register(&mut self, tool: impl Tool<E> + 'static) {
         let name = tool.spec().name;
-        self.tools.insert(name, tool);
+        self.tools.insert(name, Box::new(tool));
     }
 
-    /// Looks up tool by wire name.
-    pub fn get(&self, name: &str) -> Option<Arc<dyn Tool>> {
-        self.tools.get(name).cloned()
+    /// Looks up a tool by wire name.
+    #[must_use]
+    pub fn get(&self, name: &str) -> Option<&dyn Tool<E>> {
+        self.tools.get(name).map(Box::as_ref)
     }
 
     /// Returns specifications of all registered tools.
+    #[must_use]
     pub fn specs(&self) -> Vec<ToolSpec> {
         self.tools.values().map(|t| t.spec()).collect()
+    }
+}
+
+impl<E> Default for ToolRegistry<E> {
+    fn default() -> Self {
+        Self {
+            tools: HashMap::new(),
+        }
     }
 }

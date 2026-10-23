@@ -62,6 +62,7 @@ pub struct Message {
 
 impl Message {
     /// Authoring role string: `user`, `assistant`, or `tool`.
+    #[must_use]
     pub fn role(&self) -> &'static str {
         match &self.message {
             lemma_core::Message::User { .. } => "user",
@@ -88,6 +89,7 @@ pub enum MessageStatus {
 impl MessageStatus {
     /// Status string as persisted: `streaming`, `done`, `aborted`, or
     /// `error`.
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Streaming => "streaming",
@@ -108,4 +110,13 @@ pub struct MessageUpdate {
     pub status: MessageStatus,
     /// Failure reason when status is `Error`; `None` otherwise.
     pub error: Option<String>,
+}
+
+/// One page of a conversation's messages, newest first.
+#[derive(Debug, Clone)]
+pub struct MessagePage {
+    /// Messages on this page.
+    pub messages: Vec<Message>,
+    /// Whether older messages follow this page.
+    pub has_more: bool,
 }

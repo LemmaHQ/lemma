@@ -29,8 +29,8 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **provider** — a user-configured model endpoint stored by `lemma-provider`: kind, identifier, display name, base URL, API key, path overrides, cached model ids, and an enabled flag.
 - **provider kind** — the API dialect of a provider: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-model` defines the one `ProviderKind` enum.
 - **provider identifier** — a provider's machine name: non-empty ASCII, unique per user, immutable after creation.
-- **endpoint** — an `Endpoint`: a provider's kind, base URL, path overrides, and plaintext API key, as `ProviderService::endpoint` opens them.
-- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its kind.
+- **endpoint** — an `Endpoint`: a provider's kind, base URL, path overrides, and plaintext API key, as `ProviderService::adapter` opens them before binding the adapter.
+- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its kind and returns it as a `ModelAdapter` variant.
 - **model list** — the model ids a provider's endpoint reports, fetched live by `Connector::list_models`. A provider row stores its own list of model ids.
 
 ## Tools

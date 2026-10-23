@@ -1,7 +1,7 @@
 [package]
+name = "lemma-auth"
 version.workspace = true
 edition.workspace = true
-name = "lemma-auth"
 
 [dependencies]
 argon2.workspace = true

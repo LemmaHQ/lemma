@@ -4,6 +4,7 @@ use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
 use uuid::Uuid;
 
 use crate::stream::{StepEnd, StepOutcome};
+use crate::tool_runtime::ToolOutcome;
 
 /// A settled message without model attribution: the user message or a
 /// tool result.
@@ -77,11 +78,11 @@ pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
 }
 
 /// The tool result message answering `call`.
-pub(crate) fn tool_result(call: &ToolCall, text: String, is_error: bool) -> Message {
+pub(crate) fn tool_result(call: &ToolCall, outcome: ToolOutcome) -> Message {
     Message::ToolResult {
         tool_call_id: call.id.clone(),
         tool_name: call.name.clone(),
-        content: vec![ContentBlock::Text(TextContent { text })],
-        is_error,
+        content: vec![ContentBlock::Text(TextContent { text: outcome.text })],
+        is_error: outcome.is_error,
     }
 }

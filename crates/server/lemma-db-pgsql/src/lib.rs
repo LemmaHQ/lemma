@@ -5,24 +5,13 @@
 //! queries reside strictly within this crate.
 
 pub mod entity;
+mod pool;
 pub mod queries;
 pub mod stores;
 
+pub use pool::{connect, migrate};
 pub use queries::auth::{credentials, tokens};
 pub use queries::{conversations, providers, users};
-pub use stores::auth::PgAuthStore;
-pub use stores::conversation::PgConversationStore;
-pub use stores::provider::PgProviderStore;
-
-use sqlx::PgPool;
-use sqlx::postgres::PgPoolOptions;
-
-/// Creates a PostgreSQL connection pool with default options.
-pub async fn connect(url: &str) -> sqlx::Result<PgPool> {
-    PgPoolOptions::new().connect(url).await
-}
-
-/// Runs the migrations embedded from `./migrations` at compile time.
-pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
-    sqlx::migrate!("./migrations").run(pool).await
-}
+pub use stores::pg_auth_store::PgAuthStore;
+pub use stores::pg_conversation_store::PgConversationStore;
+pub use stores::pg_provider_store::PgProviderStore;

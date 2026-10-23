@@ -82,9 +82,28 @@ uniffi = { version = "0.32.2", features = ["tokio"] }
 uuid = { version = "1.25.0", features = ["v4", "serde"] }
 
 [workspace.lints.clippy]
+absolute_paths = "deny"
+doc_markdown = "deny"
 expect_used = "warn"
+fn_params_excessive_bools = "deny"
+format_push_string = "deny"
+implicit_clone = "deny"
+missing_assert_message = "deny"
+missing_errors_doc = "deny"
+missing_panics_doc = "deny"
+must_use_candidate = "deny"
+needless_for_each = "deny"
+needless_pass_by_value = "deny"
+redundant_clone = "deny"
+ref_option = "deny"
+return_self_not_must_use = "deny"
+single_char_lifetime_names = "deny"
+string_add = "deny"
+undocumented_unsafe_blocks = "deny"
 unwrap_used = "deny"
+wildcard_imports = "deny"
 
 [workspace.lints.rust]
 linker_messages = "allow"
+missing_debug_implementations = "deny"
 missing_docs = "deny"

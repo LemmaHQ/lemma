@@ -1,6 +1,8 @@
 //! HS256 access-token signing and verification.
 
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use chrono::{Duration, Utc};
+use jsonwebtoken::errors::Error;
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -8,7 +10,7 @@ use uuid::Uuid;
 pub const ACCESS_TOKEN_TTL_SECS: i64 = 15 * 60;
 
 /// JWT claims. `sub` carries the user id.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(missing_docs)]
 pub struct Claims {
     pub sub: String,
@@ -17,17 +19,17 @@ pub struct Claims {
 
 /// Signs an access token for `user_id` expiring after
 /// [`ACCESS_TOKEN_TTL_SECS`].
-pub fn sign_access_token(
-    secret: &str,
-    user_id: Uuid,
-) -> Result<String, jsonwebtoken::errors::Error> {
-    let exp = (chrono::Utc::now() + chrono::Duration::seconds(ACCESS_TOKEN_TTL_SECS)).timestamp()
-        as usize;
+///
+/// # Errors
+///
+/// The signing [`Error`] from `jsonwebtoken`.
+pub fn sign_access_token(secret: &str, user_id: Uuid) -> Result<String, Error> {
+    let exp = (Utc::now() + Duration::seconds(ACCESS_TOKEN_TTL_SECS)).timestamp() as usize;
     let claims = Claims {
         sub: user_id.to_string(),
         exp,
     };
-    encode(
+    jsonwebtoken::encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
@@ -35,11 +37,12 @@ pub fn sign_access_token(
 }
 
 /// Verifies an access token's signature and expiry.
-pub fn verify_access_token(
-    secret: &str,
-    token: &str,
-) -> Result<Claims, jsonwebtoken::errors::Error> {
-    decode::<Claims>(
+///
+/// # Errors
+///
+/// The `jsonwebtoken` [`Error`] for a malformed, forged, or expired token.
+pub fn verify_access_token(secret: &str, token: &str) -> Result<Claims, Error> {
+    jsonwebtoken::decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),

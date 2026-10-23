@@ -1,14 +1,6 @@
 use std::path::Path;
-use std::pin::Pin;
 
-use crate::error::ToolError;
-
-mod local;
-
-pub use self::local::LocalExecEnv;
-
-/// Future returned by environment operations.
-pub type BoxEnvFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, ToolError>> + Send + 'a>>;
+use crate::tool_error::ToolError;
 
 /// Result of executing a command in the environment.
 #[derive(Debug, Clone)]
@@ -23,16 +15,36 @@ pub struct ExecCommandResult {
 
 /// Abstract host execution environment.
 pub trait ExecEnv: Send + Sync {
-    /// Reads file from sandbox root.
-    fn read_file<'a>(&'a self, path: &'a Path) -> BoxEnvFuture<'a, String>;
+    /// Reads a file below the sandbox root.
+    ///
+    /// # Errors
+    ///
+    /// [`ToolError::Validation`] for a path outside the sandbox and
+    /// [`ToolError::Execution`] when reading fails.
+    fn read_file(&self, path: &Path) -> impl Future<Output = Result<String, ToolError>> + Send;
 
-    /// Writes file to sandbox root.
-    fn write_file<'a>(&'a self, path: &'a Path, content: &'a str) -> BoxEnvFuture<'a, ()>;
+    /// Writes a file below the sandbox root, creating missing directories.
+    ///
+    /// # Errors
+    ///
+    /// [`ToolError::Validation`] for a path outside the sandbox and
+    /// [`ToolError::Execution`] when writing fails.
+    fn write_file(
+        &self,
+        path: &Path,
+        content: &str,
+    ) -> impl Future<Output = Result<(), ToolError>> + Send;
 
-    /// Executes shell command in sandbox workspace.
-    fn exec_command<'a>(
-        &'a self,
-        command: &'a str,
-        cwd: Option<&'a Path>,
-    ) -> BoxEnvFuture<'a, ExecCommandResult>;
+    /// Executes a shell command in the sandbox workspace, or in `cwd` below
+    /// it.
+    ///
+    /// # Errors
+    ///
+    /// [`ToolError::Validation`] for a `cwd` outside the sandbox and
+    /// [`ToolError::Execution`] when the process cannot start.
+    fn exec_command(
+        &self,
+        command: &str,
+        cwd: Option<&Path>,
+    ) -> impl Future<Output = Result<ExecCommandResult, ToolError>> + Send;
 }

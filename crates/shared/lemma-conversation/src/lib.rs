@@ -5,14 +5,14 @@
 //! zero runtime bindings: hosts (server, desktop, mobile) supply concrete
 //! store implementations.
 
-mod error;
+mod conversation_error;
+mod conversation_service;
+mod conversation_store;
 mod record;
-mod service;
-mod store;
 mod tree;
 
-pub use error::ConversationError;
-pub use record::{Conversation, LastModel, Message, MessageStatus, MessageUpdate};
-pub use service::{ConversationService, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
-pub use store::{BoxConversationFuture, ConversationStore};
+pub use conversation_error::ConversationError;
+pub use conversation_service::{ConversationService, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
+pub use conversation_store::ConversationStore;
+pub use record::{Conversation, LastModel, Message, MessagePage, MessageStatus, MessageUpdate};
 pub use tree::build_context_path;

@@ -4,10 +4,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Notify;
 
 /// Shared cancellation flag of one turn; clones observe the same flag.
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct CancelToken(Arc<Inner>);
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Inner {
     cancelled: AtomicBool,
     notify: Notify,
@@ -15,6 +15,7 @@ struct Inner {
 
 impl CancelToken {
     /// Creates a token that is not cancelled.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -27,6 +28,7 @@ impl CancelToken {
     }
 
     /// Whether [`cancel`](Self::cancel) has been called.
+    #[must_use]
     pub fn is_cancelled(&self) -> bool {
         self.0.cancelled.load(Ordering::Acquire)
     }

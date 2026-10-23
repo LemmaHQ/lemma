@@ -1,7 +1,7 @@
 [package]
+name = "lemma-provider-rpc"
 version.workspace = true
 edition.workspace = true
-name = "lemma-provider-rpc"
 
 [dependencies]
 buffa-types.workspace = true

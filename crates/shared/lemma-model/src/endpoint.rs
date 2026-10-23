@@ -13,6 +13,7 @@ pub enum ProviderKind {
 
 impl ProviderKind {
     /// Stored string form: `openai`, `anthropic`, or `gemini`.
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::OpenAiCompatible => "openai",

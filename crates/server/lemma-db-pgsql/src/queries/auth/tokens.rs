@@ -1,4 +1,4 @@
-//! Queries for the refresh_tokens table.
+//! Queries for the `refresh_tokens` table.
 
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -6,7 +6,11 @@ use uuid::Uuid;
 use crate::entity::RefreshToken;
 
 /// Inserts a refresh token row.
-pub async fn insert<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert<'conn, E>(
     executor: E,
     id: Uuid,
     user_id: Uuid,
@@ -14,7 +18,7 @@ pub async fn insert<'e, E>(
     expires_at: DateTime<Utc>,
 ) -> sqlx::Result<()>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query(
         r#"
@@ -33,7 +37,11 @@ where
 
 /// Inserts the rotation successor of a consumed token, inheriting its
 /// owner. Returns the number of rows inserted: zero when the consumed token is missing.
-pub async fn insert_successor<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert_successor<'conn, E>(
     executor: E,
     id: Uuid,
     new_id: Uuid,
@@ -41,7 +49,7 @@ pub async fn insert_successor<'e, E>(
     new_expires_at: DateTime<Utc>,
 ) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query(
         r#"
@@ -59,12 +67,16 @@ where
 }
 
 /// Looks up a token row by its SHA-256 hash.
-pub async fn find_by_hash<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn find_by_hash<'conn, E>(
     executor: E,
     token_hash: &str,
 ) -> sqlx::Result<Option<RefreshToken>>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query_as::<_, RefreshToken>("SELECT * FROM refresh_tokens WHERE token_hash = $1")
         .bind(token_hash)
@@ -73,9 +85,13 @@ where
 }
 
 /// Links a consumed token to its rotation successor.
-pub async fn mark_replaced<'e, E>(executor: E, id: Uuid, replaced_by: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn mark_replaced<'conn, E>(executor: E, id: Uuid, replaced_by: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query("UPDATE refresh_tokens SET replaced_by = $2 WHERE id = $1")
         .bind(id)
@@ -86,9 +102,13 @@ where
 }
 
 /// Revokes a single token. Idempotent.
-pub async fn revoke<'e, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn revoke<'conn, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query("UPDATE refresh_tokens SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL")
         .bind(id)
@@ -99,9 +119,13 @@ where
 
 /// Revokes a token and every successor in its rotation chain, following
 /// `replaced_by` recursively.
-pub async fn revoke_chain<'e, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn revoke_chain<'conn, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+    E: sqlx::Executor<'conn, Database = sqlx::Postgres>,
 {
     sqlx::query(
         r#"

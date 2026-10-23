@@ -54,8 +54,7 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
   require_user -> user id
-  ProviderService::endpoint opens the provider's API key
-  Connector::connect binds the adapter for the provider kind
+  ProviderService::adapter opens the provider's API key and binds the adapter for its kind
   thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
@@ -109,6 +108,6 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 | 新增 RPC 服务 | 新增 `.proto` 与 `crates/server/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-server` 中路由 |
 | 新增面向用户的错误 | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |
 | 修改 schema | 在 `lemma-db-sqlite` 与 `lemma-db-pgsql` 中各加一个迁移对，再更新存储实现 |
-| 新增存储后端 | 实现四个存储 trait，并在每个宿主中接入 |
+| 新增存储后端 | 实现三个存储 trait，并在每个宿主中接入 |
 | 向 Android 本地模式暴露能力 | 给 `LemmaEngine` 加方法；它的签名就是 Kotlin API（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)） |
 | 让 Web 客户端使用桌面能力 | 扩展 preload 桥与 `web/src/platform/` 中的适配器（[web/AGENTS.zh.md](../web/AGENTS.zh.md#布局)） |

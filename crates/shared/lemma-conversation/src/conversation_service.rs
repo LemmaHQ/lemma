@@ -1,13 +1,11 @@
 //! Conversation business flows: lifecycle (create, rename, delete) and
 //! message pagination over a [`ConversationStore`] backend.
 
-use std::sync::Arc;
-
 use uuid::Uuid;
 
-use crate::error::ConversationError;
-use crate::record::{Conversation, Message};
-use crate::store::ConversationStore;
+use crate::conversation_error::ConversationError;
+use crate::conversation_store::ConversationStore;
+use crate::record::{Conversation, MessagePage};
 
 /// Default page size for message listing.
 pub const DEFAULT_PAGE_LIMIT: i32 = 50;
@@ -18,17 +16,22 @@ pub const MAX_PAGE_LIMIT: i32 = 100;
 /// Conversation domain service over a [`ConversationStore`] backend.
 ///
 /// Deletion removes a conversation together with its messages.
-pub struct ConversationService {
-    store: Arc<dyn ConversationStore>,
+#[derive(Debug)]
+pub struct ConversationService<S> {
+    store: S,
 }
 
-impl ConversationService {
+impl<S: ConversationStore> ConversationService<S> {
     /// Creates the service over a store backend.
-    pub fn new(store: Arc<dyn ConversationStore>) -> Self {
+    pub fn new(store: S) -> Self {
         Self { store }
     }
 
     /// Lists the user's conversations.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the store's [`ConversationError`].
     pub async fn list_conversations(
         &self,
         user_id: Uuid,
@@ -37,11 +40,21 @@ impl ConversationService {
     }
 
     /// Creates an empty conversation for the user.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the store's [`ConversationError`].
     pub async fn create(&self, user_id: Uuid) -> Result<Conversation, ConversationError> {
         self.store.insert(user_id).await
     }
 
     /// Renames a conversation owned by the user.
+    ///
+    /// # Errors
+    ///
+    /// [`ConversationError::TitleRequired`] for a blank title,
+    /// [`ConversationError::NotFound`] when the user owns no such
+    /// conversation; otherwise propagates the store's error.
     pub async fn rename(
         &self,
         user_id: Uuid,
@@ -61,13 +74,18 @@ impl ConversationService {
     /// Lists a conversation's messages newest-first with keyset
     /// pagination. `limit` is clamped to [`DEFAULT_PAGE_LIMIT`] and
     /// [`MAX_PAGE_LIMIT`].
+    ///
+    /// # Errors
+    ///
+    /// [`ConversationError::NotFound`] when the user owns no such
+    /// conversation; otherwise propagates the store's error.
     pub async fn list_messages(
         &self,
         user_id: Uuid,
         conversation_id: Uuid,
         before_id: Option<Uuid>,
         limit: i32,
-    ) -> Result<(Vec<Message>, bool), ConversationError> {
+    ) -> Result<MessagePage, ConversationError> {
         self.store
             .find_by_id_and_user(conversation_id, user_id)
             .await?
@@ -78,12 +96,17 @@ impl ConversationService {
             limit.min(MAX_PAGE_LIMIT)
         };
         self.store
-            .list_messages_page(conversation_id, before_id, limit as i64)
+            .list_messages_page(conversation_id, before_id, i64::from(limit))
             .await
     }
 
     /// Permanently deletes a conversation owned by the user together
     /// with its messages.
+    ///
+    /// # Errors
+    ///
+    /// [`ConversationError::NotFound`] when the user owns no such
+    /// conversation; otherwise propagates the store's error.
     pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ConversationError> {
         if !self.store.delete(id, user_id).await? {
             return Err(ConversationError::NotFound);

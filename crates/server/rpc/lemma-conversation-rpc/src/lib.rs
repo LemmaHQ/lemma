@@ -1,36 +1,45 @@
-//! Connect RPC shell for the ConversationService: JWT authentication
+//! Connect RPC shell for the `ConversationService`: JWT authentication
 //! and proto mapping. All behavior lives in `lemma-conversation`.
 
-use std::sync::Arc;
+use std::fmt::{self, Debug};
 
 use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_auth_rpc::require_user;
 use lemma_conversation::{
-    Conversation as DomainConversation, ConversationError, ConversationService as DomainService,
-    ConversationStore, Message as DomainMessage, MessageStatus as DomainMessageStatus,
+    Conversation as DomainConversation, ConversationError, ConversationService, ConversationStore,
+    Message as DomainMessage, MessageStatus as DomainMessageStatus,
 };
-use lemma_proto::app_error;
+use lemma_core::ContentBlock;
+use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    Conversation, CreateConversationResponse, DeleteConversationResponse, ErrorReason,
-    ListConversationsResponse, ListMessagesResponse, Message, MessageStatus,
+    Conversation, CreateConversationRequest, CreateConversationResponse, DeleteConversationRequest,
+    DeleteConversationResponse, ErrorReason, ListConversationsRequest, ListConversationsResponse,
+    ListMessagesRequest, ListMessagesResponse, Message, MessageStatus, RenameConversationRequest,
     RenameConversationResponse, ToolCall, ToolResultMeta,
 };
 use uuid::Uuid;
 
-/// Connect handler implementing the ConversationService RPCs.
-pub struct ConversationRpc {
-    domain: DomainService,
-    jwt_secret: Arc<str>,
+/// Connect handler implementing the `ConversationService` RPCs.
+pub struct ConversationRpc<S> {
+    domain: ConversationService<S>,
+    jwt_secret: String,
 }
 
-impl ConversationRpc {
+impl<S: Debug> Debug for ConversationRpc<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ConversationRpc")
+            .field("domain", &self.domain)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<S: ConversationStore> ConversationRpc<S> {
     /// Creates the handler over a conversation store backend.
-    pub fn new(store: Arc<dyn ConversationStore>, jwt_secret: impl Into<Arc<str>>) -> Self {
+    pub fn new(store: S, jwt_secret: String) -> Self {
         Self {
-            domain: DomainService::new(store),
-            jwt_secret: jwt_secret.into(),
+            domain: ConversationService::new(store),
+            jwt_secret,
         }
     }
 }
@@ -57,7 +66,7 @@ fn message_to_proto(m: &DomainMessage) -> Message {
             .content()
             .iter()
             .filter_map(|b| match b {
-                lemma_core::ContentBlock::Thinking(t) => Some(t.thinking.as_str()),
+                ContentBlock::Thinking(t) => Some(t.thinking.as_str()),
                 _ => None,
             })
             .collect::<String>(),
@@ -65,7 +74,6 @@ fn message_to_proto(m: &DomainMessage) -> Message {
         model: m.model.clone().unwrap_or_default(),
         tool_calls: core_msg
             .tool_calls()
-            .into_iter()
             .map(|c| ToolCall {
                 id: c.id.clone(),
                 name: c.name.clone(),
@@ -102,26 +110,26 @@ fn message_to_proto(m: &DomainMessage) -> Message {
 }
 
 fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| app_error(ErrorReason::IdInvalid))
+    Uuid::parse_str(id).map_err(|_| lemma_proto::app_error(ErrorReason::IdInvalid))
 }
 
 fn map_domain(e: ConversationError) -> ConnectError {
     match e {
-        ConversationError::TitleRequired => app_error(ErrorReason::TitleRequired),
-        ConversationError::NotFound => app_error(ErrorReason::ConversationNotFound),
+        ConversationError::TitleRequired => lemma_proto::app_error(ErrorReason::TitleRequired),
+        ConversationError::NotFound => lemma_proto::app_error(ErrorReason::ConversationNotFound),
         ConversationError::Missing(m) => ConnectError::internal(format!("not found: {m}")),
         ConversationError::Store(m) => ConnectError::internal(format!("db: {m}")),
     }
 }
 
 #[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
+impl<S: ConversationStore> v1::ConversationService for ConversationRpc<S> {
     async fn list_conversations(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::ListConversationsRequest>,
+        _request: ServiceRequest<'_, ListConversationsRequest>,
     ) -> ServiceResult<ListConversationsResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let list = self
             .domain
             .list_conversations(user_id)
@@ -136,9 +144,9 @@ impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
     async fn create_conversation(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::CreateConversationRequest>,
+        _request: ServiceRequest<'_, CreateConversationRequest>,
     ) -> ServiceResult<CreateConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let c = self.domain.create(user_id).await.map_err(map_domain)?;
         Response::ok(CreateConversationResponse {
             conversation: conversation_to_proto(&c).into(),
@@ -149,9 +157,9 @@ impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
     async fn rename_conversation(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::RenameConversationRequest>,
+        request: ServiceRequest<'_, RenameConversationRequest>,
     ) -> ServiceResult<RenameConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
         let c = self
             .domain
@@ -167,23 +175,23 @@ impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
     async fn list_messages(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ListMessagesRequest>,
+        request: ServiceRequest<'_, ListMessagesRequest>,
     ) -> ServiceResult<ListMessagesResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let conversation_id = parse_id(request.conversation_id)?;
         let before_id = if request.before_id.is_empty() {
             None
         } else {
             Some(parse_id(request.before_id)?)
         };
-        let (messages, has_more) = self
+        let page = self
             .domain
             .list_messages(user_id, conversation_id, before_id, request.limit)
             .await
             .map_err(map_domain)?;
         Response::ok(ListMessagesResponse {
-            messages: messages.iter().map(message_to_proto).collect(),
-            has_more,
+            messages: page.messages.iter().map(message_to_proto).collect(),
+            has_more: page.has_more,
             ..Default::default()
         })
     }
@@ -191,9 +199,9 @@ impl lemma_proto::lemma::v1::ConversationService for ConversationRpc {
     async fn delete_conversation(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::DeleteConversationRequest>,
+        request: ServiceRequest<'_, DeleteConversationRequest>,
     ) -> ServiceResult<DeleteConversationResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
         self.domain.delete(user_id, id).await.map_err(map_domain)?;
         Response::ok(DeleteConversationResponse::default())

@@ -6,15 +6,19 @@ use uuid::Uuid;
 
 use lemma_provider::{NewProvider, ProviderPatch};
 
+use crate::clock;
 use crate::entity::Provider;
-use crate::now_ms;
 
 /// Inserts a provider and returns it.
-pub async fn insert<'e, E>(executor: E, user_id: Uuid, p: &NewProvider) -> sqlx::Result<Provider>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert<'conn, E>(executor: E, user_id: Uuid, p: &NewProvider) -> sqlx::Result<Provider>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
-    let now = now_ms();
+    let now = clock::now_ms();
     sqlx::query_as::<_, Provider>(
         r#"
         INSERT INTO providers (id, user_id, kind, identifier, name, base_url, api_key, api_path,
@@ -40,9 +44,13 @@ where
 }
 
 /// Lists a user's providers in creation order.
-pub async fn list_by_user<'e, E>(executor: E, user_id: Uuid) -> sqlx::Result<Vec<Provider>>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn list_by_user<'conn, E>(executor: E, user_id: Uuid) -> sqlx::Result<Vec<Provider>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query_as::<_, Provider>("SELECT * FROM providers WHERE user_id = ? ORDER BY created_at")
         .bind(user_id)
@@ -51,13 +59,17 @@ where
 }
 
 /// Finds a provider owned by the given user.
-pub async fn find_by_id_and_user<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn find_by_id_and_user<'conn, E>(
     executor: E,
     id: Uuid,
     user_id: Uuid,
 ) -> sqlx::Result<Option<Provider>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query_as::<_, Provider>("SELECT * FROM providers WHERE id = ? AND user_id = ?")
         .bind(id)
@@ -68,38 +80,43 @@ where
 
 /// Applies a patch to a provider owned by the given user, returning the
 /// updated row or `None` for missing records.
-pub async fn update<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn update<'conn, E>(
     executor: E,
     id: Uuid,
     user_id: Uuid,
-    patch: ProviderPatch,
+    patch: &ProviderPatch,
 ) -> sqlx::Result<Option<Provider>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new("UPDATE providers SET ");
     {
         let mut sep = qb.separated(", ");
-        sep.push("updated_at = ").push_bind_unseparated(now_ms());
-        if let Some(v) = patch.name {
+        sep.push("updated_at = ")
+            .push_bind_unseparated(clock::now_ms());
+        if let Some(v) = &patch.name {
             sep.push(" name = ").push_bind_unseparated(v);
         }
-        if let Some(v) = patch.base_url {
+        if let Some(v) = &patch.base_url {
             sep.push(" base_url = ").push_bind_unseparated(v);
         }
-        if let Some(v) = patch.api_key {
+        if let Some(v) = &patch.api_key {
             sep.push(" api_key = ").push_bind_unseparated(v);
         }
-        if let Some(v) = patch.api_path {
+        if let Some(v) = &patch.api_path {
             sep.push(" api_path = ").push_bind_unseparated(v);
         }
-        if let Some(v) = patch.models_path {
+        if let Some(v) = &patch.models_path {
             sep.push(" models_path = ").push_bind_unseparated(v);
         }
         if let Some(v) = patch.enabled {
             sep.push(" enabled = ").push_bind_unseparated(v);
         }
-        if let Some(v) = patch.models {
+        if let Some(v) = &patch.models {
             sep.push(" models = ").push_bind_unseparated(Json(v));
         }
     }
@@ -113,9 +130,13 @@ where
 
 /// Deletes a provider owned by the given user, returning whether a row
 /// was removed.
-pub async fn delete<'e, E>(executor: E, id: Uuid, user_id: Uuid) -> sqlx::Result<bool>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn delete<'conn, E>(executor: E, id: Uuid, user_id: Uuid) -> sqlx::Result<bool>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query("DELETE FROM providers WHERE id = ? AND user_id = ?")
         .bind(id)

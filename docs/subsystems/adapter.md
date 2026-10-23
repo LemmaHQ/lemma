@@ -14,14 +14,14 @@ The adapter subsystem turns one model request into a stream of vendor-independen
 | `Endpoint` | One provider's kind, base URL, generation path override, model-list path override, and plaintext API key. |
 | `ModelRequest` | One streaming call: model id, canonical messages, tool definitions, and an optional thinking effort. |
 | `Adapter` | `stream(ModelRequest)` opens the upstream call and yields `Result<StreamEvent, ModelError>` items. |
-| `Connector` | `connect(Endpoint)` returns the adapter for the endpoint's kind; `list_models(Endpoint)` fetches the model ids the endpoint reports. |
+| `Connector` | `connect(Endpoint)` returns the connector's `Adapter` type bound to the endpoint; `list_models(Endpoint)` fetches the model ids the endpoint reports. |
 | `ModelError` | Any failure, reduced to a message. |
 
-`ProviderService::endpoint` in `lemma-provider` builds an `Endpoint` from a stored provider and decrypts its key; the provider service also calls `Connector::list_models`. An empty base URL or path selects the vendor default; an empty API key sends no credentials.
+`ProviderService::adapter` in `lemma-provider` builds an `Endpoint` from a stored provider, decrypts its key, and binds it through `Connector::connect`; the provider service also calls `Connector::list_models`. An empty base URL or path selects the vendor default; an empty API key sends no credentials.
 
 ## Implementation: `lemma-adapter`
 
-`HttpConnector` binds an endpoint to one adapter by kind. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
+`HttpConnector` binds an endpoint to one adapter by kind and returns it as a `ModelAdapter` variant. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
 
 | Kind | Adapter | Default request | Credentials | Thinking effort |
 | --- | --- | --- | --- | --- |

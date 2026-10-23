@@ -1,11 +1,11 @@
-use futures::StreamExt;
 use lemma_core::{
     ContentBlock, StopReason, StreamEvent, TextContent, ThinkingContent, ToolCall, Usage,
 };
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use serde_json::Value;
 
-use crate::cancel::CancelToken;
-use crate::event::{TurnEvent, TurnObserver};
+use crate::cancel_token::CancelToken;
+use crate::turn_event::TurnEvent;
 
 /// How one model stream ended.
 pub(crate) enum StepEnd {
@@ -45,11 +45,11 @@ impl StepOutcome {
         }
     }
 
-    pub(crate) fn tool_calls(&self) -> Vec<ToolCall> {
+    pub(crate) fn tool_calls(&self) -> Vec<&ToolCall> {
         self.blocks
             .iter()
             .filter_map(|b| match b {
-                ContentBlock::ToolCall(call) => Some(call.clone()),
+                ContentBlock::ToolCall(call) => Some(call),
                 _ => None,
             })
             .collect()
@@ -82,8 +82,7 @@ impl OpenBlock {
             } => ContentBlock::ToolCall(ToolCall {
                 id,
                 name,
-                arguments: serde_json::from_str(&arguments)
-                    .unwrap_or(serde_json::Value::String(arguments)),
+                arguments: serde_json::from_str(&arguments).unwrap_or(Value::String(arguments)),
             }),
         }
     }
@@ -91,15 +90,15 @@ impl OpenBlock {
 
 /// Folds stream events into content blocks, forwarding deltas to the
 /// observer.
-struct Accumulator<'a> {
+struct Accumulator<'obs, O> {
     blocks: Vec<ContentBlock>,
     open: Option<OpenBlock>,
     usage: Option<Usage>,
     stop_reason: StopReason,
-    observer: TurnObserver<'a>,
+    observer: &'obs O,
 }
 
-impl Accumulator<'_> {
+impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
     fn close_open(&mut self, signature: Option<String>) {
         if let Some(prev) = self.open.take() {
             self.blocks.push(prev.close(signature));
@@ -164,6 +163,8 @@ impl Accumulator<'_> {
     }
 
     async fn drain(&mut self, mut stream: BoxEventStream) -> Result<(), String> {
+        use futures::StreamExt;
+
         while let Some(event) = stream.next().await {
             self.apply(event.map_err(|e: ModelError| e.message)?)?;
         }
@@ -173,10 +174,10 @@ impl Accumulator<'_> {
 
 /// Runs one model stream to completion or cancellation, accumulating
 /// content blocks and forwarding deltas to `observer`.
-pub(crate) async fn run_stream(
-    adapter: &dyn Adapter,
+pub(crate) async fn run_stream<A: Adapter, O: Fn(TurnEvent)>(
+    adapter: &A,
     req: ModelRequest,
-    observer: TurnObserver<'_>,
+    observer: &O,
     cancel: &CancelToken,
 ) -> StepOutcome {
     let mut acc = Accumulator {

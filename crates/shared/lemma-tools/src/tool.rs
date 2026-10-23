@@ -1,23 +1,37 @@
+use std::fmt::Debug;
 use std::pin::Pin;
 
-use crate::approval::ToolTier;
-use crate::env::ExecEnv;
-use crate::error::ToolError;
+use lemma_core::ToolSpec;
+use serde_json::Value;
 
-pub use lemma_core::ToolSpec;
+use crate::tool_error::ToolError;
 
 /// Future returned by tool execution.
-pub type BoxToolFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<serde_json::Value, ToolError>> + Send + 'a>>;
+pub type BoxToolFuture<'exec> =
+    Pin<Box<dyn Future<Output = Result<Value, ToolError>> + Send + 'exec>>;
 
-/// Abstract tool capability runnable by an agent.
-pub trait Tool: Send + Sync {
+/// Capability tier of a tool.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToolTier {
+    /// Read-only inspection.
+    Read,
+    /// State-mutating operation.
+    Write,
+    /// Command execution.
+    Exec,
+}
+
+/// Abstract tool capability runnable by an agent inside an `E`
+/// environment.
+pub trait Tool<E>: Debug + Send + Sync {
     /// Returns wire specification of the tool.
     fn spec(&self) -> ToolSpec;
 
     /// Capability tier of the tool.
     fn tier(&self) -> ToolTier;
 
-    /// Executes tool inside environment.
-    fn execute<'a>(&'a self, args: serde_json::Value, env: &'a dyn ExecEnv) -> BoxToolFuture<'a>;
+    /// Executes the tool inside `env`. The future fails with
+    /// [`ToolError::Validation`] for arguments that do not match the
+    /// tool's parameters and with the environment's error otherwise.
+    fn execute<'exec>(&'exec self, args: Value, env: &'exec E) -> BoxToolFuture<'exec>;
 }

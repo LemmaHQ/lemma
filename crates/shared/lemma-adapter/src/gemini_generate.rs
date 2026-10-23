@@ -1,26 +1,25 @@
 //! Adapter for the Gemini generateContent API.
 
-use std::sync::Arc;
-
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
-use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
+use lemma_model::{Adapter, BoxEventStream, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
 use crate::error;
-use crate::request::{gemini_contents, thinking_budget};
-use crate::sse::{SseParser, events_from_sse};
-use crate::transport::HttpTransport;
+use crate::http_transport::HttpTransport;
+use crate::sse::SseParser;
+use crate::{request, sse};
 
 /// Streams via `:streamGenerateContent?alt=sse` with an `x-goog-api-key`
 /// header. Usage metrics accompany the terminal chunk and flush at EOF.
-pub struct GeminiGenerate {
-    transport: Arc<dyn HttpTransport>,
+#[derive(Debug)]
+pub struct GeminiGenerate<T> {
+    transport: T,
     endpoint: Endpoint,
 }
 
-impl GeminiGenerate {
+impl<T: HttpTransport> GeminiGenerate<T> {
     /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+    pub fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,
@@ -196,8 +195,8 @@ impl SseParser for Parser {
     }
 }
 
-impl Adapter for GeminiGenerate {
-    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
+    async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
         let base_url = if endpoint.base_url.is_empty() {
             "https://generativelanguage.googleapis.com/v1beta"
@@ -211,7 +210,7 @@ impl Adapter for GeminiGenerate {
         };
         let url = format!("{}{}", base_url.trim_end_matches('/'), path);
         let mut body = serde_json::json!({
-            "contents": gemini_contents(&req.messages),
+            "contents": request::gemini_contents(&req.messages),
         });
         if !req.tools.is_empty() {
             body["tools"] = serde_json::json!([{
@@ -224,38 +223,36 @@ impl Adapter for GeminiGenerate {
         }
         if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
             body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
-                serde_json::json!(thinking_budget(effort));
+                serde_json::json!(request::thinking_budget(effort));
         }
         let headers = if endpoint.api_key.is_empty() {
             Vec::new()
         } else {
             vec![("x-goog-api-key".to_string(), endpoint.api_key.clone())]
         };
-        let transport = Arc::clone(&self.transport);
-        Box::pin(async move {
-            let bytes = transport.post_stream(url, headers, body).await?;
-            Ok(events_from_sse(
-                bytes,
-                Parser {
-                    usage: None,
-                    stop: StopReason::Stop,
-                    thinking_open: false,
-                    signature: None,
-                    next_call: 0,
-                    called_tool: false,
-                },
-            ))
-        })
+        let bytes = self.transport.post_stream(url, headers, body).await?;
+        Ok(sse::events_from_sse(
+            bytes,
+            Parser {
+                usage: None,
+                stop: StopReason::Stop,
+                thinking_open: false,
+                signature: None,
+                next_call: 0,
+                called_tool: false,
+            },
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use futures::executor;
     use futures::{StreamExt, stream};
     use lemma_core::ToolCall;
 
     use super::*;
-    use crate::transport::ByteStream;
+    use crate::http_transport::ByteStream;
 
     fn parser() -> Parser {
         Parser {
@@ -272,7 +269,7 @@ mod tests {
         let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
-        events_from_sse(bytes, parser())
+        sse::events_from_sse(bytes, parser())
             .collect::<Vec<_>>()
             .await
             .into_iter()
@@ -286,7 +283,7 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"想想\",\"thought\"
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"一下\",\"thought\":true,\"thoughtSignature\":\"sig_xyz\"}]}}]}\n\
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"答案\"}]}}]}\n\
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"get_weather\",\"args\":{\"city\":\"北京\"}}}]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":5,\"candidatesTokenCount\":10}}\n";
-        let events = futures::executor::block_on(collect(sse))?;
+        let events = executor::block_on(collect(sse))?;
         assert_eq!(
             events,
             vec![

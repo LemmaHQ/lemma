@@ -1,20 +1,18 @@
-use std::sync::Arc;
-
-use lemma_conversation::{
-    ConversationStore, LastModel, Message as StoredMessage, build_context_path,
-};
+use lemma_conversation::{ConversationStore, LastModel, Message as StoredMessage};
 use lemma_core::{Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
+use lemma_tools::ExecEnv;
 use uuid::Uuid;
 
-use crate::cancel::CancelToken;
-use crate::error::LoopError;
-use crate::event::{TurnEvent, TurnObserver};
-use crate::persist::{placeholder, settle, settled, tool_result};
-use crate::stream::{StepEnd, run_stream};
-use crate::tool::ToolRuntime;
+use crate::cancel_token::CancelToken;
+use crate::loop_error::LoopError;
+use crate::persist;
+use crate::stream::{self, StepEnd};
+use crate::tool_runtime::ToolRuntime;
+use crate::turn_event::TurnEvent;
 
 /// One user message and where it goes.
+#[derive(Debug)]
 pub struct TurnInput {
     /// Authenticated caller the store scopes conversation queries to.
     pub user_id: Uuid,
@@ -38,17 +36,18 @@ pub enum TurnEnd {
 }
 
 /// Runs turns: assembles each step's context from the message tree, streams
-/// the model through its adapter, executes requested tool calls, and
-/// persists every message as it settles.
-pub struct AgentLoop {
-    store: Arc<dyn ConversationStore>,
-    adapter: Arc<dyn Adapter>,
-    tools: Option<ToolRuntime>,
+/// the model through its adapter, executes requested tool calls in an `E`
+/// environment, and persists every message as it settles.
+#[derive(Debug)]
+pub struct AgentLoop<S, A, E> {
+    store: S,
+    adapter: A,
+    tools: Option<ToolRuntime<E>>,
 }
 
-impl AgentLoop {
+impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
     /// Creates a loop that calls the model without tools.
-    pub fn new(store: Arc<dyn ConversationStore>, adapter: Arc<dyn Adapter>) -> Self {
+    pub fn new(store: S, adapter: A) -> Self {
         Self {
             store,
             adapter,
@@ -57,7 +56,8 @@ impl AgentLoop {
     }
 
     /// Attaches tool execution wiring to the loop.
-    pub fn with_tools(mut self, runtime: ToolRuntime) -> Self {
+    #[must_use]
+    pub fn with_tools(mut self, runtime: ToolRuntime<E>) -> Self {
         self.tools = Some(runtime);
         self
     }
@@ -66,10 +66,16 @@ impl AgentLoop {
     /// one requests no tools, a stream fails, or `cancel` fires. Cancelling
     /// interrupts a model stream and stops before the next step; a running
     /// tool call completes first.
-    pub async fn run_turn(
+    ///
+    /// # Errors
+    ///
+    /// [`LoopError::NotFound`] when the user owns no such conversation or a
+    /// message on the context path is missing, [`LoopError::Model`] when a
+    /// model stream fails, and [`LoopError::Store`] when the store fails.
+    pub async fn run_turn<O: Fn(TurnEvent) + Sync>(
         &self,
         input: TurnInput,
-        observer: TurnObserver<'_>,
+        observer: &O,
         cancel: &CancelToken,
     ) -> Result<TurnEnd, LoopError> {
         let TurnInput {
@@ -89,14 +95,15 @@ impl AgentLoop {
             )));
         };
 
-        let user_entry = settled(user_message_id, conversation_id, meta.leaf_id, user_message);
-        self.append(user_id, user_entry).await?;
+        let user_entry =
+            persist::settled(user_message_id, conversation_id, meta.leaf_id, user_message);
+        self.append(user_id, &user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
         });
 
         self.store
-            .update_last_model(conversation_id, user_id, model.clone())
+            .update_last_model(conversation_id, user_id, &model)
             .await?;
 
         let tool_specs = self
@@ -111,20 +118,17 @@ impl AgentLoop {
                 return Ok(TurnEnd::Aborted);
             }
             let entries = self.store.list_messages(conversation_id).await?;
-            let messages = build_context_path(&entries, leaf_id)?;
+            let messages = lemma_conversation::build_context_path(&entries, leaf_id)?;
 
             let assistant_id = Uuid::new_v4();
-            self.append(
-                user_id,
-                placeholder(
-                    assistant_id,
-                    conversation_id,
-                    leaf_id,
-                    &model.model,
-                    model.provider_id,
-                ),
-            )
-            .await?;
+            let placeholder = persist::placeholder(
+                assistant_id,
+                conversation_id,
+                leaf_id,
+                &model.model,
+                model.provider_id,
+            );
+            self.append(user_id, &placeholder).await?;
             observer(TurnEvent::AssistantStarted { id: assistant_id });
 
             let req = ModelRequest {
@@ -133,9 +137,9 @@ impl AgentLoop {
                 tools: tool_specs.clone(),
                 thinking_effort: model.thinking_effort.clone(),
             };
-            let outcome = run_stream(self.adapter.as_ref(), req, observer, cancel).await;
+            let outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
             self.store
-                .update_message(assistant_id, settle(&outcome))
+                .update_message(assistant_id, &persist::settle(&outcome))
                 .await?;
 
             match outcome.end {
@@ -161,39 +165,37 @@ impl AgentLoop {
             };
 
             leaf_id = assistant_id;
-            for call in &tool_calls {
+            for call in tool_calls {
                 observer(TurnEvent::ToolStarted {
                     id: call.id.clone(),
                     name: call.name.clone(),
                     arguments: serde_json::to_string(&call.arguments).unwrap_or_default(),
                 });
-                let (text, is_error) = runtime.run(call).await;
+                let tool_outcome = runtime.run(call).await;
                 observer(TurnEvent::ToolFinished {
                     id: call.id.clone(),
                     name: call.name.clone(),
-                    content: text.clone(),
-                    is_error,
+                    content: tool_outcome.text.clone(),
+                    is_error: tool_outcome.is_error,
                 });
                 let result_id = Uuid::new_v4();
-                self.append(
-                    user_id,
-                    settled(
-                        result_id,
-                        conversation_id,
-                        Some(leaf_id),
-                        tool_result(call, text, is_error),
-                    ),
-                )
-                .await?;
+                let result = persist::settled(
+                    result_id,
+                    conversation_id,
+                    Some(leaf_id),
+                    persist::tool_result(call, tool_outcome),
+                );
+                self.append(user_id, &result).await?;
                 leaf_id = result_id;
             }
         }
     }
 
-    async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
-        let (conversation_id, id) = (entry.conversation_id, entry.id);
+    async fn append(&self, user_id: Uuid, entry: &StoredMessage) -> Result<(), LoopError> {
         self.store.append_message(entry).await?;
-        self.store.update_leaf(conversation_id, user_id, id).await?;
+        self.store
+            .update_leaf(entry.conversation_id, user_id, entry.id)
+            .await?;
         Ok(())
     }
 }

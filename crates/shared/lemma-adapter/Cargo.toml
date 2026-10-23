@@ -1,7 +1,7 @@
 [package]
 name = "lemma-adapter"
-edition.workspace = true
 version.workspace = true
+edition.workspace = true
 
 [dependencies]
 futures.workspace = true

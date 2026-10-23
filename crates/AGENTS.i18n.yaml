@@ -3,14 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing crates/AGENTS.md
 /agentsmd--rust-workspace:
-  en: 62cb561bf7be3af7
-  zh: fc3f62c503a0bb2c
+  en: 08a2d14b5094d4a4
+  zh: 718c78baff0509c7
 /agentsmd--rust-workspace/code:
-  en: eb015385d65e67d1
-  zh: a5968b0de1af510c
+  en: 73d06660c4dae82c
+  zh: 038193d5630c3bfb
 /agentsmd--rust-workspace/doc-comments:
-  en: 1ab6532458a94eed
-  zh: 72b5336844762e5e
+  en: 754d63644e41b144
+  zh: a2e5705a73d74125
 /agentsmd--rust-workspace/layout:
   en: 19828310b6e587be
   zh: 4d6390bb9076ea32

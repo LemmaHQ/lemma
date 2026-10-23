@@ -54,8 +54,7 @@ A **turn** starts from one user message and ends when the model stops without re
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
   require_user -> user id
-  ProviderService::endpoint opens the provider's API key
-  Connector::connect binds the adapter for the provider kind
+  ProviderService::adapter opens the provider's API key and binds the adapter for its kind
   thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
@@ -109,6 +108,6 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | Add an RPC service | add a `.proto` and a new crate under `crates/server/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-server` |
 | Add a user-facing error | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/data/rpc/errors.ts` and both locale files |
 | Change the schema | add a migration pair to both `lemma-db-sqlite` and `lemma-db-pgsql`, then update the stores |
-| Add a storage backend | implement the four store traits and wire them in each host |
+| Add a storage backend | implement the three store traits and wire them in each host |
 | Expose a capability to Android local mode | add a method to `LemmaEngine`; its signature is a Kotlin API ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)) |
 | Reach a desktop capability from the web client | extend the preload bridge and the adapter in `web/src/platform/` ([web/AGENTS.md](../web/AGENTS.md#layout)) |

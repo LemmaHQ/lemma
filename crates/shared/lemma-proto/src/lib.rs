@@ -6,7 +6,13 @@
 
 /// Generated message and service types, rooted at `lemma::v1`.
 pub mod proto {
-    #![allow(missing_docs)]
+    #![allow(
+        missing_debug_implementations,
+        missing_docs,
+        clippy::nursery,
+        clippy::pedantic,
+        clippy::restriction
+    )]
 
     connectrpc::include_generated!();
 }

@@ -1,7 +1,7 @@
 [package]
+name = "lemma-agent-rpc"
 version.workspace = true
 edition.workspace = true
-name = "lemma-agent-rpc"
 
 [dependencies]
 buffa.workspace = true
@@ -10,8 +10,11 @@ dashmap.workspace = true
 futures.workspace = true
 lemma-agent.workspace = true
 lemma-auth-rpc.workspace = true
+lemma-conversation.workspace = true
 lemma-core.workspace = true
+lemma-model.workspace = true
 lemma-proto.workspace = true
+lemma-provider.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 

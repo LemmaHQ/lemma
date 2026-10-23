@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 use lemma_agent_loop::LoopError;
@@ -37,7 +38,7 @@ impl fmt::Display for AgentError {
     }
 }
 
-impl std::error::Error for AgentError {}
+impl Error for AgentError {}
 
 impl From<ProviderError> for AgentError {
     fn from(err: ProviderError) -> Self {

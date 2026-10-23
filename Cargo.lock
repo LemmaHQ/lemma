@@ -1871,8 +1871,11 @@ dependencies = [
  "futures",
  "lemma-agent",
  "lemma-auth-rpc",
+ "lemma-conversation",
  "lemma-core",
+ "lemma-model",
  "lemma-proto",
+ "lemma-provider",
  "tokio",
  "uuid",
 ]

@@ -1,5 +1,6 @@
 //! Error type for the provider domain.
 
+use std::error::Error;
 use std::fmt;
 
 /// Errors surfaced by the provider domain. The RPC shell maps these to
@@ -36,4 +37,4 @@ impl fmt::Display for ProviderError {
     }
 }
 
-impl std::error::Error for ProviderError {}
+impl Error for ProviderError {}

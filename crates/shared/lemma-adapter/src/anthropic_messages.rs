@@ -1,15 +1,15 @@
 //! Adapter for the Anthropic Messages API.
 
-use std::sync::Arc;
+use std::mem;
 
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
-use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
+use lemma_model::{Adapter, BoxEventStream, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
 use crate::error;
-use crate::request::{anthropic_messages, thinking_budget};
-use crate::sse::{SseParser, events_from_sse};
-use crate::transport::HttpTransport;
+use crate::http_transport::HttpTransport;
+use crate::sse::SseParser;
+use crate::{request, sse};
 
 /// Required by the API; acts as a fixed response-length ceiling.
 const MAX_TOKENS: u32 = 8192;
@@ -18,14 +18,15 @@ const ANTHROPIC_VERSION: &str = "2023-06-01";
 
 /// Streams via `POST <base_url>/messages`, or the endpoint's `api_path`
 /// in place of the path, with an `x-api-key` header.
-pub struct AnthropicMessages {
-    transport: Arc<dyn HttpTransport>,
+#[derive(Debug)]
+pub struct AnthropicMessages<T> {
+    transport: T,
     endpoint: Endpoint,
 }
 
-impl AnthropicMessages {
+impl<T: HttpTransport> AnthropicMessages<T> {
     /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+    pub fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,
@@ -189,14 +190,14 @@ impl Parser {
     }
 
     fn block_stop(&mut self) -> Vec<StreamEvent> {
-        let block = std::mem::replace(&mut self.block, Block::None);
+        let block = mem::replace(&mut self.block, Block::None);
         match block {
             Block::Text => vec![StreamEvent::TextEnd],
             Block::Thinking => {
                 let signature = if self.signature.is_empty() {
                     None
                 } else {
-                    Some(std::mem::take(&mut self.signature))
+                    Some(mem::take(&mut self.signature))
                 };
                 vec![StreamEvent::ThinkingEnd { signature }]
             }
@@ -262,8 +263,8 @@ impl SseParser for Parser {
     }
 }
 
-impl Adapter for AnthropicMessages {
-    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+impl<T: HttpTransport> Adapter for AnthropicMessages<T> {
+    async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
         let base_url = if endpoint.base_url.is_empty() {
             "https://api.anthropic.com/v1"
@@ -277,7 +278,7 @@ impl Adapter for AnthropicMessages {
         };
         let url = format!("{}{}", base_url.trim_end_matches('/'), path);
         let effort = req.thinking_effort.as_deref().filter(|e| !e.is_empty());
-        let budget = effort.map(thinking_budget);
+        let budget = effort.map(request::thinking_budget);
         let max_tokens = match budget {
             Some(budget) => MAX_TOKENS.max(budget + 8192),
             None => MAX_TOKENS,
@@ -285,7 +286,7 @@ impl Adapter for AnthropicMessages {
         let mut body = serde_json::json!({
             "model": req.model,
             "max_tokens": max_tokens,
-            "messages": anthropic_messages(&req.messages),
+            "messages": request::anthropic_messages(&req.messages),
             "stream": true,
         });
         if !req.tools.is_empty() {
@@ -314,30 +315,28 @@ impl Adapter for AnthropicMessages {
         if !endpoint.api_key.is_empty() {
             headers.push(("x-api-key".to_string(), endpoint.api_key.clone()));
         }
-        let transport = Arc::clone(&self.transport);
-        Box::pin(async move {
-            let bytes = transport.post_stream(url, headers, body).await?;
-            Ok(events_from_sse(
-                bytes,
-                Parser {
-                    input: None,
-                    output: None,
-                    stop: StopReason::Stop,
-                    block: Block::None,
-                    signature: String::new(),
-                },
-            ))
-        })
+        let bytes = self.transport.post_stream(url, headers, body).await?;
+        Ok(sse::events_from_sse(
+            bytes,
+            Parser {
+                input: None,
+                output: None,
+                stop: StopReason::Stop,
+                block: Block::None,
+                signature: String::new(),
+            },
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use futures::executor;
     use futures::{StreamExt, stream};
     use lemma_core::ToolCall;
 
     use super::*;
-    use crate::transport::ByteStream;
+    use crate::http_transport::ByteStream;
 
     fn parser() -> Parser {
         Parser {
@@ -353,7 +352,7 @@ mod tests {
         let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
-        events_from_sse(bytes, parser())
+        sse::events_from_sse(bytes, parser())
             .collect::<Vec<_>>()
             .await
             .into_iter()
@@ -389,7 +388,7 @@ event: message_delta\n\
 data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\"},\"usage\":{\"output_tokens\":40}}\n\
 event: message_stop\n\
 data: {\"type\":\"message_stop\"}\n";
-        let events = futures::executor::block_on(collect(sse))?;
+        let events = executor::block_on(collect(sse))?;
         assert_eq!(
             events,
             vec![

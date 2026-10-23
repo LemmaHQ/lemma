@@ -1,7 +1,7 @@
 [package]
+name = "lemma-server"
 version.workspace = true
 edition.workspace = true
-name = "lemma-server"
 
 [dependencies]
 axum.workspace = true
@@ -20,8 +20,8 @@ lemma-db-sqlite.workspace = true
 lemma-model.workspace = true
 lemma-provider.workspace = true
 lemma-provider-rpc.workspace = true
-rust-embed.workspace = true
 rand.workspace = true
+rust-embed.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true

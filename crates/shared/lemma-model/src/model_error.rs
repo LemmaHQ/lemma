@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 /// Any model call failure, reduced to a message.
@@ -9,10 +10,9 @@ pub struct ModelError {
 
 impl ModelError {
     /// Creates an error carrying `message`.
-    pub fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
+    #[must_use]
+    pub fn new(message: String) -> Self {
+        Self { message }
     }
 }
 
@@ -22,4 +22,4 @@ impl fmt::Display for ModelError {
     }
 }
 
-impl std::error::Error for ModelError {}
+impl Error for ModelError {}

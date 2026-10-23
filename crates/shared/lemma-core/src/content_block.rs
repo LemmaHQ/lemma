@@ -59,6 +59,7 @@ pub struct ImageContent {
 impl ContentBlock {
     /// The visible text of a text block, returning `None` for structured
     /// content kinds.
+    #[must_use]
     pub fn plain_text(&self) -> Option<&str> {
         match self {
             Self::Text(t) => Some(&t.text),

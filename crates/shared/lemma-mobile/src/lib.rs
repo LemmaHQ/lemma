@@ -2,17 +2,18 @@
 //! the Kotlin Multiplatform client, over the same domain services and SQLite
 //! backend as the server mode.
 
+use std::error::Error;
 use std::fmt;
-use std::str::FromStr;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_agent::{Agent, AgentError, TurnEnd, TurnEvent, TurnRequest};
 use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use lemma_auth::{AuthService, AuthStore, Session, User};
-use lemma_conversation::{Conversation, ConversationService, ConversationStore, Message};
+use lemma_conversation::{Conversation, ConversationService, Message};
 use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
-use lemma_model::{Connector, ProviderKind};
+use lemma_model::ProviderKind;
 use lemma_provider::{CreateInput, ProviderService, ProviderView, UpdateInput};
 use uuid::Uuid;
 
@@ -51,14 +52,21 @@ impl fmt::Display for EngineError {
     }
 }
 
-impl std::error::Error for EngineError {}
+impl Error for EngineError {}
 
 fn parse_id(raw: &str) -> Result<Uuid, EngineError> {
     Uuid::parse_str(raw).map_err(|_| EngineError::InvalidId(raw.to_owned()))
 }
 
+fn parse_kind(raw: &str) -> Result<ProviderKind, EngineError> {
+    use std::str::FromStr;
+
+    ProviderKind::from_str(raw)
+        .map_err(|()| EngineError::Validation(format!("unknown provider kind: {raw}")))
+}
+
 /// An account as seen by the mobile client.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MobileUser {
     /// User id.
     pub id: String,
@@ -79,7 +87,7 @@ impl From<User> for MobileUser {
 }
 
 /// An authenticated session: the account plus its issued tokens.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MobileSession {
     /// The authenticated account.
     pub user: MobileUser,
@@ -103,7 +111,7 @@ impl From<Session> for MobileSession {
 }
 
 /// A conversation summary.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MobileConversation {
     /// Conversation id.
     pub id: String,
@@ -124,7 +132,7 @@ impl From<Conversation> for MobileConversation {
 }
 
 /// A message in a conversation.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MobileMessage {
     /// Message id.
     pub id: String,
@@ -166,7 +174,7 @@ impl From<Message> for MobileMessage {
 }
 
 /// One keyset page of messages, newest first.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MessagePage {
     /// The page's messages.
     pub messages: Vec<MobileMessage>,
@@ -175,7 +183,7 @@ pub struct MessagePage {
 }
 
 /// A model provider configuration.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct MobileProvider {
     /// Provider id.
     pub id: String,
@@ -217,7 +225,7 @@ impl From<ProviderView> for MobileProvider {
 }
 
 /// Patch input for updating a provider; absent fields keep current values.
-#[derive(uniffi::Record)]
+#[derive(Debug, uniffi::Record)]
 pub struct ProviderUpdate {
     /// Display name.
     pub name: Option<String>,
@@ -317,6 +325,7 @@ pub trait AgentEventListener: Send + Sync {
     fn on_event(&self, event: MobileAgentEvent);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "used as a map_err function")]
 fn prepare_error(e: AgentError) -> EngineError {
     match e {
         AgentError::ContentRequired | AgentError::ModelRequired => {
@@ -368,15 +377,18 @@ fn map_event(ev: TurnEvent) -> MobileAgentEvent {
     }
 }
 
+/// Connector every provider call of the engine goes through.
+type EngineConnector = HttpConnector<ReqwestTransport>;
+
 /// The embedded local engine: auth, conversation, provider, and agent
 /// domain services over a migrated SQLite pool.
-#[derive(uniffi::Object)]
+#[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
-    auth: AuthService,
-    auth_store: Arc<SqliteAuthStore>,
-    conversations: ConversationService,
-    providers: Arc<ProviderService>,
-    agent: Agent,
+    auth: AuthService<SqliteAuthStore>,
+    auth_store: SqliteAuthStore,
+    conversations: ConversationService<SqliteConversationStore>,
+    providers: Arc<ProviderService<SqliteProviderStore, EngineConnector>>,
+    agent: Agent<SqliteConversationStore, SqliteProviderStore, EngineConnector>,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -384,43 +396,45 @@ impl LemmaEngine {
     /// Opens or creates the engine database at `<data_dir>/lemma.db`, runs
     /// migrations, and returns the ready engine. `jwt_secret` signs access
     /// tokens and is supplied by the caller's configuration.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Storage`] when the database cannot be opened or
+    /// migrated.
     #[uniffi::constructor]
     pub async fn open(data_dir: String, jwt_secret: String) -> Result<Arc<Self>, EngineError> {
-        let data_dir = std::path::PathBuf::from(data_dir);
-        let pool = lemma_db_sqlite::connect(&data_dir.join("lemma.db"))
+        let data_dir = PathBuf::from(data_dir);
+        let pool = lemma_db_sqlite::connect(data_dir.join("lemma.db"))
             .await
             .map_err(|e| EngineError::Storage(e.to_string()))?;
         lemma_db_sqlite::migrate(&pool)
             .await
             .map_err(|e| EngineError::Storage(e.to_string()))?;
-        let auth_store = Arc::new(SqliteAuthStore::new(pool.clone()));
-        let auth = AuthService::new(auth_store.clone(), jwt_secret);
-        let store: Arc<dyn ConversationStore> =
-            Arc::new(SqliteConversationStore::new(pool.clone()));
-        let conversations = ConversationService::new(Arc::clone(&store));
-        let connector: Arc<dyn Connector> =
-            Arc::new(HttpConnector::new(Arc::new(ReqwestTransport::new())));
+        let auth_store = SqliteAuthStore::new(pool.clone());
+        let conversation_store = SqliteConversationStore::new(pool.clone());
         let providers = Arc::new(ProviderService::new(
-            Arc::new(SqliteProviderStore::new(pool.clone())),
+            SqliteProviderStore::new(pool.clone()),
             None,
-            Arc::clone(&connector),
+            HttpConnector::new(ReqwestTransport::new()),
         ));
-        let agent = Agent::new(
-            store,
-            Arc::clone(&providers),
-            connector,
-            Some(data_dir.join("workspaces")),
-        );
         Ok(Arc::new(Self {
-            auth,
+            auth: AuthService::new(auth_store.clone(), jwt_secret),
             auth_store,
-            conversations,
+            conversations: ConversationService::new(conversation_store.clone()),
+            agent: Agent::new(
+                conversation_store,
+                Arc::clone(&providers),
+                Some(data_dir.join("workspaces")),
+            ),
             providers,
-            agent,
         }))
     }
 
     /// Registers a new account and opens a session.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Auth`] carrying the auth domain's rejection.
     pub async fn sign_up(
         &self,
         username: String,
@@ -435,6 +449,10 @@ impl LemmaEngine {
     }
 
     /// Authenticates by username or email and opens a session.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Auth`] carrying the auth domain's rejection.
     pub async fn login(
         &self,
         login: String,
@@ -449,6 +467,11 @@ impl LemmaEngine {
 
     /// Opens a session on the default local account, provisioning it on
     /// first use. Shared by every local-mode runtime.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Storage`] when the account lookup fails and
+    /// [`EngineError::Auth`] when provisioning or login fails.
     pub async fn use_default_account(&self) -> Result<MobileSession, EngineError> {
         if self
             .auth_store
@@ -470,6 +493,11 @@ impl LemmaEngine {
     }
 
     /// Creates an empty conversation for the user.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Conversation`] carrying the domain error.
     pub async fn create_conversation(
         &self,
         user_id: String,
@@ -483,6 +511,11 @@ impl LemmaEngine {
 
     /// Lists a conversation's messages newest-first with keyset pagination.
     /// `limit` of zero selects the domain default page size.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Conversation`] carrying the domain error.
     pub async fn list_messages(
         &self,
         user_id: String,
@@ -499,14 +532,19 @@ impl LemmaEngine {
                 limit,
             )
             .await
-            .map(|(messages, has_more)| MessagePage {
-                messages: messages.into_iter().map(Into::into).collect(),
-                has_more,
+            .map(|page| MessagePage {
+                messages: page.messages.into_iter().map(Into::into).collect(),
+                has_more: page.has_more,
             })
             .map_err(|e| EngineError::Conversation(e.to_string()))
     }
 
     /// Lists the user's provider configurations.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     pub async fn list_providers(
         &self,
         user_id: String,
@@ -519,6 +557,12 @@ impl LemmaEngine {
     }
 
     /// Validates and stores a new provider configuration.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id,
+    /// [`EngineError::Validation`] for an unknown kind; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     #[allow(clippy::too_many_arguments)]
     pub async fn create_provider(
         &self,
@@ -532,8 +576,7 @@ impl LemmaEngine {
         models_path: String,
         models: Vec<String>,
     ) -> Result<MobileProvider, EngineError> {
-        let kind = ProviderKind::from_str(&kind)
-            .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
+        let kind = parse_kind(&kind)?;
         self.providers
             .create(
                 parse_id(&user_id)?,
@@ -554,6 +597,11 @@ impl LemmaEngine {
     }
 
     /// Applies a patch to a provider owned by the user.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     pub async fn update_provider(
         &self,
         user_id: String,
@@ -568,6 +616,11 @@ impl LemmaEngine {
     }
 
     /// Deletes a provider owned by the user.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     pub async fn delete_provider(
         &self,
         user_id: String,
@@ -580,6 +633,11 @@ impl LemmaEngine {
     }
 
     /// Fetches the live model list using a stored provider's key.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     pub async fn fetch_provider_models(
         &self,
         user_id: String,
@@ -592,6 +650,11 @@ impl LemmaEngine {
     }
 
     /// Fetches the live model list for ad-hoc connection details.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Validation`] for an unknown kind; otherwise
+    /// [`EngineError::Provider`] carrying the domain error.
     pub async fn fetch_models(
         &self,
         kind: String,
@@ -599,8 +662,7 @@ impl LemmaEngine {
         api_key: String,
         models_path: String,
     ) -> Result<Vec<String>, EngineError> {
-        let kind = ProviderKind::from_str(&kind)
-            .map_err(|()| EngineError::Validation(format!("unknown provider kind: {kind}")))?;
+        let kind = parse_kind(&kind)?;
         self.providers
             .fetch_models_adhoc(kind, &base_url, &api_key, &models_path)
             .await
@@ -609,15 +671,24 @@ impl LemmaEngine {
 
     /// Aborts the user's running turn started by `message_id`; a turn that
     /// is not running is a no-op.
-    pub fn abort_message(&self, user_id: String, message_id: String) -> Result<(), EngineError> {
-        self.agent
-            .abort(parse_id(&user_id)?, parse_id(&message_id)?);
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id.
+    pub fn abort_message(&self, user_id: &str, message_id: &str) -> Result<(), EngineError> {
+        self.agent.abort(parse_id(user_id)?, parse_id(message_id)?);
         Ok(())
     }
 
     /// Runs one agent turn: appends the user message, streams model and tool
     /// events to `listener`, and persists the settled assistant messages.
     /// The stream terminates with a `Done`, `Aborted`, or `Error` event.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::InvalidId`] for a malformed id and the mapped
+    /// [`EngineError`] when the turn cannot be prepared; failures of the
+    /// running turn arrive as an `Error` event instead.
     #[allow(clippy::too_many_arguments)]
     pub async fn send_message(
         &self,

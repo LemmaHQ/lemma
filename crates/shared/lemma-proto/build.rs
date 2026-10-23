@@ -1,6 +1,8 @@
 //! Build script: compiles the proto contracts into Connect bindings.
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
     connectrpc_build::Config::new()
         .files(&[
             "../../../proto/lemma/v1/auth.proto",

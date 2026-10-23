@@ -80,3 +80,11 @@ pub struct Message {
     pub created_at: i64,
     pub updated_at: i64,
 }
+
+/// One page of message rows, newest first.
+#[derive(Debug, Clone)]
+pub struct MessagePage {
+    pub messages: Vec<Message>,
+    /// Whether older rows follow this page.
+    pub has_more: bool,
+}

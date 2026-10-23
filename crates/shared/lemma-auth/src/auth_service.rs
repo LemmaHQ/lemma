@@ -1,17 +1,17 @@
 //! Auth business flows: signup, login, token refresh and rotation over
 //! an [`AuthStore`] backend.
 
-use std::sync::Arc;
+use std::fmt::{self, Debug};
 
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
 
-use crate::error::AuthError;
-use crate::jwt::{ACCESS_TOKEN_TTL_SECS, sign_access_token};
+use crate::auth_error::AuthError;
+use crate::auth_store::AuthStore;
+use crate::jwt::ACCESS_TOKEN_TTL_SECS;
 use crate::password::{hash_password, verify_password};
 use crate::record::User;
-use crate::store::AuthStore;
-use crate::{generate_refresh_token, hash_token};
+use crate::{jwt, token};
 
 /// Lifetime of a refresh token: 30 days.
 pub const REFRESH_TTL_DAYS: i64 = 30;
@@ -37,29 +37,34 @@ pub struct Session {
 }
 
 /// Auth domain service over an [`AuthStore`] backend.
-pub struct AuthService {
-    store: Arc<dyn AuthStore>,
-    secret: Arc<str>,
+pub struct AuthService<A> {
+    store: A,
+    secret: String,
 }
 
-impl AuthService {
+impl<A: Debug> Debug for AuthService<A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthService")
+            .field("store", &self.store)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<A: AuthStore> AuthService<A> {
     /// Creates the service. `secret` signs and verifies access tokens.
-    pub fn new(store: Arc<dyn AuthStore>, secret: impl Into<Arc<str>>) -> Self {
-        Self {
-            store,
-            secret: secret.into(),
-        }
+    pub fn new(store: A, secret: String) -> Self {
+        Self { store, secret }
     }
 
     async fn issue_tokens(&self, user_id: Uuid) -> Result<AuthTokens, AuthError> {
-        let access =
-            sign_access_token(&self.secret, user_id).map_err(|e| AuthError::Sign(e.to_string()))?;
-        let refresh = generate_refresh_token();
+        let access = jwt::sign_access_token(&self.secret, user_id)
+            .map_err(|e| AuthError::Sign(e.to_string()))?;
+        let refresh = token::generate_refresh_token();
         self.store
             .insert_refresh_token(
                 Uuid::new_v4(),
                 user_id,
-                &hash_token(&refresh),
+                &token::hash_token(&refresh),
                 Utc::now() + Duration::days(REFRESH_TTL_DAYS),
             )
             .await?;
@@ -71,6 +76,14 @@ impl AuthService {
     }
 
     /// Registers a new account and opens a session.
+    ///
+    /// # Errors
+    ///
+    /// [`AuthError::SignupFieldsRequired`] for a blank username or email or
+    /// a password under 8 characters, [`AuthError::UsernameTaken`] for a
+    /// registered username or email, [`AuthError::Hash`] or
+    /// [`AuthError::Sign`] when hashing or signing fails; otherwise
+    /// propagates the store's error.
     pub async fn sign_up(
         &self,
         username: &str,
@@ -92,6 +105,12 @@ impl AuthService {
     }
 
     /// Authenticates by username or email and opens a session.
+    ///
+    /// # Errors
+    ///
+    /// [`AuthError::CredentialsInvalid`] for an unknown login or a wrong
+    /// password, [`AuthError::Sign`] when signing fails; otherwise
+    /// propagates the store's error.
     pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
         let login = login.trim();
         let user = self
@@ -114,10 +133,16 @@ impl AuthService {
     /// Rotates a refresh token and returns a fresh token pair. A rotated
     /// or revoked token presented again means theft: the whole rotation
     /// chain is revoked.
+    ///
+    /// # Errors
+    ///
+    /// [`AuthError::TokenInvalid`] for an unknown, expired, rotated, or
+    /// revoked token, [`AuthError::Sign`] when signing fails; otherwise
+    /// propagates the store's error.
     pub async fn refresh(&self, refresh_token: &str) -> Result<AuthTokens, AuthError> {
         let row = self
             .store
-            .find_refresh_token_by_hash(&hash_token(refresh_token))
+            .find_refresh_token_by_hash(&token::hash_token(refresh_token))
             .await?
             .ok_or(AuthError::TokenInvalid)?;
         if row.revoked_at.is_some() || row.replaced_by.is_some() {
@@ -127,14 +152,14 @@ impl AuthService {
         if row.expires_at <= Utc::now() {
             return Err(AuthError::TokenInvalid);
         }
-        let access = sign_access_token(&self.secret, row.user_id)
+        let access = jwt::sign_access_token(&self.secret, row.user_id)
             .map_err(|e| AuthError::Sign(e.to_string()))?;
-        let refresh = generate_refresh_token();
+        let refresh = token::generate_refresh_token();
         self.store
             .rotate_refresh_token(
                 row.id,
                 Uuid::new_v4(),
-                &hash_token(&refresh),
+                &token::hash_token(&refresh),
                 Utc::now() + Duration::days(REFRESH_TTL_DAYS),
             )
             .await?;
@@ -146,11 +171,15 @@ impl AuthService {
     }
 
     /// Revokes the presented refresh token, when it exists.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the store's error.
     pub async fn logout(&self, refresh_token: Option<&str>) -> Result<(), AuthError> {
-        if let Some(token) = refresh_token
+        if let Some(presented) = refresh_token
             && let Some(row) = self
                 .store
-                .find_refresh_token_by_hash(&hash_token(token))
+                .find_refresh_token_by_hash(&token::hash_token(presented))
                 .await?
         {
             self.store.revoke_refresh_token(row.id).await?;
@@ -159,6 +188,11 @@ impl AuthService {
     }
 
     /// Returns the account for an authenticated user id.
+    ///
+    /// # Errors
+    ///
+    /// [`AuthError::UserNotFound`] for an unknown id; otherwise propagates
+    /// the store's error.
     pub async fn me(&self, user_id: Uuid) -> Result<User, AuthError> {
         self.store
             .find_user_by_id(user_id)

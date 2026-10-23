@@ -1,18 +1,21 @@
-//! Handler for the AuthService RPCs.
+//! Handler for the `AuthService` RPCs.
 
-use std::sync::Arc;
+use std::fmt::{self, Debug};
 
-use crate::{ACCESS_COOKIE, cookie_value, require_user};
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use http::HeaderValue;
+use http::header::SET_COOKIE;
 use lemma_auth::{
-    ACCESS_TOKEN_TTL_SECS, AuthError, AuthService as AuthDomain, AuthStore, AuthTokens,
-    REFRESH_TTL_DAYS, User,
+    ACCESS_TOKEN_TTL_SECS, AuthError, AuthService, AuthStore, AuthTokens, REFRESH_TTL_DAYS, User,
 };
-use lemma_proto::app_error;
+use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    ErrorReason, LoginResponse, LogoutResponse, MeResponse, RefreshResponse, SignUpResponse,
+    ErrorReason, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MeRequest, MeResponse,
+    RefreshRequest, RefreshResponse, SignUpRequest, SignUpResponse,
 };
+
+use crate::request_auth::{self, ACCESS_COOKIE};
 
 const REFRESH_COOKIE: &str = "lemma_refresh";
 const REFRESH_COOKIE_PATH: &str = "/lemma.v1.AuthService";
@@ -60,9 +63,9 @@ fn clear_session_cookies(secure: bool) -> [String; 2] {
 fn with_cookies<B>(body: B, cookies: [String; 2]) -> ServiceResult<B> {
     let mut response = Response::new(body);
     for cookie in cookies {
-        let value = http::HeaderValue::from_str(&cookie)
+        let value = HeaderValue::from_str(&cookie)
             .map_err(|e| ConnectError::internal(format!("set-cookie header: {e}")))?;
-        response.headers.append(http::header::SET_COOKIE, value);
+        response.headers.append(SET_COOKIE, value);
     }
     Ok(response)
 }
@@ -71,29 +74,37 @@ fn refresh_token_of(ctx: &RequestContext, body: &str) -> Result<String, ConnectE
     if !body.is_empty() {
         return Ok(body.to_owned());
     }
-    cookie_value(ctx, REFRESH_COOKIE).ok_or_else(|| app_error(ErrorReason::TokenInvalid))
+    request_auth::cookie_value(ctx, REFRESH_COOKIE)
+        .ok_or_else(|| lemma_proto::app_error(ErrorReason::TokenInvalid))
 }
 
-/// Connect handler implementing the AuthService RPCs.
-pub struct AuthRpc {
-    domain: AuthDomain,
-    secret: Arc<str>,
+/// Connect handler implementing the `AuthService` RPCs.
+pub struct AuthRpc<A> {
+    domain: AuthService<A>,
+    secret: String,
 }
 
-impl AuthRpc {
+impl<A: Debug> Debug for AuthRpc<A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthRpc")
+            .field("domain", &self.domain)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<A: AuthStore> AuthRpc<A> {
     /// Creates the handler over an auth store backend. `secret` signs and
     /// verifies access tokens.
-    pub fn new(store: Arc<dyn AuthStore>, secret: impl Into<Arc<str>>) -> Self {
-        let secret = secret.into();
+    pub fn new(store: A, secret: String) -> Self {
         Self {
-            domain: AuthDomain::new(store, secret.clone()),
+            domain: AuthService::new(store, secret.clone()),
             secret,
         }
     }
 }
 
-fn user_to_proto(u: &User) -> lemma_proto::lemma::v1::User {
-    lemma_proto::lemma::v1::User {
+fn user_to_proto(u: &User) -> v1::User {
+    v1::User {
         id: u.id.to_string(),
         username: u.username.clone(),
         email: u.email.clone(),
@@ -102,8 +113,8 @@ fn user_to_proto(u: &User) -> lemma_proto::lemma::v1::User {
     }
 }
 
-fn tokens_to_proto(t: AuthTokens) -> lemma_proto::lemma::v1::AuthTokens {
-    lemma_proto::lemma::v1::AuthTokens {
+fn tokens_to_proto(t: AuthTokens) -> v1::AuthTokens {
+    v1::AuthTokens {
         access_token: t.access_token,
         access_token_expires_at: Timestamp::from(t.access_token_expires_at).into(),
         refresh_token: t.refresh_token,
@@ -113,11 +124,13 @@ fn tokens_to_proto(t: AuthTokens) -> lemma_proto::lemma::v1::AuthTokens {
 
 fn map_domain(e: AuthError) -> ConnectError {
     match e {
-        AuthError::SignupFieldsRequired => app_error(ErrorReason::SignupFieldsRequired),
-        AuthError::CredentialsInvalid => app_error(ErrorReason::CredentialsInvalid),
-        AuthError::TokenInvalid => app_error(ErrorReason::TokenInvalid),
-        AuthError::UserNotFound => app_error(ErrorReason::UserNotFound),
-        AuthError::UsernameTaken => app_error(ErrorReason::UsernameTaken),
+        AuthError::SignupFieldsRequired => {
+            lemma_proto::app_error(ErrorReason::SignupFieldsRequired)
+        }
+        AuthError::CredentialsInvalid => lemma_proto::app_error(ErrorReason::CredentialsInvalid),
+        AuthError::TokenInvalid => lemma_proto::app_error(ErrorReason::TokenInvalid),
+        AuthError::UserNotFound => lemma_proto::app_error(ErrorReason::UserNotFound),
+        AuthError::UsernameTaken => lemma_proto::app_error(ErrorReason::UsernameTaken),
         AuthError::Sign(m) => ConnectError::internal(format!("jwt sign: {m}")),
         AuthError::Hash(m) => ConnectError::internal(format!("hash password: {m}")),
         AuthError::Store(m) => ConnectError::internal(format!("db: {m}")),
@@ -125,11 +138,11 @@ fn map_domain(e: AuthError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::AuthService for AuthRpc {
+impl<A: AuthStore> v1::AuthService for AuthRpc<A> {
     async fn sign_up(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::SignUpRequest>,
+        request: ServiceRequest<'_, SignUpRequest>,
     ) -> ServiceResult<SignUpResponse> {
         let session = self
             .domain
@@ -150,7 +163,7 @@ impl lemma_proto::lemma::v1::AuthService for AuthRpc {
     async fn login(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::LoginRequest>,
+        request: ServiceRequest<'_, LoginRequest>,
     ) -> ServiceResult<LoginResponse> {
         let session = self
             .domain
@@ -171,7 +184,7 @@ impl lemma_proto::lemma::v1::AuthService for AuthRpc {
     async fn refresh(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::RefreshRequest>,
+        request: ServiceRequest<'_, RefreshRequest>,
     ) -> ServiceResult<RefreshResponse> {
         let refresh_token = refresh_token_of(&ctx, request.refresh_token)?;
         let tokens = self
@@ -192,10 +205,10 @@ impl lemma_proto::lemma::v1::AuthService for AuthRpc {
     async fn logout(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::LogoutRequest>,
+        request: ServiceRequest<'_, LogoutRequest>,
     ) -> ServiceResult<LogoutResponse> {
         let token = if request.refresh_token.is_empty() {
-            cookie_value(&ctx, REFRESH_COOKIE)
+            request_auth::cookie_value(&ctx, REFRESH_COOKIE)
         } else {
             Some(request.refresh_token.to_owned())
         };
@@ -212,9 +225,9 @@ impl lemma_proto::lemma::v1::AuthService for AuthRpc {
     async fn me(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, lemma_proto::lemma::v1::MeRequest>,
+        _request: ServiceRequest<'_, MeRequest>,
     ) -> ServiceResult<MeResponse> {
-        let user_id = require_user(&self.secret, &ctx)?;
+        let user_id = request_auth::require_user(&self.secret, &ctx)?;
         let user = self.domain.me(user_id).await.map_err(map_domain)?;
         Response::ok(MeResponse {
             user: user_to_proto(&user).into(),

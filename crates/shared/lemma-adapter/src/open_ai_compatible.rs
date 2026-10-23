@@ -1,26 +1,25 @@
 //! Adapter for OpenAI-compatible chat completions APIs.
 
-use std::sync::Arc;
-
 use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
-use lemma_model::{Adapter, BoxModelFuture, Endpoint, ModelError, ModelRequest};
+use lemma_model::{Adapter, BoxEventStream, Endpoint, ModelError, ModelRequest};
 use serde::Deserialize;
 
 use crate::error;
-use crate::request::openai_messages;
-use crate::sse::{SseParser, events_from_sse};
-use crate::transport::HttpTransport;
+use crate::http_transport::HttpTransport;
+use crate::sse::SseParser;
+use crate::{request, sse};
 
 /// Streams via `POST <base_url>/chat/completions`, or the endpoint's
 /// `api_path` in place of the path, with a bearer token.
-pub struct OpenAiCompatible {
-    transport: Arc<dyn HttpTransport>,
+#[derive(Debug)]
+pub struct OpenAiCompatible<T> {
+    transport: T,
     endpoint: Endpoint,
 }
 
-impl OpenAiCompatible {
+impl<T: HttpTransport> OpenAiCompatible<T> {
     /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: Arc<dyn HttpTransport>, endpoint: Endpoint) -> Self {
+    pub fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,
@@ -233,8 +232,8 @@ impl SseParser for Parser {
     }
 }
 
-impl Adapter for OpenAiCompatible {
-    fn stream(&self, req: ModelRequest) -> BoxModelFuture {
+impl<T: HttpTransport> Adapter for OpenAiCompatible<T> {
+    async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
         let base_url = if endpoint.base_url.is_empty() {
             "https://api.openai.com/v1"
@@ -249,7 +248,7 @@ impl Adapter for OpenAiCompatible {
         let url = format!("{}{}", base_url.trim_end_matches('/'), path);
         let mut body = serde_json::json!({
             "model": req.model,
-            "messages": openai_messages(&req.messages),
+            "messages": request::openai_messages(&req.messages),
             "stream": true,
             "stream_options": { "include_usage": true },
         });
@@ -280,29 +279,27 @@ impl Adapter for OpenAiCompatible {
                 format!("Bearer {}", endpoint.api_key),
             )]
         };
-        let transport = Arc::clone(&self.transport);
-        Box::pin(async move {
-            let bytes = transport.post_stream(url, headers, body).await?;
-            Ok(events_from_sse(
-                bytes,
-                Parser {
-                    usage: None,
-                    stop: StopReason::Stop,
-                    thinking_open: false,
-                    tools: Vec::new(),
-                },
-            ))
-        })
+        let bytes = self.transport.post_stream(url, headers, body).await?;
+        Ok(sse::events_from_sse(
+            bytes,
+            Parser {
+                usage: None,
+                stop: StopReason::Stop,
+                thinking_open: false,
+                tools: Vec::new(),
+            },
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use futures::executor;
     use futures::{StreamExt, stream};
     use lemma_core::ToolCall;
 
     use super::*;
-    use crate::transport::ByteStream;
+    use crate::http_transport::ByteStream;
 
     fn parser() -> Parser {
         Parser {
@@ -317,7 +314,7 @@ mod tests {
         let bytes: ByteStream = Box::pin(stream::iter(vec![Ok::<_, ModelError>(
             sse.as_bytes().to_vec(),
         )]));
-        events_from_sse(bytes, parser())
+        sse::events_from_sse(bytes, parser())
             .collect::<Vec<_>>()
             .await
             .into_iter()
@@ -332,7 +329,7 @@ data: {\"choices\":[{\"delta\":{\"content\":\"世界\"},\"finish_reason\":null}]
 data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\
 data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":4}}\n\
 data: [DONE]\n";
-        let events = futures::executor::block_on(collect(sse))?;
+        let events = executor::block_on(collect(sse))?;
         assert_eq!(
             events,
             vec![
@@ -370,7 +367,7 @@ data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arg
 data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"北京\\\"}\"}}]},\"finish_reason\":null}]}\n\
 data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\
 data: [DONE]\n";
-        let events = futures::executor::block_on(collect(sse))?;
+        let events = executor::block_on(collect(sse))?;
         assert_eq!(
             events,
             vec![

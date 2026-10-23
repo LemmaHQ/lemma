@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::content::{ContentBlock, ToolCall};
+use crate::content_block::{ContentBlock, ToolCall};
 use crate::usage::Usage;
 
 /// Why a generation ended.
@@ -52,6 +52,7 @@ pub enum Message {
 
 impl Message {
     /// Content blocks of any message variant.
+    #[must_use]
     pub fn content(&self) -> &[ContentBlock] {
         match self {
             Self::User { content }
@@ -62,6 +63,7 @@ impl Message {
 
     /// Visible text of the message: text blocks joined by spaces. Lossy
     /// projection for flat-text consumers (search index, legacy contracts).
+    #[must_use]
     pub fn visible_text(&self) -> String {
         self.content()
             .iter()
@@ -70,17 +72,15 @@ impl Message {
             .join(" ")
     }
 
-    /// Collects every tool call contained in an assistant message.
-    pub fn tool_calls(&self) -> Vec<&ToolCall> {
-        match self {
-            Self::Assistant { content, .. } => content
-                .iter()
-                .filter_map(|b| match b {
-                    ContentBlock::ToolCall(call) => Some(call),
-                    _ => None,
-                })
-                .collect(),
-            _ => Vec::new(),
-        }
+    /// Every tool call contained in an assistant message.
+    pub fn tool_calls(&self) -> impl Iterator<Item = &ToolCall> {
+        let content: &[ContentBlock] = match self {
+            Self::Assistant { content, .. } => content,
+            Self::User { .. } | Self::ToolResult { .. } => &[],
+        };
+        content.iter().filter_map(|b| match b {
+            ContentBlock::ToolCall(call) => Some(call),
+            _ => None,
+        })
     }
 }

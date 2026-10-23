@@ -3,15 +3,19 @@
 use sqlx::Sqlite;
 use uuid::Uuid;
 
+use crate::clock;
 use crate::entity::User;
-use crate::now_ms;
 
 /// Inserts a user and returns it.
-pub async fn insert<'e, E>(executor: E, username: &str, email: &str) -> sqlx::Result<User>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert<'conn, E>(executor: E, username: &str, email: &str) -> sqlx::Result<User>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
-    let now = now_ms();
+    let now = clock::now_ms();
     sqlx::query_as::<_, User>(
         r#"
         INSERT INTO users (id, username, email, created_at, updated_at)
@@ -29,9 +33,13 @@ where
 }
 
 /// Finds a user by username or email; `login` matches either column.
-pub async fn find_by_login<'e, E>(executor: E, login: &str) -> sqlx::Result<Option<User>>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn find_by_login<'conn, E>(executor: E, login: &str) -> sqlx::Result<Option<User>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query_as::<_, User>("SELECT * FROM users WHERE username = ? OR email = ?")
         .bind(login)
@@ -41,9 +49,13 @@ where
 }
 
 /// Finds a user by id.
-pub async fn find_by_id<'e, E>(executor: E, id: Uuid) -> sqlx::Result<Option<User>>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn find_by_id<'conn, E>(executor: E, id: Uuid) -> sqlx::Result<Option<User>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = ?")
         .bind(id)

@@ -6,10 +6,10 @@ pub(crate) fn transport(e: impl Display) -> ModelError {
     ModelError::new(format!("transport: {e}"))
 }
 
-pub(crate) fn http(status: u16, body: String) -> ModelError {
+pub(crate) fn http(status: u16, body: &str) -> ModelError {
     ModelError::new(format!("upstream {status}: {body}"))
 }
 
-pub(crate) fn protocol(msg: impl Into<String>) -> ModelError {
+pub(crate) fn protocol(msg: String) -> ModelError {
     ModelError::new(msg)
 }

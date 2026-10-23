@@ -1,5 +1,6 @@
 //! Error types for the auth domain.
 
+use std::error::Error;
 use std::fmt;
 
 /// Errors surfaced by auth storage backends.
@@ -20,7 +21,7 @@ impl fmt::Display for AuthStoreError {
     }
 }
 
-impl std::error::Error for AuthStoreError {}
+impl Error for AuthStoreError {}
 
 /// Errors surfaced by the auth domain. The RPC shell maps these to wire
 /// error reasons; local callers match on them directly.
@@ -59,7 +60,7 @@ impl fmt::Display for AuthError {
     }
 }
 
-impl std::error::Error for AuthError {}
+impl Error for AuthError {}
 
 impl From<AuthStoreError> for AuthError {
     fn from(e: AuthStoreError) -> Self {

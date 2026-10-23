@@ -1,9 +1,9 @@
 //! `AuthStore` implementation over the users and auth queries.
 
 use chrono::{DateTime, Utc};
+use lemma_auth::{AuthStore, AuthStoreError, RefreshToken, User};
+use sqlx::SqlitePool;
 use uuid::Uuid;
-
-use lemma_auth::{AuthStore, AuthStoreError, BoxAuthFuture, RefreshToken, User};
 
 use crate::entity;
 use crate::queries::auth::{credentials, tokens};
@@ -36,6 +36,7 @@ fn into_token(t: entity::RefreshToken) -> Result<RefreshToken, AuthStoreError> {
     })
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "used as a map_err function")]
 fn store_err(e: sqlx::Error) -> AuthStoreError {
     AuthStoreError::Db(e.to_string())
 }
@@ -45,142 +46,127 @@ fn unique_violation(e: &sqlx::Error, needle: &str) -> bool {
 }
 
 /// [`AuthStore`] backed by a SQLite pool.
+#[derive(Debug, Clone)]
 pub struct SqliteAuthStore {
-    pool: sqlx::SqlitePool,
+    pool: SqlitePool,
 }
 
 impl SqliteAuthStore {
     /// Creates the store over a pool.
-    pub fn new(pool: sqlx::SqlitePool) -> Self {
+    #[must_use]
+    pub fn new(pool: SqlitePool) -> Self {
         Self { pool }
     }
 }
 
 impl AuthStore for SqliteAuthStore {
-    fn create_user_with_credential<'a>(
-        &'a self,
-        username: &'a str,
-        email: &'a str,
-        password_hash: &'a str,
-    ) -> BoxAuthFuture<'a, User> {
-        Box::pin(async move {
-            let mut tx = self.pool.begin().await.map_err(store_err)?;
-            let user = users::insert(&mut *tx, username, email)
-                .await
-                .map_err(|e| {
-                    if unique_violation(&e, "users.username") || unique_violation(&e, "users.email")
-                    {
-                        AuthStoreError::UsernameTaken
-                    } else {
-                        store_err(e)
-                    }
-                })?;
-            credentials::upsert(&mut *tx, user.id, password_hash)
-                .await
-                .map_err(store_err)?;
-            tx.commit().await.map_err(store_err)?;
-            into_user(user)
-        })
-    }
-
-    fn find_user_by_login<'a>(&'a self, login: &'a str) -> BoxAuthFuture<'a, Option<User>> {
-        Box::pin(async move {
-            users::find_by_login(&self.pool, login)
-                .await
-                .map_err(store_err)?
-                .map(into_user)
-                .transpose()
-        })
-    }
-
-    fn find_user_by_id<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, Option<User>> {
-        Box::pin(async move {
-            users::find_by_id(&self.pool, id)
-                .await
-                .map_err(store_err)?
-                .map(into_user)
-                .transpose()
-        })
-    }
-
-    fn password_hash<'a>(&'a self, user_id: Uuid) -> BoxAuthFuture<'a, Option<String>> {
-        Box::pin(async move {
-            credentials::password_hash(&self.pool, user_id)
-                .await
-                .map_err(store_err)
-        })
-    }
-
-    fn insert_refresh_token<'a>(
-        &'a self,
-        id: Uuid,
-        user_id: Uuid,
-        token_hash: &'a str,
-        expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, ()> {
-        Box::pin(async move {
-            tokens::insert(
-                &self.pool,
-                id,
-                user_id,
-                token_hash,
-                expires_at.timestamp_millis(),
-            )
+    async fn create_user_with_credential(
+        &self,
+        username: &str,
+        email: &str,
+        password_hash: &str,
+    ) -> Result<User, AuthStoreError> {
+        let mut tx = self.pool.begin().await.map_err(store_err)?;
+        let user = users::insert(&mut *tx, username, email)
             .await
-            .map_err(store_err)
-        })
-    }
-
-    fn find_refresh_token_by_hash<'a>(
-        &'a self,
-        token_hash: &'a str,
-    ) -> BoxAuthFuture<'a, Option<RefreshToken>> {
-        Box::pin(async move {
-            tokens::find_by_hash(&self.pool, token_hash)
-                .await
-                .map_err(store_err)?
-                .map(into_token)
-                .transpose()
-        })
-    }
-
-    fn rotate_refresh_token<'a>(
-        &'a self,
-        id: Uuid,
-        new_id: Uuid,
-        new_token_hash: &'a str,
-        new_expires_at: DateTime<Utc>,
-    ) -> BoxAuthFuture<'a, ()> {
-        Box::pin(async move {
-            let mut tx = self.pool.begin().await.map_err(store_err)?;
-            let inserted = tokens::insert_successor(
-                &mut *tx,
-                id,
-                new_id,
-                new_token_hash,
-                new_expires_at.timestamp_millis(),
-            )
+            .map_err(|e| {
+                if unique_violation(&e, "users.username") || unique_violation(&e, "users.email") {
+                    AuthStoreError::UsernameTaken
+                } else {
+                    store_err(e)
+                }
+            })?;
+        credentials::upsert(&mut *tx, user.id, password_hash)
             .await
             .map_err(store_err)?;
-            if inserted == 0 {
-                return Err(AuthStoreError::Db(format!("refresh token not found: {id}")));
-            }
-            tokens::mark_replaced(&mut *tx, id, new_id)
-                .await
-                .map_err(store_err)?;
-            tx.commit().await.map_err(store_err)
-        })
+        tx.commit().await.map_err(store_err)?;
+        into_user(user)
     }
 
-    fn revoke_refresh_token<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, u64> {
-        Box::pin(async move { tokens::revoke(&self.pool, id).await.map_err(store_err) })
+    async fn find_user_by_login(&self, login: &str) -> Result<Option<User>, AuthStoreError> {
+        users::find_by_login(&self.pool, login)
+            .await
+            .map_err(store_err)?
+            .map(into_user)
+            .transpose()
     }
 
-    fn revoke_refresh_chain<'a>(&'a self, id: Uuid) -> BoxAuthFuture<'a, u64> {
-        Box::pin(async move {
-            tokens::revoke_chain(&self.pool, id)
-                .await
-                .map_err(store_err)
-        })
+    async fn find_user_by_id(&self, id: Uuid) -> Result<Option<User>, AuthStoreError> {
+        users::find_by_id(&self.pool, id)
+            .await
+            .map_err(store_err)?
+            .map(into_user)
+            .transpose()
+    }
+
+    async fn password_hash(&self, user_id: Uuid) -> Result<Option<String>, AuthStoreError> {
+        credentials::password_hash(&self.pool, user_id)
+            .await
+            .map_err(store_err)
+    }
+
+    async fn insert_refresh_token(
+        &self,
+        id: Uuid,
+        user_id: Uuid,
+        token_hash: &str,
+        expires_at: DateTime<Utc>,
+    ) -> Result<(), AuthStoreError> {
+        tokens::insert(
+            &self.pool,
+            id,
+            user_id,
+            token_hash,
+            expires_at.timestamp_millis(),
+        )
+        .await
+        .map_err(store_err)
+    }
+
+    async fn find_refresh_token_by_hash(
+        &self,
+        token_hash: &str,
+    ) -> Result<Option<RefreshToken>, AuthStoreError> {
+        tokens::find_by_hash(&self.pool, token_hash)
+            .await
+            .map_err(store_err)?
+            .map(into_token)
+            .transpose()
+    }
+
+    async fn rotate_refresh_token(
+        &self,
+        id: Uuid,
+        new_id: Uuid,
+        new_token_hash: &str,
+        new_expires_at: DateTime<Utc>,
+    ) -> Result<(), AuthStoreError> {
+        let mut tx = self.pool.begin().await.map_err(store_err)?;
+        let inserted = tokens::insert_successor(
+            &mut *tx,
+            id,
+            new_id,
+            new_token_hash,
+            new_expires_at.timestamp_millis(),
+        )
+        .await
+        .map_err(store_err)?;
+        if inserted == 0 {
+            return Err(AuthStoreError::Db(format!("refresh token not found: {id}")));
+        }
+        tokens::mark_replaced(&mut *tx, id, new_id)
+            .await
+            .map_err(store_err)?;
+        tx.commit().await.map_err(store_err)
+    }
+
+    async fn revoke_refresh_token(&self, id: Uuid) -> Result<u64, AuthStoreError> {
+        tokens::revoke(&self.pool, id).await.map_err(store_err)
+    }
+
+    async fn revoke_refresh_chain(&self, id: Uuid) -> Result<u64, AuthStoreError> {
+        tokens::revoke_chain(&self.pool, id)
+            .await
+            .map_err(store_err)
     }
 }

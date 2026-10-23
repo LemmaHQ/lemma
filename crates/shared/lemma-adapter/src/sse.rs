@@ -12,7 +12,7 @@ use futures::{Stream, StreamExt, stream};
 use lemma_core::{StopReason, StreamEvent, Usage};
 use lemma_model::{BoxEventStream, ModelError};
 
-use crate::transport::ByteStream;
+use crate::http_transport::ByteStream;
 
 /// Parses a provider's SSE `data:` payloads into canonical events.
 pub(crate) trait SseParser: Send + 'static {

@@ -1,72 +1,84 @@
-//! Connect RPC shell exposing `lemma_agent::Agent` as the AgentService.
+//! Handler for the `AgentService` RPCs.
 
-mod live;
-
+use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use buffa::MessageField;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use futures::StreamExt;
-use lemma_agent::{Agent, TurnEnd, TurnEvent, TurnRequest};
-use lemma_auth_rpc::require_user;
-use lemma_proto::app_error;
+use lemma_agent::{Agent, AgentError as TurnError, TurnEnd, TurnEvent, TurnRequest};
+use lemma_conversation::ConversationStore;
+use lemma_core::Usage;
+use lemma_model::Connector;
+use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    AbortMessageResponse, AgentAborted, AgentDelta, AgentDone, AgentError, AgentEvent,
-    AgentStarted, AgentTurnStarted, ErrorReason, ResumeStreamResponse, SendMessageRequest,
-    SendMessageResponse, TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted,
-    agent_delta, agent_event,
+    AbortMessageRequest, AbortMessageResponse, AgentAborted, AgentDelta, AgentDone, AgentError,
+    AgentEvent, AgentStarted, AgentTurnStarted, ErrorReason, ResumeStreamRequest,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TextDelta, ThinkingDelta,
+    TokenUsage, ToolCallFinished, ToolCallStarted, agent_delta, agent_event,
 };
+use lemma_provider::ProviderStore;
 use uuid::Uuid;
 
-use crate::live::LiveTurns;
+use crate::live_turns::LiveTurns;
 
-/// Connect handler implementing the AgentService RPCs.
+/// Connect handler implementing the `AgentService` RPCs.
 ///
 /// A turn runs to its end independently of its streams: a client that loses
 /// the `SendMessage` stream resumes it with `ResumeStream`, and only
 /// `AbortMessage` stops the turn early.
-pub struct AgentRpc {
-    agent: Arc<Agent>,
-    jwt_secret: Arc<str>,
+pub struct AgentRpc<S, P, C> {
+    agent: Agent<S, P, C>,
+    jwt_secret: String,
     live: Arc<LiveTurns>,
 }
 
-impl AgentRpc {
+impl<S: Debug, P: Debug, C: Debug> Debug for AgentRpc<S, P, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AgentRpc")
+            .field("agent", &self.agent)
+            .field("live", &self.live)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<S: ConversationStore, P: ProviderStore, C: Connector> AgentRpc<S, P, C> {
     /// Creates the handler over the agent.
-    pub fn new(agent: Arc<Agent>, jwt_secret: impl Into<Arc<str>>) -> Self {
+    pub fn new(agent: Agent<S, P, C>, jwt_secret: String) -> Self {
         Self {
             agent,
-            jwt_secret: jwt_secret.into(),
+            jwt_secret,
             live: Arc::default(),
         }
     }
 }
 
-fn prepare_error(e: lemma_agent::AgentError) -> ConnectError {
+fn prepare_error(e: TurnError) -> ConnectError {
     match e {
-        lemma_agent::AgentError::ContentRequired => {
-            app_error(ErrorReason::ERROR_REASON_CONTENT_REQUIRED)
+        TurnError::ContentRequired => {
+            lemma_proto::app_error(ErrorReason::ERROR_REASON_CONTENT_REQUIRED)
         }
-        lemma_agent::AgentError::ModelRequired => {
-            app_error(ErrorReason::ERROR_REASON_MODEL_REQUIRED)
+        TurnError::ModelRequired => {
+            lemma_proto::app_error(ErrorReason::ERROR_REASON_MODEL_REQUIRED)
         }
-        lemma_agent::AgentError::ProviderNotFound => {
-            app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND)
+        TurnError::ProviderNotFound => {
+            lemma_proto::app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND)
         }
         other => ConnectError::internal(other.to_string()),
     }
 }
 
 #[allow(refining_impl_trait)]
-impl lemma_proto::lemma::v1::AgentService for AgentRpc {
+impl<S: ConversationStore, P: ProviderStore, C: Connector> v1::AgentService for AgentRpc<S, P, C> {
     async fn send_message(
         &self,
         ctx: RequestContext,
         request: ServiceRequest<'_, SendMessageRequest>,
     ) -> ServiceResult<ServiceStream<SendMessageResponse>> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        use futures::StreamExt;
+
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let turn = self
             .agent
             .prepare(TurnRequest {
@@ -105,9 +117,9 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
     async fn abort_message(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::AbortMessageRequest>,
+        request: ServiceRequest<'_, AbortMessageRequest>,
     ) -> ServiceResult<AbortMessageResponse> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         self.agent.abort(user_id, parse_uuid(request.message_id)?);
         Ok(Response::new(AbortMessageResponse {
             ..Default::default()
@@ -117,15 +129,17 @@ impl lemma_proto::lemma::v1::AgentService for AgentRpc {
     async fn resume_stream(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, lemma_proto::lemma::v1::ResumeStreamRequest>,
+        request: ServiceRequest<'_, ResumeStreamRequest>,
     ) -> ServiceResult<ServiceStream<ResumeStreamResponse>> {
-        let user_id = require_user(&self.jwt_secret, &ctx)?;
+        use futures::StreamExt;
+
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let offset = usize::try_from(request.offset)
             .map_err(|_| ConnectError::invalid_argument("offset is negative"))?;
         let events = self
             .live
             .follow(user_id, parse_uuid(request.message_id)?, offset)
-            .ok_or_else(|| app_error(ErrorReason::ERROR_REASON_TURN_NOT_RUNNING))?;
+            .ok_or_else(|| lemma_proto::app_error(ErrorReason::ERROR_REASON_TURN_NOT_RUNNING))?;
         Response::stream_ok(Box::pin(events.map(|event| {
             Ok(ResumeStreamResponse {
                 event: MessageField::some(event),
@@ -145,13 +159,13 @@ fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
             id,
             name,
             arguments,
-        } => tool_call_started_event(&id, &name, &arguments),
+        } => tool_call_started_event(id, name, arguments),
         TurnEvent::ToolFinished {
             id,
             name,
             content,
             is_error,
-        } => tool_call_finished_event(&id, &name, &content, is_error),
+        } => tool_call_finished_event(id, name, content, is_error),
         TurnEvent::AssistantDone { usage, .. } => done_event(usage),
     }
 }
@@ -202,7 +216,7 @@ fn thinking_delta_event(thinking: String) -> AgentEvent {
     }
 }
 
-fn done_event(usage: Option<lemma_core::Usage>) -> AgentEvent {
+fn done_event(usage: Option<Usage>) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::Done(Box::new(AgentDone {
             usage: usage
@@ -241,13 +255,13 @@ fn turn_started_event(id: Uuid) -> AgentEvent {
     }
 }
 
-fn tool_call_started_event(call_id: &str, name: &str, arguments: &str) -> AgentEvent {
+fn tool_call_started_event(call_id: String, name: String, arguments: String) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::ToolCallStarted(Box::new(
             ToolCallStarted {
-                call_id: call_id.to_string(),
-                name: name.to_string(),
-                arguments: arguments.to_string(),
+                call_id,
+                name,
+                arguments,
                 ..Default::default()
             },
         ))),
@@ -256,17 +270,17 @@ fn tool_call_started_event(call_id: &str, name: &str, arguments: &str) -> AgentE
 }
 
 fn tool_call_finished_event(
-    call_id: &str,
-    name: &str,
-    content: &str,
+    call_id: String,
+    name: String,
+    content: String,
     is_error: bool,
 ) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::ToolCallFinished(Box::new(
             ToolCallFinished {
-                call_id: call_id.to_string(),
-                name: name.to_string(),
-                content: content.to_string(),
+                call_id,
+                name,
+                content,
                 is_error,
                 ..Default::default()
             },
@@ -276,5 +290,5 @@ fn tool_call_finished_event(
 }
 
 fn parse_uuid(s: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(s).map_err(|_| app_error(ErrorReason::ERROR_REASON_ID_INVALID))
+    Uuid::parse_str(s).map_err(|_| lemma_proto::app_error(ErrorReason::ERROR_REASON_ID_INVALID))
 }

@@ -1,33 +1,28 @@
-use std::fmt;
+use std::error::Error;
+use std::{fmt, io};
 
-/// Errors produced during tool discovery, argument validation, and execution.
+/// Errors produced during tool argument validation and execution.
 #[derive(Debug)]
 pub enum ToolError {
     /// Failure during tool argument validation.
     Validation(String),
-    /// Execution denied by approval policy.
-    PermissionDenied(String),
     /// Failure encountered within the execution environment.
     Execution(String),
-    /// Target tool missing from the registry.
-    NotFound(String),
 }
 
 impl fmt::Display for ToolError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Validation(e) => write!(f, "validation error: {e}"),
-            Self::PermissionDenied(e) => write!(f, "permission denied: {e}"),
             Self::Execution(e) => write!(f, "execution error: {e}"),
-            Self::NotFound(e) => write!(f, "tool not found: {e}"),
         }
     }
 }
 
-impl std::error::Error for ToolError {}
+impl Error for ToolError {}
 
-impl From<std::io::Error> for ToolError {
-    fn from(error: std::io::Error) -> Self {
+impl From<io::Error> for ToolError {
+    fn from(error: io::Error) -> Self {
         Self::Execution(error.to_string())
     }
 }

@@ -29,8 +29,8 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 - **provider** — 由 `lemma-provider` 存储的、用户配置的模型端点：类型、标识符、显示名称、base URL、API key、路径覆盖、缓存的模型 id，以及启用标志。
 - **provider 类型（provider kind）** — provider 的 API 方言：`openai`（OpenAI chat completions 及兼容 API）、`anthropic` 或 `gemini`。`lemma-model` 定义唯一的 `ProviderKind` 枚举。
 - **provider 标识符（provider identifier）** — provider 的机器名：非空 ASCII，在同一用户下唯一，创建后不可修改。
-- **端点（endpoint）** — 一个 `Endpoint`：由 `ProviderService::endpoint` 打开的 provider 类型、base URL、路径覆盖与明文 API key。
-- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应类型的适配器。
+- **端点（endpoint）** — 一个 `Endpoint`：`ProviderService::adapter` 在绑定适配器之前打开的 provider 类型、base URL、路径覆盖与明文 API key。
+- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应类型的适配器，并以 `ModelAdapter` 变体的形式返回。
 - **模型列表（model list）** — provider 端点报告的模型 id，由 `Connector::list_models` 实时获取。provider 行另行保存一份模型 id 列表。
 
 ## 工具

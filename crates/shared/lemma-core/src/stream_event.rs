@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::StopReason;
-use crate::content::ToolCall;
+use crate::content_block::ToolCall;
 use crate::usage::Usage;
 
 /// One incremental event from a streaming provider call.

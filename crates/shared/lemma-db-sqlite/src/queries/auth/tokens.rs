@@ -1,13 +1,17 @@
-//! Queries for the refresh_tokens table.
+//! Queries for the `refresh_tokens` table.
 
 use sqlx::Sqlite;
 use uuid::Uuid;
 
+use crate::clock;
 use crate::entity::RefreshToken;
-use crate::now_ms;
 
 /// Inserts a refresh token row.
-pub async fn insert<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert<'conn, E>(
     executor: E,
     id: Uuid,
     user_id: Uuid,
@@ -15,7 +19,7 @@ pub async fn insert<'e, E>(
     expires_at: i64,
 ) -> sqlx::Result<()>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query(
         r#"
@@ -26,7 +30,7 @@ where
     .bind(id)
     .bind(user_id)
     .bind(token_hash)
-    .bind(now_ms())
+    .bind(clock::now_ms())
     .bind(expires_at)
     .execute(executor)
     .await
@@ -35,7 +39,11 @@ where
 
 /// Inserts the rotation successor of a consumed token, inheriting its
 /// owner. Returns the number of rows inserted: zero when the consumed token is missing.
-pub async fn insert_successor<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn insert_successor<'conn, E>(
     executor: E,
     id: Uuid,
     new_id: Uuid,
@@ -43,7 +51,7 @@ pub async fn insert_successor<'e, E>(
     new_expires_at: i64,
 ) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query(
         r#"
@@ -53,7 +61,7 @@ where
     )
     .bind(new_id)
     .bind(new_token_hash)
-    .bind(now_ms())
+    .bind(clock::now_ms())
     .bind(new_expires_at)
     .bind(id)
     .execute(executor)
@@ -62,12 +70,16 @@ where
 }
 
 /// Looks up a token row by its SHA-256 hash.
-pub async fn find_by_hash<'e, E>(
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn find_by_hash<'conn, E>(
     executor: E,
     token_hash: &str,
 ) -> sqlx::Result<Option<RefreshToken>>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query_as::<_, RefreshToken>("SELECT * FROM refresh_tokens WHERE token_hash = ?")
         .bind(token_hash)
@@ -76,9 +88,13 @@ where
 }
 
 /// Links a consumed token to its rotation successor.
-pub async fn mark_replaced<'e, E>(executor: E, id: Uuid, replaced_by: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn mark_replaced<'conn, E>(executor: E, id: Uuid, replaced_by: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query("UPDATE refresh_tokens SET replaced_by = ? WHERE id = ?")
         .bind(replaced_by)
@@ -89,12 +105,16 @@ where
 }
 
 /// Revokes a single token. Idempotent.
-pub async fn revoke<'e, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn revoke<'conn, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query("UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL")
-        .bind(now_ms())
+        .bind(clock::now_ms())
         .bind(id)
         .execute(executor)
         .await
@@ -103,9 +123,13 @@ where
 
 /// Revokes a token and every successor in its rotation chain, following
 /// `replaced_by` recursively.
-pub async fn revoke_chain<'e, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
+///
+/// # Errors
+///
+/// Propagates the [`sqlx::Error`] of the query.
+pub async fn revoke_chain<'conn, E>(executor: E, id: Uuid) -> sqlx::Result<u64>
 where
-    E: sqlx::Executor<'e, Database = Sqlite>,
+    E: sqlx::Executor<'conn, Database = Sqlite>,
 {
     sqlx::query(
         r#"
@@ -120,7 +144,7 @@ where
         "#,
     )
     .bind(id)
-    .bind(now_ms())
+    .bind(clock::now_ms())
     .execute(executor)
     .await
     .map(|r| r.rows_affected())

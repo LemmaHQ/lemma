@@ -1,17 +1,15 @@
 use std::pin::Pin;
 use std::time::Duration;
 
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use lemma_model::ModelError;
+use reqwest::{Client, RequestBuilder, Response};
+use serde_json::Value;
 
 use crate::error;
 
 /// Raw response body as a byte stream.
 pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Vec<u8>, ModelError>> + Send>>;
-
-/// Future returned by [`HttpTransport`] calls.
-pub type BoxTransportFuture<'a, T> =
-    Pin<Box<dyn Future<Output = Result<T, ModelError>> + Send + 'a>>;
 
 /// Time limit of a [`HttpTransport::get_json`] call.
 const GET_TIMEOUT: Duration = Duration::from_secs(10);
@@ -20,60 +18,61 @@ const GET_TIMEOUT: Duration = Duration::from_secs(10);
 ///
 /// Hosts inject their own networking stack (reqwest on server/desktop,
 /// platform networking on mobile); adapters rely exclusively on injected
-/// client implementations.
-pub trait HttpTransport: Send + Sync {
+/// client implementations. Clones share one underlying client.
+pub trait HttpTransport: Clone + Send + Sync + 'static {
     /// Sends a POST with a JSON body and returns the response as a byte
-    /// stream. Non-2xx statuses become an error carrying the body.
+    /// stream.
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError`] when the request fails or the status is not 2xx; the
+    /// error carries the response body.
     fn post_stream(
         &self,
         url: String,
         headers: Vec<(String, String)>,
-        body: serde_json::Value,
-    ) -> BoxTransportFuture<'_, ByteStream>;
+        body: Value,
+    ) -> impl Future<Output = Result<ByteStream, ModelError>> + Send;
 
     /// Sends a GET and parses the response body as JSON, within a 10-second
-    /// limit. Non-2xx statuses become an error carrying the body.
+    /// limit.
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError`] when the request fails or times out, the status is not
+    /// 2xx, or the body is not JSON.
     fn get_json(
         &self,
         url: String,
         headers: Vec<(String, String)>,
-    ) -> BoxTransportFuture<'_, serde_json::Value>;
+    ) -> impl Future<Output = Result<Value, ModelError>> + Send;
 }
 
 /// Default transport backed by reqwest.
+#[derive(Debug, Clone, Default)]
 pub struct ReqwestTransport {
-    client: reqwest::Client,
+    client: Client,
 }
 
 impl ReqwestTransport {
     /// Creates the transport with a fresh client.
+    #[must_use]
     pub fn new() -> Self {
-        Self {
-            client: reqwest::Client::new(),
-        }
+        Self::default()
     }
 }
 
-impl Default for ReqwestTransport {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-async fn send(req: reqwest::RequestBuilder) -> Result<reqwest::Response, ModelError> {
+async fn send(req: RequestBuilder) -> Result<Response, ModelError> {
     let resp = req.send().await.map_err(error::transport)?;
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.map_err(error::transport)?;
-        return Err(error::http(status.as_u16(), text));
+        return Err(error::http(status.as_u16(), &text));
     }
     Ok(resp)
 }
 
-fn with_headers(
-    mut req: reqwest::RequestBuilder,
-    headers: Vec<(String, String)>,
-) -> reqwest::RequestBuilder {
+fn with_headers(mut req: RequestBuilder, headers: Vec<(String, String)>) -> RequestBuilder {
     for (name, value) in headers {
         req = req.header(name, value);
     }
@@ -81,29 +80,28 @@ fn with_headers(
 }
 
 impl HttpTransport for ReqwestTransport {
-    fn post_stream(
+    async fn post_stream(
         &self,
         url: String,
         headers: Vec<(String, String)>,
-        body: serde_json::Value,
-    ) -> BoxTransportFuture<'_, ByteStream> {
-        Box::pin(async move {
-            let resp = send(with_headers(self.client.post(&url).json(&body), headers)).await?;
-            Ok(Box::pin(
-                resp.bytes_stream()
-                    .map(|r| r.map(|b| b.to_vec()).map_err(error::transport)),
-            ) as ByteStream)
-        })
+        body: Value,
+    ) -> Result<ByteStream, ModelError> {
+        use futures::StreamExt;
+
+        let resp = send(with_headers(self.client.post(&url).json(&body), headers)).await?;
+        let stream: ByteStream = Box::pin(
+            resp.bytes_stream()
+                .map(|r| r.map(|b| b.to_vec()).map_err(error::transport)),
+        );
+        Ok(stream)
     }
 
-    fn get_json(
+    async fn get_json(
         &self,
         url: String,
         headers: Vec<(String, String)>,
-    ) -> BoxTransportFuture<'_, serde_json::Value> {
-        Box::pin(async move {
-            let req = with_headers(self.client.get(&url).timeout(GET_TIMEOUT), headers);
-            send(req).await?.json().await.map_err(error::transport)
-        })
+    ) -> Result<Value, ModelError> {
+        let req = with_headers(self.client.get(&url).timeout(GET_TIMEOUT), headers);
+        send(req).await?.json().await.map_err(error::transport)
     }
 }

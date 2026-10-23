@@ -4,10 +4,10 @@
 
 mod adapter;
 mod endpoint;
-mod error;
-mod request;
+mod model_error;
+mod model_request;
 
-pub use adapter::{Adapter, BoxEventStream, BoxModelFuture, BoxModelsFuture, Connector};
+pub use adapter::{Adapter, BoxEventStream, Connector};
 pub use endpoint::{Endpoint, ProviderKind};
-pub use error::ModelError;
-pub use request::ModelRequest;
+pub use model_error::ModelError;
+pub use model_request::ModelRequest;

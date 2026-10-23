@@ -6,12 +6,13 @@ use lemma_proto::lemma::v1::AgentEvent;
 use tokio::sync::watch;
 use uuid::Uuid;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct EventLog {
     events: Vec<AgentEvent>,
     ended: bool,
 }
 
+#[derive(Debug)]
 struct LiveTurn {
     user_id: Uuid,
     log: watch::Receiver<EventLog>,
@@ -19,7 +20,7 @@ struct LiveTurn {
 
 /// The event logs of running turns, by user message id; any number of
 /// streams read a log from any offset.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(crate) struct LiveTurns(DashMap<Uuid, LiveTurn>);
 
 /// Appends a running turn's events. Dropping it ends the log and
@@ -111,6 +112,7 @@ fn follow(log: watch::Receiver<EventLog>, offset: usize) -> impl Stream<Item = A
 mod tests {
     use futures::StreamExt;
     use lemma_proto::lemma::v1::{AgentError, agent_event};
+    use tokio::task;
 
     use super::*;
 
@@ -135,7 +137,7 @@ mod tests {
             panic!("running turn is not resumable");
         };
         let resumed = tokio::spawn(resumed.collect::<Vec<_>>());
-        tokio::task::yield_now().await;
+        task::yield_now().await;
         writer.push(event("c"));
         drop(writer);
 

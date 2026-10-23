@@ -52,6 +52,3 @@ pub enum TurnEvent {
         usage: Option<Usage>,
     },
 }
-
-/// Receives the events of one turn as they happen.
-pub type TurnObserver<'a> = &'a (dyn Fn(TurnEvent) + Send + Sync);
