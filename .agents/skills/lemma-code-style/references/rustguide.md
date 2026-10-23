@@ -1,2344 +1,1601 @@
 # Rust Style Guide
 
-## Motivation - why use a formatting tool?
+Source: <https://google.github.io/styleguide/rustguide.html>
 
-Formatting code is a mostly mechanical task which takes both time and mental effort. By using an automatic formatting tool, a programmer is relieved of this task and can concentrate on more important things.
+This copy removes the items that apply only to Google codebases: the Chromium, Fuchsia, and Android rules and exceptions, the C++ interop exceptions, and the per-codebase test framework section.
 
-Furthermore, by sticking to an established style guide (such as this one), programmers don’t need to formulate ad hoc style rules, nor do they need to debate with other programmers what style rules should be used, saving time, communication overhead, and mental energy.
+This document is a *style guide* for the usage of the Rust programming language
+at Google. In this context, “style” refers to more than just formatting; it
+includes guidance on API and implementation design.
 
-Humans comprehend information through pattern matching. By ensuring that all Rust code has similar formatting, less mental effort is required to comprehend a new project, lowering the barrier to entry for new developers.
+## Background
 
-Thus, there are productivity benefits to using a formatting tool (such as `rustfmt`), and even larger benefits by using a community-consistent formatting, typically by using a formatting tool’s default settings.
+### Goals of the style guide
 
-## The default Rust style
+By and large, we have this document for
+[the same reasons we have a C++ style guide](https://google.github.io/styleguide/cppguide.html#Goals).
 
-The Rust Style Guide defines the default Rust style, and *recommends* that developers and tools follow the default Rust style. Tools such as `rustfmt` use the style guide as a reference for the default style. Everything in this style guide, whether or not it uses language such as “must” or the imperative mood such as “insert a space …” or “break the line after …”, refers to the default style.
+Most style rules come from one or more of the goals listed below.
 
-This should not be interpreted as forbidding developers from following a non-default style, or forbidding tools from adding any particular configuration options.
+<dl>
 
-## Bugs
+<dt>Style rules should prioritize readability and maintainability over writeability</dt>
+<dd>We expect our code to be around for long periods of time, and we
+consider a little bit of extra effort applied during code writing to be
+worth it in the long run if the style rule improves readability.
+</dd>
 
-If the style guide differs from rustfmt, that may represent a bug in rustfmt, or a bug in the style guide; either way, please report it to the style team or the rustfmt team or both, for investigation and fix.
+<dt>Style rules should favor better automation</dt>
+<dd>
+Large-Scale Changes (LSCs)
+are common at Google, and consistency helps
+make LSCs easier to carry out.
+</dd>
 
-If implementing a new formatting tool based on the style guide and default Rust style, please test it on the corpus of existing Rust code, and avoid causing widespread breakage. The implementation and testing of such a tool may surface bugs in either the style guide or rustfmt, as well as bugs in the tool itself.
+<dt>Style rules should be consistent with the wider Rust ecosystem where possible</dt>
+<dd>The broader Rust ecosystem already has a pretty good amount of consistency
+in style, and we should rely on that where possible to reduce surprise and make
+it less work to learn Google's Rust style.
+</dd>
 
-We typically resolve bugs in a fashion that avoids widespread breakage.
+<dt>Style rules should pull their weight</dt>
+<dd>Every Rust developer and reviewer at Google has to keep these style rules
+in mind: as such, we should be careful to include rules that have a tangible
+benefit.
+</dd>
 
-## Formatting conventions
+<dt>Style rules may help avoid minor style disagreements</dt>
+<dd>There are many cases where reasonable people may disagree about a style, and
+we expect that disagreement to show up often on CLs. Having a style rule helps
+avoid having to rehash this each time. Rules in this category that do not have other
+benefits should be kept to a minimum.
+</dd>
 
-### Indentation and line width
+</dl>
 
-- Use spaces, not tabs.
-- Each level of indentation must be 4 spaces (that is, all indentation outside of string literals and comments must be a multiple of 4).
-- The maximum width for a line is 100 characters.
+<a id="public-rules"></a>
 
-#### Block indent
+## Follow public Rust style rules
 
-Prefer block indent over visual indent:
+Follow the official public Rust style rules to the extent they don't conflict
+with this style guide.
 
-``` playground
-#![allow(unused)]
-fn main() {
-// Block indent
-a_function_call(
-    foo,
-    bar,
-);
+*   [Rust Style Guide](https://doc.rust-lang.org/nightly/style-guide/)
 
-// Visual indent
-a_function_call(foo,
-                bar);
+    *   Most code formatting conventions are enforced automatically by rustfmt.
+
+*   [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
+
+A “conflict” would be a case where this style guide suggests a pattern that is
+discouraged, or counter to the primary encouraged pattern in the Rust style
+guide.
+
+Why does the guidance in this style guide deviate from regular Rust style rules?
+
+Most style guides have three goals: consistency, readability, and encouraging
+good API design. Regardless of the specific choices made, it helps everyone to
+have these choices made beforehand to limit bikeshedding.
+
+This style guide shares those goals, but it also has an additional goal not seen
+as often: smoothing the way for Large-Scale Changes (LSCs). Large codebases like
+many of the ones at Google occasionally need to run codebase-spanning
+refactorings that are assisted by tooling: for this to work well, the code
+should be something tooling has an easy time working with. Consistency helps for
+this, but so does having deliberate refactor-friendly patterns.
+
+<a id="api-design-context"></a>
+
+## Apply API design rules in context
+
+When applying rules that relate to API design, you should distinguish two types
+of code:
+
+*   Library code
+
+    *   Intended for use by other projects (applications or other libraries).
+    *   Solves a relatively general problem.
+
+*   Application code
+
+    *   Intended for use in a single application.
+    *   Solves a more specific problem.
+
+For *library code*, style guide rules that concern API design are binding.
+
+For *application code*, the rules on API design are a strong recommendation. As
+you apply them, keep in mind that since application code is written to solve a
+specific problem, it should generally favor simplicity and directness over broad
+reusability. Avoid premature generalization and abstraction; focus on what is
+required to meet the immediate need.
+
+<a id="code-organization"></a>
+
+## Code organization
+
+*Terminology:*
+
+*   A *crate* is a unit of compilation. A crate always contains a nameless Rust
+    module, the "root module".
+
+*   A Rust *module* is a unit of code organization within a crate. Rust modules
+    are used to control visibility of names. Modules can be nested. They can
+    also be used to split code across files and directories.
+
+<a id="userdefined-item"></a>
+
+### Name source files and leaf modules after the primary user-defined item
+
+When a `leaf module` has a primary user-defined item (e.g., `Foo`), the module
+should be named after that item (e.g., `mod foo` and `foo.rs`).
+
+Leaf modules that are not primarily about any particular abstraction can be
+named as desired.
+
+Rationale
+
+This makes it easy to identify the content/purpose of a source file or leaf
+module at a glance.
+
+<a id="non-leaf-modules"></a>
+
+### Don’t implement APIs in non-leaf modules
+
+The only items in non-leaf modules should be module declarations (not
+definitions) and `re-exports`.
+
+Note that the definition of `leaf modules` allows the following sub-modules:
+`mod test` and cross-language binding modules like `#[cxx::bridge]`.
+
+Exceptions:
+
+*   Having a small amount of core “ties things together” implementation code in
+    a non-leaf module may be fine. The goal is to not have a lot of code in
+    these modules.
+
+Rationale
+
+This makes it easier to find things, and avoids mixing structure and contents.
+
+<a id="glob-imports"></a>
+
+### Don’t use glob imports
+
+Don't use glob imports, except in the following situations where you may
+optionally do so at your own discretion:
+
+*   `use super::*` for inline modules
+*   `use enum::*` in method bodies of enums, and functions that are primarily
+    dealing with that enum
+*   `pub use submodule::*` for non-leaf modules
+
+If using third-party crates that encourage a prelude, it is up to the reviewer’s
+discretion to allow it.
+
+This also means that defining preludes should be avoided.
+
+Rationale
+
+Glob imports increase toil for code janitors running LSCs, and make it harder to
+know where a type comes from in contexts without xrefs.
+
+<a id="use-statement"></a>
+
+### A `use` statement should import items from one module
+
+This rule corresponds to the rustfmt setting `imports_granularity = Module`.
+
+Basically, there should not be any `::`'s inside the `{..}` block of a `use`
+statement. For example:
+
+Good:
+
+```rust
+use foo::Foo;
+use foo::bar::Bar;
+use foo::bar::Baz;
+```
+
+Good:
+
+```rust
+use foo::Foo;
+use foo::bar::{Bar, Baz};
+```
+
+Bad:
+
+```rust
+use foo::{Foo, bar::Bar};
+```
+
+<a id="prefer-local-trait-imports"></a>
+
+### Prefer locally-scoped trait imports
+
+Import traits within function bodies, unless the trait's methods are used
+extensively throughout the file.
+
+Good:
+
+```rust
+fn foo(x: u8) {
+    // Import the trait within a function, not at the module scope.
+    use std::str::FromStr;
+
+    let string: String = x.parse();
 }
 ```
 
-This makes for smaller diffs (e.g., if `a_function_call` is renamed in the above example) and less rightward drift.
+<a id="toplevel-functions"></a>
 
-### Trailing commas
+### Qualify calls to top-level functions with a module name
 
-In comma-separated lists of any kind, use a trailing comma when followed by a newline:
+To use top-level functions defined in other modules or crates, import their
+module and call them with `modulename::functionname()`. For example:
 
-``` playground
-#![allow(unused)]
-fn main() {
-function_call(
-    argument,
-    another_argument,
-);
+Good:
 
-let array = [
-    element,
-    another_element,
-    yet_another_element,
-];
-}
+```rust
+use std::mem;
+
+let x = mem::transmute(y);
 ```
 
-This makes moving code (e.g., by copy and paste) easier, and makes diffs smaller, as appending or removing items does not require modifying another line to add or remove a comma.
+Bad:
 
-### Blank lines
+```rust
+use std::mem::transmute;
 
-Separate items and statements by either zero or one blank lines (i.e., one or two newlines). E.g,
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo() {
-    let x = ...;
-
-    let y = ...;
-    let z = ...;
-}
-
-fn bar() {}
-fn baz() {}
-}
+let x = transmute(y);
 ```
 
-### Trailing whitespace
+Exceptions:
 
-Do not include trailing whitespace on the end of any line. This includes blank lines, comment lines, code lines, and string literals.
+*   When importing functions with sufficiently disambiguated names.
+*   When the module name itself is prone to collisions.
 
-Note that avoiding trailing whitespace in string literals requires care to preserve the value of the literal.
+Rationale
 
-### Sorting
+Many Rust codebases consistently keep a style such that unqualified lowercase
+names are assumed local, so `foo()` can be assumed to be from the same module.
+This rule largely exists to avoid reviewer disagreements, the benefit is mostly
+consistency and a minor edge on reading code without xrefs.
 
-In various cases, the default Rust style specifies to sort things. If not otherwise specified, such sorting should be “version sorting”, which ensures that (for instance) `x8` comes before `x16` even though the character `1` comes before the character `8`.
+<a id="type-names"></a>
 
-For the purposes of the Rust style, to compare two strings for version-sorting:
+### Type names should be imported and used unqualified
 
-- Process both strings from beginning to end as two sequences of maximal-length chunks, where each chunk consists either of a sequence of characters other than ASCII digits, or a sequence of ASCII digits (a numeric chunk), and compare corresponding chunks from the strings.
-- To compare two numeric chunks, compare them by numeric value, ignoring leading zeroes. If the two chunks have equal numeric value, but different numbers of leading digits, and this is the first time this has happened for these strings, treat the chunks as equal (moving on to the next chunk) but remember which string had more leading zeroes.
-- To compare two chunks if both are not numeric, compare them by Unicode character lexicographically, with two exceptions:
-  - `_` (underscore) sorts immediately after ` ` (space) but before any other character. (This treats underscore as a word separator, as commonly used in identifiers.)
-  - Unless otherwise specified, version-sorting should sort non-lowercase characters (characters that can start an `UpperCamelCase` identifier) before lowercase characters.
-- If the comparison reaches the end of the string and considers each pair of chunks equal:
-  - If one of the numeric comparisons noted the earliest point at which one string had more leading zeroes than the other, sort the string with more leading zeroes first.
-  - Otherwise, the strings are equal.
+By default, types and traits should be referenced in code without using their
+module path, e.g., code should use `Regex`, not `regex::Regex`, with a
+`use regex::Regex` at the top of the file or potentially in the relevant
+function.
 
-Note that there exist various algorithms called “version sorting”, which generally try to solve the same problem, but which differ in various ways (such as in their handling of numbers with leading zeroes). This algorithm does not purport to precisely match the behavior of any particular other algorithm, only to produce a simple and satisfying result for Rust formatting. In particular, this algorithm aims to produce a satisfying result for a set of symbols that have the same number of leading zeroes, and an acceptable and easily understandable result for a set of symbols that has varying numbers of leading zeroes.
+Exceptions:
 
-As an example, version-sorting will sort the following strings in the order given:
+*   In cases where there are ambiguities, it is acceptable to directly reference
+    types with common names like `io::Error`. It is also acceptable to rename
+    (`use std::io::Error as IoError`).
+*   In cases where you have a large “group” of types, e.g. the
+    [`hir module in rustc`](https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/index.html)
+    which contains a large number of HIR types.
+*   In macros and generated code; where requiring a `use` is counterproductive.
+*   In code with lots of dependencies, where importing everything would lead to
+    a very large import block with little benefit.
 
-- `_ZYXW`
-- `_abcd`
-- `A2`
-- `ABCD`
-- `Z_YXW`
-- `ZY_XW`
-- `ZY_XW`
-- `ZYXW`
-- `ZYXW_`
-- `a1`
-- `abcd`
-- `u_zzz`
-- `u8`
-- `u16`
-- `u32`
-- `u64`
-- `u128`
-- `u256`
-- `ua`
-- `usize`
-- `uz`
-- `v000`
-- `v00`
-- `v0`
-- `v0s`
-- `v00t`
-- `v0u`
-- `v001`
-- `v01`
-- `v1`
-- `v009`
-- `v09`
-- `v9`
-- `v010`
-- `v10`
-- `w005s09t`
-- `w5s009t`
-- `x64`
-- `x86`
-- `x86_32`
-- `x86_64`
-- `x86_128`
-- `x87`
-- `zyxw`
+Rationale
 
-### Module-level items
+This rule largely exists to avoid reviewer disagreements.
 
-### Statements
+<a id="code-formatting"></a>
 
-### Expressions
+## Code formatting and aesthetics
 
-### Types
+<a id="formatting-other"></a>
 
-### Comments
+### Use the appropriate formatting tool
 
-The following guidelines for comments are recommendations only, a mechanical formatter might skip formatting of comments.
+Use the appropriate formatting tool (`rustfmt`).
 
-Prefer line comments (`//`) to block comments (`/* ... */`).
+Configuration (for style guide authors)
 
-When using line comments, put a single space after the opening sigil.
+A codebase may choose to not apply the following `rustfmt` options if they care
+about building on stable and the option is unavailable on their stable Rust:
 
-When using single-line block comments, put a single space after the opening sigil and before the closing sigil. For multi-line block comments, put a newline after the opening sigil, and a newline before the closing sigil.
+*   Maximum of 100 columns per line:
+    [`max_width = 100`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#max_width)
 
-Prefer to put a comment on its own line. Where a comment follows code, put a single space before it. Where a block comment appears inline, use surrounding whitespace as if it were an identifier or keyword.
+*   Usage of lowercase alphabets in hex literals (`0xab123cdef` as opposed to
+    `0xAB123CDEF`):
+    [`hex_literal_case = Lower`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#hex_literal_case)
 
-Examples:
+*   Macro matcher formatting:
+    [`format_macro_matchers = true`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#format_macro_matchers)
 
-``` playground
-#![allow(unused)]
-fn main() {
-// A comment on an item.
-struct Foo { ... }
+*   Usage of escapes for invisible characters in literals. E.g., if you wish to
+    have text containing a Zero-Width joiner, use `\u{200D}`.
 
-fn foo() {} // A comment after an item.
+<a id="formatting-optout"></a>
 
-pub fn foo(/* a comment before an argument */ x: T) {...}
-}
+### Opting out of automatic formatting
+
+You may opt out of automatic formatting using `#[rustfmt::skip]`, but only in
+the following situations:
+
+*   **Manual alignment** – If you have a situation-specific reason to have a
+    snippet of code line up in a particular way (e.g., multiple similar lines of
+    code that you want to remain aligned for readability, or a
+    matrix-constructing function).
+*   **Generated code** (ideally, use a genrule instead).
+
+Important: Formatting should not be skipped for personal style choices.
+
+<a id="ownership-borrowing"></a>
+
+## Ownership and borrowing
+
+<a id="avoid-rc-arc"></a>
+
+### Avoid `Rc` and `Arc`
+
+Prefer unique ownership and borrowing over `Rc` and `Arc` for managing memory.
+
+Exception:
+
+*   Use `Rc` and `Arc` when the alternative ownership and borrowing structure
+    would be unreasonably complex to write, understand, or maintain. This is a
+    judgment call to be discussed during code review.
+
+Rationale
+
+Generally, Rust allows representing object graphs without using shared ownership
+smart pointers. These pointers add runtime overhead and their own unique
+complexity. Engineers coming from other languages might tend to use `Rc` and
+`Arc` too quickly.
+
+<a id="prefer-borrows"></a>
+
+### Prefer borrows over deep copies
+
+Use `.clone()` when you genuinely need a deep copy of an object.
+
+Avoid using `.clone()` as a substitute for borrowing. Design code that works
+naturally with Rust's ownership and borrowing rules. However, if the borrowing
+relationships become excessively complex, `.clone()` can be a pragmatic choice.
+
+Consider the performance needs of the code while choosing between cloning and
+borrowing.
+
+Note: This advice does not apply to cloning `Rc` or `Arc` pointers. Cloning
+reference-counted pointers does not create a deep copy, and is an expected way
+to use them.
+
+Rationale
+
+Deep copies can be expensive to make due to memory allocation and data copying.
+
+<a id="inputs-and-outputs"></a>
+
+## Function inputs and outputs
+
+<a id="flexible-references"></a>
+
+### Accept flexible references for immutable data
+
+When functions accept borrowed, immutable data, use a reference type that
+affords the most flexibility. Pass references to the data itself instead of
+references to smart pointers, containers, or wrappers.
+
+<!-- mdformat off(keep table rows on single lines for Kramdown compatibility in the public style guide) -->
+
+| Use          | Instead of   | Why?                                                         |
+| ------------ | ------------ | ------------------------------------------------------------ |
+| `&T`         | `&Box<T>`    | Borrow the data inside the box                               |
+| `&[T]`       | `&Vec<T>`    | Accept any slice instead of specific containers              |
+| `&str`       | `&String`    | Accept a string slice instead of references to owned strings |
+| `Option<&T>` | `&Option<T>` | Borrow the data inside the Option                            |
+
+<!-- mdformat on -->
+
+Exceptions:
+
+*   When expecting non-linear character data such as Rope/Cord.
+
+For context, see Clippy lints
+[`borrowed_box`](https://rust-lang.github.io/rust-clippy/master/index.html#borrowed_box)
+and
+[ptr_arg](https://rust-lang.github.io/rust-clippy/master/index.html#ptr_arg).
+
+Rationale
+
+Accepting reference types that don't mention specific smart pointers,
+containers, or wrappers makes functions more versatile and performant: callers
+can pass data held in a variety of ways without copying it first.
+
+<a id="return-iterators"></a>
+
+### Iterators vs. owned collections in return types
+
+Prefer returning iterators (either concrete types or `impl Iterator`) where
+possible over returning `Vec<T>`.
+
+Note: In application code, returning a `Vec<T>` is fine if it simplifies the
+code and if flexibility and performance advantages of iterators are not clearly
+needed.
+
+Exceptions:
+
+*   Most callers will need to construct an owned vector.
+*   The function's implementation naturally constructs a vector.
+*   The returned value will likely need to be randomly indexed.
+*   The algorithm works better as a `for` loop and the forced allocation doesn't
+    matter too much.
+*   The function's intended purpose is creating a new owned collection.
+*   The function is returning a pre-existing vector.
+
+Rationale
+
+Highly reusable library code generally should strive to provide more flexible
+and performant APIs. Returning an iterator allows callers to choose how to
+consume the data: collect it into a vector, process it in a loop, or chain
+further iterator adapters. Some of these options allow users to avoid
+unnecessary allocations.
+
+In application code, the usage patterns for a function are often easier to
+predict. If it is clear that performance is not a concern, or that data would be
+collected into a vector anyway, returning a vector makes for a simpler API.
+
+<a id="accept-iterators"></a>
+
+### Iterators vs. slices in function parameters
+
+Highly reusable library code should accept iterators or `impl IntoIterator` if
+it only needs to iterate over the input.
+
+Note: In application code, accepting a slice `&[T]` is fine if it simplifies the
+code and if flexibility and performance advantages of iterators are not clearly
+needed.
+
+Rationale
+
+Highly reusable library code generally should strive to provide more flexible
+and performant APIs. Functions that accept iterators offer callers:
+
+*   More flexibility (data can be supplied from any collection)
+*   Efficiency (data does not need to be copied into a contiguous piece of
+    memory)
+*   Composability (the function works better with iterator chains)
+
+In application code, the usage patterns for a function are often easier to
+predict. If it is clear that performance is not a concern, or that callers would
+always have a vector anyway, accepting a slice makes for a simpler API.
+
+<a id="accepting-into"></a>
+
+### Accepting `Into`
+
+When designing library APIs that accept a `T` but users are likely to have
+various types, consider accepting `impl Into<T>` instead of `T` if **call-site
+ergonomics are paramount**.
+
+Tip: This should be balanced against code bloat concerns; it is not a
+requirement to use lots of `Into<T>` in your code.
+
+Note: Application code should almost never use `impl Into<T>` parameters.
+
+Rationale
+
+Using `impl Into<T>` allows a function to directly accept various arguments of
+various compatible types. For example, a function accepting `impl Into<String>`
+could be called with a `String` or a `&str` literal directly.
+
+The tradeoff here is balancing the convenience of avoiding a `.into()` at the
+callsite against the cost of generics (more complex API signature, increased
+code size, sometimes even type inference difficulties).
+
+<a id="enum-vs-bool"></a>
+
+### Prefer `enum` over `bool` in APIs
+
+Use `enum` function parameters instead of `bool` in cases where the purpose of
+the parameter is not obvious.
+
+If you do use `bool`, consider using an inline comment to document the purpose
+of the `bool` in an argument list.
+
+<a id="reporting-errors"></a>
+
+### Reporting errors
+
+Choose the error reporting mechanism that fits your API contract: `Option`,
+`Result`, or `panic!`.
+
+**Use `Option` for simple failures** where the cause is obvious and the caller
+would not benefit from further details. This is best for standard, anticipated
+outcomes like a missing value or a parsing mismatch.
+
+Good:
+
+```rust
+// Good: The cause of the failure is obvious (integer overflow). No further
+// details could be reasonably provided.
+fn checked_add(a: u32, b: u32) -> Option<u32> { ... }
 ```
 
-Comments should usually be complete sentences. Start with a capital letter, end with a period (`.`). An inline block comment may be treated as a note without punctuation.
+**Use `Result` for recoverable failures where the caller needs context** to
+handle the error. These are often "unavoidable" errors caused by external
+factors (like I/O or network) that even correctly implemented code cannot
+prevent with checks ahead of time. Nevertheless, the caller can reasonably
+anticipate the kinds of errors (a file-related function can fail with an I/O
+error). The error details allow the caller to distinguish failure modes and
+recover appropriately.
 
-Source lines which are entirely a comment should be limited to 80 characters in length (including comment sigils, but excluding indentation) or the maximum width of the line (including comment sigils and indentation), whichever is smaller:
+Good:
 
-``` playground
-#![allow(unused)]
-fn main() {
-// This comment goes up to the ................................. 80 char margin.
+```rust
+// Good: The caller needs to know *why* it failed (NotFound vs PermissionDenied).
+fn open_file(path: &Path) -> Result<File, io::Error> { ... }
+```
 
-{
-    // This comment is .............................................. 80 chars wide.
-}
+**Use `panic!` to report bugs and violated invariants.** These errors are
+avoidable: the program is missing a check, and is calling an operation without
+fulfilling a precondition. These defects must be fixed in the code, not handled
+at runtime, although coarse-grained recovery might be possible with
+`catch_unwind`.
 
-{
-    {
-        {
-            {
-                {
-                    {
-                        // This comment is limited by the ......................... 100 char margin.
-                    }
-                }
-            }
+Good:
+
+```rust
+// Good: Panics if the invariant (index must be in bounds) is violated.
+// This indicates a bug in the caller's logic.
+impl<T> MyVec<T> {
+    pub fn remove(&mut self, index: usize) -> T {
+        if index >= self.len() {
+            panic!("index out of bounds");
         }
+        // ...
     }
 }
-}
 ```
 
-#### Doc comments
+Note: Some codebases may choose to avoid panics entirely, and require even
+broken invariants to be reported via `Result`.
 
-Prefer line comments (`///`) to block comments (`/** ... */`).
+Exceptions:
 
-Prefer outer doc comments (`///` or `/** ... */`), only use inner doc comments (`//!` and `/*! ... */`) to write module-level or crate-level documentation.
+*   Developer-facing binaries may use panics for non-fatal errors.
+*   Tests may use panics for assertions.
 
-Put doc comments before attributes.
+<a id="types"></a>
 
-### Attributes
+## Types
 
-Put each attribute on its own line, indented to the level of the item. In the case of inner attributes (`#!`), indent it to the level of the inside of the item. Prefer outer attributes, where possible.
+<a id="newtypes-vs-type-aliases"></a>
 
-For attributes with argument lists, format like functions.
+### Newtypes versus type aliases
 
-``` playground
-#![allow(unused)]
-fn main() {
-#[repr(C)]
-#[foo(foo, bar)]
-#[long_multi_line_attribute(
-    split,
-    across,
-    lines,
-)]
-struct CRepr {
-    #![repr(C)]
-    x: f32,
-    y: f32,
-}
-}
-```
+Use a
+[newtype](https://doc.rust-lang.org/rust-by-example/generics/new_types.html)
+instead of a type alias in the following cases:
 
-For attributes with an equal sign, put a single space before and after the `=`, e.g., `#[foo = 42]`.
+*   If the type you are defining has notable semantic differences.
+*   For types that warrant an API of their own.
+*   If you want the flexibility to change the underlying type later, especially
+    if you don't control all usages of your type.
+*   For type safety, if it’s easy for the types to get mixed up. For example, a
+    `Date` type may use newtypes to distinguish `Day`, `Month`, and `Year`
+    numbers in its internal calculations.
 
-There must only be a single `derive` attribute. Note for tool authors: if combining multiple `derive` attributes into a single attribute, the ordering of the derived names must generally be preserved for correctness: `#[derive(Foo)] #[derive(Bar)] struct Baz;` must be formatted to `#[derive(Foo, Bar)] struct Baz;`.
+<a id="prefer-named-fields"></a>
 
-### <em>small</em> items
+### Prefer named fields over tuples and non-newtype tuple structs
 
-In many places in this guide we specify formatting that depends on a code construct being *small*. For example, single-line vs multi-line struct literals:
+Prefer types with named fields over tuples, as tuple indexes (`.0`, `.1`, ...)
+quickly become confusing.
 
-``` playground
-#![allow(unused)]
-fn main() {
-// Normal formatting
-Foo {
-    f1: an_expression,
-    f2: another_expression(),
-}
+Exceptions:
 
-// "small" formatting
-Foo { f1, f2 }
-}
-```
+*   Newtype tuple structs (tuple structs with only one field).
+*   In very local contexts where there is unlikely to be any confusion.
 
-We leave it to individual tools to decide on exactly what *small* means. In particular, tools are free to use different definitions in different circumstances.
-
-Some suitable heuristics are the size of the item (in characters) or the complexity of an item (for example, that all components must be simple names, not more complex sub-expressions). For more discussion on suitable heuristics, see [this issue](https://github.com/rust-lang-nursery/fmt-rfcs/issues/47).
-
-## Non-formatting conventions
-
-## Cargo.toml conventions
-
-## Principles used for deciding these guidelines
-
-# Items
-
-Items consist of the set of things permitted at the top level of a module. However, Rust also allows some items to appear within some other types of items, such as within a function. The same formatting conventions apply whether an item appears at module level or within another item.
-
-`extern crate` statements must be first in a file. They must be ordered alphabetically.
-
-`use` statements, and module *declarations* (`mod foo;`, not `mod { ... }`) must come before other items. Put imports before module declarations. Version-sort each, except that `self` and `super` must come before any other names.
-
-Don’t automatically move module declarations annotated with `#[macro_use]`, since that might change semantics.
-
-## Function definitions
-
-In Rust, people often find functions by searching for `fn [function-name]`, so the formatting of function definitions must enable this.
-
-The proper ordering and spacing is:
-
-``` playground
-#![allow(unused)]
-fn main() {
-[pub] [unsafe] [extern ["ABI"]] fn foo(arg1: i32, arg2: i32) -> i32 {
-    ...
-}
-}
-```
-
-Avoid comments within the signature itself.
-
-If the function signature does not fit on one line, then break after the opening parenthesis and before the closing parenthesis and put each argument on its own block-indented line. For example,
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo(
-    arg1: i32,
-    arg2: i32,
-) -> i32 {
-    ...
-}
-}
-```
-
-Note the trailing comma on the last argument.
-
-## Tuples and tuple structs
-
-Write the type list as you would a parameter list to a function.
-
-Build a tuple or tuple struct as you would call a function.
-
-### Single-line
-
-``` playground
-#![allow(unused)]
-fn main() {
-struct Bar(Type1, Type2);
-
-let x = Bar(11, 22);
-let y = (11, 22, 33);
-}
-```
-
-## Enums
-
-In the declaration, put each variant on its own line, block indented.
-
-Format each variant accordingly as either a struct (but without the `struct` keyword), a tuple struct, or an identifier (which doesn’t require special formatting):
-
-``` playground
-#![allow(unused)]
-fn main() {
-enum FooBar {
-    First(u32),
-    Second,
-    Error {
-        err: Box<Error>,
-        line: u32,
-    },
-}
-}
-```
-
-If a struct variant is [*small*](#small-items), format it on one line. In this case, do not use a trailing comma for the field list, but do put spaces around each brace:
-
-``` playground
-#![allow(unused)]
-fn main() {
-enum FooBar {
-    Error { err: Box<Error>, line: u32 },
-}
-}
-```
-
-In an enum with multiple struct variants, if any struct variant is written on multiple lines, use the multi-line formatting for all struct variants. However, such a situation might be an indication that you should factor out the fields of the variant into their own struct.
-
-## Structs and Unions
-
-Struct names follow on the same line as the `struct` keyword, with the opening brace on the same line when it fits within the right margin. All struct fields are indented once and end with a trailing comma. The closing brace is not indented and appears on its own line.
-
-``` playground
-#![allow(unused)]
-fn main() {
-struct Foo {
-    a: A,
-    b: B,
-}
-}
-```
-
-If and only if the type of a field does not fit within the right margin, it is pulled down to its own line and indented again.
-
-``` playground
-#![allow(unused)]
-fn main() {
-struct Foo {
-    a: A,
-    long_name:
-        LongType,
-}
-}
-```
-
-Prefer using a unit struct (e.g., `struct Foo;`) to an empty struct (e.g., `struct Foo();` or `struct Foo {}`, these only exist to simplify code generation), but if you must use an empty struct, keep it on one line with no space between the braces: `struct Foo();` or `struct Foo {}`.
-
-The same guidelines are used for untagged union declarations.
-
-``` playground
-#![allow(unused)]
-fn main() {
-union Foo {
-    a: A,
-    b: B,
-    long_name:
-        LongType,
-}
-}
-```
-
-## Tuple structs
-
-Put the whole struct on one line if possible. Separate types within the parentheses using a comma and space. Don’t use a trailing comma for a single-line tuple struct. Don’t put spaces around the parentheses or semicolon:
-
-``` playground
-#![allow(unused)]
-fn main() {
-pub struct Foo(String, u8);
-}
-```
-
-Prefer unit structs to empty tuple structs (these only exist to simplify code generation), e.g., `struct Foo;` rather than `struct Foo();`.
-
-For more than a few fields (in particular if the tuple struct does not fit on one line), prefer a proper struct with named fields.
-
-For a multi-line tuple struct, block-format the fields with a field on each line and a trailing comma:
-
-``` playground
-#![allow(unused)]
-fn main() {
-pub struct Foo(
-    String,
-    u8,
-);
-}
-```
+<a id="traits"></a>
 
 ## Traits
 
-Use block-indent for trait items. If there are no items, format the trait (including its `{}`) on a single line. Otherwise, break after the opening brace and before the closing brace:
+<a id="traits-yagni"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-trait Foo {}
+### Add trait implementations when they become necessary
 
-pub trait Bar {
-    ...
+As a general rule, low-level library code should anticipate users' needs
+proactively, while application code should add trait impls as needed.
+
+<a id="known-traits"></a>
+
+### Implement known standard library traits instead of custom methods
+
+If a method matches the purpose and behavior of a standard library trait,
+implement that trait. For example, instead of writing
+`fn from_str(&str) -> Self` on `Foo`, you should `impl FromStr for Foo`.
+
+It is acceptable to have both the method and the trait impl for discoverability
+reasons.
+
+For context, see Clippy lint
+[`should_implement_trait`](https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait)
+([list of traits](https://github.com/rust-lang/rust-clippy/blob/928349795f9f28f54e69bd0f0ffeed33de5e272a/clippy_lints/src/methods/mod.rs#L3940-L3971)).
+
+<a id="derive"></a>
+
+### Use `#[derive()]` if possible
+
+Manual implementations should be avoided if they can be expressed as a
+`#[derive()]`.
+
+<a id="generics-vs-dyn-trait"></a>
+
+### Generics versus `dyn Trait`
+
+In libraries, prefer accepting generics (`T: Trait` or `impl Trait`) in function
+parameters over `dyn Trait`.
+
+Exceptions:
+
+*   Cases where code size matters.
+
+Rationale
+
+-   Efficiency
+
+    -   Additional indirection: Creating a `dyn Trait` requires setting up a fat
+        pointer, and a vtable lookup is required for every call of a function on
+        the trait.
+    -   If a function takes a `dyn Trait`, the compiler can't perform certain
+        optimizations that it could if the function was generic, such as
+        inlining calls to functions of the trait.
+
+-   Some traits are not
+    [`dyn` compatible](https://doc.rust-lang.org/reference/items/traits.html#dyn-compatibility).
+    For example, a trait is not `dyn` compatible if it has generic functions,
+    associated functions without a `self` parameter, or functions that return
+    `Self`.
+
+<a id="trait-vs-inherent-impl"></a>
+
+### When to define a trait versus an inherent implementation
+
+Define a trait only for the following purposes:
+
+*   To enable generic programming (to use `T: Trait` in constraints of generic
+    functions and types).
+
+*   To accept or return an `impl Trait` or `dyn Trait`.
+
+*   To define an [extension trait](#extension-traits) (but see also the caveats
+    in the section on extension traits).
+
+In all other cases where you want to implement functionality for a type, use an
+[inherent implementation](https://doc.rust-lang.org/std/keyword.impl.html#inherent-implementations).
+
+Don't use traits merely to organize code.
+
+<a id="extension-traits"></a>
+
+### Extension traits
+
+An
+[extension trait](https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html)
+is a trait that adds methods to a type from a different crate.
+
+What differentiates an extension trait from other traits is that its sole
+purpose is to add methods to the type; it is not intended for use in generics
+(`T: Trait`, `impl Trait`) or dynamic dispatch (`dyn Trait`). To indicate this,
+the name of an extension trait should carry the suffix `~Ext` (for example,
+`ForeignTypeExt`).
+
+In general, the team that owns the original type should also own the extension
+trait.
+
+Exceptions:
+
+*   Extension methods that are expected to become well known and provide
+    significant value, for example, in foundational libraries / frameworks.
+
+Note: This rule is specifically about extension traits. It is relatively common
+to define a trait as an input trait (e.g., `DateLike`) and implement it on a
+bunch of foreign types.
+
+Examples
+
+```rust
+extern crate foreign_crate;
+use foreign_crate::ForeignType;
+
+trait ForeignTypeExt {
+  fn additional_method(&self);
 }
-}
-```
 
-If the trait has bounds, put a space after the colon but not before, and put spaces around each `+`, e.g.,
-
-``` playground
-#![allow(unused)]
-fn main() {
-trait Foo: Debug + Bar {}
-}
-```
-
-Prefer not to line-break in the bounds if possible (consider using a `where` clause). Prefer to break between bounds than to break any individual bound. If you must break the bounds, put each bound (including the first) on its own block-indented line, break before the `+` and put the opening brace on its own line:
-
-``` playground
-#![allow(unused)]
-fn main() {
-pub trait IndexRanges:
-    Index<Range<usize>, Output=Self>
-    + Index<RangeTo<usize>, Output=Self>
-    + Index<RangeFrom<usize>, Output=Self>
-    + Index<RangeFull, Output=Self>
-{
-    ...
-}
-}
-```
-
-## Impls
-
-Use block-indent for impl items. If there are no items, format the impl (including its `{}`) on a single line. Otherwise, break after the opening brace and before the closing brace:
-
-``` playground
-#![allow(unused)]
-fn main() {
-impl Foo {}
-
-impl Bar for Foo {
-    ...
-}
-}
-```
-
-Avoid line-breaking in the signature if possible. If a line break is required in a non-inherent impl, break immediately before `for`, block indent the concrete type and put the opening brace on its own line:
-
-``` playground
-#![allow(unused)]
-fn main() {
-impl Bar
-    for Foo
-{
-    ...
-}
-}
-```
-
-## Extern crate
-
-`extern crate foo;`
-
-Use spaces around keywords, no spaces around the semicolon.
-
-## Modules
-
-``` playground
-#![allow(unused)]
-fn main() {
-mod foo {
-}
-}
-```
-
-``` playground
-#![allow(unused)]
-fn main() {
-mod foo;
-}
-```
-
-Use spaces around keywords and before the opening brace, no spaces around the semicolon.
-
-## <code>macro_rules!</code>
-
-Use `{}` for the full definition of the macro.
-
-``` playground
-#![allow(unused)]
-fn main() {
-macro_rules! foo {
-}
-}
-```
-
-## Generics
-
-Prefer to put a generics clause on one line. Break other parts of an item declaration rather than line-breaking a generics clause. If a generics clause is large enough to require line-breaking, prefer a `where` clause instead.
-
-Do not put spaces before or after `<` nor before `>`. Only put a space after `>` if it is followed by a word or opening brace, not an opening parenthesis. Put a space after each comma. Do not use a trailing comma for a single-line generics clause.
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo<T: Display, U: Debug>(x: Vec<T>, y: Vec<U>) ...
-
-impl<T: Display, U: Debug> SomeType<T, U> { ...
-}
-```
-
-If the generics clause must be formatted across multiple lines, put each parameter on its own block-indented line, break after the opening `<` and before the closing `>`, and use a trailing comma.
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo<
-    T: Display,
-    U: Debug,
->(x: Vec<T>, y: Vec<U>) ...
+impl ForeignTypeExt for ForeignType {
+  fn additional_method(&self) { ... }
 }
 ```
 
-If an associated type is bound in a generic type, put spaces around the `=`:
+It is also possible to define an extension trait for every type that implements
+some foreign trait. Effectively, this is equivalent to adding default methods to
+the foreign trait:
 
-``` playground
-#![allow(unused)]
-fn main() {
-<T: Example<Item = u32>>
+```rust
+extern crate foreign_crate;
+use foreign_crate::ForeignTrait;
+
+trait ForeignTraitExt {
+  fn additional_method(&self);
+}
+
+impl<T: ForeignTrait> ForeignTraitExt for T {
+  fn additional_method(&self) { ... }
 }
 ```
 
-Prefer to use single-letter names for generic parameters.
-
-## <code>where</code> clauses
-
-These rules apply for `where` clauses on any item.
-
-If immediately following a closing bracket of any kind, write the keyword `where` on the same line, with a space before it.
-
-Otherwise, put `where` on a new line at the same indentation level. Put each component of a `where` clause on its own line, block-indented. Use a trailing comma, unless the clause is terminated with a semicolon. If the `where` clause is followed by a block (or assignment), start that block on a new line. Examples:
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn function<T, U>(args)
-where
-    T: Bound,
-    U: AnotherBound,
-{
-    body
-}
-
-fn foo<T>(
-    args
-) -> ReturnType
-where
-    T: Bound,
-{
-    body
-}
-
-fn foo<T, U>(
-    args,
-) where
-    T: Bound,
-    U: AnotherBound,
-{
-    body
-}
-
-fn foo<T, U>(
-    args
-) -> ReturnType
-where
-    T: Bound,
-    U: AnotherBound;  // Note, no trailing comma.
-
-// Note that where clauses on `type` aliases are not enforced and should not
-// be used.
-type Foo<T>
-where
-    T: Bound
-= Bar<T>;
-}
-```
-
-If a `where` clause is very short, prefer using an inline bound on the type parameter.
-
-If a component of a `where` clause does not fit and contains `+`, break it before each `+` and block-indent the continuation lines. Put each bound on its own line. E.g.,
-
-``` playground
-#![allow(unused)]
-fn main() {
-impl<T: ?Sized, Idx> IndexRanges<Idx> for T
-where
-    T: Index<Range<Idx>, Output = Self::Output>
-        + Index<RangeTo<Idx>, Output = Self::Output>
-        + Index<RangeFrom<Idx>, Output = Self::Output>
-        + Index<RangeInclusive<Idx>, Output = Self::Output>
-        + Index<RangeToInclusive<Idx>, Output = Self::Output>
-        + Index<RangeFull>,
-}
-```
-
-## Type aliases
-
-Keep type aliases on one line when they fit. If necessary to break the line, do so before the `=`, and block-indent the right-hand side:
-
-``` playground
-#![allow(unused)]
-fn main() {
-pub type Foo = Bar<T>;
-
-// If multi-line is required
-type VeryLongType<T, U: SomeBound>
-    = AnEvenLongerType<T, U, Foo<T>>;
-}
-```
-
-When there is a trailing `where` clause after the type, and no `where` clause present before the type, break before the `=` and indent. Then break before the `where` keyword and format the clauses normally, e.g.,
-
-``` playground
-#![allow(unused)]
-fn main() {
-// With only a trailing where clause
-type VeryLongType<T, U>
-    = AnEvenLongerType<T, U, Foo<T>>
-where
-    T: U::AnAssociatedType,
-    U: SomeBound;
-}
-```
-
-When there is a `where` clause before the type, format it normally, and break after the last clause. Do not indent before the `=` to leave it visually distinct from the indented clauses that precede it. If there is additionally a `where` clause after the type, break before the `where` keyword and format the clauses normally.
-
-``` playground
-#![allow(unused)]
-fn main() {
-// With only a preceding where clause.
-type WithPrecedingWC<T, U>
-where
-    T: U::AnAssociatedType,
-    U: SomeBound,
-= AnEvenLongerType<T, U, Foo<T>>;
+Rationale
 
-// Or with both a preceding and trailing where clause.
-type WithPrecedingWC<T, U>
-where
-    T: U::AnAssociatedType,
-    U: SomeBound,
-= AnEvenLongerType<T, U, Foo<T>>
-where
-    T: U::AnAssociatedType2,
-    U: SomeBound2;
-}
-```
+When the same team owns the extension trait and the type being extended, this
+helps avoid method name conflicts between the base type and the extension trait
+or between two extension traits.
 
-## Associated types
+<a id="important-traits"></a>
 
-Format associated types like type aliases. Where an associated type has a bound, put a space after the colon but not before:
+### Specific guidance for important traits
 
-``` playground
-#![allow(unused)]
-fn main() {
-pub type Foo: Bar;
-}
-```
+*   **Types with public fields**: Consider implementing traits implemented by
+    all subfields.
 
-## extern items
+*   **Error types**: Implement the `Copy` trait whenever possible. `Copy` types
+    are simpler to manage and propagate because they can be passed by value
+    without moving ownership. An example of a case where this is not possible is
+    if the error must contain non-`Copy` fields like a `String`.
 
-When writing extern items (such as `extern "C" fn`), always specify the ABI. For example, write `extern "C" fn foo ...` or `unsafe extern "C" { ...}` and avoid `extern fn foo ...` and `unsafe extern { ... }`.
+*   **`Copy`**: Implement whenever it is reasonably clear that the type will
+    continue to be `Copy` in the future.
 
-## Imports (<code>use</code> statements)
+*   **`Clone`**: Most types should implement `Clone` unless they represent some
+    external resource.
 
-Format imports on one line where possible. Don’t put spaces around braces.
+*   **`Default`**: Implement if the type implements `new()` or otherwise has a
+    default state. For context, see Clippy lint
+    [`new_without_default`](https://rust-lang.github.io/rust-clippy/master/index.html#new_without_default).
 
-``` playground
-#![allow(unused)]
-fn main() {
-use a::b::c;
-use a::b::d::*;
-use a::b::{foo, bar, baz};
-}
-```
+*   **`PartialEq`** / **`Eq`**: If you want users to use the `==` operator,
+    prefer implementing `PartialEq` over `Eq`. When you do implement `Eq`, be
+    aware of the additionally required reflexivity (details:
+    https://doc.rust-lang.org/std/cmp/trait.Eq.html).
 
-### Large list imports
+*   **`PartialOrd`** / **`Ord`**: If you want users to use the `<` or `>`
+    operators, prefer implementing `PartialOrd` over `Ord`. When you do
+    implement `Ord`, be aware that it requires total ordering (details:
+    https://doc.rust-lang.org/std/cmp/trait.Ord.html).
 
-Prefer to use multiple imports rather than a multi-line import. However, tools should not split imports by default.
+*   **Map keys**
 
-If an import does require multiple lines (either because a list of single names does not fit within the max width, or because of the rules for nested imports below), then break after the opening brace and before the closing brace, use a trailing comma, and block indent the names.
+    *   If you think it is likely that a type will be used as a map key or
+        otherwise cached, implement `Hash` and `Eq`.
+    *   If, in addition, the type has a clear total ordering, implement `Ord`
+        (and any traits it needs).
 
-``` playground
-#![allow(unused)]
-fn main() {
-// Prefer
-foo::{long, list, of, imports};
-foo::{more, imports};
+<a id="from-impls"></a>
 
-// If necessary
-foo::{
-    long, list, of, imports, more,
-    imports,  // Note trailing comma
-};
-}
-```
+### Pair important `From` impls with explicit constructor methods
 
-### Ordering of imports
+If a type has an important `From` impl that is expected to be one of the primary
+ways of constructing it, add an inherent `::new()`, `::new_from_foo()`¸ or
+`::from_foo()` method.
 
-A *group* of imports is a set of imports on the same or sequential lines. One or more blank lines or other items (e.g., a function) separate groups of imports.
+<a id="options-should-implement-default"></a>
 
-Within a group of imports, imports must be version-sorted. Groups of imports must not be merged or re-ordered.
+### Options structs should implement Default
 
-E.g., input:
+Structs with all-public fields that are primarily used as a “bag of options” for
+a function should implement `Default`.
 
-``` playground
-#![allow(unused)]
-fn main() {
-use d;
-use c;
+Rationale
 
-use b;
-use a;
-}
-```
+This enables convenient use of struct update syntax
+(`Struct { a: 0, ..Default::default()}` ).
 
-output:
+<a id="concurrency"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-use c;
-use d;
+## Concurrency
 
-use a;
-use b;
-}
-```
+<a id="poison"></a>
 
-Because of `macro_use`, attributes must also start a new group and prevent re-ordering.
+### Handling poison
 
-### Ordering list import
+Never reach inside a poisoned mutex to get at its insides, no matter how
+tempting the use case may seem.
 
-Names in a list import must be version-sorted, except that:
+<a id="macros"></a>
 
-- `self` and `super` always come first if present, and
-- groups and glob imports always come last if present.
+## Macros
 
-This applies recursively. For example, `a::*` comes before `b::a` but `a::b` comes before `a::*`. E.g., `use foo::bar::{a, b::c, b::d, b::d::{x, y, z}, b::{self, r, s}};`.
+When considering how to express an API, prefer in order:
 
-### Normalisation
+-   Regular Rust functions, types, traits, objects, and modules. (Avoid macros,
+    code generation, and metaprogramming where possible).
 
-Tools must make the following normalisations, recursively:
+-   `macro_rules!`-style macros.
 
-- `use a::self;` -&gt; `use a;`
-- `use a::{};` -&gt; (nothing)
-- `use a::{b};` -&gt; `use a::b;`
+-   Other code generation strategies (e.g. `genrule`)
 
-Tools must not otherwise merge or un-merge import lists or adjust glob imports (without an explicit option).
+-   `proc_macro` macros.
 
-### Nested imports
+When you decide to use a macro or code generation, please weigh the benefits
+against the costs:
 
-If there are any nested imports in a list import, then use the multi-line form, even if the import fits on one line. Each nested import must be on its own line, but non-nested imports must be grouped on as few lines as possible.
+-   IDEs, Code Search and other developer tools will work less well on code that
+    uses macros.
+-   Macros can create dialects of the language that make it harder for engineers
+    to work across the codebase.
+-   Large scale changes are more difficult and expensive to apply.
 
-For example,
+Rationale
 
-``` playground
-#![allow(unused)]
-fn main() {
-use a::b::{
-    x, y, z,
-    u::{...},
-    w::{...},
-};
-}
-```
+**Prefer non-macro facilities:** Macros can create dialects of the language that
+make it harder for engineers to work across the codebase. When a reader sees a
+usage of a macro, they can make fewer assumptions about that code than if it
+didn't use a macro. Macros are harder to write correctly than regular Rust code.
 
-### Merging/un-merging imports
-
-An example:
-
-``` playground
-#![allow(unused)]
-fn main() {
-// Un-merged
-use a::b;
-use a::c::d;
-
-// Merged
-use a::{b, c::d};
-}
-```
-
-Tools must not merge or un-merge imports by default. They may offer merging or un-merging as an option.
-
-# Statements
-
-## Let statements
-
-Put a space after the `:` and on both sides of the `=` (if they are present). Don’t put a space before the semicolon.
-
-``` playground
-#![allow(unused)]
-fn main() {
-// A comment.
-let pattern: Type = expr;
-
-let pattern;
-let pattern: Type;
-let pattern = expr;
-}
-```
-
-If possible, format the declaration on a single line. If not possible, then try splitting after the `=`, if the declaration fits on two lines. Block-indent the expression.
-
-``` playground
-#![allow(unused)]
-fn main() {
-let pattern: Type =
-    expr;
-}
-```
-
-If the first line still does not fit on a single line, split after the `:`, and use block indentation. If the type requires multiple lines, even after line-breaking after the `:`, then place the first line on the same line as the `:`, subject to the [combining rules](#combinable-expressions).
-
-``` playground
-#![allow(unused)]
-fn main() {
-let pattern:
-    Type =
-    expr;
-}
-```
-
-e.g,
-
-``` playground
-#![allow(unused)]
-fn main() {
-let Foo {
-    f: abcd,
-    g: qwer,
-}: Foo<Bar> =
-    Foo { f, g };
-
-let (abcd,
-    defg):
-    Baz =
-{ ... }
-}
-```
-
-If the expression covers multiple lines, if the first line of the expression fits in the remaining space, it stays on the same line as the `=`, and the rest of the expression is not further indented. If the first line does not fit, then put the expression on subsequent lines, block indented. If the expression is a block and the type or pattern cover multiple lines, put the opening brace on a new line and not indented (this provides separation for the interior of the block from the type); otherwise, the opening brace follows the `=`.
-
-Examples:
-
-``` playground
-#![allow(unused)]
-fn main() {
-let foo = Foo {
-    f: abcd,
-    g: qwer,
-};
-
-let foo =
-    ALongName {
-        f: abcd,
-        g: qwer,
-    };
-
-let foo: Type = {
-    an_expression();
-    ...
-};
-
-let foo:
-    ALongType =
-{
-    an_expression();
-    ...
-};
-
-let Foo {
-    f: abcd,
-    g: qwer,
-}: Foo<Bar> = Foo {
-    f: blimblimblim,
-    g: blamblamblam,
-};
-
-let Foo {
-    f: abcd,
-    g: qwer,
-}: Foo<Bar> = foo(
-    blimblimblim,
-    blamblamblam,
-);
-}
-```
-
-### else blocks (let-else statements)
-
-A let statement can contain an `else` component, making it a let-else statement. In this case, always apply the same formatting rules to the components preceding the `else` block (i.e. the `let pattern: Type = initializer_expr` portion) as described [for other let statements](#let-statements).
-
-Format the entire let-else statement on a single line if all the following are true:
-
-- the entire statement is *short*
-- the `else` block contains only a single-line expression and no statements
-- the `else` block contains no comments
-- the let statement components preceding the `else` block can be formatted on a single line
-
-``` playground
-#![allow(unused)]
-fn main() {
-let Some(1) = opt else { return };
-}
-```
-
-Otherwise, the let-else statement requires some line breaks.
-
-If breaking a let-else statement across multiple lines, never break between the `else` and the `{`, and always break before the `}`.
-
-If the let statement components preceding the `else` can be formatted on a single line, but the let-else does not qualify to be placed entirely on a single line, put the `else {` on the same line as the initializer expression, with a space between them, then break the line after the `{`. Indent the closing `}` to match the `let`, and indent the contained block one step further.
-
-``` playground
-#![allow(unused)]
-fn main() {
-let Some(1) = opt else {
-    return;
-};
-
-let Some(1) = opt else {
-    // nope
-    return
-};
-}
-```
-
-If the let statement components preceding the `else` can be formatted on a single line, but the `else {` does not fit on the same line, break the line before the `else`.
-
-``` playground
-#![allow(unused)]
-fn main() {
-    let Some(x) = some_really_really_really_really_really_really_really_really_really_long_name
-    else {
-        return;
-    };
-}
-```
-
-If the initializer expression is multi-line, put the `else` keyword and opening brace of the block (i.e. `else {`) on the same line as the end of the initializer expression, with a space between them, if and only if all the following are true:
-
-- The initializer expression ends with one or more closing parentheses, square brackets, and/or braces
-- There is nothing else on that line
-- That line has the same indentation level as the initial `let` keyword.
+**Use `macro_rules!` for simple code generation:** Since Rust macros operate on
+the AST, they can be less fragile than textual code generation.
 
+<a id="naming"></a>
+
+## Naming
+
+<a id="naming-methods"></a>
+
+### Naming methods
+
+Follow the Rust standard library style for naming methods. See also the guidance
+on
+[naming conventions](https://google.github.io/comprehensive-rust/idiomatic/foundations-api-design/predictable-api/naming-conventions.html)
+in the Comprehensive Rust course.
+
+Specific considerations:
+
+*   Use prefixes such as `as_...()`, `to_...()`, or `into_...()` with the
+    appropriate `self` convention. See also
+    [this section](https://rust-lang.github.io/api-guidelines/naming.html#ad-hoc-conversions-follow-as_-to_-into_-conventions-c-conv)
+    of the Rust API Guidelines and the Clippy lint
+    [`wrong_self_convention`](https://rust-lang.github.io/rust-clippy/master/index.html#wrong_self_convention).
+
+<a id="lifetimes"></a>
+
+### Naming lifetimes
+
+Lifetimes should have descriptive names, especially type lifetimes.
+
+Exceptions:
+
+*   Type lifetimes that are extremely generic abstractions like `Cow`.
+*   It is fine to use anonymous lifetimes (`'_`) where they work.
+*   Single-character lifetimes are okay when they are simply expressing the
+    relationship between a method’s input and output, or needed for a local
+    higher-ranked lifetime bounds (`for<'a>`). Up to two such local lifetimes
+    are fine, if more are needed, we strongly advise you to use descriptive
+    names.
+
+<a id="generic-parameters"></a>
+
+### Naming generic parameters
+
+Use a short name for your generic parameters (either single or multi character),
+related to the kind of thing they represent. Single-letter generics are okay,
+but the letter chosen should be somewhat indicative of the object type, ideally
+taken from the most important trait bound.
+
+`T` or `U` are fine when the generics are in a relatively unbound context; i.e.
+it is an API intended for use with most types, like `Vec<T>`.
+
+<a id="naming-extension-traits"></a>
+
+### Naming extension traits
+
+When naming an [extension trait](#extension-traits), give the name an `~Ext`
+suffix (for example, `ForeignTypeExt`).
+
+<a id="naming-initialization-functions"></a>
+
+### Naming initialization functions
+
+Follow these guidelines when naming initialization functions:
+
+*   Constructors: Use `new()`, or `new_with_foo()` if there is more than one. If
+    the constructor returns a `Result`, use `try_new()`.
+
+*   Value-to-value conversions: Use `from_foo()` with an associated `From` impl.
+    See
+    [here](https://doc.rust-lang.org/std/convert/trait.From.html#when-to-implement-from)
+    for details on when an operation can be considered to be a value-to-value
+    conversion.
+
+<a id="avoid-abbreviations"></a>
+
+### Avoid abbreviations
+
+Don't use abbreviations (especially acronyms and initialisms) that someone
+outside your project is unlikely to know. Don't abbreviate by deleting letters
+within a word.
+
+See also the
+[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules).
+
+Exceptions:
+
+*   Common abbreviations found in Wikipedia.
+*   Abbreviations that are unlikely to be confusing to people outside of your
+    project, for example `IpAddr`. You and your reviewer should make this
+    determination. In general, the preference should still be not to abbreviate.
+
+<a id="writing-doc"></a>
+
+## When and how to write documentation
+
+Add documentation comments to public APIs, potentially using the `missing_doc`
+lint to help with this.
+
+Best practices for documentation comments:
+
+*   Consider including examples: It is not necessary for every function to have
+    examples, but enough functionality should be covered in examples *somewhere*
+    to give an idea of how the crate works.
+
+*   Always document panic cases for functions which may panic due to malformed
+    input.
+
+*   Clearly document invariants for unsafe functions and traits.
+
+*   Use capitalization and punctuation.
+
+*   Don't explain the basics of the programming language. For example, don’t do
+    the following:
+
+    ```rust
+    struct MockFileSystem { ... }
+
+    /// A mock implementation of the FileSystem trait, intended to be used in unit tests.
+    impl FileSystem for MockFileSystem
+    ```
+
+Exceptions:
+
+*   Comments should say something that the code does not already say. If there's
+    nothing insightful to say, it is better to omit the comment than to repeat
+    the function name in a trivial way. For example, don’t do the following
+    (it’s fine to `allow` the lint in that case):
+
+    ```rust
+    /// Removes an element.
+    pub fn remove_element() -> Element {}
+    ```
+
+*   It is generally okay to omit documentation on individual enum variants,
+    especially if their name is self-explanatory.
+
+**How to format documentation comments**
+
+Follow these guidelines when writing documentation comments:
+
+*   Use `///` comments to document items following the comment, such as
+    functions, structs, enums, traits, and type aliases.
+*   Use `//!` comments to document the module or the library itself. These
+    comments should be placed at the top of the file.
+*   Follow the rules laid out in
+    [the official Rust style guide on doc comments](https://doc.rust-lang.org/nightly/style-guide/#doc-comments).
+*   Use Markdown syntax.
+*   Use ordinary comment syntax (`//`) for non-documentation comments, such as
+    implementation comments, TODOs that are not interesting for users, commented
+    out source code, etc.
+*   Prefer to document things in a straightforward manner, using `///` and `//!`
+    comments, rather than generating documentation from macros. This makes the
+    documentation directly readable when viewing or modifying the source code.
+
+It is acceptable, and even encouraged, to mix doc comments (`///` and `//!`) and
+ordinary comments (`//`). If you have one thing you wish to document publicly,
+and another thing you want to note as an implementation comment, then use both!
 For example:
 
-``` playground
-#![allow(unused)]
-fn main() {
-let Some(x) = y.foo(
-    "abc",
-    fairly_long_identifier,
-    "def",
-    "123456",
-    "string",
-    "cheese",
-) else {
-    bar()
-}
+Good:
+
+```rust
+/// Finds the first `FooItem` with the given `name`, or `None` if not present.
+// TODO: crbug.com/12345 - `name` should be &str, not String.
+pub fn get_named(items: &[FooItem], name: String) -> Option<&FooItem> {...}
+```
+
+Rationale
+
+Many, though not all, languages have a different commenting convention (such as
+extra `*` characters) for doc comments as opposed to implementation comments.
+Rust and Python are notable for not just having different commenting
+conventions, but an actual different syntax entirely. This has concrete benefits
+to the Rust ecosystem:
+
+*   Doc comments can be consumed by tooling, including documentation generators
+    like `rustdoc`, IDE features, and Kythe.
+*   Doc comments have a standard structure and formatting rules (Markdown),
+    allowing for rich text in those contexts.
+*   Errors in applying doc comment syntax (e.g., applying it to an expression
+    instead of a documentable item) are linted against, catching documentation
+    errors early. If there are no lint errors, the doc comments are guaranteed
+    to be visible to documentation tooling, removing a degree of flakiness and
+    unpredictability from the documentation process.
+*   Doc comments are a part of the AST, and so can be produced and consumed by
+    macros, including both `macro_rules!` macros and procedural macros.
+
+<a id="other-features"></a>
+
+## Other Rust features
+
+<a id="unsafe"></a>
+
+### Unsafe code
+
+Don't write unsafe code unless there is no way to implement the same
+functionality with safe code.
+
+If you do have to write unsafe code:
+
+*   Encapsulate unsafe code in a safe abstraction and isolate it from business
+    logic as much as possible. Ideally, unsafe code should be in a separate
+    crate with few dependencies beyond the standard library.
+*   Add a safety comment starting with `SAFETY:` that explains why the code is
+    correct.
+*   Add a technical justification for unsafe code. Depending on context, this
+    can be a justification for an individual unsafe block or a more general
+    justification that covers an entire file or build target. The justification
+    should answer these questions:
+    *   Why is this code not written in an equivalent safe way?
+    *   If the reason is performance, are there benchmarks?
+
+<a id="unstable-features"></a>
+
+### No unstable features
+
+Don't use unstable features.
+
+<a id="getters-and-setters"></a>
+
+### Getters and setters
+
+Writing and naming getters and setters should follow these guidelines:
+
+*   `foo()` for a getter that returns a `T` by value.
+*   `foo_mut()` for a getter that returns a `&mut T`.
+*   `take_foo()` for a getter that "clears" the value (by setting it to `None`
+    or some other default state) and returns the old value.
+*   `set_foo()` for a setter that takes a `T` by value.
+*   `with_foo()` / `with_mut_foo()` for an accessor that operates via a closure
+    (see details [below](#closure-accessors)). Such an accessor is invoked as
+    `object.with_foo(|foo| frob(foo))`.
+*   `replace_foo()` for a setter that returns the old value.
+
+Examples
+
+```rs
+impl Stuff {
+   fn foo(&self) -> &Foo { ...  }
+   fn foo_mut(&mut self) -> &mut Foo { ... }
+
+   /// Sets "baz" property to `None` and returns the old value.
+   fn take_baz(&mut self) -> Option<Baz> { ... }
+
+   fn set_foo(&mut self, foo: Foo) { ... }
+
+   /// Calls `f` with a borrow of the "bar" property.
+   /// Returns the return value of `f`.
+   fn with_bar<R>(&self, f: impl FnOnce(&Bar) -> R) -> R { ... }
+
+   /// Calls `f` with a mutable borrow of the "bar" property.
+   /// Returns the return value of `f`.
+   fn with_mut_bar<R>(&self, f: impl FnOnce(&mut i32) -> R) -> R { ... }
+
+   /// Sets "foo" property to `foo` and returns the old value.
+   fn replace_foo(&mut self, foo: Foo) -> Foo  { ... }
 }
 ```
 
-Otherwise, put the `else` keyword and opening brace on the next line after the end of the initializer expression, with the `else` keyword at the same indentation level as the `let` keyword.
+<a id="closure-accessors"></a>
 
-For example:
+#### More on accessors that accept closures
 
-``` playground
-fn main() {
-    let Some(x) = abcdef()
-        .foo(
-            "abc",
-            some_really_really_really_long_ident,
-            "ident",
-            "123456",
-        )
-        .bar()
-        .baz()
-        .qux("fffffffffffffffff")
-    else {
-        return
-    };
+Accessors that accept a closure (`.with_foo()`) are typically invoked as
+`object.with_foo(|foo| do_something_with(foo))`. They can be a good choice in
+the following situations:
 
-    let Some(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) =
-        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-    else {
-        return;
-    };
+*   When the property is contained in an interior mutability wrapper (e.g.
+    `Mutex` or `RefCell`). These mechanisms need to constrain access to the
+    property to a scope, and the closure provides this scope. This is usually
+    preferable to directly returning the RAII object that implements the scope
+    (e.g. `MutexGuard<T>`) because the latter would leak an implementation
+    detail.
 
-    let LongStructName(AnotherStruct {
-        multi,
-        line,
-        pattern,
-    }) = slice.as_ref()
-    else {
-        return;
-    };
+*   When follow-up work or validation is needed after a property is changed and
+    a `set_foo()` accessor cannot be used (for example because the property's
+    type is expensive to clone or cannot be cloned at all).
 
-    let LongStructName(AnotherStruct {
-        multi,
-        line,
-        pattern,
-    }) = multi_line_function_call(
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-    ) else {
-        return;
-    };
-}
-```
+A `with_foo()` accessor will often allow the closure to return a value and
+forward it by returning it from `with_foo()`.
 
-## Macros in statement position
+If you need to provide two closure-accepting accessors, one for read-only access
+and one for mutable access, it is common to name them `with_foo()` and
+`with_mut_foo()`. Otherwise, `with_foo()` is often also used for mutating
+accessors.
 
-For a macro use in statement position, use parentheses or square brackets as delimiters, and terminate it with a semicolon. Do not put spaces around the name, `!`, the delimiters, or the `;`.
+<a id="expected-api-sets"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-// A comment.
-a_macro!(...);
-}
-```
+### Implement expected API sets together
 
-## Expressions in statement position
+If you implement `len()`, also implement `is_empty()`. For context, see Clippy
+lint
+[`len_without_is_empty`](https://rust-lang.github.io/rust-clippy/master/index.html#len_without_is_empty).
 
-Do not put space between the expression and the semicolon.
+<a id="doc-hidden"></a>
 
-    <expr>;
+### Do not access items marked `#[doc(hidden)]` that you don't own
 
-Terminate all expressions in statement position with a semicolon, unless they end with a block or are used as the value for a block.
+Treat items marked `#[doc(hidden)]` as private. Don't access them unless you own
+the code.
 
-E.g.,
+<a id="const-functions"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-{
-    an_expression();
-    expr_as_value()
-}
+### Use `const` functions responsibly
 
-return foo();
+Mark a public function as `const` only if you expect it to remain `const` in the
+future (or can commit to helping clients migrate when it changes).
 
-loop {
-    break;
-}
-}
-```
+Rationale
 
-Use a semicolon where an expression has void type, even if it could be propagated. E.g.,
+It’s a breaking change to turn a `const` function into a regular function.
 
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo() { ... }
+<a id="operator-overloads"></a>
 
-fn bar() {
-    foo();
-}
-}
-```
+### Avoid overloading for non-mathematical purposes
 
-# Expressions
+Use operator overloads for their original mathematical/logical purpose, not just
+to make the code more concise (as "syntax sugar").
 
-## Blocks
+<a id="non-exhaustive-enums"></a>
 
-A block expression must have a newline after the initial `{` and before the terminal `}`, unless it qualifies to be written as a single line based on another style rule.
+### Apply `#[non_exhaustive]` to publicly-exposed enums
 
-A keyword before the block (such as `unsafe` or `async`) must be on the same line as the opening brace, with a single space between the keyword and the opening brace. Indent the contents of the block.
+If an enum is part of a public API used by other teams, mark it
+`#[non_exhaustive]`.
 
-``` playground
-#![allow(unused)]
-fn main() {
-fn block_as_stmt() {
-    a_call();
+Exceptions:
 
-    {
-        a_call_inside_a_block();
+*   The enum will never change. For example:
+    *   Enums describing an existing ontology (e.g.,
+        `enum Color { Red, Green, Blue }`).
+    *   Enums with two states that could be Booleans (e.g.,
+        `enum Visibility { Visible, Hidden }`)
+*   The enum *may* change in the future, but you are committed to fixing
+    resulting breakages via an LSC.
 
-        // a comment in a block
-        the_value
-    }
-}
+For context, see Clippy lint
+[`exhaustive_enums`](https://rust-lang.github.io/rust-clippy/master/index.html#exhaustive_enums).
 
-fn block_as_expr() {
-    let foo = {
-        a_call_inside_a_block();
+Rationale
 
-        // a comment in a block
-        the_value
-    };
-}
+Marking an enum `#[non_exhaustive]` forces users to include a wildcard arm
+(`_ => ...`) in `match` statements. This ensures code continues to compile when
+new variants are added to the enum later.
 
-fn unsafe_block_as_stmt() {
-    a_call();
+This rule is primarily important for enums used across team boundaries, because
+the scope of the breakage could be significant. Enums used only a small number
+of times can't create a large breakage and thus may ignore this rule.
 
-    unsafe {
-        a_call_inside_a_block();
+<a id="non-exhaustive-structs"></a>
 
-        // a comment in a block
-        the_value
-    }
-}
-}
-```
+### Apply `#[non_exhaustive]` to public structs with public fields
 
-If a block has an attribute, put it on its own line before the block:
+Structs with public fields that are part of a public API used by other teams
+should be marked `#[non_exhaustive]`.
 
-``` playground
-#![allow(unused)]
-fn main() {
-fn block_as_stmt() {
-    #[an_attribute]
-    {
-        #![an_inner_attribute]
+Exceptions:
 
-        // a comment in a block
-        the_value
-    }
-}
-}
-```
+*   The struct fields are unlikely to change, e.g., because they describe an
+    existing ontology (e.g., a Rectangle type) or the reviewer can otherwise be
+    confident that they will not change.
+*   The struct fields *may* change in the future, but you are committed to
+    fixing resulting breakages via an LSC.
+*   You want to enable your users to use functional record update (FRU) struct
+    initialization syntax (`Person { name: "foo", ..Default::default() }`).
 
-Avoid writing comments on the same lines as either of the braces.
+Rationale
 
-Write an empty block as `{}`.
+Adding a new field (even a private one) to a struct with all public fields is a
+breaking change, because callers can no longer name all fields in a struct
+literal.
 
-Write a block on a single line if:
+A `#[non_exhaustive]` struct can't be constructed with the struct literal
+syntax, except for the code in the same crate. This allows new private fields to
+be added without breaking users.
 
-- it is either used in expression position (not statement position) or is an unsafe block in statement position,
-- it contains a single-line expression and no statements, and
-- it contains no comments
+This rule is primarily important for structs used across team boundaries,
+because the scope of the breakage could be significant. Structs used only a
+small number of times can't create a large breakage and thus may ignore this
+rule.
 
-For a single-line block, put spaces after the opening brace and before the closing brace.
+<a id="must-use-on-functions"></a>
+
+### `#[must_use]` on functions
+
+Use `#[must_use]` on functions in these cases:
+
+*   The caller cannot use the function correctly if they ignore the return
+    value. This includes pure functions (functions without side effects), such
+    as `HashMap::get()`.
+
+*   Any function whose return value represents an error or otherwise critical
+    information about the function's behavior. If the return type is already
+    annotated `#[must_use]` (which is true of `Result`, for example), the
+    function does not need to be annotated `#[must_use]`.
+
+<a id="must-use-on-types"></a>
+
+### `#[must_use]` on types
+
+Use `#[must_use]` on types intended to be returned by functions that would
+otherwise be annotated `#[must_use]` according to the
+[rules above](#must-use-on-functions).
 
 Examples:
 
-``` playground
-fn main() {
-    // Single line
-    let _ = { a_call() };
-    let _ = unsafe { a_call() };
+*   The type is an error type (similar to `Result` or `StatusOr`).
 
-    // Not allowed on one line
-    // Statement position.
-    {
-        a_call()
-    }
+*   The type represents a lazily evaluated computation. In other words, the
+    function call doesn't do anything by itself, and the return value needs to
+    be accessed to cause some desired side effect.
 
-    // Contains a statement
-    let _ = {
-        a_call();
-    };
-    unsafe {
-        a_call();
-    }
+<a id="global-initialization"></a>
 
-    // Contains a comment
-    let _ = {
-        // A comment
-    };
-    let _ = {
-        // A comment
-        a_call()
-    };
+### Do not run code before `main()`
 
-    // Multiple lines
-    let _ = {
-        a_call();
-        another_call()
-    };
-    let _ = {
-        a_call(
-            an_argument,
-            another_arg,
-        )
-    };
+Do not cause code to run before `main()`, for example by using techniques such
+as the [ctor crate](https://docs.rs/ctor/latest/ctor/).
+
+## Implementation concerns
+
+<a id="type-inference"></a>
+
+### Don't overuse type inference
+
+Add enough explicit types so that someone familiar with the codebase can figure
+out what the inferred types are.
+
+Prefer to add the types to variable declarations, rather than as
+[turbofishes](https://doc.rust-lang.org/reference/glossary.html#turbofish). If
+the compiler forces you to add a turbofish, it is generally fine to add a `_`
+inference marker.
+
+Specific situations in which you should probably add types:
+
+*   When calling methods with a generic return type, such as `.into()` or
+    `.parse()`.
+*   For the result of complex iterator chains.
+
+<a id="dont-check-then-unwrap"></a>
+
+### Prefer pattern matching over check-then-unwrap
+
+Avoid potentially panicking operations when the input data guarantees they
+cannot panic. For example, instead of using `Option::unwrap` on a value known to
+be valid, use pattern matching to prove correctness to the compiler.
+
+Good:
+
+```rust
+// Good: The match arm proves to the compiler that `x` is `Some`.
+// A panic is obviously not possible.
+if let Some(value) = option {
+    use_value(value);
 }
 ```
 
-## Closures
+Bad:
 
-Don’t put any extra spaces before the first `|` (unless the closure is prefixed by a keyword such as `move`); put a space between the second `|` and the expression of the closure. Between the `|`s, use function definition syntax, but elide types where possible.
-
-Use closures without the enclosing `{}`, if possible. Add the `{}` when you have a return type, when there are statements, when there are comments inside the closure, or when the body expression is a control-flow expression that spans multiple lines. If using braces, follow the rules above for blocks. Examples:
-
-``` playground
-#![allow(unused)]
-fn main() {
-|arg1, arg2| expr
-
-move |arg1: i32, arg2: i32| -> i32 {
-    expr1;
-    expr2
-}
-
-|| Foo {
-    field1,
-    field2: 0,
-}
-
-|| {
-    if true {
-        blah
-    } else {
-        boo
-    }
-}
-
-|x| unsafe {
-    expr
-}
+```rust
+// Bad: Correctness of `unwrap` relies on a runtime check that `option` is `Some`.
+if option.is_some() {
+    use_value(option.unwrap());
 }
 ```
 
-## Struct literals
+<a id="expect-over-unwrap"></a>
 
-If a struct literal is *small*, format it on a single line, and do not use a trailing comma. If not, split it across multiple lines, with each field on its own block-indented line, and use a trailing comma.
+### Prefer `expect` over `unwrap`
 
-For each `field: value` entry, put a space after the colon only.
+If a panic is necessary because an invariant cannot be expressed in the type
+system, prefer `expect` over `unwrap` to document the reason.
 
-Put a space before the opening brace. In the single-line form, put spaces after the opening brace and before the closing brace.
+<a id="non-exhaustive-enum-matching"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-Foo { field1, field2: 0 }
-let f = Foo {
-    field1,
-    field2: an_expr,
-};
-}
-```
+### Don't omit patterns on `non_exhaustive` enums when matching
 
-Functional record update syntax is treated like a field, but it must never have a trailing comma. Do not put a space after `..`.
+Prefer to list all enum variants in `match` statements over `non_exhaustive`
+enums.
 
-``` playground
-#![allow(unused)]
-fn main() {
-let f = Foo {
-    field1,
-    ..an_expr
-};
-}
-```
-
-## Unit literals
-
-Never break between the opening and closing parentheses of the `()` unit literal. This applies even when the closing parenthesis would fall past the maximum line width.
-
-## Tuple literals
-
-Use a single-line form where possible. Do not put spaces between the opening parenthesis and the first element, or between the last element and the closing parenthesis. Separate elements with a comma followed by a space.
-
-Where a single-line form is not possible, write the tuple across multiple lines, with each element of the tuple on its own block-indented line, and use a trailing comma.
-
-``` playground
-#![allow(unused)]
-fn main() {
-(a, b, c)
-
-let x = (
-    a_long_expr,
-    another_very_long_expr,
-);
-}
-```
-
-## Tuple struct literals
-
-Do not put space between the identifier and the opening parenthesis. Otherwise, follow the rules for tuple literals:
-
-``` playground
-#![allow(unused)]
-fn main() {
-Foo(a, b, c)
-
-let x = Foo(
-    a_long_expr,
-    another_very_long_expr,
-);
-}
-```
-
-## Enum literals
-
-Follow the formatting rules for the various struct literals. Prefer using the name of the enum as a qualifying name, unless the enum is in the prelude:
-
-``` playground
-#![allow(unused)]
-fn main() {
-Foo::Bar(a, b)
-Foo::Baz {
-    field1,
-    field2: 1001,
-}
-Ok(an_expr)
-}
-```
-
-## Array literals
-
-Write small array literals on a single line. Do not put spaces between the opening square bracket and the first element, or between the last element and the closing square bracket. Separate elements with a comma followed by a space.
-
-If using the repeating initializer, put a space after the semicolon only.
-
-Apply the same rules if using `vec!` or similar array-like macros; always use square brackets with such macros. Examples:
-
-``` playground
-fn main() {
-    let x = [1, 2, 3];
-    let y = vec![a, b, c, d];
-    let a = [42; 10];
-}
-```
-
-For arrays that have to be broken across lines, if using the repeating initializer, break after the `;`, not before. Otherwise, follow the rules below for function calls. In any case, block-indent the contents of the initializer, and put line breaks after the opening square bracket and before the closing square bracket:
-
-``` playground
-fn main() {
-    [
-        a_long_expression();
-        1234567890
-    ]
-    let x = [
-        an_expression,
-        another_expression,
-        a_third_expression,
-    ];
-}
-```
-
-## Array accesses, indexing, and slicing
-
-Don’t put spaces around the square brackets. Avoid breaking lines if possible. Never break a line between the target expression and the opening square bracket. If the indexing expression must be broken onto a subsequent line, or spans multiple lines itself, then block-indent the indexing expression, and put newlines after the opening square bracket and before the closing square bracket:
+If you don't care about specific variants, place them in the wildcard arm. If
+you *only* care about specific variants, use an `if let` or a `let … else {}`.
 
 Examples:
 
-``` playground
-fn main() {
-    foo[42];
-    &foo[..10];
-    bar[0..100];
-    foo[4 + 5 / bar];
-    a_long_target[
-        a_long_indexing_expression
-    ];
+```rust
+#[non_exhaustive]
+pub enum Shape {
+    Circle,
+    Square,
+    Triangle,
 }
 ```
 
-## Unary operations
+Good:
 
-Do not include a space between a unary op and its operand (i.e., `!x`, not `! x`). However, there must be a space after `&mut`. Avoid line-breaking between a unary operator and its operand.
-
-## Binary operations
-
-Do include spaces around binary ops (i.e., `x + 1`, not `x+1`) (including `=` and other assignment operators such as `+=` or `*=`).
-
-For comparison operators, because for `T op U`, `&T op &U` is also implemented: if you have `t: &T`, and `u: U`, prefer `*t op u` to `t op &u`. In general, within expressions, prefer dereferencing to taking references, unless necessary (e.g. to avoid an unnecessarily expensive operation).
-
-Use parentheses liberally; do not necessarily elide them due to precedence. Tools should not automatically insert or remove parentheses. Do not use spaces to indicate precedence.
-
-If line-breaking, block-indent each subsequent line. For assignment operators, break after the operator; for all other operators, put the operator on the subsequent line. Put each sub-expression on its own line:
-
-``` playground
-#![allow(unused)]
-fn main() {
-foo_bar
-    + bar
-    + baz
-    + qux
-    + whatever
+```rust
+fn process_shape(shape: Shape) {
+  match shape {
+    Shape::Circle => println!("It's a circle"),
+    Shape::Square => println!("It's a square"),
+    // Triangle and any future variants don't require any actions.
+    Shape::Triangle | _ => {}
+  }
 }
 ```
 
-Prefer line-breaking at an assignment operator (either `=` or `+=`, etc.) rather than at other binary operators.
+Good:
 
-### Casts (<code>as</code>)
-
-Format `as` casts like a binary operator. In particular, always include spaces around `as`, and if line-breaking, break before the `as` (never after) and block-indent the subsequent line. Format the type on the right-hand side using the rules for types.
-
-However, unlike with other binary operators, if chaining a series of `as` casts that require line-breaking, and line-breaking before the first `as` suffices to make the remainder fit on the next line, don’t break before any subsequent `as`; instead, leave the series of types all on the same line:
-
-``` playground
-#![allow(unused)]
-fn main() {
-let cstr = very_long_expression()
-    as *const str as *const [u8] as *const std::os::raw::c_char;
+```rust
+fn process_shape(shape: Shape) {
+  if let Shape::Circle = shape {
+    println!("It's a circle"),
+  }
 }
 ```
 
-If the subsequent line still requires line-breaking, break and block-indent before each `as` as with other binary operators.
+Bad:
 
-## Control flow
-
-Do not include extraneous parentheses for `if` and `while` expressions.
-
-``` playground
-#![allow(unused)]
-fn main() {
-if true {
-}
+```rust
+fn process_shape(shape: Shape) {
+  match shape {
+    Shape::Circle => println!("It's a circle"),
+    _ => {}
+  }
 }
 ```
 
-is better than
+Exceptions:
 
-``` playground
-#![allow(unused)]
-fn main() {
-if (true) {
-}
-}
+*   You only care about specific variants *and* `match` is cleaner than
+    `if let`.
+
+This is covered by the built-in lint `non_exhaustive_omitted_patterns` which you
+can enable on your code.
+
+<a id="assertion-context"></a>
+
+### Use context strings to clarify assertions
+
+While some assertions are self-explanatory, many benefit from additional context
+that clarifies why an assertion is expected to hold, or what caused it to be
+violated. Use the optional format string argument for `assert!` to convey this
+context.
+
+You should always consider adding context, but particularly in the following
+situations:
+
+*   If you're thinking of adding a comment to the assertion. Use a format string
+    instead: It has the benefit that it will appear in logs.
+*   If you expect failing assertions to be seen by users. In this case, a
+    human-readable explanation is more helpful than a Rust expression.
+*   If logging a value helps in understanding why the assertion failed.
+*   To clarify whether a failing assertion means that
+    *   The client misused an API (i.e., they should change their use of the
+        API), or
+    *   The implementation contains a bug (i.e., the client should file a bug
+        report).
+
+Examples
+
+**Explaining why an assertion should hold**
+
+Good:
+
+```rust
+    assert!(
+        values.is_sorted(),
+        "`values` is populated from a `PriorityQueue`, so we expect it to be sorted"
+    );
 ```
 
-Do include extraneous parentheses if it makes an arithmetic or logic expression easier to understand (`(x * 15) + (y * 20)` is fine)
+**Logging a value to clarify why the assertion failed**
 
-## Function calls
+Good:
 
-Do not put a space between the function name, and the opening parenthesis.
-
-Do not put a space between an argument, and the comma which follows.
-
-Do put a space between an argument, and the comma which precedes it.
-
-Prefer not to break a line in the callee expression.
-
-For a function call with no arguments (a nullary function call like `func()`), never break within the parentheses, and never put a space between the parentheses. Always write a nullary function call as a single-line call, never a multi-line call. This applies even when the closing parenthesis would fall past the maximum line width.
-
-### Single-line calls
-
-Do not put a space between the function name and open paren, between the open paren and the first argument, or between the last argument and the close paren.
-
-Do not put a comma after the last argument.
-
-``` playground
-#![allow(unused)]
-fn main() {
-foo(x, y, z)
-}
+```rust
+assert!(refund > 0, "Refund must be positive, got {refund:?});
 ```
 
-### Multi-line calls
+**Flagging misuse of an API**
 
-If the function call is not *small*, it would otherwise over-run the max width, or any argument or the callee is multi-line, then format the call across multiple lines. In this case, put each argument on its own block-indented line, break after the opening parenthesis and before the closing parenthesis, and use a trailing comma:
+Good:
 
-``` playground
-#![allow(unused)]
-fn main() {
-a_function_call(
-    arg1,
-    a_nested_call(a, b),
-)
-}
-```
-
-## Method calls
-
-Follow the function rules for calling.
-
-Do not put any spaces around the `.`.
-
-``` playground
-#![allow(unused)]
-fn main() {
-x.foo().bar().baz(x, y, z);
-}
-```
-
-## Macro uses
-
-If a macro can be parsed like other constructs, format it like those constructs. For example, a macro use `foo!(a, b, c)` can be parsed like a function call (ignoring the `!`), so format it using the rules for function calls.
-
-The style guide defines specific formatting for particular macros in the language or standard library. The style guide does not define formatting for any third-party macros, even if similar to those in the language or standard library.
-
-### Format string macros
-
-For macros which take a format string, if all other arguments are *small*, format the arguments before the format string on a single line if they fit, and format the arguments after the format string on a single line if they fit, with the format string on its own line. If the arguments are not small or do not fit, put each on its own line as with a function. For example:
-
-``` playground
-#![allow(unused)]
-fn main() {
-println!(
-    "Hello {} and {}",
-    name1, name2,
-);
-
-assert_eq!(
-    x, y,
-    "x and y were not equal, see {}",
-    reason,
-);
-}
-```
-
-## Chains of fields and method calls
-
-A chain is a sequence of field accesses, method calls, and/or uses of the try operator `?`. E.g., `a.b.c().d` or `foo?.bar().baz?`.
-
-Format the chain on one line if it is “small” and otherwise possible to do so. If formatting on multiple lines, put each field access or method call in the chain on its own line, with the line-break before the `.` and after any `?`. Block-indent each subsequent line:
-
-``` playground
-#![allow(unused)]
-fn main() {
-let foo = bar
-    .baz?
-    .qux();
-}
-```
-
-If the length of the last line of the first element plus its indentation is less than or equal to the indentation of the second line, then combine the first and second lines if they fit. Apply this rule recursively.
-
-``` playground
-#![allow(unused)]
-fn main() {
-x.baz?
-    .qux()
-
-x.y.z
-    .qux()
-
-let foo = x
-    .baz?
-    .qux();
-
-foo(
-    expr1,
-    expr2,
-).baz?
-    .qux();
-}
-```
-
-### Multi-line elements
-
-If any element in a chain is formatted across multiple lines, put that element and any later elements on their own lines.
-
-``` playground
-#![allow(unused)]
-fn main() {
-a.b.c()?
-    .foo(
-        an_expr,
-        another_expr,
-    )
-    .bar
-    .baz
-}
-```
-
-Note there is block indent due to the chain and the function call in the above example.
-
-Prefer formatting the whole chain in multi-line style and each element on one line, rather than putting some elements on multiple lines and some on a single line, e.g.,
-
-``` playground
-#![allow(unused)]
-fn main() {
-// Better
-self.pre_comment
-    .as_ref()
-    .map_or(false, |comment| comment.starts_with("//"))
-
-// Worse
-self.pre_comment.as_ref().map_or(
-    false,
-    |comment| comment.starts_with("//"),
-)
-}
-```
-
-## Control flow expressions
-
-This section covers `for` and `loop` expressions, as well as `if` and `while` expressions with their sub-expression variants. This includes those with a single `let` sub-expression (i.e. `if let` and `while let`) as well as “let-chains”: those with one or more `let` sub-expressions and one or more bool-type conditions (i.e. `if a && let Some(b) = c`).
-
-Put the keyword, any initial clauses, and the opening brace of the block all on a single line, if they fit. Apply the usual rules for [block formatting](#blocks) to the block.
-
-If there is an `else` component, then put the closing brace, `else`, any following clause, and the opening brace all on the same line, with a single space before and after the `else` keyword:
-
-``` playground
-#![allow(unused)]
-fn main() {
-if ... {
+```rust
+impl Database {
     ...
-} else {
-    ...
-}
 
-if let ... {
-    ...
-} else if ... {
-    ...
-} else {
-    ...
-}
-}
-```
-
-If the control line needs to be broken, then prefer breaking after the `=` for any `let` sub-expression in an `if` or `while` expression that does not fit, and before `in` in a `for` expression; the following line should be block indented. If the control line is broken for any reason, then the opening brace should be on its own line and not indented. Examples:
-
-``` playground
-#![allow(unused)]
-fn main() {
-while let Some(foo)
-    = a_long_expression
-{
-    ...
-}
-
-for foo
-    in a_long_expression
-{
-    ...
-}
-
-if a_long_expression
-    && another_long_expression
-    || a_third_long_expression
-{
-    ...
-}
-
-if let Some(a) = b
-    && another_long_expression
-    && a_third_long_expression
-{
-    // ...
-}
-
-if let Some(relatively_long_thing)
-    = a_long_expression
-    && another_long_expression
-    && a_third_long_expression
-{
-    // ...
-}
-
-if some_expr
-    && another_long_expression
-    && let Some(relatively_long_thing) =
-        a_long_long_long_long_long_long_really_reallllllllllyyyyyyy_long_expression
-    && a_third_long_expression
-{
-    // ...
-}
-}
-```
-
-A let-chain control line is allowed to be formatted on a single line provided it only consists of two clauses, with the first, left-hand side operand being a literal or an `ident` (which can optionally be preceded by any number of unary prefix operators), and the second, right-hand side operand being a single-line `let` clause. Otherwise, the control line must be broken and formatted according to the above rules. For example:
-
-``` playground
-#![allow(unused)]
-fn main() {
-if a && let Some(b) = foo() {
-    // ...
-}
-
-if true && let Some(b) = foo() {
-    // ...
-}
-
-let operator = if !from_hir_call && let Some(p) = parent {
-    // ...
-};
-
-if let Some(b) = foo()
-    && a
-{
-    // ..
-}
-
-if foo()
-    && let Some(b) = bar
-{
-    // ...
-}
-
-if gen_pos != GenericArgPosition::Type
-    && let Some(b) = gen_args.bindings.first()
-{
-    // ..
-}
-}
-```
-
-Where the initial clause spans multiple lines and ends with one or more closing parentheses, square brackets, or braces, and there is nothing else on that line, and that line is not indented beyond the indent on the first line of the control flow expression, then put the opening brace of the block on the same line with a preceding space. For example:
-
-``` playground
-#![allow(unused)]
-fn main() {
-if !self.config.file_lines().intersects(
-    &self.codemap.lookup_line_range(
-        stmt.span,
-    ),
-) {  // Opening brace on same line as initial clause.
-    ...
-}
-}
-```
-
-### Single line <code>if else</code>
-
-Put an `if else` or `if let else` on a single line if it occurs in expression context (i.e., is not a standalone statement), it contains a single `else` clause, and is *small*:
-
-``` playground
-#![allow(unused)]
-fn main() {
-let y = if x { 0 } else { 1 };
-
-// Examples that must be multi-line.
-let y = if something_very_long {
-    not_small
-} else {
-    also_not_small
-};
-
-if x {
-    0
-} else {
-    1
-}
-}
-```
-
-## Match
-
-Prefer not to line-break inside the discriminant expression. Always break after the opening brace and before the closing brace. Block-indent the match arms once:
-
-``` playground
-#![allow(unused)]
-fn main() {
-match foo {
-    // arms
-}
-
-let x = match foo.bar.baz() {
-    // arms
-};
-}
-```
-
-Use a trailing comma for a match arm if and only if not using a block.
-
-Never start a match arm pattern with `|`:
-
-``` playground
-#![allow(unused)]
-fn main() {
-match foo {
-    // Don't do this.
-    | foo => bar,
-    // Or this.
-    | a_very_long_pattern
-    | another_pattern
-    | yet_another_pattern
-    | a_fourth_pattern => {
-        ...
+    fn execute_query(&self, query: &str) {
+        assert!(self.stream.is_some(), "Call connect() before executing queries");
     }
-}
-}
-```
 
-Prefer:
-
-``` playground
-#![allow(unused)]
-fn main() {
-match foo {
-    foo => bar,
-    a_very_long_pattern
-    | another_pattern
-    | yet_another_pattern
-    | a_fourth_pattern => {
-        ...
-    }
-}
+    ...
 }
 ```
 
-Avoid splitting the left-hand side (before the `=>`) of a match arm where possible. If the right-hand side of the match arm is kept on the same line, never use a block (unless the block is empty).
+**Don't use the context string merely to repeat the condition**
 
-If the right-hand side consists of multiple statements, or has line comments, or the start of the line does not fit on the same line as the left-hand side, use a block. Do not flatten a right-hand side block containing a single macro call because its expanded form could contain a trailing semicolon.
+Bad:
 
-Block-indent the body of a block arm.
-
-Examples:
-
-``` playground
-#![allow(unused)]
-fn main() {
-match foo {
-    foo => bar,
-    a_very_long_pattern | another_pattern if an_expression() => {
-        no_room_for_this_expression()
-    }
-    foo => {
-        // A comment.
-        an_expression()
-    }
-    foo => {
-        let a = statement();
-        an_expression()
-    }
-    bar => {}
-    // Trailing comma on last item.
-    foo => bar,
-    baz => qux!(),
-    lorem => {
-        ipsum!()
-    }
-}
-}
+```rust
+assert(!values.is_sorted(), "values should always be sorted");
 ```
 
-If the body is a single expression with no line comments and not a control flow expression, start it on the same line as the left-hand side. If not, then it must be in a block. Example:
+<a id="combinator-chains"></a>
 
-``` playground
-#![allow(unused)]
-fn main() {
-match foo {
-    // A combinable expression.
-    foo => a_function_call(another_call(
-        argument1,
-        argument2,
-    )),
-    // A non-combinable expression
-    bar => {
-        a_function_call(
-            another_call(
-                argument1,
-                argument2,
-            ),
-            another_argument,
-        )
-    }
-}
-}
-```
+### Don't use iterator combinator chains when direct iteration is clearer
 
-### Line-breaking
+Avoid using combinator chains in ways that hurt readability. Specifically:
 
-If using a block form on the right-hand side of a match arm makes it possible to avoid breaking on the left-hand side, do that:
+*   Avoid long and complex combinator chains.
+*   Don't construct combinator chains in the header of a `for` loop. Instead,
+    assign the combinator chain to a variable, then consume that variable in the
+    `for` loop.
+*   Avoid `Iterator::for_each` unless you're convinced you have a good reason. A
+    `for` loop is usually easier to read.
 
-``` playground
-#![allow(unused)]
-fn main() {
-    // Assuming the following line does not fit in the max width
-    a_very_long_pattern | another_pattern => ALongStructName {
-        ...
-    },
-    // Prefer this
-    a_very_long_pattern | another_pattern => {
-        ALongStructName {
-            ...
+Combinators *are* preferable for shorter chains and for cases where the
+combinator itself provides a lot of logic that would otherwise have to be
+written out in the corresponding `for` loop.
+
+Examples
+
+**Complex combinator chains**
+
+Here's an example of a combinator chain that is hard to read because it involves
+conditionals and mutates external state:
+
+Bad:
+
+```rust
+let mut error_count = 0;
+let _processed_items: Vec<_> = items
+    .into_iter()
+    .map(transformation_that_may_fail)
+    .map(|result| {
+        if result.is_err() {
+            error_count += 1;
         }
-    }
-    // To splitting the pattern.
-}
+        result
+    })
+    .filter_map(Result::ok)
+    .collect();
 ```
 
-Never break after `=>` without using the block form of the body.
+The corresponding `for` loop is easier to read:
 
-If the left-hand side must be split and there is an `if` clause, break before the `if` and block indent. In this case, always use a block body and start the body on a new line:
+Good:
 
-``` playground
-#![allow(unused)]
-fn main() {
-    a_very_long_pattern | another_pattern
-        if expr =>
-    {
-        ...
-    }
-}
-```
+```rust
+let mut error_count = 0;
+let mut processed_items = Vec::with_capacity(items.len());
 
-If required to break the pattern, put each clause of the pattern on its own line with no additional indent, breaking before the `|`. If there is an `if` clause, use the above form:
-
-``` playground
-#![allow(unused)]
-fn main() {
-    a_very_long_pattern
-    | another_pattern
-    | yet_another_pattern
-    | a_forth_pattern => {
-        ...
-    }
-    a_very_long_pattern
-    | another_pattern
-    | yet_another_pattern
-    | a_forth_pattern
-        if expr =>
-    {
-        ...
+for item in items {
+    match transformation_that_may_fail(item) {
+        Ok(val) => processed_items.push(val),
+        Err(_) => error_count += 1,
     }
 }
 ```
 
-If the pattern is multi-line, and the last line is less wide than the indent, do not put the `if` clause on a new line. E.g.,
+**Combinator chains in for loops**
 
-``` playground
-#![allow(unused)]
-fn main() {
-    Token::Dimension {
-         value,
-         ref unit,
-         ..
-    } if num_context.is_ok(context.parsing_mode, value) => {
-        ...
-    }
+Avoid constructing a combinator chain in the header of a `for` loop:
+
+Bad:
+
+```rust
+for bug in bug_descriptions
+    .iter()
+    .filter_map(|description| parse_bug_description(description).ok())
+    .filter(|bug| bug.priority <= Priority::P1)
+{
+    assign_bug(bug);
 }
 ```
 
-If every clause in a pattern is *small*, but the whole pattern does not fit on one line, then format the pattern across multiple lines with as many clauses per line as possible. Again, break before a `|`:
+Instead, assign the combinator chain to a variable. This reduces clutter, and
+the variable name documents what the combinator chain does:
 
-``` playground
-#![allow(unused)]
-fn main() {
-    foo | bar | baz
-    | qux => {
-        ...
-    }
+Good:
+
+```rust
+let urgent_bugs = bug_descriptions
+    .iter()
+    .filter_map(|description| parse_bug_description(description).ok())
+    .filter(|bug| bug.priority <= Priority::P1);
+
+for bug in urgent_bugs {
+    assign_bug(bug);
 }
 ```
 
-We define a pattern clause to be *small* if it fits on a single line and matches “small” in the following grammar:
+**When to prefer a combinator chain**
 
-    small:
-        - small_no_tuple
-        - unary tuple constructor: `(` small_no_tuple `,` `)`
-        - `&` small
+Here's an example where a combinator chain is preferable:
 
-    small_no_tuple:
-        - single token
-        - `&` small_no_tuple
+Good:
 
-E.g., `&&Some(foo)` matches, `Foo(4, Bar)` does not.
+```rust
+let threshold_exceeded = values.iter().any(|&v| v > threshold);
+```
 
-## Combinable expressions
+The corresponding for loop is harder to read and reinvents the logic contained
+in `any()`:
 
-Where a function call has a single argument, and that argument is formatted across multiple-lines, format the outer call as if it were a single-line call, if the result fits. Apply the same combining behaviour to any similar expressions which have multi-line, block-indented lists of sub-expressions delimited by parentheses (e.g., macros or tuple struct literals). E.g.,
+Bad:
 
-``` playground
-#![allow(unused)]
-fn main() {
-foo(bar(
-    an_expr,
-    another_expr,
-))
-
-let x = foo(Bar {
-    field: whatever,
-});
-
-foo(|param| {
-    action();
-    foo(param)
-})
-
-let x = combinable([
-    an_expr,
-    another_expr,
-]);
-
-let arr = [combinable(
-    an_expr,
-    another_expr,
-)];
+```rust
+let mut threshold_exceeded = false;
+for v in values {
+  if v > threshold {
+    threshold_exceeded = true;
+    break;
+  }
 }
 ```
 
-Apply this behavior recursively.
+<a id="catch-unwind"></a>
 
-For a function with multiple arguments, if the last argument is a multi-line closure with an explicit block, there are no other closure arguments, and all the arguments and the first line of the closure fit on the first line, use the same combining behavior:
+### Don't call `panic::catch_unwind`
 
-``` playground
-#![allow(unused)]
-fn main() {
-foo(first_arg, x, |param| {
-    action();
-    foo(param)
-})
-}
-```
+Use of `panic::catch_unwind` is prohibited in first-party Rust code.
 
-## Ranges
+Exceptions:
 
-Do not put spaces in ranges, e.g., `0..10`, `x..=y`, `..x.len()`, `foo..`.
+*   It is acceptable as a defense in depth mechanism as long as it is never
+    *relied* upon for any properties. A codebase that is already attempting to
+    avoid panics may choose to wrap critical entry points with a `catch_unwind`
+    recovery mechanism just in case a panic slips through. Code authors must
+    convince the reviewer that the codebase is doing most of what it can to
+    avoid panics. This exception only applies to code that has the possibility
+    of being run with `panic=unwind`.
 
-When writing a range with both upper and lower bounds, if the line must be broken within the range, break before the range operator and block indent the second line:
+Rationale
 
-``` playground
-#![allow(unused)]
-fn main() {
-a_long_expression
-    ..another_long_expression
-}
-```
+Rust code may be used in many environments, and `panic::catch_unwind` will only
+function correctly in environments with `panic=unwind`.
 
-For the sake of indicating precedence, if either bound is a compound expression, use parentheses around it, e.g., `..(x + 1)`, `(x.f)..(x.f.len())`, or `0..(x - 10)`.
+<a id="prefer-format-or-write"></a>
 
-## Hexadecimal literals
+### Prefer `format!` / `write!` for concatenation and substitution
 
-Hexadecimal literals may use upper- or lower-case letters, but they must not be mixed within the same literal. Projects should use the same case for all literals, but we do not make a recommendation for either lower- or upper-case.
+Prefer `format!()` and `write!()` to other alternatives in the following
+situations:
 
-## Patterns
+*   To concatenate more than two strings. For example, use
+    `format!("{a}{b}{c}")` instead of `a + b + c`.
+*   To perform substitutions on a literal string (instead of using
+    `str::replace`).
 
-Format patterns like their corresponding expressions. See the section on `match` for additional formatting for patterns in match arms.
+Rationale
 
-# Types and Bounds
-
-## Single line formatting
-
-- `[T]` no spaces
-- `[T; expr]`, e.g., `[u32; 42]`, `[Vec<Foo>; 10 * 2 + foo()]` (space after colon, no spaces around square brackets)
-- `*const T`, `*mut T` (no space after `*`, space before type)
-- `&'a T`, `&T`, `&'a mut T`, `&mut T` (no space after `&`, single spaces separating other words)
-- `unsafe extern "C" fn<'a, 'b, 'c>(T, U, V) -> W` or `fn()` (single spaces around keywords and sigils, and after commas, no trailing commas, no spaces around brackets)
-- `!` gets treated like any other type name, `Name`
-- `(A, B, C, D)` (spaces after commas, no spaces around parens, no trailing comma unless it is a one-tuple)
-- `<Baz<T> as SomeTrait>::Foo::Bar` or `Foo::Bar` or `::Foo::Bar` (no spaces around `::` or angle brackets, single spaces around `as`)
-- `Foo::Bar<T, U, V>` (spaces after commas, no trailing comma, no spaces around angle brackets)
-- `T + T + T` (single spaces between types, and `+`).
-- `impl T + T + T` (single spaces between keyword, types, and `+`).
-
-Do not put space around parentheses used in types, e.g., `(Foo)`
-
-## Line breaks
-
-Avoid breaking lines in types where possible. Prefer breaking at outermost scope, e.g., prefer
-
-``` playground
-#![allow(unused)]
-fn main() {
-Foo<
-    Bar,
-    Baz<Type1, Type2>,
->
-}
-```
-
-to
-
-``` playground
-#![allow(unused)]
-fn main() {
-Foo<Bar, Baz<
-    Type1,
-    Type2,
->>
-}
-```
-
-If a type requires line-breaks in order to fit, this section outlines where to break such types if necessary.
-
-Break `[T; expr]` after the `;` if necessary.
-
-Break function types following the rules for function declarations.
-
-Break generic types following the rules for generics.
-
-Break types with `+` by breaking before the `+` and block-indenting the subsequent lines. When breaking such a type, break before *every* `+`:
-
-``` playground
-#![allow(unused)]
-fn main() {
-impl Clone
-    + Copy
-    + Debug
-
-Box<
-    Clone
-    + Copy
-    + Debug
->
-}
-```
-
-## Precise capturing bounds
-
-A `use<'a, T>` precise capturing bound is formatted as if it were a single path segment with non-turbofished angle-bracketed args, like a trait bound whose identifier is `use`.
-
-``` playground
-#![allow(unused)]
-fn main() {
-fn foo() -> impl Sized + use<'a> {}
-
-// is formatted analogously to:
-
-fn foo() -> impl Sized + Use<'a> {}
-}
-```
-
-# Other style advice
-
-## Expressions
-
-Prefer to use Rust’s expression oriented nature where possible;
-
-``` playground
-#![allow(unused)]
-fn main() {
-// use
-let x = if y { 1 } else { 0 };
-// not
-let x;
-if y {
-    x = 1;
-} else {
-    x = 0;
-}
-}
-```
-
-## Names
-
-- Types shall be `UpperCamelCase`,
-- Enum variants shall be `UpperCamelCase`,
-- Struct fields shall be `snake_case`,
-- Function and method names shall be `snake_case`,
-- Local variables shall be `snake_case`,
-- Macro names shall be `snake_case`,
-- Constants (`const`s and immutable `static`s) shall be `SCREAMING_SNAKE_CASE`.
-- When a name is forbidden because it is a reserved word (such as `crate`), either use a raw identifier (`r#crate`) or use a trailing underscore (`crate_`). Don’t misspell the word (`krate`).
-
-### Modules
-
-Avoid `#[path]` annotations where possible.
-
-# <code>Cargo.toml</code> conventions
-
-## Formatting conventions
-
-Use the same line width and indentation as Rust code.
-
-Put a blank line between the last key-value pair in a section and the header of the next section. Do not place a blank line between section headers and the key-value pairs in that section, or between key-value pairs in a section.
-
-Version-sort key names within each section, with the exception of the `[package]` section. Put the `[package]` section at the top of the file; put the `name` and `version` keys in that order at the top of that section, followed by the remaining keys other than `description` in order, followed by the `description` at the end of that section.
-
-Don’t use quotes around any standard key names; use bare keys. Only use quoted keys for non-standard keys whose names require them, and avoid introducing such key names when possible. See the [TOML specification](https://toml.io/en/v1.0.0#keys) for details.
-
-Put a single space both before and after the `=` between a key and value. Do not indent any key names; start all key names at the start of a line.
-
-Use multi-line strings (rather than newline escape sequences) for any string values that include multiple lines, such as the crate description.
-
-For array values, such as a list of features, put the entire list on the same line as the key, if it fits. Otherwise, use block indentation: put a newline after the opening square bracket, indent each item by one indentation level, put a comma after each item (including the last), and put the closing square bracket at the start of a line by itself after the last item.
-
-``` playground
-#![allow(unused)]
-fn main() {
-some_feature = [
-    "another_feature",
-    "yet_another_feature",
-    "some_dependency?/some_feature",
-]
-}
-```
-
-For table values, such as a crate dependency with a path, write the entire table using curly braces and commas on the same line as the key if it fits. If the entire table does not fit on the same line as the key, separate it out into a separate section with key-value pairs:
-
-``` toml
-[dependencies]
-crate1 = { path = "crate1", version = "1.2.3" }
-
-[dependencies.extremely_long_crate_name_goes_here]
-path = "extremely_long_path_name_goes_right_here"
-version = "4.5.6"
-```
-
-## Metadata conventions
-
-The authors list, if present, should consist of strings that each contain an author name followed by an email address in angle brackets: `Full Name <email@address>`. It should not contain bare email addresses, or names without email addresses. (The authors list may also include a mailing list address without an associated name.)
-
-The license field must contain a valid [SPDX expression](https://spdx.org/spdx-specification-21-web-version#h.jxpfx0ykyb60), using valid [SPDX license names](https://spdx.org/licenses/). (As an exception, by widespread convention, the license field may use `/` in place of `OR`; for example, `MIT/Apache-2.0`.)
-
-The homepage field, if present, must consist of a single URL, including the scheme (e.g. `https://example.org/`, not just `example.org`.)
-
-Within the description field, wrap text at 80 columns. Don’t start the description field with the name of the crate (e.g. “cratename is a …”); just describe the crate itself. If providing a multi-sentence description, the first sentence should go on a line by itself and summarize the crate, like the subject of an email or commit message; subsequent sentences can then describe the crate in more detail.
-
-# Guiding principles and rationale
-
-When deciding on style guidelines, the style team follows these guiding principles (in rough priority order):
-
-- readability
-
-  - scan-ability
-  - avoiding misleading formatting
-  - accessibility - readable and editable by users using the widest variety of hardware, including non-visual accessibility interfaces
-  - readability of code in contexts without syntax highlighting or IDE assistance, such as rustc error messages, diffs, grep, and other plain-text contexts
-
-- aesthetics
-
-  - sense of ‘beauty’
-  - consistent with other languages/tools
-
-- specifics
-
-  - compatibility with version control practices - preserving diffs, merge-friendliness, etc.
-  - preventing rightward drift
-  - minimising vertical space
-
-- application
-
-  - ease of manual application
-  - ease of implementation (in `rustfmt`, and in other tools/editors/code generators)
-  - internal consistency
-  - simplicity of formatting rules
-
-# Rust style editions
-
-The default Rust style evolves over time, as Rust does. However, to avoid breaking established code style, and CI jobs checking code style, changes to the default Rust style only appear in *style editions*.
-
-Code written in a given [Rust edition](https://doc.rust-lang.org/edition-guide/) uses the corresponding Rust style edition by default. To make it easier to migrate code style separately from the semantic changes between Rust editions, formatting tools such as `rustfmt` allow updating the style edition separately from the Rust edition.
-
-The current version of the style guide describes the latest Rust style edition. Each distinct past style will have a corresponding archived version of the style guide.
-
-Note that archived versions of the style guide do not document formatting for newer Rust constructs that did not exist at the time that version of the style guide was archived. However, each style edition will still format all constructs valid in that Rust edition, with the style of newer constructs coming from the first subsequent style edition providing formatting rules for that construct (without any of the systematic/global changes from that style edition).
-
-Not all Rust editions have corresponding changes to the Rust style. For instance, Rust 2015, Rust 2018, and Rust 2021 all use the same style edition.
-
-## Rust next style edition
-
-- Never break within a nullary function call `func()` or a unit literal `()`.
-
-## Rust 2024 style edition
-
-This style guide describes the Rust 2024 style edition. The Rust 2024 style edition is currently nightly-only and may change before the release of Rust 2024.
-
-For a full history of changes in the Rust 2024 style edition, see the git history of the style guide. Notable changes in the Rust 2024 style edition include:
-
-- Miscellaneous `rustfmt` bugfixes.
-- Use version-sort (sort `x8`, `x16`, `x32`, `x64`, `x128` in that order).
-- Change “ASCIIbetical” sort to Unicode-aware “non-lowercase before lowercase”.
-
-## Rust 2015/2018/2021 style edition
-
-The archived version of the style guide at <https://github.com/rust-lang/rust/tree/37343f4a4d4ed7ad0891cb79e8eb25acf43fb821/src/doc/style-guide/src> describes the style edition corresponding to Rust 2015, Rust 2018, and Rust 2021.
-
-# Nightly
-
-This chapter documents style and formatting for nightly-only syntax. The rest of the style guide documents style for stable Rust syntax; nightly syntax only appears in this chapter. Each section here includes the name of the feature gate, so that searches (e.g. `git grep`) for a nightly feature in the Rust repository also turn up the style guide section.
-
-Style and formatting for nightly-only syntax should be removed from this chapter and integrated into the appropriate sections of the style guide at the time of stabilization.
-
-There is no guarantee of the stability of this chapter in contrast to the rest of the style guide. Refer to the style team policy for nightly formatting procedure regarding breaking changes to this chapter.
-
-### Frontmatter
-
-*Location: Placed before comments and attributes in the [root](#rust-style-guide).*
-
-*Tracking issue: [#136889](https://github.com/rust-lang/rust/issues/136889)*
-
-*Feature gate: `frontmatter`*
-
-There should be no blank lines between the frontmatter and either the start of the file or a shebang. There can be zero or one line between the frontmatter and any following content.
-
-The frontmatter fences should use the minimum number of dashes necessary for the contained content (one more than the longest series of initial dashes in the content, with a minimum of 3 to be recognized as frontmatter delimiters). If an infostring is present after the opening fence, there should be one space separating them. The frontmatter fence lines should not have trailing whitespace.
-
-``` playground
-#!/usr/bin/env cargo
---- cargo
-[dependencies]
-regex = "1"
----
-
-fn main() {}
-```
+*   `format!` / `write!` require fewer allocations than concatenating strings
+    using `+`.
+*   Prefer standard format strings to inventing your own templating syntax.
