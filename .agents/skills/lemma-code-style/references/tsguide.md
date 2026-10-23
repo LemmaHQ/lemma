@@ -1,5 +1,4 @@
 
-
 # Google TypeScript Style Guide
 
 This guide is based on the internal Google TypeScript style guide, but it has been slightly adjusted to remove Google-internal sections. Google's internal environment has different constraints on TypeScript than you might find outside of Google. The advice here is specifically useful for people authoring code they intend to import into Google, but otherwise may not apply in your external environment.
@@ -54,10 +53,10 @@ const output = '\ufeff' + content;
 
 Files consist of the following, **in order**:
 
-1.  Copyright information, if present
-2.  JSDoc with `@fileoverview`, if present
-3.  Imports, if present
-4.  The file’s implementation
+1. Copyright information, if present
+2. JSDoc with `@fileoverview`, if present
+3. Imports, if present
+4. The file’s implementation
 
 **Exactly one blank line** separates each section that is present.
 
@@ -182,9 +181,9 @@ Code *should* fix name collisions by using a namespace import or renaming the ex
 
 Three examples where renaming can be helpful:
 
-1.  If it's necessary to avoid collisions with other imported symbols.
-2.  If the imported symbol name is generated.
-3.  If importing symbols whose names are unclear by themselves, renaming can improve code clarity. For example, when using RxJS the `from` function might be more readable when renamed to `observableFrom`.
+1. If it's necessary to avoid collisions with other imported symbols.
+2. If the imported symbol name is generated.
+3. If importing symbols whose names are unclear by themselves, renaming can improve code clarity. For example, when using RxJS the `from` function might be more readable when renamed to `observableFrom`.
 
 ### Exports
 
@@ -2956,8 +2955,8 @@ You will occasionally encounter files in the codebase that are not in proper Goo
 
 When updating the style of existing code, follow these guidelines.
 
-1.  It is not required to change all existing code to meet current style guidelines. Reformatting existing code is a trade-off between code churn and consistency. Style rules evolve over time and these kinds of tweaks to maintain compliance would create unnecessary churn. However, if significant changes are being made to a file it is expected that the file will be in Google Style.
-2.  Be careful not to allow opportunistic style fixes to muddle the focus of a CL. If you find yourself making a lot of style changes that aren’t critical to the central focus of a CL, promote those changes to a separate CL.
+1. It is not required to change all existing code to meet current style guidelines. Reformatting existing code is a trade-off between code churn and consistency. Style rules evolve over time and these kinds of tweaks to maintain compliance would create unnecessary churn. However, if significant changes are being made to a file it is expected that the file will be in Google Style.
+2. Be careful not to allow opportunistic style fixes to muddle the focus of a CL. If you find yourself making a lot of style changes that aren’t critical to the central focus of a CL, promote those changes to a separate CL.
 
 ### Deprecation
 
@@ -2973,9 +2972,9 @@ In general, engineers usually know best about what's needed in their code, so if
 
 The following points are the exceptions, which are the reasons we have some global rules. Evaluate your style guide proposal against the following:
 
-1.  **Code should avoid patterns that are known to cause problems, especially for users new to the language.**
+1. **Code should avoid patterns that are known to cause problems, especially for users new to the language.**
 
-2.  **Code across projects should be consistent across irrelevant variations.**
+2. **Code across projects should be consistent across irrelevant variations.**
 
     When there are two options that are equivalent in a superficial way, we should consider choosing one just so we don't divergently evolve for no reason and avoid pointless debates in code reviews.
 
@@ -2985,7 +2984,7 @@ The following points are the exceptions, which are the reasons we have some glob
     - `x as T` syntax vs the equivalent `<T>x` syntax (disallowed).
     - `Array<[number, number]>` vs `[number, number][]`.
 
-3.  **Code should be maintainable in the long term.**
+3. **Code should be maintainable in the long term.**
 
     Code usually lives longer than the original author works on it, and the TypeScript team must keep all of Google working into the future.
 
@@ -2996,7 +2995,7 @@ The following points are the exceptions, which are the reasons we have some glob
     - Code must import the libraries it uses (“strict deps”) so that a refactor in a dependency doesn't change the dependencies of its users.
     - We ask users to write tests. Without tests we cannot have confidence that changes that we make to the language, don't break users.
 
-4.  **Code reviewers should be focused on improving the quality of the code, not enforcing arbitrary rules.**
+4. **Code reviewers should be focused on improving the quality of the code, not enforcing arbitrary rules.**
 
     If it's possible to implement your rule as an automated check that is often a good sign. This also supports principle 3.
 
@@ -3008,7 +3007,6 @@ The following points are the exceptions, which are the reasons we have some glob
 
     Namespace imports are often called 'module imports' <a href="#fnref1" rev="footnote">↩︎</a>
 
-2.
+1.
 
     named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments. <a href="#fnref2" rev="footnote">↩︎</a>
-

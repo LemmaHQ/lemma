@@ -60,11 +60,11 @@ benefits should be kept to a minimum.
 Follow the official public Rust style rules to the extent they don't conflict
 with this style guide.
 
-*   [Rust Style Guide](https://doc.rust-lang.org/nightly/style-guide/)
+* [Rust Style Guide](https://doc.rust-lang.org/nightly/style-guide/)
 
-    *   Most code formatting conventions are enforced automatically by rustfmt.
+  * Most code formatting conventions are enforced automatically by rustfmt.
 
-*   [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
+* [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
 
 A “conflict” would be a case where this style guide suggests a pattern that is
 discouraged, or counter to the primary encouraged pattern in the Rust style
@@ -90,15 +90,15 @@ this, but so does having deliberate refactor-friendly patterns.
 When applying rules that relate to API design, you should distinguish two types
 of code:
 
-*   Library code
+* Library code
 
-    *   Intended for use by other projects (applications or other libraries).
-    *   Solves a relatively general problem.
+  * Intended for use by other projects (applications or other libraries).
+  * Solves a relatively general problem.
 
-*   Application code
+* Application code
 
-    *   Intended for use in a single application.
-    *   Solves a more specific problem.
+  * Intended for use in a single application.
+  * Solves a more specific problem.
 
 For *library code*, style guide rules that concern API design are binding.
 
@@ -114,10 +114,10 @@ required to meet the immediate need.
 
 *Terminology:*
 
-*   A *crate* is a unit of compilation. A crate always contains a nameless Rust
+* A *crate* is a unit of compilation. A crate always contains a nameless Rust
     module, the "root module".
 
-*   A Rust *module* is a unit of code organization within a crate. Rust modules
+* A Rust *module* is a unit of code organization within a crate. Rust modules
     are used to control visibility of names. Modules can be nested. They can
     also be used to split code across files and directories.
 
@@ -148,7 +148,7 @@ Note that the definition of `leaf modules` allows the following sub-modules:
 
 Exceptions:
 
-*   Having a small amount of core “ties things together” implementation code in
+* Having a small amount of core “ties things together” implementation code in
     a non-leaf module may be fine. The goal is to not have a lot of code in
     these modules.
 
@@ -163,10 +163,10 @@ This makes it easier to find things, and avoids mixing structure and contents.
 Don't use glob imports, except in the following situations where you may
 optionally do so at your own discretion:
 
-*   `use super::*` for inline modules
-*   `use enum::*` in method bodies of enums, and functions that are primarily
+* `use super::*` for inline modules
+* `use enum::*` in method bodies of enums, and functions that are primarily
     dealing with that enum
-*   `pub use submodule::*` for non-leaf modules
+* `pub use submodule::*` for non-leaf modules
 
 If using third-party crates that encourage a prelude, it is up to the reviewer’s
 discretion to allow it.
@@ -251,8 +251,8 @@ let x = transmute(y);
 
 Exceptions:
 
-*   When importing functions with sufficiently disambiguated names.
-*   When the module name itself is prone to collisions.
+* When importing functions with sufficiently disambiguated names.
+* When the module name itself is prone to collisions.
 
 Rationale
 
@@ -272,14 +272,14 @@ function.
 
 Exceptions:
 
-*   In cases where there are ambiguities, it is acceptable to directly reference
+* In cases where there are ambiguities, it is acceptable to directly reference
     types with common names like `io::Error`. It is also acceptable to rename
     (`use std::io::Error as IoError`).
-*   In cases where you have a large “group” of types, e.g. the
+* In cases where you have a large “group” of types, e.g. the
     [`hir module in rustc`](https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/index.html)
     which contains a large number of HIR types.
-*   In macros and generated code; where requiring a `use` is counterproductive.
-*   In code with lots of dependencies, where importing everything would lead to
+* In macros and generated code; where requiring a `use` is counterproductive.
+* In code with lots of dependencies, where importing everything would lead to
     a very large import block with little benefit.
 
 Rationale
@@ -301,17 +301,17 @@ Configuration (for style guide authors)
 A codebase may choose to not apply the following `rustfmt` options if they care
 about building on stable and the option is unavailable on their stable Rust:
 
-*   Maximum of 100 columns per line:
+* Maximum of 100 columns per line:
     [`max_width = 100`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#max_width)
 
-*   Usage of lowercase alphabets in hex literals (`0xab123cdef` as opposed to
+* Usage of lowercase alphabets in hex literals (`0xab123cdef` as opposed to
     `0xAB123CDEF`):
     [`hex_literal_case = Lower`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#hex_literal_case)
 
-*   Macro matcher formatting:
+* Macro matcher formatting:
     [`format_macro_matchers = true`](https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#format_macro_matchers)
 
-*   Usage of escapes for invisible characters in literals. E.g., if you wish to
+* Usage of escapes for invisible characters in literals. E.g., if you wish to
     have text containing a Zero-Width joiner, use `\u{200D}`.
 
 <a id="formatting-optout"></a>
@@ -321,11 +321,11 @@ about building on stable and the option is unavailable on their stable Rust:
 You may opt out of automatic formatting using `#[rustfmt::skip]`, but only in
 the following situations:
 
-*   **Manual alignment** – If you have a situation-specific reason to have a
+* **Manual alignment** – If you have a situation-specific reason to have a
     snippet of code line up in a particular way (e.g., multiple similar lines of
     code that you want to remain aligned for readability, or a
     matrix-constructing function).
-*   **Generated code** (ideally, use a genrule instead).
+* **Generated code** (ideally, use a genrule instead).
 
 Important: Formatting should not be skipped for personal style choices.
 
@@ -341,7 +341,7 @@ Prefer unique ownership and borrowing over `Rc` and `Arc` for managing memory.
 
 Exception:
 
-*   Use `Rc` and `Arc` when the alternative ownership and borrowing structure
+* Use `Rc` and `Arc` when the alternative ownership and borrowing structure
     would be unreasonably complex to write, understand, or maintain. This is a
     judgment call to be discussed during code review.
 
@@ -398,7 +398,7 @@ references to smart pointers, containers, or wrappers.
 
 Exceptions:
 
-*   When expecting non-linear character data such as Rope/Cord.
+* When expecting non-linear character data such as Rope/Cord.
 
 For context, see Clippy lints
 [`borrowed_box`](https://rust-lang.github.io/rust-clippy/master/index.html#borrowed_box)
@@ -424,13 +424,13 @@ needed.
 
 Exceptions:
 
-*   Most callers will need to construct an owned vector.
-*   The function's implementation naturally constructs a vector.
-*   The returned value will likely need to be randomly indexed.
-*   The algorithm works better as a `for` loop and the forced allocation doesn't
+* Most callers will need to construct an owned vector.
+* The function's implementation naturally constructs a vector.
+* The returned value will likely need to be randomly indexed.
+* The algorithm works better as a `for` loop and the forced allocation doesn't
     matter too much.
-*   The function's intended purpose is creating a new owned collection.
-*   The function is returning a pre-existing vector.
+* The function's intended purpose is creating a new owned collection.
+* The function is returning a pre-existing vector.
 
 Rationale
 
@@ -460,10 +460,10 @@ Rationale
 Highly reusable library code generally should strive to provide more flexible
 and performant APIs. Functions that accept iterators offer callers:
 
-*   More flexibility (data can be supplied from any collection)
-*   Efficiency (data does not need to be copied into a contiguous piece of
+* More flexibility (data can be supplied from any collection)
+* Efficiency (data does not need to be copied into a contiguous piece of
     memory)
-*   Composability (the function works better with iterator chains)
+* Composability (the function works better with iterator chains)
 
 In application code, the usage patterns for a function are often easier to
 predict. If it is clear that performance is not a concern, or that callers would
@@ -562,8 +562,8 @@ broken invariants to be reported via `Result`.
 
 Exceptions:
 
-*   Developer-facing binaries may use panics for non-fatal errors.
-*   Tests may use panics for assertions.
+* Developer-facing binaries may use panics for non-fatal errors.
+* Tests may use panics for assertions.
 
 <a id="types"></a>
 
@@ -577,11 +577,11 @@ Use a
 [newtype](https://doc.rust-lang.org/rust-by-example/generics/new_types.html)
 instead of a type alias in the following cases:
 
-*   If the type you are defining has notable semantic differences.
-*   For types that warrant an API of their own.
-*   If you want the flexibility to change the underlying type later, especially
+* If the type you are defining has notable semantic differences.
+* For types that warrant an API of their own.
+* If you want the flexibility to change the underlying type later, especially
     if you don't control all usages of your type.
-*   For type safety, if it’s easy for the types to get mixed up. For example, a
+* For type safety, if it’s easy for the types to get mixed up. For example, a
     `Date` type may use newtypes to distinguish `Day`, `Month`, and `Year`
     numbers in its internal calculations.
 
@@ -594,8 +594,8 @@ quickly become confusing.
 
 Exceptions:
 
-*   Newtype tuple structs (tuple structs with only one field).
-*   In very local contexts where there is unlikely to be any confusion.
+* Newtype tuple structs (tuple structs with only one field).
+* In very local contexts where there is unlikely to be any confusion.
 
 <a id="traits"></a>
 
@@ -639,20 +639,20 @@ parameters over `dyn Trait`.
 
 Exceptions:
 
-*   Cases where code size matters.
+* Cases where code size matters.
 
 Rationale
 
--   Efficiency
+* Efficiency
 
-    -   Additional indirection: Creating a `dyn Trait` requires setting up a fat
+  * Additional indirection: Creating a `dyn Trait` requires setting up a fat
         pointer, and a vtable lookup is required for every call of a function on
         the trait.
-    -   If a function takes a `dyn Trait`, the compiler can't perform certain
+  * If a function takes a `dyn Trait`, the compiler can't perform certain
         optimizations that it could if the function was generic, such as
         inlining calls to functions of the trait.
 
--   Some traits are not
+* Some traits are not
     [`dyn` compatible](https://doc.rust-lang.org/reference/items/traits.html#dyn-compatibility).
     For example, a trait is not `dyn` compatible if it has generic functions,
     associated functions without a `self` parameter, or functions that return
@@ -664,12 +664,12 @@ Rationale
 
 Define a trait only for the following purposes:
 
-*   To enable generic programming (to use `T: Trait` in constraints of generic
+* To enable generic programming (to use `T: Trait` in constraints of generic
     functions and types).
 
-*   To accept or return an `impl Trait` or `dyn Trait`.
+* To accept or return an `impl Trait` or `dyn Trait`.
 
-*   To define an [extension trait](#extension-traits) (but see also the caveats
+* To define an [extension trait](#extension-traits) (but see also the caveats
     in the section on extension traits).
 
 In all other cases where you want to implement functionality for a type, use an
@@ -696,7 +696,7 @@ trait.
 
 Exceptions:
 
-*   Extension methods that are expected to become well known and provide
+* Extension methods that are expected to become well known and provide
     significant value, for example, in foundational libraries / frameworks.
 
 Note: This rule is specifically about extension traits. It is relatively common
@@ -745,39 +745,39 @@ or between two extension traits.
 
 ### Specific guidance for important traits
 
-*   **Types with public fields**: Consider implementing traits implemented by
+* **Types with public fields**: Consider implementing traits implemented by
     all subfields.
 
-*   **Error types**: Implement the `Copy` trait whenever possible. `Copy` types
+* **Error types**: Implement the `Copy` trait whenever possible. `Copy` types
     are simpler to manage and propagate because they can be passed by value
     without moving ownership. An example of a case where this is not possible is
     if the error must contain non-`Copy` fields like a `String`.
 
-*   **`Copy`**: Implement whenever it is reasonably clear that the type will
+* **`Copy`**: Implement whenever it is reasonably clear that the type will
     continue to be `Copy` in the future.
 
-*   **`Clone`**: Most types should implement `Clone` unless they represent some
+* **`Clone`**: Most types should implement `Clone` unless they represent some
     external resource.
 
-*   **`Default`**: Implement if the type implements `new()` or otherwise has a
+* **`Default`**: Implement if the type implements `new()` or otherwise has a
     default state. For context, see Clippy lint
     [`new_without_default`](https://rust-lang.github.io/rust-clippy/master/index.html#new_without_default).
 
-*   **`PartialEq`** / **`Eq`**: If you want users to use the `==` operator,
+* **`PartialEq`** / **`Eq`**: If you want users to use the `==` operator,
     prefer implementing `PartialEq` over `Eq`. When you do implement `Eq`, be
     aware of the additionally required reflexivity (details:
-    https://doc.rust-lang.org/std/cmp/trait.Eq.html).
+    <https://doc.rust-lang.org/std/cmp/trait.Eq.html>).
 
-*   **`PartialOrd`** / **`Ord`**: If you want users to use the `<` or `>`
+* **`PartialOrd`** / **`Ord`**: If you want users to use the `<` or `>`
     operators, prefer implementing `PartialOrd` over `Ord`. When you do
     implement `Ord`, be aware that it requires total ordering (details:
-    https://doc.rust-lang.org/std/cmp/trait.Ord.html).
+    <https://doc.rust-lang.org/std/cmp/trait.Ord.html>).
 
-*   **Map keys**
+* **Map keys**
 
-    *   If you think it is likely that a type will be used as a map key or
+  * If you think it is likely that a type will be used as a map key or
         otherwise cached, implement `Hash` and `Eq`.
-    *   If, in addition, the type has a clear total ordering, implement `Ord`
+  * If, in addition, the type has a clear total ordering, implement `Ord`
         (and any traits it needs).
 
 <a id="from-impls"></a>
@@ -817,23 +817,23 @@ tempting the use case may seem.
 
 When considering how to express an API, prefer in order:
 
--   Regular Rust functions, types, traits, objects, and modules. (Avoid macros,
+* Regular Rust functions, types, traits, objects, and modules. (Avoid macros,
     code generation, and metaprogramming where possible).
 
--   `macro_rules!`-style macros.
+* `macro_rules!`-style macros.
 
--   Other code generation strategies (e.g. `genrule`)
+* Other code generation strategies (e.g. `genrule`)
 
--   `proc_macro` macros.
+* `proc_macro` macros.
 
 When you decide to use a macro or code generation, please weigh the benefits
 against the costs:
 
--   IDEs, Code Search and other developer tools will work less well on code that
+* IDEs, Code Search and other developer tools will work less well on code that
     uses macros.
--   Macros can create dialects of the language that make it harder for engineers
+* Macros can create dialects of the language that make it harder for engineers
     to work across the codebase.
--   Large scale changes are more difficult and expensive to apply.
+* Large scale changes are more difficult and expensive to apply.
 
 Rationale
 
@@ -860,7 +860,7 @@ in the Comprehensive Rust course.
 
 Specific considerations:
 
-*   Use prefixes such as `as_...()`, `to_...()`, or `into_...()` with the
+* Use prefixes such as `as_...()`, `to_...()`, or `into_...()` with the
     appropriate `self` convention. See also
     [this section](https://rust-lang.github.io/api-guidelines/naming.html#ad-hoc-conversions-follow-as_-to_-into_-conventions-c-conv)
     of the Rust API Guidelines and the Clippy lint
@@ -874,9 +874,9 @@ Lifetimes should have descriptive names, especially type lifetimes.
 
 Exceptions:
 
-*   Type lifetimes that are extremely generic abstractions like `Cow`.
-*   It is fine to use anonymous lifetimes (`'_`) where they work.
-*   Single-character lifetimes are okay when they are simply expressing the
+* Type lifetimes that are extremely generic abstractions like `Cow`.
+* It is fine to use anonymous lifetimes (`'_`) where they work.
+* Single-character lifetimes are okay when they are simply expressing the
     relationship between a method’s input and output, or needed for a local
     higher-ranked lifetime bounds (`for<'a>`). Up to two such local lifetimes
     are fine, if more are needed, we strongly advise you to use descriptive
@@ -907,10 +907,10 @@ suffix (for example, `ForeignTypeExt`).
 
 Follow these guidelines when naming initialization functions:
 
-*   Constructors: Use `new()`, or `new_with_foo()` if there is more than one. If
+* Constructors: Use `new()`, or `new_with_foo()` if there is more than one. If
     the constructor returns a `Result`, use `try_new()`.
 
-*   Value-to-value conversions: Use `from_foo()` with an associated `From` impl.
+* Value-to-value conversions: Use `from_foo()` with an associated `From` impl.
     See
     [here](https://doc.rust-lang.org/std/convert/trait.From.html#when-to-implement-from)
     for details on when an operation can be considered to be a value-to-value
@@ -929,8 +929,8 @@ See also the
 
 Exceptions:
 
-*   Common abbreviations found in Wikipedia.
-*   Abbreviations that are unlikely to be confusing to people outside of your
+* Common abbreviations found in Wikipedia.
+* Abbreviations that are unlikely to be confusing to people outside of your
     project, for example `IpAddr`. You and your reviewer should make this
     determination. In general, the preference should still be not to abbreviate.
 
@@ -943,18 +943,18 @@ lint to help with this.
 
 Best practices for documentation comments:
 
-*   Consider including examples: It is not necessary for every function to have
+* Consider including examples: It is not necessary for every function to have
     examples, but enough functionality should be covered in examples *somewhere*
     to give an idea of how the crate works.
 
-*   Always document panic cases for functions which may panic due to malformed
+* Always document panic cases for functions which may panic due to malformed
     input.
 
-*   Clearly document invariants for unsafe functions and traits.
+* Clearly document invariants for unsafe functions and traits.
 
-*   Use capitalization and punctuation.
+* Use capitalization and punctuation.
 
-*   Don't explain the basics of the programming language. For example, don’t do
+* Don't explain the basics of the programming language. For example, don’t do
     the following:
 
     ```rust
@@ -966,7 +966,7 @@ Best practices for documentation comments:
 
 Exceptions:
 
-*   Comments should say something that the code does not already say. If there's
+* Comments should say something that the code does not already say. If there's
     nothing insightful to say, it is better to omit the comment than to repeat
     the function name in a trivial way. For example, don’t do the following
     (it’s fine to `allow` the lint in that case):
@@ -976,24 +976,24 @@ Exceptions:
     pub fn remove_element() -> Element {}
     ```
 
-*   It is generally okay to omit documentation on individual enum variants,
+* It is generally okay to omit documentation on individual enum variants,
     especially if their name is self-explanatory.
 
 **How to format documentation comments**
 
 Follow these guidelines when writing documentation comments:
 
-*   Use `///` comments to document items following the comment, such as
+* Use `///` comments to document items following the comment, such as
     functions, structs, enums, traits, and type aliases.
-*   Use `//!` comments to document the module or the library itself. These
+* Use `//!` comments to document the module or the library itself. These
     comments should be placed at the top of the file.
-*   Follow the rules laid out in
+* Follow the rules laid out in
     [the official Rust style guide on doc comments](https://doc.rust-lang.org/nightly/style-guide/#doc-comments).
-*   Use Markdown syntax.
-*   Use ordinary comment syntax (`//`) for non-documentation comments, such as
+* Use Markdown syntax.
+* Use ordinary comment syntax (`//`) for non-documentation comments, such as
     implementation comments, TODOs that are not interesting for users, commented
     out source code, etc.
-*   Prefer to document things in a straightforward manner, using `///` and `//!`
+* Prefer to document things in a straightforward manner, using `///` and `//!`
     comments, rather than generating documentation from macros. This makes the
     documentation directly readable when viewing or modifying the source code.
 
@@ -1018,16 +1018,16 @@ Rust and Python are notable for not just having different commenting
 conventions, but an actual different syntax entirely. This has concrete benefits
 to the Rust ecosystem:
 
-*   Doc comments can be consumed by tooling, including documentation generators
+* Doc comments can be consumed by tooling, including documentation generators
     like `rustdoc`, IDE features, and Kythe.
-*   Doc comments have a standard structure and formatting rules (Markdown),
+* Doc comments have a standard structure and formatting rules (Markdown),
     allowing for rich text in those contexts.
-*   Errors in applying doc comment syntax (e.g., applying it to an expression
+* Errors in applying doc comment syntax (e.g., applying it to an expression
     instead of a documentable item) are linted against, catching documentation
     errors early. If there are no lint errors, the doc comments are guaranteed
     to be visible to documentation tooling, removing a degree of flakiness and
     unpredictability from the documentation process.
-*   Doc comments are a part of the AST, and so can be produced and consumed by
+* Doc comments are a part of the AST, and so can be produced and consumed by
     macros, including both `macro_rules!` macros and procedural macros.
 
 <a id="other-features"></a>
@@ -1043,17 +1043,17 @@ functionality with safe code.
 
 If you do have to write unsafe code:
 
-*   Encapsulate unsafe code in a safe abstraction and isolate it from business
+* Encapsulate unsafe code in a safe abstraction and isolate it from business
     logic as much as possible. Ideally, unsafe code should be in a separate
     crate with few dependencies beyond the standard library.
-*   Add a safety comment starting with `SAFETY:` that explains why the code is
+* Add a safety comment starting with `SAFETY:` that explains why the code is
     correct.
-*   Add a technical justification for unsafe code. Depending on context, this
+* Add a technical justification for unsafe code. Depending on context, this
     can be a justification for an individual unsafe block or a more general
     justification that covers an entire file or build target. The justification
     should answer these questions:
-    *   Why is this code not written in an equivalent safe way?
-    *   If the reason is performance, are there benchmarks?
+  * Why is this code not written in an equivalent safe way?
+  * If the reason is performance, are there benchmarks?
 
 <a id="unstable-features"></a>
 
@@ -1067,15 +1067,15 @@ Don't use unstable features.
 
 Writing and naming getters and setters should follow these guidelines:
 
-*   `foo()` for a getter that returns a `T` by value.
-*   `foo_mut()` for a getter that returns a `&mut T`.
-*   `take_foo()` for a getter that "clears" the value (by setting it to `None`
+* `foo()` for a getter that returns a `T` by value.
+* `foo_mut()` for a getter that returns a `&mut T`.
+* `take_foo()` for a getter that "clears" the value (by setting it to `None`
     or some other default state) and returns the old value.
-*   `set_foo()` for a setter that takes a `T` by value.
-*   `with_foo()` / `with_mut_foo()` for an accessor that operates via a closure
+* `set_foo()` for a setter that takes a `T` by value.
+* `with_foo()` / `with_mut_foo()` for an accessor that operates via a closure
     (see details [below](#closure-accessors)). Such an accessor is invoked as
     `object.with_foo(|foo| frob(foo))`.
-*   `replace_foo()` for a setter that returns the old value.
+* `replace_foo()` for a setter that returns the old value.
 
 Examples
 
@@ -1110,14 +1110,14 @@ Accessors that accept a closure (`.with_foo()`) are typically invoked as
 `object.with_foo(|foo| do_something_with(foo))`. They can be a good choice in
 the following situations:
 
-*   When the property is contained in an interior mutability wrapper (e.g.
+* When the property is contained in an interior mutability wrapper (e.g.
     `Mutex` or `RefCell`). These mechanisms need to constrain access to the
     property to a scope, and the closure provides this scope. This is usually
     preferable to directly returning the RAII object that implements the scope
     (e.g. `MutexGuard<T>`) because the latter would leak an implementation
     detail.
 
-*   When follow-up work or validation is needed after a property is changed and
+* When follow-up work or validation is needed after a property is changed and
     a `set_foo()` accessor cannot be used (for example because the property's
     type is expensive to clone or cannot be cloned at all).
 
@@ -1171,12 +1171,12 @@ If an enum is part of a public API used by other teams, mark it
 
 Exceptions:
 
-*   The enum will never change. For example:
-    *   Enums describing an existing ontology (e.g.,
+* The enum will never change. For example:
+  * Enums describing an existing ontology (e.g.,
         `enum Color { Red, Green, Blue }`).
-    *   Enums with two states that could be Booleans (e.g.,
+  * Enums with two states that could be Booleans (e.g.,
         `enum Visibility { Visible, Hidden }`)
-*   The enum *may* change in the future, but you are committed to fixing
+* The enum *may* change in the future, but you are committed to fixing
     resulting breakages via an LSC.
 
 For context, see Clippy lint
@@ -1201,12 +1201,12 @@ should be marked `#[non_exhaustive]`.
 
 Exceptions:
 
-*   The struct fields are unlikely to change, e.g., because they describe an
+* The struct fields are unlikely to change, e.g., because they describe an
     existing ontology (e.g., a Rectangle type) or the reviewer can otherwise be
     confident that they will not change.
-*   The struct fields *may* change in the future, but you are committed to
+* The struct fields *may* change in the future, but you are committed to
     fixing resulting breakages via an LSC.
-*   You want to enable your users to use functional record update (FRU) struct
+* You want to enable your users to use functional record update (FRU) struct
     initialization syntax (`Person { name: "foo", ..Default::default() }`).
 
 Rationale
@@ -1230,11 +1230,11 @@ rule.
 
 Use `#[must_use]` on functions in these cases:
 
-*   The caller cannot use the function correctly if they ignore the return
+* The caller cannot use the function correctly if they ignore the return
     value. This includes pure functions (functions without side effects), such
     as `HashMap::get()`.
 
-*   Any function whose return value represents an error or otherwise critical
+* Any function whose return value represents an error or otherwise critical
     information about the function's behavior. If the return type is already
     annotated `#[must_use]` (which is true of `Result`, for example), the
     function does not need to be annotated `#[must_use]`.
@@ -1249,9 +1249,9 @@ otherwise be annotated `#[must_use]` according to the
 
 Examples:
 
-*   The type is an error type (similar to `Result` or `StatusOr`).
+* The type is an error type (similar to `Result` or `StatusOr`).
 
-*   The type represents a lazily evaluated computation. In other words, the
+* The type represents a lazily evaluated computation. In other words, the
     function call doesn't do anything by itself, and the return value needs to
     be accessed to cause some desired side effect.
 
@@ -1278,9 +1278,9 @@ inference marker.
 
 Specific situations in which you should probably add types:
 
-*   When calling methods with a generic return type, such as `.into()` or
+* When calling methods with a generic return type, such as `.into()` or
     `.parse()`.
-*   For the result of complex iterator chains.
+* For the result of complex iterator chains.
 
 <a id="dont-check-then-unwrap"></a>
 
@@ -1373,7 +1373,7 @@ fn process_shape(shape: Shape) {
 
 Exceptions:
 
-*   You only care about specific variants *and* `match` is cleaner than
+* You only care about specific variants *and* `match` is cleaner than
     `if let`.
 
 This is covered by the built-in lint `non_exhaustive_omitted_patterns` which you
@@ -1391,15 +1391,15 @@ context.
 You should always consider adding context, but particularly in the following
 situations:
 
-*   If you're thinking of adding a comment to the assertion. Use a format string
+* If you're thinking of adding a comment to the assertion. Use a format string
     instead: It has the benefit that it will appear in logs.
-*   If you expect failing assertions to be seen by users. In this case, a
+* If you expect failing assertions to be seen by users. In this case, a
     human-readable explanation is more helpful than a Rust expression.
-*   If logging a value helps in understanding why the assertion failed.
-*   To clarify whether a failing assertion means that
-    *   The client misused an API (i.e., they should change their use of the
+* If logging a value helps in understanding why the assertion failed.
+* To clarify whether a failing assertion means that
+  * The client misused an API (i.e., they should change their use of the
         API), or
-    *   The implementation contains a bug (i.e., the client should file a bug
+  * The implementation contains a bug (i.e., the client should file a bug
         report).
 
 Examples
@@ -1453,11 +1453,11 @@ assert(!values.is_sorted(), "values should always be sorted");
 
 Avoid using combinator chains in ways that hurt readability. Specifically:
 
-*   Avoid long and complex combinator chains.
-*   Don't construct combinator chains in the header of a `for` loop. Instead,
+* Avoid long and complex combinator chains.
+* Don't construct combinator chains in the header of a `for` loop. Instead,
     assign the combinator chain to a variable, then consume that variable in the
     `for` loop.
-*   Avoid `Iterator::for_each` unless you're convinced you have a good reason. A
+* Avoid `Iterator::for_each` unless you're convinced you have a good reason. A
     `for` loop is usually easier to read.
 
 Combinators *are* preferable for shorter chains and for cases where the
@@ -1569,7 +1569,7 @@ Use of `panic::catch_unwind` is prohibited in first-party Rust code.
 
 Exceptions:
 
-*   It is acceptable as a defense in depth mechanism as long as it is never
+* It is acceptable as a defense in depth mechanism as long as it is never
     *relied* upon for any properties. A codebase that is already attempting to
     avoid panics may choose to wrap critical entry points with a `catch_unwind`
     recovery mechanism just in case a panic slips through. Code authors must
@@ -1589,13 +1589,13 @@ function correctly in environments with `panic=unwind`.
 Prefer `format!()` and `write!()` to other alternatives in the following
 situations:
 
-*   To concatenate more than two strings. For example, use
+* To concatenate more than two strings. For example, use
     `format!("{a}{b}{c}")` instead of `a + b + c`.
-*   To perform substitutions on a literal string (instead of using
+* To perform substitutions on a literal string (instead of using
     `str::replace`).
 
 Rationale
 
-*   `format!` / `write!` require fewer allocations than concatenating strings
+* `format!` / `write!` require fewer allocations than concatenating strings
     using `+`.
-*   Prefer standard format strings to inventing your own templating syntax.
+* Prefer standard format strings to inventing your own templating syntax.

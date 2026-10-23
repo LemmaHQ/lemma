@@ -28,10 +28,10 @@ A higher source wins every conflict. Known conflicts:
 
 Read only the section the question needs.
 
-| Language | Reference | Sections |
-| --- | --- | --- |
-| Rust | [rustguide.md](references/rustguide.md) | Code organization; Ownership and borrowing; Function inputs and outputs; Types; Traits; Naming; When and how to write documentation; Other Rust features; Implementation concerns |
-| TypeScript | [tsguide.md](references/tsguide.md) | Source file structure; Language features; Naming; Type system; Comments and documentation; Policies |
-| Kotlin | [kotlinguide.md](references/kotlinguide.md) | Source files; Formatting; Naming; Documentation |
+| Language   | Reference                                   | Sections                                                                                                                                                                          |
+| ---------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust       | [rustguide.md](references/rustguide.md)     | Code organization; Ownership and borrowing; Function inputs and outputs; Types; Traits; Naming; When and how to write documentation; Other Rust features; Implementation concerns |
+| TypeScript | [tsguide.md](references/tsguide.md)         | Source file structure; Language features; Naming; Type system; Comments and documentation; Policies                                                                               |
+| Kotlin     | [kotlinguide.md](references/kotlinguide.md) | Source files; Formatting; Naming; Documentation                                                                                                                                   |
 
 Rust and Kotlin formatting is mechanical: run `just rust-fmt` or `just mobile-fmt` instead of applying the guide by hand, and consult the guide for questions the formatter leaves open. The Rust guide builds on the [official Rust Style Guide](https://doc.rust-lang.org/nightly/style-guide/), which `rustfmt` implements and which also covers `Cargo.toml` layout.

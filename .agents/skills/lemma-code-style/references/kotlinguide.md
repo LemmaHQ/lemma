@@ -369,6 +369,7 @@ Beyond where required by the language or other style rules, and apart from liter
   for (i in 0..1) {
   }
   ```
+
 - Separating any reserved word, such as `else` or `catch`, from a closing curly brace (`}`) that precedes it on that line.
 
   ```kotlin
@@ -382,6 +383,7 @@ Beyond where required by the language or other style rules, and apart from liter
   } else {
   }
   ```
+
 - Before any open curly brace (`{`).
 
   ```kotlin
@@ -395,6 +397,7 @@ Beyond where required by the language or other style rules, and apart from liter
   if (list.isEmpty()) {
   }
   ```
+
 - On both sides of any binary operator.
 
   ```kotlin
@@ -434,6 +437,7 @@ Beyond where required by the language or other style rules, and apart from liter
     // Okay
     val toString = Any::toString
     ```
+
   - the dot separator (`.`).
 
     ```kotlin
@@ -445,6 +449,7 @@ Beyond where required by the language or other style rules, and apart from liter
     // Okay
     it.toString()
     ```
+
   - the range operator (`..`).
 
     ```kotlin
@@ -460,6 +465,7 @@ Beyond where required by the language or other style rules, and apart from liter
       print(i)
     }
     ```
+
 - Before a colon (`:`) only if used in a class declaration for specifying a base class or interfaces, or when used in a `where` clause for [generic constraints](https://kotlinlang.org/docs/reference/generics.html#generic-constraints).
 
   ```kotlin
@@ -491,6 +497,7 @@ Beyond where required by the language or other style rules, and apart from liter
   // Okay
   fun <T> max(a: T, b: T) where T : Comparable<T> {}
   ```
+
 - After a comma (`,`) or colon (`:`).
 
   ```kotlin
@@ -512,6 +519,7 @@ Beyond where required by the language or other style rules, and apart from liter
   // Okay
   class Foo : Runnable
   ```
+
 - On both sides of the double slash (`//`) that begins an end-of-line comment. Here, multiple spaces are allowed, but not required.
 
   ```kotlin
@@ -781,7 +789,7 @@ Any of the standard “block tags” that are used appear in the order `@constru
 
 Each KDoc block begins with a brief summary fragment. This fragment is very important: it is the only part of the text that appears in certain contexts such as class and method indexes.
 
-This is a fragment–a noun phrase or verb phrase, not a complete sentence. It does not begin with "`A `Foo` is a...`", or "`This method returns...`", nor does it have to form a complete imperative sentence like "`Save the record.`". However, the fragment is capitalized and punctuated as if it were a complete sentence.
+This is a fragment–a noun phrase or verb phrase, not a complete sentence. It does not begin with "`A`Foo`is a...`", or "`This method returns...`", nor does it have to form a complete imperative sentence like "`Save the record.`". However, the fragment is capitalized and punctuated as if it were a complete sentence.
 
 ### Usage
 
