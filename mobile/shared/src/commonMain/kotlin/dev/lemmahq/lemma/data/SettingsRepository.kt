@@ -23,14 +23,6 @@ interface SettingsRepository {
 
     fun setThemeMode(mode: String)
 
-    fun getLocalJwtSecret(): String?
-
-    fun setLocalJwtSecret(secret: String?)
-
-    fun getLocalUserId(): String?
-
-    fun setLocalUserId(userId: String?)
-
     fun getDefaultProviderId(): String?
 
     fun setDefaultProviderId(providerId: String?)
@@ -50,8 +42,6 @@ class DefaultSettingsRepository(private val settings: Settings = Settings()) : S
         private const val KEY_ACCESS_TOKEN = "lemma_access_token"
         private const val KEY_REFRESH_TOKEN = "lemma_refresh_token"
         private const val KEY_THEME_MODE = "lemma_theme_mode"
-        private const val KEY_LOCAL_JWT_SECRET = "lemma_local_jwt_secret"
-        private const val KEY_LOCAL_USER_ID = "lemma_local_user_id"
         private const val KEY_DEFAULT_PROVIDER_ID = "lemma_default_provider_id"
         private const val KEY_DEFAULT_MODEL = "lemma_default_model"
         const val MODE_REMOTE = "remote"
@@ -117,30 +107,6 @@ class DefaultSettingsRepository(private val settings: Settings = Settings()) : S
         settings.putString(KEY_THEME_MODE, mode)
     }
 
-    override fun getLocalJwtSecret(): String? {
-        return settings.getStringOrNull(KEY_LOCAL_JWT_SECRET)
-    }
-
-    override fun setLocalJwtSecret(secret: String?) {
-        if (secret == null) {
-            settings.remove(KEY_LOCAL_JWT_SECRET)
-        } else {
-            settings.putString(KEY_LOCAL_JWT_SECRET, secret)
-        }
-    }
-
-    override fun getLocalUserId(): String? {
-        return settings.getStringOrNull(KEY_LOCAL_USER_ID)
-    }
-
-    override fun setLocalUserId(userId: String?) {
-        if (userId == null) {
-            settings.remove(KEY_LOCAL_USER_ID)
-        } else {
-            settings.putString(KEY_LOCAL_USER_ID, userId)
-        }
-    }
-
     override fun getDefaultProviderId(): String? {
         return settings.getStringOrNull(KEY_DEFAULT_PROVIDER_ID)
     }
@@ -168,6 +134,5 @@ class DefaultSettingsRepository(private val settings: Settings = Settings()) : S
     override fun clearAuth() {
         settings.remove(KEY_ACCESS_TOKEN)
         settings.remove(KEY_REFRESH_TOKEN)
-        settings.remove(KEY_LOCAL_USER_ID)
     }
 }

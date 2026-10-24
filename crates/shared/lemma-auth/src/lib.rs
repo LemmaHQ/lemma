@@ -9,9 +9,6 @@ mod password;
 mod record;
 mod token;
 
-/// Default-account constants shared by local-mode runtimes.
-pub mod local;
-
 pub use auth_error::{AuthError, AuthStoreError};
 pub use auth_service::{AuthService, AuthTokens, REFRESH_TTL_DAYS, Session};
 pub use auth_store::AuthStore;

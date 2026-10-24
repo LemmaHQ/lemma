@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 fun AuthScreen(
     client: LemmaClient,
     connectionLabel: String,
-    showSkip: Boolean,
+    changeModeLabel: String,
     onAuthSuccess: () -> Unit,
     onChangeMode: () -> Unit,
     modifier: Modifier = Modifier,
@@ -179,28 +179,10 @@ fun AuthScreen(
                 )
 
                 Text(
-                    text = if (showSkip) "Skip" else "Change server",
+                    text = changeModeLabel,
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textTertiary,
-                    modifier =
-                        Modifier.clickable {
-                            if (showSkip) {
-                                isLoading = true
-                                errorMessage = null
-                                scope.launch {
-                                    try {
-                                        client.useDefaultAccount()
-                                        onAuthSuccess()
-                                    } catch (e: Exception) {
-                                        errorMessage = e.message ?: "Authentication failed"
-                                    } finally {
-                                        isLoading = false
-                                    }
-                                }
-                            } else {
-                                onChangeMode()
-                            }
-                        },
+                    modifier = Modifier.clickable { onChangeMode() },
                 )
             }
         }

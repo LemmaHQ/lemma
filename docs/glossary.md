@@ -19,7 +19,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **step** — one model request and the tool calls its response requests. Each step writes one assistant message and one tool result message per tool call.
 - **placeholder** — the assistant message a step appends with status `streaming` before calling the model, and settles with the final content, status, and usage afterwards.
 - **stream event** — one `StreamEvent`: the closed, vendor-independent set of events every adapter emits (text, thinking, and tool-call start, delta, and end; `Done`; `Error`).
-- **turn event** — one `TurnEvent` the loop reports to its observer. `lemma-agent-rpc` maps it onto the `AgentEvent` proto message; `lemma-mobile` maps it onto `MobileAgentEvent`.
+- **turn event** — one `TurnEvent` the loop reports to its observer. `lemma-agent-rpc` maps it onto the `AgentEvent` proto message.
 - **content block** — one `ContentBlock` of a message: `Text`, `Thinking` (with the vendor signature needed to replay it), `ToolCall`, or `Image`.
 - **stop reason** — why a generation ended: `stop`, `length`, `tool_use`, `error`, or `aborted`. Only `tool_use` with at least one tool call starts another step.
 - **thinking effort** — the reasoning setting forwarded to the vendor's thinking control (`low`, `medium`, `high`, or a numeric budget). An empty value in `SendMessage` reuses the conversation's last setting.
@@ -48,8 +48,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **local mode** — the runtimes that keep data on the device: the desktop local engine and the Android in-process engine.
 - **local engine** — the engine the `lemma-desktop` addon opens in Electron's engine process over the `userData` directory; the web client reaches it over a `MessagePort`.
 - **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no conversation messages.
-- **in-process engine** — `LemmaEngine` from `lemma-mobile`, called by the Android app through UniFFI bindings.
-- **default local account** — the account Android local mode provides without sign-up, created on first need, username `lemma` with a fixed public password (`lemma_auth::local`). Accounts users register carry their own passwords.
+- **in-process engine** — `LemmaEngine` from `lemma-mobile`, which serves the Connect router inside the Android app; the app reaches it through UniFFI bindings.
 - **access token** — a JWT signed with the JWT secret, valid for 15 minutes, carrying the user id in `sub`.
 - **refresh token** — a random token valid for 30 days; the store keeps only its SHA-256 hash, and each refresh revokes it and issues a new pair.
 - **cookie mode** — the browser client's authentication when the API shares its origin: tokens travel in the `lemma_access` and `lemma_refresh` cookies instead of an `Authorization` header.

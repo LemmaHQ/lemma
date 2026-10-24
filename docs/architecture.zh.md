@@ -8,15 +8,15 @@
 
 Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其上方的层；`lemma-core` 是各层共用的语言。
 
-| 层 | Crate | 负责 |
-| --- | --- | --- |
-| 契约 | `lemma-proto`、`lemma-core`、`lemma-model` | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
-| 领域 | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号与令牌；会话、消息树及其 `ConversationStore` trait；provider 配置与模型列表；API key 加密 |
-| 引擎 | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop` | 厂商协议格式与模型列表；工具注册表、审批策略与执行环境；turn 循环及其取消 |
-| Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、会话存储、工作区工具）并运行它，以及中止正在运行的 turn |
-| 存储 | `lemma-db-sqlite`、`lemma-db-pgsql` | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现 |
-| RPC | `crates/rpc/*`，包括 `lemma-host` | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个存储后端之上把它们组装成一个路由，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由 |
-| 宿主 | `lemma-server`、`lemma-desktop`、`lemma-mobile` | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面 |
+| 层    | Crate                                                                | 负责                                                                                                                                                                                                                    |
+| ----- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                           | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
+| 领域  | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号与令牌；会话、消息树及其 `ConversationStore` trait；provider 配置与模型列表；API key 加密                                                                                                                           |
+| 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`                   | 厂商协议格式与模型列表；工具注册表、审批策略与执行环境；turn 循环及其取消                                                                                                                                               |
+| Agent | `lemma-agent`                                                        | 根据请求组装一个 turn（provider 端点、适配器、会话存储、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                   |
+| 存储  | `lemma-db-sqlite`、`lemma-db-pgsql`                                  | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现                                                                                                                                                                      |
+| RPC   | `crates/rpc/*`，包括 `lemma-host`                                    | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个存储后端之上把它们组装成一个路由，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                              |
+| 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                      | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
 
 领域层、引擎层与 agent 层不含 SQL。它们定义存储 trait（`ConversationStore`、`ProviderStore`、`AuthStore`），由各宿主传入 SQLite 或 PostgreSQL 实现。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
@@ -26,17 +26,17 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 同一套领域服务与 turn 循环运行在三种宿主中。客户端选择宿主；核心不感知调用方是哪个客户端。
 
-| 运行时 | 宿主 | 存储 | 工具 | 已存储的 API key |
-| --- | --- | --- | --- | --- |
-| 服务端模式 | `lemma-server`，端口 1025 | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无 | 用 `LEMMA_SECRET_KEY` 加密 |
-| 本地引擎 | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 用引擎生成的密钥加密 |
-| 进程内 | `lemma-mobile` 中的 `LemmaEngine`，加载进 Android 应用 | `<filesDir>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 明文 |
+| 运行时     | 宿主                                                         | 存储                                                | 工具               | 已存储的 API key           |
+| ---------- | ------------------------------------------------------------ | --------------------------------------------------- | ------------------ | -------------------------- |
+| 服务端模式 | `lemma-server`，端口 1025                                    | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                 | 用 `LEMMA_SECRET_KEY` 加密 |
+| 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
+| 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行对应后端的迁移，对外提供四个 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
 **本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
-**进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `LemmaEngine`，直接调用领域服务，不经过 RPC；turn 事件经 `AgentEventListener` 回调送达。同一个 Android 应用还有远程模式，通过 Connect Kotlin 访问服务端。两种模式都实现 Kotlin 的 `LemmaClient` 接口（`RemoteLemmaClient`、`LocalLemmaClient`）。
+**进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它与桌面 addon 一样，在数据目录（应用的 `filesDir`）上打开引擎，并在进程内提供 Connect 路由。应用访问它时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
 
 Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息缓存在 SQLDelight 中；缓存归客户端所有，宿主的存储才是记录本身。
 
@@ -50,7 +50,7 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 
 ## 一次 turn 的完整链路
 
-一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，两个宿主都只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。RPC 宿主把它的 `TurnEvent` 映射为 `AgentEvent` 消息，移动端宿主把它们映射为 `MobileAgentEvent`。
+一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，`lemma-agent-rpc` 只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。`lemma-agent-rpc` 把它的 `TurnEvent` 映射为 `AgentEvent` 消息。
 
 ```text
 AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
@@ -80,7 +80,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
 
-`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。`LemmaEngine::abort_message` 以同样的方式中止 Android 引擎中的 turn。
+`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
 无论客户端是否读取它的流，turn 都会运行到结束。`lemma-agent-rpc` 记录每个正在运行的 turn 的 `AgentEvent`；`SendMessage` 与 `ResumeStream` 都读取这份记录，因此读取较慢的客户端不会漏掉事件。丢失流的客户端用用户消息 id 和已收到的事件数调用 `ResumeStream`，先收到其余事件，再接着收到实时事件。turn 结束后，`ResumeStream` 以 `ERROR_REASON_TURN_NOT_RUNNING` 失败，客户端改为读取已定稿的消息。
 
@@ -98,17 +98,16 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 
 新行为接入以下某个接入点。修改 turn 循环本身时，同步更新这张表。
 
-| 目标 | 机制 |
-| --- | --- |
-| 新增厂商协议 | 在 `lemma-model` 中加一个 `ProviderKind` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定 |
-| 新增面向模型的工具 | 在 `lemma-tools` 中实现 `Tool`，并在 `Agent` 构建 `ToolRegistry` 处注册（`lemma-agent`） |
-| 管控工具调用 | 实现 `ApprovalPolicy` 并设置到 `ToolRuntime` 上 |
-| 在别处运行工具 | 实现 `ExecEnv` |
-| 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector` |
-| 新增 RPC | 修改 `.proto`，在对应的 `crates/rpc/` crate 中实现，并重新生成客户端代码 |
-| 新增 RPC 服务 | 新增 `.proto` 与 `crates/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-host` 中路由 |
-| 新增面向用户的错误 | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |
-| 修改 schema | 在 `lemma-db-sqlite` 与 `lemma-db-pgsql` 中各加一个迁移对，再更新存储实现 |
-| 新增存储后端 | 实现三个存储 trait，并在每个宿主中接入 |
-| 向 Android 本地模式暴露能力 | 给 `LemmaEngine` 加方法；它的签名就是 Kotlin API（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)） |
-| 让 Web 客户端使用桌面能力 | 扩展 preload 桥与 `web/src/platform/` 中的适配器（[web/AGENTS.zh.md](../web/AGENTS.zh.md#布局)） |
+| 目标                           | 机制                                                                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| 新增厂商协议                   | 在 `lemma-model` 中加一个 `ProviderKind` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定      |
+| 新增面向模型的工具             | 在 `lemma-tools` 中实现 `Tool`，并在 `Agent` 构建 `ToolRegistry` 处注册（`lemma-agent`）                                          |
+| 管控工具调用                   | 实现 `ApprovalPolicy` 并设置到 `ToolRuntime` 上                                                                                   |
+| 在别处运行工具                 | 实现 `ExecEnv`                                                                                                                    |
+| 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector`                                                                                  |
+| 新增 RPC                       | 修改 `.proto`，在对应的 `crates/rpc/` crate 中实现，并重新生成客户端代码                                                          |
+| 新增 RPC 服务                  | 新增 `.proto` 与 `crates/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-host` 中路由                     |
+| 新增面向用户的错误             | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |
+| 修改 schema                    | 在 `lemma-db-sqlite` 与 `lemma-db-pgsql` 中各加一个迁移对，再更新存储实现                                                         |
+| 新增存储后端                   | 实现三个存储 trait，并在每个宿主中接入                                                                                            |
+| 让 Web 客户端使用桌面能力      | 扩展 preload 桥与 `web/src/platform/` 中的适配器（[web/AGENTS.zh.md](../web/AGENTS.zh.md#布局)）                                  |

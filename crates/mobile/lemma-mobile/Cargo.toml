@@ -15,19 +15,9 @@ required-features = ["bindgen"]
 bindgen = ["uniffi/cli"]
 
 [dependencies]
-chrono.workspace = true
-lemma-adapter.workspace = true
-lemma-agent.workspace = true
-lemma-auth.workspace = true
-lemma-conversation.workspace = true
-lemma-db-sqlite.workspace = true
-lemma-model.workspace = true
-lemma-provider.workspace = true
-serde_json.workspace = true
-sqlx.workspace = true
+lemma-host.workspace = true
 tokio.workspace = true
 uniffi.workspace = true
-uuid.workspace = true
 
 [lints]
 workspace = true

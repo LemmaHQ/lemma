@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import dev.lemmahq.lemma.data.DriverFactory
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.db.LemmaDatabase
-import dev.lemmahq.lemma.engine.LocalLemmaClient
+import dev.lemmahq.lemma.engine.LocalEngine
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,8 +23,8 @@ class MainActivity : ComponentActivity() {
             }
             App(
                 localChatRepository = repo,
-                localClientFactory = { settings ->
-                    LocalLemmaClient.create(applicationContext, settings)
+                localRpc = { settings ->
+                    LocalEngine.client(applicationContext, settings)
                 },
             )
         }

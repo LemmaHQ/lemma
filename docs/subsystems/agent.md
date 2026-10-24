@@ -33,11 +33,9 @@ The loop reports `TurnEvent`s to the observer in the order they happen. Each hos
 | `TurnEnd::Aborted` | `aborted` | The turn was aborted. |
 | `Err(AgentError)` | `error` | The turn failed; carries the error text. |
 
-`lemma-mobile` maps the same sources onto `MobileAgentEvent` and delivers them to an `AgentEventListener`.
-
 ## Abort
 
-Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_id, user_message_id)` cancels the token only when that user owns the turn; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running tool call completes, and the turn stops before the next step. `AbortMessage` and `LemmaEngine::abort_message` both call `Agent::abort`.
+Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_id, user_message_id)` cancels the token only when that user owns the turn; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running tool call completes, and the turn stops before the next step. `AbortMessage` calls `Agent::abort`.
 
 ## Streams and resume
 

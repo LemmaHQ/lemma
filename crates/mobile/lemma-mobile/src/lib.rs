@@ -1,724 +1,139 @@
-//! UniFFI embedding surface: the local engine facade consumed in-process by
-//! the Kotlin Multiplatform client, over the same domain services and SQLite
-//! backend as the server mode.
+//! UniFFI facade for Android local mode: opens the local engine over a data
+//! directory and serves its Connect router through an in-process transport.
 
 use std::error::Error;
 use std::fmt;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::Path;
 
-use lemma_adapter::{HttpConnector, ReqwestTransport};
-use lemma_agent::{Agent, AgentError, TurnEnd, TurnEvent, TurnRequest};
-use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
-use lemma_auth::{AuthService, AuthStore, Session, User};
-use lemma_conversation::{Conversation, ConversationService, Message};
-use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
-use lemma_model::ProviderKind;
-use lemma_provider::{CreateInput, ProviderService, ProviderView, UpdateInput};
-use uuid::Uuid;
+use lemma_host::{InProcessTransport, LocalEngine};
+use tokio::sync::Mutex;
 
 uniffi::setup_scaffolding!();
 
-/// Errors surfaced by the local engine facade.
+/// Failures of the engine facade.
 #[derive(Debug, uniffi::Error)]
+#[uniffi(flat_error)]
 pub enum EngineError {
-    /// A string id argument failed to parse as a UUID.
-    InvalidId(String),
-    /// The auth domain rejected the operation.
-    Auth(String),
-    /// The conversation domain rejected the operation.
-    Conversation(String),
-    /// The provider domain rejected the operation.
-    Provider(String),
-    /// The agent execution failed.
-    Agent(String),
-    /// A request argument failed validation.
-    Validation(String),
-    /// The storage backend failed.
-    Storage(String),
+    /// A startup step of [`LemmaEngine::open`] failed.
+    Open(String),
+    /// A request was malformed, or its response body is not open or failed
+    /// while streaming.
+    Transport(String),
 }
 
 impl fmt::Display for EngineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidId(raw) => write!(f, "invalid id: {raw}"),
-            Self::Auth(e) => write!(f, "auth: {e}"),
-            Self::Conversation(e) => write!(f, "conversation: {e}"),
-            Self::Provider(e) => write!(f, "provider: {e}"),
-            Self::Agent(e) => write!(f, "agent: {e}"),
-            Self::Validation(e) => write!(f, "validation: {e}"),
-            Self::Storage(e) => write!(f, "storage: {e}"),
+            Self::Open(e) | Self::Transport(e) => write!(f, "{e}"),
         }
     }
 }
 
 impl Error for EngineError {}
 
-fn parse_id(raw: &str) -> Result<Uuid, EngineError> {
-    Uuid::parse_str(raw).map_err(|_| EngineError::InvalidId(raw.to_owned()))
-}
-
-fn parse_kind(raw: &str) -> Result<ProviderKind, EngineError> {
-    use std::str::FromStr;
-
-    ProviderKind::from_str(raw)
-        .map_err(|()| EngineError::Validation(format!("unknown provider kind: {raw}")))
-}
-
-/// An account as seen by the mobile client.
+/// One HTTP header.
 #[derive(Debug, uniffi::Record)]
-pub struct MobileUser {
-    /// User id.
-    pub id: String,
-    /// Login name.
-    pub username: String,
-    /// Contact email.
-    pub email: String,
-}
-
-impl From<User> for MobileUser {
-    fn from(u: User) -> Self {
-        Self {
-            id: u.id.to_string(),
-            username: u.username,
-            email: u.email,
-        }
-    }
-}
-
-/// An authenticated session: the account plus its issued tokens.
-#[derive(Debug, uniffi::Record)]
-pub struct MobileSession {
-    /// The authenticated account.
-    pub user: MobileUser,
-    /// Signed access token.
-    pub access_token: String,
-    /// Access-token expiry time, RFC 3339.
-    pub access_token_expires_at: String,
-    /// Plaintext refresh token.
-    pub refresh_token: String,
-}
-
-impl From<Session> for MobileSession {
-    fn from(s: Session) -> Self {
-        Self {
-            user: s.user.into(),
-            access_token: s.tokens.access_token,
-            access_token_expires_at: s.tokens.access_token_expires_at.to_rfc3339(),
-            refresh_token: s.tokens.refresh_token,
-        }
-    }
-}
-
-/// A conversation summary.
-#[derive(Debug, uniffi::Record)]
-pub struct MobileConversation {
-    /// Conversation id.
-    pub id: String,
-    /// Display title.
-    pub title: String,
-    /// Last update time, RFC 3339.
-    pub updated_at: String,
-}
-
-impl From<Conversation> for MobileConversation {
-    fn from(c: Conversation) -> Self {
-        Self {
-            id: c.id.to_string(),
-            title: c.title,
-            updated_at: c.updated_at.to_rfc3339(),
-        }
-    }
-}
-
-/// A message in a conversation.
-#[derive(Debug, uniffi::Record)]
-pub struct MobileMessage {
-    /// Message id.
-    pub id: String,
-    /// Parent message id; absent for roots.
-    pub parent_id: Option<String>,
-    /// Authoring role.
-    pub role: String,
-    /// Visible text content, mirroring the server's presentation mapping.
-    pub text: String,
-    /// Structured content payload as JSON.
-    pub content_json: String,
-    /// Provider id used, for assistant messages.
-    pub provider_id: Option<String>,
-    /// Model used, for assistant messages.
-    pub model: Option<String>,
-    /// Delivery status: `streaming`, `done`, `aborted`, or `error`.
-    pub status: String,
-    /// Failure reason when status is `error`.
-    pub error: Option<String>,
-    /// Creation time, seconds since the Unix epoch.
-    pub created_at_seconds: i64,
-}
-
-impl From<Message> for MobileMessage {
-    fn from(m: Message) -> Self {
-        Self {
-            id: m.id.to_string(),
-            parent_id: m.parent_id.map(|id| id.to_string()),
-            role: m.role().to_string(),
-            text: m.message.visible_text(),
-            content_json: serde_json::to_string(&m.message).unwrap_or_default(),
-            provider_id: m.provider_id.map(|id| id.to_string()),
-            model: m.model,
-            status: m.status.as_str().to_string(),
-            error: m.error,
-            created_at_seconds: m.created_at.timestamp(),
-        }
-    }
-}
-
-/// One keyset page of messages, newest first.
-#[derive(Debug, uniffi::Record)]
-pub struct MessagePage {
-    /// The page's messages.
-    pub messages: Vec<MobileMessage>,
-    /// Whether an older page exists.
-    pub has_more: bool,
-}
-
-/// A model provider configuration.
-#[derive(Debug, uniffi::Record)]
-pub struct MobileProvider {
-    /// Provider id.
-    pub id: String,
-    /// Provider kind: `openai`, `anthropic`, or `gemini`.
-    pub kind: String,
-    /// User-facing machine identifier, immutable after creation.
-    pub identifier: String,
-    /// Display name.
+pub struct Header {
+    /// Header name.
     pub name: String,
-    /// API base URL.
-    pub base_url: String,
-    /// Stored API key, empty when keyless.
-    pub api_key: String,
-    /// Cached model ids.
-    pub models: Vec<String>,
-    /// Enabled flag.
-    pub enabled: bool,
-    /// Generation endpoint path override.
-    pub api_path: String,
-    /// Model-list endpoint path override.
-    pub models_path: String,
+    /// Header value.
+    pub value: String,
 }
 
-impl From<ProviderView> for MobileProvider {
-    fn from(v: ProviderView) -> Self {
-        Self {
-            id: v.id.to_string(),
-            kind: v.kind.as_str().to_string(),
-            identifier: v.identifier,
-            name: v.name,
-            base_url: v.base_url,
-            api_key: v.api_key,
-            models: v.models,
-            enabled: v.enabled,
-            api_path: v.api_path,
-            models_path: v.models_path,
-        }
-    }
-}
-
-/// Patch input for updating a provider; absent fields keep current values.
+/// Status and headers of a response; its body is read by
+/// [`LemmaEngine::read`] under `body`.
 #[derive(Debug, uniffi::Record)]
-pub struct ProviderUpdate {
-    /// Display name.
-    pub name: Option<String>,
-    /// API base URL.
-    pub base_url: Option<String>,
-    /// Plaintext replacement API key.
-    pub api_key: Option<String>,
-    /// Generation endpoint path override.
-    pub api_path: Option<String>,
-    /// Model-list endpoint path override.
-    pub models_path: Option<String>,
-    /// Enabled flag.
-    pub enabled: Option<bool>,
-    /// Model ids to cache.
-    pub models: Option<Vec<String>>,
+pub struct ResponseHead {
+    /// Id of the open response body.
+    pub body: u32,
+    /// HTTP status code.
+    pub status: u16,
+    /// Response headers, in response order.
+    pub headers: Vec<Header>,
 }
 
-impl From<ProviderUpdate> for UpdateInput {
-    fn from(p: ProviderUpdate) -> Self {
-        Self {
-            name: p.name,
-            base_url: p.base_url,
-            api_key: p.api_key,
-            api_path: p.api_path,
-            models_path: p.models_path,
-            enabled: p.enabled,
-            models: p.models,
-        }
-    }
-}
-
-/// One streamed event of an agent turn.
-#[derive(Debug, uniffi::Enum)]
-pub enum MobileAgentEvent {
-    /// The user message has been committed.
-    Started {
-        /// User message id.
-        message_id: String,
-    },
-    /// A new assistant message node started streaming.
-    TurnStarted {
-        /// Assistant message id.
-        message_id: String,
-    },
-    /// An incremental text chunk.
-    Delta {
-        /// Incremental chunk.
-        text: String,
-    },
-    /// An incremental reasoning chunk.
-    ThinkingDelta {
-        /// Incremental reasoning chunk.
-        text: String,
-    },
-    /// A tool call is about to execute.
-    ToolStarted {
-        /// Provider-assigned call id.
-        id: String,
-        /// Tool name.
-        name: String,
-        /// Call arguments as serialized JSON.
-        arguments: String,
-    },
-    /// A tool call finished executing.
-    ToolFinished {
-        /// Provider-assigned call id.
-        id: String,
-        /// Tool name.
-        name: String,
-        /// Tool output text.
-        content: String,
-        /// True when the tool reported a failure.
-        is_error: bool,
-    },
-    /// The turn completed and the assistant message persisted.
-    Done {
-        /// Assistant message id.
-        message_id: String,
-        /// Prompt tokens consumed, zero when unreported.
-        input_tokens: i64,
-        /// Response tokens produced, zero when unreported.
-        output_tokens: i64,
-    },
-    /// The turn was aborted by the user.
-    Aborted,
-    /// The turn failed.
-    Error {
-        /// Failure description.
-        message: String,
-    },
-}
-
-/// Receives streamed agent turn events on the Kotlin side.
-#[uniffi::export(foreign)]
-pub trait AgentEventListener: Send + Sync {
-    /// Delivers one streamed turn event.
-    fn on_event(&self, event: MobileAgentEvent);
-}
-
-#[expect(clippy::needless_pass_by_value, reason = "used as a map_err function")]
-fn prepare_error(e: AgentError) -> EngineError {
-    match e {
-        AgentError::ContentRequired | AgentError::ModelRequired => {
-            EngineError::Validation(e.to_string())
-        }
-        AgentError::Store(_) | AgentError::Workspace(_) => EngineError::Storage(e.to_string()),
-        AgentError::ProviderNotFound | AgentError::Provider(_) => {
-            EngineError::Provider(e.to_string())
-        }
-        AgentError::Loop(_) => EngineError::Agent(e.to_string()),
-    }
-}
-
-fn map_event(ev: TurnEvent) -> MobileAgentEvent {
-    match ev {
-        TurnEvent::UserAppended { id } => MobileAgentEvent::Started {
-            message_id: id.to_string(),
-        },
-        TurnEvent::AssistantStarted { id } => MobileAgentEvent::TurnStarted {
-            message_id: id.to_string(),
-        },
-        TurnEvent::Delta { delta } => MobileAgentEvent::Delta { text: delta },
-        TurnEvent::ThinkingDelta { delta } => MobileAgentEvent::ThinkingDelta { text: delta },
-        TurnEvent::ToolStarted {
-            id,
-            name,
-            arguments,
-        } => MobileAgentEvent::ToolStarted {
-            id,
-            name,
-            arguments,
-        },
-        TurnEvent::ToolFinished {
-            id,
-            name,
-            content,
-            is_error,
-        } => MobileAgentEvent::ToolFinished {
-            id,
-            name,
-            content,
-            is_error,
-        },
-        TurnEvent::AssistantDone { id, usage, .. } => MobileAgentEvent::Done {
-            message_id: id.to_string(),
-            input_tokens: usage.map_or(0, |u| u.input),
-            output_tokens: usage.map_or(0, |u| u.output),
-        },
-    }
-}
-
-/// Connector every provider call of the engine goes through.
-type EngineConnector = HttpConnector<ReqwestTransport>;
-
-/// The embedded local engine: auth, conversation, provider, and agent
-/// domain services over a migrated SQLite pool.
+/// The open local engine.
 #[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
-    auth: AuthService<SqliteAuthStore>,
-    auth_store: SqliteAuthStore,
-    conversations: ConversationService<SqliteConversationStore>,
-    providers: Arc<ProviderService<SqliteProviderStore, EngineConnector>>,
-    agent: Agent<SqliteConversationStore, SqliteProviderStore, EngineConnector>,
+    transport: InProcessTransport,
+    local: Mutex<Option<LocalEngine>>,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
 impl LemmaEngine {
-    /// Opens or creates the engine database at `<data_dir>/lemma.db`, runs
-    /// migrations, and returns the ready engine. `jwt_secret` signs access
-    /// tokens and is supplied by the caller's configuration.
+    /// Opens the local engine over `data_dir`.
     ///
     /// # Errors
     ///
-    /// [`EngineError::Storage`] when the database cannot be opened or
-    /// migrated.
+    /// [`EngineError::Open`] naming the startup step that failed.
     #[uniffi::constructor]
-    pub async fn open(data_dir: String, jwt_secret: String) -> Result<Arc<Self>, EngineError> {
-        let data_dir = PathBuf::from(data_dir);
-        let pool = lemma_db_sqlite::connect(data_dir.join("lemma.db"))
+    pub async fn open(data_dir: String) -> Result<Self, EngineError> {
+        let local = LocalEngine::open(Path::new(&data_dir))
             .await
-            .map_err(|e| EngineError::Storage(e.to_string()))?;
-        lemma_db_sqlite::migrate(&pool)
-            .await
-            .map_err(|e| EngineError::Storage(e.to_string()))?;
-        let auth_store = SqliteAuthStore::new(pool.clone());
-        let conversation_store = SqliteConversationStore::new(pool.clone());
-        let providers = Arc::new(ProviderService::new(
-            SqliteProviderStore::new(pool.clone()),
-            None,
-            HttpConnector::new(ReqwestTransport::new()),
-        ));
-        Ok(Arc::new(Self {
-            auth: AuthService::new(auth_store.clone(), jwt_secret),
-            auth_store,
-            conversations: ConversationService::new(conversation_store.clone()),
-            agent: Agent::new(
-                conversation_store,
-                Arc::clone(&providers),
-                Some(data_dir.join("workspaces")),
-            ),
-            providers,
-        }))
+            .map_err(|e| EngineError::Open(e.to_string()))?;
+        Ok(Self {
+            transport: InProcessTransport::new(local.router()),
+            local: Mutex::new(Some(local)),
+        })
     }
 
-    /// Registers a new account and opens a session.
+    /// Sends one request to the engine and opens its response body.
     ///
     /// # Errors
     ///
-    /// [`EngineError::Auth`] carrying the auth domain's rejection.
-    pub async fn sign_up(
+    /// [`EngineError::Transport`] for an invalid method, path, or header.
+    pub async fn request(
         &self,
-        username: String,
-        email: String,
-        password: String,
-    ) -> Result<MobileSession, EngineError> {
-        self.auth
-            .sign_up(&username, &email, &password)
+        method: String,
+        path: String,
+        headers: Vec<Header>,
+        body: Vec<u8>,
+    ) -> Result<ResponseHead, EngineError> {
+        let headers: Vec<(String, String)> = headers
+            .into_iter()
+            .map(|header| (header.name, header.value))
+            .collect();
+        let head = self
+            .transport
+            .request(&method, &path, &headers, body)
             .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Auth(e.to_string()))
+            .map_err(|e| EngineError::Transport(e.to_string()))?;
+        Ok(ResponseHead {
+            body: head.body,
+            status: head.status,
+            headers: head
+                .headers
+                .into_iter()
+                .map(|(name, value)| Header { name, value })
+                .collect(),
+        })
     }
 
-    /// Authenticates by username or email and opens a session.
+    /// Reads the next chunk of a response body; `None` marks its end.
     ///
     /// # Errors
     ///
-    /// [`EngineError::Auth`] carrying the auth domain's rejection.
-    pub async fn login(
-        &self,
-        login: String,
-        password: String,
-    ) -> Result<MobileSession, EngineError> {
-        self.auth
-            .login(&login, &password)
+    /// [`EngineError::Transport`] for an unknown body id, or a body that
+    /// failed while streaming.
+    pub async fn read(&self, body: u32) -> Result<Option<Vec<u8>>, EngineError> {
+        self.transport
+            .read(body)
             .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Auth(e.to_string()))
+            .map(|chunk| chunk.map(Vec::from))
+            .map_err(|e| EngineError::Transport(e.to_string()))
     }
 
-    /// Opens a session on the default local account, provisioning it on
-    /// first use. Shared by every local-mode runtime.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::Storage`] when the account lookup fails and
-    /// [`EngineError::Auth`] when provisioning or login fails.
-    pub async fn use_default_account(&self) -> Result<MobileSession, EngineError> {
-        if self
-            .auth_store
-            .find_user_by_login(DEFAULT_USERNAME)
-            .await
-            .map_err(|e| EngineError::Storage(e.to_string()))?
-            .is_none()
-        {
-            self.auth
-                .sign_up(DEFAULT_USERNAME, DEFAULT_EMAIL, DEFAULT_PASSWORD)
-                .await
-                .map_err(|e| EngineError::Auth(e.to_string()))?;
+    /// Closes a response body before its end.
+    pub fn cancel(&self, body: u32) {
+        self.transport.cancel(body);
+    }
+
+    /// Closes the engine's database; call it once no request is in flight.
+    /// Named apart from `close`, which the Kotlin binding takes from
+    /// `AutoCloseable` to free the native object.
+    pub async fn shutdown(&self) {
+        if let Some(local) = self.local.lock().await.take() {
+            local.close().await;
         }
-        self.auth
-            .login(DEFAULT_USERNAME, DEFAULT_PASSWORD)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Auth(e.to_string()))
-    }
-
-    /// Creates an empty conversation for the user.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Conversation`] carrying the domain error.
-    pub async fn create_conversation(
-        &self,
-        user_id: String,
-    ) -> Result<MobileConversation, EngineError> {
-        self.conversations
-            .create(parse_id(&user_id)?)
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Lists a conversation's messages newest-first with keyset pagination.
-    /// `limit` of zero selects the domain default page size.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Conversation`] carrying the domain error.
-    pub async fn list_messages(
-        &self,
-        user_id: String,
-        conversation_id: String,
-        before_id: Option<String>,
-        limit: i32,
-    ) -> Result<MessagePage, EngineError> {
-        let before = before_id.as_deref().map(parse_id).transpose()?;
-        self.conversations
-            .list_messages(
-                parse_id(&user_id)?,
-                parse_id(&conversation_id)?,
-                before,
-                limit,
-            )
-            .await
-            .map(|page| MessagePage {
-                messages: page.messages.into_iter().map(Into::into).collect(),
-                has_more: page.has_more,
-            })
-            .map_err(|e| EngineError::Conversation(e.to_string()))
-    }
-
-    /// Lists the user's provider configurations.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    pub async fn list_providers(
-        &self,
-        user_id: String,
-    ) -> Result<Vec<MobileProvider>, EngineError> {
-        self.providers
-            .list(parse_id(&user_id)?)
-            .await
-            .map(|ps| ps.into_iter().map(Into::into).collect())
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Validates and stores a new provider configuration.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id,
-    /// [`EngineError::Validation`] for an unknown kind; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    #[allow(clippy::too_many_arguments)]
-    pub async fn create_provider(
-        &self,
-        user_id: String,
-        kind: String,
-        identifier: String,
-        name: String,
-        base_url: String,
-        api_key: String,
-        api_path: String,
-        models_path: String,
-        models: Vec<String>,
-    ) -> Result<MobileProvider, EngineError> {
-        let kind = parse_kind(&kind)?;
-        self.providers
-            .create(
-                parse_id(&user_id)?,
-                CreateInput {
-                    kind,
-                    identifier,
-                    name,
-                    base_url,
-                    api_key,
-                    api_path,
-                    models_path,
-                    models,
-                },
-            )
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Applies a patch to a provider owned by the user.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    pub async fn update_provider(
-        &self,
-        user_id: String,
-        provider_id: String,
-        patch: ProviderUpdate,
-    ) -> Result<MobileProvider, EngineError> {
-        self.providers
-            .update(parse_id(&user_id)?, parse_id(&provider_id)?, patch.into())
-            .await
-            .map(Into::into)
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Deletes a provider owned by the user.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    pub async fn delete_provider(
-        &self,
-        user_id: String,
-        provider_id: String,
-    ) -> Result<(), EngineError> {
-        self.providers
-            .delete(parse_id(&user_id)?, parse_id(&provider_id)?)
-            .await
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Fetches the live model list using a stored provider's key.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    pub async fn fetch_provider_models(
-        &self,
-        user_id: String,
-        provider_id: String,
-    ) -> Result<Vec<String>, EngineError> {
-        self.providers
-            .fetch_models_for(parse_id(&user_id)?, parse_id(&provider_id)?)
-            .await
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Fetches the live model list for ad-hoc connection details.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::Validation`] for an unknown kind; otherwise
-    /// [`EngineError::Provider`] carrying the domain error.
-    pub async fn fetch_models(
-        &self,
-        kind: String,
-        base_url: String,
-        api_key: String,
-        models_path: String,
-    ) -> Result<Vec<String>, EngineError> {
-        let kind = parse_kind(&kind)?;
-        self.providers
-            .fetch_models_adhoc(kind, &base_url, &api_key, &models_path)
-            .await
-            .map_err(|e| EngineError::Provider(e.to_string()))
-    }
-
-    /// Aborts the user's running turn started by `message_id`; a turn that
-    /// is not running is a no-op.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id.
-    pub fn abort_message(&self, user_id: &str, message_id: &str) -> Result<(), EngineError> {
-        self.agent.abort(parse_id(user_id)?, parse_id(message_id)?);
-        Ok(())
-    }
-
-    /// Runs one agent turn: appends the user message, streams model and tool
-    /// events to `listener`, and persists the settled assistant messages.
-    /// The stream terminates with a `Done`, `Aborted`, or `Error` event.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::InvalidId`] for a malformed id and the mapped
-    /// [`EngineError`] when the turn cannot be prepared; failures of the
-    /// running turn arrive as an `Error` event instead.
-    #[allow(clippy::too_many_arguments)]
-    pub async fn send_message(
-        &self,
-        user_id: String,
-        conversation_id: String,
-        content: String,
-        provider_id: String,
-        model: String,
-        thinking_effort: Option<String>,
-        listener: Arc<dyn AgentEventListener>,
-    ) -> Result<(), EngineError> {
-        let turn = self
-            .agent
-            .prepare(TurnRequest {
-                user_id: parse_id(&user_id)?,
-                conversation_id: parse_id(&conversation_id)?,
-                provider_id: parse_id(&provider_id)?,
-                model,
-                content,
-                thinking_effort,
-            })
-            .await
-            .map_err(prepare_error)?;
-        match turn.run(|ev| listener.on_event(map_event(ev))).await {
-            Ok(TurnEnd::Done) => {}
-            Ok(TurnEnd::Aborted) => listener.on_event(MobileAgentEvent::Aborted),
-            Err(e) => listener.on_event(MobileAgentEvent::Error {
-                message: e.to_string(),
-            }),
-        }
-        Ok(())
     }
 }

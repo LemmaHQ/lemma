@@ -1,12 +1,7 @@
 package dev.lemmahq.lemma.network
 
-import com.connectrpc.Headers
-import com.connectrpc.Interceptor
 import com.connectrpc.ProtocolClientConfig
-import com.connectrpc.StreamFunction
-import com.connectrpc.UnaryFunction
 import com.connectrpc.extensions.GoogleJavaLiteProtobufStrategy
-import com.connectrpc.http.clone
 import com.connectrpc.impl.ProtocolClient
 import com.connectrpc.okhttp.ConnectOkHttpClient
 import dev.lemmahq.gen.lemma.v1.AgentServiceClient
@@ -15,61 +10,24 @@ import dev.lemmahq.gen.lemma.v1.ConversationServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
 import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 
-class LemmaRpcClient(
-    val host: String,
-    private val tokenProvider: () -> String? = { null },
-    private val settingsRepository: SettingsRepository? = null,
-) {
+/**
+ * Connect clients of the four Lemma services at [host], authenticated by [AuthInterceptor].
+ * Requests go over the network, or to [transport] when it is set, which answers them in place of a
+ * server.
+ */
+class LemmaRpcClient(host: String, settings: SettingsRepository, transport: Interceptor? = null) {
     private val okHttpClient =
         ConnectOkHttpClient.configureClient(
-                OkHttpClient.Builder().apply {
-                    if (settingsRepository != null) {
-                        authenticator(TokenAuthenticator(host, settingsRepository))
-                    }
+                OkHttpClient.Builder().addInterceptor(AuthInterceptor(settings)).apply {
+                    transport?.let { addInterceptor(it) }
                 }
             )
             .build()
 
-    private val authInterceptor: (ProtocolClientConfig) -> Interceptor = {
-        object : Interceptor {
-            override fun unaryFunction(): UnaryFunction {
-                return UnaryFunction(
-                    requestFunction = { req ->
-                        val token = tokenProvider()
-                        if (token.isNullOrBlank()) {
-                            req
-                        } else {
-                            val headers: Headers =
-                                req.headers + mapOf("authorization" to listOf("Bearer $token"))
-                            req.clone(headers = headers)
-                        }
-                    },
-                    responseFunction = { it },
-                )
-            }
-
-            override fun streamFunction(): StreamFunction {
-                return StreamFunction(
-                    requestFunction = { req ->
-                        val token = tokenProvider()
-                        if (token.isNullOrBlank()) {
-                            req
-                        } else {
-                            val headers: Headers =
-                                req.headers + mapOf("authorization" to listOf("Bearer $token"))
-                            req.clone(headers = headers)
-                        }
-                    },
-                    requestBodyFunction = { it },
-                    streamResultFunction = { it },
-                )
-            }
-        }
-    }
-
-    val protocolClient =
+    private val protocolClient =
         ProtocolClient(
             httpClient = ConnectOkHttpClient(okHttpClient),
             config =
@@ -77,7 +35,6 @@ class LemmaRpcClient(
                     host = host,
                     serializationStrategy = GoogleJavaLiteProtobufStrategy(),
                     ioCoroutineContext = Dispatchers.IO,
-                    interceptors = listOf(authInterceptor),
                 ),
         )
 

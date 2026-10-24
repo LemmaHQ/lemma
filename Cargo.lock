@@ -2037,19 +2037,9 @@ dependencies = [
 name = "lemma-mobile"
 version = "0.1.0"
 dependencies = [
- "chrono",
- "lemma-adapter",
- "lemma-agent",
- "lemma-auth",
- "lemma-conversation",
- "lemma-db-sqlite",
- "lemma-model",
- "lemma-provider",
- "serde_json",
- "sqlx",
+ "lemma-host",
  "tokio",
  "uniffi",
- "uuid",
 ]
 
 [[package]]

@@ -15,7 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.lemmahq.lemma.client.LemmaClient
-import dev.lemmahq.lemma.client.RemoteLemmaClient
 import dev.lemmahq.lemma.data.DefaultSettingsRepository
 import dev.lemmahq.lemma.data.LocalChatRepository
 import dev.lemmahq.lemma.data.SettingsRepository
@@ -29,7 +28,7 @@ import dev.lemmahq.lemma.ui.setup.SetupScreen
 @Composable
 fun App(
     localChatRepository: LocalChatRepository,
-    localClientFactory: (suspend (SettingsRepository) -> LemmaClient)? = null,
+    localRpc: (suspend (SettingsRepository) -> LemmaRpcClient)? = null,
 ) {
     val settingsRepository = remember { DefaultSettingsRepository() }
     var appMode by remember {
@@ -56,16 +55,12 @@ fun App(
                 when {
                     appMode == DefaultSettingsRepository.MODE_REMOTE &&
                         !currentServerUrl.isNullOrBlank() ->
-                        RemoteLemmaClient(
-                            LemmaRpcClient(
-                                host = currentServerUrl.orEmpty(),
-                                tokenProvider = { settingsRepository.getAccessToken() },
-                                settingsRepository = settingsRepository,
-                            ),
+                        LemmaClient(
+                            LemmaRpcClient(currentServerUrl.orEmpty(), settingsRepository),
                             settingsRepository,
                         )
-                    appMode == DefaultSettingsRepository.MODE_LOCAL && localClientFactory != null ->
-                        localClientFactory.invoke(settingsRepository)
+                    appMode == DefaultSettingsRepository.MODE_LOCAL && localRpc != null ->
+                        LemmaClient(localRpc.invoke(settingsRepository), settingsRepository)
                     else -> null
                 }
         }
@@ -76,7 +71,7 @@ fun App(
                 appMode.isNullOrBlank() -> {
                     SetupScreen(
                         settingsRepository = settingsRepository,
-                        localAvailable = localClientFactory != null,
+                        localAvailable = localRpc != null,
                         onConnected = { url ->
                             settingsRepository.setAppMode(DefaultSettingsRepository.MODE_REMOTE)
                             currentServerUrl = url
@@ -101,7 +96,12 @@ fun App(
                                 } else {
                                     "Connected to $currentServerUrl"
                                 },
-                            showSkip = appMode == DefaultSettingsRepository.MODE_LOCAL,
+                            changeModeLabel =
+                                if (appMode == DefaultSettingsRepository.MODE_LOCAL) {
+                                    "Use a server"
+                                } else {
+                                    "Change server"
+                                },
                             onAuthSuccess = {
                                 currentAccessToken = settingsRepository.getAccessToken()
                             },

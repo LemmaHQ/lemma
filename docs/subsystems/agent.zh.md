@@ -33,11 +33,9 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | `TurnEnd::Aborted` | `aborted` | turn 被中止。 |
 | `Err(AgentError)` | `error` | turn 失败；携带错误文本。 |
 
-`lemma-mobile` 把相同的来源映射为 `MobileAgentEvent`，交给 `AgentEventListener`。
-
 ## 中止
 
-每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_id, user_message_id)` 只在该用户拥有这个 turn 时取消令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 与 `LemmaEngine::abort_message` 都调用 `Agent::abort`。
+每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_id, user_message_id)` 只在该用户拥有这个 turn 时取消令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 调用 `Agent::abort`。
 
 ## 流与恢复
 
