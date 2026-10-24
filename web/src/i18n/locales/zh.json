@@ -12,7 +12,7 @@
         "password": "密码",
         "passwordMismatch": "两次输入的密码不一致。",
         "passwordPlaceholder": "输入密码",
-        "productName": "自托管 AI 助手",
+        "productName": "Lemma",
         "registerTab": "创建账号",
         "selfHostedNote": "自托管：你的对话数据永远不会离开你的服务器。",
         "skipDesktop": "跳过登录，使用本地账号",
