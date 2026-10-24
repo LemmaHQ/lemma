@@ -25,5 +25,4 @@ export interface PlatformAdapter {
     readonly window: WindowCapabilities;
     readonly auth: AuthCapabilities;
     readonly layout: LayoutCapabilities;
-    appPath(path: string): string;
 }

@@ -50,8 +50,4 @@ export class BrowserAdapter implements PlatformAdapter {
         this.baseUrl = resolveBaseUrl();
         this.auth.cookieMode = resolveCookieMode(this.baseUrl);
     }
-
-    appPath(path: string): string {
-        return path;
-    }
 }

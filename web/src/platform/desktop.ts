@@ -41,8 +41,4 @@ export class DesktopAdapter implements PlatformAdapter {
             getSkipCredentials: () => bridge.getSkipCredentials(),
         };
     }
-
-    appPath(path: string): string {
-        return `#${path}`;
-    }
 }

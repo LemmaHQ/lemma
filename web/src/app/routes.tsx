@@ -1,11 +1,5 @@
 import { lazy, Suspense } from "react";
-import {
-    BrowserRouter,
-    HashRouter,
-    Navigate,
-    Route,
-    Routes,
-} from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { Loading, RequireAuth } from "./RequireAuth";
 
@@ -21,12 +15,9 @@ const SettingsPage = lazy(() =>
     })),
 );
 
-const Router =
-    window.location.protocol === "file:" ? HashRouter : BrowserRouter;
-
 export function AppRoutes() {
     return (
-        <Router>
+        <BrowserRouter>
             <Suspense fallback={<Loading />}>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
@@ -50,6 +41,6 @@ export function AppRoutes() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Suspense>
-        </Router>
+        </BrowserRouter>
     );
 }

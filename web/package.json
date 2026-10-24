@@ -13,7 +13,7 @@
         "prebuild": "npm run gen",
         "build": "tsc -b && vite build",
         "prebuild:desktop": "npm run gen",
-        "build:desktop": "tsc -b && vite build --base=./ --outDir ../desktop/web-dist --emptyOutDir",
+        "build:desktop": "tsc -b && vite build --outDir ../desktop/web-dist --emptyOutDir",
         "prelint": "npm run gen",
         "lint": "oxlint",
         "preview": "vite preview",

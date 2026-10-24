@@ -1,7 +1,17 @@
 import type { SkipCredentials, TitleBarState } from "@lemma/desktop-bridge";
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
+import {
+    app,
+    BrowserWindow,
+    ipcMain,
+    Menu,
+    nativeTheme,
+    net,
+    protocol,
+    type WebContents,
+} from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import * as engine from "./engine";
 import { themeColors } from "./gen/theme-colors";
 
@@ -13,6 +23,26 @@ const debugPort = process.env.LEMMA_DEBUG_PORT;
 if (debugPort !== undefined && debugPort !== "") {
     app.commandLine.appendSwitch("remote-debugging-port", debugPort);
 }
+
+const APP_ORIGIN = "app://lemma";
+const WEB_ROOT = path.join(__dirname, "../../web-dist");
+
+protocol.registerSchemesAsPrivileged([
+    { scheme: "app", privileges: { standard: true, secure: true } },
+]);
+
+const serveWebFile = (request: Request): Promise<Response> => {
+    const file = path.join(
+        WEB_ROOT,
+        decodeURIComponent(new URL(request.url).pathname),
+    );
+    if (path.relative(WEB_ROOT, file).startsWith("..")) {
+        return Promise.resolve(new Response(null, { status: 404 }));
+    }
+    const target =
+        path.extname(file) === "" ? path.join(WEB_ROOT, "index.html") : file;
+    return net.fetch(pathToFileURL(target).href);
+};
 
 let mainWindow: BrowserWindow | null = null;
 let engineStopping = false;
@@ -38,11 +68,9 @@ const loadApp = () => {
     if (mainWindow === null) {
         return;
     }
-    mainWindow
-        .loadFile(path.join(__dirname, "../../web-dist/index.html"))
-        .catch((err: unknown) => {
-            console.error("app page failed to load:", err);
-        });
+    mainWindow.loadURL(`${APP_ORIGIN}/`).catch((err: unknown) => {
+        console.error("app page failed to load:", err);
+    });
 };
 
 const titleBarOverlay = (state: TitleBarState) => ({
@@ -107,11 +135,19 @@ ipcMain.on("set-titlebar", (_event, state: unknown) => {
     }
 });
 
-ipcMain.handle("get-skip-credentials", (): SkipCredentials | null =>
-    engine.getSkipCredentials(),
+ipcMain.handle(
+    "get-skip-credentials",
+    async (): Promise<SkipCredentials | null> => {
+        await engineStart;
+        return engine.getSkipCredentials();
+    },
 );
+const connectWhenStarted = async (target: WebContents): Promise<void> => {
+    await engineStart;
+    engine.connect(target);
+};
 ipcMain.on("engine-connect", (event) => {
-    engine.connect(event.sender);
+    void connectWhenStarted(event.sender);
 });
 engine.onExit((detail) => {
     mainWindow?.webContents.send("engine-exit", detail);
@@ -128,6 +164,7 @@ ipcMain.on("toggle-maximize", () => {
 });
 
 let fatalDetail: string | null = null;
+let engineStart: Promise<void> = Promise.resolve();
 
 const openWindow = () => {
     createWindow();
@@ -138,12 +175,18 @@ const openWindow = () => {
     }
 };
 
-const boot = async () => {
+const startEngine = async (): Promise<void> => {
     try {
         await engine.start();
     } catch (err) {
         fatalDetail = err instanceof Error ? err.message : String(err);
+        loadFatalPage(fatalDetail);
     }
+};
+
+const boot = () => {
+    protocol.handle("app", serveWebFile);
+    engineStart = startEngine();
     openWindow();
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -166,7 +209,7 @@ if (gotTheLock) {
 
     app.on("ready", () => {
         Menu.setApplicationMenu(null);
-        void boot();
+        boot();
     });
 
     app.on("before-quit", (event) => {

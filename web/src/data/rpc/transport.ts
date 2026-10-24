@@ -71,7 +71,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
             if (!cookieMode) {
                 clearTokens();
             }
-            window.location.href = platform.appPath("/login");
+            window.location.href = "/login";
             throw e;
         }
         if (!cookieMode) {
