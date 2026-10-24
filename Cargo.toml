@@ -7,10 +7,10 @@ members = [
     "crates/shared/lemma-auth",
     "crates/shared/lemma-provider",
     "crates/shared/lemma-conversation",
-    "crates/server/rpc/lemma-agent-rpc",
-    "crates/server/rpc/lemma-auth-rpc",
-    "crates/server/rpc/lemma-conversation-rpc",
-    "crates/server/rpc/lemma-provider-rpc",
+    "crates/rpc/lemma-agent-rpc",
+    "crates/rpc/lemma-auth-rpc",
+    "crates/rpc/lemma-conversation-rpc",
+    "crates/rpc/lemma-provider-rpc",
     "crates/shared/lemma-crypto",
     "crates/shared/lemma-core",
     "crates/shared/lemma-adapter",
@@ -18,7 +18,7 @@ members = [
     "crates/shared/lemma-agent-loop",
     "crates/shared/lemma-model",
     "crates/shared/lemma-tools",
-    "crates/shared/lemma-mobile",
+    "crates/mobile/lemma-mobile",
 ]
 resolver = "2"
 
@@ -46,16 +46,16 @@ lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }
 lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
 lemma-auth = { path = "crates/shared/lemma-auth" }
-lemma-auth-rpc = { path = "crates/server/rpc/lemma-auth-rpc" }
+lemma-auth-rpc = { path = "crates/rpc/lemma-auth-rpc" }
 lemma-conversation = { path = "crates/shared/lemma-conversation" }
-lemma-conversation-rpc = { path = "crates/server/rpc/lemma-conversation-rpc" }
+lemma-conversation-rpc = { path = "crates/rpc/lemma-conversation-rpc" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
 lemma-db-pgsql = { path = "crates/server/lemma-db-pgsql" }
 lemma-db-sqlite = { path = "crates/shared/lemma-db-sqlite" }
 lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
-lemma-agent-rpc = { path = "crates/server/rpc/lemma-agent-rpc" }
-lemma-provider-rpc = { path = "crates/server/rpc/lemma-provider-rpc" }
+lemma-agent-rpc = { path = "crates/rpc/lemma-agent-rpc" }
+lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }

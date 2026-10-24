@@ -8,6 +8,7 @@ on:
     paths:
       - "mobile/**"
       - "crates/shared/**"
+      - "crates/mobile/**"
       - "proto/**"
       - "design/**"
       - "gradle/**"
@@ -24,6 +25,7 @@ on:
     paths:
       - "mobile/**"
       - "crates/shared/**"
+      - "crates/mobile/**"
       - "proto/**"
       - "design/**"
       - "gradle/**"

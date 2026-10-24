@@ -14,7 +14,7 @@ One page per subsystem of Lemma: what it is, the data structures it moves, and t
 | `provider.md` | provider records, model catalogs, and stored credentials in `lemma-provider` |
 | `auth.md` | accounts, password hashing, JWT issuance, local-mode accounts, and secret encryption in `lemma-auth` and `lemma-crypto` |
 | `storage.md` | the store traits and their SQLite and PostgreSQL backends in `lemma-db-sqlite` and `lemma-db-pgsql` |
-| `rpc.md` | the `proto/lemma/v1` contracts, ConnectRPC services under `crates/server/rpc/`, and the error model in `lemma-proto` |
+| `rpc.md` | the `proto/lemma/v1` contracts, ConnectRPC services under `crates/rpc/`, and the error model in `lemma-proto` |
 | `server.md` | `lemma-server`: configuration, routing, embedded web assets, server and local modes |
 | `web-client.md` | the React client in `web/`: RPC clients, stores, the conversation view |
 | `desktop-engine.md` | the Electron shell in `desktop/` and its sidecar engine lifecycle |

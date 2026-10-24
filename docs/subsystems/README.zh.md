@@ -14,7 +14,7 @@ Lemma 的每个子系统一页：它是什么、它传递的数据结构，以�
 | `provider.md` | `lemma-provider` 中的 provider 记录、模型目录与已存储的凭据 |
 | `auth.md` | `lemma-auth` 与 `lemma-crypto` 中的账户、密码哈希、JWT 签发、本地模式账户与密钥加密 |
 | `storage.md` | 存储 trait 及其 SQLite 与 PostgreSQL 后端，位于 `lemma-db-sqlite` 与 `lemma-db-pgsql` |
-| `rpc.md` | `proto/lemma/v1` 契约、`crates/server/rpc/` 下的 ConnectRPC 服务，以及 `lemma-proto` 中的错误模型 |
+| `rpc.md` | `proto/lemma/v1` 契约、`crates/rpc/` 下的 ConnectRPC 服务，以及 `lemma-proto` 中的错误模型 |
 | `server.md` | `lemma-server`：配置、路由、内嵌 Web 资源、服务端与本地两种模式 |
 | `web-client.md` | `web/` 中的 React 客户端：RPC 客户端、状态 store、会话视图 |
 | `desktop-engine.md` | `desktop/` 中的 Electron 外壳及其 sidecar 引擎生命周期 |

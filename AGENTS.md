@@ -9,8 +9,9 @@ Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. 
 ```text
 crates/       Rust workspace (crates/AGENTS.md)
   shared/     crates linked by the server, the desktop engine, and Android
+  rpc/        one ConnectRPC service crate per proto service
   server/     server-only crates: the lemma-server binary, the PostgreSQL store
-    rpc/      one ConnectRPC service crate per proto service
+  mobile/     lemma-mobile, the UniFFI facade for Android
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
 web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)

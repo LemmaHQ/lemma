@@ -186,8 +186,8 @@ val buildLemmaMobileHost =
     tasks.register<Exec>("buildLemmaMobileHost") {
         workingDir = rootProject.projectDir
         commandLine("cargo", "build", "-p", "lemma-mobile")
-        inputs.dir(rootProject.file("crates/shared/lemma-mobile/src"))
-        inputs.file(rootProject.file("crates/shared/lemma-mobile/Cargo.toml"))
+        inputs.dir(rootProject.file("crates/mobile/lemma-mobile/src"))
+        inputs.file(rootProject.file("crates/mobile/lemma-mobile/Cargo.toml"))
         inputs.file(rootProject.file("Cargo.lock"))
         outputs.file(rootProject.file(lemmaHostLibPath))
     }
@@ -213,11 +213,11 @@ val generateUniffiBindings =
             "kotlin",
             "--no-format",
             "--config",
-            "crates/shared/lemma-mobile/uniffi.toml",
+            "crates/mobile/lemma-mobile/uniffi.toml",
             "--out-dir",
             uniffiGeneratedDir.get().asFile.absolutePath,
         )
-        inputs.file(rootProject.file("crates/shared/lemma-mobile/uniffi.toml"))
+        inputs.file(rootProject.file("crates/mobile/lemma-mobile/uniffi.toml"))
         inputs.file(rootProject.file(lemmaHostLibPath))
         outputs.dir(uniffiGeneratedDir)
     }
@@ -240,8 +240,8 @@ val buildLemmaMobileJniLibs =
                 }
             }
         )
-        inputs.dir(rootProject.file("crates/shared/lemma-mobile/src"))
-        inputs.file(rootProject.file("crates/shared/lemma-mobile/Cargo.toml"))
+        inputs.dir(rootProject.file("crates/mobile/lemma-mobile/src"))
+        inputs.file(rootProject.file("crates/mobile/lemma-mobile/Cargo.toml"))
         inputs.file(rootProject.file("Cargo.lock"))
         outputs.dir(lemmaJniLibsDir)
     }

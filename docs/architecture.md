@@ -15,11 +15,12 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Engine | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
 | Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, conversation store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
-| Hosts | `lemma-mobile`, `crates/server/rpc/*`, `lemma-server` | The UniFFI facade for Android; one ConnectRPC service per proto service; the server binary |
+| RPC | `crates/rpc/*` | One ConnectRPC service per proto service |
+| Hosts | `lemma-server`, `lemma-mobile` | The server binary; the UniFFI facade for Android |
 
 The domain, engine, and agent layers contain no SQL. They define store traits (`ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/server/` build only into `lemma-server` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/` and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 
@@ -104,8 +105,8 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | Gate tool calls | implement `ApprovalPolicy` and set it on the `ToolRuntime` |
 | Run tools somewhere else | implement `ExecEnv` |
 | Send provider traffic through another stack | implement `HttpTransport` and construct the `HttpConnector` with it |
-| Add an RPC | change the `.proto`, implement it in the matching `crates/server/rpc/` crate, and regenerate the clients |
-| Add an RPC service | add a `.proto` and a new crate under `crates/server/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-server` |
+| Add an RPC | change the `.proto`, implement it in the matching `crates/rpc/` crate, and regenerate the clients |
+| Add an RPC service | add a `.proto` and a new crate under `crates/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-server` |
 | Add a user-facing error | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/data/rpc/errors.ts` and both locale files |
 | Change the schema | add a migration pair to both `lemma-db-sqlite` and `lemma-db-pgsql`, then update the stores |
 | Add a storage backend | implement the three store traits and wire them in each host |

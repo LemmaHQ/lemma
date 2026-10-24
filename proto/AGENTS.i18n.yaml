@@ -3,8 +3,8 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing proto/AGENTS.md
 /agentsmd--protobuf-contracts:
-  en: 674f67193f322f8c
-  zh: 7a68f1e747fcccdc
+  en: eada7eeca21f869d
+  zh: d3edaabbcb25e90f
 /agentsmd--protobuf-contracts/commands:
   en: d816aee3a7982ece
   zh: f8fd5a51b7edee17
