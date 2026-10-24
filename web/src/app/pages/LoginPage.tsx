@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { useEffect } from "react";
 
@@ -9,7 +8,6 @@ import { setTitleBarSurface } from "@/features/preferences/theme";
 import { useAuth } from "@/features/auth/store";
 
 export function LoginPage() {
-    const { t } = useTranslation();
     const user = useAuth((s) => s.user);
 
     useEffect(() => {
@@ -25,11 +23,8 @@ export function LoginPage() {
                 <LanguageToggle />
                 <ThemeToggle />
             </div>
-            <div className="flex w-full max-w-95 flex-col items-center gap-4">
+            <div className="flex w-full max-w-95 flex-col items-center">
                 <AuthCard />
-                <p className="text-center text-xs text-muted-foreground">
-                    {t("auth.selfHostedNote")}
-                </p>
             </div>
         </div>
     );

@@ -3,7 +3,6 @@ import { serveEnginePort, type PortEngine } from "./serve-engine-port";
 
 interface Addon {
     open(dataDir: string): Promise<PortEngine & { close(): Promise<void> }>;
-    defaultAccount(): { username: string; password: string };
 }
 
 const isHostCommand = (value: unknown): value is HostCommand =>
@@ -50,7 +49,7 @@ const run = async (): Promise<void> => {
             serveEnginePort(port, engine);
         }
     });
-    post({ type: "ready", account: addon.defaultAccount() });
+    post({ type: "ready" });
 };
 
 // oxlint-disable-next-line unicorn/prefer-top-level-await -- the engine host is bundled as CommonJS, which has no top-level await

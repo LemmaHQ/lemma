@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { connect, getSkipCredentials, onExit, start, stop } from "./engine";
+import { connect, onExit, start, stop } from "./engine";
 
 type FakeUtility = EventEmitter & {
     postMessage: ReturnType<
@@ -50,10 +50,7 @@ const fakeWindow = () => ({
     postMessage: vi.fn<WebContents["postMessage"]>(),
 });
 
-const READY = {
-    type: "ready",
-    account: { username: "lemma", password: "secret" },
-};
+const READY = { type: "ready" };
 
 let proc: FakeUtility;
 
@@ -66,14 +63,6 @@ afterEach(() => {
     proc.emit("exit", 0);
     vi.useRealTimers();
     delete process.env.LEMMA_ENGINE_PROFILE;
-});
-
-it("resolves the default account the engine announces", async () => {
-    const started = start();
-    proc.emit("message", READY);
-
-    await expect(started).resolves.toEqual(READY.account);
-    expect(getSkipCredentials()).toEqual(READY.account);
 });
 
 it("forks the engine host with the addon of the selected profile and userData", async () => {
@@ -100,7 +89,7 @@ it("rejects and kills the engine when it fails to open", async () => {
 it("ignores a malformed message while waiting for readiness", async () => {
     vi.useFakeTimers();
     const started = start();
-    proc.emit("message", { type: "ready", account: { username: "lemma" } });
+    proc.emit("message", { type: "failed" });
     vi.advanceTimersByTime(10_000);
 
     await expect(started).rejects.toThrow("within 10s");
@@ -113,7 +102,6 @@ it("rejects when the engine exits before announcing readiness", async () => {
     await expect(started).rejects.toThrow(
         "engine exited before ready (code 3)",
     );
-    expect(getSkipCredentials()).toBeNull();
 });
 
 it("refuses a second start while the engine runs", async () => {

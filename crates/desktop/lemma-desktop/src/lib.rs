@@ -4,7 +4,6 @@
 
 use std::path::Path;
 
-use lemma_auth::local::{DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use lemma_host::{InProcessTransport, LocalEngine};
 use napi::bindgen_prelude::Buffer;
 use napi::{Error, Result};
@@ -34,17 +33,6 @@ pub struct ResponseHead {
     pub headers: Vec<Header>,
 }
 
-/// Credentials of the default local account, which let the client skip
-/// sign-in.
-#[napi(object)]
-#[derive(Debug)]
-pub struct DefaultAccount {
-    /// Username of the default local account.
-    pub username: String,
-    /// Fixed public password of the default local account.
-    pub password: String,
-}
-
 /// The open local engine.
 #[napi]
 #[derive(Debug)]
@@ -67,16 +55,6 @@ pub async fn open(data_dir: String) -> Result<Engine> {
         transport: InProcessTransport::new(local.router()),
         local: Mutex::new(Some(local)),
     })
-}
-
-/// The default local account.
-#[napi]
-#[must_use]
-pub fn default_account() -> DefaultAccount {
-    DefaultAccount {
-        username: DEFAULT_USERNAME.to_owned(),
-        password: DEFAULT_PASSWORD.to_owned(),
-    }
 }
 
 #[napi]

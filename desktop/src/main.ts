@@ -1,4 +1,4 @@
-import type { SkipCredentials, TitleBarState } from "@lemma/desktop-bridge";
+import type { TitleBarState } from "@lemma/desktop-bridge";
 import {
     app,
     BrowserWindow,
@@ -135,13 +135,6 @@ ipcMain.on("set-titlebar", (_event, state: unknown) => {
     }
 });
 
-ipcMain.handle(
-    "get-skip-credentials",
-    async (): Promise<SkipCredentials | null> => {
-        await engineStart;
-        return engine.getSkipCredentials();
-    },
-);
 const connectWhenStarted = async (target: WebContents): Promise<void> => {
     await engineStart;
     engine.connect(target);

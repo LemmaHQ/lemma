@@ -38,7 +38,8 @@ async fn read_to_end(
 }
 
 #[tokio::test]
-async fn login_returns_the_response_and_closes_the_body_at_its_end() -> Result<(), Box<dyn Error>> {
+async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result<(), Box<dyn Error>>
+{
     let dir = DataDir::new();
     let engine = LocalEngine::open(&dir.0).await?;
     let transport = InProcessTransport::new(engine.router());
@@ -46,15 +47,15 @@ async fn login_returns_the_response_and_closes_the_body_at_its_end() -> Result<(
     let head = transport
         .request(
             "POST",
-            "/lemma.v1.AuthService/Login",
+            "/lemma.v1.AuthService/SignUp",
             &json_headers(),
-            br#"{"login":"lemma","password":"lemma-local-default"}"#.to_vec(),
+            br#"{"username":"ada","email":"ada@example.com","password":"correct-horse"}"#.to_vec(),
         )
         .await?;
     let body: serde_json::Value =
         serde_json::from_slice(&read_to_end(&transport, head.body).await?)?;
 
-    assert_eq!(head.status, 200, "login status");
+    assert_eq!(head.status, 200, "sign-up status");
     assert!(
         head.headers
             .iter()
@@ -62,7 +63,7 @@ async fn login_returns_the_response_and_closes_the_body_at_its_end() -> Result<(
         "content type in {:?}",
         head.headers
     );
-    assert_eq!(body["user"]["username"], "lemma", "logged-in user");
+    assert_eq!(body["user"]["username"], "ada", "signed-up user");
     assert_eq!(
         transport.read(head.body).await,
         Err(InProcessTransportError::UnknownBody(head.body)),

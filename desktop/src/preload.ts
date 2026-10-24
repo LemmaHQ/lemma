@@ -19,7 +19,6 @@ ipcRenderer.on("engine-exit", (_event, detail: unknown) => {
 });
 
 const bridge: DesktopBridge = {
-    getSkipCredentials: () => ipcRenderer.invoke("get-skip-credentials"),
     setTitleBar: (state: TitleBarState): void => {
         ipcRenderer.send("set-titlebar", state);
     },

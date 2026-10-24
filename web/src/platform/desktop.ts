@@ -37,8 +37,6 @@ export class DesktopAdapter implements PlatformAdapter {
         };
         this.auth = {
             cookieMode: false,
-            canSkipAuth: true,
-            getSkipCredentials: () => bridge.getSkipCredentials(),
         };
     }
 }

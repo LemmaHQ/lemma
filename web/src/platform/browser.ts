@@ -37,8 +37,6 @@ export class BrowserAdapter implements PlatformAdapter {
 
     readonly auth = {
         cookieMode: false,
-        canSkipAuth: false,
-        getSkipCredentials: () => Promise.resolve(null),
     };
 
     readonly layout = {

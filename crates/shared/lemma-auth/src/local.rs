@@ -1,6 +1,5 @@
-//! Default account of local mode: the open entry point shared by every
-//! runtime hosting the engine on the device, whether in the desktop engine
-//! process or in-process on mobile.
+//! Default account of Android local mode: the open entry point of the
+//! in-process engine on mobile.
 
 /// Username of the default local account.
 pub const DEFAULT_USERNAME: &str = "lemma";

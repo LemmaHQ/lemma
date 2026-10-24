@@ -34,7 +34,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行对应后端的迁移，对外提供四个 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
-**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里，并创建默认本地账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
+**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `LemmaEngine`，直接调用领域服务，不经过 RPC；turn 事件经 `AgentEventListener` 回调送达。同一个 Android 应用还有远程模式，通过 Connect Kotlin 访问服务端。两种模式都实现 Kotlin 的 `LemmaClient` 接口（`RemoteLemmaClient`、`LocalLemmaClient`）。
 

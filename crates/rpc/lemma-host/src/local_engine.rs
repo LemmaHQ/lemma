@@ -2,8 +2,6 @@ use std::fs;
 use std::path::Path;
 
 use axum::Router;
-use lemma_auth::local::{DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_USERNAME};
-use lemma_auth::{AuthService, AuthStore};
 use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
 use sqlx::SqlitePool;
 
@@ -22,9 +20,8 @@ pub struct LocalEngine {
 
 impl LocalEngine {
     /// Opens the engine over `data_dir`: loads `secrets.json`, generating it
-    /// on first run; opens and migrates `lemma.db`; and creates the default
-    /// local account when it is missing. Turns run workspace tools under
-    /// `workspaces/`.
+    /// on first run, and opens and migrates `lemma.db`. Turns run workspace
+    /// tools under `workspaces/`.
     ///
     /// # Errors
     ///
@@ -38,11 +35,6 @@ impl LocalEngine {
             .await
             .map_err(LocalEngineError::Migration)?;
         let auth_store = SqliteAuthStore::new(pool.clone());
-        ensure_default_account(
-            &auth_store,
-            &AuthService::new(auth_store.clone(), secrets.jwt_secret.clone()),
-        )
-        .await?;
         let state = AppState::new(
             auth_store,
             SqliteConversationStore::new(pool.clone()),
@@ -91,24 +83,4 @@ fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> 
             Ok(secrets)
         }
     }
-}
-
-/// Makes sure the default local account exists; called on every local
-/// startup to guarantee predictable access across all runtimes.
-async fn ensure_default_account<A: AuthStore>(
-    store: &A,
-    auth: &AuthService<A>,
-) -> Result<(), LocalEngineError> {
-    if store
-        .find_user_by_login(DEFAULT_USERNAME)
-        .await
-        .map_err(|e| LocalEngineError::DefaultAccount(format!("default account lookup: {e}")))?
-        .is_some()
-    {
-        return Ok(());
-    }
-    auth.sign_up(DEFAULT_USERNAME, DEFAULT_EMAIL, DEFAULT_PASSWORD)
-        .await
-        .map_err(|e| LocalEngineError::DefaultAccount(format!("default account: {e}")))?;
-    Ok(())
 }

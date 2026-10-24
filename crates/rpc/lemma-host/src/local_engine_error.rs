@@ -13,14 +13,12 @@ pub enum LocalEngineError {
     Database(sqlx::Error),
     /// A migration of `lemma.db` failed.
     Migration(MigrateError),
-    /// The default local account could not be looked up or created.
-    DefaultAccount(String),
 }
 
 impl fmt::Display for LocalEngineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Secrets(e) | Self::DefaultAccount(e) => write!(f, "{e}"),
+            Self::Secrets(e) => write!(f, "{e}"),
             Self::Database(e) => write!(f, "open lemma.db: {e}"),
             Self::Migration(e) => write!(f, "migrate lemma.db: {e}"),
         }

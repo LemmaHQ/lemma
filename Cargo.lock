@@ -1999,7 +1999,6 @@ dependencies = [
 name = "lemma-desktop"
 version = "0.1.0"
 dependencies = [
- "lemma-auth",
  "lemma-host",
  "napi",
  "napi-build",

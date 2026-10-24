@@ -14,19 +14,16 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
-    FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorText } from "@/data/rpc/errors";
 import { useAuth } from "@/features/auth/store";
-import { usePlatformAuth } from "@/platform";
 
 export function AuthCard() {
     const { t } = useTranslation();
     const login = useAuth((s) => s.login);
     const signup = useAuth((s) => s.signup);
-    const platformAuth = usePlatformAuth();
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
@@ -58,22 +55,6 @@ export function AuthCard() {
         setError("");
         try {
             await signup(username.trim(), email.trim(), password);
-        } catch (e) {
-            setError(errorText(e, t));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const handleSkip = async () => {
-        const skip = await platformAuth.getSkipCredentials();
-        if (skip === null) {
-            return;
-        }
-        setBusy(true);
-        setError("");
-        try {
-            await login(skip.username, skip.password);
         } catch (e) {
             setError(errorText(e, t));
         } finally {
@@ -242,23 +223,6 @@ export function AuthCard() {
                         </form>
                     </TabsContent>
                 </Tabs>
-                {platformAuth.canSkipAuth && (
-                    <FieldGroup className="mt-6">
-                        <FieldSeparator>{t("auth.orDivider")}</FieldSeparator>
-                        <Field>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={busy}
-                                onClick={() => {
-                                    void handleSkip();
-                                }}
-                            >
-                                {t("auth.skipDesktop")}
-                            </Button>
-                        </Field>
-                    </FieldGroup>
-                )}
             </CardContent>
         </Card>
     );

@@ -2,7 +2,6 @@ import { useContext } from "react";
 
 import { PlatformContext } from "./context";
 import type {
-    AuthCapabilities,
     LayoutCapabilities,
     PlatformAdapter,
     WindowCapabilities,
@@ -14,10 +13,6 @@ export function usePlatform(): PlatformAdapter {
 
 export function usePlatformWindow(): WindowCapabilities {
     return useContext(PlatformContext).window;
-}
-
-export function usePlatformAuth(): AuthCapabilities {
-    return useContext(PlatformContext).auth;
 }
 
 export function usePlatformLayout(): LayoutCapabilities {

@@ -49,8 +49,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 - **本地引擎（local engine）** — `lemma-desktop` addon 在 Electron 引擎进程中、基于 `userData` 目录打开的引擎；Web 客户端经 `MessagePort` 访问它。
 - **引擎端口（engine port）** — 网页与桌面引擎进程之间的 `MessagePort`。请求、响应数据块与取消都经它传递；它不传递会话消息。
 - **进程内引擎（in-process engine）** — `lemma-mobile` 中的 `LemmaEngine`，由 Android 应用通过 UniFFI 绑定调用。
-- **默认本地账号（default local account）** — 本地模式无需注册即可使用的账号，在首次需要时创建，用户名 `lemma`，密码固定且公开（`lemma_auth::local`）。用户自行注册的账号使用各自的密码。
-- **跳过登录凭据（skip credentials）** — 默认本地账号的用户名与密码，由桌面外壳交给 Web 客户端，使其可以跳过登录。
+- **默认本地账号（default local account）** — Android 本地模式无需注册即可使用的账号，在首次需要时创建，用户名 `lemma`，密码固定且公开（`lemma_auth::local`）。用户自行注册的账号使用各自的密码。
 - **访问令牌（access token）** — 用 JWT 密钥签名、有效期 15 分钟的 JWT，`sub` 中携带用户 id。
 - **refresh 令牌（refresh token）** — 有效期 30 天的随机令牌；存储中只保留其 SHA-256 哈希，每次刷新都会吊销它并签发新的一对令牌。
 - **cookie 模式（cookie mode）** — API 与页面同源时浏览器客户端的认证方式：令牌通过 `lemma_access` 与 `lemma_refresh` cookie 传递，而不是 `Authorization` 头。

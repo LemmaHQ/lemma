@@ -1,4 +1,3 @@
-import type { SkipCredentials } from "@lemma/desktop-bridge";
 import {
     app,
     MessageChannelMain,
@@ -26,20 +25,11 @@ const isHostEvent = (value: unknown): value is HostEvent => {
     if (value.type === "failed") {
         return "reason" in value && typeof value.reason === "string";
     }
-    return (
-        value.type === "ready" &&
-        "account" in value &&
-        typeof value.account === "object" &&
-        value.account !== null &&
-        "username" in value.account &&
-        typeof value.account.username === "string" &&
-        "password" in value.account &&
-        typeof value.account.password === "string"
-    );
+    return value.type === "ready";
 };
 
 let running: Running | null = null;
-let account: SkipCredentials | null = null;
+let ready = false;
 let exitDetail = "the local engine is not running";
 const exitListeners = new Set<(detail: string) => void>();
 
@@ -73,11 +63,6 @@ const post = (
     proc.postMessage(command, ports);
 };
 
-/** The default local account, once the engine is ready. */
-export function getSkipCredentials(): SkipCredentials | null {
-    return account;
-}
-
 /** Calls `listener` when a ready engine exits without being stopped. */
 export function onExit(listener: (detail: string) => void): void {
     exitListeners.add(listener);
@@ -85,9 +70,9 @@ export function onExit(listener: (detail: string) => void): void {
 
 /**
  * Starts the engine process, which opens the engine over the `userData`
- * directory, and resolves with the default local account once it is ready.
+ * directory, and resolves once it is ready.
  */
-export async function start(): Promise<SkipCredentials> {
+export async function start(): Promise<void> {
     if (running !== null) {
         throw new Error("engine already running");
     }
@@ -98,9 +83,11 @@ export async function start(): Promise<SkipCredentials> {
     );
     const exit = Promise.withResolvers<"exited">();
     running = { proc, exited: exit.promise };
-    const ready = Promise.withResolvers<SkipCredentials>();
+    const readiness = Promise.withResolvers<undefined>();
     const timer = setTimeout(() => {
-        ready.reject(new Error("engine did not report readiness within 10s"));
+        readiness.reject(
+            new Error("engine did not report readiness within 10s"),
+        );
         proc.kill();
     }, READY_TIMEOUT_MS);
 
@@ -111,20 +98,22 @@ export async function start(): Promise<SkipCredentials> {
         }
         clearTimeout(timer);
         if (message.type === "ready") {
-            ready.resolve(message.account);
+            readiness.resolve(undefined);
         } else {
-            ready.reject(new Error(message.reason));
+            readiness.reject(new Error(message.reason));
             proc.kill();
         }
     });
     proc.on("exit", (code) => {
         clearTimeout(timer);
-        const wasReady = account !== null;
+        const wasReady = ready;
         running = null;
-        account = null;
+        ready = false;
         exitDetail = `the local engine exited with code ${code}`;
         exit.resolve("exited");
-        ready.reject(new Error(`engine exited before ready (code ${code})`));
+        readiness.reject(
+            new Error(`engine exited before ready (code ${code})`),
+        );
         if (wasReady) {
             for (const listener of exitListeners) {
                 listener(exitDetail);
@@ -132,8 +121,8 @@ export async function start(): Promise<SkipCredentials> {
         }
     });
 
-    account = await ready.promise;
-    return account;
+    await readiness.promise;
+    ready = true;
 }
 
 /**
@@ -143,7 +132,7 @@ export async function start(): Promise<SkipCredentials> {
 export function connect(
     target: Pick<WebContents, "send" | "postMessage">,
 ): void {
-    if (running === null || account === null) {
+    if (running === null || !ready) {
         target.send("engine-exit", exitDetail);
         return;
     }
@@ -161,7 +150,7 @@ export async function stop(): Promise<void> {
     if (current === null) {
         return;
     }
-    account = null;
+    ready = false;
     post(current.proc, { type: "stop" });
     const grace = Promise.withResolvers<"timeout">();
     const timer = setTimeout(() => {

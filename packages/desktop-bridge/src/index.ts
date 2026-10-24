@@ -4,15 +4,8 @@ export interface TitleBarState {
     surface: "sidebar" | "background";
 }
 
-/** The default local account, which lets the web client skip sign-in. */
-export interface SkipCredentials {
-    username: string;
-    password: string;
-}
-
 /** The API the desktop preload exposes to the web client as `window.lemmaDesktop`. */
 export interface DesktopBridge {
-    getSkipCredentials(): Promise<SkipCredentials | null>;
     setTitleBar(state: TitleBarState): void;
     toggleMaximize(): void;
     /**

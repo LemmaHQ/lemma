@@ -1,6 +1,4 @@
-import type { SkipCredentials, TitleBarState } from "@lemma/desktop-bridge";
-
-export type { SkipCredentials };
+import type { TitleBarState } from "@lemma/desktop-bridge";
 
 export interface WindowCapabilities {
     setTitleBar(state: TitleBarState): void;
@@ -9,8 +7,6 @@ export interface WindowCapabilities {
 
 export interface AuthCapabilities {
     readonly cookieMode: boolean;
-    readonly canSkipAuth: boolean;
-    getSkipCredentials(): Promise<SkipCredentials | null>;
 }
 
 export interface LayoutCapabilities {
