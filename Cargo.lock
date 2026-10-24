@@ -1986,6 +1986,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "connectrpc",
+ "futures",
  "hex",
  "lemma-adapter",
  "lemma-agent",
@@ -2001,6 +2002,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "tokio",
+ "tower",
+ "uuid",
 ]
 
 [[package]]

@@ -6,6 +6,7 @@ version.workspace = true
 [dependencies]
 axum.workspace = true
 connectrpc.workspace = true
+futures.workspace = true
 hex.workspace = true
 lemma-adapter.workspace = true
 lemma-agent.workspace = true
@@ -21,6 +22,11 @@ rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
+tokio.workspace = true
+tower.workspace = true
+
+[dev-dependencies]
+uuid.workspace = true
 
 [lints]
 workspace = true

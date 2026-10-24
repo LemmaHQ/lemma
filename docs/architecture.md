@@ -15,7 +15,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Engine | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
 | Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, conversation store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
-| RPC | `crates/rpc/*`, including `lemma-host` | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a storage backend and opens the local engine from its data directory |
+| RPC | `crates/rpc/*`, including `lemma-host` | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a storage backend, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport` |
 | Hosts | `lemma-server`, `lemma-mobile` | The server binary; the UniFFI facade for Android |
 
 The domain, engine, and agent layers contain no SQL. They define store traits (`ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.

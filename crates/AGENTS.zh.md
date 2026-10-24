@@ -23,7 +23,7 @@
 
 ## 布局
 
-- `shared/` 中的 crate 为所有运行时构建，Android 通过 `lemma-mobile` 链接。`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host` 把它们组装成一个路由。宿主目录下的 crate 只编入该宿主：`server/` 编入 `lemma-server`，`mobile/` 编入 Android 应用。
+- `shared/` 中的 crate 为所有运行时构建，Android 通过 `lemma-mobile` 链接。`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host` 把它们组装成一个路由，并在进程内提供它。宿主目录下的 crate 只编入该宿主：`server/` 编入 `lemma-server`，`mobile/` 编入 Android 应用。
 - crate 以单数形式命名为 `lemma-<concept>`；现存的复数名称逐步改正。
 - `lemma-db-sqlite` 与 `lemma-db-pgsql` 各自拥有 `migrations/` 目录，内含可回滚的 `.up.sql` 与 `.down.sql` 成对文件；schema 变更在两者中各加一个 migration。
 
