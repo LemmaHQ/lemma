@@ -1,7 +1,8 @@
 {
-    "name": "web",
-    "private": true,
+    "name": "@lemma/web",
     "version": "0.1.0",
+    "private": true,
+    "description": "Lemma web client",
     "type": "module",
     "scripts": {
         "gen": "npm run gen:tokens && npm run gen:proto",

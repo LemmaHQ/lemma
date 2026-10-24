@@ -1,12 +1,12 @@
 {
-    "name": "desktop",
+    "name": "@lemma/desktop",
     "productName": "Lemma",
     "version": "0.1.0",
+    "private": true,
     "description": "Lemma desktop client",
     "main": ".vite/build/main.cjs",
-    "private": true,
     "scripts": {
-        "build": "npm --workspace=web run build:desktop && tsc",
+        "build": "npm --workspace=@lemma/web run build:desktop && tsc",
         "prestart": "npm run build",
         "start": "electron-forge start",
         "package": "electron-forge package",
@@ -26,6 +26,9 @@
         "name": "wanzhao-ysy",
         "email": "wanzhao_ysy@qq.com"
     },
+    "dependencies": {
+        "electron-squirrel-startup": "^1.0.1"
+    },
     "devDependencies": {
         "@electron-forge/cli": "^8.0.1",
         "@electron-forge/maker-deb": "^8.0.1",
@@ -44,8 +47,5 @@
         "typescript": "^7.0.2",
         "vite": "^8.3.4",
         "vitest": "^5.0.5"
-    },
-    "dependencies": {
-        "electron-squirrel-startup": "^1.0.1"
     }
 }

@@ -145,7 +145,7 @@ desktop-build:
 [group('desktop')]
 desktop-dev:
     cargo build -p lemma-server
-    npm --workspace=desktop run start
+    npm --workspace=@lemma/desktop run start
 
 # Run tests
 [group('desktop')]
