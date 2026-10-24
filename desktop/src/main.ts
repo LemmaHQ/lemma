@@ -132,15 +132,29 @@ ipcMain.on("toggle-maximize", () => {
     }
 });
 
+let fatalDetail: string | null = null;
+
+const openWindow = () => {
+    createWindow();
+    if (fatalDetail === null) {
+        loadApp();
+    } else {
+        loadFatalPage(fatalDetail);
+    }
+};
+
 const boot = async () => {
     try {
         await engine.start();
-        createWindow();
-        loadApp();
     } catch (err) {
-        createWindow();
-        loadFatalPage(err instanceof Error ? err.message : String(err));
+        fatalDetail = err instanceof Error ? err.message : String(err);
     }
+    openWindow();
+    app.on("activate", () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+            openWindow();
+        }
+    });
 };
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -177,12 +191,6 @@ if (gotTheLock) {
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin") {
             app.quit();
-        }
-    });
-
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
         }
     });
 } else {
