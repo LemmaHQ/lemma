@@ -67,7 +67,6 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_JWT_SECRET` | `lemma-server`, server mode | signs and verifies access tokens |
 | `LEMMA_SECRET_KEY` | `lemma-server`, server mode | derives the key that seals provider API keys; changing it makes stored keys unreadable |
 | `LEMMA_DB`, `LEMMA_DB_USER`, `LEMMA_DB_PASSWORD` | `docker-compose.yml` | database name, user, and password of the PostgreSQL container; the password is required |
-| `LEMMA_LOCAL_MODE`, `LEMMA_DATA_DIR` | `lemma-server` | run as the local engine with SQLite and secrets in the data directory |
 | `LEMMA_ENGINE_PROFILE` | `desktop/` | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug` |
 | `LEMMA_DEBUG_PORT` | `desktop/` | Chromium remote-debugging port |
 | `ANDROID_HOME` | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative |

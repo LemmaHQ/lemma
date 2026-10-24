@@ -21,9 +21,9 @@ pub async fn serve(
         .await
 }
 
-/// The desktop shell loads its UI from file://, so its API calls arrive
-/// cross-origin (Origin: null). Auth relies exclusively on Bearer tokens,
-/// preserving browser security under an open CORS policy.
+/// Browser clients may load the web build from another origin and point
+/// it at this server. Auth relies on Bearer tokens there, preserving
+/// browser security under an open CORS policy.
 fn cors_layer() -> CorsLayer {
     CorsLayer::new()
         .allow_origin(Any)

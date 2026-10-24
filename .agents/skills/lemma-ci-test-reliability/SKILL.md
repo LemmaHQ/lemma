@@ -46,7 +46,7 @@ Prefer an injected dependency: pass configuration as a value instead of reading 
 
 A fixed sleep is not evidence that setup completed or cleanup settled.
 
-- Wait for an explicit readiness event, a channel message, a stream item, or an observable state change: the `LEMMA_READY` line, a `TurnEvent`, a message status in the store.
+- Wait for an explicit readiness event, a channel message, a stream item, or an observable state change: the engine process's `ready` message, a `TurnEvent`, a message status in the store.
 - Use channels or barriers to place a race at a deterministic point and prove the operations overlap.
 - Use a timeout only to bound a wait (`tokio::time::timeout`), never as the condition that makes the assertion correct.
 - When time is the subject, use `tokio::time::pause` or vitest fake timers with a fixed system time, and always restore real timers.

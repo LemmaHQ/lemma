@@ -44,7 +44,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Runtimes and accounts
 
-- **server mode** — `lemma-server` started without `LEMMA_LOCAL_MODE`: configured by environment variables or `.env`, listening on port 1025, without tools.
+- **server mode** — the `lemma-server` binary: configured by environment variables or `.env`, listening on port 1025, without tools.
 - **local mode** — the runtimes that keep data on the device: the desktop local engine and the Android in-process engine.
 - **local engine** — the engine the `lemma-desktop` addon opens in Electron's engine process over the `userData` directory; the web client reaches it over a `MessagePort`.
 - **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no conversation messages.

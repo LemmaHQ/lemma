@@ -67,7 +67,6 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_JWT_SECRET` | `lemma-server`，服务端模式 | 签名并校验访问令牌 |
 | `LEMMA_SECRET_KEY` | `lemma-server`，服务端模式 | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取 |
 | `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml` | PostgreSQL 容器的数据库名、用户与密码；密码必填 |
-| `LEMMA_LOCAL_MODE`、`LEMMA_DATA_DIR` | `lemma-server` | 作为本地引擎运行，SQLite 与密钥都放在数据目录中 |
 | `LEMMA_ENGINE_PROFILE` | `desktop/` | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug` |
 | `LEMMA_DEBUG_PORT` | `desktop/` | Chromium 远程调试端口 |
 | `ANDROID_HOME` | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties` |

@@ -44,7 +44,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## 运行时与账号
 
-- **服务端模式（server mode）** — 不带 `LEMMA_LOCAL_MODE` 启动的 `lemma-server`：由环境变量或 `.env` 配置，监听 1025 端口，不挂工具。
+- **服务端模式（server mode）** — `lemma-server` 可执行文件：由环境变量或 `.env` 配置，监听 1025 端口，不挂工具。
 - **本地模式（local mode）** — 数据留在设备上的运行时：桌面端的本地引擎与 Android 的进程内引擎。
 - **本地引擎（local engine）** — `lemma-desktop` addon 在 Electron 引擎进程中、基于 `userData` 目录打开的引擎；Web 客户端经 `MessagePort` 访问它。
 - **引擎端口（engine port）** — 网页与桌面引擎进程之间的 `MessagePort`。请求、响应数据块与取消都经它传递；它不传递会话消息。
