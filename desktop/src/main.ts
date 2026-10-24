@@ -107,15 +107,14 @@ ipcMain.on("set-titlebar", (_event, state: unknown) => {
     }
 });
 
-ipcMain.on("get-server-url-sync", (event) => {
-    event.returnValue = engine.serverUrl() ?? "";
+ipcMain.handle("get-skip-credentials", (): SkipCredentials | null =>
+    engine.getSkipCredentials(),
+);
+ipcMain.on("engine-connect", (event) => {
+    engine.connect(event.sender);
 });
-ipcMain.handle("get-skip-credentials", (): SkipCredentials | null => {
-    const skip = engine.getSkipCredentials();
-    const url = engine.serverUrl();
-    return url !== null && skip !== null
-        ? { serverUrl: url, username: skip.username, password: skip.password }
-        : null;
+engine.onExit((detail) => {
+    mainWindow?.webContents.send("engine-exit", detail);
 });
 ipcMain.on("toggle-maximize", () => {
     if (mainWindow === null) {

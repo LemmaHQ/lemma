@@ -1,59 +1,45 @@
 import type { DesktopBridge, TitleBarState } from "@lemma/desktop-bridge";
 
+import {
+    connectEngine,
+    createEngineFetch,
+    ENGINE_BASE_URL,
+} from "./engine-fetch";
 import type { PlatformAdapter } from "./types";
 
 declare global {
     interface Window {
-        __LEMMA_SERVER_URL__?: string;
         lemmaDesktop?: DesktopBridge;
     }
 }
 
 export class DesktopAdapter implements PlatformAdapter {
     readonly isDesktop = true;
-    readonly baseUrl: string;
-
-    readonly window = {
-        setTitleBar: (state: TitleBarState): void => {
-            window.lemmaDesktop?.setTitleBar(state);
-        },
-        toggleMaximize: (): void => {
-            window.lemmaDesktop?.toggleMaximize();
-        },
-    };
-
-    readonly auth = {
-        cookieMode: false,
-        canSkipAuth: true,
-        getSkipCredentials: () => {
-            return (
-                window.lemmaDesktop?.getSkipCredentials() ??
-                Promise.resolve(null)
-            );
-        },
-    };
+    readonly baseUrl = ENGINE_BASE_URL;
+    readonly fetch: typeof globalThis.fetch;
+    readonly window: PlatformAdapter["window"];
+    readonly auth: PlatformAdapter["auth"];
 
     readonly layout = {
         hasCustomTitlebar: true,
         titlebarHeight: 40,
     };
 
-    constructor() {
-        const injected =
-            typeof window === "undefined"
-                ? undefined
-                : // oxlint-disable-next-line eslint/no-underscore-dangle -- injected global name is owned by the desktop host
-                  window.__LEMMA_SERVER_URL__;
-        const stored =
-            typeof localStorage === "undefined"
-                ? null
-                : localStorage.getItem("lemma.serverUrl");
-        this.baseUrl =
-            injected !== undefined && injected !== ""
-                ? injected
-                : stored !== null && stored !== ""
-                  ? stored
-                  : "/";
+    constructor(target: Window, bridge: DesktopBridge) {
+        this.fetch = createEngineFetch(connectEngine(target, bridge));
+        this.window = {
+            setTitleBar: (state: TitleBarState): void => {
+                bridge.setTitleBar(state);
+            },
+            toggleMaximize: (): void => {
+                bridge.toggleMaximize();
+            },
+        };
+        this.auth = {
+            cookieMode: false,
+            canSkipAuth: true,
+            getSkipCredentials: () => bridge.getSkipCredentials(),
+        };
     }
 
     appPath(path: string): string {

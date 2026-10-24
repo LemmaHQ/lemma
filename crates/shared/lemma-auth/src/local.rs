@@ -1,6 +1,6 @@
 //! Default account of local mode: the open entry point shared by every
-//! runtime hosting the engine, whether as a desktop sidecar or embedded
-//! in-process on mobile.
+//! runtime hosting the engine on the device, whether in the desktop engine
+//! process or in-process on mobile.
 
 /// Username of the default local account.
 pub const DEFAULT_USERNAME: &str = "lemma";

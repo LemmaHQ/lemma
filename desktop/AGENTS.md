@@ -7,19 +7,19 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions); th
 ## Engine and renderer
 
 - **The renderer is the web client.** `npm run build` builds `web/` with a relative base into `web-dist/`, then type-checks the desktop sources with `tsc`; change the UI in `web/`. Git ignores `web-dist/`, `out/`, and `.vite/`.
-- **`src/engine.ts` runs `lemma-server` as a child process** with `LEMMA_LOCAL_MODE=1` and `LEMMA_DATA_DIR` set to Electron's `userData` directory. Unpackaged builds take the binary from `target/<profile>/`, where `LEMMA_ENGINE_PROFILE` selects the profile (default `debug`).
-- **The engine announces readiness** with one stdout line, `LEMMA_READY <json>`, carrying the port and the default account credentials. `engine.ts` and `crates/server/lemma-server/src/local_mode.rs` own the two ends of this handshake and change together.
-- **`src/preload.ts` exposes `__LEMMA_SERVER_URL__` and `lemmaDesktop`** to the renderer; `web/src/platform/` is their only consumer.
+- **`src/engine.ts` runs the engine in an Electron utility process.** `src/engine-host.ts` is that process's entry: it loads the `lemma-desktop` addon, opens the engine over Electron's `userData` directory, and reports `ready` with the default account or `failed` with the reason. Unpackaged builds load the addon from `target/<profile>/`, where `LEMMA_ENGINE_PROFILE` selects the profile (default `debug`); packaged builds load it from the resources directory.
+- **The page talks to the engine over the engine port, a `MessagePort` that bypasses the main process.** On `connectEngine()`, `main.ts` opens a `MessageChannelMain` and hands one end to the engine process and the other to the page; `src/serve-engine-port.ts` serves requests on the engine end. When the engine exits, `main.ts` tells the page, whose pending and later requests fail.
+- **`src/preload.ts` implements `window.lemmaDesktop`,** whose types live in [`@lemma/desktop-bridge`](../packages/AGENTS.md); `web/src/platform/` is its only consumer.
 - **`src/gen/theme-colors.ts` carries the window colors:** the background, sidebar, and foreground of each theme, generated from [design/tokens.json](../design/README.md). Git ignores it; `npm run lint`, `test`, and `build` generate it first. `src/main.ts` reads the titlebar and window background colors from it.
 - `LEMMA_DEBUG_PORT` enables Chromium remote debugging.
 
 ## Commands
 
 ```sh
-just desktop-dev        # build lemma-server, then launch Electron
+just desktop-dev        # build the engine addon, then launch Electron
 just desktop-lint-check # oxlint; desktop-lint applies fixes
 just desktop-fmt-check  # prettier --check; desktop-fmt formats
 just desktop-test       # vitest
 just desktop-cov        # vitest coverage
-just desktop-package    # renderer build, electron-forge package
+just desktop-package    # release engine addon, renderer build, electron-forge package
 ```

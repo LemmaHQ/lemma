@@ -141,10 +141,10 @@ desktop-fmt:
 desktop-build:
     npm run build
 
-# Run the dev shell
+# Build the engine addon, then run the dev shell
 [group('desktop')]
 desktop-dev:
-    cargo build -p lemma-server
+    cargo build -p lemma-desktop
     npm --workspace=@lemma/desktop run start
 
 # Run tests
@@ -159,10 +159,11 @@ desktop-test:
 desktop-cov *args:
     npm run test:cov -- {{ args }}
 
-# Package the app
+# Build the release engine addon and the renderer, then package the app
 [group('desktop')]
 [working-directory('desktop')]
 desktop-package:
+    cargo build --release -p lemma-desktop
     just desktop-build
     npm run package
 

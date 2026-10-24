@@ -17,7 +17,7 @@ Lemma 的每个子系统一页：它是什么、它传递的数据结构，以�
 | `rpc.md` | `proto/lemma/v1` 契约、`crates/rpc/` 下的 ConnectRPC 服务及其在 `lemma-host` 中的组装，以及 `lemma-proto` 中的错误模型 |
 | `server.md` | `lemma-server`：配置、内嵌 Web 资源、服务端与本地两种模式 |
 | `web-client.md` | `web/` 中的 React 客户端：RPC 客户端、状态 store、会话视图 |
-| `desktop-engine.md` | `desktop/` 中的 Electron 外壳及其 sidecar 引擎生命周期 |
+| `desktop-engine.md` | `desktop/` 中的 Electron 外壳、`lemma-desktop` addon 与引擎进程生命周期 |
 | `mobile-bridge.md` | `lemma-mobile` 中的 UniFFI 绑定与 `mobile/` 中的 Android 客户端 |
 
 这些页面上的类型声明与源码中的声明一致。改动调整了已文档化的类型时，所属页面在同一次改动中更新（[写作规则](../AGENTS.zh.md#写作规则)）。

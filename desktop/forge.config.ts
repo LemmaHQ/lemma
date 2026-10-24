@@ -10,9 +10,13 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
-const engineBinaryPath = (): string => {
+const engineAddonPath = (): string => {
     const name =
-        process.platform === "win32" ? "lemma-server.exe" : "lemma-server";
+        process.platform === "win32"
+            ? "lemma_desktop.dll"
+            : process.platform === "darwin"
+              ? "liblemma_desktop.dylib"
+              : "liblemma_desktop.so";
     const bin = path.join(__dirname, "bin", name);
     if (fs.existsSync(bin)) return bin;
     return path.join(__dirname, "..", "target", "release", name);
@@ -21,7 +25,7 @@ const engineBinaryPath = (): string => {
 const config: ForgeConfig = {
     packagerConfig: {
         asar: true,
-        extraResource: [engineBinaryPath()],
+        extraResource: [engineAddonPath()],
         // Mirrors plugin-vite's default ignore (which only keeps .vite) and
         // additionally keeps the bundled web build.
         ignore: (file) => {
@@ -48,6 +52,11 @@ const config: ForgeConfig = {
                     entry: "src/preload.ts",
                     config: "vite.preload.config.mts",
                     target: "preload",
+                },
+                {
+                    entry: "src/engine-host.ts",
+                    config: "vite.main.config.mts",
+                    target: "main",
                 },
             ],
             renderer: [],

@@ -14,7 +14,10 @@ import {
 const platform = getPlatform();
 const cookieMode = platform.auth.cookieMode;
 
-const bareTransport = createConnectTransport({ baseUrl: platform.baseUrl });
+const bareTransport = createConnectTransport({
+    baseUrl: platform.baseUrl,
+    fetch: platform.fetch,
+});
 
 async function doRefresh(): Promise<boolean> {
     const auth = createClient(AuthService, bareTransport);
@@ -83,5 +86,6 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 
 export const transport = createConnectTransport({
     baseUrl: platform.baseUrl,
+    fetch: platform.fetch,
     interceptors: [authInterceptor],
 });

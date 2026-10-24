@@ -29,12 +29,12 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 | Runtime | Host | Storage | Tools | Stored API keys |
 | --- | --- | --- | --- | --- |
 | Server mode | `lemma-server`, port 1025 | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none | sealed with `LEMMA_SECRET_KEY` |
-| Local engine | `lemma-server` with `LEMMA_LOCAL_MODE`, loopback port chosen by the OS | SQLite at `<LEMMA_DATA_DIR>/lemma.db` | per-conversation workspace | sealed with an engine-generated key |
+| Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db` | per-conversation workspace | sealed with an engine-generated key |
 | In-process | `LemmaEngine` in `lemma-mobile`, loaded into the Android app | SQLite at `<filesDir>/lemma.db` | per-conversation workspace | plaintext |
 
 **Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the backend's migrations at startup, and serves the four ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
 
-**The local engine** is the desktop runtime. Electron starts `lemma-server` as a child process; the engine stores its JWT and sealing secrets in `secrets.json` under the data directory, creates the default local account, and prints one `LEMMA_READY <json>` line carrying its port and that account's credentials. It exits when its stdin closes. The renderer is the same web client, pointed at the engine's loopback URL ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
+**The local engine** is the desktop runtime. Electron runs the `lemma-desktop` addon in a utility process; the addon opens the engine over Electron's `userData` directory, which stores its JWT and sealing secrets in `secrets.json`, and creates the default local account. The renderer is the same web client; its requests travel over a `MessagePort` to the engine process, which serves them on the Connect router in-process, with no network listener ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
 
 **In-process** is the Android local mode. Kotlin opens `LemmaEngine` through generated UniFFI bindings and calls the domain services directly, with no RPC hop; turn events arrive through the `AgentEventListener` callback. The same Android app has a remote mode that talks to a server through Connect Kotlin. Both modes implement the Kotlin `LemmaClient` interface (`RemoteLemmaClient`, `LocalLemmaClient`).
 

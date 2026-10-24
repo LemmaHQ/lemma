@@ -15,7 +15,7 @@ crates/       Rust workspace（crates/AGENTS.md）
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
 web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.md）
-desktop/      Electron 外壳，以本地引擎方式运行 lemma-server（desktop/AGENTS.md）
+desktop/      Electron 外壳，在 utility process 中运行引擎（desktop/AGENTS.md）
 packages/     @lemma 命名空间下的共享 npm 包（packages/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
@@ -30,7 +30,7 @@ scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
 ```sh
 just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
-just desktop-dev         # 构建 lemma-server，再启动 Electron
+just desktop-dev         # 构建引擎 addon，再启动 Electron
 just design-gen          # 重新生成 Web 主题、桌面端窗口颜色与 Android 色板
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对

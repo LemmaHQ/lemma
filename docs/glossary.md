@@ -46,10 +46,11 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 - **server mode** — `lemma-server` started without `LEMMA_LOCAL_MODE`: configured by environment variables or `.env`, listening on port 1025, without tools.
 - **local mode** — the runtimes that keep data on the device: the desktop local engine and the Android in-process engine.
-- **local engine** — `lemma-server` started by Electron with `LEMMA_LOCAL_MODE` and `LEMMA_DATA_DIR`, announcing itself with a `LEMMA_READY <json>` line.
+- **local engine** — the engine the `lemma-desktop` addon opens in Electron's engine process over the `userData` directory; the web client reaches it over a `MessagePort`.
+- **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no conversation messages.
 - **in-process engine** — `LemmaEngine` from `lemma-mobile`, called by the Android app through UniFFI bindings.
 - **default local account** — the account local mode provides without sign-up, created on first need, username `lemma` with a fixed public password (`lemma_auth::local`). Accounts users register carry their own passwords.
-- **skip credentials** — the default local account's username and password plus the engine URL, which the desktop shell hands to the web client so sign-in can be skipped.
+- **skip credentials** — the default local account's username and password, which the desktop shell hands to the web client so sign-in can be skipped.
 - **access token** — a JWT signed with the JWT secret, valid for 15 minutes, carrying the user id in `sub`.
 - **refresh token** — a random token valid for 30 days; the store keeps only its SHA-256 hash, and each refresh revokes it and issues a new pair.
 - **cookie mode** — the browser client's authentication when the API shares its origin: tokens travel in the `lemma_access` and `lemma_refresh` cookies instead of an `Authorization` header.

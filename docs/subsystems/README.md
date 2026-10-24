@@ -17,7 +17,7 @@ One page per subsystem of Lemma: what it is, the data structures it moves, and t
 | `rpc.md` | the `proto/lemma/v1` contracts, ConnectRPC services under `crates/rpc/` and their assembly in `lemma-host`, and the error model in `lemma-proto` |
 | `server.md` | `lemma-server`: configuration, embedded web assets, server and local modes |
 | `web-client.md` | the React client in `web/`: RPC clients, stores, the conversation view |
-| `desktop-engine.md` | the Electron shell in `desktop/` and its sidecar engine lifecycle |
+| `desktop-engine.md` | the Electron shell in `desktop/`, the `lemma-desktop` addon, and the engine process lifecycle |
 | `mobile-bridge.md` | the UniFFI bindings in `lemma-mobile` and the Android client in `mobile/` |
 
 Type declarations on these pages match their source declarations. The owning page updates in the same change that reshapes a documented type ([writing rules](../AGENTS.md#writing-rules)).

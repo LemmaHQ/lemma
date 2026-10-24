@@ -29,12 +29,12 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 运行时 | 宿主 | 存储 | 工具 | 已存储的 API key |
 | --- | --- | --- | --- | --- |
 | 服务端模式 | `lemma-server`，端口 1025 | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无 | 用 `LEMMA_SECRET_KEY` 加密 |
-| 本地引擎 | 设置了 `LEMMA_LOCAL_MODE` 的 `lemma-server`，回环地址上由操作系统分配端口 | `<LEMMA_DATA_DIR>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 用引擎生成的密钥加密 |
+| 本地引擎 | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 用引擎生成的密钥加密 |
 | 进程内 | `lemma-mobile` 中的 `LemmaEngine`，加载进 Android 应用 | `<filesDir>/lemma.db` 中的 SQLite | 每个会话一个工作区 | 明文 |
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行对应后端的迁移，对外提供四个 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
-**本地引擎**是桌面端的运行时。Electron 以子进程方式启动 `lemma-server`；引擎把 JWT 密钥与加密密钥保存在数据目录下的 `secrets.json` 中，创建默认本地账号，并打印一行 `LEMMA_READY <json>`，携带端口与该账号的凭据。stdin 关闭时引擎退出。渲染层是同一个 Web 客户端，指向引擎的回环地址（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
+**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里，并创建默认本地账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `LemmaEngine`，直接调用领域服务，不经过 RPC；turn 事件经 `AgentEventListener` 回调送达。同一个 Android 应用还有远程模式，通过 Connect Kotlin 访问服务端。两种模式都实现 Kotlin 的 `LemmaClient` 接口（`RemoteLemmaClient`、`LocalLemmaClient`）。
 

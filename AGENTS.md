@@ -15,7 +15,7 @@ crates/       Rust workspace (crates/AGENTS.md)
   mobile/     lemma-mobile, the UniFFI facade for Android
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
 web/          React web client, also the desktop renderer (web/AGENTS.md)
-desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
+desktop/      Electron shell running the engine in a utility process (desktop/AGENTS.md)
 packages/     shared npm packages under the @lemma scope (packages/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
@@ -30,7 +30,7 @@ scripts/      documentation checks: translation pairing, brief generator, reposi
 ```sh
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
-just desktop-dev         # build lemma-server, then launch Electron
+just desktop-dev         # build the engine addon, then launch Electron
 just design-gen          # regenerate the web theme, desktop window colors, and Android palette
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one

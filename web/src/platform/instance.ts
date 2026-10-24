@@ -6,11 +6,12 @@ let currentPlatform: PlatformAdapter | null = null;
 
 export function getPlatform(): PlatformAdapter {
     if (currentPlatform === null) {
-        const isElectron =
-            typeof window !== "undefined" && window.lemmaDesktop !== undefined;
-        currentPlatform = isElectron
-            ? new DesktopAdapter()
-            : new BrowserAdapter();
+        const bridge =
+            typeof window === "undefined" ? undefined : window.lemmaDesktop;
+        currentPlatform =
+            bridge === undefined
+                ? new BrowserAdapter()
+                : new DesktopAdapter(window, bridge);
     }
     return currentPlatform;
 }

@@ -45,7 +45,7 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 ### Run the desktop app
 
-`just desktop-dev` builds `lemma-server` in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the server as its local engine. The engine keeps its database and secrets in Electron's `userData` directory and needs no `.env`. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine handshake.
+`just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database and secrets in Electron's `userData` directory and needs no `.env`. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
 
 ### Run the Android app
 
@@ -67,8 +67,8 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_JWT_SECRET` | `lemma-server`, server mode | signs and verifies access tokens |
 | `LEMMA_SECRET_KEY` | `lemma-server`, server mode | derives the key that seals provider API keys; changing it makes stored keys unreadable |
 | `LEMMA_DB`, `LEMMA_DB_USER`, `LEMMA_DB_PASSWORD` | `docker-compose.yml` | database name, user, and password of the PostgreSQL container; the password is required |
-| `LEMMA_LOCAL_MODE`, `LEMMA_DATA_DIR` | `lemma-server` | run as the local engine with SQLite and secrets in the data directory; Electron sets both |
-| `LEMMA_ENGINE_PROFILE` | `desktop/` | Cargo profile of the engine binary for unpackaged runs, default `debug` |
+| `LEMMA_LOCAL_MODE`, `LEMMA_DATA_DIR` | `lemma-server` | run as the local engine with SQLite and secrets in the data directory |
+| `LEMMA_ENGINE_PROFILE` | `desktop/` | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug` |
 | `LEMMA_DEBUG_PORT` | `desktop/` | Chromium remote-debugging port |
 | `ANDROID_HOME` | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative |
 
