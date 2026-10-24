@@ -19,12 +19,13 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly window: PlatformAdapter["window"];
     readonly auth: PlatformAdapter["auth"];
 
-    readonly layout = {
-        hasCustomTitlebar: true,
-        titlebarHeight: 40,
-    };
+    readonly layout: PlatformAdapter["layout"];
 
     constructor(target: Window, bridge: DesktopBridge) {
+        this.layout = {
+            hasCustomTitlebar: true,
+            titlebarHeight: bridge.titlebarHeight,
+        };
         this.fetch = createEngineFetch(connectEngine(target, bridge));
         this.window = {
             setTitleBar: (state: TitleBarState): void => {

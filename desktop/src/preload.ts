@@ -5,6 +5,7 @@ import type {
     TitleBarState,
 } from "@lemma/desktop-bridge";
 import { contextBridge, ipcRenderer } from "electron";
+import { TITLEBAR_HEIGHT } from "./titlebar";
 
 ipcRenderer.on("engine-port", (event) => {
     const handoff: EnginePortHandoff = { type: "lemma-engine-port" };
@@ -19,6 +20,7 @@ ipcRenderer.on("engine-exit", (_event, detail: unknown) => {
 });
 
 const bridge: DesktopBridge = {
+    titlebarHeight: TITLEBAR_HEIGHT,
     setTitleBar: (state: TitleBarState): void => {
         ipcRenderer.send("set-titlebar", state);
     },

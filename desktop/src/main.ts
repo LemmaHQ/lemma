@@ -14,6 +14,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import * as engine from "./engine";
 import { themeColors } from "./gen/theme-colors";
+import { TITLEBAR_HEIGHT } from "./titlebar";
 
 if (started) {
     app.quit();
@@ -76,7 +77,7 @@ const loadApp = () => {
 const titleBarOverlay = (state: TitleBarState) => ({
     color: themeColors[state.theme][state.surface],
     symbolColor: themeColors[state.theme].foreground,
-    height: 40,
+    height: TITLEBAR_HEIGHT,
 });
 
 const initialTitleBarState = (): TitleBarState => ({
