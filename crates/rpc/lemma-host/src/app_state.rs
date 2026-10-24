@@ -14,20 +14,22 @@ use lemma_provider_rpc::ProviderRpc;
 use crate::secrets::Secrets;
 
 /// Connector every provider call goes through.
-pub type ServerConnector = HttpConnector<ReqwestTransport>;
+type HostConnector = HttpConnector<ReqwestTransport>;
 
 /// The four Connect services over one storage backend: auth on `A`,
 /// conversations on `S`, providers on `P`.
+#[derive(Debug)]
 pub struct AppState<A, S, P> {
-    pub auth: AuthRpc<A>,
-    pub providers: ProviderRpc<P, ServerConnector>,
-    pub conversations: ConversationRpc<S>,
-    pub agent: AgentRpc<S, P, ServerConnector>,
+    pub(crate) auth: AuthRpc<A>,
+    pub(crate) providers: ProviderRpc<P, HostConnector>,
+    pub(crate) conversations: ConversationRpc<S>,
+    pub(crate) agent: AgentRpc<S, P, HostConnector>,
 }
 
 impl<A: AuthStore, S: ConversationStore, P: ProviderStore> AppState<A, S, P> {
     /// Wires the services over the backend's stores. With `workspaces_dir`
     /// set, turns run workspace tools under it.
+    #[must_use]
     pub fn new(
         auth: A,
         conversations: S,

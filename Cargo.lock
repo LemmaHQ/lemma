@@ -1981,6 +1981,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-host"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "connectrpc",
+ "hex",
+ "lemma-adapter",
+ "lemma-agent",
+ "lemma-agent-rpc",
+ "lemma-auth",
+ "lemma-auth-rpc",
+ "lemma-conversation",
+ "lemma-conversation-rpc",
+ "lemma-db-sqlite",
+ "lemma-provider",
+ "lemma-provider-rpc",
+ "rand 0.10.3",
+ "serde",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
 name = "lemma-mobile"
 version = "0.1.0"
 dependencies = [
@@ -2048,29 +2071,18 @@ name = "lemma-server"
 version = "0.1.0"
 dependencies = [
  "axum",
- "connectrpc",
  "dotenvy",
- "hex",
- "lemma-adapter",
- "lemma-agent",
- "lemma-agent-rpc",
  "lemma-auth",
- "lemma-auth-rpc",
  "lemma-conversation",
- "lemma-conversation-rpc",
  "lemma-db-pgsql",
  "lemma-db-sqlite",
- "lemma-model",
+ "lemma-host",
  "lemma-provider",
- "lemma-provider-rpc",
- "rand 0.10.3",
  "rust-embed",
  "serde",
  "serde_json",
- "sqlx",
  "tokio",
  "tower-http 0.7.1",
- "uuid",
 ]
 
 [[package]]

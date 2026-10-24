@@ -15,7 +15,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Engine | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop` | Vendor wire formats and model lists; the tool registry, approval policy, and execution environment; the turn loop and its cancellation |
 | Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, conversation store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
-| RPC | `crates/rpc/*` | One ConnectRPC service per proto service |
+| RPC | `crates/rpc/*`, including `lemma-host` | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a storage backend and opens the local engine from its data directory |
 | Hosts | `lemma-server`, `lemma-mobile` | The server binary; the UniFFI facade for Android |
 
 The domain, engine, and agent layers contain no SQL. They define store traits (`ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
@@ -106,7 +106,7 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | Run tools somewhere else | implement `ExecEnv` |
 | Send provider traffic through another stack | implement `HttpTransport` and construct the `HttpConnector` with it |
 | Add an RPC | change the `.proto`, implement it in the matching `crates/rpc/` crate, and regenerate the clients |
-| Add an RPC service | add a `.proto` and a new crate under `crates/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-server` |
+| Add an RPC service | add a `.proto` and a new crate under `crates/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-host` |
 | Add a user-facing error | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/data/rpc/errors.ts` and both locale files |
 | Change the schema | add a migration pair to both `lemma-db-sqlite` and `lemma-db-pgsql`, then update the stores |
 | Add a storage backend | implement the three store traits and wire them in each host |

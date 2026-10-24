@@ -6,13 +6,12 @@ use lemma_auth::AuthStore;
 use lemma_conversation::ConversationStore;
 use lemma_db_pgsql::{PgAuthStore, PgConversationStore, PgProviderStore};
 use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
+use lemma_host::{AppState, Secrets};
 use lemma_provider::ProviderStore;
 use tokio::net::TcpListener;
 
-use crate::app_state::AppState;
 use crate::config::{Config, DatabaseBackend};
-use crate::secrets::Secrets;
-use crate::{http_server, routes};
+use crate::http_server;
 
 /// Runs the server until Ctrl-C or SIGTERM, then closes the pool.
 pub async fn run() -> Result<(), Box<dyn Error>> {
@@ -55,7 +54,7 @@ async fn serve<A: AuthStore, S: ConversationStore, P: ProviderStore>(
     let state = AppState::new(auth, conversations, providers, secrets, None);
     let listener = TcpListener::bind("0.0.0.0:1025").await?;
     println!("listening on {}", listener.local_addr()?);
-    http_server::serve(listener, routes::router(state), async {
+    http_server::serve(listener, lemma_host::router(state), async {
         match http_server::shutdown_signal().await {
             Ok(()) => println!("shutting down"),
             Err(e) => eprintln!("shutdown signal error: {e}"),

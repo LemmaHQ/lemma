@@ -15,7 +15,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 引擎 | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop` | 厂商协议格式与模型列表；工具注册表、审批策略与执行环境；turn 循环及其取消 |
 | Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、会话存储、工作区工具）并运行它，以及中止正在运行的 turn |
 | 存储 | `lemma-db-sqlite`、`lemma-db-pgsql` | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现 |
-| RPC | `crates/rpc/*` | 每个 proto service 对应一个 ConnectRPC 服务 |
+| RPC | `crates/rpc/*`，包括 `lemma-host` | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个存储后端之上把它们组装成一个路由，并从数据目录打开本地引擎 |
 | 宿主 | `lemma-server`、`lemma-mobile` | 服务端可执行文件；面向 Android 的 UniFFI 门面 |
 
 领域层、引擎层与 agent 层不含 SQL。它们定义存储 trait（`ConversationStore`、`ProviderStore`、`AuthStore`），由各宿主传入 SQLite 或 PostgreSQL 实现。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
@@ -106,7 +106,7 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 | 在别处运行工具 | 实现 `ExecEnv` |
 | 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector` |
 | 新增 RPC | 修改 `.proto`，在对应的 `crates/rpc/` crate 中实现，并重新生成客户端代码 |
-| 新增 RPC 服务 | 新增 `.proto` 与 `crates/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-server` 中路由 |
+| 新增 RPC 服务 | 新增 `.proto` 与 `crates/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-host` 中路由 |
 | 新增面向用户的错误 | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |
 | 修改 schema | 在 `lemma-db-sqlite` 与 `lemma-db-pgsql` 中各加一个迁移对，再更新存储实现 |
 | 新增存储后端 | 实现三个存储 trait，并在每个宿主中接入 |

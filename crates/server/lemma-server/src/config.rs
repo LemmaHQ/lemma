@@ -3,7 +3,7 @@
 use std::env;
 use std::error::Error;
 
-use crate::secrets::Secrets;
+use lemma_host::Secrets;
 
 /// All variables are required; `main()` loads `.env` first.
 pub struct Config {

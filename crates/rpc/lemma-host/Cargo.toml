@@ -1,0 +1,26 @@
+[package]
+name = "lemma-host"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+axum.workspace = true
+connectrpc.workspace = true
+hex.workspace = true
+lemma-adapter.workspace = true
+lemma-agent.workspace = true
+lemma-agent-rpc.workspace = true
+lemma-auth.workspace = true
+lemma-auth-rpc.workspace = true
+lemma-conversation.workspace = true
+lemma-conversation-rpc.workspace = true
+lemma-db-sqlite.workspace = true
+lemma-provider.workspace = true
+lemma-provider-rpc.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+
+[lints]
+workspace = true
