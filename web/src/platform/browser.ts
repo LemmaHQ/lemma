@@ -25,7 +25,6 @@ function resolveCookieMode(baseUrl: string): boolean {
 }
 
 export class BrowserAdapter implements PlatformAdapter {
-    readonly isDesktop = false;
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch = (input, init) =>
         globalThis.fetch(input, init);

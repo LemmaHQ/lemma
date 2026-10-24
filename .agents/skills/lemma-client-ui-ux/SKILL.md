@@ -52,7 +52,7 @@ Apply [lemma-error-handling](../lemma-error-handling/SKILL.md#localized-actionab
 Verify every menu, select, popover, and tooltip for all three:
 
 - **Dismissable:** an outside click and Escape close it; on Android, the back gesture closes it before leaving the screen.
-- **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the `.desktop-titlebar` drag region covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
+- **Viewport-fitting:** it flips or slides to stay inside the window with an edge margin. In the desktop shell, the `.app-titlebar` drag region covers the top of the window, so top-anchored overlays set `collisionPadding` to keep clear of it.
 - **Unclipped:** it portals out of `overflow` ancestors and is never covered by neighboring elements or the titlebar.
 
 Scrollable panes and panels use the shared `ScrollArea`, whose scrollbar overlays the content and follows the theme. Verify the bar is neither clipped by rounded corners nor flush against the container edge.

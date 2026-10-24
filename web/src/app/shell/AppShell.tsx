@@ -1,29 +1,31 @@
 import { useEffect, type ReactNode } from "react";
 
 import { useTitleBarTheme } from "@/features/preferences/theme";
-import { usePlatform, usePlatformLayout, usePlatformWindow } from "@/platform";
+import { usePlatformLayout, usePlatformWindow } from "@/platform";
 
 export function AppShell({ children }: { children: ReactNode }) {
-    const platform = usePlatform();
     const layout = usePlatformLayout();
     const windowCaps = usePlatformWindow();
     useTitleBarTheme();
 
     useEffect(() => {
-        document.documentElement.classList.toggle(
-            "desktop",
-            platform.isDesktop,
+        const root = document.documentElement;
+        root.classList.toggle("custom-titlebar", layout.hasCustomTitlebar);
+        root.style.setProperty(
+            "--titlebar-height",
+            `${layout.titlebarHeight}px`,
         );
         return () => {
-            document.documentElement.classList.remove("desktop");
+            root.classList.remove("custom-titlebar");
+            root.style.removeProperty("--titlebar-height");
         };
-    }, [platform.isDesktop]);
+    }, [layout.hasCustomTitlebar, layout.titlebarHeight]);
 
     return (
         <>
             {layout.hasCustomTitlebar && (
                 <div
-                    className="desktop-titlebar bg-background"
+                    className="app-titlebar bg-background"
                     onDoubleClick={() => {
                         windowCaps.toggleMaximize();
                     }}

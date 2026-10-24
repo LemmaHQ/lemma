@@ -14,7 +14,6 @@ declare global {
 }
 
 export class DesktopAdapter implements PlatformAdapter {
-    readonly isDesktop = true;
     readonly baseUrl = ENGINE_BASE_URL;
     readonly fetch: typeof globalThis.fetch;
     readonly window: PlatformAdapter["window"];

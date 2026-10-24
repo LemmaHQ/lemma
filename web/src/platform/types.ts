@@ -15,7 +15,6 @@ export interface LayoutCapabilities {
 }
 
 export interface PlatformAdapter {
-    readonly isDesktop: boolean;
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch;
     readonly window: WindowCapabilities;
