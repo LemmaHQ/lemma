@@ -15,6 +15,7 @@ crates/       Rust workspace（crates/AGENTS.md）
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
 web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.md）
 desktop/      Electron 外壳，以本地引擎方式运行 lemma-server（desktop/AGENTS.md）
+packages/     @lemma 命名空间下的共享 npm 包（packages/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
 design/       三端颜色 token（tokens.json）及其生成器

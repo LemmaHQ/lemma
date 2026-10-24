@@ -2,7 +2,7 @@
 
 [English](AGENTS.md) | 中文
 
-这些规则是对仓库级[约定](../AGENTS.zh.md#约定)的补充。TypeScript 规则同样适用于 [desktop/](../desktop/AGENTS.zh.md)。
+这些规则是对仓库级[约定](../AGENTS.zh.md#约定)的补充。TypeScript 规则同样适用于 [desktop/](../desktop/AGENTS.zh.md) 与 [packages/](../packages/AGENTS.zh.md)。
 
 ## TypeScript
 
@@ -14,7 +14,7 @@
 - **未知输入标注为 `unknown`**，再收窄为具体类型。
 - **JSDoc** 是导出公共接口上的紧凑契约，不写 JSDoc 类型注解。传入多个同类型实参的调用可以内联标注参数名：`/* paramName= */`。
 - **所有 TypeScript 项目共用的编译选项放在根目录 `tsconfig.base.json`；** 各项目的 `tsconfig` 继承它，只补充运行环境需要的设置：DOM、JSX、模块解析、`types`、路径别名。`scripts/` 与 `design/` 中的仓库脚本是由 Node 直接运行的 `.ts` 文件，由 `just scripts-type-check` 做类型检查。
-- **lint 工具是 oxlint，开启类型感知规则。** 根目录 `.oxlintrc.json` 存放所有 TypeScript 项目共用的规则，`just scripts-lint-check` 用它检查 `scripts/` 与 `design/`。`web/.oxlintrc.json` 与 `desktop/.oxlintrc.json` 继承它，再加上各自运行环境的插件。抑制只针对一条规则并写明原因：`// oxlint-disable-next-line <rule> -- <reason>`。
+- **lint 工具是 oxlint，开启类型感知规则。** 根目录 `.oxlintrc.json` 存放所有 TypeScript 项目共用的规则，`just scripts-lint-check` 用它检查 `scripts/` 与 `design/`。`web/.oxlintrc.json`、`desktop/.oxlintrc.json` 与每个包的 `.oxlintrc.json` 继承它，再加上各自运行环境的插件。抑制只针对一条规则并写明原因：`// oxlint-disable-next-line <rule> -- <reason>`。
 
 ## 布局
 

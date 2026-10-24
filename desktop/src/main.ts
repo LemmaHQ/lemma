@@ -1,3 +1,4 @@
+import type { SkipCredentials, TitleBarState } from "@lemma/desktop-bridge";
 import { app, BrowserWindow, ipcMain, Menu, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
@@ -43,11 +44,6 @@ const loadApp = () => {
             console.error("app page failed to load:", err);
         });
 };
-
-interface TitleBarState {
-    theme: "light" | "dark";
-    surface: "sidebar" | "background";
-}
 
 const titleBarOverlay = (state: TitleBarState) => ({
     color: themeColors[state.theme][state.surface],
@@ -114,7 +110,7 @@ ipcMain.on("set-titlebar", (_event, state: unknown) => {
 ipcMain.on("get-server-url-sync", (event) => {
     event.returnValue = engine.serverUrl() ?? "";
 });
-ipcMain.handle("get-skip-credentials", () => {
+ipcMain.handle("get-skip-credentials", (): SkipCredentials | null => {
     const skip = engine.getSkipCredentials();
     const url = engine.serverUrl();
     return url !== null && skip !== null

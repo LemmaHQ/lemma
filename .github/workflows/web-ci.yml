@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - "web/**"
+      - "packages/**"
       - "design/**"
       - "package.json"
       - "package-lock.json"
@@ -19,6 +20,7 @@ on:
   pull_request:
     paths:
       - "web/**"
+      - "packages/**"
       - "design/**"
       - "package.json"
       - "package-lock.json"

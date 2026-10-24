@@ -4,6 +4,7 @@ FROM node:${NODE_VERSION}-trixie-slim AS web-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY web/package.json web/package.json
+COPY packages ./packages
 RUN npm ci
 COPY mise.toml ./
 RUN BUF_VERSION=$(sed -nE 's/^[ "]*(buf)[ "]*= *"([^"]+)".*/\2/p' mise.toml) \

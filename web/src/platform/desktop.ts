@@ -1,20 +1,11 @@
+import type { DesktopBridge, TitleBarState } from "@lemma/desktop-bridge";
+
 import type { PlatformAdapter } from "./types";
 
 declare global {
     interface Window {
         __LEMMA_SERVER_URL__?: string;
-        lemmaDesktop?: {
-            getSkipCredentials(): Promise<{
-                serverUrl: string;
-                username: string;
-                password: string;
-            } | null>;
-            setTitleBar(state: {
-                theme: "light" | "dark";
-                surface: "sidebar" | "background";
-            }): void;
-            toggleMaximize(): void;
-        };
+        lemmaDesktop?: DesktopBridge;
     }
 }
 
@@ -23,10 +14,7 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly baseUrl: string;
 
     readonly window = {
-        setTitleBar: (state: {
-            theme: "light" | "dark";
-            surface: "sidebar" | "background";
-        }): void => {
+        setTitleBar: (state: TitleBarState): void => {
             window.lemmaDesktop?.setTitleBar(state);
         },
         toggleMaximize: (): void => {

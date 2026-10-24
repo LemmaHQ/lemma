@@ -1,0 +1,24 @@
+{
+    "name": "@lemma/desktop-bridge",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Lemma desktop bridge types",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "type-check": "tsc",
+        "lint": "oxlint",
+        "format": "prettier --write . --ignore-path ../../.gitignore",
+        "format:check": "prettier --check . --ignore-path ../../.gitignore"
+    },
+    "author": {
+        "name": "wanzhao-ysy",
+        "email": "wanzhao_ysy@qq.com"
+    },
+    "devDependencies": {
+        "prettier": "^3.9.10",
+        "typescript": "^7.0.2"
+    }
+}

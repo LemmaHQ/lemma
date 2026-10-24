@@ -5,7 +5,8 @@
     "type": "module",
     "workspaces": [
         "web",
-        "desktop"
+        "desktop",
+        "packages/*"
     ],
     "author": {
         "name": "wanzhao-ysy",

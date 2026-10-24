@@ -1,15 +1,10 @@
-export interface WindowCapabilities {
-    setTitleBar(state: {
-        theme: "light" | "dark";
-        surface: "sidebar" | "background";
-    }): void;
-    toggleMaximize(): void;
-}
+import type { SkipCredentials, TitleBarState } from "@lemma/desktop-bridge";
 
-export interface SkipCredentials {
-    serverUrl: string;
-    username: string;
-    password: string;
+export type { SkipCredentials };
+
+export interface WindowCapabilities {
+    setTitleBar(state: TitleBarState): void;
+    toggleMaximize(): void;
 }
 
 export interface AuthCapabilities {

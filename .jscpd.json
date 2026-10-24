@@ -1,5 +1,13 @@
 {
-    "path": ["crates", "web/src", "desktop/src", "mobile", "scripts", "design"],
+    "path": [
+        "crates",
+        "web/src",
+        "desktop/src",
+        "packages",
+        "mobile",
+        "scripts",
+        "design"
+    ],
     "ignore": [
         "**/*.json",
         "**/*.toml",

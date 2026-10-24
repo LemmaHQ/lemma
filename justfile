@@ -166,6 +166,31 @@ desktop-package:
     just desktop-build
     npm run package
 
+# Type-check the shared packages in packages/
+[group('packages')]
+packages-type-check:
+    npm run type-check --workspace=packages
+
+# Run oxlint on the shared packages
+[group('packages')]
+packages-lint-check:
+    npm run lint --workspace=packages
+
+# Apply oxlint fixes to the shared packages
+[group('packages')]
+packages-lint:
+    npm run lint --workspace=packages -- --fix
+
+# Check formatting of the shared packages
+[group('packages')]
+packages-fmt-check:
+    npm run format:check --workspace=packages
+
+# Format the shared packages
+[group('packages')]
+packages-fmt:
+    npm run format --workspace=packages
+
 # Run Android Lint on androidApp
 [group('mobile')]
 mobile-android-lint-check:

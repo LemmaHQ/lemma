@@ -15,6 +15,7 @@ crates/       Rust workspace (crates/AGENTS.md)
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
 web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running lemma-server as a local engine (desktop/AGENTS.md)
+packages/     shared npm packages under the @lemma scope (packages/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
 design/       color tokens for all clients (tokens.json) and their generator
