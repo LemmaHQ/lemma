@@ -16,11 +16,11 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Agent | `lemma-agent` | Assembling one turn from a request (provider endpoint, adapter, conversation store, workspace tools), running it, and aborting running turns |
 | Storage | `lemma-db-sqlite`, `lemma-db-pgsql` | Migrations, SQL, and one implementation of each store trait per backend |
 | RPC | `crates/rpc/*`, including `lemma-host` | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a storage backend, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport` |
-| Hosts | `lemma-server`, `lemma-mobile` | The server binary; the UniFFI facade for Android |
+| Hosts | `lemma-server`, `lemma-desktop`, `lemma-mobile` | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android |
 
 The domain, engine, and agent layers contain no SQL. They define store traits (`ConversationStore`, `ProviderStore`, `AuthStore`), and each host passes in the SQLite or PostgreSQL implementation. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/` and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 

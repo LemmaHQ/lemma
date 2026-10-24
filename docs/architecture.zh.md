@@ -16,11 +16,11 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | Agent | `lemma-agent` | 根据请求组装一个 turn（provider 端点、适配器、会话存储、工作区工具）并运行它，以及中止正在运行的 turn |
 | 存储 | `lemma-db-sqlite`、`lemma-db-pgsql` | 迁移、SQL，以及每个后端对每个存储 trait 的一份实现 |
 | RPC | `crates/rpc/*`，包括 `lemma-host` | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个存储后端之上把它们组装成一个路由，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由 |
-| 宿主 | `lemma-server`、`lemma-mobile` | 服务端可执行文件；面向 Android 的 UniFFI 门面 |
+| 宿主 | `lemma-server`、`lemma-desktop`、`lemma-mobile` | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面 |
 
 领域层、引擎层与 agent 层不含 SQL。它们定义存储 trait（`ConversationStore`、`ProviderStore`、`AuthStore`），由各宿主传入 SQLite 或 PostgreSQL 实现。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
-`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
 ## 运行时
 

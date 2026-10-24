@@ -23,7 +23,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, including Android through `lemma-mobile`. `rpc/` holds one crate per proto service, plus `lemma-host`, which assembles them into one router and serves it in-process. Crates under a host directory build only into that host: `server/` into `lemma-server`, `mobile/` into the Android app.
+- `shared/` crates build for every runtime, including Android through `lemma-mobile`. `rpc/` holds one crate per proto service, plus `lemma-host`, which assembles them into one router and serves it in-process. Crates under a host directory build only into that host: `server/` into `lemma-server`, `desktop/` into the Electron shell, `mobile/` into the Android app.
 - Crates are named `lemma-<concept>` in the singular; existing plural names are renamed over time.
 - `lemma-db-sqlite` and `lemma-db-pgsql` each own a `migrations/` directory of reversible `.up.sql` and `.down.sql` pairs; a schema change adds a migration to both.
 

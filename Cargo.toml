@@ -20,6 +20,7 @@ members = [
     "crates/shared/lemma-model",
     "crates/shared/lemma-tools",
     "crates/mobile/lemma-mobile",
+    "crates/desktop/lemma-desktop",
 ]
 resolver = "2"
 
@@ -61,6 +62,9 @@ lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }
+napi = { version = "3.15.0", features = ["async"] }
+napi-build = "2.6.0"
+napi-derive = "3.6.13"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 rust-embed = { version = "8.12.0", features = ["mime-guess"] }

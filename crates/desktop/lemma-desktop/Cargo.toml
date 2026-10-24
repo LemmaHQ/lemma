@@ -1,0 +1,20 @@
+[package]
+name = "lemma-desktop"
+edition.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+lemma-auth.workspace = true
+lemma-host.workspace = true
+napi.workspace = true
+napi-derive.workspace = true
+tokio.workspace = true
+
+[build-dependencies]
+napi-build.workspace = true
+
+[lints]
+workspace = true
