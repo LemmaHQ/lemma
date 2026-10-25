@@ -3,32 +3,11 @@ import { create } from "zustand";
 import { agentClient, conversationClient } from "@/data/rpc/clients";
 import { errorReason, errorText } from "@/data/rpc/errors";
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
-import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { i18n } from "@/i18n";
 
-export interface ToolCallItem {
-    id: string;
-    name: string;
-    arguments: string;
-    output: string;
-    isError: boolean;
-    state: "running" | "done";
-}
-
-export interface AgentItem {
-    id: string;
-    role: "user" | "assistant" | "tool";
-    content: string;
-    thinking: string;
-    status: "streaming" | "done" | "aborted" | "error";
-    providerId: string;
-    model: string;
-    toolCalls: ToolCallItem[];
-    toolCallId?: string | undefined;
-    toolIsError?: boolean | undefined;
-    error?: string | undefined;
-}
+import { type AgentItem, hydrateToolResults, protoToItem } from "./agent-item";
+import { createStreamReducer } from "./stream-reducer";
 
 interface ChatState {
     conversationId: string | null;
@@ -47,76 +26,6 @@ let userAborted = false;
 
 const PAGE_SIZE = 50;
 const MAX_RESUME = 3;
-
-function statusFromProto(s: MessageStatus): AgentItem["status"] {
-    switch (s) {
-        case MessageStatus.STREAMING:
-            return "streaming";
-        case MessageStatus.ABORTED:
-            return "aborted";
-        case MessageStatus.ERROR:
-            return "error";
-        default:
-            return "done";
-    }
-}
-
-function protoToItem(m: Message): AgentItem {
-    return {
-        id: m.id,
-        role:
-            m.role === "user"
-                ? "user"
-                : m.role === "tool"
-                  ? "tool"
-                  : "assistant",
-        content: m.content,
-        thinking: m.thinking,
-        status: statusFromProto(m.status),
-        providerId: m.providerId,
-        model: m.model,
-        toolCalls: m.toolCalls.map((tc) => ({
-            id: tc.id,
-            name: tc.name,
-            arguments: tc.arguments,
-            output: "",
-            isError: false,
-            state: "done",
-        })),
-        toolCallId: m.toolResult?.toolCallId,
-        toolIsError: m.toolResult?.isError,
-        error: m.error === "" ? undefined : m.error,
-    };
-}
-
-function hydrateToolResults(items: AgentItem[]): AgentItem[] {
-    const resultByCallId = new Map<string, AgentItem>();
-    for (const entry of items) {
-        if (entry.role === "tool" && entry.toolCallId !== undefined) {
-            resultByCallId.set(entry.toolCallId, entry);
-        }
-    }
-    return items.map((entry) => {
-        if (entry.role !== "assistant" || entry.toolCalls.length === 0) {
-            return entry;
-        }
-        return {
-            ...entry,
-            toolCalls: entry.toolCalls.map((tc) => {
-                const res = resultByCallId.get(tc.id);
-                if (res === undefined) {
-                    return tc;
-                }
-                return {
-                    ...tc,
-                    output: res.content,
-                    isError: res.toolIsError ?? false,
-                    state: "done",
-                };
-            }),
-        };
-    });
-}
 
 async function latestPage(
     conversationId: string,
@@ -175,7 +84,17 @@ export const useChat = create<ChatState>()((set, get) => ({
         const { signal } = controller;
         activeMessageId = null;
         userAborted = false;
-        let currentId = aiTempId;
+
+        const reducer = createStreamReducer(
+            set,
+            get,
+            providerId,
+            model,
+            aiTempId,
+            (messageId) => {
+                activeMessageId = messageId;
+            },
+        );
 
         set((s) => ({
             streaming: true,
@@ -204,156 +123,6 @@ export const useChat = create<ChatState>()((set, get) => ({
             ],
         }));
 
-        const updateCurrent = (patch: Partial<AgentItem>) => {
-            set((s) => ({
-                items: s.items.map((it) =>
-                    it.id === currentId ? { ...it, ...patch } : it,
-                ),
-            }));
-        };
-        const appendText = (chunk: string) => {
-            set((s) => ({
-                items: s.items.map((it) =>
-                    it.id === currentId
-                        ? { ...it, content: it.content + chunk }
-                        : it,
-                ),
-            }));
-        };
-        const appendThinking = (chunk: string) => {
-            set((s) => ({
-                items: s.items.map((it) =>
-                    it.id === currentId
-                        ? { ...it, thinking: it.thinking + chunk }
-                        : it,
-                ),
-            }));
-        };
-        const addToolCall = (call: ToolCallItem) => {
-            set((s) => ({
-                items: s.items.map((it) =>
-                    it.id === currentId
-                        ? { ...it, toolCalls: [...it.toolCalls, call] }
-                        : it,
-                ),
-            }));
-        };
-        const finishToolCall = (
-            callId: string,
-            output: string,
-            isError: boolean,
-        ) => {
-            set((s) => ({
-                items: s.items.map((entry) =>
-                    entry.id === currentId
-                        ? {
-                              ...entry,
-                              toolCalls: entry.toolCalls.map((tc) =>
-                                  tc.id === callId
-                                      ? {
-                                            ...tc,
-                                            output,
-                                            isError,
-                                            state: "done",
-                                        }
-                                      : tc,
-                              ),
-                          }
-                        : entry,
-                ),
-            }));
-        };
-
-        const startTurn = (messageId: string) => {
-            const current = get().items.find((it) => it.id === currentId);
-            const empty =
-                current !== undefined &&
-                current.role === "assistant" &&
-                current.content === "" &&
-                current.thinking === "" &&
-                current.toolCalls.length === 0;
-            if (empty) {
-                set((s) => ({
-                    items: s.items.map((it) =>
-                        it.id === currentId ? { ...it, id: messageId } : it,
-                    ),
-                }));
-                currentId = messageId;
-                return;
-            }
-            set((s) => ({
-                items: [
-                    ...s.items,
-                    {
-                        id: messageId,
-                        role: "assistant",
-                        content: "",
-                        thinking: "",
-                        status: "streaming",
-                        providerId,
-                        model,
-                        toolCalls: [],
-                    },
-                ],
-            }));
-            currentId = messageId;
-        };
-
-        const applyEvent = (event?: AgentEvent) => {
-            const kind = event?.kind;
-            if (kind === undefined) {
-                return;
-            }
-            switch (kind.case) {
-                case "started":
-                    activeMessageId = kind.value.messageId;
-                    break;
-                case "turnStarted":
-                    startTurn(kind.value.messageId);
-                    break;
-                case "delta": {
-                    const part = kind.value.part;
-                    if (part.case === "text") {
-                        appendText(part.value.content);
-                    } else if (part.case === "thinking") {
-                        appendThinking(part.value.content);
-                    }
-                    break;
-                }
-                case "toolCallStarted":
-                    addToolCall({
-                        id: kind.value.callId,
-                        name: kind.value.name,
-                        arguments: kind.value.arguments,
-                        output: "",
-                        isError: false,
-                        state: "running",
-                    });
-                    break;
-                case "toolCallFinished":
-                    finishToolCall(
-                        kind.value.callId,
-                        kind.value.content,
-                        kind.value.isError,
-                    );
-                    break;
-                case "done":
-                    updateCurrent({ status: "done" });
-                    break;
-                case "aborted":
-                    updateCurrent({ status: "aborted" });
-                    break;
-                case "error":
-                    updateCurrent({
-                        status: "error",
-                        error: kind.value.message,
-                    });
-                    break;
-                case undefined:
-                    break;
-            }
-        };
-
         let received = 0;
         const openStream = (): AsyncIterable<{
             event?: AgentEvent | undefined;
@@ -381,11 +150,11 @@ export const useChat = create<ChatState>()((set, get) => ({
             try {
                 for await (const res of openStream()) {
                     received += 1;
-                    applyEvent(res.event);
+                    reducer.applyEvent(res.event);
                 }
             } catch (e) {
                 if (userAborted || signal.aborted) {
-                    updateCurrent({ status: "aborted" });
+                    reducer.updateCurrent({ status: "aborted" });
                     return;
                 }
                 if (errorReason(e) === ErrorReason.TURN_NOT_RUNNING) {
@@ -394,7 +163,7 @@ export const useChat = create<ChatState>()((set, get) => ({
                 }
                 const next = resumes + 1;
                 if (activeMessageId === null || next > MAX_RESUME) {
-                    updateCurrent({
+                    reducer.updateCurrent({
                         status: "error",
                         error: errorText(e, i18n.t),
                     });

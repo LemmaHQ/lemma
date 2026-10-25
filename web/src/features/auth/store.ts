@@ -10,7 +10,7 @@ import {
 } from "@/data/credentials";
 import { authClient } from "@/data/rpc/clients";
 import type { AuthTokens, User } from "@/gen/lemma/v1/auth_pb";
-import { getPlatform } from "@/platform";
+import { getPlatform } from "@/platform/instance";
 
 const cookieMode = getPlatform().auth.cookieMode;
 

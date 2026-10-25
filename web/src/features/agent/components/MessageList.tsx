@@ -7,7 +7,7 @@ import {
     ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { AgentItem } from "@/features/agent/store";
+import type { AgentItem } from "@/features/agent/agent-item";
 
 import { EmptyState } from "./EmptyState";
 import { MessageItem } from "./MessageItem";

@@ -3,7 +3,7 @@ import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { AuthService } from "@/gen/lemma/v1/auth_pb";
-import { getPlatform } from "@/platform";
+import { getPlatform } from "@/platform/instance";
 import {
     clearTokens,
     getAccessToken,

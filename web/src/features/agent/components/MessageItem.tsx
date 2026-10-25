@@ -26,7 +26,7 @@ import {
     ToolInput,
     ToolOutput,
 } from "@/components/ai-elements/tool";
-import type { AgentItem, ToolCallItem } from "@/features/agent/store";
+import type { AgentItem, ToolCallItem } from "@/features/agent/agent-item";
 
 const STREAMDOWN_PLUGINS = { code, cjk };
 

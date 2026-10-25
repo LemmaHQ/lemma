@@ -1,7 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { cn } from "cn";
 
-import { usePlatformLayout } from "@/platform";
+import { usePlatformLayout } from "@/platform/hooks";
 
 function TooltipProvider({
     delay = 0,
