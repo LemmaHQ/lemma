@@ -36,6 +36,7 @@ just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 auto
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径
 just dup-check           # 报告复制粘贴的代码（jscpd，.jscpd.json）
+just source-check        # 检查源码文件的行数、命名、纯转发模块与测试位置
 ```
 
 Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后缀的同名 recipe 会应用修复。CI 步骤调用 recipe，不重复其中的命令，因此本地运行可以复现 CI 步骤。各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
@@ -56,6 +57,7 @@ Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后
 - **彻底删除废弃与临时代码；** 历史由 Git 保留。
 - **只为明确的业务场景编写逻辑。** 新增防御性逻辑（上限、兜底分支、额外校验、降级路径）之前，先向用户说明场景与理由，由用户决定。
 - **spec、文档与注释准确界定功能与边界。** 默认正向表述；划定边界、列举排除项与评审清单时可以使用否定表述。
+- **源码文件**不超过 300 行，并遵守 [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md#source-files) 中的文件结构、命名与测试位置规则；`just source-check` 检查其中可机器检查的部分。
 - **代码风格：** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) 收录这些规则背后的上游指南。
 
 ## Git

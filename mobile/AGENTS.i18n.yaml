@@ -8,6 +8,9 @@
 /agentsmd--android-client/kotlin:
   en: 8024ff6a30c68fdc
   zh: 4179f03d510688a8
+/agentsmd--android-client/layout:
+  en: 4693cfe653c86173
+  zh: 8e64146884f6c2e8
 /agentsmd--android-client/modules-and-generated-code:
   en: 6600f57ff3dfe92d
   zh: e9bb8a688f039d9d

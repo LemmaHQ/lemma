@@ -13,6 +13,14 @@
 - **包名一律全小写，单词直接连写；** 每个文件一条 `package` 语句。
 - **KDoc** 是公共 API 上的紧凑契约，首句是完整的摘要短语；自解释的属性与方法省略 KDoc。
 
+## 目录结构
+
+`:mobile:shared` 的代码位于 `dev.lemmahq.lemma` 下，按职责分包：
+
+- `client/` 存放 `LemmaClient` 及其对外暴露的数据类型；`network/` 存放 Connect RPC 客户端、OkHttp 拦截器与错误格式化；`data/` 存放仓库类与 SQLDelight 驱动。
+- `ui/<功能>/` 存放每个功能的界面及其私有 Composable；`ui/components/` 存放多个功能共用的 `Lemma*` 组件；`theme/` 存放颜色、字体与形状。
+- 只用于 Android 的代码放在 `androidMain` 下，放进对应的包（`data/`）或单独的包（`engine/`）；测试放在 `commonTest` 或 `androidHostTest` 中被测代码所在的包。
+
 ## 模块与生成代码
 
 - `:mobile:androidApp` 是 Android 应用；`:mobile:shared` 是 Kotlin Multiplatform 模块，包含 UI、SQLDelight 数据库与两套生成的绑定代码。

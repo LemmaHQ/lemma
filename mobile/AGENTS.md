@@ -13,6 +13,14 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 - **Package names are all lowercase with words concatenated;** each file has one `package` statement.
 - **KDoc** is a compact contract on public APIs whose first sentence is a complete summary phrase; self-explanatory properties and methods omit it.
 
+## Layout
+
+`:mobile:shared` code lives under `dev.lemmahq.lemma`, one package per responsibility:
+
+- `client/` holds `LemmaClient` and the data types it exposes; `network/` holds the Connect RPC client, the OkHttp interceptors, and error formatting; `data/` holds the repositories and SQLDelight drivers.
+- `ui/<feature>/` holds each feature's screen and its private Composables; `ui/components/` holds the `Lemma*` components several features share; `theme/` holds colors, typography, and shapes.
+- Android-only code lives under `androidMain`, in the matching package (`data/`) or its own (`engine/`); tests live in `commonTest` or `androidHostTest` under the package of the code they test.
+
 ## Modules and generated code
 
 - `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI, the SQLDelight database, and both generated binding sets.

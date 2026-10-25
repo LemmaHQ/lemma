@@ -283,3 +283,8 @@ scripts-lint:
 [group('dup')]
 dup-check:
     npx --no-install jscpd
+
+# Check source file length, names, re-export modules, and test placement
+[group('source')]
+source-check:
+    node scripts/verify-source-files.ts

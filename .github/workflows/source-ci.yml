@@ -1,0 +1,72 @@
+name: Source CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/**"
+      - "web/src/**"
+      - "desktop/src/**"
+      - "packages/**"
+      - "mobile/**"
+      - "scripts/**"
+      - "design/**"
+      - "proto/**"
+      - "assets/**"
+      - "justfile"
+      - "mise.toml"
+      - "package.json"
+      - ".github/workflows/source-ci.yml"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "web/src/**"
+      - "desktop/src/**"
+      - "packages/**"
+      - "mobile/**"
+      - "scripts/**"
+      - "design/**"
+      - "proto/**"
+      - "assets/**"
+      - "justfile"
+      - "mise.toml"
+      - "package.json"
+      - ".github/workflows/source-ci.yml"
+
+concurrency:
+  group: source-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  files:
+    name: Source Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node just
+
+      - name: Check source files
+        run: just source-check
+
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    needs:
+      - files
+    if: ${{ always() }}
+    steps:
+      - name: Verify required jobs
+        run: |
+          if [ "${{ needs.files.result }}" != "success" ]; then
+            echo "Source CI failed"
+            exit 1
+          fi
