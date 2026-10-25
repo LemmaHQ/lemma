@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.agent
+package dev.lemmahq.lemma.ui.conversation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
 
 @Composable
-internal fun AgentTopBar(
+internal fun ConversationTopBar(
     title: String,
     modelLabel: String?,
     onOpenDrawer: () -> Unit,

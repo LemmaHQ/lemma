@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppSidebar } from "@/app/shell/AppSidebar";
 import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
-import { AgentComposer } from "@/features/agent/components/AgentComposer";
+import { MessageComposer } from "@/features/agent/components/MessageComposer";
 import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
 import { useModelSelection } from "@/features/agent/useModelSelection";
@@ -26,7 +26,7 @@ import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useAgent } from "@/features/agent/store";
+import { useActiveConversation } from "@/features/agent/store";
 import { setTitleBarSurface } from "@/features/preferences/theme";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
@@ -42,10 +42,10 @@ function toSummary(c: Conversation): SessionSummary {
     };
 }
 
-export function AgentPage() {
+export function ConversationPage() {
     const { t } = useTranslation();
     const conversations = useConversations();
-    const agent = useAgent();
+    const conversation = useActiveConversation();
     const providersStore = useProviders();
     const navigate = useNavigate();
 
@@ -65,7 +65,7 @@ export function AgentPage() {
 
     const { model, options: modelOptions, selectModel } = useModelSelection();
 
-    const openConversation = useAgent((s) => s.open);
+    const openConversation = useActiveConversation((s) => s.open);
     useEffect(() => {
         if (activeId !== null) {
             void openConversation(activeId);
@@ -77,7 +77,7 @@ export function AgentPage() {
     }, []);
 
     const sendText = async (text: string) => {
-        if (agent.streaming) {
+        if (conversation.streaming) {
             return;
         }
         if (model === null) {
@@ -89,9 +89,9 @@ export function AgentPage() {
             if (cid === null) {
                 cid = await conversations.create();
                 void navigate(`/conversations/${cid}`);
-                await agent.open(cid);
+                await conversation.open(cid);
             }
-            await agent.send(model.providerId, model.model, text);
+            await conversation.send(model.providerId, model.model, text);
         } catch (e) {
             toast.error(errorText(e, t));
         }
@@ -107,21 +107,25 @@ export function AgentPage() {
     };
 
     const handleStop = () => {
-        void agent.abort();
+        void conversation.abort();
     };
 
     const handleRegenerate = (messageId: string) => {
-        if (agent.streaming || model === null) {
+        if (conversation.streaming || model === null) {
             return;
         }
-        const idx = agent.items.findIndex((m) => m.id === messageId);
+        const idx = conversation.items.findIndex((m) => m.id === messageId);
         if (idx < 0) {
             return;
         }
         for (let i = idx - 1; i >= 0; i--) {
-            const prev = agent.items[i];
+            const prev = conversation.items[i];
             if (prev !== undefined && prev.role === "user") {
-                void agent.send(model.providerId, model.model, prev.content);
+                void conversation.send(
+                    model.providerId,
+                    model.model,
+                    prev.content,
+                );
                 return;
             }
         }
@@ -200,19 +204,19 @@ export function AgentPage() {
                             </span>
                         </header>
                         <MessageList
-                            items={agent.items}
-                            conversationId={agent.conversationId}
+                            items={conversation.items}
+                            conversationId={conversation.conversationId}
                             providerNameById={providerNameById}
                             onPickSuggestion={handlePickSuggestion}
                             onRegenerate={handleRegenerate}
                         />
                         <div className="mx-auto w-full max-w-3xl px-6 pb-6">
-                            <AgentComposer
+                            <MessageComposer
                                 value={draft}
                                 onChange={setDraft}
                                 onSend={handleSend}
                                 onStop={handleStop}
-                                streaming={agent.streaming}
+                                streaming={conversation.streaming}
                                 model={model}
                                 modelOptions={modelOptions}
                                 onModelChange={selectModel}

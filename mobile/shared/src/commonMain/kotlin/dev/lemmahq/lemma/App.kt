@@ -20,8 +20,8 @@ import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
-import dev.lemmahq.lemma.ui.agent.AgentScreen
 import dev.lemmahq.lemma.ui.auth.AuthScreen
+import dev.lemmahq.lemma.ui.conversation.ConversationScreen
 import dev.lemmahq.lemma.ui.provider.ProvidersScreen
 import dev.lemmahq.lemma.ui.setup.SetupScreen
 
@@ -130,7 +130,7 @@ fun App(
                         )
                     } else {
                         key(providersNonce) {
-                            AgentScreen(
+                            ConversationScreen(
                                 client = ready,
                                 settingsRepository = settingsRepository,
                                 onLogout = {

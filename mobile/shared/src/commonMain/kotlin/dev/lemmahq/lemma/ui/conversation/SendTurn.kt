@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.agent
+package dev.lemmahq.lemma.ui.conversation
 
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.LemmaClient
@@ -7,7 +7,7 @@ import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
 
 internal suspend fun sendTurn(
-    state: AgentState,
+    state: ConversationState,
     client: LemmaClient,
     localMessageRepository: LocalMessageRepository,
     text: String,

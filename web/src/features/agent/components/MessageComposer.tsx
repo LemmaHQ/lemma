@@ -18,7 +18,7 @@ import type {
 
 import { ModelSwitcher } from "./ModelSwitcher";
 
-interface AgentComposerProps {
+interface MessageComposerProps {
     value: string;
     onChange: (value: string) => void;
     onSend: () => void;
@@ -30,7 +30,7 @@ interface AgentComposerProps {
     inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
-export function AgentComposer({
+export function MessageComposer({
     value,
     onChange,
     onSend,
@@ -40,7 +40,7 @@ export function AgentComposer({
     modelOptions,
     onModelChange,
     inputRef,
-}: AgentComposerProps) {
+}: MessageComposerProps) {
     const { t } = useTranslation();
     const canSend = model !== null && value.trim() !== "" && !streaming;
 
@@ -61,10 +61,10 @@ export function AgentComposer({
                         disabled={model === null}
                         placeholder={
                             model === null
-                                ? t("agent.noModelPlaceholder")
-                                : t("agent.inputPlaceholder")
+                                ? t("conversation.noModelPlaceholder")
+                                : t("conversation.inputPlaceholder")
                         }
-                        aria-label={t("agent.inputPlaceholder")}
+                        aria-label={t("conversation.inputPlaceholder")}
                     />
                 </PromptInputBody>
                 <PromptInputFooter>
@@ -85,7 +85,7 @@ export function AgentComposer({
                     ) : (
                         <PromptInputSubmit
                             disabled={!canSend}
-                            aria-label={t("agent.send")}
+                            aria-label={t("conversation.send")}
                         />
                     )}
                 </PromptInputFooter>
@@ -93,18 +93,18 @@ export function AgentComposer({
             <p className="text-center text-xs text-muted-foreground">
                 {model === null ? (
                     <>
-                        {t("agent.noModelHint")}{" "}
+                        {t("conversation.noModelHint")}{" "}
                         <Button
                             variant="link"
                             size="xs"
                             nativeButton={false}
                             render={<Link to="/settings/providers" />}
                         >
-                            {t("agent.noModelAction")}
+                            {t("conversation.noModelAction")}
                         </Button>
                     </>
                 ) : (
-                    t("agent.disclaimer")
+                    t("conversation.disclaimer")
                 )}
             </p>
         </div>

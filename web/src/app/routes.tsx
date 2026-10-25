@@ -3,8 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { Loading, RequireAuth } from "./RequireAuth";
 
-const AgentPage = lazy(() =>
-    import("@/app/pages/AgentPage").then((m) => ({ default: m.AgentPage })),
+const ConversationPage = lazy(() =>
+    import("@/app/pages/ConversationPage").then((m) => ({
+        default: m.ConversationPage,
+    })),
 );
 const LoginPage = lazy(() =>
     import("@/app/pages/LoginPage").then((m) => ({ default: m.LoginPage })),
@@ -22,10 +24,10 @@ export function AppRoutes() {
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route element={<RequireAuth />}>
-                        <Route path="/" element={<AgentPage />} />
+                        <Route path="/" element={<ConversationPage />} />
                         <Route
                             path="/conversations/:id"
-                            element={<AgentPage />}
+                            element={<ConversationPage />}
                         />
                         <Route
                             path="/settings"

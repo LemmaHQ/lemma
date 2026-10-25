@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.agent
+package dev.lemmahq.lemma.ui.conversation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import dev.lemmahq.lemma.client.ClientConversation
 import dev.lemmahq.lemma.client.ClientProvider
 
-internal class AgentState {
+internal class ConversationState {
     val conversations = mutableStateListOf<ClientConversation>()
     var currentConversation by mutableStateOf<ClientConversation?>(null)
     val messages = mutableStateListOf<UiMessage>()
@@ -26,4 +26,5 @@ internal class AgentState {
     var lastFailedText by mutableStateOf<String?>(null)
 }
 
-@Composable internal fun rememberAgentState(): AgentState = remember { AgentState() }
+@Composable
+internal fun rememberConversationState(): ConversationState = remember { ConversationState() }

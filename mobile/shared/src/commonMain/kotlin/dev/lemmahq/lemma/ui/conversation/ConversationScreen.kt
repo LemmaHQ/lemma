@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.agent
+package dev.lemmahq.lemma.ui.conversation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,7 +29,7 @@ import lemma.mobile.shared.generated.resources.agent_stop
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun AgentScreen(
+fun ConversationScreen(
     client: LemmaClient,
     settingsRepository: SettingsRepository,
     onLogout: () -> Unit,
@@ -40,7 +40,7 @@ fun AgentScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    val state = rememberAgentState()
+    val state = rememberConversationState()
 
     val stopDescription = stringResource(Res.string.agent_stop)
     val abortedNotice = stringResource(Res.string.agent_aborted_notice)
@@ -184,7 +184,7 @@ fun AgentScreen(
         },
     ) {
         Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
-            AgentTopBar(
+            ConversationTopBar(
                 title = state.currentConversation?.title?.ifBlank { "Lemma" } ?: "Lemma",
                 modelLabel =
                     if (state.providers.any { it.enabled }) {
@@ -220,13 +220,13 @@ fun AgentScreen(
                 )
             }
 
-            AgentComposer(
+            MessageComposer(
                 value = state.inputText,
                 onValueChange = { state.inputText = it },
                 isStreaming = state.isStreaming && state.streamingMessageId != null,
                 stopDescription = stopDescription,
                 onStop = {
-                    val messageId = state.streamingMessageId ?: return@AgentComposer
+                    val messageId = state.streamingMessageId ?: return@MessageComposer
                     scope.launch {
                         try {
                             client.abortMessage(messageId)
@@ -237,10 +237,10 @@ fun AgentScreen(
                 },
                 onSend = {
                     val text = state.inputText.trim()
-                    if (text.isBlank() || state.isStreaming) return@AgentComposer
+                    if (text.isBlank() || state.isStreaming) return@MessageComposer
                     if (state.selectedProviderId.isBlank() || state.selectedModel.isBlank()) {
                         state.bannerErrorMessage = "Select a model first"
-                        return@AgentComposer
+                        return@MessageComposer
                     }
                     state.inputText = ""
                     scope.launch {

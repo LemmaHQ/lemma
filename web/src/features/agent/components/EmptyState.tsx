@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/empty";
 
 const SUGGESTION_KEYS = [
-    "agent.suggestion1",
-    "agent.suggestion2",
-    "agent.suggestion3",
+    "conversation.suggestion1",
+    "conversation.suggestion2",
+    "conversation.suggestion3",
 ] as const;
 
 interface EmptyStateProps {
@@ -30,8 +30,10 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
                 <EmptyMedia variant="icon">
                     <IconMessage />
                 </EmptyMedia>
-                <EmptyTitle>{t("agent.emptyTitle")}</EmptyTitle>
-                <EmptyDescription>{t("agent.emptySubtitle")}</EmptyDescription>
+                <EmptyTitle>{t("conversation.emptyTitle")}</EmptyTitle>
+                <EmptyDescription>
+                    {t("conversation.emptySubtitle")}
+                </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex-row flex-wrap justify-center">
                 {SUGGESTION_KEYS.map((key) => (

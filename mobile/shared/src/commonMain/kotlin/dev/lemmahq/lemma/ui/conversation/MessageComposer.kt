@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.agent
+package dev.lemmahq.lemma.ui.conversation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.ui.components.LemmaInput
 
 @Composable
-internal fun AgentComposer(
+internal fun MessageComposer(
     value: String,
     onValueChange: (String) -> Unit,
     isStreaming: Boolean,

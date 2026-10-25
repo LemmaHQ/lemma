@@ -163,7 +163,11 @@ export function MessageItem({
             {!streaming && (
                 <MessageActions>
                     <MessageAction
-                        tooltip={copied ? t("agent.copied") : t("agent.copy")}
+                        tooltip={
+                            copied
+                                ? t("conversation.copied")
+                                : t("conversation.copy")
+                        }
                         onClick={() => {
                             void handleCopy();
                         }}
@@ -172,7 +176,7 @@ export function MessageItem({
                     </MessageAction>
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageAction
-                            tooltip={t("agent.regenerate")}
+                            tooltip={t("conversation.regenerate")}
                             onClick={() => onRegenerate(message.id)}
                         >
                             <IconRefresh />
