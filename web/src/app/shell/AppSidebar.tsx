@@ -76,7 +76,7 @@ export function AppSidebar({
                             }}
                         >
                             <IconPlus />
-                            <span>{t("sidebar.newChat")}</span>
+                            <span>{t("sidebar.newConversation")}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

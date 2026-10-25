@@ -18,7 +18,7 @@ import type {
 
 import { ModelSwitcher } from "./ModelSwitcher";
 
-interface ChatComposerProps {
+interface AgentComposerProps {
     value: string;
     onChange: (value: string) => void;
     onSend: () => void;
@@ -30,7 +30,7 @@ interface ChatComposerProps {
     inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
-export function ChatComposer({
+export function AgentComposer({
     value,
     onChange,
     onSend,
@@ -40,7 +40,7 @@ export function ChatComposer({
     modelOptions,
     onModelChange,
     inputRef,
-}: ChatComposerProps) {
+}: AgentComposerProps) {
     const { t } = useTranslation();
     const canSend = model !== null && value.trim() !== "" && !streaming;
 
@@ -61,10 +61,10 @@ export function ChatComposer({
                         disabled={model === null}
                         placeholder={
                             model === null
-                                ? t("chat.noModelPlaceholder")
-                                : t("chat.inputPlaceholder")
+                                ? t("agent.noModelPlaceholder")
+                                : t("agent.inputPlaceholder")
                         }
-                        aria-label={t("chat.inputPlaceholder")}
+                        aria-label={t("agent.inputPlaceholder")}
                     />
                 </PromptInputBody>
                 <PromptInputFooter>
@@ -80,12 +80,12 @@ export function ChatComposer({
                             status="streaming"
                             type="button"
                             onClick={onStop}
-                            aria-label={t("chat.stop")}
+                            aria-label={t("agent.stop")}
                         />
                     ) : (
                         <PromptInputSubmit
                             disabled={!canSend}
-                            aria-label={t("chat.send")}
+                            aria-label={t("agent.send")}
                         />
                     )}
                 </PromptInputFooter>
@@ -93,18 +93,18 @@ export function ChatComposer({
             <p className="text-center text-xs text-muted-foreground">
                 {model === null ? (
                     <>
-                        {t("chat.noModelHint")}{" "}
+                        {t("agent.noModelHint")}{" "}
                         <Button
                             variant="link"
                             size="xs"
                             nativeButton={false}
                             render={<Link to="/settings/providers" />}
                         >
-                            {t("chat.noModelAction")}
+                            {t("agent.noModelAction")}
                         </Button>
                     </>
                 ) : (
-                    t("chat.disclaimer")
+                    t("agent.disclaimer")
                 )}
             </p>
         </div>

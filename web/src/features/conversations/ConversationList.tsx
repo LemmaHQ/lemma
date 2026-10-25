@@ -120,7 +120,7 @@ function SessionItem({
             >
                 <span>
                     {session.title === ""
-                        ? t("sidebar.newChat")
+                        ? t("sidebar.newConversation")
                         : session.title}
                 </span>
             </SidebarMenuButton>

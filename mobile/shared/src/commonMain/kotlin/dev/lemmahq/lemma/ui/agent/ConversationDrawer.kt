@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +32,7 @@ internal fun ConversationDrawer(
     conversations: List<ClientConversation>,
     currentConversationId: String?,
     isLoading: Boolean,
-    onNewChat: () -> Unit,
+    onNewConversation: () -> Unit,
     onSelectConversation: (ClientConversation) -> Unit,
     onManageProviders: () -> Unit,
     onLogout: () -> Unit,
@@ -52,7 +52,7 @@ internal fun ConversationDrawer(
 
             LemmaButton(
                 text = "+ New Chat",
-                onClick = onNewChat,
+                onClick = onNewConversation,
                 modifier = Modifier.fillMaxWidth(),
                 variant = LemmaButtonVariant.Primary,
             )

@@ -156,14 +156,14 @@ export function MessageItem({
                 )}
                 {message.status === "aborted" && (
                     <p className="text-xs text-muted-foreground">
-                        {t("chat.abortedNotice")}
+                        {t("agent.abortedNotice")}
                     </p>
                 )}
             </MessageContent>
             {!streaming && (
                 <MessageActions>
                     <MessageAction
-                        tooltip={copied ? t("chat.copied") : t("chat.copy")}
+                        tooltip={copied ? t("agent.copied") : t("agent.copy")}
                         onClick={() => {
                             void handleCopy();
                         }}
@@ -172,7 +172,7 @@ export function MessageItem({
                     </MessageAction>
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageAction
-                            tooltip={t("chat.regenerate")}
+                            tooltip={t("agent.regenerate")}
                             onClick={() => onRegenerate(message.id)}
                         >
                             <IconRefresh />

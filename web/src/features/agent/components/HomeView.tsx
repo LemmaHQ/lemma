@@ -6,7 +6,7 @@ import type {
     ModelSelection,
 } from "@/features/agent/useModelSelection";
 
-import { ChatComposer } from "./ChatComposer";
+import { AgentComposer } from "./AgentComposer";
 
 interface HomeViewProps {
     onSubmit: (text: string) => void;
@@ -30,7 +30,7 @@ export function HomeView({
                 <h1 className="mb-8 text-center text-3xl font-semibold">
                     {t("common.appName")}
                 </h1>
-                <ChatComposer
+                <AgentComposer
                     value={value}
                     onChange={setValue}
                     onSend={() => onSubmit(value.trim())}

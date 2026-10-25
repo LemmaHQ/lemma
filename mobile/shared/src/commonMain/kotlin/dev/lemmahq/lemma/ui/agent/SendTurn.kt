@@ -1,15 +1,15 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.LemmaClient
-import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
 
 internal suspend fun sendTurn(
-    state: ChatState,
+    state: AgentState,
     client: LemmaClient,
-    localChatRepository: LocalChatRepository,
+    localMessageRepository: LocalMessageRepository,
     text: String,
     abortedNotice: String,
 ) {
@@ -30,7 +30,7 @@ internal suspend fun sendTurn(
 
     state.messages.add(UiMessage(id = userMsgId, role = LemmaBubbleRole.User, text = text))
     state.messages.add(UiMessage(id = aiMsgId, role = LemmaBubbleRole.Assistant, text = ""))
-    localChatRepository.saveMessage(
+    localMessageRepository.saveMessage(
         id = userMsgId,
         conversationId = conv.id,
         role = 1L,
@@ -60,7 +60,7 @@ internal suspend fun sendTurn(
                     is AgentStreamEvent.Done -> {
                         if (lastIdx >= 0) {
                             val aiText = state.messages[lastIdx].text
-                            localChatRepository.saveMessage(
+                            localMessageRepository.saveMessage(
                                 id = aiMsgId,
                                 conversationId = conv.id,
                                 role = 2L,

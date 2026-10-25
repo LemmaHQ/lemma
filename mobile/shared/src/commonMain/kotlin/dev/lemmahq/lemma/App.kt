@@ -16,18 +16,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.DefaultSettingsRepository
-import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
+import dev.lemmahq.lemma.ui.agent.AgentScreen
 import dev.lemmahq.lemma.ui.auth.AuthScreen
-import dev.lemmahq.lemma.ui.chat.MainChatScreen
 import dev.lemmahq.lemma.ui.provider.ProvidersScreen
 import dev.lemmahq.lemma.ui.setup.SetupScreen
 
 @Composable
 fun App(
-    localChatRepository: LocalChatRepository,
+    localMessageRepository: LocalMessageRepository,
     localRpc: (suspend (SettingsRepository) -> LemmaRpcClient)? = null,
 ) {
     val settingsRepository = remember { DefaultSettingsRepository() }
@@ -130,7 +130,7 @@ fun App(
                         )
                     } else {
                         key(providersNonce) {
-                            MainChatScreen(
+                            AgentScreen(
                                 client = ready,
                                 settingsRepository = settingsRepository,
                                 onLogout = {
@@ -138,7 +138,7 @@ fun App(
                                     currentAccessToken = null
                                 },
                                 onManageProviders = { showProviders = true },
-                                localChatRepository = localChatRepository,
+                                localMessageRepository = localMessageRepository,
                             )
                         }
                     }

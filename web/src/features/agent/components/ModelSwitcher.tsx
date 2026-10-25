@@ -39,23 +39,23 @@ export function ModelSwitcher({
             <ModelSelectorTrigger
                 render={
                     <PromptInputButton
-                        aria-label={t("chat.selectModel")}
+                        aria-label={t("agent.selectModel")}
                         disabled={options.length === 0}
                     />
                 }
             >
                 <ModelSelectorName>
                     {selection === null
-                        ? t("chat.noProvider")
+                        ? t("agent.noProvider")
                         : selection.model}
                 </ModelSelectorName>
                 <IconChevronDown />
             </ModelSelectorTrigger>
-            <ModelSelectorContent title={t("chat.selectModel")}>
-                <ModelSelectorInput placeholder={t("chat.searchModel")} />
+            <ModelSelectorContent title={t("agent.selectModel")}>
+                <ModelSelectorInput placeholder={t("agent.searchModel")} />
                 <ModelSelectorList>
                     <ModelSelectorEmpty>
-                        {t("chat.noModelMatch")}
+                        {t("agent.noModelMatch")}
                     </ModelSelectorEmpty>
                     {groups.map(([providerName, models]) => (
                         <ModelSelectorGroup

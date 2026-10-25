@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.LemmaClient
-import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.ErrorFormatter
 import dev.lemmahq.lemma.theme.LemmaTheme
@@ -29,18 +29,18 @@ import lemma.mobile.shared.generated.resources.agent_stop
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun MainChatScreen(
+fun AgentScreen(
     client: LemmaClient,
     settingsRepository: SettingsRepository,
     onLogout: () -> Unit,
     onManageProviders: () -> Unit,
-    localChatRepository: LocalChatRepository,
+    localMessageRepository: LocalMessageRepository,
     modifier: Modifier = Modifier,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    val state = rememberChatState()
+    val state = rememberAgentState()
 
     val stopDescription = stringResource(Res.string.agent_stop)
     val abortedNotice = stringResource(Res.string.agent_aborted_notice)
@@ -83,7 +83,7 @@ fun MainChatScreen(
             state.messages.clear()
             return@LaunchedEffect
         }
-        val cachedMsgs = localChatRepository.getMessages(convId)
+        val cachedMsgs = localMessageRepository.getMessages(convId)
         if (cachedMsgs.isNotEmpty()) {
             state.messages.clear()
             state.messages.addAll(
@@ -115,7 +115,7 @@ fun MainChatScreen(
             state.messages.clear()
             state.messages.addAll(list)
             for (m in serverMsgs) {
-                localChatRepository.saveMessage(
+                localMessageRepository.saveMessage(
                     id = m.id,
                     conversationId = convId,
                     role = if (m.role == "user") 1L else 2L,
@@ -158,7 +158,7 @@ fun MainChatScreen(
                 conversations = state.conversations,
                 currentConversationId = state.currentConversation?.id,
                 isLoading = state.isLoadingConversations,
-                onNewChat = {
+                onNewConversation = {
                     scope.launch {
                         drawerState.close()
                         try {
@@ -184,7 +184,7 @@ fun MainChatScreen(
         },
     ) {
         Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
-            ChatTopBar(
+            AgentTopBar(
                 title = state.currentConversation?.title?.ifBlank { "Lemma" } ?: "Lemma",
                 modelLabel =
                     if (state.providers.any { it.enabled }) {
@@ -220,13 +220,13 @@ fun MainChatScreen(
                 )
             }
 
-            ChatComposer(
+            AgentComposer(
                 value = state.inputText,
                 onValueChange = { state.inputText = it },
                 isStreaming = state.isStreaming && state.streamingMessageId != null,
                 stopDescription = stopDescription,
                 onStop = {
-                    val messageId = state.streamingMessageId ?: return@ChatComposer
+                    val messageId = state.streamingMessageId ?: return@AgentComposer
                     scope.launch {
                         try {
                             client.abortMessage(messageId)
@@ -237,14 +237,14 @@ fun MainChatScreen(
                 },
                 onSend = {
                     val text = state.inputText.trim()
-                    if (text.isBlank() || state.isStreaming) return@ChatComposer
+                    if (text.isBlank() || state.isStreaming) return@AgentComposer
                     if (state.selectedProviderId.isBlank() || state.selectedModel.isBlank()) {
                         state.bannerErrorMessage = "Select a model first"
-                        return@ChatComposer
+                        return@AgentComposer
                     }
                     state.inputText = ""
                     scope.launch {
-                        sendTurn(state, client, localChatRepository, text, abortedNotice)
+                        sendTurn(state, client, localMessageRepository, text, abortedNotice)
                     }
                 },
             )

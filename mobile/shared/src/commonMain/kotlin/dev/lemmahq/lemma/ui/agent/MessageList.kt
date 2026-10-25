@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

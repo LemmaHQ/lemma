@@ -18,7 +18,7 @@
         "username": "Username",
         "usernamePlaceholder": "Pick a username"
     },
-    "chat": {
+    "agent": {
         "abortedNotice": "Generation stopped.",
         "copied": "Copied",
         "copy": "Copy",
@@ -161,7 +161,7 @@
         "appSettings": "App settings",
         "collapse": "Collapse sidebar",
         "expand": "Expand sidebar",
-        "newChat": "New chat",
+        "newConversation": "New chat",
         "signOut": "Sign out",
         "title": "Sidebar",
         "toggle": "Toggle sidebar"

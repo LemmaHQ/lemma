@@ -5,7 +5,7 @@ import dev.lemmahq.lemma.db.LemmaDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class LocalChatRepository(database: LemmaDatabase) {
+class LocalMessageRepository(database: LemmaDatabase) {
 
     private val queries = database.lemmaDatabaseQueries
 

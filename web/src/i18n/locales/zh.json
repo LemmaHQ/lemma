@@ -18,7 +18,7 @@
         "username": "用户名",
         "usernamePlaceholder": "取一个用户名"
     },
-    "chat": {
+    "agent": {
         "abortedNotice": "生成已停止。",
         "copied": "已复制",
         "copy": "复制",
@@ -161,7 +161,7 @@
         "appSettings": "应用设置",
         "collapse": "收起侧边栏",
         "expand": "展开侧边栏",
-        "newChat": "新会话",
+        "newConversation": "新会话",
         "signOut": "退出登录",
         "title": "侧边栏",
         "toggle": "切换侧边栏"

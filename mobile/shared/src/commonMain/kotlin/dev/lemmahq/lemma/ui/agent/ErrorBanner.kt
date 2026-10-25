@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

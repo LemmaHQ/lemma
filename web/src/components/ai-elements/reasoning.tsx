@@ -102,9 +102,9 @@ export function ReasoningTrigger({
         >
             <IconBrain className="size-4" />
             {isStreaming ? (
-                <Shimmer>{t("chat.thinkingInProgress")}</Shimmer>
+                <Shimmer>{t("agent.thinkingInProgress")}</Shimmer>
             ) : (
-                <span>{t("chat.thinking")}</span>
+                <span>{t("agent.thinking")}</span>
             )}
             <IconChevronDown
                 className={cn(

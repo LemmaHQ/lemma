@@ -2,7 +2,7 @@ import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
 import type { AgentItem } from "./agent-item";
 
-/** The slice of chat state the reducer reads and patches. */
+/** The slice of agent state the reducer reads and patches. */
 export interface StreamSlice {
     items: AgentItem[];
 }
@@ -13,7 +13,7 @@ export type StreamSet = (fn: (s: StreamSlice) => Partial<StreamSlice>) => void;
 /** Reads the current slice. */
 export type StreamGet = () => StreamSlice;
 
-/** Applies one send's stream events to the chat items. */
+/** Applies one send's stream events to the agent items. */
 export interface StreamReducer {
     applyEvent: (event?: AgentEvent) => void;
     updateCurrent: (patch: Partial<AgentItem>) => void;

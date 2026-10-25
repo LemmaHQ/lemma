@@ -9,7 +9,7 @@ import { i18n } from "@/i18n";
 import { type AgentItem, hydrateToolResults, protoToItem } from "./agent-item";
 import { createStreamReducer } from "./stream-reducer";
 
-interface ChatState {
+interface AgentState {
     conversationId: string | null;
     items: AgentItem[];
     streaming: boolean;
@@ -29,7 +29,7 @@ const MAX_RESUME = 3;
 
 async function latestPage(
     conversationId: string,
-): Promise<Pick<ChatState, "items" | "hasMore">> {
+): Promise<Pick<AgentState, "items" | "hasMore">> {
     const res = await conversationClient.listMessages({
         conversationId,
         limit: PAGE_SIZE,
@@ -40,7 +40,7 @@ async function latestPage(
     };
 }
 
-export const useChat = create<ChatState>()((set, get) => ({
+export const useAgent = create<AgentState>()((set, get) => ({
     conversationId: null,
     items: [],
     streaming: false,

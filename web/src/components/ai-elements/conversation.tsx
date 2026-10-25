@@ -83,7 +83,7 @@ export function ConversationScrollButton({
     if (isAtBottom) {
         return null;
     }
-    const label = t("chat.scrollToBottom");
+    const label = t("agent.scrollToBottom");
     return (
         <Tooltip>
             <TooltipTrigger

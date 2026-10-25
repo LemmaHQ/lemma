@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppSidebar } from "@/app/shell/AppSidebar";
 import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
-import { ChatComposer } from "@/features/agent/components/ChatComposer";
+import { AgentComposer } from "@/features/agent/components/AgentComposer";
 import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
 import { useModelSelection } from "@/features/agent/useModelSelection";
@@ -26,7 +26,7 @@ import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useChat as useChatStore } from "@/features/agent/store";
+import { useAgent } from "@/features/agent/store";
 import { setTitleBarSurface } from "@/features/preferences/theme";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
@@ -42,10 +42,10 @@ function toSummary(c: Conversation): SessionSummary {
     };
 }
 
-export function ChatPage() {
+export function AgentPage() {
     const { t } = useTranslation();
     const conversations = useConversations();
-    const chat = useChatStore();
+    const agent = useAgent();
     const providersStore = useProviders();
     const navigate = useNavigate();
 
@@ -65,7 +65,7 @@ export function ChatPage() {
 
     const { model, options: modelOptions, selectModel } = useModelSelection();
 
-    const openConversation = useChatStore((s) => s.open);
+    const openConversation = useAgent((s) => s.open);
     useEffect(() => {
         if (activeId !== null) {
             void openConversation(activeId);
@@ -77,7 +77,7 @@ export function ChatPage() {
     }, []);
 
     const sendText = async (text: string) => {
-        if (chat.streaming) {
+        if (agent.streaming) {
             return;
         }
         if (model === null) {
@@ -89,9 +89,9 @@ export function ChatPage() {
             if (cid === null) {
                 cid = await conversations.create();
                 void navigate(`/conversations/${cid}`);
-                await chat.open(cid);
+                await agent.open(cid);
             }
-            await chat.send(model.providerId, model.model, text);
+            await agent.send(model.providerId, model.model, text);
         } catch (e) {
             toast.error(errorText(e, t));
         }
@@ -107,21 +107,21 @@ export function ChatPage() {
     };
 
     const handleStop = () => {
-        void chat.abort();
+        void agent.abort();
     };
 
     const handleRegenerate = (messageId: string) => {
-        if (chat.streaming || model === null) {
+        if (agent.streaming || model === null) {
             return;
         }
-        const idx = chat.items.findIndex((m) => m.id === messageId);
+        const idx = agent.items.findIndex((m) => m.id === messageId);
         if (idx < 0) {
             return;
         }
         for (let i = idx - 1; i >= 0; i--) {
-            const prev = chat.items[i];
+            const prev = agent.items[i];
             if (prev !== undefined && prev.role === "user") {
-                void chat.send(model.providerId, model.model, prev.content);
+                void agent.send(model.providerId, model.model, prev.content);
                 return;
             }
         }
@@ -196,23 +196,23 @@ export function ChatPage() {
                                 {activeSession !== undefined &&
                                 activeSession.title !== ""
                                     ? activeSession.title
-                                    : t("sidebar.newChat")}
+                                    : t("sidebar.newConversation")}
                             </span>
                         </header>
                         <MessageList
-                            items={chat.items}
-                            conversationId={chat.conversationId}
+                            items={agent.items}
+                            conversationId={agent.conversationId}
                             providerNameById={providerNameById}
                             onPickSuggestion={handlePickSuggestion}
                             onRegenerate={handleRegenerate}
                         />
                         <div className="mx-auto w-full max-w-3xl px-6 pb-6">
-                            <ChatComposer
+                            <AgentComposer
                                 value={draft}
                                 onChange={setDraft}
                                 onSend={handleSend}
                                 onStop={handleStop}
-                                streaming={chat.streaming}
+                                streaming={agent.streaming}
                                 model={model}
                                 modelOptions={modelOptions}
                                 onModelChange={selectModel}

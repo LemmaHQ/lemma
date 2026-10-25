@@ -28,17 +28,17 @@ const STATUS = {
     "input-available": {
         icon: IconClock,
         iconClassName: "animate-pulse",
-        label: "chat.toolCall.running",
+        label: "agent.toolCall.running",
     },
     "output-available": {
         icon: IconCircleCheck,
         iconClassName: "",
-        label: "chat.toolCall.done",
+        label: "agent.toolCall.done",
     },
     "output-error": {
         icon: IconCircleX,
         iconClassName: "text-destructive",
-        label: "chat.toolCall.failed",
+        label: "agent.toolCall.failed",
     },
 } as const satisfies Record<ToolState, unknown>;
 
@@ -76,14 +76,14 @@ export function ToolGroupTrigger({
         >
             <IconTool className="size-4" />
             {running ? (
-                <Shimmer>{t("chat.toolGroup.running", { count })}</Shimmer>
+                <Shimmer>{t("agent.toolGroup.running", { count })}</Shimmer>
             ) : (
-                <span>{t("chat.toolGroup.used", { count })}</span>
+                <span>{t("agent.toolGroup.used", { count })}</span>
             )}
             {failed > 0 && (
                 <span className="flex items-center gap-1 text-destructive">
                     <IconCircleX className="size-4" />
-                    {t("chat.toolGroup.failed", { count: failed })}
+                    {t("agent.toolGroup.failed", { count: failed })}
                 </span>
             )}
             <IconChevronDown className="size-4 transition-transform duration-medium ease-move in-data-panel-open:rotate-180 motion-reduce:transition-none" />
@@ -183,7 +183,7 @@ export function ToolInput({ className, input, ...props }: ToolInputProps) {
             {...props}
         >
             <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {t("chat.toolCall.arguments")}
+                {t("agent.toolCall.arguments")}
             </h4>
             <div className="rounded-md bg-muted/50">
                 <CodeBlock
@@ -211,7 +211,7 @@ export function ToolOutput({
         return (
             <div className={cn("space-y-2 p-4", className)} {...props}>
                 <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    {t("chat.toolCall.error")}
+                    {t("agent.toolCall.error")}
                 </h4>
                 <div className="overflow-x-auto rounded-md bg-destructive/10 text-xs text-destructive">
                     {errorText}
@@ -225,7 +225,7 @@ export function ToolOutput({
     return (
         <div className={cn("space-y-2 p-4", className)} {...props}>
             <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {t("chat.toolCall.output")}
+                {t("agent.toolCall.output")}
             </h4>
             <div className="overflow-x-auto rounded-md bg-muted/50 text-xs text-foreground">
                 <CodeBlock code={output} language="json" />

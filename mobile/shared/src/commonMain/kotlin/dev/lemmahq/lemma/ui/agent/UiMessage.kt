@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.chat
+package dev.lemmahq.lemma.ui.agent
 
 import dev.lemmahq.lemma.ui.components.LemmaBubbleRole
 

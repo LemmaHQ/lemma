@@ -6,13 +6,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.runBlocking
 
-class LocalChatRepositoryTest {
+class LocalMessageRepositoryTest {
 
     @Test
     fun savedMessagesListPerConversationInCreationOrder() = runBlocking {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         LemmaDatabase.Schema.create(driver)
-        val repo = LocalChatRepository(LemmaDatabase(driver))
+        val repo = LocalMessageRepository(LemmaDatabase(driver))
 
         repo.saveMessage("msg_2", "conv_1", 2, "second", 2, 2000L, 2000L)
         repo.saveMessage("msg_1", "conv_1", 1, "first", 2, 1000L, 1000L)

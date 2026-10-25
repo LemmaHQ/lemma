@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import dev.lemmahq.lemma.data.DriverFactory
-import dev.lemmahq.lemma.data.LocalChatRepository
+import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.db.LemmaDatabase
 import dev.lemmahq.lemma.engine.LocalEngine
 
@@ -19,10 +19,10 @@ class MainActivity : ComponentActivity() {
             val repo = remember {
                 val driver = DriverFactory(applicationContext).createDriver()
                 val db = LemmaDatabase(driver)
-                LocalChatRepository(db)
+                LocalMessageRepository(db)
             }
             App(
-                localChatRepository = repo,
+                localMessageRepository = repo,
                 localRpc = { settings ->
                     LocalEngine.client(applicationContext, settings)
                 },
