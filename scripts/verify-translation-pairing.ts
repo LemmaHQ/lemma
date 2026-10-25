@@ -1,10 +1,5 @@
-import {
-    checkPair,
-    isExcluded,
-    listPairs,
-    pairOf,
-    writeRecord,
-} from "./translation-pairing.ts";
+import { isExcluded, listPairs, pairOf } from "./translation-pairing.ts";
+import { checkPair, writeRecord } from "./translation-records.ts";
 
 const args = process.argv.slice(2);
 const write = args.includes("--write");
@@ -32,8 +27,7 @@ if (write) {
     process.exit(failed ? 1 : 0);
 }
 
-const pairs =
-    files.length > 0 ? files.map(pairOf) : listPairs();
+const pairs = files.length > 0 ? files.map(pairOf) : listPairs();
 const problems = pairs.flatMap(checkPair);
 for (const problem of problems) {
     console.error(problem);
