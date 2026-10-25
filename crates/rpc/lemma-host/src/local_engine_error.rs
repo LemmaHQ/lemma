@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use sqlx::migrate::MigrateError;
+use sea_orm::DbErr;
 
 /// Failures of [`LocalEngine::open`](crate::LocalEngine::open), one per
 /// startup step.
@@ -12,7 +12,7 @@ pub enum LocalEngineError {
     /// `lemma.db` could not be opened or created.
     Database(sqlx::Error),
     /// A migration of `lemma.db` failed.
-    Migration(MigrateError),
+    Migration(DbErr),
 }
 
 impl fmt::Display for LocalEngineError {

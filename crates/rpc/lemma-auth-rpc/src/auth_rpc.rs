@@ -7,13 +7,14 @@ use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, Service
 use http::HeaderValue;
 use http::header::SET_COOKIE;
 use lemma_auth::{
-    ACCESS_TOKEN_TTL_SECS, AuthError, AuthService, AuthStore, AuthTokens, REFRESH_TTL_DAYS, User,
+    ACCESS_TOKEN_TTL_SECS, AuthError, AuthService, AuthTokens, REFRESH_TTL_DAYS, User,
 };
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
     ErrorReason, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MeRequest, MeResponse,
     RefreshRequest, RefreshResponse, SignUpRequest, SignUpResponse,
 };
+use sea_orm::DatabaseConnection;
 
 use crate::request_auth::{self, ACCESS_COOKIE};
 
@@ -79,12 +80,12 @@ fn refresh_token_of(ctx: &RequestContext, body: &str) -> Result<String, ConnectE
 }
 
 /// Connect handler implementing the `AuthService` RPCs.
-pub struct AuthRpc<A> {
-    domain: AuthService<A>,
+pub struct AuthRpc {
+    domain: AuthService,
     secret: String,
 }
 
-impl<A: Debug> Debug for AuthRpc<A> {
+impl Debug for AuthRpc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AuthRpc")
             .field("domain", &self.domain)
@@ -92,12 +93,13 @@ impl<A: Debug> Debug for AuthRpc<A> {
     }
 }
 
-impl<A: AuthStore> AuthRpc<A> {
-    /// Creates the handler over an auth store backend. `secret` signs and
-    /// verifies access tokens.
-    pub fn new(store: A, secret: String) -> Self {
+impl AuthRpc {
+    /// Creates the handler over a database holding the auth tables.
+    /// `secret` signs and verifies access tokens.
+    #[must_use]
+    pub fn new(db: DatabaseConnection, secret: String) -> Self {
         Self {
-            domain: AuthService::new(store, secret.clone()),
+            domain: AuthService::new(db, secret.clone()),
             secret,
         }
     }
@@ -138,7 +140,7 @@ fn map_domain(e: AuthError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl<A: AuthStore> v1::AuthService for AuthRpc<A> {
+impl v1::AuthService for AuthRpc {
     async fn sign_up(
         &self,
         ctx: RequestContext,

@@ -8,8 +8,6 @@ WHERE client_msg_id IS NOT NULL;
 
 ALTER TABLE conversations ADD COLUMN local_only INTEGER NOT NULL DEFAULT 0;
 
-ALTER TABLE refresh_tokens ADD COLUMN label TEXT;
-
 CREATE TABLE settings (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key TEXT NOT NULL,

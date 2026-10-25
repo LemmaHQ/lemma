@@ -9,9 +9,15 @@ chrono.workspace = true
 hex.workspace = true
 jsonwebtoken.workspace = true
 rand.workspace = true
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
 serde.workspace = true
 sha2.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+lemma-test-db.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true

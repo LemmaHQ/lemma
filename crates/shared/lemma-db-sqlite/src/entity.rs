@@ -10,35 +10,6 @@ use sqlx::types::Json;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
-pub struct User {
-    pub id: Uuid,
-    pub username: String,
-    pub email: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct Credential {
-    pub user_id: Uuid,
-    /// Argon2 hash of the account password.
-    pub password_hash: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct RefreshToken {
-    pub id: Uuid,
-    pub user_id: Uuid,
-    pub token_hash: String,
-    pub replaced_by: Option<Uuid>,
-    pub revoked_at: Option<i64>,
-    pub created_at: i64,
-    pub expires_at: i64,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Provider {
     pub id: Uuid,
     pub user_id: Uuid,

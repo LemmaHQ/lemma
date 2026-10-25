@@ -3,25 +3,7 @@
 use std::error::Error;
 use std::fmt;
 
-/// Errors surfaced by auth storage backends.
-#[derive(Debug)]
-pub enum AuthStoreError {
-    /// The username or email is already registered.
-    UsernameTaken,
-    /// The storage backend failed.
-    Db(String),
-}
-
-impl fmt::Display for AuthStoreError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UsernameTaken => write!(f, "username taken"),
-            Self::Db(e) => write!(f, "db: {e}"),
-        }
-    }
-}
-
-impl Error for AuthStoreError {}
+use sea_orm::DbErr;
 
 /// Errors surfaced by the auth domain. The RPC shell maps these to wire
 /// error reasons; local callers match on them directly.
@@ -41,7 +23,7 @@ pub enum AuthError {
     Sign(String),
     /// Password hashing failed.
     Hash(String),
-    /// The storage backend failed.
+    /// The database failed.
     Store(String),
 }
 
@@ -62,11 +44,8 @@ impl fmt::Display for AuthError {
 
 impl Error for AuthError {}
 
-impl From<AuthStoreError> for AuthError {
-    fn from(e: AuthStoreError) -> Self {
-        match e {
-            AuthStoreError::UsernameTaken => Self::UsernameTaken,
-            AuthStoreError::Db(m) => Self::Store(m),
-        }
+impl From<DbErr> for AuthError {
+    fn from(e: DbErr) -> Self {
+        Self::Store(e.to_string())
     }
 }

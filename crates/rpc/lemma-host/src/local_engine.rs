@@ -2,13 +2,14 @@ use std::fs;
 use std::path::Path;
 
 use axum::Router;
-use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
+use lemma_db_sqlite::{SqliteConversationStore, SqliteProviderStore};
+use sea_orm::{DbErr, SqlxSqliteConnector};
 use sqlx::SqlitePool;
 
 use crate::app_state::AppState;
 use crate::local_engine_error::LocalEngineError;
-use crate::router;
 use crate::secrets::Secrets;
+use crate::{database, router};
 
 /// The desktop engine: the Connect services over one SQLite database, with
 /// the secrets, the database, and the workspaces under one data directory.
@@ -31,12 +32,15 @@ impl LocalEngine {
         let pool = lemma_db_sqlite::connect(data_dir.join("lemma.db"))
             .await
             .map_err(LocalEngineError::Database)?;
-        lemma_db_sqlite::migrate(&pool)
+        let db = SqlxSqliteConnector::from_sqlx_sqlite_pool(pool.clone());
+        database::migrate(&db)
             .await
             .map_err(LocalEngineError::Migration)?;
-        let auth_store = SqliteAuthStore::new(pool.clone());
+        lemma_db_sqlite::migrate(&pool)
+            .await
+            .map_err(|e| LocalEngineError::Migration(DbErr::Migration(e.to_string())))?;
         let state = AppState::new(
-            auth_store,
+            db,
             SqliteConversationStore::new(pool.clone()),
             SqliteProviderStore::new(pool.clone()),
             secrets,

@@ -21,6 +21,7 @@ members = [
     "crates/shared/lemma-tools",
     "crates/mobile/lemma-mobile",
     "crates/desktop/lemma-desktop",
+    "crates/shared/lemma-test-db",
 ]
 resolver = "2"
 
@@ -59,6 +60,7 @@ lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
 lemma-agent-rpc = { path = "crates/rpc/lemma-agent-rpc" }
 lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
+lemma-test-db = { path = "crates/shared/lemma-test-db" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }
@@ -68,6 +70,14 @@ napi-derive = "3.6.13"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 rust-embed = { version = "8.12.0", features = ["mime-guess"] }
+sea-orm = { version = "2.0.4", default-features = false, features = [
+    "macros",
+    "sqlite-use-returning-for-3_35",
+    "with-chrono",
+    "with-json",
+    "with-uuid",
+] }
+sea-orm-migration = { version = "2.0.4", default-features = false }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.11.0"

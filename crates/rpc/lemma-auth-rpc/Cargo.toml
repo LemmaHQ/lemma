@@ -9,6 +9,7 @@ connectrpc.workspace = true
 http.workspace = true
 lemma-auth.workspace = true
 lemma-proto.workspace = true
+sea-orm.workspace = true
 uuid.workspace = true
 
 [lints]

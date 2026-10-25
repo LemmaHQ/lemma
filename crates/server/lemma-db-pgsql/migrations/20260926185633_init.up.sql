@@ -1,30 +1,3 @@
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL DEFAULT 'normal',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
-);
-CREATE UNIQUE INDEX users_owner_unique ON users (role)
-WHERE role = 'owner';
-CREATE TABLE auth_credentials (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
-);
-CREATE TABLE refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash TEXT UNIQUE NOT NULL,
-    label TEXT,
-    replaced_by UUID REFERENCES refresh_tokens(id),
-    revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    expires_at TIMESTAMPTZ NOT NULL
-);
-CREATE INDEX ON refresh_tokens (user_id);
 CREATE TABLE settings (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key TEXT NOT NULL,

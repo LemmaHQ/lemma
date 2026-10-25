@@ -8,8 +8,6 @@ WHERE client_msg_id IS NOT NULL;
 
 ALTER TABLE conversations ADD COLUMN local_only BOOLEAN NOT NULL DEFAULT FALSE;
 
-ALTER TABLE refresh_tokens ADD COLUMN label TEXT;
-
 CREATE TABLE settings (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key TEXT NOT NULL,

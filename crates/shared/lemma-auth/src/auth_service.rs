@@ -1,16 +1,21 @@
-//! Auth business flows: signup, login, token refresh and rotation over
-//! an [`AuthStore`] backend.
+//! Auth business flows: signup, login, token refresh and rotation over a
+//! database.
 
 use std::fmt::{self, Debug};
 
 use chrono::{DateTime, Duration, Utc};
+use sea_orm::sea_query::{Expr, IntoCondition};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
+    QueryFilter, Set, SqlErr, TransactionTrait,
+};
 use uuid::Uuid;
 
+use crate::User;
 use crate::auth_error::AuthError;
-use crate::auth_store::AuthStore;
+use crate::entity::{auth_credential, refresh_token, user};
 use crate::jwt::ACCESS_TOKEN_TTL_SECS;
 use crate::password::{hash_password, verify_password};
-use crate::record::User;
 use crate::{jwt, token};
 
 /// Lifetime of a refresh token: 30 days.
@@ -36,42 +41,61 @@ pub struct Session {
     pub tokens: AuthTokens,
 }
 
-/// Auth domain service over an [`AuthStore`] backend.
-pub struct AuthService<A> {
-    store: A,
+/// Auth domain service over a database holding the auth tables.
+pub struct AuthService {
+    db: DatabaseConnection,
     secret: String,
 }
 
-impl<A: Debug> Debug for AuthService<A> {
+impl Debug for AuthService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AuthService")
-            .field("store", &self.store)
+            .field("db", &self.db)
             .finish_non_exhaustive()
     }
 }
 
-impl<A: AuthStore> AuthService<A> {
+async fn revoke<C: ConnectionTrait, F: IntoCondition>(db: &C, scope: F) -> Result<u64, AuthError> {
+    let result = refresh_token::Entity::update_many()
+        .col_expr(refresh_token::Column::RevokedAt, Expr::value(Utc::now()))
+        .filter(scope)
+        .filter(refresh_token::Column::RevokedAt.is_null())
+        .exec(db)
+        .await?;
+    Ok(result.rows_affected)
+}
+
+impl AuthService {
     /// Creates the service. `secret` signs and verifies access tokens.
-    pub fn new(store: A, secret: String) -> Self {
-        Self { store, secret }
+    #[must_use]
+    pub fn new(db: DatabaseConnection, secret: String) -> Self {
+        Self { db, secret }
     }
 
-    async fn issue_tokens(&self, user_id: Uuid) -> Result<AuthTokens, AuthError> {
-        let access = jwt::sign_access_token(&self.secret, user_id)
+    async fn issue_tokens<C: ConnectionTrait>(
+        &self,
+        db: &C,
+        user_id: Uuid,
+        family_id: Uuid,
+    ) -> Result<AuthTokens, AuthError> {
+        let access_token = jwt::sign_access_token(&self.secret, user_id)
             .map_err(|e| AuthError::Sign(e.to_string()))?;
-        let refresh = token::generate_refresh_token();
-        self.store
-            .insert_refresh_token(
-                Uuid::new_v4(),
-                user_id,
-                &token::hash_token(&refresh),
-                Utc::now() + Duration::days(REFRESH_TTL_DAYS),
-            )
-            .await?;
+        let plaintext = token::generate_refresh_token();
+        let now = Utc::now();
+        refresh_token::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            user_id: Set(user_id),
+            family_id: Set(family_id),
+            token_hash: Set(token::hash_token(&plaintext)),
+            revoked_at: Set(None),
+            expires_at: Set(now + Duration::days(REFRESH_TTL_DAYS)),
+        }
+        .insert(db)
+        .await?;
         Ok(AuthTokens {
-            access_token: access,
-            access_token_expires_at: Utc::now() + Duration::seconds(ACCESS_TOKEN_TTL_SECS),
-            refresh_token: refresh,
+            access_token,
+            access_token_expires_at: now + Duration::seconds(ACCESS_TOKEN_TTL_SECS),
+            refresh_token: plaintext,
         })
     }
 
@@ -82,8 +106,8 @@ impl<A: AuthStore> AuthService<A> {
     /// [`AuthError::SignupFieldsRequired`] for a blank username or email or
     /// a password under 8 characters, [`AuthError::UsernameTaken`] for a
     /// registered username or email, [`AuthError::Hash`] or
-    /// [`AuthError::Sign`] when hashing or signing fails; otherwise
-    /// propagates the store's error.
+    /// [`AuthError::Sign`] when hashing or signing fails, and
+    /// [`AuthError::Store`] when the database fails.
     pub async fn sign_up(
         &self,
         username: &str,
@@ -95,12 +119,28 @@ impl<A: AuthStore> AuthService<A> {
         if username.is_empty() || email.is_empty() || password.len() < 8 {
             return Err(AuthError::SignupFieldsRequired);
         }
-        let hash = hash_password(password).map_err(|e| AuthError::Hash(e.to_string()))?;
-        let user = self
-            .store
-            .create_user_with_credential(username, email, &hash)
-            .await?;
-        let tokens = self.issue_tokens(user.id).await?;
+        let password_hash = hash_password(password).map_err(|e| AuthError::Hash(e.to_string()))?;
+        let tx = self.db.begin().await?;
+        let user = user::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            username: Set(username.to_owned()),
+            email: Set(email.to_owned()),
+            created_at: Set(Utc::now()),
+        }
+        .insert(&tx)
+        .await
+        .map_err(|e| match e.sql_err() {
+            Some(SqlErr::UniqueConstraintViolation(_)) => AuthError::UsernameTaken,
+            _ => e.into(),
+        })?;
+        auth_credential::ActiveModel {
+            user_id: Set(user.id),
+            password_hash: Set(password_hash),
+        }
+        .insert(&tx)
+        .await?;
+        let tokens = self.issue_tokens(&tx, user.id, Uuid::new_v4()).await?;
+        tx.commit().await?;
         Ok(Session { user, tokens })
     }
 
@@ -109,81 +149,73 @@ impl<A: AuthStore> AuthService<A> {
     /// # Errors
     ///
     /// [`AuthError::CredentialsInvalid`] for an unknown login or a wrong
-    /// password, [`AuthError::Sign`] when signing fails; otherwise
-    /// propagates the store's error.
+    /// password, [`AuthError::Sign`] when signing fails, and
+    /// [`AuthError::Store`] when the database fails.
     pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
         let login = login.trim();
-        let user = self
-            .store
-            .find_user_by_login(login)
+        let user = user::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(user::Column::Username.eq(login))
+                    .add(user::Column::Email.eq(login)),
+            )
+            .one(&self.db)
             .await?
             .ok_or(AuthError::CredentialsInvalid)?;
-        let stored_hash = self
-            .store
-            .password_hash(user.id)
+        let credential = auth_credential::Entity::find_by_id(user.id)
+            .one(&self.db)
             .await?
             .ok_or(AuthError::CredentialsInvalid)?;
-        if !verify_password(password, &stored_hash) {
+        if !verify_password(password, &credential.password_hash) {
             return Err(AuthError::CredentialsInvalid);
         }
-        let tokens = self.issue_tokens(user.id).await?;
+        let tokens = self.issue_tokens(&self.db, user.id, Uuid::new_v4()).await?;
         Ok(Session { user, tokens })
     }
 
     /// Rotates a refresh token and returns a fresh token pair. A rotated
-    /// or revoked token presented again means theft: the whole rotation
-    /// chain is revoked.
+    /// or revoked token presented again means theft: every token of its
+    /// family is revoked.
     ///
     /// # Errors
     ///
     /// [`AuthError::TokenInvalid`] for an unknown, expired, rotated, or
-    /// revoked token, [`AuthError::Sign`] when signing fails; otherwise
-    /// propagates the store's error.
-    pub async fn refresh(&self, refresh_token: &str) -> Result<AuthTokens, AuthError> {
-        let row = self
-            .store
-            .find_refresh_token_by_hash(&token::hash_token(refresh_token))
+    /// revoked token, [`AuthError::Sign`] when signing fails, and
+    /// [`AuthError::Store`] when the database fails.
+    pub async fn refresh(&self, presented: &str) -> Result<AuthTokens, AuthError> {
+        let row = refresh_token::Entity::find()
+            .filter(refresh_token::Column::TokenHash.eq(token::hash_token(presented)))
+            .one(&self.db)
             .await?
             .ok_or(AuthError::TokenInvalid)?;
-        if row.revoked_at.is_some() || row.replaced_by.is_some() {
-            let _ = self.store.revoke_refresh_chain(row.id).await;
+        if row.revoked_at.is_none() && row.expires_at <= Utc::now() {
             return Err(AuthError::TokenInvalid);
         }
-        if row.expires_at <= Utc::now() {
+        let tx = self.db.begin().await?;
+        if revoke(&tx, refresh_token::Column::Id.eq(row.id)).await? == 0 {
+            revoke(&tx, refresh_token::Column::FamilyId.eq(row.family_id)).await?;
+            tx.commit().await?;
             return Err(AuthError::TokenInvalid);
         }
-        let access = jwt::sign_access_token(&self.secret, row.user_id)
-            .map_err(|e| AuthError::Sign(e.to_string()))?;
-        let refresh = token::generate_refresh_token();
-        self.store
-            .rotate_refresh_token(
-                row.id,
-                Uuid::new_v4(),
-                &token::hash_token(&refresh),
-                Utc::now() + Duration::days(REFRESH_TTL_DAYS),
-            )
-            .await?;
-        Ok(AuthTokens {
-            access_token: access,
-            access_token_expires_at: Utc::now() + Duration::seconds(ACCESS_TOKEN_TTL_SECS),
-            refresh_token: refresh,
-        })
+        let tokens = self.issue_tokens(&tx, row.user_id, row.family_id).await?;
+        tx.commit().await?;
+        Ok(tokens)
     }
 
     /// Revokes the presented refresh token, when it exists.
     ///
     /// # Errors
     ///
-    /// Propagates the store's error.
-    pub async fn logout(&self, refresh_token: Option<&str>) -> Result<(), AuthError> {
-        if let Some(presented) = refresh_token
-            && let Some(row) = self
-                .store
-                .find_refresh_token_by_hash(&token::hash_token(presented))
-                .await?
-        {
-            self.store.revoke_refresh_token(row.id).await?;
-        }
+    /// [`AuthError::Store`] when the database fails.
+    pub async fn logout(&self, presented: Option<&str>) -> Result<(), AuthError> {
+        let Some(plaintext) = presented else {
+            return Ok(());
+        };
+        revoke(
+            &self.db,
+            refresh_token::Column::TokenHash.eq(token::hash_token(plaintext)),
+        )
+        .await?;
         Ok(())
     }
 
@@ -191,11 +223,11 @@ impl<A: AuthStore> AuthService<A> {
     ///
     /// # Errors
     ///
-    /// [`AuthError::UserNotFound`] for an unknown id; otherwise propagates
-    /// the store's error.
+    /// [`AuthError::UserNotFound`] for an unknown id and
+    /// [`AuthError::Store`] when the database fails.
     pub async fn me(&self, user_id: Uuid) -> Result<User, AuthError> {
-        self.store
-            .find_user_by_id(user_id)
+        user::Entity::find_by_id(user_id)
+            .one(&self.db)
             .await?
             .ok_or(AuthError::UserNotFound)
     }

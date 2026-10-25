@@ -2,12 +2,12 @@
 
 use std::error::Error;
 
-use lemma_auth::AuthStore;
 use lemma_conversation::ConversationStore;
-use lemma_db_pgsql::{PgAuthStore, PgConversationStore, PgProviderStore};
-use lemma_db_sqlite::{SqliteAuthStore, SqliteConversationStore, SqliteProviderStore};
+use lemma_db_pgsql::{PgConversationStore, PgProviderStore};
+use lemma_db_sqlite::{SqliteConversationStore, SqliteProviderStore};
 use lemma_host::{AppState, Secrets};
 use lemma_provider::ProviderStore;
+use sea_orm::{DatabaseConnection, SqlxPostgresConnector, SqlxSqliteConnector};
 use tokio::net::TcpListener;
 
 use crate::config::{Config, DatabaseBackend};
@@ -19,9 +19,11 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
     match config.database_backend()? {
         DatabaseBackend::Postgres => {
             let pool = lemma_db_pgsql::connect(&config.database_url).await?;
+            let db = SqlxPostgresConnector::from_sqlx_postgres_pool(pool.clone());
+            lemma_host::migrate(&db).await?;
             lemma_db_pgsql::migrate(&pool).await?;
             serve(
-                PgAuthStore::new(pool.clone()),
+                db,
                 PgConversationStore::new(pool.clone()),
                 PgProviderStore::new(pool.clone()),
                 config.secrets,
@@ -31,9 +33,11 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
         }
         DatabaseBackend::Sqlite => {
             let pool = lemma_db_sqlite::connect(config.sqlite_path()?).await?;
+            let db = SqlxSqliteConnector::from_sqlx_sqlite_pool(pool.clone());
+            lemma_host::migrate(&db).await?;
             lemma_db_sqlite::migrate(&pool).await?;
             serve(
-                SqliteAuthStore::new(pool.clone()),
+                db,
                 SqliteConversationStore::new(pool.clone()),
                 SqliteProviderStore::new(pool.clone()),
                 config.secrets,
@@ -45,13 +49,13 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn serve<A: AuthStore, S: ConversationStore, P: ProviderStore>(
-    auth: A,
+async fn serve<S: ConversationStore, P: ProviderStore>(
+    db: DatabaseConnection,
     conversations: S,
     providers: P,
     secrets: Secrets,
 ) -> Result<(), Box<dyn Error>> {
-    let state = AppState::new(auth, conversations, providers, secrets, None);
+    let state = AppState::new(db, conversations, providers, secrets, None);
     let listener = TcpListener::bind("0.0.0.0:1025").await?;
     println!("listening on {}", listener.local_addr()?);
     http_server::serve(listener, lemma_host::router(state), async {
