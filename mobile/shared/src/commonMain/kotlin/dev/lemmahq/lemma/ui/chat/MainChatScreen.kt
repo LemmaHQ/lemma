@@ -221,11 +221,32 @@ fun MainChatScreen(
             }
 
             ChatComposer(
-                state = state,
-                client = client,
-                localChatRepository = localChatRepository,
+                value = state.inputText,
+                onValueChange = { state.inputText = it },
+                isStreaming = state.isStreaming && state.streamingMessageId != null,
                 stopDescription = stopDescription,
-                abortedNotice = abortedNotice,
+                onStop = {
+                    val messageId = state.streamingMessageId ?: return@ChatComposer
+                    scope.launch {
+                        try {
+                            client.abortMessage(messageId)
+                        } catch (e: Exception) {
+                            state.bannerErrorMessage = ErrorFormatter.format(e)
+                        }
+                    }
+                },
+                onSend = {
+                    val text = state.inputText.trim()
+                    if (text.isBlank() || state.isStreaming) return@ChatComposer
+                    if (state.selectedProviderId.isBlank() || state.selectedModel.isBlank()) {
+                        state.bannerErrorMessage = "Select a model first"
+                        return@ChatComposer
+                    }
+                    state.inputText = ""
+                    scope.launch {
+                        sendTurn(state, client, localChatRepository, text, abortedNotice)
+                    }
+                },
             )
         }
     }
