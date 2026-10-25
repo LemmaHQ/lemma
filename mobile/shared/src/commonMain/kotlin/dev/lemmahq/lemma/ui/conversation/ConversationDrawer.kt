@@ -51,7 +51,7 @@ internal fun ConversationDrawer(
             Spacer(modifier = Modifier.height(16.dp))
 
             LemmaButton(
-                text = "+ New Chat",
+                text = "+ New conversation",
                 onClick = onNewConversation,
                 modifier = Modifier.fillMaxWidth(),
                 variant = LemmaButtonVariant.Primary,
@@ -83,7 +83,7 @@ internal fun ConversationDrawer(
                                     .padding(horizontal = 12.dp, vertical = 10.dp)
                         ) {
                             Text(
-                                text = conv.title.ifBlank { "New Chat" },
+                                text = conv.title.ifBlank { "New conversation" },
                                 style = LemmaTheme.typography.bodyMedium,
                                 color =
                                     if (isSelected) LemmaTheme.colors.textPrimary

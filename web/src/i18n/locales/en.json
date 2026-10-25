@@ -61,7 +61,7 @@
         "noModelAction": "Open settings",
         "noModelHint": "Set up a provider and model in Settings first.",
         "noModelMatch": "No matching models",
-        "noModelPlaceholder": "Configure a provider and model to start chatting…",
+        "noModelPlaceholder": "Configure a provider and model to start…",
         "noProvider": "No provider",
         "regenerate": "Regenerate",
         "scrollToBottom": "Scroll to latest",
@@ -163,7 +163,7 @@
         "appSettings": "App settings",
         "collapse": "Collapse sidebar",
         "expand": "Expand sidebar",
-        "newConversation": "New chat",
+        "newConversation": "New conversation",
         "signOut": "Sign out",
         "title": "Sidebar",
         "toggle": "Toggle sidebar"

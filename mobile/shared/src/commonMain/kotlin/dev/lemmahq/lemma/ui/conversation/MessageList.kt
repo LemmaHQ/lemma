@@ -31,7 +31,7 @@ internal fun MessageList(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Send a message to start chatting",
+                    text = "Send a message to start",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textTertiary,
                 )
