@@ -182,7 +182,7 @@ export function createEngineFetch(
             headers: [...request.headers],
             body,
         };
-        port.postMessage(message, [body.buffer]);
+        port.postMessage(message);
         return entry.head.promise;
     };
 }
