@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
+use sea_orm::DbErr;
+
 /// Errors surfaced by the conversation domain. The RPC shell maps these
 /// to wire error reasons; local callers match on them directly.
 #[derive(Debug)]
@@ -13,7 +15,7 @@ pub enum ConversationError {
     NotFound,
     /// Target conversation or message node is absent from the message tree.
     Missing(String),
-    /// The storage backend failed.
+    /// The database failed.
     Store(String),
 }
 
@@ -29,3 +31,9 @@ impl fmt::Display for ConversationError {
 }
 
 impl Error for ConversationError {}
+
+impl From<DbErr> for ConversationError {
+    fn from(e: DbErr) -> Self {
+        Self::Store(e.to_string())
+    }
+}

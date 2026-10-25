@@ -6,11 +6,11 @@
   en: 15f197829c7e8735
   zh: ec38442c0a7b13af
 /lemma-architecture/crate-layers:
-  en: 4b43cd13a8fa60a4
-  zh: 3935aa5c8ef51dc9
+  en: 2be8a6ef526ec87d
+  zh: c6d0eda0c2c9f907
 /lemma-architecture/runtimes:
-  en: 24a04118ff287ea7
-  zh: 2c63778e754456cb
+  en: 9de408d5f7a7699c
+  zh: 4222320115381b11
 /lemma-architecture/contracts-across-the-wire:
   en: 7768c0d262b8f713
   zh: 05f13024bbef8949
@@ -18,8 +18,8 @@
   en: 9cc5fad2fa01fc2c
   zh: 4c880815c83df2c8
 /lemma-architecture/persistence:
-  en: 3a4213b1335e577f
-  zh: 76bc92ff4b046ff1
+  en: 87d3e71e7491990b
+  zh: 93cb84685cea014d
 /lemma-architecture/where-new-behavior-goes:
-  en: 0041026689256953
-  zh: d4fb40b43a31b787
+  en: 79ed0fb241c5e5fe
+  zh: 276882b4c0372f6b

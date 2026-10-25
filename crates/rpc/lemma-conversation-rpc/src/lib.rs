@@ -7,7 +7,7 @@ use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_conversation::{
-    Conversation as DomainConversation, ConversationError, ConversationService, ConversationStore,
+    Conversation as DomainConversation, ConversationError, ConversationService,
     Message as DomainMessage, MessageStatus as DomainMessageStatus,
 };
 use lemma_core::ContentBlock;
@@ -21,12 +21,12 @@ use lemma_proto::lemma::v1::{
 use uuid::Uuid;
 
 /// Connect handler implementing the `ConversationService` RPCs.
-pub struct ConversationRpc<S> {
-    domain: ConversationService<S>,
+pub struct ConversationRpc {
+    domain: ConversationService,
     jwt_secret: String,
 }
 
-impl<S: Debug> Debug for ConversationRpc<S> {
+impl Debug for ConversationRpc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ConversationRpc")
             .field("domain", &self.domain)
@@ -34,13 +34,12 @@ impl<S: Debug> Debug for ConversationRpc<S> {
     }
 }
 
-impl<S: ConversationStore> ConversationRpc<S> {
-    /// Creates the handler over a conversation store backend.
-    pub fn new(store: S, jwt_secret: String) -> Self {
-        Self {
-            domain: ConversationService::new(store),
-            jwt_secret,
-        }
+impl ConversationRpc {
+    /// Creates the handler over the conversation domain service, which the
+    /// agent shares.
+    #[must_use]
+    pub fn new(domain: ConversationService, jwt_secret: String) -> Self {
+        Self { domain, jwt_secret }
     }
 }
 
@@ -55,7 +54,7 @@ fn conversation_to_proto(c: &DomainConversation) -> Conversation {
 }
 
 fn message_to_proto(m: &DomainMessage) -> Message {
-    let core_msg = &m.message;
+    let core_msg = &m.body.0;
     Message {
         id: m.id.to_string(),
         conversation_id: m.conversation_id.to_string(),
@@ -123,7 +122,7 @@ fn map_domain(e: ConversationError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl<S: ConversationStore> v1::ConversationService for ConversationRpc<S> {
+impl v1::ConversationService for ConversationRpc {
     async fn list_conversations(
         &self,
         ctx: RequestContext,

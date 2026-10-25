@@ -6,12 +6,9 @@ edition.workspace = true
 [dependencies]
 axum.workspace = true
 dotenvy.workspace = true
-lemma-conversation.workspace = true
-lemma-db-pgsql.workspace = true
-lemma-db-sqlite.workspace = true
 lemma-host.workspace = true
 rust-embed.workspace = true
-sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-postgres", "sqlx-sqlite"] }
+sea-orm = { workspace = true, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 tokio.workspace = true
 tower-http.workspace = true
 

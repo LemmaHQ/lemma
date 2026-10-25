@@ -1,5 +1,5 @@
 //! The agent: assembles one turn from a user's request (provider adapter,
-//! conversation store, workspace tools) and runs it on the agent loop.
+//! conversations, workspace tools) and runs it on the agent loop.
 //! Hosts call only this crate and map its [`TurnEvent`]s onto their own
 //! event types.
 

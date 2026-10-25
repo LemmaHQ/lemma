@@ -2,9 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use axum::Router;
-use lemma_db_sqlite::SqliteConversationStore;
-use sea_orm::{DbErr, SqlxSqliteConnector};
-use sqlx::SqlitePool;
+use sea_orm::{DatabaseConnection, DbErr};
 
 use crate::app_state::AppState;
 use crate::local_engine_error::LocalEngineError;
@@ -16,7 +14,7 @@ use crate::{database, router};
 #[derive(Debug)]
 pub struct LocalEngine {
     router: Router,
-    pool: SqlitePool,
+    db: DatabaseConnection,
 }
 
 impl LocalEngine {
@@ -29,25 +27,23 @@ impl LocalEngine {
     /// [`LocalEngineError`] naming the startup step that failed.
     pub async fn open(data_dir: &Path) -> Result<Self, LocalEngineError> {
         let secrets = load_or_create_secrets(data_dir)?;
-        let pool = lemma_db_sqlite::connect(data_dir.join("lemma.db"))
+        let path = data_dir.join("lemma.db");
+        let url = format!(
+            "sqlite:{}",
+            path.to_string_lossy()
+                .replace('%', "%25")
+                .replace('?', "%3F")
+        );
+        let db = database::connect(&url)
             .await
             .map_err(LocalEngineError::Database)?;
-        let db = SqlxSqliteConnector::from_sqlx_sqlite_pool(pool.clone());
         database::migrate(&db)
             .await
             .map_err(LocalEngineError::Migration)?;
-        lemma_db_sqlite::migrate(&pool)
-            .await
-            .map_err(|e| LocalEngineError::Migration(DbErr::Migration(e.to_string())))?;
-        let state = AppState::new(
-            db,
-            SqliteConversationStore::new(pool.clone()),
-            secrets,
-            Some(data_dir.join("workspaces")),
-        );
+        let state = AppState::new(db.clone(), secrets, Some(data_dir.join("workspaces")));
         Ok(Self {
             router: router::router(state),
-            pool,
+            db,
         })
     }
 
@@ -56,9 +52,13 @@ impl LocalEngine {
         self.router.clone()
     }
 
-    /// Closes the database pool; call it after the host stops serving.
-    pub async fn close(self) {
-        self.pool.close().await;
+    /// Closes the database; call it after the host stops serving.
+    ///
+    /// # Errors
+    ///
+    /// The [`DbErr`] when the database fails to close.
+    pub async fn close(self) -> Result<(), DbErr> {
+        self.db.close().await
     }
 }
 

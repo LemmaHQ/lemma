@@ -69,7 +69,7 @@ async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result
         Err(InProcessTransportError::UnknownBody(head.body)),
         "a finished body is closed"
     );
-    engine.close().await;
+    engine.close().await?;
     Ok(())
 }
 
@@ -95,7 +95,7 @@ async fn cancel_closes_an_unread_body() -> Result<(), Box<dyn Error>> {
         Err(InProcessTransportError::UnknownBody(head.body)),
         "a cancelled body is closed"
     );
-    engine.close().await;
+    engine.close().await?;
     Ok(())
 }
 
@@ -118,6 +118,6 @@ async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<
         matches!(result, Err(InProcessTransportError::InvalidRequest(_))),
         "{result:?}"
     );
-    engine.close().await;
+    engine.close().await?;
     Ok(())
 }

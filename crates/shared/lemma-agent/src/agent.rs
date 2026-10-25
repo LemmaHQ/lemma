@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, TurnInput};
-use lemma_conversation::{ConversationStore, LastModel};
+use lemma_conversation::{ConversationService, LastModel};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
 use lemma_provider::ProviderService;
@@ -47,22 +47,22 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 /// `write_file`, `bash`) run in `<workspaces_dir>/<conversation id>`;
 /// without it, turns call the model without tools.
 #[derive(Debug)]
-pub struct Agent<S, C> {
-    store: S,
+pub struct Agent<C> {
+    conversations: ConversationService,
     providers: Arc<ProviderService<C>>,
     workspaces_dir: Option<PathBuf>,
     running: Arc<RunningTurns>,
 }
 
-impl<S: ConversationStore, C: Connector> Agent<S, C> {
-    /// Creates the agent over its store and provider domain.
+impl<C: Connector> Agent<C> {
+    /// Creates the agent over the conversation and provider domains.
     pub fn new(
-        store: S,
+        conversations: ConversationService,
         providers: Arc<ProviderService<C>>,
         workspaces_dir: Option<PathBuf>,
     ) -> Self {
         Self {
-            store,
+            conversations,
             providers,
             workspaces_dir,
             running: Arc::default(),
@@ -78,9 +78,9 @@ impl<S: ConversationStore, C: Connector> Agent<S, C> {
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
     /// blank content or model, [`AgentError::ProviderNotFound`] when the user
     /// owns no such provider, [`AgentError::Provider`] when opening it
-    /// fails, [`AgentError::Store`] when the store fails, and
+    /// fails, [`AgentError::Store`] when the database fails, and
     /// [`AgentError::Workspace`] when the workspace cannot be created.
-    pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<S, C::Adapter>, AgentError> {
+    pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<C::Adapter>, AgentError> {
         if req.content.trim().is_empty() {
             return Err(AgentError::ContentRequired);
         }
@@ -91,14 +91,14 @@ impl<S: ConversationStore, C: Connector> Agent<S, C> {
         let thinking_effort = match req.thinking_effort {
             Some(effort) if !effort.is_empty() => Some(effort),
             _ => self
-                .store
-                .find_by_id_and_user(req.conversation_id, req.user_id)
+                .conversations
+                .find(req.user_id, req.conversation_id)
                 .await?
                 .and_then(|c| c.last_model)
                 .and_then(|m| m.thinking_effort),
         };
 
-        let agent_loop = AgentLoop::new(self.store.clone(), adapter);
+        let agent_loop = AgentLoop::new(self.conversations.clone(), adapter);
         let agent_loop = match &self.workspaces_dir {
             Some(dir) => {
                 let workspace = dir.join(req.conversation_id.to_string());
@@ -159,14 +159,14 @@ impl<S: ConversationStore, C: Connector> Agent<S, C> {
 
 /// One assembled turn, ready to run.
 #[derive(Debug)]
-pub struct Turn<S, A> {
-    agent_loop: AgentLoop<S, A, LocalExecEnv>,
+pub struct Turn<A> {
+    agent_loop: AgentLoop<A, LocalExecEnv>,
     input: TurnInput,
     cancel: CancelToken,
     _registration: Registration,
 }
 
-impl<S: ConversationStore, A: Adapter> Turn<S, A> {
+impl<A: Adapter> Turn<A> {
     /// The id of the user message this turn appends; abort and resume
     /// address the turn by it.
     #[must_use]

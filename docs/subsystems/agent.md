@@ -6,18 +6,18 @@ The agent subsystem turns one user request into a running turn and reports its p
 
 ## Turn assembly
 
-`Agent` holds the conversation store, the provider service, the model connector, and an optional workspaces directory. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
+`Agent` holds the conversation service, the provider service, the model connector, and an optional workspaces directory. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
 
 | Check | Failure |
 | --- | --- |
 | content is empty after trimming | `AgentError::ContentRequired` |
 | model id is empty after trimming | `AgentError::ModelRequired` |
 | the provider does not belong to the user | `AgentError::ProviderNotFound` |
-| the provider key cannot be opened, the store fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
+| the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
 An empty thinking effort reuses the effort of the conversation's last model selection. With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<conversation id>`; without one, the model is called without tools.
 
-`Turn::run(observer)` runs the turn to its end and returns `TurnEnd::Done` or `TurnEnd::Aborted`; a failed stream or store returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
+`Turn::run(observer)` runs the turn to its end and returns `TurnEnd::Done` or `TurnEnd::Aborted`; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
 
 ## Turn events
 

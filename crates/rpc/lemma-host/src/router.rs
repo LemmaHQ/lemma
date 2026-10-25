@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use axum::Router;
-use lemma_conversation::ConversationStore;
 
 use crate::app_state::AppState;
 
 /// Mounts each Connect service under its `/lemma.v1.<Service>/` path.
-pub fn router<S: ConversationStore>(state: AppState<S>) -> Router {
+pub fn router(state: AppState) -> Router {
     let agent = connectrpc::Router::new()
         .add_service(Arc::new(state.agent))
         .into_axum_service();

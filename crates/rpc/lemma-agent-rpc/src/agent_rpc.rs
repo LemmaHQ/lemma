@@ -8,7 +8,6 @@ use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
 use lemma_agent::{Agent, AgentError as TurnError, TurnEnd, TurnEvent, TurnRequest};
-use lemma_conversation::ConversationStore;
 use lemma_core::Usage;
 use lemma_model::Connector;
 use lemma_proto::lemma::v1;
@@ -27,13 +26,13 @@ use crate::live_turns::LiveTurns;
 /// A turn runs to its end independently of its streams: a client that loses
 /// the `SendMessage` stream resumes it with `ResumeStream`, and only
 /// `AbortMessage` stops the turn early.
-pub struct AgentRpc<S, C> {
-    agent: Agent<S, C>,
+pub struct AgentRpc<C> {
+    agent: Agent<C>,
     jwt_secret: String,
     live: Arc<LiveTurns>,
 }
 
-impl<S: Debug, C: Debug> Debug for AgentRpc<S, C> {
+impl<C: Debug> Debug for AgentRpc<C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AgentRpc")
             .field("agent", &self.agent)
@@ -42,9 +41,10 @@ impl<S: Debug, C: Debug> Debug for AgentRpc<S, C> {
     }
 }
 
-impl<S: ConversationStore, C: Connector> AgentRpc<S, C> {
+impl<C: Connector> AgentRpc<C> {
     /// Creates the handler over the agent.
-    pub fn new(agent: Agent<S, C>, jwt_secret: String) -> Self {
+    #[must_use]
+    pub fn new(agent: Agent<C>, jwt_secret: String) -> Self {
         Self {
             agent,
             jwt_secret,
@@ -69,7 +69,7 @@ fn prepare_error(e: TurnError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl<S: ConversationStore, C: Connector> v1::AgentService for AgentRpc<S, C> {
+impl<C: Connector> v1::AgentService for AgentRpc<C> {
     async fn send_message(
         &self,
         ctx: RequestContext,

@@ -41,7 +41,12 @@ const run = async (): Promise<void> => {
             return;
         }
         if (command.type === "stop") {
-            void engine.close().finally(() => process.exit(0));
+            void engine
+                .close()
+                .catch((err: unknown) => {
+                    console.error("engine close failed:", err);
+                })
+                .finally(() => process.exit(0));
             return;
         }
         const [port] = event.ports;

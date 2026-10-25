@@ -15,8 +15,7 @@ use crate::entity::provider;
 use crate::entity::provider::Models;
 use crate::provider_error::ProviderError;
 
-/// A provider as presented to callers: the API key is masked for
-/// display.
+/// A provider as presented to callers: the API key is opened to plaintext.
 #[derive(Debug, Clone)]
 pub struct ProviderView {
     /// Provider id.
@@ -29,7 +28,8 @@ pub struct ProviderView {
     pub name: String,
     /// API base URL.
     pub base_url: String,
-    /// Masked API key.
+    /// Plaintext API key; empty when none is stored or the stored one
+    /// cannot be opened.
     pub api_key: String,
     /// Cached model ids.
     pub models: Vec<String>,
@@ -66,15 +66,15 @@ pub struct CreateInput {
     pub models: Vec<String>,
 }
 
-/// Input for updating a provider. An absent or empty `api_key` keeps the
-/// current key; a non-empty one is a plaintext replacement.
+/// Input for updating a provider. A `None` field keeps its current value;
+/// `Some` replaces it, and an empty `api_key` clears the key.
 #[derive(Debug, Default)]
 pub struct UpdateInput {
     /// Display name.
     pub name: Option<String>,
     /// API base URL.
     pub base_url: Option<String>,
-    /// Plaintext replacement API key.
+    /// Plaintext replacement API key; empty clears the key.
     pub api_key: Option<String>,
     /// Generation endpoint path override.
     pub api_path: Option<String>,
@@ -157,7 +157,7 @@ impl<C: Connector> ProviderService<C> {
         }
     }
 
-    /// Lists the user's providers with masked keys, in creation order.
+    /// Lists the user's providers in creation order.
     ///
     /// # Errors
     ///

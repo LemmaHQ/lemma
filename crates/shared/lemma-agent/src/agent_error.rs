@@ -16,7 +16,7 @@ pub enum AgentError {
     ProviderNotFound,
     /// The provider domain failed, e.g. opening the API key.
     Provider(ProviderError),
-    /// The conversation store failed while preparing the turn.
+    /// The conversation database failed while preparing the turn.
     Store(ConversationError),
     /// The conversation's tool workspace could not be created.
     Workspace(String),

@@ -8,7 +8,7 @@ use lemma_conversation::ConversationError;
 pub enum LoopError {
     /// The model stream failed; the step's placeholder carries the message.
     Model(String),
-    /// The conversation store failed.
+    /// The conversation database failed.
     Store(String),
     /// The conversation or a message on its path is absent.
     NotFound(String),

@@ -6,18 +6,18 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## Turn 组装
 
-`Agent` 持有会话存储、provider 服务、模型 connector，以及可选的工作区目录。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
+`Agent` 持有会话服务、provider 服务、模型 connector，以及可选的工作区目录。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
 
 | 检查 | 失败 |
 | --- | --- |
 | 去除首尾空白后内容为空 | `AgentError::ContentRequired` |
 | 去除首尾空白后模型 id 为空 | `AgentError::ModelRequired` |
 | provider 不属于该用户 | `AgentError::ProviderNotFound` |
-| 无法打开 provider 密钥、存储失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
+| 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
 思考强度为空时，沿用会话最近一次模型选择中的思考强度。有工作区目录时，turn 获得以 `<workspaces_dir>/<conversation id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
 
-`Turn::run(observer)` 把 turn 运行到结束，返回 `TurnEnd::Done` 或 `TurnEnd::Aborted`；模型流或存储失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
+`Turn::run(observer)` 把 turn 运行到结束，返回 `TurnEnd::Done` 或 `TurnEnd::Aborted`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
 
 ## Turn 事件
 

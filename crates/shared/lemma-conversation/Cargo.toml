@@ -6,9 +6,19 @@ edition.workspace = true
 [dependencies]
 chrono.workspace = true
 lemma-core.workspace = true
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-uuid = { workspace = true, features = ["serde"] }
+uuid.workspace = true
+
+[dev-dependencies]
+lemma-adapter.workspace = true
+lemma-auth.workspace = true
+lemma-model.workspace = true
+lemma-provider.workspace = true
+lemma-test-db.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true

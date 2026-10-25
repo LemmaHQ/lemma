@@ -10,7 +10,7 @@ pub enum LocalEngineError {
     /// `secrets.json` could not be read, parsed, or written.
     Secrets(String),
     /// `lemma.db` could not be opened or created.
-    Database(sqlx::Error),
+    Database(DbErr),
     /// A migration of `lemma.db` failed.
     Migration(DbErr),
 }

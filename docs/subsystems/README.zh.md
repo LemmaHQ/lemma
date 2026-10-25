@@ -10,10 +10,10 @@ Lemma 的每个子系统一页：它是什么、它传递的数据结构，以�
 | [agent.zh.md](agent.zh.md) | `lemma-agent` 中的 agent 与 `lemma-agent-loop` 中的 turn 循环，及其 `AgentService` 暴露：turn 组装、有序流事件、中止与恢复 |
 | [adapter.zh.md](adapter.zh.md) | `lemma-model` 中的模型接口与 `lemma-adapter` 中的适配器：请求组装、connector、传输、模型列表，以及 OpenAI、Anthropic、Gemini 的 SSE 解析 |
 | `tools.md` | `lemma-tools` 中的工具注册表：工具定义、执行分级、审批策略、工作区环境、内置工具 |
-| `conversation.md` | `lemma-conversation` 中的会话记录、消息树（叶子指针、分支与上下文路径）、`ConversationStore` trait 与会话服务 |
+| `conversation.md` | `lemma-conversation` 中的会话记录、消息树（叶子指针、分支与上下文路径）与会话服务 |
 | `provider.md` | `lemma-provider` 中的 provider 记录、模型目录与已存储的凭据 |
 | `auth.md` | `lemma-auth` 与 `lemma-crypto` 中的账户、密码哈希、JWT 签发、本地模式账户与密钥加密 |
-| `storage.md` | 存储 trait 及其 SQLite 与 PostgreSQL 后端，位于 `lemma-db-sqlite` 与 `lemma-db-pgsql` |
+| `storage.md` | `lemma-host` 中的数据库连接与合并后的 schema 迁移，覆盖 SQLite 与 PostgreSQL |
 | `rpc.md` | `proto/lemma/v1` 契约、`crates/rpc/` 下的 ConnectRPC 服务及其在 `lemma-host` 中的组装，以及 `lemma-proto` 中的错误模型 |
 | `server.md` | `lemma-server`：配置、内嵌 Web 资源、服务端模式 |
 | `web-client.md` | `web/` 中的 React 客户端：RPC 客户端、状态 store、会话视图 |

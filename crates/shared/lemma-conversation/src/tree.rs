@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
+use crate::Message;
 use crate::conversation_error::ConversationError;
-use crate::record::Message;
 
 /// Follows parent pointers from `leaf_id` to the root and returns the canonical
 /// messages on that path, root first.
@@ -27,7 +27,7 @@ pub fn build_context_path(
                 "node {id} missing in tree"
             )));
         };
-        path.push(entry.message.clone());
+        path.push(entry.body.0.clone());
         current = entry.parent_id;
     }
     path.reverse();

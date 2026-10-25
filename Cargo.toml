@@ -1,8 +1,6 @@
 [workspace]
 members = [
     "crates/server/lemma-server",
-    "crates/shared/lemma-db-sqlite",
-    "crates/server/lemma-db-pgsql",
     "crates/shared/lemma-proto",
     "crates/shared/lemma-auth",
     "crates/shared/lemma-provider",
@@ -53,8 +51,6 @@ lemma-auth-rpc = { path = "crates/rpc/lemma-auth-rpc" }
 lemma-conversation = { path = "crates/shared/lemma-conversation" }
 lemma-conversation-rpc = { path = "crates/rpc/lemma-conversation-rpc" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
-lemma-db-pgsql = { path = "crates/server/lemma-db-pgsql" }
-lemma-db-sqlite = { path = "crates/shared/lemma-db-sqlite" }
 lemma-host = { path = "crates/rpc/lemma-host" }
 lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
@@ -81,17 +77,6 @@ sea-orm-migration = { version = "2.0.4", default-features = false }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.11.0"
-sqlx = { version = "0.9.0", features = [
-    "postgres",
-    "sqlite",
-    "runtime-tokio",
-    "tls-rustls",
-    "migrate",
-    "macros",
-    "uuid",
-    "chrono",
-    "json",
-] }
 tokio = { version = "1.53.1", features = ["full"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["cors"] }

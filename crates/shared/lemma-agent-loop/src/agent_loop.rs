@@ -1,4 +1,4 @@
-use lemma_conversation::{ConversationStore, LastModel, Message as StoredMessage};
+use lemma_conversation::{ConversationService, LastModel, Message as StoredMessage};
 use lemma_core::{Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
 use lemma_tools::ExecEnv;
@@ -14,7 +14,7 @@ use crate::turn_event::TurnEvent;
 /// One user message and where it goes.
 #[derive(Debug)]
 pub struct TurnInput {
-    /// Authenticated caller the store scopes conversation queries to.
+    /// Authenticated caller conversation queries are scoped to.
     pub user_id: Uuid,
     /// Conversation the turn continues from its active leaf.
     pub conversation_id: Uuid,
@@ -39,17 +39,17 @@ pub enum TurnEnd {
 /// the model through its adapter, executes requested tool calls in an `E`
 /// environment, and persists every message as it settles.
 #[derive(Debug)]
-pub struct AgentLoop<S, A, E> {
-    store: S,
+pub struct AgentLoop<A, E> {
+    conversations: ConversationService,
     adapter: A,
     tools: Option<ToolRuntime<E>>,
 }
 
-impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
+impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     /// Creates a loop that calls the model without tools.
-    pub fn new(store: S, adapter: A) -> Self {
+    pub fn new(conversations: ConversationService, adapter: A) -> Self {
         Self {
-            store,
+            conversations,
             adapter,
             tools: None,
         }
@@ -71,7 +71,7 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
     ///
     /// [`LoopError::NotFound`] when the user owns no such conversation or a
     /// message on the context path is missing, [`LoopError::Model`] when a
-    /// model stream fails, and [`LoopError::Store`] when the store fails.
+    /// model stream fails, and [`LoopError::Store`] when the database fails.
     pub async fn run_turn<O: Fn(TurnEvent) + Sync>(
         &self,
         input: TurnInput,
@@ -85,11 +85,7 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
             user_message,
             model,
         } = input;
-        let Some(meta) = self
-            .store
-            .find_by_id_and_user(conversation_id, user_id)
-            .await?
-        else {
+        let Some(meta) = self.conversations.find(user_id, conversation_id).await? else {
             return Err(LoopError::NotFound(format!(
                 "conversation {conversation_id} not found"
             )));
@@ -97,13 +93,13 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
 
         let user_entry =
             persist::settled(user_message_id, conversation_id, meta.leaf_id, user_message);
-        self.append(user_id, &user_entry).await?;
+        self.append(user_id, user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
         });
 
-        self.store
-            .update_last_model(conversation_id, user_id, &model)
+        self.conversations
+            .update_last_model(user_id, conversation_id, &model)
             .await?;
 
         let tool_specs = self
@@ -117,7 +113,7 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
             if cancel.is_cancelled() {
                 return Ok(TurnEnd::Aborted);
             }
-            let entries = self.store.list_messages(conversation_id).await?;
+            let entries = self.conversations.all_messages(conversation_id).await?;
             let messages = lemma_conversation::build_context_path(&entries, leaf_id)?;
 
             let assistant_id = Uuid::new_v4();
@@ -128,7 +124,7 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
                 &model.model,
                 model.provider_id,
             );
-            self.append(user_id, &placeholder).await?;
+            self.append(user_id, placeholder).await?;
             observer(TurnEvent::AssistantStarted { id: assistant_id });
 
             let req = ModelRequest {
@@ -138,8 +134,8 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
                 thinking_effort: model.thinking_effort.clone(),
             };
             let outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
-            self.store
-                .update_message(assistant_id, &persist::settle(&outcome))
+            self.conversations
+                .update_message(assistant_id, persist::settle(&outcome))
                 .await?;
 
             match outcome.end {
@@ -185,16 +181,17 @@ impl<S: ConversationStore, A: Adapter, E: ExecEnv> AgentLoop<S, A, E> {
                     Some(leaf_id),
                     persist::tool_result(call, tool_outcome),
                 );
-                self.append(user_id, &result).await?;
+                self.append(user_id, result).await?;
                 leaf_id = result_id;
             }
         }
     }
 
-    async fn append(&self, user_id: Uuid, entry: &StoredMessage) -> Result<(), LoopError> {
-        self.store.append_message(entry).await?;
-        self.store
-            .update_leaf(entry.conversation_id, user_id, entry.id)
+    async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
+        let (conversation_id, id) = (entry.conversation_id, entry.id);
+        self.conversations.append_message(entry).await?;
+        self.conversations
+            .update_leaf(user_id, conversation_id, id)
             .await?;
         Ok(())
     }

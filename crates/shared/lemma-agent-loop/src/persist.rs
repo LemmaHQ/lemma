@@ -1,5 +1,5 @@
 use chrono::Utc;
-use lemma_conversation::{Message as StoredMessage, MessageStatus, MessageUpdate};
+use lemma_conversation::{Message as StoredMessage, MessageBody, MessageStatus, MessageUpdate};
 use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
 use uuid::Uuid;
 
@@ -19,7 +19,7 @@ pub(crate) fn settled(
         id,
         conversation_id,
         parent_id,
-        message,
+        body: MessageBody(message),
         status: MessageStatus::Done,
         error: None,
         model: None,
@@ -43,13 +43,13 @@ pub(crate) fn placeholder(
         id,
         conversation_id,
         parent_id: Some(parent_id),
-        message: Message::Assistant {
+        body: MessageBody(Message::Assistant {
             content: vec![ContentBlock::Text(TextContent {
                 text: String::new(),
             })],
             stop_reason: StopReason::Stop,
             usage: None,
-        },
+        }),
         status: MessageStatus::Streaming,
         error: None,
         model: Some(model.to_string()),
@@ -67,11 +67,11 @@ pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
         StepEnd::Aborted => (MessageStatus::Aborted, None),
     };
     MessageUpdate {
-        message: Message::Assistant {
+        body: MessageBody(Message::Assistant {
             content: outcome.content(),
             stop_reason: outcome.stop_reason,
             usage: outcome.usage,
-        },
+        }),
         status,
         error,
     }
