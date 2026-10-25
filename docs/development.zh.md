@@ -8,7 +8,7 @@
 
 ### 前置条件
 
-- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`sqlx-cli`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell、CI 与 Dockerfile 读取同一份版本。
+- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`sea-orm-cli`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell、CI 与 Dockerfile 读取同一份版本。
 - 通过 rustup 安装 stable 版 Rust；[rust-toolchain.toml](../rust-toolchain.toml) 会加上 `rustfmt`、`clippy` 与 `llvm-tools-preview`。Rust 构建需要 `PATH` 上有 `protoc`，用来编译 `proto/`。
 - Docker，用于 PostgreSQL 与完整栈镜像。
 - 仅 Android 需要：Android SDK（通过 `ANDROID_HOME` 或 `local.properties` 中的 `sdk.dir` 找到），并在 `<sdk>/ndk/` 下安装 NDK。Gradle 使用其中最新的 NDK。
@@ -43,6 +43,10 @@ just rust-dev
 
 `docker compose --profile full up -d` 启动服务端容器（镜像不存在时先由 Dockerfile 构建）与数据库；`docker compose --profile full down` 停止它们。
 
+### 在 PostgreSQL 上运行 Rust 测试
+
+`just rust-test` 在内存 SQLite 上运行数据库测试，CI 只跑这一种。要在 PostgreSQL 上也跑一遍：用 `docker compose up -d` 启动数据库，在 shell 中把 `LEMMA_TEST_POSTGRES_URL` 设为 `.env` 里的 `DATABASE_URL`，再运行 `just rust-test`。每个测试在该服务器上创建自己的数据库，结束后删除，`lemma-db` 中的数据保持不变。
+
 ### 运行桌面应用
 
 `just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库与密钥保存在 Electron 的 `userData` 目录中，不需要 `.env`。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
@@ -67,6 +71,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_JWT_SECRET` | `lemma-server`，服务端模式 | 签名并校验访问令牌 |
 | `LEMMA_SECRET_KEY` | `lemma-server`，服务端模式 | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取 |
 | `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml` | PostgreSQL 容器的数据库名、用户与密码；密码必填 |
+| `LEMMA_TEST_POSTGRES_URL` | Rust 测试，经由 `lemma-test-db` | 数据库测试在 SQLite 之外额外运行的 PostgreSQL 服务器；其角色为每个测试创建并删除一个数据库 |
 | `LEMMA_ENGINE_PROFILE` | `desktop/` | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug` |
 | `LEMMA_DEBUG_PORT` | `desktop/` | Chromium 远程调试端口 |
 | `ANDROID_HOME` | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties` |

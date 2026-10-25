@@ -8,7 +8,7 @@ How to set up a machine for Lemma and run each client. The [root AGENTS.md](../A
 
 ### Prerequisites
 
-- [mise](https://mise.jdx.dev/) installs the tools pinned in [mise.toml](../mise.toml): Node.js, Java, just, buf, protoc, and the cargo tools `cargo-binstall`, `sqlx-cli`, `cargo-llvm-cov`, and `cargo-nextest`. Local shells, CI, and the Dockerfile read the same pins.
+- [mise](https://mise.jdx.dev/) installs the tools pinned in [mise.toml](../mise.toml): Node.js, Java, just, buf, protoc, and the cargo tools `cargo-binstall`, `sea-orm-cli`, `cargo-llvm-cov`, and `cargo-nextest`. Local shells, CI, and the Dockerfile read the same pins.
 - Rust stable through rustup; [rust-toolchain.toml](../rust-toolchain.toml) adds `rustfmt`, `clippy`, and `llvm-tools-preview`. The Rust build needs `protoc` on `PATH` to compile `proto/`.
 - Docker, for PostgreSQL and the full-stack image.
 - For Android only: the Android SDK, found through `ANDROID_HOME` or `sdk.dir` in `local.properties`, with an NDK under `<sdk>/ndk/`. Gradle uses the newest NDK there.
@@ -43,6 +43,10 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 `docker compose --profile full up -d` starts the server container, building its image from the Dockerfile when none exists, together with the database; `docker compose --profile full down` stops them.
 
+### Run the Rust tests on PostgreSQL
+
+`just rust-test` runs the database tests on in-memory SQLite, and CI runs only that. To run them on PostgreSQL as well, start the database with `docker compose up -d`, set `LEMMA_TEST_POSTGRES_URL` in the shell to the `DATABASE_URL` from `.env`, and run `just rust-test`. Each test creates its own database on that server and drops it afterwards, so the data in `lemma-db` stays untouched.
+
 ### Run the desktop app
 
 `just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database and secrets in Electron's `userData` directory and needs no `.env`. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
@@ -67,6 +71,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_JWT_SECRET` | `lemma-server`, server mode | signs and verifies access tokens |
 | `LEMMA_SECRET_KEY` | `lemma-server`, server mode | derives the key that seals provider API keys; changing it makes stored keys unreadable |
 | `LEMMA_DB`, `LEMMA_DB_USER`, `LEMMA_DB_PASSWORD` | `docker-compose.yml` | database name, user, and password of the PostgreSQL container; the password is required |
+| `LEMMA_TEST_POSTGRES_URL` | Rust tests, through `lemma-test-db` | PostgreSQL server the database tests run on in addition to SQLite; its role creates and drops one database per test |
 | `LEMMA_ENGINE_PROFILE` | `desktop/` | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug` |
 | `LEMMA_DEBUG_PORT` | `desktop/` | Chromium remote-debugging port |
 | `ANDROID_HOME` | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative |
