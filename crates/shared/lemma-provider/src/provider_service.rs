@@ -1,15 +1,19 @@
-//! Provider domain service: validation, API-key sealing, and
-//! orchestration over a [`ProviderStore`].
+//! Provider domain service: validation, API-key sealing, and persistence
+//! over a database.
 
 use std::fmt::{self, Debug};
 
 use chrono::{DateTime, Utc};
 use lemma_model::{Connector, Endpoint, ProviderKind};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, NotSet, QueryFilter,
+    QueryOrder, Set, SqlErr, Unchanged,
+};
 use uuid::Uuid;
 
+use crate::entity::provider;
+use crate::entity::provider::Models;
 use crate::provider_error::ProviderError;
-use crate::provider_store::ProviderStore;
-use crate::record::{NewProvider, ProviderPatch, ProviderRecord};
 
 /// A provider as presented to callers: the API key is masked for
 /// display.
@@ -82,32 +86,32 @@ pub struct UpdateInput {
     pub models: Option<Vec<String>>,
 }
 
-/// Provider domain service over a [`ProviderStore`] backend.
+/// Provider domain service over a database holding the providers table.
 ///
 /// `secret_key` selects the API-key storage encoding: `Some` seals keys
 /// with lemma-crypto (server), `None` stores plaintext (local storage
 /// stays inspectable). `connector` binds providers to adapters and fetches
 /// live model lists.
-pub struct ProviderService<P, C> {
-    store: P,
+pub struct ProviderService<C> {
+    db: DatabaseConnection,
     secret_key: Option<String>,
     connector: C,
 }
 
-impl<P: Debug, C: Debug> Debug for ProviderService<P, C> {
+impl<C: Debug> Debug for ProviderService<C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProviderService")
-            .field("store", &self.store)
+            .field("db", &self.db)
             .field("connector", &self.connector)
             .finish_non_exhaustive()
     }
 }
 
-impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
-    /// Creates the service over a store backend.
-    pub fn new(store: P, secret_key: Option<String>, connector: C) -> Self {
+impl<C: Connector> ProviderService<C> {
+    /// Creates the service over a database.
+    pub fn new(db: DatabaseConnection, secret_key: Option<String>, connector: C) -> Self {
         Self {
-            store,
+            db,
             secret_key,
             connector,
         }
@@ -135,7 +139,7 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
         }
     }
 
-    fn view(&self, r: &ProviderRecord) -> ProviderView {
+    fn view(&self, r: &provider::Model) -> ProviderView {
         let api_key = self.open_key(&r.api_key).unwrap_or_default();
         ProviderView {
             id: r.id,
@@ -144,7 +148,7 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
             name: r.name.clone(),
             base_url: r.base_url.clone(),
             api_key,
-            models: r.models.clone(),
+            models: r.models.0.clone(),
             enabled: r.enabled,
             api_path: r.api_path.clone(),
             models_path: r.models_path.clone(),
@@ -153,14 +157,18 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
         }
     }
 
-    /// Lists the user's providers with masked keys.
+    /// Lists the user's providers with masked keys, in creation order.
     ///
     /// # Errors
     ///
-    /// Propagates the store's [`ProviderError`].
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderView>, ProviderError> {
-        let records = self.store.list(user_id).await?;
-        Ok(records.iter().map(|r| self.view(r)).collect())
+        let rows = provider::Entity::find()
+            .filter(provider::Column::UserId.eq(user_id))
+            .order_by_asc(provider::Column::CreatedAt)
+            .all(&self.db)
+            .await?;
+        Ok(rows.iter().map(|r| self.view(r)).collect())
     }
 
     /// Validates and stores a new provider.
@@ -169,8 +177,9 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     ///
     /// [`ProviderError::IdentifierInvalid`] for an empty or non-ASCII
     /// identifier, [`ProviderError::FieldsRequired`] for an empty base URL,
-    /// [`ProviderError::Crypto`] when sealing the key fails; otherwise
-    /// propagates the store's error.
+    /// [`ProviderError::IdentifierTaken`] when the user already has a
+    /// provider with the identifier, [`ProviderError::Crypto`] when sealing
+    /// the key fails, and [`ProviderError::Store`] when the database fails.
     pub async fn create(
         &self,
         user_id: Uuid,
@@ -188,24 +197,29 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
             return Err(ProviderError::FieldsRequired);
         }
         let sealed = self.seal_key(&input.api_key)?;
-        let record = self
-            .store
-            .insert(
-                user_id,
-                &NewProvider {
-                    id: Uuid::new_v4(),
-                    kind: kind.to_string(),
-                    identifier: identifier.to_string(),
-                    name: name.to_string(),
-                    base_url: base_url.to_string(),
-                    api_key: sealed,
-                    api_path: input.api_path.trim().to_string(),
-                    models_path: input.models_path.trim().to_string(),
-                    models: input.models,
-                },
-            )
-            .await?;
-        Ok(self.view(&record))
+        let now = Utc::now();
+        let row = provider::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            user_id: Set(user_id),
+            kind: Set(kind.to_owned()),
+            identifier: Set(identifier.to_owned()),
+            name: Set(name.to_owned()),
+            base_url: Set(base_url.to_owned()),
+            api_key: Set(sealed),
+            api_path: Set(input.api_path.trim().to_owned()),
+            models_path: Set(input.models_path.trim().to_owned()),
+            models: Set(Models(input.models)),
+            enabled: Set(true),
+            created_at: Set(now),
+            updated_at: Set(now),
+        }
+        .insert(&self.db)
+        .await
+        .map_err(|e| match e.sql_err() {
+            Some(SqlErr::UniqueConstraintViolation(_)) => ProviderError::IdentifierTaken,
+            _ => e.into(),
+        })?;
+        Ok(self.view(&row))
     }
 
     /// Applies an update to a provider owned by the user.
@@ -213,8 +227,8 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     /// # Errors
     ///
     /// [`ProviderError::NotFound`] when the user owns no such provider,
-    /// [`ProviderError::Crypto`] when sealing the key fails; otherwise
-    /// propagates the store's error.
+    /// [`ProviderError::Crypto`] when sealing the key fails, and
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn update(
         &self,
         user_id: Uuid,
@@ -222,36 +236,49 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
         input: UpdateInput,
     ) -> Result<ProviderView, ProviderError> {
         let api_key = match input.api_key {
-            Some(k) => Some(self.seal_key(&k)?),
-            None => None,
+            Some(k) => Set(self.seal_key(&k)?),
+            None => NotSet,
         };
-        let patch = ProviderPatch {
-            name: input.name.map(|s| s.trim().to_string()),
+        let row = provider::Entity::update(provider::ActiveModel {
+            id: Unchanged(id),
+            name: input.name.map_or(NotSet, |s| Set(s.trim().to_owned())),
             base_url: input
                 .base_url
-                .map(|s| s.trim().trim_end_matches('/').to_string()),
+                .map_or(NotSet, |s| Set(s.trim().trim_end_matches('/').to_owned())),
             api_key,
-            api_path: input.api_path.map(|s| s.trim().to_string()),
-            models_path: input.models_path.map(|s| s.trim().to_string()),
-            enabled: input.enabled,
-            models: input.models,
-        };
-        let record = self
-            .store
-            .update(user_id, id, &patch)
-            .await?
-            .ok_or(ProviderError::NotFound)?;
-        Ok(self.view(&record))
+            api_path: input.api_path.map_or(NotSet, |s| Set(s.trim().to_owned())),
+            models_path: input
+                .models_path
+                .map_or(NotSet, |s| Set(s.trim().to_owned())),
+            models: input.models.map_or(NotSet, |m| Set(Models(m))),
+            enabled: input.enabled.map_or(NotSet, Set),
+            updated_at: Set(Utc::now()),
+            ..Default::default()
+        })
+        .validate()?
+        .filter(provider::Column::UserId.eq(user_id))
+        .exec(&self.db)
+        .await
+        .map_err(|e| match e {
+            DbErr::RecordNotUpdated => ProviderError::NotFound,
+            e => e.into(),
+        })?;
+        Ok(self.view(&row))
     }
 
     /// Deletes a provider owned by the user.
     ///
     /// # Errors
     ///
-    /// [`ProviderError::NotFound`] when the user owns no such provider;
-    /// otherwise propagates the store's error.
+    /// [`ProviderError::NotFound`] when the user owns no such provider and
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
-        if !self.store.delete(user_id, id).await? {
+        let deleted = provider::Entity::delete_many()
+            .filter(provider::Column::Id.eq(id))
+            .filter(provider::Column::UserId.eq(user_id))
+            .exec(&self.db)
+            .await?;
+        if deleted.rows_affected == 0 {
             return Err(ProviderError::NotFound);
         }
         Ok(())
@@ -263,25 +290,25 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     /// # Errors
     ///
     /// [`ProviderError::NotFound`] when the user owns no such provider,
-    /// [`ProviderError::Crypto`] when opening the key fails; otherwise
-    /// propagates the store's error.
+    /// [`ProviderError::Crypto`] when opening the key fails, and
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn adapter(&self, user_id: Uuid, id: Uuid) -> Result<C::Adapter, ProviderError> {
         let endpoint = self.endpoint(user_id, id).await?;
         Ok(self.connector.connect(endpoint))
     }
 
     async fn endpoint(&self, user_id: Uuid, id: Uuid) -> Result<Endpoint, ProviderError> {
-        let record = self
-            .store
-            .get(user_id, id)
+        let row = provider::Entity::find_by_id(id)
+            .filter(provider::Column::UserId.eq(user_id))
+            .one(&self.db)
             .await?
             .ok_or(ProviderError::NotFound)?;
         Ok(Endpoint {
-            kind: kind_of(&record),
-            api_key: self.open_key(&record.api_key)?,
-            base_url: record.base_url,
-            api_path: record.api_path,
-            models_path: record.models_path,
+            kind: kind_of(&row),
+            api_key: self.open_key(&row.api_key)?,
+            base_url: row.base_url,
+            api_path: row.api_path,
+            models_path: row.models_path,
         })
     }
 
@@ -291,8 +318,8 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     ///
     /// [`ProviderError::NotFound`] when the user owns no such provider,
     /// [`ProviderError::Crypto`] when opening the key fails,
-    /// [`ProviderError::Fetch`] when the endpoint request fails; otherwise
-    /// propagates the store's error.
+    /// [`ProviderError::Fetch`] when the endpoint request fails, and
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn fetch_models_for(
         &self,
         user_id: Uuid,
@@ -332,8 +359,8 @@ impl<P: ProviderStore, C: Connector> ProviderService<P, C> {
     }
 }
 
-fn kind_of(record: &ProviderRecord) -> ProviderKind {
+fn kind_of(row: &provider::Model) -> ProviderKind {
     use std::str::FromStr;
 
-    ProviderKind::from_str(&record.kind).unwrap_or(ProviderKind::OpenAiCompatible)
+    ProviderKind::from_str(&row.kind).unwrap_or(ProviderKind::OpenAiCompatible)
 }

@@ -14,9 +14,7 @@ use lemma_proto::lemma::v1::{
     ErrorReason, FetchModelsRequest, FetchModelsResponse, ListProvidersRequest,
     ListProvidersResponse, Provider, UpdateProviderRequest, UpdateProviderResponse,
 };
-use lemma_provider::{
-    CreateInput, ProviderError, ProviderService, ProviderStore, ProviderView, UpdateInput,
-};
+use lemma_provider::{CreateInput, ProviderError, ProviderService, ProviderView, UpdateInput};
 use uuid::Uuid;
 
 /// Maps a proto kind to the domain kind. Returns `None` for unspecified
@@ -45,12 +43,12 @@ pub fn kind_to_proto(kind: ProviderKind) -> v1::ProviderKind {
 ///
 /// `jwt_secret` authenticates requests; `domain` seals API keys at rest
 /// and fetches model lists.
-pub struct ProviderRpc<P, C> {
-    domain: Arc<ProviderService<P, C>>,
+pub struct ProviderRpc<C> {
+    domain: Arc<ProviderService<C>>,
     jwt_secret: String,
 }
 
-impl<P: Debug, C: Debug> Debug for ProviderRpc<P, C> {
+impl<C: Debug> Debug for ProviderRpc<C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProviderRpc")
             .field("domain", &self.domain)
@@ -58,10 +56,10 @@ impl<P: Debug, C: Debug> Debug for ProviderRpc<P, C> {
     }
 }
 
-impl<P: ProviderStore, C: Connector> ProviderRpc<P, C> {
+impl<C: Connector> ProviderRpc<C> {
     /// Creates the handler over the provider domain service, which the
     /// agent shares.
-    pub fn new(domain: Arc<ProviderService<P, C>>, jwt_secret: String) -> Self {
+    pub fn new(domain: Arc<ProviderService<C>>, jwt_secret: String) -> Self {
         Self { domain, jwt_secret }
     }
 }
@@ -107,7 +105,7 @@ fn map_domain(e: ProviderError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl<P: ProviderStore, C: Connector> v1::ProviderService for ProviderRpc<P, C> {
+impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
     async fn list_providers(
         &self,
         ctx: RequestContext,

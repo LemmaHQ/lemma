@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use axum::Router;
-use lemma_db_sqlite::{SqliteConversationStore, SqliteProviderStore};
+use lemma_db_sqlite::SqliteConversationStore;
 use sea_orm::{DbErr, SqlxSqliteConnector};
 use sqlx::SqlitePool;
 
@@ -42,7 +42,6 @@ impl LocalEngine {
         let state = AppState::new(
             db,
             SqliteConversationStore::new(pool.clone()),
-            SqliteProviderStore::new(pool.clone()),
             secrets,
             Some(data_dir.join("workspaces")),
         );

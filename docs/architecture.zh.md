@@ -11,14 +11,14 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 层    | Crate                                                                | 负责                                                                                                                                                                                                                    |
 | ----- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                           | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
-| 领域  | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表与迁移；会话、消息树及其 `ConversationStore` trait；provider 配置与模型列表；API key 加密                                                                                                   |
+| 领域  | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表与迁移；会话、消息树及其 `ConversationStore` trait；provider 配置、模型列表，以及 provider 相关的表与迁移；API key 加密                                                                     |
 | 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`                   | 厂商协议格式与模型列表；工具注册表、审批策略与执行环境；turn 循环及其取消                                                                                                                                               |
 | Agent | `lemma-agent`                                                        | 根据请求组装一个 turn（provider 端点、适配器、会话存储、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                   |
-| 存储  | `lemma-db-sqlite`、`lemma-db-pgsql`                                  | 迁移、SQL，以及每个后端对 `ConversationStore` 与 `ProviderStore` 的一份实现                                                                                                                                             |
+| 存储  | `lemma-db-sqlite`、`lemma-db-pgsql`                                  | 迁移、SQL，以及每个后端对 `ConversationStore` 的一份实现                                                                                                                                                                |
 | RPC   | `crates/rpc/*`，包括 `lemma-host`                                    | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个存储后端之上把它们组装成一个路由，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                              |
 | 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                      | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
 
-领域层、引擎层与 agent 层不含 SQL。`lemma-conversation` 与 `lemma-provider` 定义存储 trait（`ConversationStore`、`ProviderStore`），由各宿主传入 SQLite 或 PostgreSQL 实现；`lemma-auth` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 运行在任一后端上。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
+领域层、引擎层与 agent 层不含 SQL。`lemma-conversation` 定义存储 trait `ConversationStore`，由各宿主传入 SQLite 或 PostgreSQL 实现；`lemma-auth` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 运行在任一后端上。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
 `crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
@@ -86,7 +86,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 ## 持久化
 
-认证表 `users`、`auth_credentials` 与 `refresh_tokens` 属于 `lemma-auth`，它用 SeaORM 定义这些表并拥有它们的迁移；`lemma-host` 在 SQLite 与 PostgreSQL 上同样执行这些迁移。两个后端共用 `providers`、`conversations` 与 `messages` 的逻辑 schema；每个后端各有一个由可回滚迁移对组成的 `migrations/` 目录，这些表的 schema 改动要在两边各加一个迁移（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。每个宿主打开连接池时都会运行迁移。
+认证表 `users`、`auth_credentials` 与 `refresh_tokens` 属于 `lemma-auth`，`providers` 属于 `lemma-provider`；每个 crate 用 SeaORM 定义自己的表并拥有它们的迁移，`lemma-host` 在 SQLite 与 PostgreSQL 上同样执行这些迁移。两个后端共用 `conversations` 与 `messages` 的逻辑 schema；每个后端各有一个由可回滚迁移对组成的 `migrations/` 目录，这些表的 schema 改动要在两边各加一个迁移（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。每个宿主打开连接池时都会运行迁移。
 
 一个会话是一棵消息树。每条消息行保存它的 `parent_id`、带 token 用量的序列化规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider 与模型。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-conversation` 中的 `ConversationStore` 是这些表上唯一的 trait：turn 循环通过它追加、定稿消息并移动叶子，会话服务通过它创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
 

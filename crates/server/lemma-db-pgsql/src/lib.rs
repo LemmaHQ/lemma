@@ -10,6 +10,5 @@ pub mod queries;
 pub mod stores;
 
 pub use pool::{connect, migrate};
-pub use queries::{conversations, providers};
+pub use queries::conversations;
 pub use stores::pg_conversation_store::PgConversationStore;
-pub use stores::pg_provider_store::PgProviderStore;

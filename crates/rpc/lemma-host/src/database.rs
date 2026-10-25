@@ -5,7 +5,10 @@ struct Migrator;
 
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        let mut all = lemma_auth::migrations();
+        let mut all: Vec<_> = [lemma_auth::migrations(), lemma_provider::migrations()]
+            .into_iter()
+            .flatten()
+            .collect();
         all.sort_by(|a, b| a.name().cmp(b.name()));
         all
     }

@@ -2307,7 +2307,6 @@ dependencies = [
  "lemma-core",
  "lemma-model",
  "lemma-proto",
- "lemma-provider",
  "tokio",
  "uuid",
 ]
@@ -2393,7 +2392,6 @@ dependencies = [
  "chrono",
  "lemma-conversation",
  "lemma-core",
- "lemma-provider",
  "serde",
  "serde_json",
  "sqlx",
@@ -2408,7 +2406,6 @@ dependencies = [
  "chrono",
  "lemma-conversation",
  "lemma-core",
- "lemma-provider",
  "serde",
  "serde_json",
  "sqlx",
@@ -2490,8 +2487,15 @@ name = "lemma-provider"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "lemma-auth",
  "lemma-crypto",
  "lemma-model",
+ "lemma-test-db",
+ "sea-orm",
+ "sea-orm-migration",
+ "serde",
+ "serde_json",
+ "tokio",
  "uuid",
 ]
 
@@ -2518,7 +2522,6 @@ dependencies = [
  "lemma-db-pgsql",
  "lemma-db-sqlite",
  "lemma-host",
- "lemma-provider",
  "rust-embed",
  "sea-orm",
  "tokio",

@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
+use sea_orm::DbErr;
+
 /// Errors surfaced by the provider domain. The RPC shell maps these to
 /// wire error reasons; local callers match on them directly.
 #[derive(Debug)]
@@ -17,7 +19,7 @@ pub enum ProviderError {
     NotFound,
     /// Sealing or opening a stored API key failed.
     Crypto(String),
-    /// The storage backend failed.
+    /// The database failed.
     Store(String),
     /// Fetching the live model list failed.
     Fetch(String),
@@ -38,3 +40,9 @@ impl fmt::Display for ProviderError {
 }
 
 impl Error for ProviderError {}
+
+impl From<DbErr> for ProviderError {
+    fn from(e: DbErr) -> Self {
+        Self::Store(e.to_string())
+    }
+}

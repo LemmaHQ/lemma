@@ -10,7 +10,6 @@ lemma-conversation.workspace = true
 lemma-db-pgsql.workspace = true
 lemma-db-sqlite.workspace = true
 lemma-host.workspace = true
-lemma-provider.workspace = true
 rust-embed.workspace = true
 sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-postgres", "sqlx-sqlite"] }
 tokio.workspace = true

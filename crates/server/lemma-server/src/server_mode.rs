@@ -3,10 +3,9 @@
 use std::error::Error;
 
 use lemma_conversation::ConversationStore;
-use lemma_db_pgsql::{PgConversationStore, PgProviderStore};
-use lemma_db_sqlite::{SqliteConversationStore, SqliteProviderStore};
+use lemma_db_pgsql::PgConversationStore;
+use lemma_db_sqlite::SqliteConversationStore;
 use lemma_host::{AppState, Secrets};
-use lemma_provider::ProviderStore;
 use sea_orm::{DatabaseConnection, SqlxPostgresConnector, SqlxSqliteConnector};
 use tokio::net::TcpListener;
 
@@ -22,13 +21,7 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
             let db = SqlxPostgresConnector::from_sqlx_postgres_pool(pool.clone());
             lemma_host::migrate(&db).await?;
             lemma_db_pgsql::migrate(&pool).await?;
-            serve(
-                db,
-                PgConversationStore::new(pool.clone()),
-                PgProviderStore::new(pool.clone()),
-                config.secrets,
-            )
-            .await?;
+            serve(db, PgConversationStore::new(pool.clone()), config.secrets).await?;
             pool.close().await;
         }
         DatabaseBackend::Sqlite => {
@@ -39,7 +32,6 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
             serve(
                 db,
                 SqliteConversationStore::new(pool.clone()),
-                SqliteProviderStore::new(pool.clone()),
                 config.secrets,
             )
             .await?;
@@ -49,13 +41,12 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn serve<S: ConversationStore, P: ProviderStore>(
+async fn serve<S: ConversationStore>(
     db: DatabaseConnection,
     conversations: S,
-    providers: P,
     secrets: Secrets,
 ) -> Result<(), Box<dyn Error>> {
-    let state = AppState::new(db, conversations, providers, secrets, None);
+    let state = AppState::new(db, conversations, secrets, None);
     let listener = TcpListener::bind("0.0.0.0:1025").await?;
     println!("listening on {}", listener.local_addr()?);
     http_server::serve(listener, lemma_host::router(state), async {

@@ -11,23 +11,6 @@ use sqlx::types::Json;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
-pub struct Provider {
-    pub id: Uuid,
-    pub user_id: Uuid,
-    pub kind: String,
-    pub identifier: String,
-    pub name: String,
-    pub base_url: String,
-    pub api_key: String,
-    pub models: Json<Vec<String>>,
-    pub api_path: String,
-    pub models_path: String,
-    pub enabled: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Conversation {
     pub id: Uuid,
     pub user_id: Uuid,

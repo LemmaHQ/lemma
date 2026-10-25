@@ -6,7 +6,7 @@ use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, 
 use lemma_conversation::{ConversationStore, LastModel};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
-use lemma_provider::{ProviderService, ProviderStore};
+use lemma_provider::ProviderService;
 use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::fs;
 use uuid::Uuid;
@@ -47,18 +47,18 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 /// `write_file`, `bash`) run in `<workspaces_dir>/<conversation id>`;
 /// without it, turns call the model without tools.
 #[derive(Debug)]
-pub struct Agent<S, P, C> {
+pub struct Agent<S, C> {
     store: S,
-    providers: Arc<ProviderService<P, C>>,
+    providers: Arc<ProviderService<C>>,
     workspaces_dir: Option<PathBuf>,
     running: Arc<RunningTurns>,
 }
 
-impl<S: ConversationStore, P: ProviderStore, C: Connector> Agent<S, P, C> {
+impl<S: ConversationStore, C: Connector> Agent<S, C> {
     /// Creates the agent over its store and provider domain.
     pub fn new(
         store: S,
-        providers: Arc<ProviderService<P, C>>,
+        providers: Arc<ProviderService<C>>,
         workspaces_dir: Option<PathBuf>,
     ) -> Self {
         Self {

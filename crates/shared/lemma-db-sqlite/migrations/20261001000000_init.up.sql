@@ -1,19 +1,3 @@
-CREATE TABLE providers (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL,
-    name TEXT NOT NULL,
-    base_url TEXT NOT NULL,
-    api_key TEXT NOT NULL,
-    models TEXT NOT NULL,
-    api_path TEXT NOT NULL DEFAULT '',
-    models_path TEXT NOT NULL DEFAULT '',
-    enabled INTEGER NOT NULL DEFAULT 1,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-);
-CREATE INDEX idx_providers_user ON providers (user_id);
-
 CREATE TABLE settings (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key TEXT NOT NULL,

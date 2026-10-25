@@ -7,7 +7,7 @@ use lemma_agent_rpc::AgentRpc;
 use lemma_auth_rpc::AuthRpc;
 use lemma_conversation::ConversationStore;
 use lemma_conversation_rpc::ConversationRpc;
-use lemma_provider::{ProviderService, ProviderStore};
+use lemma_provider::ProviderService;
 use lemma_provider_rpc::ProviderRpc;
 use sea_orm::DatabaseConnection;
 
@@ -16,30 +16,29 @@ use crate::secrets::Secrets;
 /// Connector every provider call goes through.
 type HostConnector = HttpConnector<ReqwestTransport>;
 
-/// The four Connect services over one database: auth on it directly,
-/// conversations on `S`, providers on `P`.
+/// The four Connect services over one database: auth and providers on it
+/// directly, conversations on `S`.
 #[derive(Debug)]
-pub struct AppState<S, P> {
+pub struct AppState<S> {
     pub(crate) auth: AuthRpc,
-    pub(crate) providers: ProviderRpc<P, HostConnector>,
+    pub(crate) providers: ProviderRpc<HostConnector>,
     pub(crate) conversations: ConversationRpc<S>,
-    pub(crate) agent: AgentRpc<S, P, HostConnector>,
+    pub(crate) agent: AgentRpc<S, HostConnector>,
 }
 
-impl<S: ConversationStore, P: ProviderStore> AppState<S, P> {
-    /// Wires the services over the database and the stores. With
-    /// `workspaces_dir` set, turns run workspace tools under it.
+impl<S: ConversationStore> AppState<S> {
+    /// Wires the services over the database and the conversation store.
+    /// With `workspaces_dir` set, turns run workspace tools under it.
     #[must_use]
     pub fn new(
         db: DatabaseConnection,
         conversations: S,
-        providers: P,
         secrets: Secrets,
         workspaces_dir: Option<PathBuf>,
     ) -> Self {
         let connector = HttpConnector::new(ReqwestTransport::new());
         let provider_service = Arc::new(ProviderService::new(
-            providers,
+            db.clone(),
             Some(secrets.secret_key),
             connector,
         ));

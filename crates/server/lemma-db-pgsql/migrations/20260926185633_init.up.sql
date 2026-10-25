@@ -5,21 +5,6 @@ CREATE TABLE settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     PRIMARY KEY (user_id, key)
 );
-CREATE TABLE providers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL,
-    name TEXT NOT NULL,
-    base_url TEXT NOT NULL,
-    api_key TEXT NOT NULL,
-    models JSONB NOT NULL,
-    api_path TEXT NOT NULL DEFAULT '',
-    models_path TEXT NOT NULL DEFAULT '',
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
-);
-CREATE INDEX ON providers (user_id);
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

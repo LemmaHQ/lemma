@@ -1,4 +1,3 @@
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS conversations;
 DROP TABLE IF EXISTS settings;
-DROP TABLE IF EXISTS providers;

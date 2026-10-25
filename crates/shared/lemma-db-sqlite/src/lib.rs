@@ -11,6 +11,5 @@ pub mod queries;
 pub mod stores;
 
 pub use pool::{connect, connect_in_memory, migrate};
-pub use queries::{conversations, providers};
+pub use queries::conversations;
 pub use stores::sqlite_conversation_store::SqliteConversationStore;
-pub use stores::sqlite_provider_store::SqliteProviderStore;
