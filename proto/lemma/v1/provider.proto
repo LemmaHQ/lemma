@@ -18,7 +18,7 @@ message Provider {
   ProviderKind kind = 2;
   string name = 3;
   string base_url = 4; // Base URL including API version path, e.g. https://api.openai.com/v1
-  string api_key = 5; // Masked when returned in read responses
+  string api_key = 5; // Decrypted plaintext in read responses
   repeated string models = 6;
   bool enabled = 7;
   string api_path = 8; // Empty string uses provider kind default
