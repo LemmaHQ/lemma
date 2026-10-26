@@ -16,6 +16,7 @@ import {
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const TOKENS_PATH = path.join(ROOT_DIR, "design/tokens.json");
 const WEB_CSS_PATH = path.join(ROOT_DIR, "web/src/tokens.css");
+const UI_CSS_PATH = path.join(ROOT_DIR, "packages/ui/src/styles/tokens.css");
 const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/theme-colors.ts");
 const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
@@ -49,8 +50,10 @@ function main(): void {
     };
     checkThemesMatch(themes.light, themes.dark);
     const motion = readMotion(tokens, TOKENS_PATH);
+    const css = generateWebCss(themes, motion);
     const outputs: [string, string][] = [
-        [WEB_CSS_PATH, generateWebCss(themes, motion)],
+        [WEB_CSS_PATH, css],
+        [UI_CSS_PATH, css],
         [DESKTOP_TS_PATH, generateDesktopTs(themes)],
         [ANDROID_KT_PATH, generateAndroidKt(colors)],
     ];

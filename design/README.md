@@ -16,17 +16,18 @@ English | [中文](README.zh.md)
 
 ## Output
 
-The generator writes three files, all ignored by Git:
+The generator writes four files, all ignored by Git:
 
 | File                                                            | Content                                                                                     | Consumer                                                     |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `web/src/tokens.css`                                            | One CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `web/src/index.css` imports it                               |
+| `packages/ui/src/styles/tokens.css`                             | The same content as `web/src/tokens.css`                                                    | `packages/ui/src/styles/globals.css` imports it              |
 | `desktop/src/gen/theme-colors.ts`                               | The background, sidebar, and foreground of each theme                                       | `desktop/src/main.ts` colors the titlebar and window from it |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                     | `theme/Scheme.kt` maps it onto the app's color roles         |
 
 The Android app reads only the palette, and only the web theme reads the motion tokens. Each consumer runs the generator before reading the output:
 
-- The web npm scripts run it before `dev`, `build`, `build:desktop`, `lint`, `test`, `test:cov`, `format`, and `format:check`.
+- The web npm scripts run it before `dev`, `build`, `build:desktop`, `lint`, `test`, `test:cov`, `format`, and `format:check`; the `@lemma/ui` npm scripts run it before `lint`.
 - The desktop npm scripts run it before `lint`, `test`, and `test:cov`; the desktop `build` runs the web `build:desktop` first.
 - The Gradle task `generateDesignTokens` runs it before Kotlin compiles.
 

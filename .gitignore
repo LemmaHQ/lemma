@@ -21,6 +21,7 @@ dist-ssr
 # Generated code and design tokens
 web/src/gen
 web/src/tokens.css
+packages/ui/src/styles/tokens.css
 desktop/src/gen/
 
 # Desktop (Electron Forge)
