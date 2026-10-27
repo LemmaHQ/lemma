@@ -3,6 +3,7 @@ import { Field, FieldGroup } from "@lemma/ui/components/field";
 import {
     InputGroup,
     InputGroupAddon,
+    InputGroupButton,
     InputGroupInput,
 } from "@lemma/ui/components/input-group";
 import { PasswordInput } from "@lemma/ui/components/password-input";
@@ -120,20 +121,19 @@ export function SignInForm({
                                 readOnly
                                 value={identifier.trim()}
                             />
-                            <div className="flex h-8 items-center gap-2 rounded-lg border border-input bg-control pr-1 pl-2.5 text-sm">
-                                <UserIcon className="size-4 shrink-0 text-muted-foreground" />
-                                <span className="min-w-0 flex-1 truncate font-medium">
+                            <InputGroup>
+                                <InputGroupAddon>
+                                    <UserIcon />
+                                </InputGroupAddon>
+                                <span className="min-w-0 flex-1 truncate pl-1.5 text-base font-medium md:text-sm">
                                     {identifier.trim()}
                                 </span>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="xs"
-                                    onClick={changeAccount}
-                                >
-                                    {t("auth.changeAccount")}
-                                </Button>
-                            </div>
+                                <InputGroupAddon align="inline-end">
+                                    <InputGroupButton onClick={changeAccount}>
+                                        {t("auth.changeAccount")}
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </InputGroup>
                         </Field>
                         <Field data-invalid={invalid}>
                             <PasswordInput
