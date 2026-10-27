@@ -6,6 +6,8 @@ export interface TitleBarState {
 
 /** The API the desktop preload exposes to the web client as `window.lemmaDesktop`. */
 export interface DesktopBridge {
+    /** Version of the desktop app, from `app.getVersion()`. */
+    readonly appVersion: string;
     /** Height in CSS pixels of the titlebar overlay the page lays out under. */
     readonly titlebarHeight: number;
     setTitleBar(state: TitleBarState): void;

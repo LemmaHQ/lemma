@@ -12,6 +12,7 @@ import {
 import started from "electron-squirrel-startup";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { appVersionArg } from "./app-version";
 import * as engine from "./engine";
 import { themeColors } from "./gen/theme-colors";
 import { TITLEBAR_HEIGHT } from "./titlebar";
@@ -102,6 +103,7 @@ const createWindow = () => {
         titleBarOverlay: titleBarOverlay(initialState),
         webPreferences: {
             preload: path.join(__dirname, "preload.cjs"),
+            additionalArguments: [appVersionArg(app.getVersion())],
         },
     });
     mainWindow = window;
