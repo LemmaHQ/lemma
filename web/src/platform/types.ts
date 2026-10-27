@@ -20,4 +20,6 @@ export interface PlatformAdapter {
     readonly window: WindowCapabilities;
     readonly auth: AuthCapabilities;
     readonly layout: LayoutCapabilities;
+    /** Version of the native client app; `null` in the browser. */
+    readonly clientVersion: string | null;
 }

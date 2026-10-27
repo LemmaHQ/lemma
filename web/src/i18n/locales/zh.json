@@ -1,23 +1,4 @@
 {
-    "auth": {
-        "confirmPassword": "确认密码",
-        "confirmPasswordPlaceholder": "再次输入密码",
-        "createAccount": "创建账号",
-        "email": "邮箱",
-        "emailPlaceholder": "you@example.com",
-        "identifier": "邮箱或用户名",
-        "identifierPlaceholder": "you@example.com",
-        "loginTab": "登录",
-        "password": "密码",
-        "passwordMismatch": "两次输入的密码不一致",
-        "passwordPlaceholder": "输入密码",
-        "productName": "Lemma",
-        "registerTab": "创建账号",
-        "signIn": "登录",
-        "subtitle": "登录或创建账号以继续。",
-        "username": "用户名",
-        "usernamePlaceholder": "取一个用户名"
-    },
     "agent": {
         "abortedNotice": "生成已停止。",
         "stop": "停止生成",
@@ -38,6 +19,26 @@
             "used_one": "使用了 {{count}} 个工具",
             "used_other": "使用了 {{count}} 个工具"
         }
+    },
+    "auth": {
+        "changeAccount": "更换",
+        "confirmPassword": "确认密码",
+        "continue": "继续",
+        "email": "邮箱",
+        "haveAccount": "已有账号？",
+        "identifier": "邮箱或用户名",
+        "noAccount": "还没有账号？",
+        "password": "密码",
+        "passwordDescription": "输入该账号的密码以继续。",
+        "passwordMismatch": "两次输入的密码不一致",
+        "passwordTitle": "输入密码",
+        "signIn": "登录",
+        "signInDescription": "输入邮箱或用户名以继续。",
+        "signInTitle": "登录 Lemma",
+        "signUp": "注册",
+        "signUpDescription": "创建账号，开始使用 Lemma。",
+        "signUpTitle": "注册 Lemma 账号",
+        "username": "用户名"
     },
     "common": {
         "appName": "Lemma",
@@ -170,5 +171,9 @@
         "light": "浅色",
         "system": "跟随系统",
         "toggle": "切换主题"
+    },
+    "version": {
+        "client": "客户端 v{{version}}",
+        "server": "服务端 v{{version}}"
     }
 }

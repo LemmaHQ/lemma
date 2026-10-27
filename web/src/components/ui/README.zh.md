@@ -21,7 +21,6 @@
 | `badge`        | 简短的状态或计数标签                                   |
 | `button`       | 可点击的操作                                           |
 | `button-group` | 一排相连的控件，例如输入框与其保存按钮                 |
-| `card`         | 带边框的内容卡片                                       |
 | `collapsible`  | 显示与隐藏区域；由调用方绘制触发器                     |
 | `command`      | 可搜索的命令或选项列表；`model-selector` 基于它构建    |
 | `dialog`       | 承载任务、保留下层页面的模态窗口                       |
@@ -33,16 +32,14 @@
 | `separator`    | 水平或垂直分隔线                                       |
 | `spinner`      | 按钮或行内的加载动画图标                               |
 | `switch`       | 立即生效的两态开关                                     |
-| `tabs`         | 在面板之间切换的标签列表                               |
 | `toggle`       | 可按下的两态按钮                                       |
 | `toggle-group` | 设置一个或多个值的一排切换按钮                         |
 | `tooltip`      | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示       |
 
-侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input-group`、`password-input`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
+侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input-group`、`password-input`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入，品牌标志从 `@lemma/ui/components/brand/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
 
-有三对组件容易混淆：
+有两对组件容易混淆：
 
-- **`Tabs` 与 `ToggleGroup`。** `Tabs` 切换显示哪个面板，并通过 `TabsContent` 拥有这些面板。`ToggleGroup` 设置一个值，例如主题偏好，不拥有面板。
 - **`AlertDialog` 与提示消息。** `AlertDialog` 在操作之前询问，并阻塞直到用户回答。提示消息在操作执行后报告结果，不阻塞任何内容。
 - **`Tooltip` 与 `title`。** `Tooltip` 在键盘聚焦时显示并跟随主题；`title` 属性两者都做不到。仅含图标的按钮使用 `Tooltip` 加 `aria-label`。
 

@@ -10,3 +10,7 @@ export function usePlatformWindow(): WindowCapabilities {
 export function usePlatformLayout(): LayoutCapabilities {
     return useContext(PlatformContext).layout;
 }
+
+export function useClientVersion(): string | null {
+    return useContext(PlatformContext).clientVersion;
+}

@@ -18,10 +18,11 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly fetch: typeof globalThis.fetch;
     readonly window: PlatformAdapter["window"];
     readonly auth: PlatformAdapter["auth"];
-
     readonly layout: PlatformAdapter["layout"];
+    readonly clientVersion: string;
 
     constructor(target: Window, bridge: DesktopBridge) {
+        this.clientVersion = bridge.appVersion;
         this.layout = {
             hasCustomTitlebar: true,
             titlebarHeight: bridge.titlebarHeight,

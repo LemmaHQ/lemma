@@ -1,0 +1,58 @@
+// Adapted from the github-icon of itshover (https://itshover.com), Apache License 2.0.
+import { cn } from "cn";
+import { motion, type Variants } from "motion/react";
+
+import {
+    getVariants,
+    IconWrapper,
+    useAnimateIconContext,
+    type IconProps,
+} from "@animate-ui/react/icons";
+
+type GithubProps = IconProps<keyof typeof animations>;
+
+const animations = {
+    default: {
+        group: {
+            initial: { scale: 1, rotate: 0 },
+            animate: {
+                scale: [1, 1.1, 1],
+                rotate: [0, -5, 5, 0],
+                transition: { duration: 0.5, ease: "easeInOut" },
+            },
+        },
+    } satisfies Record<string, Variants>,
+} as const;
+
+function IconComponent({ size, className, ...props }: GithubProps) {
+    const { controls } = useAnimateIconContext();
+    const variants: Record<keyof (typeof animations)["default"], Variants> =
+        getVariants(animations);
+    const animate = controls === undefined ? {} : { animate: controls };
+
+    return (
+        <motion.svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={cn("overflow-visible", className)}
+            {...props}
+        >
+            <motion.g variants={variants.group} initial="initial" {...animate}>
+                <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+            </motion.g>
+        </motion.svg>
+    );
+}
+
+function Github(props: GithubProps) {
+    return <IconWrapper icon={IconComponent} {...props} />;
+}
+
+export { Github, Github as GithubIcon, type GithubProps };

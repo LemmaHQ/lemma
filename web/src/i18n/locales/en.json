@@ -1,23 +1,4 @@
 {
-    "auth": {
-        "confirmPassword": "Confirm password",
-        "confirmPasswordPlaceholder": "Repeat your password",
-        "createAccount": "Create account",
-        "email": "Email",
-        "emailPlaceholder": "you@example.com",
-        "identifier": "Email or username",
-        "identifierPlaceholder": "you@example.com",
-        "loginTab": "Sign in",
-        "password": "Password",
-        "passwordMismatch": "Passwords do not match",
-        "passwordPlaceholder": "Enter your password",
-        "productName": "Lemma",
-        "registerTab": "Create account",
-        "signIn": "Sign in",
-        "subtitle": "Sign in or create an account to continue.",
-        "username": "Username",
-        "usernamePlaceholder": "Pick a username"
-    },
     "agent": {
         "abortedNotice": "Generation stopped.",
         "stop": "Stop generating",
@@ -38,6 +19,26 @@
             "used_one": "Used {{count}} tool",
             "used_other": "Used {{count}} tools"
         }
+    },
+    "auth": {
+        "changeAccount": "Change",
+        "confirmPassword": "Confirm password",
+        "continue": "Continue",
+        "email": "Email",
+        "haveAccount": "Already have an account?",
+        "identifier": "Email or username",
+        "noAccount": "No account yet?",
+        "password": "Password",
+        "passwordDescription": "Enter the password for this account to continue.",
+        "passwordMismatch": "Passwords do not match",
+        "passwordTitle": "Enter your password",
+        "signIn": "Sign in",
+        "signInDescription": "Enter your email or username to continue.",
+        "signInTitle": "Sign in to Lemma",
+        "signUp": "Sign up",
+        "signUpDescription": "Create an account to start using Lemma.",
+        "signUpTitle": "Create your Lemma account",
+        "username": "Username"
     },
     "common": {
         "appName": "Lemma",
@@ -170,5 +171,9 @@
         "light": "Light",
         "system": "System",
         "toggle": "Toggle theme"
+    },
+    "version": {
+        "client": "Client v{{version}}",
+        "server": "Server v{{version}}"
     }
 }

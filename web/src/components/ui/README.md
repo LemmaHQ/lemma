@@ -21,7 +21,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `badge`        | Short status or count label                                                           |
 | `button`       | Clickable action                                                                      |
 | `button-group` | Row of joined controls, such as an input with its save button                         |
-| `card`         | Bordered content card                                                                 |
 | `collapsible`  | Show-and-hide region; the caller draws the trigger                                    |
 | `command`      | Searchable list of commands or options; `model-selector` builds on it                 |
 | `dialog`       | Modal window for a task that keeps the page underneath                                |
@@ -33,16 +32,14 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `separator`    | Horizontal or vertical divider line                                                   |
 | `spinner`      | Animated loading icon inside a button or row                                          |
 | `switch`       | Two-state toggle that applies immediately                                             |
-| `tabs`         | Tablist that switches between panels                                                  |
 | `toggle`       | Pressable two-state button                                                            |
 | `toggle-group` | Row of toggles that sets one value or several                                         |
 | `tooltip`      | Short label for an icon-only control, shown on hover and keyboard focus               |
 
-The sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input-group`, `password-input`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
+The sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input-group`, `password-input`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>` and brand logos from `@lemma/ui/components/brand/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
 
-Three pairs are easy to confuse:
+Two pairs are easy to confuse:
 
-- **`Tabs` against `ToggleGroup`.** `Tabs` switches which panel is shown and owns the panels through `TabsContent`. `ToggleGroup` sets a value, such as the theme preference, and owns no panels.
 - **`AlertDialog` against a toast.** `AlertDialog` asks before an action and blocks until the user answers. A toast reports the outcome of an action after it ran and blocks nothing.
 - **`Tooltip` against `title`.** `Tooltip` shows on keyboard focus and follows the theme; the `title` attribute does neither. Icon-only buttons use `Tooltip` plus an `aria-label`.
 

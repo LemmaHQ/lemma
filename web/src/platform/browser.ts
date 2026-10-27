@@ -29,6 +29,8 @@ export class BrowserAdapter implements PlatformAdapter {
     readonly fetch: typeof globalThis.fetch = (input, init) =>
         globalThis.fetch(input, init);
 
+    readonly clientVersion = null;
+
     readonly window = {
         setTitleBar: (): void => {},
         toggleMaximize: (): void => {},

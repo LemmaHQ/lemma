@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
+import { AuthLayout } from "./auth/AuthLayout";
 import { AppShell } from "./shell/AppShell";
 import { Loading, RequireAuth } from "./RequireAuth";
 
@@ -9,11 +10,23 @@ const router = createBrowserRouter([
         HydrateFallback: Loading,
         children: [
             {
-                path: "/login",
-                lazy: async () => ({
-                    Component: (await import("@/app/pages/LoginPage"))
-                        .LoginPage,
-                }),
+                Component: AuthLayout,
+                children: [
+                    {
+                        path: "/signin",
+                        lazy: async () => ({
+                            Component: (await import("@/app/pages/SignInPage"))
+                                .SignInPage,
+                        }),
+                    },
+                    {
+                        path: "/signup",
+                        lazy: async () => ({
+                            Component: (await import("@/app/pages/SignUpPage"))
+                                .SignUpPage,
+                        }),
+                    },
+                ],
             },
             {
                 Component: RequireAuth,
