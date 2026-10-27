@@ -12,7 +12,7 @@ English | [中文](README.zh.md)
 
 - `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, the gray steps of the Android app, the neutral steps of the web theme, blue and red steps with their alpha tiers, and alpha tiers of black and white. Palette names describe the color, not its use.
 - `light` and `dark` hold the same color roles: the shadcn theme variables such as `background`, `primary`, and `sidebar-border`, plus the state roles of the shared web controls such as `control-hover` and `destructive-ring`. Each role references a palette entry, for example `{palette.blue.500}`.
-- `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`. [Web styling](../docs/web-styling.md#motion) defines what each step and easing is for.
+- `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`.
 
 ## Output
 

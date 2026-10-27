@@ -5,7 +5,7 @@ description: Use when adding, changing, or reviewing user-visible UI in the Lemm
 
 # Lemma client UI/UX
 
-This skill is guidance, not a complete checklist. It covers judgment calls that lint, typecheck, and tests cannot make: where feedback appears, what gets reused, and how surfaces behave at window edges and across platforms. Copy quality follows [lemma-prose-standard](../lemma-prose-standard/SKILL.md). Web styling ownership and token rules live in [docs/web-styling.md](../../../docs/web-styling.md), radii in [docs/ui-radius.md](../../../docs/ui-radius.md), and shared controls in the [component catalog](../../../web/src/components/ui/README.md#component-catalog); this skill adds judgment on top of those rules, not a second copy of them.
+This skill is guidance, not a complete checklist. It covers judgment calls that lint, typecheck, and tests cannot make: where feedback appears, what gets reused, and how surfaces behave at window edges and across platforms. Copy quality follows [lemma-prose-standard](../lemma-prose-standard/SKILL.md). Shared controls are listed in the [component catalog](../../../web/src/components/ui/README.md#component-catalog); this skill adds judgment on top of it, not a second copy of it.
 
 The web client is also the desktop renderer, so every web rule applies to desktop. Each section names the Android (Compose) form where it differs.
 
