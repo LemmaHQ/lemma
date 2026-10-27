@@ -174,7 +174,10 @@ function FieldError({ className, ...props }: React.ComponentProps<"div">) {
         <div
             role="alert"
             data-slot="field-error"
-            className={cn("text-sm font-normal text-destructive", className)}
+            className={cn(
+                "animate-in text-sm font-normal text-destructive duration-base ease-enter fade-in-0 slide-in-from-bottom-1",
+                className,
+            )}
             {...props}
         />
     );
