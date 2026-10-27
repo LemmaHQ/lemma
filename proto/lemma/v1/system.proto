@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package lemma.v1;
+
+message GetVersionRequest {}
+
+message GetVersionResponse {
+  // Release version of the server or local engine that answers.
+  string version = 1;
+}
+
+// Facts about the running server; every RPC answers without a session.
+service SystemService {
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+}

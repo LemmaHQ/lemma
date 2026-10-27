@@ -41,11 +41,11 @@ The web client fetches conversations and messages from the host on each view. Th
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `ConversationService`, and `AgentService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `ConversationService`, `AgentService`, and `SystemService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
-`AuthService.Me` and every RPC of the other three services resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id.
+`AuthService.Me` and every RPC of `ProviderService`, `ConversationService`, and `AgentService` resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id. The other `AuthService` RPCs and `SystemService` answer without a session.
 
 ## The path of one turn
 

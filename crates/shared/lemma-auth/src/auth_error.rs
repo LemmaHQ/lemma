@@ -17,8 +17,10 @@ pub enum AuthError {
     TokenInvalid,
     /// Target account is absent.
     UserNotFound,
-    /// The username or email is already registered.
+    /// The username is already registered.
     UsernameTaken,
+    /// The email is already registered.
+    EmailTaken,
     /// Access-token signing failed.
     Sign(String),
     /// Password hashing failed.
@@ -35,6 +37,7 @@ impl fmt::Display for AuthError {
             Self::TokenInvalid => write!(f, "token invalid"),
             Self::UserNotFound => write!(f, "user not found"),
             Self::UsernameTaken => write!(f, "username taken"),
+            Self::EmailTaken => write!(f, "email taken"),
             Self::Sign(e) => write!(f, "jwt sign: {e}"),
             Self::Hash(e) => write!(f, "hash password: {e}"),
             Self::Store(e) => write!(f, "db: {e}"),

@@ -23,22 +23,46 @@ fn service(db: DatabaseConnection) -> AuthService {
 }
 
 #[tokio::test]
-async fn sign_up_rejects_a_taken_username_or_email() -> Result<(), Box<dyn Error>> {
+async fn sign_up_names_the_taken_username_or_email() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
         auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        auth.sign_up("bob", "bob@example.com", PASSWORD).await?;
 
         let same_username = auth.sign_up("ada", "other@example.com", PASSWORD).await;
         let same_email = auth.sign_up("other", "ada@example.com", PASSWORD).await;
+        let both = auth.sign_up("ada", "bob@example.com", PASSWORD).await;
 
         assert!(
             matches!(same_username, Err(AuthError::UsernameTaken)),
             "same username: {same_username:?}"
         );
         assert!(
-            matches!(same_email, Err(AuthError::UsernameTaken)),
+            matches!(same_email, Err(AuthError::EmailTaken)),
             "same email: {same_email:?}"
         );
+        assert!(
+            matches!(both, Err(AuthError::UsernameTaken)),
+            "username and email of different accounts: {both:?}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn account_exists_matches_the_username_or_the_email() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db);
+        auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+
+        assert!(auth.account_exists("ada").await?, "username");
+        assert!(
+            auth.account_exists(" ada@example.com ").await?,
+            "padded email"
+        );
+        assert!(!auth.account_exists("nobody").await?, "unknown login");
+        assert!(!auth.account_exists("").await?, "blank login");
         Ok(())
     })
     .await

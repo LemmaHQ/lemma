@@ -17,6 +17,7 @@ lemma-conversation.workspace = true
 lemma-conversation-rpc.workspace = true
 lemma-provider.workspace = true
 lemma-provider-rpc.workspace = true
+lemma-system-rpc.workspace = true
 rand.workspace = true
 sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-sqlite"] }
 sea-orm-migration.workspace = true

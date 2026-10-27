@@ -27,7 +27,8 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
 fn message(reason: ErrorReason) -> &'static str {
     match reason {
         ErrorReason::CredentialsInvalid => "invalid credentials",
-        ErrorReason::UsernameTaken => "username or email already taken",
+        ErrorReason::UsernameTaken => "username already taken",
+        ErrorReason::EmailTaken => "email already taken",
         ErrorReason::SignupFieldsRequired => {
             "username and email required, password at least 8 chars"
         }

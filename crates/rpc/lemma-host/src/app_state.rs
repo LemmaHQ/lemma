@@ -9,6 +9,7 @@ use lemma_conversation::ConversationService;
 use lemma_conversation_rpc::ConversationRpc;
 use lemma_provider::ProviderService;
 use lemma_provider_rpc::ProviderRpc;
+use lemma_system_rpc::SystemRpc;
 use sea_orm::DatabaseConnection;
 
 use crate::secrets::Secrets;
@@ -16,13 +17,14 @@ use crate::secrets::Secrets;
 /// Connector every provider call goes through.
 type HostConnector = HttpConnector<ReqwestTransport>;
 
-/// The four Connect services over one database.
+/// The five Connect services over one database.
 #[derive(Debug)]
 pub struct AppState {
     pub(crate) auth: AuthRpc,
     pub(crate) providers: ProviderRpc<HostConnector>,
     pub(crate) conversations: ConversationRpc,
     pub(crate) agent: AgentRpc<HostConnector>,
+    pub(crate) system: SystemRpc,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             providers: ProviderRpc::new(provider_service, secrets.jwt_secret.clone()),
             conversations: ConversationRpc::new(conversation_service, secrets.jwt_secret.clone()),
             agent: AgentRpc::new(agent, secrets.jwt_secret),
+            system: SystemRpc,
         }
     }
 }

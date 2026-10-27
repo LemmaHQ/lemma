@@ -11,8 +11,9 @@ use lemma_auth::{
 };
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    ErrorReason, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, MeRequest, MeResponse,
-    RefreshRequest, RefreshResponse, SignUpRequest, SignUpResponse,
+    CheckAccountRequest, CheckAccountResponse, ErrorReason, LoginRequest, LoginResponse,
+    LogoutRequest, LogoutResponse, MeRequest, MeResponse, RefreshRequest, RefreshResponse,
+    SignUpRequest, SignUpResponse,
 };
 use sea_orm::DatabaseConnection;
 
@@ -133,6 +134,7 @@ fn map_domain(e: AuthError) -> ConnectError {
         AuthError::TokenInvalid => lemma_proto::app_error(ErrorReason::TokenInvalid),
         AuthError::UserNotFound => lemma_proto::app_error(ErrorReason::UserNotFound),
         AuthError::UsernameTaken => lemma_proto::app_error(ErrorReason::UsernameTaken),
+        AuthError::EmailTaken => lemma_proto::app_error(ErrorReason::EmailTaken),
         AuthError::Sign(m) => ConnectError::internal(format!("jwt sign: {m}")),
         AuthError::Hash(m) => ConnectError::internal(format!("hash password: {m}")),
         AuthError::Store(m) => ConnectError::internal(format!("db: {m}")),
@@ -181,6 +183,22 @@ impl v1::AuthService for AuthRpc {
             },
             cookies,
         )
+    }
+
+    async fn check_account(
+        &self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, CheckAccountRequest>,
+    ) -> ServiceResult<CheckAccountResponse> {
+        let exists = self
+            .domain
+            .account_exists(request.login)
+            .await
+            .map_err(map_domain)?;
+        Response::ok(CheckAccountResponse {
+            exists,
+            ..Default::default()
+        })
     }
 
     async fn refresh(

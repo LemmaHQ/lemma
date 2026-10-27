@@ -46,6 +46,15 @@ message LoginResponse {
   AuthTokens tokens = 2;
 }
 
+message CheckAccountRequest {
+  // Username or email of the account.
+  string login = 1;
+}
+
+message CheckAccountResponse {
+  bool exists = 1;
+}
+
 message RefreshRequest {
   string refresh_token = 1;
 }
@@ -70,6 +79,8 @@ service AuthService {
   // Registers a new user account.
   rpc SignUp(SignUpRequest) returns (SignUpResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  // Reports whether an account with the username or email exists, so a client can route to sign-in or sign-up.
+  rpc CheckAccount(CheckAccountRequest) returns (CheckAccountResponse);
   // Token rotation: revokes the previous refresh token and issues a new pair.
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
   // Revokes the active refresh token session.

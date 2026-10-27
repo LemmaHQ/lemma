@@ -77,6 +77,7 @@
         "contentRequired": "Message content is required.",
         "conversationNotFound": "Conversation not found.",
         "credentialsInvalid": "Incorrect username or password.",
+        "emailTaken": "This email is already registered.",
         "idInvalid": "Invalid ID.",
         "modelRequired": "Please select a model.",
         "network": "Can't reach the server. Check your connection and try again.",
@@ -92,7 +93,7 @@
         "turnNotRunning": "This reply has already finished.",
         "unspecified": "Something went wrong. Please try again.",
         "userNotFound": "User not found.",
-        "usernameTaken": "Username or email is already taken."
+        "usernameTaken": "This username is already taken."
     },
     "language": {
         "toggle": "Language"

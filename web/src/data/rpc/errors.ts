@@ -7,6 +7,7 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.UNSPECIFIED]: "errors.unspecified",
     [ErrorReason.CREDENTIALS_INVALID]: "errors.credentialsInvalid",
     [ErrorReason.USERNAME_TAKEN]: "errors.usernameTaken",
+    [ErrorReason.EMAIL_TAKEN]: "errors.emailTaken",
     [ErrorReason.SIGNUP_FIELDS_REQUIRED]: "errors.signupFieldsRequired",
     [ErrorReason.TOKEN_INVALID]: "errors.tokenInvalid",
     [ErrorReason.USER_NOT_FOUND]: "errors.userNotFound",

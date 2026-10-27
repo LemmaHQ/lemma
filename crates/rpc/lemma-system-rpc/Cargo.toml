@@ -1,0 +1,11 @@
+[package]
+name = "lemma-system-rpc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+connectrpc.workspace = true
+lemma-proto.workspace = true
+
+[lints]
+workspace = true

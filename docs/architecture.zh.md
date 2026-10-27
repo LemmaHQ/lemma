@@ -41,11 +41,11 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 
 ## 跨线路的契约
 
-`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`ConversationService`、`AgentService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`ConversationService`、`AgentService`、`SystemService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 业务错误携带 `errors.proto` 中封闭枚举里的一个 `ErrorReason`，由 `lemma_proto::app_error` 作为 `ErrorInfo` detail 附加；客户端按原因码本地化。基础设施故障（数据库、解密、上游）返回 internal 级别的 Connect 错误，带原始英文信息，不带原因码。
 
-`AuthService.Me` 与其他三个服务的每个 RPC 都用 `require_user` 解析调用者：优先取 `Bearer` 访问令牌，否则取 `lemma_access` cookie。之后每个请求只操作该用户 id 名下的行。
+`AuthService.Me` 与 `ProviderService`、`ConversationService`、`AgentService` 的每个 RPC 都用 `require_user` 解析调用者：优先取 `Bearer` 访问令牌，否则取 `lemma_access` cookie。之后每个请求只操作该用户 id 名下的行。`AuthService` 的其余 RPC 与 `SystemService` 无需会话即可调用。
 
 ## 一次 turn 的完整链路
 

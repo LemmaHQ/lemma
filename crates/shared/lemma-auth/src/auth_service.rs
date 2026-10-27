@@ -6,8 +6,8 @@ use std::fmt::{self, Debug};
 use chrono::{DateTime, Duration, Utc};
 use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
-    QueryFilter, Set, SqlErr, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, DbErr,
+    EntityTrait, QueryFilter, Set, SqlErr, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -105,9 +105,9 @@ impl AuthService {
     ///
     /// [`AuthError::SignupFieldsRequired`] for a blank username or email or
     /// a password under 8 characters, [`AuthError::UsernameTaken`] for a
-    /// registered username or email, [`AuthError::Hash`] or
-    /// [`AuthError::Sign`] when hashing or signing fails, and
-    /// [`AuthError::Store`] when the database fails.
+    /// registered username, [`AuthError::EmailTaken`] for a registered
+    /// email, [`AuthError::Hash`] or [`AuthError::Sign`] when hashing or
+    /// signing fails, and [`AuthError::Store`] when the database fails.
     pub async fn sign_up(
         &self,
         username: &str,
@@ -121,18 +121,22 @@ impl AuthService {
         }
         let password_hash = hash_password(password).map_err(|e| AuthError::Hash(e.to_string()))?;
         let tx = self.db.begin().await?;
-        let user = user::ActiveModel {
+        let inserted = user::ActiveModel {
             id: Set(Uuid::new_v4()),
             username: Set(username.to_owned()),
             email: Set(email.to_owned()),
             created_at: Set(Utc::now()),
         }
         .insert(&tx)
-        .await
-        .map_err(|e| match e.sql_err() {
-            Some(SqlErr::UniqueConstraintViolation(_)) => AuthError::UsernameTaken,
-            _ => e.into(),
-        })?;
+        .await;
+        let user = match inserted {
+            Ok(user) => user,
+            Err(e) if matches!(e.sql_err(), Some(SqlErr::UniqueConstraintViolation(_))) => {
+                tx.rollback().await?;
+                return Err(self.conflict(username, email, e).await?);
+            }
+            Err(e) => return Err(e.into()),
+        };
         auth_credential::ActiveModel {
             user_id: Set(user.id),
             password_hash: Set(password_hash),
@@ -144,6 +148,53 @@ impl AuthService {
         Ok(Session { user, tokens })
     }
 
+    /// Names the field a rejected signup collides with, the username first;
+    /// `violation` becomes a store error when no colliding account remains.
+    async fn conflict(
+        &self,
+        username: &str,
+        email: &str,
+        violation: DbErr,
+    ) -> Result<AuthError, AuthError> {
+        let existing = user::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(user::Column::Username.eq(username))
+                    .add(user::Column::Email.eq(email)),
+            )
+            .all(&self.db)
+            .await?;
+        Ok(
+            if existing.iter().any(|account| account.username == username) {
+                AuthError::UsernameTaken
+            } else if existing.is_empty() {
+                violation.into()
+            } else {
+                AuthError::EmailTaken
+            },
+        )
+    }
+
+    async fn find_by_login(&self, login: &str) -> Result<Option<User>, AuthError> {
+        Ok(user::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(user::Column::Username.eq(login))
+                    .add(user::Column::Email.eq(login)),
+            )
+            .one(&self.db)
+            .await?)
+    }
+
+    /// Reports whether an account has `login` as its username or email.
+    ///
+    /// # Errors
+    ///
+    /// [`AuthError::Store`] when the database fails.
+    pub async fn account_exists(&self, login: &str) -> Result<bool, AuthError> {
+        Ok(self.find_by_login(login.trim()).await?.is_some())
+    }
+
     /// Authenticates by username or email and opens a session.
     ///
     /// # Errors
@@ -152,14 +203,8 @@ impl AuthService {
     /// password, [`AuthError::Sign`] when signing fails, and
     /// [`AuthError::Store`] when the database fails.
     pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
-        let login = login.trim();
-        let user = user::Entity::find()
-            .filter(
-                Condition::any()
-                    .add(user::Column::Username.eq(login))
-                    .add(user::Column::Email.eq(login)),
-            )
-            .one(&self.db)
+        let user = self
+            .find_by_login(login.trim())
             .await?
             .ok_or(AuthError::CredentialsInvalid)?;
         let credential = auth_credential::Entity::find_by_id(user.id)

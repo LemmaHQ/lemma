@@ -77,6 +77,7 @@
         "contentRequired": "消息内容不能为空。",
         "conversationNotFound": "会话不存在。",
         "credentialsInvalid": "用户名或密码错误。",
+        "emailTaken": "该邮箱已注册。",
         "idInvalid": "无效的 ID。",
         "modelRequired": "请先选择模型。",
         "network": "无法连接服务器，请检查网络后重试。",
@@ -92,7 +93,7 @@
         "turnNotRunning": "该回复已结束。",
         "unspecified": "操作失败，请重试。",
         "userNotFound": "用户不存在。",
-        "usernameTaken": "用户名或邮箱已被占用。"
+        "usernameTaken": "该用户名已被占用。"
     },
     "language": {
         "toggle": "语言"

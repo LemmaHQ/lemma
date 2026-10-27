@@ -10,6 +10,7 @@ members = [
     "crates/rpc/lemma-conversation-rpc",
     "crates/rpc/lemma-host",
     "crates/rpc/lemma-provider-rpc",
+    "crates/rpc/lemma-system-rpc",
     "crates/shared/lemma-crypto",
     "crates/shared/lemma-core",
     "crates/shared/lemma-adapter",
@@ -56,6 +57,7 @@ lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
 lemma-agent-rpc = { path = "crates/rpc/lemma-agent-rpc" }
 lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
+lemma-system-rpc = { path = "crates/rpc/lemma-system-rpc" }
 lemma-test-db = { path = "crates/shared/lemma-test-db" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }

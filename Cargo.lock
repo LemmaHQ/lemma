@@ -2424,6 +2424,7 @@ dependencies = [
  "lemma-conversation-rpc",
  "lemma-provider",
  "lemma-provider-rpc",
+ "lemma-system-rpc",
  "rand 0.10.3",
  "sea-orm",
  "sea-orm-migration",
@@ -2505,6 +2506,14 @@ dependencies = [
  "sea-orm",
  "tokio",
  "tower-http 0.7.1",
+]
+
+[[package]]
+name = "lemma-system-rpc"
+version = "0.1.0"
+dependencies = [
+ "connectrpc",
+ "lemma-proto",
 ]
 
 [[package]]
