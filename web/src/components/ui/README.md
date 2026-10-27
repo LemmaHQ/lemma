@@ -14,37 +14,32 @@ The sibling `web/src/components/ai-elements/` holds the conversation components,
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module          | Use                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------ |
-| `alert-dialog`  | Confirmation before a destructive or irreversible action                                   |
-| `avatar`        | Round initial or image for a user or provider; `AvatarBadge` marks a status                |
-| `badge`         | Short status or count label                                                                |
-| `button`        | Clickable action                                                                           |
-| `button-group`  | Row of joined controls, such as an input with its save button                              |
-| `card`          | Bordered content card                                                                      |
-| `collapsible`   | Show-and-hide region; the caller draws the trigger                                         |
-| `command`       | Searchable list of commands or options; `model-selector` builds on it                      |
-| `dialog`        | Modal window for a task that keeps the page underneath                                     |
-| `dropdown-menu` | Menu of actions or choices anchored to a trigger                                           |
-| `empty`         | Empty state with icon, title, description, and actions                                     |
-| `field`         | Form layout: label, control, description, and error, grouped and separated                 |
-| `input`         | Single-line text field                                                                     |
-| `input-group`   | Text field with attached icons, text, or buttons                                           |
-| `item`          | Row with title, description, and trailing actions in a list or settings group              |
-| `label`         | Form label bound to a control by `htmlFor`                                                 |
-| `select`        | Single choice from a list in a form                                                        |
-| `scroll-area`   | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it      |
-| `separator`     | Horizontal or vertical divider line                                                        |
-| `spinner`       | Animated loading icon inside a button or row                                               |
-| `sonner`        | The toast host, mounted once in `App`; raise toasts with `toast` from the `sonner` package |
-| `switch`        | Two-state toggle that applies immediately                                                  |
-| `tabs`          | Tablist that switches between panels                                                       |
-| `textarea`      | Multi-line text field                                                                      |
-| `toggle`        | Pressable two-state button                                                                 |
-| `toggle-group`  | Row of toggles that sets one value or several                                              |
-| `tooltip`       | Short label for an icon-only control, shown on hover and keyboard focus                    |
+| Module         | Use                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| `alert-dialog` | Confirmation before a destructive or irreversible action                                   |
+| `avatar`       | Round initial or image for a user or provider; `AvatarBadge` marks a status                |
+| `badge`        | Short status or count label                                                                |
+| `button`       | Clickable action                                                                           |
+| `button-group` | Row of joined controls, such as an input with its save button                              |
+| `card`         | Bordered content card                                                                      |
+| `collapsible`  | Show-and-hide region; the caller draws the trigger                                         |
+| `command`      | Searchable list of commands or options; `model-selector` builds on it                      |
+| `dialog`       | Modal window for a task that keeps the page underneath                                     |
+| `empty`        | Empty state with icon, title, description, and actions                                     |
+| `input`        | Single-line text field                                                                     |
+| `item`         | Row with title, description, and trailing actions in a list or settings group              |
+| `select`       | Single choice from a list in a form                                                        |
+| `scroll-area`  | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it      |
+| `separator`    | Horizontal or vertical divider line                                                        |
+| `spinner`      | Animated loading icon inside a button or row                                               |
+| `sonner`       | The toast host, mounted once in `App`; raise toasts with `toast` from the `sonner` package |
+| `switch`       | Two-state toggle that applies immediately                                                  |
+| `tabs`         | Tablist that switches between panels                                                       |
+| `toggle`       | Pressable two-state button                                                                 |
+| `toggle-group` | Row of toggles that sets one value or several                                              |
+| `tooltip`      | Short label for an icon-only control, shown on hover and keyboard focus                    |
 
-The sidebar and its sheet come from `@lemma/ui`: import `@lemma/ui/components/sidebar` and `@lemma/ui/hooks/use-sidebar`. `AppShell` in `web/src/app/shell/` assembles them for the signed-in pages.
+The sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input-group`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages.
 
 Three pairs are easy to confuse:
 

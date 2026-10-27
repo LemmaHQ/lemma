@@ -1,4 +1,13 @@
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@lemma/ui/components/dropdown-menu";
+import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -9,15 +18,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/features/auth/store";
 
 /** The signed-in account at the bottom of the sidebar, opening settings and sign-out. */

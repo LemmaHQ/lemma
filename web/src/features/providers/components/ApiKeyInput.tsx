@@ -1,13 +1,13 @@
-import { IconEye, IconEyeOff } from "@tabler/icons-react";
-import { useState, type ComponentProps } from "react";
-import { useTranslation } from "react-i18next";
-
 import {
     InputGroup,
     InputGroupAddon,
     InputGroupButton,
     InputGroupInput,
-} from "@/components/ui/input-group";
+} from "@lemma/ui/components/input-group";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useState, type ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
+
 import {
     Tooltip,
     TooltipContent,

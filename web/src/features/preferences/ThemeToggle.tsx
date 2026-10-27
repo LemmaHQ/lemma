@@ -1,14 +1,14 @@
-import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
-import { useTheme } from "next-themes";
-import { useTranslation } from "react-i18next";
-
-import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@lemma/ui/components/dropdown-menu";
+import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
+
+import { Button } from "@/components/ui/button";
 import {
     Tooltip,
     TooltipContent,

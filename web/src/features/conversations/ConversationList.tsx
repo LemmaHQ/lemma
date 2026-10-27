@@ -1,13 +1,13 @@
-import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
     DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+} from "@lemma/ui/components/dropdown-menu";
+import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+
 import {
     SidebarGroup,
     SidebarGroupContent,

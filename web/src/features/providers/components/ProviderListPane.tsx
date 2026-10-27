@@ -9,7 +9,7 @@ import {
     InputGroup,
     InputGroupAddon,
     InputGroupInput,
-} from "@/components/ui/input-group";
+} from "@lemma/ui/components/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import {

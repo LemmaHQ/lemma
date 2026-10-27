@@ -1,3 +1,9 @@
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from "@lemma/ui/components/field";
 import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -9,12 +15,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorText } from "@/data/rpc/errors";

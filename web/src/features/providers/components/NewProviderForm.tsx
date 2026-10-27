@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     Field,
     FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
-} from "@/components/ui/field";
+} from "@lemma/ui/components/field";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,

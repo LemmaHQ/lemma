@@ -1,3 +1,9 @@
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupTextarea,
+} from "@lemma/ui/components/input-group";
 import { IconCornerDownLeft, IconSquare } from "@tabler/icons-react";
 import { cn } from "cn";
 import {
@@ -6,13 +12,6 @@ import {
     type KeyboardEvent,
     useState,
 } from "react";
-
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupTextarea,
-} from "@/components/ui/input-group";
 
 type PromptInputProps = Omit<ComponentProps<"form">, "onSubmit"> & {
     onSubmit: () => void;
