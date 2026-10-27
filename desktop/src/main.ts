@@ -7,6 +7,7 @@ import {
     nativeTheme,
     net,
     protocol,
+    shell,
     type WebContents,
 } from "electron";
 import started from "electron-squirrel-startup";
@@ -27,6 +28,10 @@ if (debugPort !== undefined && debugPort !== "") {
 }
 
 const APP_ORIGIN = "app://lemma";
+const isAppUrl = (url: string) => {
+    const target = new URL(url);
+    return target.protocol === "app:" && target.host === "lemma";
+};
 const WEB_ROOT = path.join(__dirname, "../../web-dist");
 
 protocol.registerSchemesAsPrivileged([
@@ -44,6 +49,12 @@ const serveWebFile = (request: Request): Promise<Response> => {
     const target =
         path.extname(file) === "" ? path.join(WEB_ROOT, "index.html") : file;
     return net.fetch(pathToFileURL(target).href);
+};
+
+const openExternalLink = (url: string) => {
+    if (new URL(url).protocol === "https:") {
+        void shell.openExternal(url);
+    }
 };
 
 let mainWindow: BrowserWindow | null = null;
@@ -109,6 +120,17 @@ const createWindow = () => {
     mainWindow = window;
     window.on("closed", () => {
         mainWindow = null;
+    });
+
+    window.webContents.setWindowOpenHandler(({ url }) => {
+        openExternalLink(url);
+        return { action: "deny" };
+    });
+    window.webContents.on("will-navigate", (event, url) => {
+        if (!isAppUrl(url)) {
+            event.preventDefault();
+            openExternalLink(url);
+        }
     });
 
     window.webContents.on("before-input-event", (_event, input) => {
