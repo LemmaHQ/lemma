@@ -1,3 +1,4 @@
+import { AnimateIcon } from "@animate-ui/react/icons";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,7 +14,9 @@ import {
     SidebarMenuItem,
 } from "@lemma/ui/components/sidebar";
 import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { IconChevronDown, IconLogout, IconSettings } from "@tabler/icons-react";
+import { ChevronDownIcon } from "@lemma/ui/icons/chevron-down";
+import { LogOutIcon } from "@lemma/ui/icons/log-out";
+import { SettingsIcon } from "@lemma/ui/icons/settings";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
@@ -42,7 +45,7 @@ export function AccountMenu() {
                         <span className="min-w-0 flex-1 truncate">
                             {username}
                         </span>
-                        <IconChevronDown />
+                        <ChevronDownIcon />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="start"
@@ -53,23 +56,27 @@ export function AccountMenu() {
                             <DropdownMenuLabel>{username}</DropdownMenuLabel>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            render={<Link to="/settings" viewTransition />}
-                            onClick={() => {
-                                setOpenMobile(false);
-                            }}
-                        >
-                            <IconSettings />
-                            {t("sidebar.appSettings")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => {
-                                void logout();
-                            }}
-                        >
-                            <IconLogout />
-                            {t("sidebar.signOut")}
-                        </DropdownMenuItem>
+                        <AnimateIcon animateOnHover asChild>
+                            <DropdownMenuItem
+                                render={<Link to="/settings" viewTransition />}
+                                onClick={() => {
+                                    setOpenMobile(false);
+                                }}
+                            >
+                                <SettingsIcon />
+                                {t("sidebar.appSettings")}
+                            </DropdownMenuItem>
+                        </AnimateIcon>
+                        <AnimateIcon animateOnHover asChild>
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    void logout();
+                                }}
+                            >
+                                <LogOutIcon />
+                                {t("sidebar.signOut")}
+                            </DropdownMenuItem>
+                        </AnimateIcon>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

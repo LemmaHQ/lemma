@@ -1,13 +1,10 @@
+import { AnimateIcon } from "@animate-ui/react/icons";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
     DropdownMenuItem,
 } from "@lemma/ui/components/dropdown-menu";
-import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-
 import {
     SidebarGroup,
     SidebarGroupContent,
@@ -19,6 +16,12 @@ import {
     SidebarMenuItem,
 } from "@lemma/ui/components/sidebar";
 import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
+import { EllipsisIcon } from "@lemma/ui/icons/ellipsis";
+import { PencilIcon } from "@lemma/ui/icons/pencil";
+import { Trash2Icon } from "@lemma/ui/icons/trash-2";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+
 import {
     Tooltip,
     TooltipContent,
@@ -40,20 +43,22 @@ function SessionActions({ children }: { children: ReactNode }) {
     return (
         <DropdownMenu>
             <Tooltip>
-                <TooltipTrigger
-                    render={
-                        <DropdownMenuTrigger
-                            render={
-                                <SidebarMenuAction
-                                    showOnHover
-                                    aria-label={t("sessions.actions")}
-                                />
-                            }
-                        />
-                    }
-                >
-                    <IconDots />
-                </TooltipTrigger>
+                <AnimateIcon animateOnHover asChild>
+                    <TooltipTrigger
+                        render={
+                            <DropdownMenuTrigger
+                                render={
+                                    <SidebarMenuAction
+                                        showOnHover
+                                        aria-label={t("sessions.actions")}
+                                    />
+                                }
+                            />
+                        }
+                    >
+                        <EllipsisIcon />
+                    </TooltipTrigger>
+                </AnimateIcon>
                 <TooltipContent>{t("sessions.actions")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent side="right" align="start">
@@ -126,17 +131,21 @@ function SessionItem({
                 </span>
             </SidebarMenuButton>
             <SessionActions>
-                <DropdownMenuItem onClick={() => setEditing(true)}>
-                    <IconPencil />
-                    {t("sessions.rename")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete(session.id)}
-                >
-                    <IconTrash />
-                    {t("sessions.delete")}
-                </DropdownMenuItem>
+                <AnimateIcon animateOnHover asChild>
+                    <DropdownMenuItem onClick={() => setEditing(true)}>
+                        <PencilIcon />
+                        {t("sessions.rename")}
+                    </DropdownMenuItem>
+                </AnimateIcon>
+                <AnimateIcon animateOnHover asChild>
+                    <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => onDelete(session.id)}
+                    >
+                        <Trash2Icon />
+                        {t("sessions.delete")}
+                    </DropdownMenuItem>
+                </AnimateIcon>
             </SessionActions>
         </SidebarMenuItem>
     );
