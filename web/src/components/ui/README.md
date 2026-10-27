@@ -39,7 +39,7 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `toggle-group` | Row of toggles that sets one value or several                                              |
 | `tooltip`      | Short label for an icon-only control, shown on hover and keyboard focus                    |
 
-The sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input-group`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages.
+The sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input-group`, `password-input`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages.
 
 Three pairs are easy to confuse:
 

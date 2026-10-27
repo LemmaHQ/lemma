@@ -1,5 +1,9 @@
 {
     "close": "关闭",
+    "passwordInput": {
+        "hide": "隐藏",
+        "show": "显示"
+    },
     "sidebar": {
         "resize": "调整侧边栏宽度",
         "title": "侧边栏",

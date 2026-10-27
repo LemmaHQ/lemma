@@ -39,7 +39,7 @@
 | `toggle-group` | 设置一个或多个值的一排切换按钮                                           |
 | `tooltip`      | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示                         |
 
-侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input-group`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏。
+侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input-group`、`password-input`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏。
 
 有三对组件容易混淆：
 

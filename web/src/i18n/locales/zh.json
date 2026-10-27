@@ -115,7 +115,6 @@
         "enabledGroup": "已启用",
         "fetchModelList": "拉取模型列表",
         "fetchingModels": "拉取中…",
-        "hideApiKey": "隐藏 API key",
         "identifier": "服务商 ID",
         "identifierHint": "作为服务商唯一标识符，创建后将无法修改。",
         "identifierInvalid": "服务商 ID 不能为空，且仅限 ASCII 字符。",
@@ -133,7 +132,6 @@
         "removeModel": "移除模型",
         "searchPlaceholder": "搜索服务商…",
         "securityNote": "凭据以 AES-GCM 加密后存储。",
-        "showApiKey": "显示 API key",
         "title": "服务商",
         "type": "类型"
     },

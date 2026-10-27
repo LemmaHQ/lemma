@@ -5,6 +5,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from "@lemma/ui/components/field";
+import { PasswordInput } from "@lemma/ui/components/password-input";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,8 +20,6 @@ import {
 } from "@/components/ui/select";
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
-
-import { ApiKeyInput } from "./ApiKeyInput";
 
 export interface NewProviderData {
     kind: ProviderKind;
@@ -156,7 +155,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     <FieldLabel htmlFor="np-apikey">
                         {t("providers.apiKey")}
                     </FieldLabel>
-                    <ApiKeyInput
+                    <PasswordInput
                         id="np-apikey"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}

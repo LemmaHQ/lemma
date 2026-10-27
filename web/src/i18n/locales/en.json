@@ -115,7 +115,6 @@
         "enabledGroup": "Enabled",
         "fetchModelList": "Fetch model list",
         "fetchingModels": "Fetching…",
-        "hideApiKey": "Hide API key",
         "identifier": "Provider ID",
         "identifierHint": "Serves as the unique identifier of this provider; cannot be changed after creation.",
         "identifierInvalid": "Provider ID must be non-empty and contain only ASCII characters.",
@@ -133,7 +132,6 @@
         "removeModel": "Remove model",
         "searchPlaceholder": "Search providers…",
         "securityNote": "Credentials are encrypted with AES-GCM before being stored.",
-        "showApiKey": "Show API key",
         "title": "Providers",
         "type": "Type"
     },

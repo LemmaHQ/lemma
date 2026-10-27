@@ -7,6 +7,7 @@ import {
     FieldLabel,
     FieldSeparator,
 } from "@lemma/ui/components/field";
+import { PasswordInput } from "@lemma/ui/components/password-input";
 import { IconLock, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +31,6 @@ import { Switch } from "@/components/ui/switch";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
 
-import { ApiKeyInput } from "./ApiKeyInput";
 import { ModelList } from "./ModelList";
 
 interface ProviderDetailProps {
@@ -221,7 +221,7 @@ export function ProviderDetail({
                         </FieldDescription>
                     </FieldContent>
                     <ButtonGroup>
-                        <ApiKeyInput
+                        <PasswordInput
                             id="pd-apikey"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}

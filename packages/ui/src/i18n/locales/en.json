@@ -1,5 +1,9 @@
 {
     "close": "Close",
+    "passwordInput": {
+        "hide": "Hide",
+        "show": "Show"
+    },
     "sidebar": {
         "resize": "Resize sidebar",
         "title": "Sidebar",
