@@ -1,15 +1,7 @@
 import { useContext } from "react";
 
 import { PlatformContext } from "./context";
-import type {
-    LayoutCapabilities,
-    PlatformAdapter,
-    WindowCapabilities,
-} from "./types";
-
-export function usePlatform(): PlatformAdapter {
-    return useContext(PlatformContext);
-}
+import type { LayoutCapabilities, WindowCapabilities } from "./types";
 
 export function usePlatformWindow(): WindowCapabilities {
     return useContext(PlatformContext).window;

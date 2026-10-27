@@ -3,8 +3,8 @@ import type { Pair } from "./translation-pairing.ts";
 import { splitSections } from "./translation-sections.ts";
 import type { Section } from "./translation-sections.ts";
 
-export const TERMINOLOGY = "docs/i18n/terminology.md";
-export const CONTRACT = "docs/i18n/README.md#the-pairing-contract";
+const TERMINOLOGY = "docs/i18n/terminology.md";
+const CONTRACT = "docs/i18n/README.md#the-pairing-contract";
 
 export type Side = "en" | "zh";
 

@@ -1,0 +1,35 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "ignoreExportsUsedInFile": {
+        "interface": true,
+        "type": true
+    },
+    "workspaces": {
+        ".": {
+            "entry": ["scripts/{verify,gen}-*.ts", "design/gen-tokens.ts"],
+            "ignoreBinaries": ["just"],
+            "project": ["scripts/**/*.ts", "design/**/*.ts"],
+            "ignoreDependencies": [
+                "autocorrect-node",
+                "jscpd",
+                "markdownlint-cli2"
+            ]
+        },
+        "web": {
+            "ignoreBinaries": ["buf"],
+            "ignoreDependencies": [
+                "@bufbuild/protoc-gen-es",
+                "prettier-plugin-tailwindcss"
+            ],
+            "ignoreIssues": {
+                "src/components/ui/**": ["exports"],
+                "src/components/ai-elements/**": ["exports"]
+            }
+        },
+        "packages/ui": {
+            "ignoreIssues": {
+                "src/components/**": ["exports"]
+            }
+        }
+    }
+}

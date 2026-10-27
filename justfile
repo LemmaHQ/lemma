@@ -284,6 +284,12 @@ scripts-lint:
 dup-check:
     npx --no-install jscpd
 
+# Report unused files, exports, and dependencies (knip, knip.json)
+[group('deadcode')]
+deadcode-check:
+    npm --workspace=@lemma/web run gen
+    npx --no-install knip
+
 # Check source file length, names, re-export modules, and test placement
 [group('source')]
 source-check:

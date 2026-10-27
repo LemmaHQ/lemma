@@ -33,6 +33,7 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 | `.oxlintrc.json`, `.prettierrc.json`, `tsconfig.base.json`                             | the `web/` and `desktop/` rows; `just scripts-type-check` and `just scripts-lint-check` for the first and last                                                    |
 | `justfile`, `mise.toml`                                                                | every changed recipe once; `just docs-refs-check` after a recipe rename or removal; every workflow's path filter includes both files                              |
 | `crates/`, `web/src/`, `desktop/src/`, `mobile/`, `scripts/`, `design/`, `.jscpd.json` | `just source-check`; `just dup-check`, and when a clone involves the changed code, extract the shared part instead of adding another copy                         |
+| `web/`, `desktop/`, `packages/`, `scripts/`, `design/`, `knip.json`, `package.json`    | `just deadcode-check`; delete what it reports as unused instead of ignoring it                                                                                    |
 | `.github/workflows/`                                                                   | read the changed workflow for path filters and job dependencies; it runs only in CI                                                                               |
 
 Notes on the rows:

@@ -36,6 +36,7 @@ just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 auto
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径
 just dup-check           # 报告复制粘贴的代码（jscpd，.jscpd.json）
+just deadcode-check      # 报告未使用的文件、导出与依赖（knip，knip.json）
 just source-check        # 检查源码文件的行数、命名、纯转发模块与测试位置
 ```
 

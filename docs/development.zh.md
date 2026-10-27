@@ -65,16 +65,16 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### 环境变量
 
-| 变量 | 读取方 | 含义 |
-| --- | --- | --- |
-| `DATABASE_URL` | `lemma-server`，服务端模式 | `postgres://` 或 `postgresql://` 选择 PostgreSQL；`sqlite:` 选择指定路径上的 SQLite |
-| `LEMMA_JWT_SECRET` | `lemma-server`，服务端模式 | 签名并校验访问令牌 |
-| `LEMMA_SECRET_KEY` | `lemma-server`，服务端模式 | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取 |
-| `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml` | PostgreSQL 容器的数据库名、用户与密码；密码必填 |
-| `LEMMA_TEST_POSTGRES_URL` | Rust 测试，经由 `lemma-test-db` | 数据库测试在 SQLite 之外额外运行的 PostgreSQL 服务器；其角色为每个测试创建并删除一个数据库 |
-| `LEMMA_ENGINE_PROFILE` | `desktop/` | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug` |
-| `LEMMA_DEBUG_PORT` | `desktop/` | Chromium 远程调试端口 |
-| `ANDROID_HOME` | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties` |
+| 变量                                             | 读取方                          | 含义                                                                                       |
+| ------------------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                                   | `lemma-server`，服务端模式      | `postgres://` 或 `postgresql://` 选择 PostgreSQL；`sqlite:` 选择指定路径上的 SQLite        |
+| `LEMMA_JWT_SECRET`                               | `lemma-server`，服务端模式      | 签名并校验访问令牌                                                                         |
+| `LEMMA_SECRET_KEY`                               | `lemma-server`，服务端模式      | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取                          |
+| `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml`            | PostgreSQL 容器的数据库名、用户与密码；密码必填                                            |
+| `LEMMA_TEST_POSTGRES_URL`                        | Rust 测试，经由 `lemma-test-db` | 数据库测试在 SQLite 之外额外运行的 PostgreSQL 服务器；其角色为每个测试创建并删除一个数据库 |
+| `LEMMA_ENGINE_PROFILE`                           | `desktop/`                      | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`                          |
+| `LEMMA_DEBUG_PORT`                               | `desktop/`                      | Chromium 远程调试端口                                                                      |
+| `ANDROID_HOME`                                   | `mobile/shared` 的 Gradle 构建  | Android SDK 位置；也可用 `local.properties`                                                |
 
 `lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
 
@@ -84,18 +84,19 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
-| 工作流 | 路径 | 运行内容 |
-| --- | --- | --- |
-| Rust CI | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/` | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest` |
-| Web CI | `web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json` | proto 与 token 生成、prettier 检查、oxlint、带类型检查的构建、vitest |
-| Desktop CI | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json` | prettier 检查与 oxlint，再在三个系统上运行 proto 与 token 生成、渲染层构建、桌面端类型检查与 vitest |
-| Mobile CI | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件 | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试 |
-| Spec CI | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置、根目录 `package.json`、`package-lock.json`、`tsconfig.json`、`tsconfig.base.json`、`.oxlintrc.json` | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查、仓库引用检查，以及 `scripts/` 与 `design/` 的类型检查与 oxlint |
-| Duplication CI | `crates/`、`web/src/`、`desktop/src/`、`mobile/`、`scripts/`、`design/`、`.jscpd.json`、根目录 `package.json`、`package-lock.json` | 通过 `just dup-check` 生成 jscpd 复制粘贴报告；列出重复片段与重复行比例，不使运行失败 |
-| Source CI | `crates/`、`web/src/`、`desktop/src/`、`packages/`、`mobile/`、`scripts/`、`design/`、`proto/`、`assets/`、根目录 `package.json` | 通过 `just source-check` 运行源码文件检查：文件行数、文件名、纯转发模块与测试位置 |
-| Coverage | 全部 | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)） |
-| CodeQL | 全部，另有每周定时 | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译 |
-| mise-upgrade | 每日定时 | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request |
+| 工作流         | 路径                                                                                                                                                                                                          | 运行内容                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust CI        | `Cargo.toml`、`Cargo.lock`、`crates/`、`proto/`                                                                                                                                                               | 先为嵌入构建 `web/dist`，再运行 `cargo fmt --check`、在三个系统上运行拒绝警告的 clippy，以及在三个系统上运行 `cargo nextest`                         |
+| Web CI         | `web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json`                                                                                     | proto 与 token 生成、prettier 检查、oxlint、带类型检查的构建、vitest                                                                                 |
+| Desktop CI     | `desktop/`、`web/`、`design/`、根目录 `package.json`、`package-lock.json`、`tsconfig.base.json`、`.oxlintrc.json`、`.prettierrc.json`                                                                         | prettier 检查与 oxlint，再在三个系统上运行 proto 与 token 生成、渲染层构建、桌面端类型检查与 vitest                                                  |
+| Mobile CI      | `mobile/`、`crates/shared/`、`proto/`、`design/`、根目录 `Cargo.toml`、`Cargo.lock`、Gradle 构建文件                                                                                                          | ktfmt 检查、Android Lint 与 debug APK 构建，另在三个系统上运行宿主机测试                                                                             |
+| Spec CI        | `proto/`、`design/`、`docs/`、`scripts/`、所有 Markdown 文件与配对记录、markdownlint 与 autocorrect 配置、根目录 `package.json`、`package-lock.json`、`tsconfig.json`、`tsconfig.base.json`、`.oxlintrc.json` | `buf lint`、`buf format` 与 `buf build`、token 生成器的检查、文档 lint、双语配对检查、仓库引用检查，以及 `scripts/` 与 `design/` 的类型检查与 oxlint |
+| Duplication CI | `crates/`、`web/src/`、`desktop/src/`、`mobile/`、`scripts/`、`design/`、`.jscpd.json`、根目录 `package.json`、`package-lock.json`                                                                            | 通过 `just dup-check` 生成 jscpd 复制粘贴报告；列出重复片段与重复行比例，不使运行失败                                                                |
+| Dead Code CI   | `web/`、`desktop/`、`packages/`、`scripts/`、`design/`、`proto/`、`knip.json`、根目录 `package.json`、`package-lock.json`                                                                                     | 通过 `just deadcode-check` 生成 knip 报告：npm workspace 与仓库脚本中未使用的文件、导出与依赖；有任何发现即使运行失败                                |
+| Source CI      | `crates/`、`web/src/`、`desktop/src/`、`packages/`、`mobile/`、`scripts/`、`design/`、`proto/`、`assets/`、根目录 `package.json`                                                                              | 通过 `just source-check` 运行源码文件检查：文件行数、文件名、纯转发模块与测试位置                                                                    |
+| Coverage       | 全部                                                                                                                                                                                                          | Rust、Web、桌面端与 Android 覆盖率，上传到 Codecov（[testing.zh.md](testing.zh.md#覆盖率)）                                                          |
+| CodeQL         | 全部，另有每周定时                                                                                                                                                                                            | 对 Rust、JavaScript/TypeScript、GitHub Actions 与 Kotlin 做代码扫描；Kotlin 扫描通过 `just mobile-android-test` 编译                                 |
+| mise-upgrade   | 每日定时                                                                                                                                                                                                      | 升级 `mise.toml` 中的固定版本，同步 Dockerfile 的 Node 版本，并开一个 pull request                                                                   |
 
 Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。
 

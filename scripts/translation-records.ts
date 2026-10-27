@@ -13,7 +13,7 @@ export interface RecordEntry {
 
 const RECORD_LINE = /^(\/\S*):$|^ {2}(en|zh): ([0-9a-f]{16})$/u;
 
-export const formatRecord = (pair: Pair, entries: Entry[]): string =>
+const formatRecord = (pair: Pair, entries: Entry[]): string =>
     [
         `# Translation-pairing record for ${path.posix.basename(pair.en)} (docs/i18n/README.md): one`,
         "# entry per heading section, holding a hash of its English and Chinese text.",

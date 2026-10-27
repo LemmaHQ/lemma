@@ -36,6 +36,7 @@ just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 just docs-refs-check     # check recipe names and repository paths cited in Markdown
 just dup-check           # report copy-pasted code (jscpd, .jscpd.json)
+just deadcode-check      # report unused files, exports, and dependencies (knip, knip.json)
 just source-check        # check source file length, names, re-export modules, and test placement
 ```
 

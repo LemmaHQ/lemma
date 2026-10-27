@@ -97,7 +97,7 @@ export function sectionKeys(sections: Section[]): string[] {
     });
 }
 
-export function structureError(
+function structureError(
     en: [Section, ...Section[]],
     zh: [Section, ...Section[]],
 ): string | null {
