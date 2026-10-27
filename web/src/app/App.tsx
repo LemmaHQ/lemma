@@ -1,10 +1,10 @@
 import { ThemeProvider } from "next-themes";
 
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { THEME_STORAGE_KEY } from "@/features/preferences/theme";
 import { PlatformProvider } from "@/platform/PlatformProvider";
 
+import { AppToaster } from "./AppToaster";
 import { AppRoutes } from "./routes";
 import { TitleBar } from "./shell/TitleBar";
 import { useAccountRuntime } from "./useAccountRuntime";
@@ -21,7 +21,7 @@ export function App() {
                 <TitleBar>
                     <TooltipProvider>
                         <AppRoutes />
-                        <Toaster />
+                        <AppToaster />
                     </TooltipProvider>
                 </TitleBar>
             </PlatformProvider>
