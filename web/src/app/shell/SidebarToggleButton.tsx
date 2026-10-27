@@ -1,15 +1,15 @@
+import { SidebarTrigger } from "@lemma/ui/components/sidebar";
+import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
 import { useTranslation } from "react-i18next";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSidebar } from "@/lib/hooks/use-sidebar";
 
-/** Sidebar trigger labeled with the action it performs. */
-export function SidebarToggle() {
+/** Collapses or expands the sidebar, labeled with the action it takes next. */
+export function SidebarToggleButton() {
     const { t } = useTranslation();
     const { isMobile, open, openMobile } = useSidebar();
     const label = (isMobile ? openMobile : open)
@@ -22,13 +22,4 @@ export function SidebarToggle() {
             <TooltipContent>{label}</TooltipContent>
         </Tooltip>
     );
-}
-
-/** Sidebar trigger rendered only while the sidebar is out of view. */
-export function SidebarRevealToggle() {
-    const { isMobile, open } = useSidebar();
-    if (open && !isMobile) {
-        return null;
-    }
-    return <SidebarToggle />;
 }

@@ -8,6 +8,11 @@ export type SidebarState = {
     setOpenMobile: (open: boolean | ((open: boolean) => boolean)) => void;
     isMobile: boolean;
     toggleSidebar: () => void;
+    /** Dragged width in pixels; `null` uses `--sidebar-width-default`. */
+    width: number | null;
+    setWidth: (width: number | null) => void;
+    resizing: boolean;
+    setResizing: (resizing: boolean) => void;
 };
 
 export const SidebarContext = createContext<SidebarState | null>(null);

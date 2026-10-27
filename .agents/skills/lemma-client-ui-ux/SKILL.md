@@ -20,7 +20,7 @@ The web client is also the desktop renderer, so every web rule applies to deskto
 ## Reuse before adding
 
 - **Extend an existing component, container, or interaction before creating a new one.** An extra menu item or a new variant on a shared control beats a parallel element stacked beside it. A shadcn component not yet in the catalog is added through the shadcn CLI, brought under the [component rules](../../../web/src/components/ui/README.md#adding-a-component), then listed in the catalog.
-- **Icons come from Tabler on web.** Pick the semantically closest existing icon. On Android, use vector icons, not text glyphs or emoji standing in for icons.
+- **Icons in `@lemma/ui` come from Animate UI's Lucide set.** Add an icon when a component first needs it, with `npx shadcn add @animate-ui/icons-lucide-<name>` in `packages/ui`; an icon missing from that set uses the static `lucide-react` icon of the same name. The current `web/` still uses Tabler until it moves onto `@lemma/ui`. Pick the semantically closest existing icon. On Android, use vector icons, not text glyphs or emoji standing in for icons.
 - **Icon-only actions get an accessible name and a tooltip.** Web uses `aria-label` plus the shared `Tooltip`, never a `title` attribute. Compose sets `contentDescription` and wraps the action in `TooltipBox` with a `PlainTooltip`, which shows on long-press.
 
 ## Feedback surfaces

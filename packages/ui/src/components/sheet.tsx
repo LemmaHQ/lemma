@@ -1,10 +1,11 @@
-import * as React from "react";
+import { AnimateIcon } from "@animate-ui/react/icons";
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
-import { IconX } from "@tabler/icons-react";
 import { cn } from "cn";
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#components/button";
+import { XIcon } from "#icons/x";
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
     return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -45,7 +46,7 @@ function SheetContent({
     side?: "top" | "right" | "bottom" | "left";
     showCloseButton?: boolean;
 }) {
-    const { t } = useTranslation();
+    const { t } = useTranslation("ui");
     return (
         <SheetPortal>
             <SheetOverlay />
@@ -60,19 +61,21 @@ function SheetContent({
             >
                 {children}
                 {showCloseButton && (
-                    <SheetPrimitive.Close
-                        data-slot="sheet-close"
-                        render={
-                            <Button
-                                variant="ghost"
-                                className="absolute top-3 right-3"
-                                size="icon-sm"
-                                aria-label={t("common.close")}
-                            />
-                        }
-                    >
-                        <IconX />
-                    </SheetPrimitive.Close>
+                    <AnimateIcon animateOnHover asChild>
+                        <SheetPrimitive.Close
+                            data-slot="sheet-close"
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    className="absolute top-3 right-3"
+                                    size="icon-sm"
+                                    aria-label={t("close")}
+                                />
+                            }
+                        >
+                            <XIcon />
+                        </SheetPrimitive.Close>
+                    </AnimateIcon>
                 )}
             </SheetPrimitive.Popup>
         </SheetPortal>
@@ -127,11 +130,11 @@ function SheetDescription({
 
 export {
     Sheet,
-    SheetTrigger,
     SheetClose,
     SheetContent,
-    SheetHeader,
-    SheetFooter,
-    SheetTitle,
     SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 };

@@ -35,8 +35,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `select`        | Single choice from a list in a form                                                        |
 | `scroll-area`   | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it      |
 | `separator`     | Horizontal or vertical divider line                                                        |
-| `sheet`         | Panel that slides in from a screen edge; `sidebar` uses it on narrow screens               |
-| `sidebar`       | Collapsible app navigation with its provider, menu parts, and toggle                       |
 | `spinner`       | Animated loading icon inside a button or row                                               |
 | `sonner`        | The toast host, mounted once in `App`; raise toasts with `toast` from the `sonner` package |
 | `switch`        | Two-state toggle that applies immediately                                                  |
@@ -45,6 +43,8 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `toggle`        | Pressable two-state button                                                                 |
 | `toggle-group`  | Row of toggles that sets one value or several                                              |
 | `tooltip`       | Short label for an icon-only control, shown on hover and keyboard focus                    |
+
+The sidebar and its sheet come from `@lemma/ui`: import `@lemma/ui/components/sidebar` and `@lemma/ui/hooks/use-sidebar`. `AppShell` in `web/src/app/shell/` assembles them for the signed-in pages.
 
 Three pairs are easy to confuse:
 
@@ -56,7 +56,6 @@ Three pairs are easy to confuse:
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
 - The theme comes from `next-themes`, mounted in `App` with the `class` attribute and the `lemma.theme` storage key; `Toaster` reads it through `useTheme`.
-- `useSidebar` reads the state of the enclosing `SidebarProvider` from [`src/lib/hooks/use-sidebar.ts`](../../lib/hooks/use-sidebar.ts), so `sidebar.tsx` exports only components.
 - oxlint checks both directories with the rules of feature code. The `src/components/**` override in [`web/.oxlintrc.json`](../../../.oxlintrc.json) lets them restyle the controls they compose, use arbitrary values for geometry, build classes with `cva`, and set ARIA roles directly.
 - User-visible text, including accessible names, comes from i18next; colors come from theme roles, never the Tailwind palette.
 

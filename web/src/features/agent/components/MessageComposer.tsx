@@ -98,7 +98,9 @@ export function MessageComposer({
                             variant="link"
                             size="xs"
                             nativeButton={false}
-                            render={<Link to="/settings/providers" />}
+                            render={
+                                <Link to="/settings/providers" viewTransition />
+                            }
                         >
                             {t("conversation.noModelAction")}
                         </Button>

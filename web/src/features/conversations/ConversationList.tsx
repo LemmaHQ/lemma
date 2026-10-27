@@ -17,7 +17,8 @@ import {
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@lemma/ui/components/sidebar";
+import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
 import {
     Tooltip,
     TooltipContent,
@@ -150,6 +151,7 @@ export function ConversationList({
     onDeleteSession,
 }: ConversationListProps) {
     const { t } = useTranslation();
+    const { setOpenMobile } = useSidebar();
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
 
     return (
@@ -166,7 +168,10 @@ export function ConversationList({
                                     key={session.id}
                                     session={session}
                                     active={session.id === activeSessionId}
-                                    onOpen={onOpenSession}
+                                    onOpen={(id) => {
+                                        setOpenMobile(false);
+                                        onOpenSession(id);
+                                    }}
                                     onDelete={onDeleteSession}
                                     onRename={onRenameSession}
                                 />

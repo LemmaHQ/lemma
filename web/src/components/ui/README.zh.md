@@ -35,8 +35,6 @@
 | `select`        | 表单中从列表里单选                                                       |
 | `scroll-area`   | 带主题化覆盖式滚动条的滚动区域；窗格与面板通过它滚动                     |
 | `separator`     | 水平或垂直分隔线                                                         |
-| `sheet`         | 从屏幕边缘滑入的面板；`sidebar` 在窄屏上使用它                           |
-| `sidebar`       | 可折叠的应用导航，含 provider、菜单部件与切换按钮                        |
 | `spinner`       | 按钮或行内的加载动画图标                                                 |
 | `sonner`        | 提示消息的宿主，在 `App` 中挂载一次；通过 `sonner` 包的 `toast` 弹出提示 |
 | `switch`        | 立即生效的两态开关                                                       |
@@ -45,6 +43,8 @@
 | `toggle`        | 可按下的两态按钮                                                         |
 | `toggle-group`  | 设置一个或多个值的一排切换按钮                                           |
 | `tooltip`       | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示                         |
+
+侧边栏及其抽屉来自 `@lemma/ui`：导入 `@lemma/ui/components/sidebar` 与 `@lemma/ui/hooks/use-sidebar`。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装它们。
 
 有三对组件容易混淆：
 
@@ -56,7 +56,6 @@
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
 - 主题来自 `next-themes`，在 `App` 中以 `class` 属性与 `lemma.theme` 存储键挂载；`Toaster` 通过 `useTheme` 读取它。
-- `useSidebar` 从 [`src/lib/hooks/use-sidebar.ts`](../../lib/hooks/use-sidebar.ts) 读取外层 `SidebarProvider` 的状态，因此 `sidebar.tsx` 只导出组件。
 - oxlint 按功能代码的规则检查这两个目录。[`web/.oxlintrc.json`](../../../.oxlintrc.json) 中针对 `src/components/**` 的覆盖项允许它们改写所组合控件的样式、为几何尺寸使用任意值、用 `cva` 构造类名，以及直接设置 ARIA 角色。
 - 用户可见文字（包括无障碍名称）取自 i18next；颜色取自主题角色，不使用 Tailwind 色板。
 

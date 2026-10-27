@@ -10,7 +10,7 @@
         "cssVariables": true,
         "prefix": ""
     },
-    "iconLibrary": "tabler",
+    "iconLibrary": "lucide",
     "aliases": {
         "components": "#components",
         "ui": "#components",
@@ -19,5 +19,8 @@
         "utils": "cn"
     },
     "menuColor": "default-translucent",
-    "menuAccent": "subtle"
+    "menuAccent": "subtle",
+    "registries": {
+        "@animate-ui": "https://animate-ui.com/r/{name}.json"
+    }
 }

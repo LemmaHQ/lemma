@@ -6,7 +6,7 @@ import { THEME_STORAGE_KEY } from "@/features/preferences/theme";
 import { PlatformProvider } from "@/platform/PlatformProvider";
 
 import { AppRoutes } from "./routes";
-import { AppShell } from "./shell/AppShell";
+import { TitleBar } from "./shell/TitleBar";
 import { useAccountRuntime } from "./useAccountRuntime";
 export function App() {
     useAccountRuntime();
@@ -18,12 +18,12 @@ export function App() {
             disableTransitionOnChange
         >
             <PlatformProvider>
-                <AppShell>
+                <TitleBar>
                     <TooltipProvider>
                         <AppRoutes />
                         <Toaster />
                     </TooltipProvider>
-                </AppShell>
+                </TitleBar>
             </PlatformProvider>
         </ThemeProvider>
     );

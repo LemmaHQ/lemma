@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
-import { AppSidebar } from "@/app/shell/AppSidebar";
-import { SidebarRevealToggle } from "@/app/shell/SidebarToggle";
+import { ShellSidebar } from "@/app/shell/ShellSidebar";
+import { useShellTitle } from "@/app/shell/useShellTitle";
 import { MessageComposer } from "@/features/agent/components/MessageComposer";
 import { HomeView } from "@/features/agent/components/HomeView";
 import { MessageList } from "@/features/agent/components/MessageList";
@@ -22,14 +22,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { errorText } from "@/data/rpc/errors";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
+import { ConversationList } from "@/features/conversations/ConversationList";
 import { useConversations } from "@/features/conversations/useConversations";
 import { useProviders } from "@/features/providers/useProviders";
 import type { SessionSummary } from "@/features/conversations/grouping";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useActiveConversation } from "@/features/agent/store";
-import { setTitleBarSurface } from "@/features/preferences/theme";
-
-const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 function toSummary(c: Conversation): SessionSummary {
     return {
@@ -50,18 +47,10 @@ export function ConversationPage() {
     const navigate = useNavigate();
 
     const activeId = useParams().id ?? null;
-    const [sidebarOpen, setSidebarOpenState] = useState(
-        () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) !== "1",
-    );
     const [draft, setDraft] = useState("");
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
-
-    const setSidebarOpen = (open: boolean) => {
-        setSidebarOpenState(open);
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, open ? "0" : "1");
-    };
 
     const { model, options: modelOptions, selectModel } = useModelSelection();
 
@@ -72,16 +61,12 @@ export function ConversationPage() {
         }
     }, [activeId, openConversation]);
 
-    useEffect(() => {
-        setTitleBarSurface("sidebar");
-    }, []);
-
     const sendText = async (text: string) => {
         if (conversation.streaming) {
             return;
         }
         if (model === null) {
-            void navigate("/settings/providers");
+            void navigate("/settings/providers", { viewTransition: true });
             return;
         }
         try {
@@ -158,74 +143,60 @@ export function ConversationPage() {
     }, [providersStore.list]);
 
     const activeSession = summaries.find((s) => s.id === activeId);
-    return (
-        <SidebarProvider
-            open={sidebarOpen}
-            onOpenChange={setSidebarOpen}
-            className="h-dvh"
-        >
-            <AppSidebar
-                sessions={summaries}
-                activeSessionId={activeId}
-                onGoHome={() => {
-                    void navigate("/");
-                }}
-                onOpenSession={(id) => {
-                    void navigate(`/conversations/${id}`);
-                }}
-                onRenameSession={(id, title) =>
-                    void runAction(() => conversations.rename(id, title))
-                }
-                onDeleteSession={setPendingDeleteId}
-            />
+    useShellTitle(
+        activeId === null
+            ? undefined
+            : activeSession !== undefined && activeSession.title !== ""
+              ? activeSession.title
+              : t("sidebar.newConversation"),
+    );
 
-            <SidebarInset className="overflow-hidden">
-                {activeId === null ? (
-                    <>
-                        <div className="absolute top-3 left-3 z-10">
-                            <SidebarRevealToggle />
-                        </div>
-                        <HomeView
-                            onSubmit={(text) => void sendText(text)}
+    return (
+        <>
+            <ShellSidebar>
+                <ConversationList
+                    sessions={summaries}
+                    activeSessionId={activeId}
+                    onOpenSession={(id) => {
+                        void navigate(`/conversations/${id}`);
+                    }}
+                    onRenameSession={(id, title) =>
+                        void runAction(() => conversations.rename(id, title))
+                    }
+                    onDeleteSession={setPendingDeleteId}
+                />
+            </ShellSidebar>
+            {activeId === null ? (
+                <HomeView
+                    onSubmit={(text) => void sendText(text)}
+                    model={model}
+                    modelOptions={modelOptions}
+                    onModelChange={selectModel}
+                />
+            ) : (
+                <>
+                    <MessageList
+                        items={conversation.items}
+                        conversationId={conversation.conversationId}
+                        providerNameById={providerNameById}
+                        onPickSuggestion={handlePickSuggestion}
+                        onRegenerate={handleRegenerate}
+                    />
+                    <div className="mx-auto w-full max-w-3xl px-6 pb-6">
+                        <MessageComposer
+                            value={draft}
+                            onChange={setDraft}
+                            onSend={handleSend}
+                            onStop={handleStop}
+                            streaming={conversation.streaming}
                             model={model}
                             modelOptions={modelOptions}
                             onModelChange={selectModel}
+                            inputRef={inputRef}
                         />
-                    </>
-                ) : (
-                    <>
-                        <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3">
-                            <SidebarRevealToggle />
-                            <span className="truncate text-sm font-medium text-foreground">
-                                {activeSession !== undefined &&
-                                activeSession.title !== ""
-                                    ? activeSession.title
-                                    : t("sidebar.newConversation")}
-                            </span>
-                        </header>
-                        <MessageList
-                            items={conversation.items}
-                            conversationId={conversation.conversationId}
-                            providerNameById={providerNameById}
-                            onPickSuggestion={handlePickSuggestion}
-                            onRegenerate={handleRegenerate}
-                        />
-                        <div className="mx-auto w-full max-w-3xl px-6 pb-6">
-                            <MessageComposer
-                                value={draft}
-                                onChange={setDraft}
-                                onSend={handleSend}
-                                onStop={handleStop}
-                                streaming={conversation.streaming}
-                                model={model}
-                                modelOptions={modelOptions}
-                                onModelChange={selectModel}
-                                inputRef={inputRef}
-                            />
-                        </div>
-                    </>
-                )}
-            </SidebarInset>
+                    </div>
+                </>
+            )}
 
             <AlertDialog
                 open={pendingDeleteId !== null}
@@ -263,6 +234,6 @@ export function ConversationPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </SidebarProvider>
+        </>
     );
 }

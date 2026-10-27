@@ -1,3 +1,8 @@
 {
-    "close": "Close"
+    "close": "Close",
+    "sidebar": {
+        "resize": "Resize sidebar",
+        "title": "Sidebar",
+        "toggle": "Toggle sidebar"
+    }
 }

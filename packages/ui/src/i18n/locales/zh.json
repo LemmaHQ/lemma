@@ -1,3 +1,8 @@
 {
-    "close": "关闭"
+    "close": "关闭",
+    "sidebar": {
+        "resize": "调整侧边栏宽度",
+        "title": "侧边栏",
+        "toggle": "切换侧边栏"
+    }
 }

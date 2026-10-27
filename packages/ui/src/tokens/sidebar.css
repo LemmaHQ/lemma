@@ -1,0 +1,90 @@
+@theme inline {
+    --color-sidebar-text: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 80%,
+        var(--sidebar)
+    );
+    --color-sidebar-muted: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 55%,
+        var(--sidebar)
+    );
+    --color-sidebar-faint: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 40%,
+        var(--sidebar)
+    );
+    --color-sidebar-hover: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 4%,
+        transparent
+    );
+    --color-sidebar-selected: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 6%,
+        transparent
+    );
+    --color-sidebar-edge: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 30%,
+        var(--sidebar)
+    );
+    --text-sidebar-item: 13.5px;
+    --text-sidebar-item--line-height: 19px;
+    --radius-sidebar-inset: 12px;
+    --duration-sidebar: 420ms;
+    --font-sidebar-brand: var(--font-serif);
+    --shadow-sidebar-card:
+        0 0 0 1px var(--sidebar-border), 0 1px 2px rgb(0 0 0 / 0.05);
+    --shadow-sidebar-card-hover:
+        0 0 0 1px
+            color-mix(
+                in oklab,
+                var(--sidebar-border),
+                var(--sidebar-foreground) 10%
+            ),
+        0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+:root {
+    --sidebar-inset-top: 0px;
+    --sidebar-width-default: 272px;
+    --sidebar-width-min: 220;
+    --sidebar-width-max: 380;
+    --sidebar-reveal-show: opacity 260ms ease 160ms, visibility 0s;
+    --sidebar-reveal-hide: opacity 200ms ease, visibility 0s 200ms;
+    --sidebar-show:
+        opacity 260ms ease, translate 420ms var(--motion-easing-enter),
+        visibility 0s;
+    --sidebar-hide:
+        opacity 200ms ease, translate 420ms var(--motion-easing-enter),
+        visibility 0s 420ms;
+    --sidebar-rail-show: opacity 180ms ease 100ms;
+    --sidebar-rail-hide: opacity 180ms ease;
+}
+
+@utility transition-sidebar-reveal-show {
+    transition: var(--sidebar-reveal-show);
+}
+
+@utility transition-sidebar-reveal-hide {
+    transition: var(--sidebar-reveal-hide);
+}
+
+@utility bg-sidebar-rail {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--color-sidebar-edge) 22%,
+        var(--color-sidebar-edge) 78%,
+        transparent
+    );
+}
+
+@utility transition-sidebar-rail-show {
+    transition: var(--sidebar-rail-show);
+}
+
+@utility transition-sidebar-rail-hide {
+    transition: var(--sidebar-rail-hide);
+}

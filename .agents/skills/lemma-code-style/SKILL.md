@@ -26,7 +26,7 @@ A higher source wins every conflict. Known conflicts:
 
 ## Source files
 
-These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf file. Files under `.agents/` and the shadcn-owned directories (`web/src/components/ui/`, `web/src/components/ai-elements/`, `web/src/lib/hooks/`) keep their upstream layout. `just source-check` (`scripts/verify-source-files.ts`) enforces the length limit, file names, the re-export ban, TypeScript test placement, and the Rust test module position.
+These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf file. Files under `.agents/` and the shadcn-owned directories (`web/src/components/ui/`, `web/src/components/ai-elements/`, `packages/ui/src/components/`, `packages/ui/src/hooks/`) keep their upstream layout. `just source-check` (`scripts/verify-source-files.ts`) enforces the length limit, file names, the re-export ban, TypeScript test placement, and the Rust test module position.
 
 ### Length
 

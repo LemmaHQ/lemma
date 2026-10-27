@@ -156,8 +156,7 @@
         "languageDesc": "选择界面语言。",
         "languageLabel": "语言",
         "themeDesc": "选择浅色、深色或跟随系统。",
-        "themeLabel": "主题",
-        "title": "设置"
+        "themeLabel": "主题"
     },
     "sidebar": {
         "appSettings": "应用设置",
@@ -165,8 +164,7 @@
         "expand": "展开侧边栏",
         "newConversation": "新会话",
         "signOut": "退出登录",
-        "title": "侧边栏",
-        "toggle": "切换侧边栏"
+        "startConversation": "新建会话"
     },
     "theme": {
         "dark": "深色",

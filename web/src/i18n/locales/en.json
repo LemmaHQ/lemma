@@ -156,8 +156,7 @@
         "languageDesc": "Choose the interface language.",
         "languageLabel": "Language",
         "themeDesc": "Choose light, dark, or follow the system.",
-        "themeLabel": "Theme",
-        "title": "Settings"
+        "themeLabel": "Theme"
     },
     "sidebar": {
         "appSettings": "App settings",
@@ -165,8 +164,7 @@
         "expand": "Expand sidebar",
         "newConversation": "New conversation",
         "signOut": "Sign out",
-        "title": "Sidebar",
-        "toggle": "Toggle sidebar"
+        "startConversation": "New conversation"
     },
     "theme": {
         "dark": "Dark",
