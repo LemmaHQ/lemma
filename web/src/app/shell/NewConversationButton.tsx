@@ -14,7 +14,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@lemma/ui/components/tooltip";
 
 /** Opens the home view for a new conversation: a labeled card in the sidebar, or an icon in the shell toolbar when `compact`. */
 export function NewConversationButton({

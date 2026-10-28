@@ -4,7 +4,7 @@ import { IconX } from "@tabler/icons-react";
 import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />;

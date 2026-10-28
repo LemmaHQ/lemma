@@ -15,7 +15,7 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import {
     Item,

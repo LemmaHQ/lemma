@@ -19,25 +19,21 @@
 | `alert-dialog` | 破坏性或不可撤销操作之前的确认                         |
 | `avatar`       | 用户或服务商的圆形首字母或图片；`AvatarBadge` 标示状态 |
 | `badge`        | 简短的状态或计数标签                                   |
-| `button`       | 可点击的操作                                           |
 | `button-group` | 一排相连的控件，例如输入框与其保存按钮                 |
 | `collapsible`  | 显示与隐藏区域；由调用方绘制触发器                     |
 | `command`      | 可搜索的命令或选项列表；`model-selector` 基于它构建    |
 | `dialog`       | 承载任务、保留下层页面的模态窗口                       |
 | `empty`        | 含图标、标题、描述与操作的空状态                       |
-| `input`        | 单行文本框                                             |
 | `item`         | 列表或设置分组中的一行，含标题、描述与尾部操作         |
 | `select`       | 表单中从列表里单选                                     |
 | `scroll-area`  | 带主题化覆盖式滚动条的滚动区域；窗格与面板通过它滚动   |
-| `separator`    | 水平或垂直分隔线                                       |
 | `skeleton`     | 已知布局的内容加载时显示的脉动占位块                   |
 | `spinner`      | 按钮或行内的加载动画图标                               |
 | `switch`       | 立即生效的两态开关                                     |
 | `toggle`       | 可按下的两态按钮                                       |
 | `toggle-group` | 设置一个或多个值的一排切换按钮                         |
-| `tooltip`      | 仅含图标的控件的简短标签，在悬停与键盘聚焦时显示       |
 
-侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input-group`、`password-input`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入，品牌标志从 `@lemma/ui/components/brand/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
+`button`、`separator`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，以及表单控件 `field`、`input`、`input-group`、`password-input`、`label` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入，品牌标志从 `@lemma/ui/components/brand/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏，`web/src/app/` 中的 `AppTooltipProvider` 让所有提示气泡避开桌面标题栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
 
 有两对组件容易混淆：
 

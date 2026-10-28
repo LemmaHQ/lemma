@@ -6,7 +6,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@lemma/ui/components/tooltip";
 
 /** Collapses or expands the sidebar, labeled with the action it takes next. */
 export function SidebarToggleButton() {

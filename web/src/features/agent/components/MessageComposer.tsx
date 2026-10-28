@@ -10,7 +10,7 @@ import {
     PromptInputTextarea,
     PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import type {
     ModelOption,
     ModelSelection,

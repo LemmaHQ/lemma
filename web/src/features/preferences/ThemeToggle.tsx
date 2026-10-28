@@ -12,12 +12,12 @@ import { SunMoonIcon } from "@lemma/ui/icons/sun-moon";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@lemma/ui/components/tooltip";
 
 import { isThemePreference, type ThemePreference } from "./theme";
 

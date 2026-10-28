@@ -9,12 +9,12 @@ import {
 import { GlobeIcon } from "@lemma/ui/icons/globe";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@lemma/ui/components/tooltip";
 
 /** Icon button opening the interface language menu. */
 export function LanguageToggle() {

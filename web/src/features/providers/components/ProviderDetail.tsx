@@ -24,9 +24,9 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
+import { Input } from "@lemma/ui/components/input";
 import { Switch } from "@/components/ui/switch";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";

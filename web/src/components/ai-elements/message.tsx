@@ -2,12 +2,12 @@ import { cn } from "cn";
 import { type ComponentProps, memo } from "react";
 import { Streamdown } from "streamdown";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@lemma/ui/components/tooltip";
 
 type MessageProps = ComponentProps<"div"> & {
     from: "user" | "assistant";

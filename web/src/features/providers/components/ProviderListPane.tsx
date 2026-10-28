@@ -1,5 +1,5 @@
 import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button } from "@lemma/ui/components/button";
 import {
     Collapsible,
     CollapsibleContent,
