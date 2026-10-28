@@ -55,6 +55,7 @@ export function ProvidersPanel() {
         <div className="flex min-h-0 flex-1">
             <ProviderListPane
                 providers={store.list}
+                loaded={store.loaded}
                 selectedId={creating ? null : effectiveSelectedId}
                 onSelect={(id) => {
                     setCreating(false);
@@ -69,11 +70,11 @@ export function ProvidersPanel() {
                         onCancel={() => setCreating(false)}
                     />
                 ) : selected === null ? (
-                    <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                        {store.loaded
-                            ? t("providers.emptyList")
-                            : t("common.loading")}
-                    </div>
+                    store.loaded && (
+                        <div className="grid h-full place-items-center text-sm text-muted-foreground">
+                            {t("providers.emptyList")}
+                        </div>
+                    )
                 ) : (
                     <ProviderDetail
                         key={selected.id}

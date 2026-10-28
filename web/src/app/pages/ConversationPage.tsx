@@ -156,6 +156,7 @@ export function ConversationPage() {
             <ShellSidebar>
                 <ConversationList
                     sessions={summaries}
+                    loaded={conversations.loaded}
                     activeSessionId={activeId}
                     onOpenSession={(id) => {
                         void navigate(`/conversations/${id}`);

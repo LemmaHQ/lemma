@@ -27,11 +27,13 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { groupSessions, type SessionSummary } from "./grouping";
 
 interface ConversationListProps {
     sessions: SessionSummary[];
+    loaded: boolean;
     activeSessionId: string | null;
     onOpenSession: (id: string) => void;
     onRenameSession: (id: string, title: string) => void;
@@ -151,9 +153,12 @@ function SessionItem({
     );
 }
 
-/** Conversation groups by recency. */
+const SKELETON_ROW_WIDTHS = ["w-4/5", "w-3/5", "w-2/3", "w-1/2", "w-3/4"];
+
+/** Conversation groups by recency; skeleton rows until the first load ends. */
 export function ConversationList({
     sessions,
+    loaded,
     activeSessionId,
     onOpenSession,
     onRenameSession,
@@ -162,6 +167,23 @@ export function ConversationList({
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
+
+    if (!loaded) {
+        return (
+            <output
+                aria-label={t("common.loading")}
+                className="flex flex-col p-2 pt-10"
+            >
+                {SKELETON_ROW_WIDTHS.map((width) => (
+                    <div key={width} className="flex h-7.5 items-center px-1.5">
+                        <div className={width}>
+                            <Skeleton surface="sidebar" className="h-3.5" />
+                        </div>
+                    </div>
+                ))}
+            </output>
+        );
+    }
 
     return (
         <>
