@@ -134,7 +134,10 @@ export function SignInForm({
                                 </InputGroupAddon>
                             </InputGroup>
                         </Field>
-                        <Field data-invalid={invalid}>
+                        <Field
+                            data-invalid={invalid}
+                            className="animate-in duration-slow ease-enter fade-in-0 slide-in-from-bottom-1"
+                        >
                             <PasswordInput
                                 name="password"
                                 autoComplete="current-password"
