@@ -80,7 +80,7 @@ export function AppShell() {
                         localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next));
                     }
                 }}
-                className="h-dvh"
+                className="h-dvh animate-in duration-slow ease-enter fade-in-0"
             >
                 <Sidebar variant="inset">
                     <SidebarHeader className="shell-transition-sidebar-header">
