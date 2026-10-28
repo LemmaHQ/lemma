@@ -38,12 +38,18 @@ export function AuthLayout() {
             <footer className="flex items-center justify-between gap-4 px-4 pb-4">
                 <div className="flex items-center gap-1">
                     <LanguageToggle />
-                    <Separator orientation="vertical" className="h-4" />
+                    <Separator
+                        orientation="vertical"
+                        className="h-4 data-vertical:self-center"
+                    />
                     <ThemeToggle />
                 </div>
                 <div className="flex items-center gap-2">
                     <VersionTags />
-                    <Separator orientation="vertical" className="h-4" />
+                    <Separator
+                        orientation="vertical"
+                        className="h-4 data-vertical:self-center"
+                    />
                     <AnimateIcon animateOnHover asChild>
                         <Button
                             variant="ghost"
