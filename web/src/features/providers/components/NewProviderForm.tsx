@@ -1,16 +1,16 @@
 import {
     Field,
+    FieldContent,
     FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@lemma/ui/components/field";
-import { PasswordInput } from "@lemma/ui/components/password-input";
+import { Input } from "@lemma/ui/components/input";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@lemma/ui/components/button";
-import { Input } from "@lemma/ui/components/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     Select,
     SelectContent,
@@ -18,15 +18,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 import { errorText } from "@/data/rpc/errors";
+import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 
-export interface NewProviderData {
+import { isBaseUrlValid, type ConnectionValues } from "../connection";
+import { ConnectionFields } from "./ConnectionFields";
+import { SaveBar } from "./SaveBar";
+
+export interface NewProviderData extends ConnectionValues {
     kind: ProviderKind;
     identifier: string;
     name: string;
-    baseUrl: string;
-    apiKey: string;
 }
 
 interface NewProviderFormProps {
@@ -40,25 +42,20 @@ const KIND_OPTIONS = [
     { value: "gemini", kind: ProviderKind.GEMINI },
 ] as const;
 
-const requiredMark = <span className="text-destructive">*</span>;
-
+/** Blank provider page; saving creates the provider. */
 export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const { t } = useTranslation();
-    const [name, setName] = useState("");
     const [kind, setKind] = useState<ProviderKind>(ProviderKind.OPENAI);
     const [identifier, setIdentifier] = useState("");
-    const [baseUrl, setBaseUrl] = useState("");
-    const [apiKey, setApiKey] = useState("");
+    const [name, setName] = useState("");
+    const [connection, setConnection] = useState<ConnectionValues>({
+        apiKey: "",
+        baseUrl: "",
+        apiPath: "",
+    });
     const [busy, setBusy] = useState(false);
     const [failed, setFailed] = useState<string | null>(null);
-
-    const handleKindChange = (value: string | null) => {
-        const option = KIND_OPTIONS.find((o) => o.value === value);
-        if (option === undefined) {
-            return;
-        }
-        setKind(option.kind);
-    };
+    const title = name.trim() === "" ? identifier.trim() : name.trim();
 
     const handleSave = async () => {
         const trimmedIdentifier = identifier.trim();
@@ -66,7 +63,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
             setFailed(t("providers.identifierInvalid"));
             return;
         }
-        if (baseUrl.trim() === "") {
+        if (connection.baseUrl.trim() === "") {
             setFailed(t("errors.providerFieldsRequired"));
             return;
         }
@@ -77,8 +74,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 kind,
                 identifier: trimmedIdentifier,
                 name: name.trim() === "" ? trimmedIdentifier : name.trim(),
-                baseUrl: baseUrl.trim(),
-                apiKey: apiKey.trim(),
+                apiKey: connection.apiKey.trim(),
+                baseUrl: connection.baseUrl.trim(),
+                apiPath: connection.apiPath.trim(),
             });
         } catch (e) {
             setFailed(errorText(e, t));
@@ -88,20 +86,43 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     };
 
     return (
-        <div className="max-w-md px-8 py-6">
-            <FieldGroup>
-                <h2 className="text-base font-semibold">
-                    {t("providers.newProvider")}
+        <div className="max-w-3xl px-8 py-6">
+            <header className="flex items-center gap-3 border-b pb-4">
+                <Avatar>
+                    <AvatarFallback>
+                        {title === "" ? "?" : title.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <h2 className="truncate text-base font-medium">
+                    {title === "" ? t("providers.newProvider") : title}
                 </h2>
-                <Field>
-                    <FieldLabel htmlFor="np-kind">
-                        {requiredMark} {t("providers.type")}
-                    </FieldLabel>
+            </header>
+
+            <FieldGroup className="mt-6">
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="provider-kind">
+                            {t("providers.type")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.typeDesc")}
+                        </FieldDescription>
+                    </FieldContent>
                     <Select
                         value={KIND_OPTIONS.find((o) => o.kind === kind)?.value}
-                        onValueChange={handleKindChange}
+                        onValueChange={(value) => {
+                            const option = KIND_OPTIONS.find(
+                                (o) => o.value === value,
+                            );
+                            if (option !== undefined) {
+                                setKind(option.kind);
+                            }
+                        }}
                     >
-                        <SelectTrigger id="np-kind" className="w-full">
+                        <SelectTrigger
+                            id="provider-kind"
+                            className="@md/field-group:shrink-0 @md/field-group:basis-80"
+                        >
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -113,68 +134,57 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         </SelectContent>
                     </Select>
                 </Field>
-                <Field>
-                    <FieldLabel htmlFor="np-identifier">
-                        {requiredMark} {t("providers.identifier")}
-                    </FieldLabel>
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="provider-identifier">
+                            {t("providers.identifier")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.identifierHint")}
+                        </FieldDescription>
+                    </FieldContent>
                     <Input
-                        id="np-identifier"
+                        id="provider-identifier"
+                        className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         placeholder={t("providers.identifierPlaceholder")}
                         required
                     />
-                    <FieldDescription>
-                        {t("providers.identifierHint")}
-                    </FieldDescription>
                 </Field>
-                <Field>
-                    <FieldLabel htmlFor="np-name">
-                        {t("providers.name")}
-                    </FieldLabel>
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="provider-name">
+                            {t("providers.name")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("providers.nameDesc")}
+                        </FieldDescription>
+                    </FieldContent>
                     <Input
-                        id="np-name"
+                        id="provider-name"
+                        className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={t("providers.namePlaceholder")}
                     />
                 </Field>
-                <Field>
-                    <FieldLabel htmlFor="np-baseurl">
-                        {requiredMark} {t("providers.baseUrl")}
-                    </FieldLabel>
-                    <Input
-                        id="np-baseurl"
-                        value={baseUrl}
-                        onChange={(e) => setBaseUrl(e.target.value)}
-                        placeholder={t("providers.baseUrlPlaceholder")}
-                        required
-                    />
-                </Field>
-                <Field>
-                    <FieldLabel htmlFor="np-apikey">
-                        {t("providers.apiKey")}
-                    </FieldLabel>
-                    <PasswordInput
-                        id="np-apikey"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder={t("providers.apiKeyPlaceholder")}
-                    />
-                </Field>
+                <ConnectionFields
+                    kind={kind}
+                    values={connection}
+                    onChange={setConnection}
+                />
                 {failed !== null && <FieldError>{failed}</FieldError>}
-                <Field orientation="horizontal">
-                    <Button
-                        type="button"
-                        onClick={() => void handleSave()}
-                        disabled={busy}
-                    >
-                        {t("common.save")}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        {t("common.cancel")}
-                    </Button>
-                </Field>
+                <SaveBar
+                    message={t("providers.newProviderHint")}
+                    busy={busy}
+                    saveDisabled={
+                        connection.baseUrl.trim() !== "" &&
+                        !isBaseUrlValid(connection.baseUrl)
+                    }
+                    onSave={() => void handleSave()}
+                    onCancel={onCancel}
+                />
             </FieldGroup>
         </div>
     );

@@ -19,7 +19,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `alert-dialog` | Confirmation before a destructive or irreversible action                              |
 | `avatar`       | Round initial or image for a user or provider; `AvatarBadge` marks a status           |
 | `badge`        | Short status or count label                                                           |
-| `button-group` | Row of joined controls, such as an input with its save button                         |
 | `collapsible`  | Show-and-hide region; the caller draws the trigger                                    |
 | `command`      | Searchable list of commands or options; `model-selector` builds on it                 |
 | `dialog`       | Modal window for a task that keeps the page underneath                                |

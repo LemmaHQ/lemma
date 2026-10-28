@@ -5,13 +5,11 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from "@lemma/ui/components/input-group";
-import {
-    IconCheck,
-    IconPlus,
-    IconRefresh,
-    IconSearch,
-    IconX,
-} from "@tabler/icons-react";
+import { CheckIcon } from "@lemma/ui/icons/check";
+import { PlusIcon } from "@lemma/ui/icons/plus";
+import { RefreshCwIcon } from "@lemma/ui/icons/refresh-cw";
+import { SearchIcon } from "@lemma/ui/icons/search";
+import { XIcon } from "@lemma/ui/icons/x";
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -83,13 +81,13 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     return (
         <section className="flex flex-col gap-3 pt-6">
             <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold">
+                <h3 className="text-sm font-medium">
                     {t("providers.modelList")}
                 </h3>
                 <div className="ml-auto flex items-center gap-2">
                     <InputGroup className="w-48">
                         <InputGroupAddon>
-                            <IconSearch />
+                            <SearchIcon />
                         </InputGroupAddon>
                         <InputGroupInput
                             value={query}
@@ -103,7 +101,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         onClick={() => void fetchRemote()}
                         disabled={fetching}
                     >
-                        {fetching ? <Spinner /> : <IconRefresh />}
+                        {fetching ? <Spinner /> : <RefreshCwIcon />}
                         {fetching
                             ? t("providers.fetchingModels")
                             : t("providers.fetchModelList")}
@@ -115,7 +113,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         aria-label={t("providers.addModel")}
                         onClick={() => setAdding((v) => !v)}
                     >
-                        <IconPlus />
+                        <PlusIcon />
                     </Button>
                 </div>
             </div>
@@ -150,7 +148,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                             onClick={confirmAdd}
                             disabled={newModel.trim() === ""}
                         >
-                            <IconCheck />
+                            <CheckIcon />
                         </InputGroupButton>
                         <InputGroupButton
                             size="icon-xs"
@@ -160,7 +158,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                                 setAdding(false);
                             }}
                         >
-                            <IconX />
+                            <XIcon />
                         </InputGroupButton>
                     </InputGroupAddon>
                 </InputGroup>
@@ -183,7 +181,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                                         aria-label={t("providers.removeModel")}
                                         onClick={() => remove(model)}
                                     >
-                                        <IconX />
+                                        <XIcon />
                                     </Button>
                                 </ItemActions>
                             </Item>

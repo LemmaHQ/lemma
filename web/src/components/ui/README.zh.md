@@ -19,7 +19,6 @@
 | `alert-dialog` | 破坏性或不可撤销操作之前的确认                         |
 | `avatar`       | 用户或服务商的圆形首字母或图片；`AvatarBadge` 标示状态 |
 | `badge`        | 简短的状态或计数标签                                   |
-| `button-group` | 一排相连的控件，例如输入框与其保存按钮                 |
 | `collapsible`  | 显示与隐藏区域；由调用方绘制触发器                     |
 | `command`      | 可搜索的命令或选项列表；`model-selector` 基于它构建    |
 | `dialog`       | 承载任务、保留下层页面的模态窗口                       |

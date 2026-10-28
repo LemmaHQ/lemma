@@ -13,12 +13,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
+import { AnimateIcon } from "@animate-ui/react/icons";
 import {
-    IconChevronDown,
-    IconChevronRight,
-    IconPlus,
-    IconSearch,
-} from "@tabler/icons-react";
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@lemma/ui/components/tooltip";
+import { ChevronDownIcon } from "@lemma/ui/icons/chevron-down";
+import { ChevronRightIcon } from "@lemma/ui/icons/chevron-right";
+import { PlusIcon } from "@lemma/ui/icons/plus";
+import { SearchIcon } from "@lemma/ui/icons/search";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -56,7 +60,7 @@ function ProviderGroup({
                     />
                 }
             >
-                {open ? <IconChevronDown /> : <IconChevronRight />}
+                {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
                 {label}
                 <span className="ml-auto">{providers.length}</span>
             </CollapsibleTrigger>
@@ -115,7 +119,7 @@ export function ProviderListPane({
             <div className="flex items-center gap-2 p-3">
                 <InputGroup className="flex-1">
                     <InputGroupAddon>
-                        <IconSearch />
+                        <SearchIcon />
                     </InputGroupAddon>
                     <InputGroupInput
                         value={query}
@@ -123,15 +127,26 @@ export function ProviderListPane({
                         placeholder={t("providers.searchPlaceholder")}
                     />
                 </InputGroup>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label={t("providers.newProvider")}
-                    onClick={onCreate}
-                >
-                    <IconPlus className="size-4" />
-                </Button>
+                <Tooltip>
+                    <AnimateIcon animateOnHover asChild>
+                        <TooltipTrigger
+                            render={
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label={t("providers.newProvider")}
+                                    onClick={onCreate}
+                                />
+                            }
+                        >
+                            <PlusIcon />
+                        </TooltipTrigger>
+                    </AnimateIcon>
+                    <TooltipContent>
+                        {t("providers.newProvider")}
+                    </TooltipContent>
+                </Tooltip>
             </div>
             <ScrollArea className="min-h-0 flex-1">
                 {loaded ? (

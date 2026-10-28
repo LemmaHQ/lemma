@@ -32,6 +32,7 @@ export function ProvidersPanel() {
             name: data.name,
             baseUrl: data.baseUrl,
             apiKey: data.apiKey,
+            apiPath: data.apiPath,
             models: [],
         });
         setSelectedId(provider.id);
@@ -79,17 +80,9 @@ export function ProvidersPanel() {
                     <ProviderDetail
                         key={selected.id}
                         provider={selected}
+                        onSave={(patch) => store.update(selected.id, patch)}
                         onToggleEnabled={(enabled) =>
                             void applyPatch(selected.id, { enabled })
-                        }
-                        onSaveBaseUrl={(baseUrl) =>
-                            store.update(selected.id, { baseUrl })
-                        }
-                        onSaveName={(name) =>
-                            store.update(selected.id, { name })
-                        }
-                        onSaveApiKey={(apiKey) =>
-                            store.update(selected.id, { apiKey })
                         }
                         onModelsChange={(models) =>
                             void applyPatch(selected.id, { models })
