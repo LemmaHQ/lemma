@@ -6,7 +6,6 @@ import {
     InputGroupInput,
 } from "@lemma/ui/components/input-group";
 import { PasswordInput } from "@lemma/ui/components/password-input";
-import { LoaderCircleIcon } from "@lemma/ui/icons/loader-circle";
 import { LockIcon } from "@lemma/ui/icons/lock";
 import { MailIcon } from "@lemma/ui/icons/mail";
 import { UserIcon } from "@lemma/ui/icons/user";
@@ -159,8 +158,7 @@ export function SignUpForm({ prefill }: { prefill: SignUpPrefill }) {
                         </InputGroupAddon>
                     </PasswordInput>
                 </Field>
-                <Button type="submit" size="lg" disabled={busy}>
-                    {busy && <LoaderCircleIcon animate />}
+                <Button type="submit" size="lg" loading={busy}>
                     {t("auth.signUp")}
                 </Button>
             </FieldGroup>

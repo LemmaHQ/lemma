@@ -7,7 +7,6 @@ import {
     InputGroupInput,
 } from "@lemma/ui/components/input-group";
 import { PasswordInput } from "@lemma/ui/components/password-input";
-import { LoaderCircleIcon } from "@lemma/ui/icons/loader-circle";
 import { LockIcon } from "@lemma/ui/icons/lock";
 import { UserIcon } from "@lemma/ui/icons/user";
 import { useState, type SubmitEvent } from "react";
@@ -157,8 +156,7 @@ export function SignInForm({
                         </Field>
                     </>
                 )}
-                <Button type="submit" size="lg" disabled={busy}>
-                    {busy && <LoaderCircleIcon animate />}
+                <Button type="submit" size="lg" loading={busy}>
                     {step === "account" ? t("auth.continue") : t("auth.signIn")}
                 </Button>
             </FieldGroup>
