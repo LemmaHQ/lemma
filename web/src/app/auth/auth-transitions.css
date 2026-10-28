@@ -1,0 +1,15 @@
+@utility auth-transition-panel {
+    view-transition-name: auth-panel;
+}
+
+::view-transition-group(auth-panel) {
+    animation-name: revert;
+    animation-duration: var(--motion-duration-slow);
+    animation-timing-function: var(--motion-easing-move);
+    animation-fill-mode: both;
+}
+
+::view-transition-new(auth-panel) {
+    animation: shell-fade-in var(--motion-duration-medium)
+        var(--motion-easing-enter) both;
+}

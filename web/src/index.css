@@ -4,6 +4,7 @@
 @import "streamdown/styles.css";
 @import "./tokens.css";
 @import "@lemma/ui/tokens.css";
+@import "./app/auth/auth-transitions.css";
 @import "./app/shell/shell-transitions.css";
 
 @source "../../packages/ui/src";
