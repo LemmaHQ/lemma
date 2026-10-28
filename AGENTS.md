@@ -61,6 +61,12 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 - **Source files** stay within 300 lines and follow the file layout, naming, and test placement rules in [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md#source-files); `just source-check` enforces the machine-checkable part.
 - **Code style:** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) holds the upstream guides behind these rules.
 
+## Answering the user
+
+- **Treat a confirmation-seeking question as an open hypothesis.** A question ending in "right?", "对吧？", or "是不是？" carries no preferred answer; evaluate it as if asked neutrally.
+- **Verify before agreeing.** Check code, facts, and architecture claims independently first; the answer opens with the finding, never with "Yes", "Exactly", or "No problem".
+- **Lead with the correction.** When a premise is wrong, flawed, or not the best option, the first sentence says so and why; technical accuracy, boundary conditions, and trade-offs come before agreement.
+
 ## Git
 
 - Commit messages follow [lemma-commit](.agents/skills/lemma-commit/SKILL.md), in English.

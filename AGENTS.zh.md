@@ -61,6 +61,12 @@ Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后
 - **源码文件**不超过 300 行，并遵守 [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md#source-files) 中的文件结构、命名与测试位置规则；`just source-check` 检查其中可机器检查的部分。
 - **代码风格：** [lemma-code-style](.agents/skills/lemma-code-style/SKILL.md) 收录这些规则背后的上游指南。
 
+## 回答用户
+
+- **确认式提问按开放假设处理。** 以"对吧？"、"是不是？"或"right?"结尾的问题不预设答案，按中立提问评估。
+- **先验证再同意。** 先独立核对代码、事实与架构判断；回答以结论开头，不以"是的"、"完全正确"或"没问题"开头。
+- **第一句指出前提问题。** 前提有错误、漏洞或并非最优时，第一句直接指出并说明原因；技术准确性、边界条件与权衡优先于附和。
+
 ## Git
 
 - 提交信息遵循 [lemma-commit](.agents/skills/lemma-commit/SKILL.md)，使用英语。
