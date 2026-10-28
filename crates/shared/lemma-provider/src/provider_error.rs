@@ -23,6 +23,8 @@ pub enum ProviderError {
     Store(String),
     /// Fetching the live model list failed.
     Fetch(String),
+    /// A connectivity check reached no answer from the model.
+    Check(String),
 }
 
 impl fmt::Display for ProviderError {
@@ -35,6 +37,7 @@ impl fmt::Display for ProviderError {
             Self::Crypto(e) => write!(f, "crypto: {e}"),
             Self::Store(e) => write!(f, "store: {e}"),
             Self::Fetch(e) => write!(f, "fetch models: {e}"),
+            Self::Check(e) => write!(f, "check: {e}"),
         }
     }
 }

@@ -3,7 +3,6 @@ package dev.lemmahq.lemma.ui.provider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +33,6 @@ import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import kotlinx.coroutines.launch
 
-private val PROVIDER_KINDS = listOf("openai", "anthropic", "gemini")
 private val IDENTIFIER_PATTERN = Regex("^[a-z0-9][a-z0-9-]*$")
 
 @Composable
@@ -56,7 +54,10 @@ internal fun ProviderEditorDialog(
     var modelsText by remember { mutableStateOf(existing?.models?.joinToString("\n").orEmpty()) }
     var isSaving by remember { mutableStateOf(false) }
     var isFetching by remember { mutableStateOf(false) }
+    var isChecking by remember { mutableStateOf(false) }
+    var answeredModel by remember { mutableStateOf<String?>(null) }
     var dialogError by remember { mutableStateOf<String?>(null) }
+    val models = modelsText.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
     val canSave =
         !isSaving &&
@@ -80,32 +81,7 @@ internal fun ProviderEditorDialog(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PROVIDER_KINDS.forEach { option ->
-                    val selected = option == kind
-                    Box(
-                        modifier =
-                            Modifier.clip(LemmaTheme.shapes.full)
-                                .background(
-                                    if (selected) LemmaTheme.colors.primary
-                                    else LemmaTheme.colors.fill2
-                                )
-                                .clickable(enabled = existing == null) { kind = option }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = option,
-                            style = LemmaTheme.typography.labelSmall,
-                            color =
-                                if (selected) {
-                                    LemmaTheme.colors.background
-                                } else {
-                                    LemmaTheme.colors.textSecondary
-                                },
-                        )
-                    }
-                }
-            }
+            ProviderKindPicker(kind = kind, enabled = existing == null, onSelect = { kind = it })
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -161,6 +137,43 @@ internal fun ProviderEditorDialog(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
+                    text = if (isChecking) "Checking…" else "Check",
+                    style = LemmaTheme.typography.bodyMedium,
+                    color =
+                        if (isChecking || models.isEmpty()) LemmaTheme.colors.textQuaternary
+                        else LemmaTheme.colors.primary,
+                    modifier =
+                        Modifier.padding(end = 16.dp).clickable(
+                            enabled = !isChecking && models.isNotEmpty()
+                        ) {
+                            scope.launch {
+                                isChecking = true
+                                answeredModel = null
+                                dialogError = null
+                                try {
+                                    val connection =
+                                        ClientProviderInput(
+                                            kind = kind,
+                                            identifier = identifier.trim(),
+                                            name = name.trim(),
+                                            baseUrl = baseUrl.trim(),
+                                            apiKey = apiKey.trim(),
+                                            apiPath = apiPath.trim(),
+                                        )
+                                    val stored = existing?.id?.takeIf { apiKey.isBlank() }
+                                    val model = models.first()
+                                    val failure = client.checkProvider(stored, connection, model)
+                                    answeredModel = model.takeIf { failure.isEmpty() }
+                                    dialogError = failure.ifEmpty { null }
+                                } catch (e: Exception) {
+                                    dialogError = ErrorFormatter.format(e)
+                                } finally {
+                                    isChecking = false
+                                }
+                            }
+                        },
+                )
+                Text(
                     text = if (isFetching) "Fetching…" else "Fetch",
                     style = LemmaTheme.typography.bodyMedium,
                     color =
@@ -192,6 +205,15 @@ internal fun ProviderEditorDialog(
                 singleLine = false,
             )
 
+            answeredModel?.let { model ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "$model answered.",
+                    style = LemmaTheme.typography.bodyMedium,
+                    color = LemmaTheme.colors.textSecondary,
+                )
+            }
+
             dialogError?.let { message ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -213,12 +235,6 @@ internal fun ProviderEditorDialog(
                 LemmaButton(
                     text = if (isSaving) "Saving…" else "Save",
                     onClick = {
-                        val models =
-                            modelsText
-                                .split(',', '\n')
-                                .map { it.trim() }
-                                .filter { it.isNotEmpty() }
-                                .distinct()
                         scope.launch {
                             isSaving = true
                             try {

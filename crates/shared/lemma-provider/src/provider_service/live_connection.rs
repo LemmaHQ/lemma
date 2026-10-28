@@ -21,7 +21,11 @@ impl<C: Connector> ProviderService<C> {
         Ok(self.connector.connect(endpoint))
     }
 
-    async fn endpoint(&self, user_id: Uuid, id: Uuid) -> Result<Endpoint, ProviderError> {
+    pub(super) async fn endpoint(
+        &self,
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<Endpoint, ProviderError> {
         let row = provider::Entity::find_by_id(id)
             .filter(provider::Column::UserId.eq(user_id))
             .one(&self.db)

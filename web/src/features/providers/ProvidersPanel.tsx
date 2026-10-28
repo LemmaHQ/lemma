@@ -90,6 +90,7 @@ export function ProvidersPanel() {
                         onFetchModels={() =>
                             store.fetchModels({ id: selected.id })
                         }
+                        onCheck={(req) => store.checkProvider(req)}
                         onDelete={() => handleDelete(selected.id)}
                     />
                 )}

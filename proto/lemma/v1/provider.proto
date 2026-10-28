@@ -82,6 +82,21 @@ message FetchModelsResponse {
   repeated string models = 1;
 }
 
+message CheckProviderRequest {
+  // Checks an existing provider id or inline connection details
+  string id = 1;
+  ProviderKind kind = 2;
+  string base_url = 3;
+  string api_key = 4;
+  string api_path = 5;
+  string model = 6;
+}
+
+message CheckProviderResponse {
+  // Upstream failure message; empty when the model answered
+  string error = 1;
+}
+
 message CreateProviderResponse {
   Provider provider = 1;
 }
@@ -97,4 +112,6 @@ service ProviderService {
   rpc DeleteProvider(DeleteProviderRequest) returns (DeleteProviderResponse);
   // Fetches remote model list from the provider endpoint.
   rpc FetchModels(FetchModelsRequest) returns (FetchModelsResponse);
+  // Sends a minimal generation request to confirm the provider answers.
+  rpc CheckProvider(CheckProviderRequest) returns (CheckProviderResponse);
 }

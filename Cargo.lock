@@ -2470,7 +2470,9 @@ name = "lemma-provider"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "futures",
  "lemma-auth",
+ "lemma-core",
  "lemma-crypto",
  "lemma-model",
  "lemma-test-db",

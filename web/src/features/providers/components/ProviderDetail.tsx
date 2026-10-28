@@ -12,7 +12,8 @@ import {
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { ProviderPatch } from "../store";
+import type { CheckRequest, ProviderPatch } from "../store";
+import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
 import { DeleteProviderButton } from "./DeleteProviderButton";
 import { ModelList } from "./ModelList";
@@ -25,6 +26,7 @@ interface ProviderDetailProps {
     onToggleEnabled: (enabled: boolean) => void;
     onModelsChange: (models: string[]) => void;
     onFetchModels: () => Promise<string[]>;
+    onCheck: (req: CheckRequest) => Promise<string>;
     onDelete: () => Promise<void>;
 }
 
@@ -35,6 +37,7 @@ export function ProviderDetail({
     onToggleEnabled,
     onModelsChange,
     onFetchModels,
+    onCheck,
     onDelete,
 }: ProviderDetailProps) {
     const { t } = useTranslation();
@@ -107,6 +110,18 @@ export function ProviderDetail({
                     kind={provider.kind}
                     values={values}
                     onChange={setValues}
+                />
+                <ConnectionCheck
+                    models={provider.models}
+                    target={`${values.apiKey}\n${values.baseUrl}\n${values.apiPath}`}
+                    disabled={!isBaseUrlValid(values.baseUrl)}
+                    onCheck={(model) =>
+                        onCheck(
+                            dirty
+                                ? { kind: provider.kind, ...values, model }
+                                : { id: provider.id, model },
+                        )
+                    }
                 />
                 {error !== null && <FieldError>{error}</FieldError>}
                 {dirty && (

@@ -1,9 +1,8 @@
 package dev.lemmahq.lemma.client
 
 import com.connectrpc.ResponseMessage
-import dev.lemmahq.gen.lemma.v1.Provider
-import dev.lemmahq.gen.lemma.v1.ProviderKind
 import dev.lemmahq.gen.lemma.v1.abortMessageRequest
+import dev.lemmahq.gen.lemma.v1.checkProviderRequest
 import dev.lemmahq.gen.lemma.v1.createConversationRequest
 import dev.lemmahq.gen.lemma.v1.createProviderRequest
 import dev.lemmahq.gen.lemma.v1.deleteProviderRequest
@@ -145,6 +144,29 @@ class LemmaClient(
         }
     }
 
+    /**
+     * Sends a test request for [model] through the stored provider [id], or through the ad-hoc
+     * connection details when [id] is null; returns the upstream failure message, empty when the
+     * model answered.
+     */
+    suspend fun checkProvider(id: String?, connection: ClientProviderInput, model: String): String {
+        val request = checkProviderRequest {
+            this.model = model
+            if (id != null) {
+                this.id = id
+            } else {
+                kind = providerKindEnum(connection.kind)
+                baseUrl = connection.baseUrl
+                apiKey = connection.apiKey
+                apiPath = connection.apiPath
+            }
+        }
+        return when (val response = rpc.provider.checkProvider(request, emptyMap())) {
+            is ResponseMessage.Success -> response.message.error
+            is ResponseMessage.Failure -> throw response.cause
+        }
+    }
+
     /** Creates an empty conversation. */
     suspend fun createConversation(): ClientConversation {
         return when (
@@ -252,38 +274,5 @@ class LemmaClient(
     private fun persistTokens(accessToken: String, refreshToken: String) {
         settings.setAccessToken(accessToken)
         settings.setRefreshToken(refreshToken)
-    }
-}
-
-private fun Provider.toClient(): ClientProvider {
-    return ClientProvider(
-        id = id,
-        kind = providerKindString(kind),
-        identifier = identifier,
-        name = name,
-        baseUrl = baseUrl,
-        apiPath = apiPath,
-        modelsPath = modelsPath,
-        models = modelsList,
-        enabled = enabled,
-        hasApiKey = apiKey.isNotBlank(),
-    )
-}
-
-private fun providerKindString(kind: ProviderKind): String {
-    return when (kind) {
-        ProviderKind.PROVIDER_KIND_OPENAI -> "openai"
-        ProviderKind.PROVIDER_KIND_ANTHROPIC -> "anthropic"
-        ProviderKind.PROVIDER_KIND_GEMINI -> "gemini"
-        else -> throw IllegalArgumentException("Unknown provider kind: $kind")
-    }
-}
-
-private fun providerKindEnum(kind: String): ProviderKind {
-    return when (kind) {
-        "openai" -> ProviderKind.PROVIDER_KIND_OPENAI
-        "anthropic" -> ProviderKind.PROVIDER_KIND_ANTHROPIC
-        "gemini" -> ProviderKind.PROVIDER_KIND_GEMINI
-        else -> throw IllegalArgumentException("Unknown provider kind: $kind")
     }
 }

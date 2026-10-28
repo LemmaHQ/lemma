@@ -24,6 +24,16 @@ export interface NewProvider {
     modelsPath?: string;
 }
 
+/** Checks a stored provider by `id`, or the inline connection when `id` is absent. */
+export interface CheckRequest {
+    id?: string;
+    kind?: ProviderKind;
+    baseUrl?: string;
+    apiKey?: string;
+    apiPath?: string;
+    model: string;
+}
+
 interface ProvidersState {
     list: Provider[];
     loaded: boolean;
@@ -38,6 +48,7 @@ interface ProvidersState {
         apiKey?: string;
         modelsPath?: string;
     }) => Promise<string[]>;
+    checkProvider: (req: CheckRequest) => Promise<string>;
 }
 
 export const useProvidersStore = create<ProvidersState>()((set) => ({
@@ -90,5 +101,10 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
     fetchModels: async (req) => {
         const res = await providerClient.fetchModels(req);
         return res.models;
+    },
+
+    checkProvider: async (req) => {
+        const res = await providerClient.checkProvider(req);
+        return res.error;
     },
 }));

@@ -7,12 +7,13 @@ use std::sync::Arc;
 
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_model::{Connector, ProviderKind};
+use lemma_model::{Connector, Endpoint, ProviderKind};
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    CreateProviderRequest, CreateProviderResponse, DeleteProviderRequest, DeleteProviderResponse,
-    ErrorReason, FetchModelsRequest, FetchModelsResponse, ListProvidersRequest,
-    ListProvidersResponse, Provider, UpdateProviderRequest, UpdateProviderResponse,
+    CheckProviderRequest, CheckProviderResponse, CreateProviderRequest, CreateProviderResponse,
+    DeleteProviderRequest, DeleteProviderResponse, ErrorReason, FetchModelsRequest,
+    FetchModelsResponse, ListProvidersRequest, ListProvidersResponse, Provider,
+    UpdateProviderRequest, UpdateProviderResponse,
 };
 use lemma_provider::{CreateInput, ProviderError, ProviderService, ProviderView, UpdateInput};
 use uuid::Uuid;
@@ -101,6 +102,7 @@ fn map_domain(e: ProviderError) -> ConnectError {
         ProviderError::Crypto(m) => ConnectError::internal(format!("crypto: {m}")),
         ProviderError::Store(m) => ConnectError::internal(format!("db: {m}")),
         ProviderError::Fetch(m) => ConnectError::internal(format!("fetch models: {m}")),
+        ProviderError::Check(m) => ConnectError::internal(format!("check: {m}")),
     }
 }
 
@@ -215,6 +217,46 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         .map_err(map_domain)?;
         Response::ok(FetchModelsResponse {
             models,
+            ..Default::default()
+        })
+    }
+
+    async fn check_provider(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, CheckProviderRequest>,
+    ) -> ServiceResult<CheckProviderResponse> {
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
+        if request.model.trim().is_empty() {
+            return Err(lemma_proto::app_error(ErrorReason::ModelRequired));
+        }
+        let model = request.model.trim();
+        let checked = if request.id.is_empty() {
+            let kind = request
+                .kind
+                .as_known()
+                .and_then(kind_from_proto)
+                .ok_or_else(|| lemma_proto::app_error(ErrorReason::ProviderKindInvalid))?;
+            let endpoint = Endpoint {
+                kind,
+                base_url: request.base_url.to_owned(),
+                api_key: request.api_key.to_owned(),
+                api_path: request.api_path.to_owned(),
+                models_path: String::new(),
+            };
+            self.domain.check_adhoc(endpoint, model).await
+        } else {
+            self.domain
+                .check_for(user_id, parse_id(request.id)?, model)
+                .await
+        };
+        let error = match checked {
+            Ok(()) => String::new(),
+            Err(ProviderError::Check(message)) => message,
+            Err(e) => return Err(map_domain(e)),
+        };
+        Response::ok(CheckProviderResponse {
+            error,
             ..Default::default()
         })
     }
