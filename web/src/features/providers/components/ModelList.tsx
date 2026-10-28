@@ -1,4 +1,4 @@
-import { FieldDescription, FieldError } from "@lemma/ui/components/field";
+import { FieldError } from "@lemma/ui/components/field";
 import {
     InputGroup,
     InputGroupAddon,
@@ -23,8 +23,9 @@ import {
     ItemSeparator,
     ItemTitle,
 } from "@/components/ui/item";
-import { Spinner } from "@/components/ui/spinner";
 import { errorText } from "@/data/rpc/errors";
+
+import { FetchModelsDialog } from "./FetchModelsDialog";
 
 interface ModelListProps {
     models: string[];
@@ -36,9 +37,8 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     const { t } = useTranslation();
     const [query, setQuery] = useState("");
     const [fetching, setFetching] = useState(false);
-    const [fetchMsg, setFetchMsg] = useState<
-        { ok: true; text: string } | { ok: false; text: string } | null
-    >(null);
+    const [fetchError, setFetchError] = useState<string | null>(null);
+    const [remote, setRemote] = useState<string[] | null>(null);
     const [adding, setAdding] = useState(false);
     const [newModel, setNewModel] = useState("");
 
@@ -54,13 +54,11 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
             return;
         }
         setFetching(true);
-        setFetchMsg(null);
+        setFetchError(null);
         try {
-            const remote = await onFetch();
-            onChange(Array.from(new Set([...models, ...remote])));
-            setFetchMsg({ ok: true, text: t("providers.modelsFetched") });
+            setRemote(await onFetch());
         } catch (e) {
-            setFetchMsg({ ok: false, text: errorText(e, t) });
+            setFetchError(errorText(e, t));
         } finally {
             setFetching(false);
         }
@@ -99,12 +97,10 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         type="button"
                         variant="outline"
                         onClick={() => void fetchRemote()}
-                        disabled={fetching}
+                        loading={fetching}
                     >
-                        {fetching ? <Spinner /> : <RefreshCwIcon />}
-                        {fetching
-                            ? t("providers.fetchingModels")
-                            : t("providers.fetchModelList")}
+                        {!fetching && <RefreshCwIcon />}
+                        {t("providers.fetchModelList")}
                     </Button>
                     <Button
                         type="button"
@@ -118,12 +114,17 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                 </div>
             </div>
 
-            {fetchMsg !== null &&
-                (fetchMsg.ok ? (
-                    <FieldDescription>{fetchMsg.text}</FieldDescription>
-                ) : (
-                    <FieldError>{fetchMsg.text}</FieldError>
-                ))}
+            {fetchError !== null && <FieldError>{fetchError}</FieldError>}
+
+            <FetchModelsDialog
+                remote={remote}
+                existing={models}
+                onClose={() => setRemote(null)}
+                onAdd={(picked) => {
+                    onChange([...models, ...picked]);
+                    setRemote(null);
+                }}
+            />
 
             {adding && (
                 <InputGroup>
