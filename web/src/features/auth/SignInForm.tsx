@@ -9,6 +9,7 @@ import {
 import { PasswordInput } from "@lemma/ui/components/password-input";
 import { LockIcon } from "@lemma/ui/icons/lock";
 import { UserIcon } from "@lemma/ui/icons/user";
+import { AnimatePresence } from "motion/react";
 import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { authClient } from "@/data/rpc/clients";
 import { errorText } from "@/data/rpc/errors";
 
+import { Reveal } from "./Reveal";
 import { useAuth } from "./store";
 
 /** Which of the two sign-in steps the form shows. */
@@ -43,7 +45,7 @@ export function SignInForm({
     const [busy, setBusy] = useState(false);
     const [stepChanged, setStepChanged] = useState(false);
     const focusOnMount = stepChanged
-        ? (el: HTMLInputElement | null) => el?.focus()
+        ? (el: HTMLInputElement | null) => el?.focus({ preventScroll: true })
         : undefined;
 
     const submit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -85,30 +87,30 @@ export function SignInForm({
             }}
         >
             <FieldGroup>
-                {step === "account" ? (
-                    <Field data-invalid={invalid}>
-                        <InputGroup>
-                            <InputGroupAddon>
-                                <UserIcon />
-                            </InputGroupAddon>
-                            <InputGroupInput
-                                name="username"
-                                autoComplete="username"
-                                ref={focusOnMount}
-                                required
-                                aria-label={t("auth.identifier")}
-                                placeholder={t("auth.identifier")}
-                                aria-invalid={invalid}
-                                value={identifier}
-                                onChange={(e) => {
-                                    setIdentifier(e.target.value);
-                                    setInvalid(false);
-                                }}
-                            />
-                        </InputGroup>
-                    </Field>
-                ) : (
-                    <>
+                <div className="flex flex-col">
+                    {step === "account" ? (
+                        <Field data-invalid={invalid}>
+                            <InputGroup>
+                                <InputGroupAddon>
+                                    <UserIcon />
+                                </InputGroupAddon>
+                                <InputGroupInput
+                                    name="username"
+                                    autoComplete="username"
+                                    ref={focusOnMount}
+                                    required
+                                    aria-label={t("auth.identifier")}
+                                    placeholder={t("auth.identifier")}
+                                    aria-invalid={invalid}
+                                    value={identifier}
+                                    onChange={(e) => {
+                                        setIdentifier(e.target.value);
+                                        setInvalid(false);
+                                    }}
+                                />
+                            </InputGroup>
+                        </Field>
+                    ) : (
                         <Field>
                             <input
                                 className="sr-only"
@@ -134,31 +136,36 @@ export function SignInForm({
                                 </InputGroupAddon>
                             </InputGroup>
                         </Field>
-                        <Field
-                            data-invalid={invalid}
-                            className="animate-in duration-slow ease-enter fade-in-0 slide-in-from-bottom-1"
-                        >
-                            <PasswordInput
-                                name="password"
-                                autoComplete="current-password"
-                                ref={focusOnMount}
-                                required
-                                aria-label={t("auth.password")}
-                                placeholder={t("auth.password")}
-                                aria-invalid={invalid}
-                                value={password}
-                                onChange={(e) => {
-                                    setPassword(e.target.value);
-                                    setInvalid(false);
-                                }}
-                            >
-                                <InputGroupAddon>
-                                    <LockIcon />
-                                </InputGroupAddon>
-                            </PasswordInput>
-                        </Field>
-                    </>
-                )}
+                    )}
+                    <AnimatePresence initial={false}>
+                        {step === "password" && (
+                            <Reveal>
+                                <div className="pt-5">
+                                    <Field data-invalid={invalid}>
+                                        <PasswordInput
+                                            name="password"
+                                            autoComplete="current-password"
+                                            ref={focusOnMount}
+                                            required
+                                            aria-label={t("auth.password")}
+                                            placeholder={t("auth.password")}
+                                            aria-invalid={invalid}
+                                            value={password}
+                                            onChange={(e) => {
+                                                setPassword(e.target.value);
+                                                setInvalid(false);
+                                            }}
+                                        >
+                                            <InputGroupAddon>
+                                                <LockIcon />
+                                            </InputGroupAddon>
+                                        </PasswordInput>
+                                    </Field>
+                                </div>
+                            </Reveal>
+                        )}
+                    </AnimatePresence>
+                </div>
                 <Button type="submit" size="lg" loading={busy}>
                     {step === "account" ? t("auth.continue") : t("auth.signIn")}
                 </Button>
