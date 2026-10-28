@@ -3,11 +3,12 @@ import { RouterProvider } from "react-router/dom";
 
 import { AuthLayout } from "./auth/AuthLayout";
 import { AppShell } from "./shell/AppShell";
-import { Loading, RequireAuth } from "./RequireAuth";
+import { RequireAuth } from "./RequireAuth";
+import { SplashScreen } from "./SplashScreen";
 
 const router = createBrowserRouter([
     {
-        HydrateFallback: Loading,
+        HydrateFallback: SplashScreen,
         children: [
             {
                 Component: AuthLayout,
