@@ -7,13 +7,15 @@ function numbers(value: string) {
 
 function slowMove(): Transition {
     const style = getComputedStyle(document.documentElement);
-    const [milliseconds = 0] = numbers(
-        style.getPropertyValue("--motion-duration-slow"),
-    );
+    const duration = style.getPropertyValue("--motion-duration-slow").trim();
+    const [value = 0] = numbers(duration);
     const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = numbers(
         style.getPropertyValue("--motion-easing-move"),
     );
-    return { duration: milliseconds / 1000, ease: [x1, y1, x2, y2] };
+    return {
+        duration: duration.endsWith("ms") ? value / 1000 : value,
+        ease: [x1, y1, x2, y2],
+    };
 }
 
 /**
