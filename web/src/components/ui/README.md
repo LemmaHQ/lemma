@@ -30,6 +30,7 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `select`       | Single choice from a list in a form                                                   |
 | `scroll-area`  | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it |
 | `separator`    | Horizontal or vertical divider line                                                   |
+| `skeleton`     | Placeholder block with a pulse while the content of a known layout loads              |
 | `spinner`      | Animated loading icon inside a button or row                                          |
 | `switch`       | Two-state toggle that applies immediately                                             |
 | `toggle`       | Pressable two-state button                                                            |
