@@ -31,7 +31,7 @@ export function AuthLayout() {
                 <span className="font-serif text-xl font-semibold">Lemma</span>
             </header>
             <main className="flex flex-1 items-center justify-center px-4 py-8">
-                <div className="w-full max-w-sm">
+                <div className="w-full max-w-sm animate-in duration-slow ease-enter fade-in-0 slide-in-from-bottom-2">
                     <Outlet />
                 </div>
             </main>
