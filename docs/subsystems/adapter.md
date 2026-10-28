@@ -29,9 +29,11 @@ The adapter subsystem turns one model request into a stream of vendor-independen
 | `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`, with `anthropic-version: 2023-06-01` | a token budget in `thinking.budget_tokens` |
 | `gemini` | `GeminiGenerate` | `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:streamGenerateContent?alt=sse` | `x-goog-api-key` | a token budget in `generationConfig.thinkingConfig.thinkingBudget` |
 
+The base URL takes the form the vendor SDK uses: the version segment belongs to the base URL for `openai` and to the default path for `anthropic` and `gemini`.
+
 A token budget comes from the effort: a number is used as is, `low` is 2048, `high` is 16384, and any other value is 8192. Anthropic requests set `max_tokens` to 8192, or to the budget plus 8192 when thinking is on. A Gemini path override may contain `{model}`, which is replaced by the model id.
 
-Model lists use `GET` on `/models` under the same base URL as generation, with the same credentials and a 10-second limit. Gemini ids lose their `models/` prefix.
+Model lists use `GET` under the same base URL as generation, with the same credentials and a 10-second limit: `/models` for `openai`, `/v1/models` for `anthropic`, `/v1beta/models` for `gemini`. Gemini ids lose their `models/` prefix.
 
 ## Stream invariants
 

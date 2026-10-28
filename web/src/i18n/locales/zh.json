@@ -105,7 +105,7 @@
         "apiKeyDesc": "用于向服务商发起请求的认证密钥。",
         "apiKeyPlaceholder": "sk-…",
         "baseUrl": "Base URL",
-        "baseUrlDesc": "API 接口地址（含版本段）。",
+        "baseUrlDesc": "API 接口地址，按厂商官方 SDK 的写法填写。",
         "baseUrlPlaceholder": "https://api.example.com/v1",
         "deleteDescription": "API key 和模型列表会一并删除，此操作不可恢复。",
         "deleteProvider": "删除服务商",

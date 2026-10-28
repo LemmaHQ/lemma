@@ -29,9 +29,11 @@
 | `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`，附带 `anthropic-version: 2023-06-01` | 换算为 `thinking.budget_tokens` 中的 token 预算 |
 | `gemini` | `GeminiGenerate` | `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:streamGenerateContent?alt=sse` | `x-goog-api-key` | 换算为 `generationConfig.thinkingConfig.thinkingBudget` 中的 token 预算 |
 
+base URL 采用厂商 SDK 的写法：`openai` 的版本段属于 base URL，`anthropic` 与 `gemini` 的版本段属于默认路径。
+
 token 预算由思考强度换算：数字原样使用，`low` 为 2048，`high` 为 16384，其他值为 8192。Anthropic 请求的 `max_tokens` 为 8192；开启思考时为预算加 8192。Gemini 的路径覆盖可以包含 `{model}`，它会被替换为模型 id。
 
-模型列表在与生成相同的 base URL 下对 `/models` 发送 `GET`，凭据相同，时限 10 秒。Gemini 的 id 会去掉 `models/` 前缀。
+模型列表在与生成相同的 base URL 下发送 `GET`，凭据相同，时限 10 秒：`openai` 为 `/models`，`anthropic` 为 `/v1/models`，`gemini` 为 `/v1beta/models`。Gemini 的 id 会去掉 `models/` 前缀。
 
 ## 流不变量
 

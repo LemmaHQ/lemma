@@ -6,8 +6,10 @@ use crate::{request, sse};
 
 use super::parser::Parser;
 
-/// Streams via `:streamGenerateContent?alt=sse` with an `x-goog-api-key`
-/// header. Usage metrics accompany the terminal chunk and flush at EOF.
+/// Streams via `POST <base_url>/v1beta/models/{model}:streamGenerateContent?alt=sse`,
+/// or the endpoint's `api_path` with `{model}` replaced, with an
+/// `x-goog-api-key` header. Usage metrics accompany the terminal chunk and
+/// flush at EOF.
 #[derive(Debug)]
 pub struct GeminiGenerate<T> {
     transport: T,
@@ -28,12 +30,12 @@ impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
     async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
         let base_url = if endpoint.base_url.is_empty() {
-            "https://generativelanguage.googleapis.com/v1beta"
+            "https://generativelanguage.googleapis.com"
         } else {
             endpoint.base_url.as_str()
         };
         let path = if endpoint.api_path.is_empty() {
-            format!("/models/{}:streamGenerateContent?alt=sse", req.model)
+            format!("/v1beta/models/{}:streamGenerateContent?alt=sse", req.model)
         } else {
             endpoint.api_path.replace("{model}", &req.model)
         };

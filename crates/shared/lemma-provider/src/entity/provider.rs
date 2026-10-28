@@ -28,7 +28,7 @@ pub struct Model {
     pub api_key: String,
     /// Generation endpoint path override; empty means the adapter default.
     pub api_path: String,
-    /// Model-list endpoint path override; empty means `/models`.
+    /// Model-list endpoint path override; empty means the adapter default.
     pub models_path: String,
     /// Cached model ids.
     pub models: Models,

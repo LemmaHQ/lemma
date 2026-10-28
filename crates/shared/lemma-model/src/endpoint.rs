@@ -41,8 +41,9 @@ impl FromStr for ProviderKind {
 pub struct Endpoint {
     /// API dialect.
     pub kind: ProviderKind,
-    /// Base URL, e.g. `https://api.openai.com/v1`; empty selects the
-    /// vendor default.
+    /// Base URL in the form the vendor SDK takes: `https://api.openai.com/v1`,
+    /// `https://api.anthropic.com`, `https://generativelanguage.googleapis.com`;
+    /// empty selects the vendor default.
     pub base_url: String,
     /// Generation endpoint path override; empty selects the adapter default.
     pub api_path: String,

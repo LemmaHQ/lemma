@@ -11,7 +11,7 @@ const MAX_TOKENS: u32 = 8192;
 /// Pinned API version header.
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 
-/// Streams via `POST <base_url>/messages`, or the endpoint's `api_path`
+/// Streams via `POST <base_url>/v1/messages`, or the endpoint's `api_path`
 /// in place of the path, with an `x-api-key` header.
 #[derive(Debug)]
 pub struct AnthropicMessages<T> {
@@ -33,12 +33,12 @@ impl<T: HttpTransport> Adapter for AnthropicMessages<T> {
     async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
         let base_url = if endpoint.base_url.is_empty() {
-            "https://api.anthropic.com/v1"
+            "https://api.anthropic.com"
         } else {
             endpoint.base_url.as_str()
         };
         let path = if endpoint.api_path.is_empty() {
-            "/messages"
+            "/v1/messages"
         } else {
             &endpoint.api_path
         };

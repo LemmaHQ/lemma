@@ -28,17 +28,21 @@ struct NameOnly {
 /// kind: bearer token for OpenAI-compatible APIs, `x-api-key` plus a
 /// pinned `anthropic-version` for Anthropic, `x-goog-api-key` for Gemini.
 ///
-/// An empty `models_path` selects `/models` under the base URL that
-/// generation uses. Gemini returns names as `models/<id>`; the prefix is
-/// stripped.
+/// An empty `models_path` selects the kind's default under the base URL
+/// that generation uses: `/models` for OpenAI-compatible APIs,
+/// `/v1/models` for Anthropic, `/v1beta/models` for Gemini. Gemini returns
+/// names as `models/<id>`; the prefix is stripped.
 pub(crate) async fn list_models<T: HttpTransport>(
     transport: &T,
     endpoint: Endpoint,
 ) -> Result<Vec<String>, ModelError> {
-    let default_base = match endpoint.kind {
-        ProviderKind::OpenAiCompatible => "https://api.openai.com/v1",
-        ProviderKind::Anthropic => "https://api.anthropic.com/v1",
-        ProviderKind::Gemini => "https://generativelanguage.googleapis.com/v1beta",
+    let (default_base, default_path) = match endpoint.kind {
+        ProviderKind::OpenAiCompatible => ("https://api.openai.com/v1", "/models"),
+        ProviderKind::Anthropic => ("https://api.anthropic.com", "/v1/models"),
+        ProviderKind::Gemini => (
+            "https://generativelanguage.googleapis.com",
+            "/v1beta/models",
+        ),
     };
     let base = if endpoint.base_url.is_empty() {
         default_base
@@ -46,7 +50,7 @@ pub(crate) async fn list_models<T: HttpTransport>(
         endpoint.base_url.trim_end_matches('/')
     };
     let path = if endpoint.models_path.is_empty() {
-        "/models"
+        default_path
     } else {
         &endpoint.models_path
     };
@@ -127,7 +131,7 @@ mod tests {
     #[test]
     fn gemini_lists_models_under_the_base_url_used_for_generation() -> Result<(), ModelError> {
         let transport = RecordingTransport::default();
-        for base_url in ["", "https://generativelanguage.googleapis.com/v1beta/"] {
+        for base_url in ["", "https://generativelanguage.googleapis.com/"] {
             let models = executor::block_on(list_models(
                 &transport,
                 Endpoint {

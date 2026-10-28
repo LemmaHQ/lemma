@@ -17,12 +17,12 @@ message Provider {
   string id = 1;
   ProviderKind kind = 2;
   string name = 3;
-  string base_url = 4; // Base URL including API version path, e.g. https://api.openai.com/v1
+  string base_url = 4; // Base URL as the vendor SDK takes it: https://api.openai.com/v1, https://api.anthropic.com, https://generativelanguage.googleapis.com
   string api_key = 5; // Decrypted plaintext in read responses
   repeated string models = 6;
   bool enabled = 7;
   string api_path = 8; // Empty string uses provider kind default
-  string models_path = 9; // Empty string defaults to /models
+  string models_path = 9; // Empty string uses provider kind default
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
   // Machine identifier visible to users; restricted to ASCII, immutable after creation.
