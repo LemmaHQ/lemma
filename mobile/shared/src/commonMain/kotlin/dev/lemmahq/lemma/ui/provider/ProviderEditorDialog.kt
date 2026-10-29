@@ -57,6 +57,7 @@ internal fun ProviderEditorDialog(
     var isChecking by remember { mutableStateOf(false) }
     var answeredModel by remember { mutableStateOf<String?>(null) }
     var dialogError by remember { mutableStateOf<String?>(null) }
+    var fetched by remember { mutableStateOf<List<String>?>(null) }
     val models = modelsText.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
     val canSave =
@@ -183,11 +184,11 @@ internal fun ProviderEditorDialog(
                         Modifier.clickable(enabled = !isFetching) {
                             scope.launch {
                                 isFetching = true
+                                dialogError = null
                                 try {
-                                    val fetched =
+                                    fetched =
                                         existing?.let { client.fetchProviderModels(it.id) }
                                             ?: client.fetchModels(kind, baseUrl, apiKey, modelsPath)
-                                    modelsText = fetched.joinToString("\n")
                                 } catch (e: Exception) {
                                     dialogError = ErrorFormatter.format(e)
                                 } finally {
@@ -204,6 +205,18 @@ internal fun ProviderEditorDialog(
                 placeholder = "gpt-4o",
                 singleLine = false,
             )
+
+            fetched?.let { remote ->
+                FetchedModelsDialog(
+                    remote = remote,
+                    existing = models,
+                    onAdd = { picked ->
+                        modelsText = (models + picked).joinToString("\n")
+                        fetched = null
+                    },
+                    onDismiss = { fetched = null },
+                )
+            }
 
             answeredModel?.let { model ->
                 Spacer(modifier = Modifier.height(8.dp))
