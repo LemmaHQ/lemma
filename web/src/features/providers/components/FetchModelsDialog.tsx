@@ -17,7 +17,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@lemma/ui/components/dialog";
 
 interface FetchModelsDialogProps {
     /** Upstream models of the last fetch; `null` keeps the dialog closed. */

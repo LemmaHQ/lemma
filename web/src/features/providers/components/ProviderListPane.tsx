@@ -1,17 +1,21 @@
-import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
+import {
+    Avatar,
+    AvatarBadge,
+    AvatarFallback,
+} from "@lemma/ui/components/avatar";
 import { Button } from "@lemma/ui/components/button";
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@lemma/ui/components/collapsible";
 import {
     InputGroup,
     InputGroupAddon,
     InputGroupInput,
 } from "@lemma/ui/components/input-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@lemma/ui/components/scroll-area";
+import { Skeleton } from "@lemma/ui/components/skeleton";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 import { AnimateIcon } from "@animate-ui/react/icons";
 import {

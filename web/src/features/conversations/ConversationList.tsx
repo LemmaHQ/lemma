@@ -27,7 +27,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@lemma/ui/components/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@lemma/ui/components/skeleton";
 
 import { groupSessions, type SessionSummary } from "./grouping";
 

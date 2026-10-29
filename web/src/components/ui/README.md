@@ -14,24 +14,15 @@ The sibling `web/src/components/ai-elements/` holds the conversation components,
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module         | Use                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------- |
-| `alert-dialog` | Confirmation before a destructive or irreversible action                              |
-| `avatar`       | Round initial or image for a user or provider; `AvatarBadge` marks a status           |
-| `badge`        | Short status or count label                                                           |
-| `collapsible`  | Show-and-hide region; the caller draws the trigger                                    |
-| `command`      | Searchable list of commands or options; `model-selector` builds on it                 |
-| `dialog`       | Modal window for a task that keeps the page underneath                                |
-| `empty`        | Empty state with icon, title, description, and actions                                |
-| `item`         | Row with title, description, and trailing actions in a list or settings group         |
-| `select`       | Single choice from a list in a form                                                   |
-| `scroll-area`  | Scrollable region with a themed overlay scrollbar; panes and panels scroll through it |
-| `skeleton`     | Placeholder block with a pulse while the content of a known layout loads              |
-| `switch`       | Two-state toggle that applies immediately                                             |
-| `toggle`       | Pressable two-state button                                                            |
-| `toggle-group` | Row of toggles that sets one value or several                                         |
+| Module         | Use                                                                   |
+| -------------- | --------------------------------------------------------------------- |
+| `badge`        | Short status or count label                                           |
+| `command`      | Searchable list of commands or options; `model-selector` builds on it |
+| `select`       | Single choice from a list in a form                                   |
+| `toggle`       | Pressable two-state button                                            |
+| `toggle-group` | Row of toggles that sets one value or several                         |
 
-`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, and the form controls `field`, `input`, `input-group`, `password-input`, `label`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>` and brand logos from `@lemma/ui/components/brand/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages, and `AppTooltipProvider` in `web/src/app/` keeps every tooltip clear of the desktop titlebar. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
+`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `switch`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>` and brand logos from `@lemma/ui/components/brand/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages, and `AppTooltipProvider` in `web/src/app/` keeps every tooltip clear of the desktop titlebar. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
 
 Two pairs are easy to confuse:
 

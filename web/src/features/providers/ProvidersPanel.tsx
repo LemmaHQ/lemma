@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@lemma/ui/components/scroll-area";
 import { errorText } from "@/data/rpc/errors";
 
 import {

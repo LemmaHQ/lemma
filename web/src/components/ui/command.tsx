@@ -10,7 +10,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@lemma/ui/components/dialog";
 
 function Command({
     className,

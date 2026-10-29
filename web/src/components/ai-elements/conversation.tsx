@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
 import { Button } from "@lemma/ui/components/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@lemma/ui/components/scroll-area";
 import {
     Tooltip,
     TooltipContent,

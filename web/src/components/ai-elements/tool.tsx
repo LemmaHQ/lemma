@@ -14,7 +14,7 @@ import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@lemma/ui/components/collapsible";
 
 import { CodeBlock } from "./code-block";
 import { Shimmer } from "./shimmer";

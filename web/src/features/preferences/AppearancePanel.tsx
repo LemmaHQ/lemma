@@ -11,7 +11,7 @@ import {
     ItemGroup,
     ItemSeparator,
     ItemTitle,
-} from "@/components/ui/item";
+} from "@lemma/ui/components/item";
 import { isThemePreference } from "@/features/preferences/theme";
 
 export function AppearancePanel() {

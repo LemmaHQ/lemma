@@ -18,7 +18,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@lemma/ui/components/alert-dialog";
 
 /** Icon button that deletes a provider after a confirmation dialog. */
 export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {

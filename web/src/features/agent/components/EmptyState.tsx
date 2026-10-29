@@ -9,7 +9,7 @@ import {
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
-} from "@/components/ui/empty";
+} from "@lemma/ui/components/empty";
 
 const SUGGESTION_KEYS = [
     "conversation.suggestion1",

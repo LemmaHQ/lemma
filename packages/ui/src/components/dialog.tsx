@@ -1,10 +1,11 @@
-import * as React from "react";
+import { AnimateIcon } from "@animate-ui/react/icons";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { IconX } from "@tabler/icons-react";
 import { cn } from "cn";
+import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@lemma/ui/components/button";
+import { Button } from "#components/button";
+import { XIcon } from "#icons/x";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -46,7 +47,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
     showCloseButton?: boolean;
 }) {
-    const { t } = useTranslation();
+    const { t } = useTranslation("ui");
     return (
         <DialogPortal>
             <DialogOverlay />
@@ -60,19 +61,21 @@ function DialogContent({
             >
                 {children}
                 {showCloseButton && (
-                    <DialogPrimitive.Close
-                        data-slot="dialog-close"
-                        render={
-                            <Button
-                                variant="ghost"
-                                className="absolute top-2 right-2"
-                                size="icon-sm"
-                                aria-label={t("common.close")}
-                            />
-                        }
-                    >
-                        <IconX />
-                    </DialogPrimitive.Close>
+                    <AnimateIcon animateOnHover asChild>
+                        <DialogPrimitive.Close
+                            data-slot="dialog-close"
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    className="absolute top-2 right-2"
+                                    size="icon-sm"
+                                    aria-label={t("close")}
+                                />
+                            }
+                        >
+                            <XIcon />
+                        </DialogPrimitive.Close>
+                    </AnimateIcon>
                 )}
             </DialogPrimitive.Popup>
         </DialogPortal>

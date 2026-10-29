@@ -10,7 +10,7 @@ import { Input } from "@lemma/ui/components/input";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@lemma/ui/components/avatar";
 import {
     Select,
     SelectContent,

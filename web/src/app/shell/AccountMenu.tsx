@@ -20,7 +20,7 @@ import { SettingsIcon } from "@lemma/ui/icons/settings";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@lemma/ui/components/avatar";
 import { useAuth } from "@/features/auth/store";
 
 /** The signed-in account at the bottom of the sidebar, opening settings and sign-out. */

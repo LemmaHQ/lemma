@@ -43,7 +43,6 @@
     "common": {
         "appName": "Lemma",
         "cancel": "Cancel",
-        "close": "Close",
         "copied": "Copied",
         "copy": "Copy",
         "delete": "Delete",

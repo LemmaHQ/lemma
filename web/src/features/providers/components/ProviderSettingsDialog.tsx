@@ -25,7 +25,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@lemma/ui/components/dialog";
 import { errorText } from "@/data/rpc/errors";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 

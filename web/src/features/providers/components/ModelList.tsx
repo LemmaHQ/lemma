@@ -14,7 +14,11 @@ import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@lemma/ui/components/button";
-import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+} from "@lemma/ui/components/empty";
 import {
     Item,
     ItemActions,
@@ -22,7 +26,7 @@ import {
     ItemGroup,
     ItemSeparator,
     ItemTitle,
-} from "@/components/ui/item";
+} from "@lemma/ui/components/item";
 import { errorText } from "@/data/rpc/errors";
 
 import { FetchModelsDialog } from "./FetchModelsDialog";

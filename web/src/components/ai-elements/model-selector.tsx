@@ -14,7 +14,7 @@ import {
     DialogContent,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@lemma/ui/components/dialog";
 
 export function ModelSelector(props: ComponentProps<typeof Dialog>) {
     return <Dialog {...props} />;

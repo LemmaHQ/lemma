@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { ShellSidebar } from "@/app/shell/ShellSidebar";
 import { useShellTitle } from "@/app/shell/useShellTitle";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@lemma/ui/components/scroll-area";
 import { AppearancePanel } from "@/features/preferences/AppearancePanel";
 import { ProvidersPanel } from "@/features/providers/ProvidersPanel";
 

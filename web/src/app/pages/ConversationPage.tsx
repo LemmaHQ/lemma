@@ -19,7 +19,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@lemma/ui/components/alert-dialog";
 import { errorText } from "@/data/rpc/errors";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 import { ConversationList } from "@/features/conversations/ConversationList";
