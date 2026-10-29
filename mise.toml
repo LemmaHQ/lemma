@@ -1,15 +1,15 @@
 [tools]
-node = "26.12.0"
-java = "temurin-25.0.4+101.0.LTS"
+node = "26.13.0"
+java = "temurin-25.0.5+8.0.LTS"
 just = "1.59.0"
-buf = "1.74.0"
+buf = "1.75.0"
 protobuf = "36.2"
-"cargo:cargo-binstall" = "1.26.0"
+"cargo:cargo-binstall" = "1.26.1"
 "cargo:sqlx-cli" = { version = "0.9.0", default-features = false, features = [
     "postgres",
     "sqlite",
     "rustls",
 ] }
 "cargo:cargo-llvm-cov" = "0.9.1"
-"cargo:cargo-nextest" = "0.9.148"
+"cargo:cargo-nextest" = "0.9.150"
 "cargo:cargo-ndk" = "4.1.2"
