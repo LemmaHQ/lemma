@@ -18,7 +18,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@lemma/ui/components/select";
 import { errorText } from "@/data/rpc/errors";
 
 type CheckResult =

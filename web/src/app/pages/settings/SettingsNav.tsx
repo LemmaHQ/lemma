@@ -1,3 +1,4 @@
+import { AnimateIcon } from "@animate-ui/react/icons";
 import {
     SidebarGroup,
     SidebarGroupContent,
@@ -7,7 +8,8 @@ import {
     SidebarMenuItem,
 } from "@lemma/ui/components/sidebar";
 import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { IconPalette, IconRobot } from "@tabler/icons-react";
+import { BotIcon } from "@lemma/ui/icons/bot";
+import { PaletteIcon } from "@lemma/ui/icons/palette";
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch } from "react-router";
@@ -25,14 +27,16 @@ function NavItem({
     const active = useMatch(to) !== null;
     return (
         <SidebarMenuItem>
-            <SidebarMenuButton
-                isActive={active}
-                render={<NavLink to={to} />}
-                onClick={() => setOpenMobile(false)}
-            >
-                <Icon />
-                <span>{label}</span>
-            </SidebarMenuButton>
+            <AnimateIcon animateOnHover asChild>
+                <SidebarMenuButton
+                    isActive={active}
+                    render={<NavLink to={to} />}
+                    onClick={() => setOpenMobile(false)}
+                >
+                    <Icon />
+                    <span>{label}</span>
+                </SidebarMenuButton>
+            </AnimateIcon>
         </SidebarMenuItem>
     );
 }
@@ -55,14 +59,14 @@ export function SettingsNav() {
         <>
             <NavGroup label={t("settings.groupGeneral")}>
                 <NavItem
-                    icon={IconPalette}
+                    icon={PaletteIcon}
                     label={t("settings.appearance")}
                     to="/settings/appearance"
                 />
             </NavGroup>
             <NavGroup label={t("settings.groupAgent")}>
                 <NavItem
-                    icon={IconRobot}
+                    icon={BotIcon}
                     label={t("settings.aiProviders")}
                     to="/settings/providers"
                 />

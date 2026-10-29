@@ -17,7 +17,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@lemma/ui/components/select";
 import { errorText } from "@/data/rpc/errors";
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 

@@ -1,12 +1,11 @@
-import * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { cn } from "cn";
-import {
-    IconSelector,
-    IconCheck,
-    IconChevronUp,
-    IconChevronDown,
-} from "@tabler/icons-react";
+import * as React from "react";
+
+import { CheckIcon } from "#icons/check";
+import { ChevronDownIcon } from "#icons/chevron-down";
+import { ChevronUpIcon } from "#icons/chevron-up";
+import { ChevronUpDownIcon } from "#icons/chevron-up-down";
 
 const Select = SelectPrimitive.Root;
 
@@ -51,7 +50,7 @@ function SelectTrigger({
             {children}
             <SelectPrimitive.Icon
                 render={
-                    <IconSelector className="pointer-events-none size-4 text-muted-foreground" />
+                    <ChevronUpDownIcon className="pointer-events-none size-4 text-muted-foreground" />
                 }
             />
         </SelectPrimitive.Trigger>
@@ -138,7 +137,7 @@ function SelectItem({
                     <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
                 }
             >
-                <IconCheck className="pointer-events-none" />
+                <CheckIcon className="pointer-events-none" />
             </SelectPrimitive.ItemIndicator>
         </SelectPrimitive.Item>
     );
@@ -173,7 +172,7 @@ function SelectScrollUpButton({
             )}
             {...props}
         >
-            <IconChevronUp />
+            <ChevronUpIcon />
         </SelectPrimitive.ScrollUpArrow>
     );
 }
@@ -191,7 +190,7 @@ function SelectScrollDownButton({
             )}
             {...props}
         >
-            <IconChevronDown />
+            <ChevronDownIcon />
         </SelectPrimitive.ScrollDownArrow>
     );
 }

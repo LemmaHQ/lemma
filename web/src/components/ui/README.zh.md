@@ -14,15 +14,12 @@
 
 在功能代码中编写控件之前先查看此列表，复用合适的控件。
 
-| 模块           | 用途                                                |
-| -------------- | --------------------------------------------------- |
-| `badge`        | 简短的状态或计数标签                                |
-| `command`      | 可搜索的命令或选项列表；`model-selector` 基于它构建 |
-| `select`       | 表单中从列表里单选                                  |
-| `toggle`       | 可按下的两态按钮                                    |
-| `toggle-group` | 设置一个或多个值的一排切换按钮                      |
+| 模块      | 用途                                                |
+| --------- | --------------------------------------------------- |
+| `badge`   | 简短的状态或计数标签                                |
+| `command` | 可搜索的命令或选项列表；`model-selector` 基于它构建 |
 
-`button`、`separator`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，布局部件 `avatar`、`collapsible`、`empty`、`item`、`scroll-area` 与 `skeleton`，以及表单控件 `checkbox`、`field`、`input`、`input-group`、`password-input`、`label`、`switch` 与 `textarea` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入，品牌标志从 `@lemma/ui/components/brand/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏，`web/src/app/` 中的 `AppTooltipProvider` 让所有提示气泡避开桌面标题栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
+`button`、`separator`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，布局部件 `avatar`、`collapsible`、`empty`、`item`、`scroll-area` 与 `skeleton`，以及表单控件 `checkbox`、`field`、`input`、`input-group`、`password-input`、`label`、`select`、`switch`、`textarea`、`toggle` 与 `toggle-group` 来自 `@lemma/ui`：导入 `@lemma/ui/components/<name>` 与 `@lemma/ui/hooks/use-sidebar`；Animate UI 的 Lucide 图标从 `@lemma/ui/icons/<name>` 导入，品牌标志从 `@lemma/ui/components/brand/<name>` 导入。`web/src/app/shell/` 中的 `AppShell` 为登录后的页面组装侧边栏，`web/src/app/` 中的 `AppTooltipProvider` 让所有提示气泡避开桌面标题栏。提示消息的宿主 `sonner` 也在 `@lemma/ui` 中；`web/src/app/` 中的 `AppToaster` 带上主题和标题栏偏移挂载一次，代码通过 `sonner` 包的 `toast` 弹出提示。
 
 有两对组件容易混淆：
 

@@ -14,15 +14,12 @@ The sibling `web/src/components/ai-elements/` holds the conversation components,
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module         | Use                                                                   |
-| -------------- | --------------------------------------------------------------------- |
-| `badge`        | Short status or count label                                           |
-| `command`      | Searchable list of commands or options; `model-selector` builds on it |
-| `select`       | Single choice from a list in a form                                   |
-| `toggle`       | Pressable two-state button                                            |
-| `toggle-group` | Row of toggles that sets one value or several                         |
+| Module    | Use                                                                   |
+| --------- | --------------------------------------------------------------------- |
+| `badge`   | Short status or count label                                           |
+| `command` | Searchable list of commands or options; `model-selector` builds on it |
 
-`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `switch`, and `textarea` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>` and brand logos from `@lemma/ui/components/brand/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages, and `AppTooltipProvider` in `web/src/app/` keeps every tooltip clear of the desktop titlebar. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
+`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` come from `@lemma/ui`: import them from `@lemma/ui/components/<name>` and `@lemma/ui/hooks/use-sidebar`; Animate UI Lucide icons come from `@lemma/ui/icons/<name>` and brand logos from `@lemma/ui/components/brand/<name>`. `AppShell` in `web/src/app/shell/` assembles the sidebar for the signed-in pages, and `AppTooltipProvider` in `web/src/app/` keeps every tooltip clear of the desktop titlebar. The toast host `sonner` also lives in `@lemma/ui`; `AppToaster` in `web/src/app/` mounts it once with the theme and the titlebar offset, and code raises toasts with `toast` from the `sonner` package.
 
 Two pairs are easy to confuse:
 

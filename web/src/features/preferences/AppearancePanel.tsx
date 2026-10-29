@@ -1,8 +1,14 @@
-import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
+import { AnimateIcon } from "@animate-ui/react/icons";
+import {
+    ToggleGroup,
+    ToggleGroupItem,
+} from "@lemma/ui/components/toggle-group";
+import { MoonIcon } from "@lemma/ui/icons/moon";
+import { SunIcon } from "@lemma/ui/icons/sun";
+import { SunMoonIcon } from "@lemma/ui/icons/sun-moon";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
     Item,
     ItemActions,
@@ -42,27 +48,33 @@ export function AppearancePanel() {
                             }}
                             aria-label={t("settings.themeLabel")}
                         >
-                            <ToggleGroupItem
-                                value="light"
-                                aria-label={t("theme.light")}
-                            >
-                                <IconSun />
-                                {t("theme.light")}
-                            </ToggleGroupItem>
-                            <ToggleGroupItem
-                                value="dark"
-                                aria-label={t("theme.dark")}
-                            >
-                                <IconMoon />
-                                {t("theme.dark")}
-                            </ToggleGroupItem>
-                            <ToggleGroupItem
-                                value="system"
-                                aria-label={t("theme.system")}
-                            >
-                                <IconDeviceDesktop />
-                                {t("theme.system")}
-                            </ToggleGroupItem>
+                            <AnimateIcon animateOnHover asChild>
+                                <ToggleGroupItem
+                                    value="light"
+                                    aria-label={t("theme.light")}
+                                >
+                                    <SunIcon />
+                                    {t("theme.light")}
+                                </ToggleGroupItem>
+                            </AnimateIcon>
+                            <AnimateIcon animateOnHover asChild>
+                                <ToggleGroupItem
+                                    value="dark"
+                                    aria-label={t("theme.dark")}
+                                >
+                                    <MoonIcon />
+                                    {t("theme.dark")}
+                                </ToggleGroupItem>
+                            </AnimateIcon>
+                            <AnimateIcon animateOnHover asChild>
+                                <ToggleGroupItem
+                                    value="system"
+                                    aria-label={t("theme.system")}
+                                >
+                                    <SunMoonIcon />
+                                    {t("theme.system")}
+                                </ToggleGroupItem>
+                            </AnimateIcon>
                         </ToggleGroup>
                     </ItemActions>
                 </Item>

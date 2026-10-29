@@ -2,7 +2,7 @@ import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group
 import { cn } from "cn";
 import * as React from "react";
 
-import { Toggle } from "@/components/ui/toggle";
+import { Toggle } from "#components/toggle";
 
 type ToggleStyle = Pick<
     React.ComponentProps<typeof Toggle>,
