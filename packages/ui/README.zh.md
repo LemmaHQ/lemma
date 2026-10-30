@@ -37,7 +37,7 @@
 
 ## 动效工具类
 
-`src/styles/` 只包含 token 中心 `tokens.css` 与动效中心 `motion.css`；`index.css`（导出为 `@lemma/ui/styles.css`）把两者与 Tailwind 一起加载。组件用 Tailwind 类书写静态样式，所有 keyframe 以及工具类无法表达的过渡都放在 `motion.css`。
+`src/styles/` 包含 token 中心 `tokens.css`、动效中心 `motion.css` 与 `components/`；`components/` 中的文件存放针对单个组件内部部件的样式，文件名取自该组件的文件名。`index.css`（导出为 `@lemma/ui/styles.css`）把它们与 Tailwind 一起加载。组件用 Tailwind 类书写静态样式，所有 keyframe 以及工具类无法表达的共享过渡都放在 `motion.css`，`components/` 中的类属于各自的组件，不属于包的接口。
 
 Tailwind 工具类，可与 `before:` 等变体组合：
 
@@ -57,15 +57,12 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 
 动效类，用于协调状态属性，并覆盖组件自身的过渡：
 
-| 类名               | 行为                                                                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `press-scale`      | 按下时把按钮缩小到 `--press-scale`（默认 `0.96`）                                                                      |
-| `swap-layer`       | 交叉切换叠放的图层：`data-on="true"` 的图层显示，其余图层缩小并模糊消失                                                |
-| `swap-turn`        | 与 `swap-layer` 相同，另带轻微旋转                                                                                     |
-| `status-swap`      | `data-done="true"` 时把 `data-part="spinner"` 子元素切换为绘制出的 `data-part="check"` 子元素                          |
-| `menu-morph`       | 让菜单浮层从触发器中展开，并错开其 `data-part="group"` 与 `"option"` 子元素，驱动滑动的 `"fill"` 高亮与 `"check"` 勾选 |
-| `stagger-children` | 让子元素依次升起                                                                                                       |
-| `streaming-caret`  | Streamdown 流式输出时，在最后一个块之后绘制跳动的光标                                                                  |
+| 类名               | 行为                                                                    |
+| ------------------ | ----------------------------------------------------------------------- |
+| `press-scale`      | 按下时把按钮缩小到 `--press-scale`（默认 `0.96`）                       |
+| `swap-layer`       | 交叉切换叠放的图层：`data-on="true"` 的图层显示，其余图层缩小并模糊消失 |
+| `swap-turn`        | 与 `swap-layer` 相同，另带轻微旋转                                      |
+| `stagger-children` | 让子元素依次升起                                                        |
 
 动效 token 还提供 `duration-reveal`、`duration-settle`、`ease-morph` 与 `ease-spring`。每个动画与动效类都有减少动态效果的回退，停止移动与循环，同时保留最终状态。
 

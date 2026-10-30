@@ -1,0 +1,49 @@
+.status-swap {
+    & > svg {
+        transition:
+            opacity 240ms ease-out,
+            transform var(--motion-duration-reveal) var(--motion-easing-enter);
+    }
+
+    & > [data-part="check"] {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+
+    & > [data-part="check"] path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+    }
+
+    &[data-done="true"] > [data-part="spinner"] {
+        opacity: 0;
+        transform: scale(0.6) rotate(-45deg);
+    }
+
+    &[data-done="true"] > [data-part="check"] {
+        opacity: 1;
+        transform: none;
+        animation: ui-pop var(--motion-duration-reveal)
+            var(--motion-easing-spring) both;
+    }
+
+    &[data-done="true"] > [data-part="check"] path {
+        animation: ui-draw var(--motion-duration-reveal)
+            var(--motion-easing-enter) 120ms both;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-swap > svg {
+        transition: none !important;
+    }
+
+    .status-swap[data-done="true"] > [data-part="check"],
+    .status-swap[data-done="true"] > [data-part="check"] path {
+        animation: none;
+    }
+
+    .status-swap > [data-part="check"] path {
+        stroke-dashoffset: 0;
+    }
+}

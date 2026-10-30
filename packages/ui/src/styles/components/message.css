@@ -1,0 +1,21 @@
+.streaming-caret[style*="--streamdown-caret"]
+    > *:last-child:not([data-sd-caret-hidden])::after {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--foreground);
+    vertical-align: 0.05em;
+    content: "";
+    animation: ui-pulse 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .streaming-caret[style*="--streamdown-caret"]
+        > *:last-child:not([data-sd-caret-hidden])::after,
+    .streaming-caret [data-sd-animate],
+    .streaming-caret [data-sd-animate-marker]::marker {
+        animation: none !important;
+    }
+}

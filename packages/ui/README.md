@@ -37,7 +37,7 @@ Two pairs are easy to confuse:
 
 ## Motion utilities
 
-`src/styles/` holds only the token center `tokens.css` and the motion center `motion.css`; `index.css`, exported as `@lemma/ui/styles.css`, loads both with Tailwind. Components write static styling as Tailwind classes, and every keyframe and every transition that a utility class cannot express lives in `motion.css`.
+`src/styles/` holds the token center `tokens.css`, the motion center `motion.css`, and `components/`, whose files hold the styles that target one component's internal parts and take that component's file name; `index.css`, exported as `@lemma/ui/styles.css`, loads them with Tailwind. Components write static styling as Tailwind classes, every keyframe and every shared transition that a utility class cannot express lives in `motion.css`, and the classes in `components/` belong to their component, not to the package interface.
 
 Tailwind utilities, usable with variants such as `before:`:
 
@@ -57,15 +57,12 @@ Tailwind utilities, usable with variants such as `before:`:
 
 Motion classes, which coordinate state attributes and override a component's own transition:
 
-| Class              | Behavior                                                                                                                                              |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `press-scale`      | Shrinks a button while pressed, to `--press-scale` (default `0.96`)                                                                                   |
-| `swap-layer`       | Cross-fades stacked layers: the one with `data-on="true"` shows, the others shrink and blur away                                                      |
-| `swap-turn`        | Like `swap-layer`, with a slight turn                                                                                                                 |
-| `status-swap`      | Turns the `data-part="spinner"` child into the drawn `data-part="check"` child once `data-done="true"`                                                |
-| `menu-morph`       | Grows a menu popup out of its trigger and staggers its `data-part="group"` and `"option"` children, a sliding `"fill"` highlight, and `"check"` marks |
-| `stagger-children` | Lifts the children in one after another                                                                                                               |
-| `streaming-caret`  | Draws a pulsing caret after Streamdown's last block while it streams                                                                                  |
+| Class              | Behavior                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| `press-scale`      | Shrinks a button while pressed, to `--press-scale` (default `0.96`)                              |
+| `swap-layer`       | Cross-fades stacked layers: the one with `data-on="true"` shows, the others shrink and blur away |
+| `swap-turn`        | Like `swap-layer`, with a slight turn                                                            |
+| `stagger-children` | Lifts the children in one after another                                                          |
 
 The motion tokens also provide `duration-reveal`, `duration-settle`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
 

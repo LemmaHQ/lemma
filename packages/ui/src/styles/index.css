@@ -4,6 +4,9 @@
 @import "streamdown/styles.css";
 @import "./tokens.css";
 @import "./motion.css";
+@import "./components/message.css";
+@import "./components/model-picker.css";
+@import "./components/thinking-loader.css";
 
 @source "../";
 @source "../../../../node_modules/streamdown/dist/*.js";
