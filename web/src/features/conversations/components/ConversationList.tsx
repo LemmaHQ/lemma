@@ -1,4 +1,3 @@
-import { timestampDate } from "@bufbuild/protobuf/wkt";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,26 +9,13 @@ import {
     AlertDialogTitle,
     toast,
 } from "@lemma/ui";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 import { errorText } from "@/i18n/error-text";
 
-import type { SessionSummary } from "../grouping";
 import { useConversations } from "../useConversations";
 import { SessionList } from "./SessionList";
-
-function toSummary(c: Conversation): SessionSummary {
-    return {
-        id: c.id,
-        title: c.title,
-        updatedAtMs:
-            c.updatedAt === undefined
-                ? 0
-                : timestampDate(c.updatedAt).getTime(),
-    };
-}
 
 /** Store-backed conversation list with rename and confirmed deletion. */
 export function ConversationList({
@@ -42,10 +28,6 @@ export function ConversationList({
     const { t } = useTranslation();
     const conversations = useConversations();
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-    const summaries = useMemo(
-        () => conversations.list.map(toSummary),
-        [conversations.list],
-    );
 
     const runAction = async (action: () => Promise<void>) => {
         try {
@@ -58,7 +40,7 @@ export function ConversationList({
     return (
         <>
             <SessionList
-                sessions={summaries}
+                sessions={conversations.list}
                 loaded={conversations.loaded}
                 activeSessionId={activeId}
                 onOpenSession={onOpen}
