@@ -9,7 +9,9 @@ import {
     setTokens,
 } from "@/rpc/credentials";
 import { authClient } from "@/rpc/clients";
+import { errorReason } from "@/rpc/errors";
 import type { AuthTokens, User } from "@/gen/lemma/v1/auth_pb";
+import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { getPlatform } from "@/platform/platform";
 
 const cookieMode = getPlatform().auth.cookieMode;
@@ -105,3 +107,15 @@ export const useAuth = create<AuthState>()((set) => ({
         set({ user: null });
     },
 }));
+
+/** The sign-up field whose value the server rejected as taken, from a failed `signup`; `null` for any other failure. */
+export function takenSignUpField(error: unknown): "username" | "email" | null {
+    switch (errorReason(error)) {
+        case ErrorReason.USERNAME_TAKEN:
+            return "username";
+        case ErrorReason.EMAIL_TAKEN:
+            return "email";
+        default:
+            return null;
+    }
+}

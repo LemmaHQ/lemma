@@ -15,10 +15,8 @@ import { useState, type SubmitEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
-import { errorReason } from "@/rpc/errors";
-import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
-import { useAuth } from "../store";
+import { takenSignUpField, useAuth } from "../store";
 
 /** Values the sign-up form starts with. */
 export interface SignUpPrefill {
@@ -27,17 +25,6 @@ export interface SignUpPrefill {
 }
 
 type SignUpField = "username" | "email" | "confirm";
-
-function rejectedField(e: unknown): SignUpField | null {
-    switch (errorReason(e)) {
-        case ErrorReason.USERNAME_TAKEN:
-            return "username";
-        case ErrorReason.EMAIL_TAKEN:
-            return "email";
-        default:
-            return null;
-    }
-}
 
 /** Sign-up with username, email, and a confirmed password. */
 export function SignUpForm({ prefill }: { prefill: SignUpPrefill }) {
@@ -62,7 +49,7 @@ export function SignUpForm({ prefill }: { prefill: SignUpPrefill }) {
         try {
             await signup(username.trim(), email.trim(), password);
         } catch (e) {
-            setInvalidField(rejectedField(e));
+            setInvalidField(takenSignUpField(e));
             toast.error(errorText(e, t));
         } finally {
             setBusy(false);
