@@ -35,8 +35,6 @@ function openSession(res: {
 
 interface AuthState {
     user: User | null;
-    ready: boolean;
-    bootstrap: () => Promise<void>;
     checkAccount: (login: string) => Promise<boolean>;
     login: (identifier: string, password: string) => Promise<void>;
     signup: (
@@ -47,38 +45,10 @@ interface AuthState {
     logout: () => Promise<void>;
 }
 
+let sessionRestored: Promise<void> | undefined;
+
 export const useAuth = create<AuthState>()((set) => ({
     user: null,
-    ready: false,
-
-    bootstrap: async () => {
-        if (cookieMode) {
-            clearTokens();
-            try {
-                const res = await authClient.me({});
-                const user = res.user ?? null;
-                if (user !== null) {
-                    setStoredUserId(user.id);
-                }
-                set({ user });
-            } catch {
-                set({ user: null });
-            }
-        } else if (getAccessToken() !== null) {
-            try {
-                const res = await authClient.me({});
-                const user = res.user ?? null;
-                if (user !== null) {
-                    setStoredUserId(user.id);
-                }
-                set({ user });
-            } catch {
-                clearTokens();
-                clearStoredUserId();
-            }
-        }
-        set({ ready: true });
-    },
 
     checkAccount: async (login) => {
         return (await authClient.checkAccount({ login })).exists;
@@ -107,6 +77,40 @@ export const useAuth = create<AuthState>()((set) => ({
         set({ user: null });
     },
 }));
+
+/** Resolves once the stored session has been checked and `user` holds its result; the first call starts the check. */
+export function ensureAuthReady(): Promise<void> {
+    sessionRestored ??= restoreSession();
+    return sessionRestored;
+}
+
+async function restoreSession(): Promise<void> {
+    if (cookieMode) {
+        clearTokens();
+        try {
+            const res = await authClient.me({});
+            const user = res.user ?? null;
+            if (user !== null) {
+                setStoredUserId(user.id);
+            }
+            useAuth.setState({ user });
+        } catch {
+            useAuth.setState({ user: null });
+        }
+    } else if (getAccessToken() !== null) {
+        try {
+            const res = await authClient.me({});
+            const user = res.user ?? null;
+            if (user !== null) {
+                setStoredUserId(user.id);
+            }
+            useAuth.setState({ user });
+        } catch {
+            clearTokens();
+            clearStoredUserId();
+        }
+    }
+}
 
 /** The sign-up field whose value the server rejected as taken, from a failed `signup`; `null` for any other failure. */
 export function takenSignUpField(error: unknown): "username" | "email" | null {

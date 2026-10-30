@@ -1,9 +1,0 @@
-export const SETTINGS_SECTIONS = ["appearance", "providers"] as const;
-
-export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
-
-export function parseSettingsSection(
-    raw: string | undefined,
-): SettingsSection | null {
-    return SETTINGS_SECTIONS.find((section) => section === raw) ?? null;
-}

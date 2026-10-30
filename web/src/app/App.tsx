@@ -1,27 +1,25 @@
 import { ThemeProvider } from "next-themes";
+import { RouterProvider } from "react-router/dom";
 
 import { THEME_STORAGE_KEY } from "@/features/preferences";
 
 import { AppToaster } from "./AppToaster";
 import { AppTooltipProvider } from "./AppTooltipProvider";
-import { AppRoutes } from "./routes";
-import { TitleBar } from "./shell/TitleBar";
-import { useAccountRuntime } from "./useAccountRuntime";
-export function App() {
-    useAccountRuntime();
+import { router } from "./router";
+import { TitleBar } from "./TitleBar";
 
+export function App() {
     return (
         <ThemeProvider
             attribute="class"
             storageKey={THEME_STORAGE_KEY}
             disableTransitionOnChange
         >
-            <TitleBar>
-                <AppTooltipProvider>
-                    <AppRoutes />
-                    <AppToaster />
-                </AppTooltipProvider>
-            </TitleBar>
+            <TitleBar />
+            <AppTooltipProvider>
+                <RouterProvider router={router} />
+                <AppToaster />
+            </AppTooltipProvider>
         </ThemeProvider>
     );
 }

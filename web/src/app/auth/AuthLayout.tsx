@@ -1,20 +1,20 @@
 import { AnimateIcon, Button, GithubIcon, Separator } from "@lemma/ui";
 import { Navigate, Outlet } from "react-router";
 
-import { useTitleBarSurface } from "@/app/shell/useTitleBarSurface";
 import { useAuth } from "@/features/auth";
 import { LanguageToggle, ThemeToggle } from "@/features/preferences";
 import { VersionTags } from "@/features/system";
+
+import { paths } from "../route-paths";
 
 const REPOSITORY_URL = "https://github.com/LemmaHQ/lemma";
 
 /** Page frame of the sign-in and sign-up routes; signed-in users go home. */
 export function AuthLayout() {
-    const user = useAuth((s) => s.user);
+    const signedIn = useAuth((s) => s.user !== null);
 
-    useTitleBarSurface("background");
-    if (user !== null) {
-        return <Navigate to="/" replace />;
+    if (signedIn) {
+        return <Navigate to={paths.home} replace />;
     }
 
     return (

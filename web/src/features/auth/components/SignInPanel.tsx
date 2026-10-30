@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
-import {
-    AuthPanel,
-    SignInForm,
-    type SignInStep,
-    type SignUpPrefill,
-} from "@/features/auth";
+import { prefillFromLogin } from "../sign-up-prefill";
+import { AuthPanel } from "./AuthPanel";
+import { SignInForm, type SignInStep } from "./SignInForm";
 
-export function SignInPage() {
+/** Two-step sign-in in its panel; an unknown account continues at `signUpPath` with the account prefilled. */
+export function SignInPanel({ signUpPath }: { signUpPath: string }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [step, setStep] = useState<SignInStep>("account");
@@ -25,17 +23,14 @@ export function SignInPage() {
             }
             switchPrompt={t("auth.noAccount")}
             switchLabel={t("auth.signUp")}
-            switchTo="/signup"
+            switchTo={signUpPath}
         >
             <SignInForm
                 step={step}
                 onStepChange={setStep}
                 onUnknownAccount={(login) => {
-                    const prefill: SignUpPrefill = login.includes("@")
-                        ? { email: login }
-                        : { username: login };
-                    void navigate("/signup", {
-                        state: prefill,
+                    void navigate(signUpPath, {
+                        state: prefillFromLogin(login),
                         viewTransition: true,
                     });
                 }}

@@ -9,6 +9,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
+import { paths } from "../route-paths";
+
 /** The way back to conversations, shown as the sidebar header of the settings pages. */
 export function BackHomeButton() {
     const { t } = useTranslation();
@@ -19,7 +21,7 @@ export function BackHomeButton() {
                 <AnimateIcon animateOnHover asChild>
                     <SidebarMenuButton
                         variant="strong"
-                        render={<NavLink to="/" end viewTransition />}
+                        render={<NavLink to={paths.home} end viewTransition />}
                         onClick={() => setOpenMobile(false)}
                     >
                         <ArrowLeftIcon />

@@ -22,7 +22,7 @@
 - `src/platform/` 导出浏览器或桌面引擎的 `platform` 适配器；它之外的代码只通过该适配器使用桌面能力。
 - `src/rpc/` 存放传输层、ConnectRPC 客户端、已保存的凭据，以及读取失败原因 `ErrorReason` 的 `errors.ts`。
 - `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
-- `src/app/` 存放路由、登录后的外壳、登录页框架，以及只负责编排功能组件的页面。
+- `src/app/` 在 `router.tsx` 中存放路由表，在 `route-paths.ts` 中存放路径，并为每个布局路由设一个目录：`auth/`、`conversation/` 与 `settings/`，各自包含只负责编排功能组件的页面。`shell/` 存放 `SignedInLayout` 与 `ShellFrame`：前者守卫登录后的路由并持有侧边栏状态，后者由两个登录后布局填入各自的侧边栏、工具栏操作与标题。功能组件以属性接收路径，不直接引用路由。
 - oxlint 负责守住边界：在 `src/app/` 与 `src/features/` 中，越过功能 `index.ts` 的导入、在 `store.ts` 之外导入 `src/rpc/` 中 `errors.ts` 以外的模块、导入 `@lemma/ui` 底层的库，都会让 `just web-lint-check` 失败。
 - 共享 shadcn 控件与 AI Elements 聊天组件位于 `@lemma/ui`；功能代码只从 `@lemma/ui` 导入它们、图标以及 `AnimateIcon`、`cn` 与 `toast`（[组件 README](../packages/ui/README.zh.md)）。
 - 面向用户的文本经由 i18next，包括 `@lemma/ui` 组件以属性接收的文字；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。

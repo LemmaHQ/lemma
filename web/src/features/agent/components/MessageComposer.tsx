@@ -24,6 +24,7 @@ interface MessageComposerProps {
     model: ModelSelection | null;
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
+    providersPath: string;
     inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
@@ -36,6 +37,7 @@ export function MessageComposer({
     model,
     modelOptions,
     onModelChange,
+    providersPath,
     inputRef,
 }: MessageComposerProps) {
     const { t } = useTranslation();
@@ -91,9 +93,7 @@ export function MessageComposer({
                             variant="link"
                             size="xs"
                             nativeButton={false}
-                            render={
-                                <Link to="/settings/providers" viewTransition />
-                            }
+                            render={<Link to={providersPath} viewTransition />}
                         >
                             {t("conversation.noModelAction")}
                         </Button>

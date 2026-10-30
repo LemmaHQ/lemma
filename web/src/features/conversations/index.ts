@@ -1,2 +1,3 @@
 export { ConversationList } from "./components/ConversationList";
-export { refreshConversations, useConversations } from "./useConversations";
+export { useConversationTitle } from "./useConversationTitle";
+export { createConversation, refreshConversations } from "./useConversations";

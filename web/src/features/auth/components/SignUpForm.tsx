@@ -16,13 +16,8 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import type { SignUpPrefill } from "../sign-up-prefill";
 import { takenSignUpField, useAuth } from "../store";
-
-/** Values the sign-up form starts with. */
-export interface SignUpPrefill {
-    username?: string;
-    email?: string;
-}
 
 type SignUpField = "username" | "email" | "confirm";
 

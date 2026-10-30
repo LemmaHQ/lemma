@@ -1,6 +1,7 @@
 import { toast } from "@lemma/ui";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 import { errorText } from "@/i18n/error-text";
 
@@ -10,21 +11,22 @@ import { HomeView } from "./HomeView";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
 
-/** Active conversation or new-conversation composer; the page supplies the models and creates conversations. */
+/** Active conversation or new-conversation composer; the page supplies the models, creates conversations, and names the path of the provider settings. */
 export function ConversationView({
     conversationId,
     modelOptions,
     providerNames,
+    providersPath,
     onCreateConversation,
-    onModelMissing,
 }: {
     conversationId: string | null;
     modelOptions: ModelOption[];
     providerNames: Map<string, string>;
+    providersPath: string;
     onCreateConversation: () => Promise<string>;
-    onModelMissing: () => void;
 }) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const conversation = useActiveConversation();
     const [draft, setDraft] = useState("");
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -42,7 +44,7 @@ export function ConversationView({
             return;
         }
         if (model === null) {
-            onModelMissing();
+            void navigate(providersPath, { viewTransition: true });
             return;
         }
         try {
@@ -102,6 +104,7 @@ export function ConversationView({
             model={model}
             modelOptions={modelOptions}
             onModelChange={selectModel}
+            providersPath={providersPath}
         />
     ) : (
         <>
@@ -122,6 +125,7 @@ export function ConversationView({
                     model={model}
                     modelOptions={modelOptions}
                     onModelChange={selectModel}
+                    providersPath={providersPath}
                     inputRef={inputRef}
                 />
             </div>

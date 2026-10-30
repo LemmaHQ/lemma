@@ -10,6 +10,7 @@ interface HomeViewProps {
     model: ModelSelection | null;
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
+    providersPath: string;
 }
 
 export function HomeView({
@@ -17,6 +18,7 @@ export function HomeView({
     model,
     modelOptions,
     onModelChange,
+    providersPath,
 }: HomeViewProps) {
     const { t } = useTranslation();
     const [value, setValue] = useState("");
@@ -34,6 +36,7 @@ export function HomeView({
                     model={model}
                     modelOptions={modelOptions}
                     onModelChange={onModelChange}
+                    providersPath={providersPath}
                 />
             </div>
         </div>

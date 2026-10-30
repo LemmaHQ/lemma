@@ -20,10 +20,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { useAuth } from "@/features/auth";
+import { useAuth } from "../store";
 
-/** The signed-in account at the bottom of the sidebar, opening settings and sign-out. */
-export function AccountMenu() {
+/** The signed-in account at the bottom of the sidebar, opening the settings at `settingsPath` and sign-out. */
+export function AccountMenu({ settingsPath }: { settingsPath: string }) {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
     const username = useAuth((s) => s.user?.username ?? "");
@@ -57,7 +57,9 @@ export function AccountMenu() {
                         <DropdownMenuSeparator />
                         <AnimateIcon animateOnHover asChild>
                             <DropdownMenuItem
-                                render={<Link to="/settings" viewTransition />}
+                                render={
+                                    <Link to={settingsPath} viewTransition />
+                                }
                                 onClick={() => {
                                     setOpenMobile(false);
                                 }}
