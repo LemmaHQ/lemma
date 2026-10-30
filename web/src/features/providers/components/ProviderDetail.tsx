@@ -9,14 +9,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
-import type { Provider } from "@/gen/lemma/v1/provider_pb";
 
 import {
     connectionPatch,
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { CheckRequest, ProviderPatch } from "../store";
+import type { CheckRequest, Provider, ProviderPatch } from "../store";
 import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
 import { DeleteProviderButton } from "./DeleteProviderButton";

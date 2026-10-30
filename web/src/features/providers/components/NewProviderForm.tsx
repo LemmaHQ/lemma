@@ -18,9 +18,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
-import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 
 import { isBaseUrlValid, type ConnectionValues } from "../connection";
+import type { ProviderKind } from "../store";
 import { ConnectionFields } from "./ConnectionFields";
 import { SaveBar } from "./SaveBar";
 
@@ -35,16 +35,12 @@ interface NewProviderFormProps {
     onCancel: () => void;
 }
 
-const KIND_OPTIONS = [
-    { value: "openai", kind: ProviderKind.OPENAI },
-    { value: "anthropic", kind: ProviderKind.ANTHROPIC },
-    { value: "gemini", kind: ProviderKind.GEMINI },
-] as const;
+const KIND_OPTIONS: readonly ProviderKind[] = ["openai", "anthropic", "gemini"];
 
 /** Blank provider page; saving creates the provider. */
 export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const { t } = useTranslation();
-    const [kind, setKind] = useState<ProviderKind>(ProviderKind.OPENAI);
+    const [kind, setKind] = useState<ProviderKind>("openai");
     const [identifier, setIdentifier] = useState("");
     const [name, setName] = useState("");
     const [connection, setConnection] = useState<ConnectionValues>({
@@ -108,13 +104,13 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         </FieldDescription>
                     </FieldContent>
                     <Select
-                        value={KIND_OPTIONS.find((o) => o.kind === kind)?.value}
+                        value={kind}
                         onValueChange={(value) => {
                             const option = KIND_OPTIONS.find(
-                                (o) => o.value === value,
+                                (o) => o === value,
                             );
                             if (option !== undefined) {
-                                setKind(option.kind);
+                                setKind(option);
                             }
                         }}
                     >
@@ -126,8 +122,8 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         </SelectTrigger>
                         <SelectContent>
                             {KIND_OPTIONS.map((o) => (
-                                <SelectItem key={o.value} value={o.value}>
-                                    {o.value}
+                                <SelectItem key={o} value={o}>
+                                    {o}
                                 </SelectItem>
                             ))}
                         </SelectContent>

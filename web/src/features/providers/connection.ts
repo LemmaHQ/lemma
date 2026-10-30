@@ -1,6 +1,4 @@
-import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
-
-import type { ProviderPatch } from "./store";
+import type { ProviderKind, ProviderPatch } from "./store";
 
 /** The editable connection settings of a provider. */
 export interface ConnectionValues {
@@ -9,23 +7,20 @@ export interface ConnectionValues {
     apiPath: string;
 }
 
-const OPENAI_PLACEHOLDERS = {
-    baseUrl: "https://api.example.com/v1",
-    apiPath: "/chat/completions",
-};
-
 /** Example base URL and default request path of each provider kind. */
 export const CONNECTION_PLACEHOLDERS: Record<
     ProviderKind,
     { baseUrl: string; apiPath: string }
 > = {
-    [ProviderKind.UNSPECIFIED]: OPENAI_PLACEHOLDERS,
-    [ProviderKind.OPENAI]: OPENAI_PLACEHOLDERS,
-    [ProviderKind.ANTHROPIC]: {
+    openai: {
+        baseUrl: "https://api.example.com/v1",
+        apiPath: "/chat/completions",
+    },
+    anthropic: {
         baseUrl: "https://api.example.com",
         apiPath: "/v1/messages",
     },
-    [ProviderKind.GEMINI]: {
+    gemini: {
         baseUrl: "https://api.example.com",
         apiPath: "/v1beta/models/{model}:…",
     },

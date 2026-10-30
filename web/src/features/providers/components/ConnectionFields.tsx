@@ -9,13 +9,12 @@ import {
 } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
-import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
-
 import {
     CONNECTION_PLACEHOLDERS,
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
+import type { ProviderKind } from "../store";
 
 interface ConnectionFieldsProps {
     kind: ProviderKind;
@@ -87,7 +86,7 @@ export function ConnectionFields({
                         {t("providers.apiPath")}
                     </FieldLabel>
                     <FieldDescription>
-                        {kind === ProviderKind.GEMINI
+                        {kind === "gemini"
                             ? t("providers.apiPathDescGemini")
                             : t("providers.apiPathDesc")}
                     </FieldDescription>

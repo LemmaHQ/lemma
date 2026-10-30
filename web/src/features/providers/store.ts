@@ -1,7 +1,26 @@
 import { create } from "zustand";
 
-import type { Provider, ProviderKind } from "@/gen/lemma/v1/provider_pb";
+import {
+    ProviderKind as ProviderKindProto,
+    type Provider as ProviderProto,
+} from "@/gen/lemma/v1/provider_pb";
 import { providerClient } from "@/rpc/clients";
+
+/** The API protocol a provider speaks. */
+export type ProviderKind = "openai" | "anthropic" | "gemini";
+
+/** A configured provider as the settings pages and the model picker read it. */
+export interface Provider {
+    id: string;
+    kind: ProviderKind;
+    identifier: string;
+    name: string;
+    baseUrl: string;
+    apiKey: string;
+    apiPath: string;
+    models: string[];
+    enabled: boolean;
+}
 
 export interface ProviderPatch {
     name?: string;
@@ -51,21 +70,30 @@ interface ProvidersState {
     checkProvider: (req: CheckRequest) => Promise<string>;
 }
 
+const KIND_PROTOS: Record<ProviderKind, ProviderKindProto> = {
+    openai: ProviderKindProto.OPENAI,
+    anthropic: ProviderKindProto.ANTHROPIC,
+    gemini: ProviderKindProto.GEMINI,
+};
+
 export const useProvidersStore = create<ProvidersState>()((set) => ({
     list: [],
     loaded: false,
 
     refresh: async () => {
         const res = await providerClient.listProviders({});
-        set({ list: res.providers, loaded: true });
+        set({ list: res.providers.map(toProvider), loaded: true });
     },
 
     create: async (input) => {
-        const res = await providerClient.createProvider(input);
-        const provider = res.provider;
-        if (provider === undefined) {
+        const res = await providerClient.createProvider({
+            ...input,
+            kind: toKindProto(input.kind),
+        });
+        if (res.provider === undefined) {
             throw new Error("no provider in response");
         }
+        const provider = toProvider(res.provider);
         set((s) => ({ list: [...s.list, provider] }));
         return provider;
     },
@@ -84,10 +112,10 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
             apiPath: patch.apiPath,
             modelsPath: patch.modelsPath,
         });
-        const provider = res.provider;
-        if (provider === undefined) {
+        if (res.provider === undefined) {
             return;
         }
+        const provider = toProvider(res.provider);
         set((s) => ({
             list: s.list.map((p) => (p.id === id ? provider : p)),
         }));
@@ -99,12 +127,49 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
     },
 
     fetchModels: async (req) => {
-        const res = await providerClient.fetchModels(req);
+        const res = await providerClient.fetchModels({
+            ...req,
+            kind: toKindProto(req.kind),
+        });
         return res.models;
     },
 
     checkProvider: async (req) => {
-        const res = await providerClient.checkProvider(req);
+        const res = await providerClient.checkProvider({
+            ...req,
+            kind: toKindProto(req.kind),
+        });
         return res.error;
     },
 }));
+
+function toKindProto(kind: ProviderKind | undefined): ProviderKindProto {
+    return kind === undefined
+        ? ProviderKindProto.UNSPECIFIED
+        : KIND_PROTOS[kind];
+}
+
+function toProvider(p: ProviderProto): Provider {
+    return {
+        id: p.id,
+        kind: toKind(p.kind),
+        identifier: p.identifier,
+        name: p.name,
+        baseUrl: p.baseUrl,
+        apiKey: p.apiKey,
+        apiPath: p.apiPath,
+        models: p.models,
+        enabled: p.enabled,
+    };
+}
+
+function toKind(kind: ProviderKindProto): ProviderKind {
+    switch (kind) {
+        case ProviderKindProto.ANTHROPIC:
+            return "anthropic";
+        case ProviderKindProto.GEMINI:
+            return "gemini";
+        default:
+            return "openai";
+    }
+}

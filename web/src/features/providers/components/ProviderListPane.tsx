@@ -23,7 +23,7 @@ import {
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Provider } from "@/gen/lemma/v1/provider_pb";
+import type { Provider } from "../store";
 
 interface ProviderListPaneProps {
     providers: Provider[];

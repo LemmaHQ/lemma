@@ -23,7 +23,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
-import type { Provider } from "@/gen/lemma/v1/provider_pb";
+
+import type { Provider } from "../store";
 
 interface ProviderSettingsDialogProps {
     provider: Provider;
