@@ -13,12 +13,12 @@
         "email": "wanzhao_ysy@qq.com"
     },
     "devDependencies": {
-        "@types/node": "^26.6.5",
+        "@types/node": "^26.6.6",
         "autocorrect-node": "^2.14.0",
-        "jscpd": "^5.4.1",
-        "markdownlint-cli2": "^0.23.3",
-        "oxlint": "^1.88.0",
-        "oxlint-tsgolint": "^7.0.2004",
+        "jscpd": "^5.4.2",
+        "markdownlint-cli2": "^0.24.0",
+        "oxlint": "^1.89.0",
+        "oxlint-tsgolint": "^7.0.2005",
         "typescript": "^7.0.2"
     },
     "allowScripts": {
