@@ -1,7 +1,7 @@
-import { IconMessage } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Suggestion } from "@/components/ai-elements/suggestion";
+import { Suggestion } from "@lemma/ui/components/ai-elements/suggestion";
+import { MessageCirclePlusIcon } from "@lemma/ui/icons/message-circle-plus";
 import {
     Empty,
     EmptyContent,
@@ -28,7 +28,7 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
         <Empty className="h-full">
             <EmptyHeader>
                 <EmptyMedia variant="icon">
-                    <IconMessage />
+                    <MessageCirclePlusIcon />
                 </EmptyMedia>
                 <EmptyTitle>{t("conversation.emptyTitle")}</EmptyTitle>
                 <EmptyDescription>

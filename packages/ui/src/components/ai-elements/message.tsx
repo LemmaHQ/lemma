@@ -2,12 +2,8 @@ import { cn } from "cn";
 import { type ComponentProps, memo } from "react";
 import { Streamdown } from "streamdown";
 
-import { Button } from "@lemma/ui/components/button";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
+import { Button } from "#components/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#components/tooltip";
 
 type MessageProps = ComponentProps<"div"> & {
     from: "user" | "assistant";
@@ -41,7 +37,13 @@ export function MessageContent({ className, ...props }: ComponentProps<"div">) {
 
 export function MessageActions({ className, ...props }: ComponentProps<"div">) {
     return (
-        <div className={cn("flex items-center gap-1", className)} {...props} />
+        <div
+            className={cn(
+                "ai-answer-actions flex items-center gap-1",
+                className,
+            )}
+            {...props}
+        />
     );
 }
 

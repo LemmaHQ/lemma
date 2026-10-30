@@ -1,19 +1,22 @@
 # Translation-pairing record for README.md (docs/i18n/README.md): one
 # entry per heading section, holding a hash of its English and Chinese text.
 # After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing web/src/components/ui/README.md
+#   just docs-pairing packages/ui/README.md
 /shared-ui-components:
   en: bee03c6a07fb576a
   zh: 507a58790c600fcc
 /shared-ui-components/summary:
-  en: 27d82218a702a2f0
-  zh: dd40afba0e229e9b
+  en: bfe553f54cf4f882
+  zh: e2d79a14fb942153
 /shared-ui-components/component-catalog:
-  en: b46b2c4603509fbb
-  zh: 182955c0bcf92c47
+  en: 567354ea08e8912b
+  zh: 483f1de0659827f4
+/shared-ui-components/motion-utilities:
+  en: b439f821b79fb2cd
+  zh: d03eb016be90e3af
 /shared-ui-components/conventions:
-  en: 4bd1dc294926dd10
-  zh: 49c372db4fe403e2
+  en: 0a883b07301c9a8b
+  zh: c004ffaec4f50f40
 /shared-ui-components/adding-a-component:
-  en: c6f0e9380c076377
-  zh: 60e78c4fd1019bff
+  en: 1266984dd97dc3ee
+  zh: 7e53ca8ed00e1b41

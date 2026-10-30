@@ -1,17 +1,21 @@
+import { cn } from "cn";
+import { CornerDownLeftIcon, SquareIcon } from "lucide-react";
+import {
+    Children,
+    type ComponentProps,
+    type KeyboardEvent,
+    useCallback,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from "react";
+
 import {
     InputGroup,
     InputGroupAddon,
     InputGroupButton,
     InputGroupTextarea,
-} from "@lemma/ui/components/input-group";
-import { IconCornerDownLeft, IconSquare } from "@tabler/icons-react";
-import { cn } from "cn";
-import {
-    Children,
-    type ComponentProps,
-    type KeyboardEvent,
-    useState,
-} from "react";
+} from "#components/input-group";
 
 type PromptInputProps = Omit<ComponentProps<"form">, "onSubmit"> & {
     onSubmit: () => void;
@@ -51,12 +55,42 @@ export function PromptInputBody({
  */
 export function PromptInputTextarea({
     className,
+    ref,
+    value,
+    onChange,
+    onCompositionEnd,
+    onCompositionStart,
+    onKeyDown,
     ...props
 }: ComponentProps<typeof InputGroupTextarea>) {
     const [isComposing, setIsComposing] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const setTextareaRef = useCallback(
+        (textarea: HTMLTextAreaElement | null) => {
+            textareaRef.current = textarea;
+            if (typeof ref === "function") {
+                ref(textarea);
+            } else if (ref !== undefined && ref !== null) {
+                ref.current = textarea;
+            }
+        },
+        [ref],
+    );
+
+    useLayoutEffect(() => {
+        const textarea = textareaRef.current;
+        if (
+            textarea !== null &&
+            (value === undefined || textarea.value === String(value))
+        ) {
+            resizeTextarea(textarea);
+        }
+    }, [value]);
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        onKeyDown?.(event);
         if (
+            event.defaultPrevented ||
             event.key !== "Enter" ||
             event.shiftKey ||
             isComposing ||
@@ -77,10 +111,22 @@ export function PromptInputTextarea({
 
     return (
         <InputGroupTextarea
-            className={cn("field-sizing-content max-h-48 min-h-16", className)}
+            ref={setTextareaRef}
+            className={cn("ui-prompt-input-textarea", className)}
             name="message"
-            onCompositionEnd={() => setIsComposing(false)}
-            onCompositionStart={() => setIsComposing(true)}
+            value={value}
+            onChange={(event) => {
+                onChange?.(event);
+                resizeTextarea(event.currentTarget);
+            }}
+            onCompositionEnd={(event) => {
+                setIsComposing(false);
+                onCompositionEnd?.(event);
+            }}
+            onCompositionStart={(event) => {
+                setIsComposing(true);
+                onCompositionStart?.(event);
+            }}
             onKeyDown={handleKeyDown}
             {...props}
         />
@@ -110,12 +156,17 @@ export function PromptInputTools({
 }
 
 export function PromptInputButton({
+    className,
     variant = "ghost",
     size,
     ...props
 }: ComponentProps<typeof InputGroupButton>) {
     return (
         <InputGroupButton
+            className={cn(
+                "ui-prompt-input-button active:translate-y-0",
+                className,
+            )}
             size={
                 size ?? (Children.count(props.children) > 1 ? "sm" : "icon-sm")
             }
@@ -131,6 +182,7 @@ type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
 };
 
 export function PromptInputSubmit({
+    className,
     variant = "default",
     size = "icon-sm",
     status = "ready",
@@ -139,17 +191,40 @@ export function PromptInputSubmit({
 }: PromptInputSubmitProps) {
     return (
         <InputGroupButton
+            className={cn(
+                "ui-prompt-input-submit active:translate-y-0",
+                className,
+            )}
             size={size}
             type="submit"
             variant={variant}
             {...props}
         >
-            {children ??
-                (status === "streaming" ? (
-                    <IconSquare className="size-4" />
-                ) : (
-                    <IconCornerDownLeft className="size-4" />
-                ))}
+            {children ?? (
+                <span
+                    className="ui-prompt-input-submit-icons"
+                    data-status={status}
+                >
+                    <span
+                        className="ui-prompt-input-submit-icon"
+                        data-icon="send"
+                    >
+                        <CornerDownLeftIcon className="size-4" />
+                    </span>
+                    <span
+                        className="ui-prompt-input-submit-icon"
+                        data-icon="stop"
+                    >
+                        <SquareIcon className="size-4" />
+                    </span>
+                </span>
+            )}
         </InputGroupButton>
     );
+}
+
+function resizeTextarea(textarea: HTMLTextAreaElement) {
+    textarea.style.setProperty("--prompt-input-height", "auto");
+    const height = Math.min(192, Math.max(64, textarea.scrollHeight));
+    textarea.style.setProperty("--prompt-input-height", `${height}px`);
 }

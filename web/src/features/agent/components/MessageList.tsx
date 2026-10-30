@@ -5,7 +5,7 @@ import {
     ConversationContent,
     ConversationFollow,
     ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
+} from "@lemma/ui/components/ai-elements/conversation";
 import { ScrollArea } from "@lemma/ui/components/scroll-area";
 import type { AgentItem } from "@/features/agent/agent-item";
 

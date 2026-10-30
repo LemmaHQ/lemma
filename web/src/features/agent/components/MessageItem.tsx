@@ -1,7 +1,6 @@
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -10,84 +9,26 @@ import {
     MessageActions,
     MessageContent,
     MessageResponse,
-} from "@/components/ai-elements/message";
-import {
-    Reasoning,
-    ReasoningContent,
-    ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
-import {
-    Tool,
-    ToolContent,
-    ToolGroup,
-    ToolGroupContent,
-    ToolGroupTrigger,
-    ToolHeader,
-    ToolInput,
-    ToolOutput,
-} from "@/components/ai-elements/tool";
-import type { AgentItem, ToolCallItem } from "@/features/agent/agent-item";
+} from "@lemma/ui/components/ai-elements/message";
+import { CopyIcon } from "@lemma/ui/icons/copy";
+import { RefreshCwIcon } from "@lemma/ui/icons/refresh-cw";
+import type { AgentItem } from "@/features/agent/agent-item";
+
+import { MessageThinking } from "./MessageThinking";
+import { ToolCallList } from "./ToolCallList";
 
 const STREAMDOWN_PLUGINS = { code, cjk };
+const STREAMDOWN_ANIMATION = {
+    animation: "answerBlurIn",
+    duration: 420,
+    easing: "var(--motion-easing-enter)",
+} as const;
 
 interface MessageItemProps {
     message: AgentItem;
     source?: string | undefined;
     canRegenerate?: boolean;
     onRegenerate?: (id: string) => void;
-}
-
-function parseArguments(text: string): unknown {
-    try {
-        const value: unknown = JSON.parse(text);
-        return value;
-    } catch {
-        return text;
-    }
-}
-
-function ToolCall({ call }: { call: ToolCallItem }) {
-    const state =
-        call.state === "running"
-            ? "input-available"
-            : call.isError
-              ? "output-error"
-              : "output-available";
-    return (
-        <Tool defaultOpen={call.state === "running"}>
-            <ToolHeader title={call.name} state={state} />
-            <ToolContent>
-                <ToolInput input={parseArguments(call.arguments)} />
-                {call.state === "done" && (
-                    <ToolOutput
-                        output={call.isError ? undefined : call.output}
-                        errorText={call.isError ? call.output : undefined}
-                    />
-                )}
-            </ToolContent>
-        </Tool>
-    );
-}
-
-function ToolCalls({ calls }: { calls: ToolCallItem[] }) {
-    const running = calls.some((call) => call.state === "running");
-    const failed = calls.filter(
-        (call) => call.state === "done" && call.isError,
-    ).length;
-    return (
-        <ToolGroup>
-            <ToolGroupTrigger
-                count={calls.length}
-                failed={failed}
-                running={running}
-            />
-            <ToolGroupContent>
-                {calls.map((call) => (
-                    <ToolCall key={call.id} call={call} />
-                ))}
-            </ToolGroupContent>
-        </ToolGroup>
-    );
 }
 
 export function MessageItem({
@@ -98,8 +39,23 @@ export function MessageItem({
 }: MessageItemProps) {
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
+    const [regenerateKey, setRegenerateKey] = useState(0);
 
     const streaming = message.status === "streaming";
+    const pendingThinking =
+        streaming &&
+        message.thinking === "" &&
+        message.content === "" &&
+        message.toolCalls.length === 0;
+    const responseAnimating = streaming && !pendingThinking;
+
+    useEffect(() => {
+        if (!copied) {
+            return;
+        }
+        const timeout = window.setTimeout(() => setCopied(false), 1500);
+        return () => window.clearTimeout(timeout);
+    }, [copied]);
 
     if (message.role === "tool") {
         return null;
@@ -118,30 +74,28 @@ export function MessageItem({
     const handleCopy = async () => {
         await navigator.clipboard.writeText(message.content).catch(() => {});
         setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
+    };
+
+    const handleRegenerate = () => {
+        setRegenerateKey((key) => key + 1);
+        onRegenerate?.(message.id);
     };
 
     return (
-        <Message from="assistant">
+        <Message className="ai-answer" from="assistant">
             <MessageContent>
-                {message.thinking !== "" && (
-                    <Reasoning
-                        isStreaming={streaming && message.content === ""}
-                        defaultOpen={streaming}
-                    >
-                        <ReasoningTrigger />
-                        <ReasoningContent>{message.thinking}</ReasoningContent>
-                    </Reasoning>
-                )}
+                <MessageThinking message={message} streaming={streaming} />
                 <MessageResponse
+                    animated={responseAnimating ? STREAMDOWN_ANIMATION : false}
+                    caret="circle"
+                    className="ai-answer-response"
                     plugins={STREAMDOWN_PLUGINS}
-                    isAnimating={streaming}
-                    caret="block"
+                    isAnimating={responseAnimating}
                 >
                     {message.content}
                 </MessageResponse>
                 {message.toolCalls.length > 0 && (
-                    <ToolCalls calls={message.toolCalls} />
+                    <ToolCallList calls={message.toolCalls} />
                 )}
                 {message.status === "error" && (
                     <p className="text-destructive">
@@ -172,14 +126,46 @@ export function MessageItem({
                             void handleCopy();
                         }}
                     >
-                        {copied ? <IconCheck /> : <IconCopy />}
+                        <span
+                            className="ai-answer-copy-icon"
+                            aria-hidden="true"
+                        >
+                            <span
+                                className="ai-answer-copy-layer"
+                                data-on={!copied}
+                            >
+                                <CopyIcon />
+                            </span>
+                            <span
+                                className="ai-answer-copy-layer"
+                                data-on={copied}
+                            >
+                                <svg
+                                    className="ai-answer-check"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        key={copied ? "copied" : "copy"}
+                                        className="animate-draw"
+                                        d="m4 12 5 5L20 6"
+                                        pathLength={1}
+                                    />
+                                </svg>
+                            </span>
+                        </span>
                     </MessageAction>
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageAction
                             tooltip={t("conversation.regenerate")}
-                            onClick={() => onRegenerate(message.id)}
+                            onClick={handleRegenerate}
                         >
-                            <IconRefresh />
+                            <span
+                                key={regenerateKey}
+                                className="ai-answer-regenerate-icon"
+                                data-spin={regenerateKey > 0}
+                            >
+                                <RefreshCwIcon />
+                            </span>
                         </MessageAction>
                     )}
                     {source !== undefined && source !== "" && (

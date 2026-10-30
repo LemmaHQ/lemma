@@ -1,0 +1,109 @@
+@keyframes ui-blur-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+        filter: blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+
+@keyframes ui-draw {
+    from {
+        stroke-dashoffset: 1;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes ui-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes ui-text-sweep {
+    from {
+        background-position: 100% center;
+    }
+    to {
+        background-position: 0% center;
+    }
+}
+
+@utility animate-blur-in {
+    animation: ui-blur-in var(--motion-duration-reveal)
+        var(--motion-easing-enter) both;
+}
+
+@utility animate-draw {
+    stroke-dasharray: 1;
+    animation: ui-draw var(--motion-duration-reveal) var(--motion-easing-enter)
+        80ms both;
+}
+
+@utility animate-pop {
+    animation: ui-pop var(--motion-duration-reveal) var(--motion-easing-spring)
+        both;
+}
+
+@utility text-sweep {
+    display: inline-block;
+    background-image: linear-gradient(
+        90deg,
+        var(--muted-foreground),
+        var(--background),
+        var(--muted-foreground)
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: ui-text-sweep 1.8s linear infinite;
+}
+
+@utility grid-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows var(--motion-duration-reveal)
+            var(--motion-easing-enter),
+        opacity var(--motion-duration-reveal) var(--motion-easing-enter);
+
+    & > * {
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    &[data-open="true"] {
+        grid-template-rows: 1fr;
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-blur-in,
+    .animate-draw,
+    .animate-pop,
+    .text-sweep {
+        animation: none;
+    }
+
+    .text-sweep {
+        background: none;
+        color: var(--muted-foreground);
+    }
+
+    .grid-collapse {
+        transition: none;
+    }
+}

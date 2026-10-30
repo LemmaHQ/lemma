@@ -7,7 +7,6 @@ const SOURCE = /\.(?:rs|py|proto|kt|kts|[cm]?[jt]s|[jt]sx)$/u;
 const SCRIPT = /\.(?:[cm]?[jt]s|[jt]sx)$/u;
 const UNCHECKED = [
     /^\.agents\//u,
-    /^web\/src\/components\/(?:ui|ai-elements)\//u,
     /^packages\/ui\/src\/(?:components|hooks)\//u,
 ];
 const TEST = [

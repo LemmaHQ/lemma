@@ -1,5 +1,5 @@
-import { IconBrain, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "cn";
+import { BrainIcon } from "lucide-react";
 import {
     type ComponentProps,
     createContext,
@@ -16,15 +16,20 @@ import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@lemma/ui/components/collapsible";
-
-import { Shimmer } from "./shimmer";
+} from "#components/collapsible";
+import { Shimmer } from "#components/ai-elements/shimmer";
+import { ThinkingStatusIcon } from "#components/ai-elements/thinking-loader";
+import { ChevronDownIcon } from "#icons/chevron-down";
+import { useStopwatch } from "#hooks/use-stopwatch";
+import { formatDuration } from "../../lib/format-duration";
 
 const AUTO_CLOSE_DELAY_MS = 1000;
 
 type ReasoningState = {
     isStreaming: boolean;
     isOpen: boolean;
+    startedAt?: number | undefined;
+    finishedAt?: number | undefined;
 };
 
 const ReasoningContext = createContext<ReasoningState>({
@@ -38,6 +43,8 @@ type ReasoningProps = Omit<
 > & {
     isStreaming?: boolean;
     defaultOpen?: boolean;
+    startedAt?: number | undefined;
+    finishedAt?: number | undefined;
 };
 
 /**
@@ -48,6 +55,8 @@ export function Reasoning({
     className,
     isStreaming = false,
     defaultOpen = false,
+    startedAt,
+    finishedAt,
     children,
     ...props
 }: ReasoningProps) {
@@ -68,8 +77,8 @@ export function Reasoning({
     }, [defaultOpen, isStreaming, isOpen, hasAutoClosed]);
 
     const state = useMemo(
-        () => ({ isStreaming, isOpen }),
-        [isStreaming, isOpen],
+        () => ({ isStreaming, isOpen, startedAt, finishedAt }),
+        [isStreaming, isOpen, startedAt, finishedAt],
     );
 
     return (
@@ -90,8 +99,15 @@ export function ReasoningTrigger({
     className,
     ...props
 }: Omit<ComponentProps<typeof CollapsibleTrigger>, "children">) {
-    const { t } = useTranslation();
-    const { isStreaming, isOpen } = useContext(ReasoningContext);
+    const { t } = useTranslation("ui");
+    const { isStreaming, isOpen, startedAt, finishedAt } =
+        useContext(ReasoningContext);
+    const elapsed = useStopwatch(startedAt, finishedAt);
+    const hasDuration =
+        elapsed !== undefined &&
+        startedAt !== undefined &&
+        finishedAt !== undefined;
+
     return (
         <CollapsibleTrigger
             className={cn(
@@ -100,13 +116,30 @@ export function ReasoningTrigger({
             )}
             {...props}
         >
-            <IconBrain className="size-4" />
-            {isStreaming ? (
-                <Shimmer>{t("agent.thinkingInProgress")}</Shimmer>
+            {isStreaming || hasDuration ? (
+                <ThinkingStatusIcon done={!isStreaming && hasDuration} />
             ) : (
-                <span>{t("agent.thinking")}</span>
+                <BrainIcon className="size-4" aria-hidden="true" />
             )}
-            <IconChevronDown
+            {isStreaming ? (
+                <>
+                    <Shimmer>{t("agent.thinkingInProgress")}</Shimmer>
+                    {elapsed !== undefined && (
+                        <span className="reasoning-time">
+                            {formatDuration(elapsed, true)}
+                        </span>
+                    )}
+                </>
+            ) : (
+                <span>
+                    {hasDuration
+                        ? t("agent.thoughtFor", {
+                              duration: formatDuration(elapsed),
+                          })
+                        : t("agent.thinking")}
+                </span>
+            )}
+            <ChevronDownIcon
                 className={cn(
                     "size-4 transition-transform duration-medium ease-move motion-reduce:transition-none",
                     isOpen && "rotate-180",
@@ -128,16 +161,21 @@ export const ReasoningContent = memo(function ReasoningContent({
     children,
     ...props
 }: ReasoningContentProps) {
+    const { isOpen } = useContext(ReasoningContext);
     return (
         <CollapsibleContent
             className={cn(
-                "h-(--collapsible-panel-height) overflow-hidden text-sm text-muted-foreground transition-[height] duration-medium ease-move outline-none data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none",
+                "grid-collapse text-sm text-muted-foreground outline-none",
                 className,
             )}
+            data-open={isOpen}
+            keepMounted
             {...props}
         >
-            <div className="pt-4">
-                <Streamdown>{children}</Streamdown>
+            <div>
+                <div className="reasoning-body animate-blur-in">
+                    <Streamdown>{children}</Streamdown>
+                </div>
             </div>
         </CollapsibleContent>
     );

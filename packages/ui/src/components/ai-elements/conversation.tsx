@@ -1,17 +1,13 @@
-import { IconArrowDown } from "@tabler/icons-react";
 import { cn } from "cn";
 import { useReducedMotion } from "motion/react";
 import { type ComponentProps, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
-import { Button } from "@lemma/ui/components/button";
-import { ScrollArea } from "@lemma/ui/components/scroll-area";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
+import { Button } from "#components/button";
+import { ScrollArea } from "#components/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#components/tooltip";
+import { ArrowDownIcon } from "#icons/arrow-down";
 
 type ConversationProps = Omit<
     ComponentProps<typeof StickToBottom>,
@@ -77,7 +73,7 @@ export function ConversationScrollButton({
 }: {
     className?: string;
 }) {
-    const { t } = useTranslation();
+    const { t } = useTranslation("ui");
     const { isAtBottom } = useStickToBottomContext();
     const scrollToEnd = useScrollToEnd();
     if (isAtBottom) {
@@ -103,7 +99,7 @@ export function ConversationScrollButton({
                     />
                 }
             >
-                <IconArrowDown />
+                <ArrowDownIcon />
             </TooltipTrigger>
             <TooltipContent>{label}</TooltipContent>
         </Tooltip>

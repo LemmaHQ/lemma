@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import type { ComponentProps } from "react";
 
-import { Button } from "@lemma/ui/components/button";
+import { Button } from "#components/button";
 
 type SuggestionProps = Omit<
     ComponentProps<typeof Button>,

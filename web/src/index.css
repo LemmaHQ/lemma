@@ -1,15 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "streamdown/styles.css";
+@import "@lemma/ui/streamdown.css";
 @import "./tokens.css";
 @import "@lemma/ui/tokens.css";
+@import "@lemma/ui/motion.css";
+@import "@lemma/ui/thinking.css";
+@import "@lemma/ui/chat-composer.css";
+@import "@lemma/ui/tool-call.css";
 @import "./app/auth/auth-transitions.css";
 @import "./app/shell/shell-transitions.css";
 
 @source "../../packages/ui/src";
-@source "../../node_modules/streamdown/dist/*.js";
-@source "../../node_modules/@streamdown/code/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -134,9 +136,13 @@ html.custom-titlebar .h-dvh {
     --duration-base: var(--motion-duration-base);
     --duration-medium: var(--motion-duration-medium);
     --duration-slow: var(--motion-duration-slow);
+    --duration-reveal: var(--motion-duration-reveal);
+    --duration-settle: var(--motion-duration-settle);
     --ease-enter: var(--motion-easing-enter);
     --ease-exit: var(--motion-easing-exit);
     --ease-move: var(--motion-easing-move);
+    --ease-morph: var(--motion-easing-morph);
+    --ease-spring: var(--motion-easing-spring);
     --default-transition-duration: var(--motion-duration-base);
     --default-transition-timing-function: var(--motion-easing-move);
     --shadow-raised:

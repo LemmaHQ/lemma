@@ -1,0 +1,161 @@
+@keyframes sd-answerBlurIn {
+    from {
+        opacity: 0;
+        filter: blur(3px);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@keyframes ui-ans-pulse {
+    50% {
+        opacity: 0.45;
+        transform: scale(0.6);
+    }
+}
+
+@keyframes ui-ans-card {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes ui-ans-fade {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes ui-ans-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.ai-answer {
+    animation: ui-ans-card 460ms var(--motion-easing-enter) both;
+}
+
+.ai-answer-actions {
+    opacity: 0.6;
+    transition: opacity 240ms var(--motion-easing-enter);
+}
+
+.group\/message:hover .ai-answer-actions,
+.group\/message:focus-within .ai-answer-actions {
+    opacity: 1;
+}
+
+.ai-answer-actions > button {
+    animation: ui-ans-fade 320ms var(--motion-easing-enter) both;
+}
+
+.ai-answer-actions > button:nth-child(2) {
+    animation-delay: 40ms;
+}
+
+.ai-answer-actions > button:nth-child(3) {
+    animation-delay: 80ms;
+}
+
+.ai-answer-actions > button:nth-child(4) {
+    animation-delay: 120ms;
+}
+
+.ai-answer-copy-icon {
+    display: grid;
+    width: 1rem;
+    height: 1rem;
+    place-items: center;
+}
+
+.ai-answer-copy-layer {
+    display: grid;
+    grid-area: 1 / 1;
+    place-items: center;
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(2px);
+    transition:
+        opacity 200ms var(--motion-easing-enter),
+        transform 300ms var(--motion-easing-morph),
+        filter 200ms var(--motion-easing-enter);
+}
+
+.ai-answer-copy-layer[data-on="true"] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+}
+
+.ai-answer-check {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ai-answer-regenerate-icon {
+    display: grid;
+    place-items: center;
+}
+
+.ai-answer-regenerate-icon[data-spin="true"] {
+    animation: ui-ans-spin 640ms var(--motion-easing-morph);
+}
+
+.ai-answer-response[style*="--streamdown-caret"]
+    > *:last-child:not([data-sd-caret-hidden])::after {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--foreground);
+    vertical-align: 0.05em;
+    content: "";
+    animation: ui-ans-pulse 1s ease-in-out infinite;
+}
+
+@media (pointer: coarse) {
+    .ai-answer-actions {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-answer,
+    .ai-answer-actions > button,
+    .ai-answer-regenerate-icon,
+    .ai-answer-response[style*="--streamdown-caret"]
+        > *:last-child:not([data-sd-caret-hidden])::after,
+    .ai-answer-response [data-sd-animate],
+    .ai-answer-response [data-sd-animate-marker]::marker {
+        animation: none !important;
+    }
+
+    .ai-answer-actions,
+    .ai-answer-copy-layer {
+        transition: none;
+    }
+
+    .ai-answer-actions {
+        opacity: 1;
+    }
+}

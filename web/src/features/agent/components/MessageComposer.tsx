@@ -9,7 +9,7 @@ import {
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
-} from "@/components/ai-elements/prompt-input";
+} from "@lemma/ui/components/ai-elements/prompt-input";
 import { Button } from "@lemma/ui/components/button";
 import type {
     ModelOption,
@@ -75,19 +75,15 @@ export function MessageComposer({
                             onSelect={onModelChange}
                         />
                     </PromptInputTools>
-                    {streaming ? (
-                        <PromptInputSubmit
-                            status="streaming"
-                            type="button"
-                            onClick={onStop}
-                            aria-label={t("agent.stop")}
-                        />
-                    ) : (
-                        <PromptInputSubmit
-                            disabled={!canSend}
-                            aria-label={t("conversation.send")}
-                        />
-                    )}
+                    <PromptInputSubmit
+                        status={streaming ? "streaming" : "ready"}
+                        type={streaming ? "button" : "submit"}
+                        disabled={!streaming && !canSend}
+                        onClick={streaming ? onStop : undefined}
+                        aria-label={
+                            streaming ? t("agent.stop") : t("conversation.send")
+                        }
+                    />
                 </PromptInputFooter>
             </PromptInput>
             <p className="text-center text-xs text-muted-foreground">

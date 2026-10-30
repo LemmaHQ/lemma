@@ -1,0 +1,109 @@
+.tool-call-name {
+    max-width: 55%;
+}
+
+.tool-call-chevron {
+    transition: transform var(--motion-duration-reveal)
+        var(--motion-easing-enter);
+}
+
+.tool-call[data-open="true"] > button .tool-call-chevron,
+.tool-call-group[data-open="true"] > button .tool-call-chevron {
+    transform: rotate(180deg);
+}
+
+.tool-call-spinner {
+    fill: none;
+    stroke-linecap: round;
+    animation: tool-call-spin 800ms linear infinite;
+}
+
+.tool-call-spinner circle {
+    stroke: currentColor;
+    stroke-width: 1.6;
+    opacity: 0.22;
+}
+
+.tool-call-spinner path {
+    stroke: var(--foreground);
+    stroke-width: 1.6;
+}
+
+.tool-call svg:has(> .animate-draw) {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tool-call-code-shell {
+    position: relative;
+    max-height: var(--tool-call-code-height, none);
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    transition: max-height var(--motion-duration-reveal)
+        var(--motion-easing-enter);
+}
+
+.tool-call-code-shell::after {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    left: 1px;
+    height: 56px;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    background: linear-gradient(to bottom, transparent, var(--background));
+    opacity: 0;
+    transition: opacity var(--motion-duration-medium) var(--motion-easing-enter);
+    pointer-events: none;
+    content: "";
+}
+
+.tool-call-code-shell[data-capped="true"]::after {
+    opacity: 1;
+}
+
+.tool-call-copy svg {
+    transition:
+        opacity var(--motion-duration-medium) var(--motion-easing-enter),
+        transform var(--motion-duration-slow) var(--motion-easing-enter),
+        filter var(--motion-duration-medium) var(--motion-easing-enter);
+}
+
+.tool-call-copy-done {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(2px);
+}
+
+.tool-call-copy[data-copied="true"] .tool-call-copy-icon {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(2px);
+}
+
+.tool-call-copy[data-copied="true"] .tool-call-copy-done {
+    opacity: 1;
+    transform: none;
+    filter: none;
+}
+
+@keyframes tool-call-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tool-call-chevron,
+    .tool-call-code-shell,
+    .tool-call-code-shell::after,
+    .tool-call-copy svg {
+        transition: none;
+    }
+
+    .tool-call-spinner {
+        animation: none;
+    }
+}

@@ -1,24 +1,7 @@
 {
     "agent": {
         "abortedNotice": "Generation stopped.",
-        "stop": "Stop generating",
-        "thinking": "Thought process",
-        "thinkingInProgress": "Thinking…",
-        "toolCall": {
-            "arguments": "Arguments",
-            "done": "Done",
-            "error": "Error",
-            "failed": "Failed",
-            "output": "Output",
-            "running": "Running"
-        },
-        "toolGroup": {
-            "failed": "{{count}} failed",
-            "running_one": "Using {{count}} tool…",
-            "running_other": "Using {{count}} tools…",
-            "used_one": "Used {{count}} tool",
-            "used_other": "Used {{count}} tools"
-        }
+        "stop": "Stop generating"
     },
     "auth": {
         "changeAccount": "Change",
@@ -60,13 +43,8 @@
         "inputPlaceholder": "Message the assistant…",
         "noModelAction": "Open settings",
         "noModelHint": "Set up a provider and model in Settings first.",
-        "noModelMatch": "No matching models",
         "noModelPlaceholder": "Configure a provider and model to start…",
-        "noProvider": "No provider",
         "regenerate": "Regenerate",
-        "scrollToBottom": "Scroll to latest",
-        "searchModel": "Search models…",
-        "selectModel": "Select model",
         "send": "Send",
         "suggestion1": "Explain a concept step by step",
         "suggestion2": "Help me debug an issue",

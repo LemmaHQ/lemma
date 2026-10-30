@@ -21,14 +21,14 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/app/` holds routing, pages, and the application shell; `src/features/<domain>/` holds each domain's components, store, and hooks.
 - `src/data/rpc/` creates the ConnectRPC clients and maps errors.
 - `src/platform/` selects the browser or desktop adapter; code outside it reaches desktop capabilities only through that adapter.
-- `src/components/ui/` holds shadcn components and `src/components/ai-elements/` holds AI Elements chat components. The shadcn CLI wrote their first version; they are owned code under the same lint and i18n rules, edited in place ([component README](src/components/ui/README.md)).
+- Shared shadcn controls and AI Elements chat components live in `@lemma/ui`; feature code imports them from `@lemma/ui/components/<name>` and `@lemma/ui/components/ai-elements/<name>` ([component README](../packages/ui/README.md)).
 - User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
 
 ## Styling
 
 - **Feature code uses only the semantic utilities of the shadcn theme,** with no hex color, no arbitrary value, and no `dark:` variant; the theme colors come from [design/tokens.json](../design/README.md).
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes, and across `src/` also `dark:` variants, Tailwind's numeric durations, default easings, shadow scale, and black and white colors; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
-- **Controls reuse `src/components/ui/` and `src/components/ai-elements/`;** check the [component catalog](src/components/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
+- **Controls reuse `@lemma/ui/components/` and `@lemma/ui/components/ai-elements/`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 

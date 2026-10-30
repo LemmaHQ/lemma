@@ -3,6 +3,11 @@
 @import "shadcn/tailwind.css";
 @import "./tokens.css";
 @import "../tokens/index.css";
+@import "./motion.css";
+@import "./thinking.css";
+@import "./chat-composer.css";
+@import "./streamdown.css";
+@import "./tool-call.css";
 
 @source "../";
 
@@ -101,9 +106,21 @@
     --duration-base: var(--motion-duration-base);
     --duration-medium: var(--motion-duration-medium);
     --duration-slow: var(--motion-duration-slow);
+    --duration-reveal: var(--motion-duration-reveal);
+    --duration-settle: var(--motion-duration-settle);
+    --duration-press: var(--motion-duration-press);
+    --duration-glide: var(--motion-duration-glide);
+    --duration-option-fade: var(--motion-duration-option-fade);
+    --duration-check: var(--motion-duration-check);
+    --duration-option-slide: var(--motion-duration-option-slide);
+    --duration-model: var(--motion-duration-model);
     --ease-enter: var(--motion-easing-enter);
     --ease-exit: var(--motion-easing-exit);
     --ease-move: var(--motion-easing-move);
+    --ease-morph: var(--motion-easing-morph);
+    --ease-spring: var(--motion-easing-spring);
+    --ease-glide: var(--motion-easing-glide);
+    --ease-model: var(--motion-easing-model);
     --default-transition-duration: var(--motion-duration-base);
     --default-transition-timing-function: var(--motion-easing-move);
     --shadow-raised:
