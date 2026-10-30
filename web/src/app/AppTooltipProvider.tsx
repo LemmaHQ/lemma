@@ -1,14 +1,14 @@
-import { TooltipProvider } from "@lemma/ui/components/tooltip";
+import { TooltipProvider } from "@lemma/ui";
 import type { ReactNode } from "react";
 
-import { usePlatformLayout } from "@/platform/hooks";
+import { getPlatform } from "@/platform/platform";
 
 const TOOLTIP_EDGE_PADDING = 5;
 const TOOLTIP_TITLEBAR_GAP = 4;
 
 /** The tooltip provider, keeping every tooltip clear of the desktop titlebar. */
 export function AppTooltipProvider({ children }: { children: ReactNode }) {
-    const { hasCustomTitlebar, titlebarHeight } = usePlatformLayout();
+    const { hasCustomTitlebar, titlebarHeight } = getPlatform().layout;
 
     return (
         <TooltipProvider

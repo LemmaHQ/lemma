@@ -1,13 +1,3 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
-import { Button } from "@lemma/ui/components/button";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
-import { Trash2Icon } from "@lemma/ui/icons/trash-2";
-import { useTranslation } from "react-i18next";
-
 import {
     AlertDialog,
     AlertDialogAction,
@@ -18,7 +8,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@lemma/ui/components/alert-dialog";
+    AnimateIcon,
+    Button,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+    Trash2Icon,
+} from "@lemma/ui";
+import { useTranslation } from "react-i18next";
 
 /** Icon button that deletes a provider after a confirmation dialog. */
 export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {

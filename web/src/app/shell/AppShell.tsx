@@ -1,4 +1,5 @@
 import {
+    cn,
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -6,14 +7,13 @@ import {
     SidebarInset,
     SidebarProvider,
     SidebarRail,
-} from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { cn } from "cn";
+    useSidebar,
+} from "@lemma/ui";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatch } from "react-router";
 
-import { setTitleBarSurface } from "@/features/preferences/theme";
+import { setTitleBarSurface } from "@/features/preferences";
 
 import { AccountMenu } from "./AccountMenu";
 import { BackHomeButton } from "./BackHomeButton";
@@ -59,65 +59,70 @@ export function AppShell() {
 
     return (
         <ShellContext value={slots}>
-            <SidebarProvider
-                open={open || !collapsible}
-                onOpenChange={(next) => {
-                    if (!collapsible) {
-                        return;
-                    }
-                    setOpen(next);
-                    localStorage.setItem(
-                        SIDEBAR_COLLAPSED_KEY,
-                        next ? "0" : "1",
-                    );
-                }}
-                width={width}
-                onWidthChange={(next) => {
-                    setWidth(next);
-                    if (next === null) {
-                        localStorage.removeItem(SIDEBAR_WIDTH_KEY);
-                    } else {
-                        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next));
-                    }
-                }}
-                className="h-dvh animate-in duration-slow ease-enter fade-in-0"
-            >
-                <Sidebar variant="inset">
-                    <SidebarHeader className="shell-transition-sidebar-header">
-                        {settings ? (
-                            <BackHomeButton />
-                        ) : (
-                            <>
-                                <div className="flex h-8.5 items-center justify-between pl-1.5">
-                                    <span className="font-sidebar-brand text-lg text-sidebar-foreground">
-                                        {t("common.appName")}
-                                    </span>
-                                    <SidebarToggleButton />
-                                </div>
-                                <NewConversationButton />
-                            </>
+            <div className="animate-in duration-slow ease-enter fade-in-0">
+                <SidebarProvider
+                    open={open || !collapsible}
+                    onOpenChange={(next) => {
+                        if (!collapsible) {
+                            return;
+                        }
+                        setOpen(next);
+                        localStorage.setItem(
+                            SIDEBAR_COLLAPSED_KEY,
+                            next ? "0" : "1",
+                        );
+                    }}
+                    width={width}
+                    onWidthChange={(next) => {
+                        setWidth(next);
+                        if (next === null) {
+                            localStorage.removeItem(SIDEBAR_WIDTH_KEY);
+                        } else {
+                            localStorage.setItem(
+                                SIDEBAR_WIDTH_KEY,
+                                String(next),
+                            );
+                        }
+                    }}
+                    className="h-dvh"
+                >
+                    <Sidebar variant="inset" label={t("sidebar.title")}>
+                        <SidebarHeader className="shell-transition-sidebar-header">
+                            {settings ? (
+                                <BackHomeButton />
+                            ) : (
+                                <>
+                                    <div className="flex h-8.5 items-center justify-between pl-1.5">
+                                        <span className="font-sidebar-brand text-lg text-sidebar-foreground">
+                                            {t("common.appName")}
+                                        </span>
+                                        <SidebarToggleButton />
+                                    </div>
+                                    <NewConversationButton />
+                                </>
+                            )}
+                        </SidebarHeader>
+                        <SidebarContent>
+                            <div
+                                ref={setSidebarTarget}
+                                className="flex flex-col shell-transition-sidebar"
+                            />
+                        </SidebarContent>
+                        {collapsible && (
+                            <SidebarFooter className="shell-transition-sidebar-footer">
+                                <AccountMenu />
+                            </SidebarFooter>
                         )}
-                    </SidebarHeader>
-                    <SidebarContent>
-                        <div
-                            ref={setSidebarTarget}
-                            className="flex flex-col shell-transition-sidebar"
-                        />
-                    </SidebarContent>
-                    {collapsible && (
-                        <SidebarFooter className="shell-transition-sidebar-footer">
-                            <AccountMenu />
-                        </SidebarFooter>
-                    )}
-                    <SidebarRail />
-                </Sidebar>
-                <SidebarInset className="overflow-hidden">
-                    <ShellHeader collapsible={collapsible} title={title} />
-                    <div className="flex min-h-0 flex-1 flex-col shell-transition-main">
-                        <Outlet />
-                    </div>
-                </SidebarInset>
-            </SidebarProvider>
+                        <SidebarRail aria-label={t("sidebar.resize")} />
+                    </Sidebar>
+                    <SidebarInset className="overflow-hidden">
+                        <ShellHeader collapsible={collapsible} title={title} />
+                        <div className="flex min-h-0 flex-1 flex-col shell-transition-main">
+                            <Outlet />
+                        </div>
+                    </SidebarInset>
+                </SidebarProvider>
+            </div>
         </ShellContext>
     );
 }

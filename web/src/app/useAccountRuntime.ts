@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
-import { useAuth } from "@/features/auth/store";
-import { useConversationsStore } from "@/features/conversations/store";
+import { useAuth } from "@/features/auth";
+import { refreshConversations } from "@/features/conversations";
 
 export function useAccountRuntime() {
     const bootstrap = useAuth((s) => s.bootstrap);
@@ -14,7 +14,7 @@ export function useAccountRuntime() {
 
     useEffect(() => {
         if (userId !== null && userId !== "") {
-            void useConversationsStore.getState().refresh();
+            void refreshConversations();
         }
     }, [userId]);
 }

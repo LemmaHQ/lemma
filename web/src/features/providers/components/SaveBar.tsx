@@ -1,4 +1,4 @@
-import { Button } from "@lemma/ui/components/button";
+import { Button } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 interface SaveBarProps {

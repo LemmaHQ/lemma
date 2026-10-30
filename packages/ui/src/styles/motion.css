@@ -40,6 +40,116 @@
     }
 }
 
+@keyframes ui-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes ui-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes ui-rise {
+    from {
+        opacity: 0;
+        translate: 0 8px;
+    }
+}
+
+@keyframes ui-from-end {
+    from {
+        opacity: 0;
+        translate: 8px 0;
+    }
+}
+
+@keyframes ui-from-start {
+    from {
+        opacity: 0;
+        translate: -8px 0;
+    }
+}
+
+@keyframes ui-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes ui-pulse {
+    50% {
+        opacity: 0.45;
+        transform: scale(0.6);
+    }
+}
+
+@keyframes ui-card-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes ui-lift-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes ui-ray {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.18;
+    }
+}
+
+@keyframes ui-grow-y {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes ui-morph-in {
+    from {
+        opacity: 0;
+        filter: blur(3px);
+        transform: translateY(30%);
+    }
+}
+
+@keyframes sd-answerBlurIn {
+    from {
+        opacity: 0;
+        filter: blur(3px);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@utility duration-* {
+    --tw-duration: --value(--duration-*);
+    transition-duration: --value(--duration-*);
+}
+
 @utility animate-blur-in {
     animation: ui-blur-in var(--motion-duration-reveal)
         var(--motion-easing-enter) both;
@@ -54,6 +164,35 @@
 @utility animate-pop {
     animation: ui-pop var(--motion-duration-reveal) var(--motion-easing-spring)
         both;
+}
+
+@utility animate-spin-loop {
+    animation: ui-spin 800ms linear infinite;
+}
+
+@utility animate-spin-once {
+    animation: ui-spin 640ms var(--motion-easing-morph);
+}
+
+@utility animate-card-in {
+    animation: ui-card-in 460ms var(--motion-easing-enter) both;
+}
+
+@utility animate-ray {
+    opacity: 0.18;
+    animation: ui-ray 800ms linear infinite;
+    animation-delay: calc((var(--ray-index) - 8) * 100ms);
+}
+
+@utility animate-grow-y {
+    transform-origin: top;
+    animation: ui-grow-y var(--motion-duration-reveal)
+        var(--motion-easing-enter) both;
+}
+
+@utility animate-morph-in {
+    animation: ui-morph-in var(--motion-duration-model)
+        var(--motion-easing-model) both;
 }
 
 @utility text-sweep {
@@ -90,12 +229,264 @@
     }
 }
 
+@utility transition-sidebar-reveal-show {
+    transition: var(--sidebar-reveal-show);
+}
+
+@utility transition-sidebar-reveal-hide {
+    transition: var(--sidebar-reveal-hide);
+}
+
+@utility transition-sidebar-rail-show {
+    transition: var(--sidebar-rail-show);
+}
+
+@utility transition-sidebar-rail-hide {
+    transition: var(--sidebar-rail-hide);
+}
+
+.press-scale {
+    transition:
+        transform var(--motion-duration-press) var(--motion-easing-enter),
+        background-color var(--motion-duration-base) var(--motion-easing-move),
+        color var(--motion-duration-base) var(--motion-easing-move),
+        opacity var(--motion-duration-base) ease-out;
+
+    &:not(:disabled):active {
+        transform: scale(var(--press-scale, 0.96));
+    }
+}
+
+.swap-layer {
+    transition:
+        opacity var(--motion-duration-medium) var(--motion-easing-enter),
+        transform var(--motion-duration-slow) var(--motion-easing-enter),
+        filter var(--motion-duration-medium) var(--motion-easing-enter);
+
+    &:not([data-on="true"]) {
+        opacity: 0;
+        transform: scale(0.6);
+        filter: blur(2px);
+    }
+}
+
+.swap-turn {
+    transition:
+        opacity var(--motion-duration-medium) ease-out,
+        filter var(--motion-duration-medium) ease-out,
+        transform var(--motion-duration-medium) var(--motion-easing-enter);
+
+    &:not([data-on="true"]) {
+        opacity: 0;
+        filter: blur(2px);
+        transform: scale(0.72) rotate(-10deg);
+    }
+}
+
+.status-swap {
+    & > svg {
+        transition:
+            opacity 240ms ease-out,
+            transform var(--motion-duration-reveal) var(--motion-easing-enter);
+    }
+
+    & > [data-part="check"] {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+
+    & > [data-part="check"] path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+    }
+
+    &[data-done="true"] > [data-part="spinner"] {
+        opacity: 0;
+        transform: scale(0.6) rotate(-45deg);
+    }
+
+    &[data-done="true"] > [data-part="check"] {
+        opacity: 1;
+        transform: none;
+        animation: ui-pop var(--motion-duration-reveal)
+            var(--motion-easing-spring) both;
+    }
+
+    &[data-done="true"] > [data-part="check"] path {
+        animation: ui-draw var(--motion-duration-reveal)
+            var(--motion-easing-enter) 120ms both;
+    }
+}
+
+.menu-morph {
+    clip-path: inset(0 0 0 0 round var(--radius-xl));
+    transition: clip-path var(--motion-duration-reveal)
+        var(--motion-easing-morph);
+
+    &[data-starting-style],
+    &[data-closed] {
+        clip-path: inset(
+            calc(100% - var(--anchor-height)) calc(100% - var(--anchor-width)) 0
+                0 round var(--radius-lg)
+        );
+    }
+
+    &[data-side="bottom"][data-starting-style],
+    &[data-side="bottom"][data-closed] {
+        clip-path: inset(
+            0 calc(100% - var(--anchor-width)) calc(100% - var(--anchor-height))
+                0 round var(--radius-lg)
+        );
+    }
+
+    &[data-closed] {
+        pointer-events: none;
+        transition: clip-path var(--motion-duration-slow)
+            var(--motion-easing-move);
+    }
+
+    & [data-part="group"] {
+        transition: opacity var(--motion-duration-option-fade) ease-out 110ms;
+    }
+
+    & [data-part="option"] {
+        transition:
+            opacity var(--motion-duration-option-fade) ease-out 110ms,
+            transform var(--motion-duration-option-slide)
+                var(--motion-easing-enter) 60ms;
+    }
+
+    &[data-starting-style] [data-part="group"],
+    &[data-starting-style] [data-part="option"],
+    &[data-closed] [data-part="group"],
+    &[data-closed] [data-part="option"] {
+        opacity: 0;
+    }
+
+    &[data-starting-style] [data-part="option"],
+    &[data-closed] [data-part="option"] {
+        transform: translateY(0.5rem);
+    }
+
+    &[data-side="bottom"][data-starting-style] [data-part="option"],
+    &[data-side="bottom"][data-closed] [data-part="option"] {
+        transform: translateY(-0.5rem);
+    }
+
+    &[data-closed] [data-part="group"],
+    &[data-closed] [data-part="option"] {
+        transition: opacity 120ms ease-in;
+    }
+
+    & [data-part="fill"] {
+        height: var(--pill-height, 0px);
+        opacity: 0;
+        transform: translate3d(0, var(--pill-y, 0px), 0);
+        transition:
+            transform var(--motion-duration-glide) var(--motion-easing-glide),
+            height var(--motion-duration-glide) var(--motion-easing-glide),
+            opacity var(--motion-duration-press) ease-out;
+    }
+
+    & [data-part="fill"][data-visible="true"] {
+        opacity: 1;
+    }
+
+    & [data-part="fill"][data-glide="false"] {
+        transition: opacity var(--motion-duration-press) ease-out;
+    }
+
+    &[data-closed] [data-part="fill"] {
+        opacity: 0;
+    }
+
+    & [data-part="check"] {
+        opacity: 0;
+        transform: scale(0.6);
+        transition:
+            opacity var(--motion-duration-press) ease-out,
+            transform var(--motion-duration-check) var(--motion-easing-spring);
+    }
+
+    & [data-checked] [data-part="check"] {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.stagger-children > * {
+    animation: ui-lift-in 320ms var(--motion-easing-enter) both;
+
+    &:nth-child(2) {
+        animation-delay: 40ms;
+    }
+
+    &:nth-child(3) {
+        animation-delay: 80ms;
+    }
+
+    &:nth-child(4) {
+        animation-delay: 120ms;
+    }
+}
+
+.streaming-caret[style*="--streamdown-caret"]
+    > *:last-child:not([data-sd-caret-hidden])::after {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--foreground);
+    vertical-align: 0.05em;
+    content: "";
+    animation: ui-pulse 1s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        --tw-enter-translate-x: 0 !important;
+        --tw-enter-translate-y: 0 !important;
+        --tw-enter-scale: 1 !important;
+        --tw-enter-rotate: 0 !important;
+        --tw-enter-blur: 0 !important;
+        --tw-exit-translate-x: 0 !important;
+        --tw-exit-translate-y: 0 !important;
+        --tw-exit-scale: 1 !important;
+        --tw-exit-rotate: 0 !important;
+        --tw-exit-blur: 0 !important;
+    }
+
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+
     .animate-blur-in,
     .animate-draw,
     .animate-pop,
-    .text-sweep {
+    .animate-spin-loop,
+    .animate-spin-once,
+    .animate-card-in,
+    .animate-morph-in,
+    .text-sweep,
+    .stagger-children > *,
+    .streaming-caret[style*="--streamdown-caret"]
+        > *:last-child:not([data-sd-caret-hidden])::after,
+    .streaming-caret [data-sd-animate],
+    .streaming-caret [data-sd-animate-marker]::marker {
+        animation: none !important;
+    }
+
+    .before\:animate-grow-y::before {
         animation: none;
+    }
+
+    .animate-ray {
+        animation: none;
+        opacity: 0.6;
     }
 
     .text-sweep {
@@ -103,7 +494,31 @@
         color: var(--muted-foreground);
     }
 
-    .grid-collapse {
-        transition: none;
+    .grid-collapse,
+    .press-scale,
+    .swap-layer,
+    .swap-turn,
+    .status-swap > svg,
+    .menu-morph,
+    .menu-morph [data-part] {
+        transition: none !important;
+    }
+
+    .swap-turn:not([data-on="true"]) {
+        filter: none;
+        transform: none;
+    }
+
+    .status-swap[data-done="true"] > [data-part="check"],
+    .status-swap[data-done="true"] > [data-part="check"] path {
+        animation: none;
+    }
+
+    .status-swap > [data-part="check"] path {
+        stroke-dashoffset: 0;
+    }
+
+    .menu-morph [data-part="option"] {
+        transform: none !important;
     }
 }

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { useProvidersStore } from "@/features/providers/store";
+import { useProvidersStore } from "./store";
 
 export function useProviders() {
     const store = useProvidersStore();

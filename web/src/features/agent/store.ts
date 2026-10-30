@@ -1,10 +1,11 @@
 import { create } from "zustand";
 
-import { agentClient, conversationClient } from "@/data/rpc/clients";
-import { errorReason, errorText } from "@/data/rpc/errors";
+import { agentClient, conversationClient } from "@/rpc/clients";
+import { errorReason } from "@/rpc/errors";
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { i18n } from "@/i18n";
+import { errorText } from "@/i18n/error-text";
 
 import { type AgentItem, hydrateToolResults, protoToItem } from "./agent-item";
 import { createStreamReducer } from "./stream-reducer";

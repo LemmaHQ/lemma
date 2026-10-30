@@ -18,6 +18,10 @@
     "settings": {
         "tailwindcss": {
             "entryPoint": "src/index.css"
+        },
+        "shadcn": {
+            "componentImports": ["^@lemma/ui$"],
+            "themeImports": ["^@lemma/ui/"]
         }
     },
     "rules": {
@@ -79,16 +83,105 @@
         "shadcn/no-arbitrary-values": "error",
         "shadcn/no-inline-styles": "error",
         "shadcn/no-unknown-classes": "error",
-        "shadcn/require-static-classes": "error"
+        "shadcn/require-static-classes": "error",
+        "no-restricted-imports": [
+            "error",
+            {
+                "patterns": [
+                    {
+                        "group": ["@/features/*/**"],
+                        "message": "import a feature through its index, @/features/<name>"
+                    },
+                    {
+                        "group": [
+                            "@base-ui/*",
+                            "@animate-ui/*",
+                            "@streamdown/*",
+                            "class-variance-authority",
+                            "cn",
+                            "lucide-react",
+                            "motion",
+                            "motion/*",
+                            "shiki",
+                            "sonner",
+                            "streamdown",
+                            "use-stick-to-bottom"
+                        ],
+                        "message": "import UI building blocks from @lemma/ui"
+                    }
+                ]
+            }
+        ]
     },
     "overrides": [
         {
-            "files": ["src/components/**"],
+            "files": ["src/app/**", "src/features/**"],
             "rules": {
-                "shadcn/no-restyle": "off",
-                "shadcn/no-arbitrary-values": "off",
-                "jsx-a11y/prefer-tag-over-role": "off",
-                "shadcn/require-static-classes": "off"
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "group": ["@/features/*/**"],
+                                "message": "import a feature through its index, @/features/<name>"
+                            },
+                            {
+                                "group": [
+                                    "@base-ui/*",
+                                    "@animate-ui/*",
+                                    "@streamdown/*",
+                                    "class-variance-authority",
+                                    "cn",
+                                    "lucide-react",
+                                    "motion",
+                                    "motion/*",
+                                    "shiki",
+                                    "sonner",
+                                    "streamdown",
+                                    "use-stick-to-bottom"
+                                ],
+                                "message": "import UI building blocks from @lemma/ui"
+                            },
+                            {
+                                "group": ["@/rpc/*", "!@/rpc/errors"],
+                                "message": "only a feature's store.ts calls RPC; read the store instead"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["src/features/*/store.ts"],
+            "rules": {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "group": ["@/features/*/**"],
+                                "message": "import a feature through its index, @/features/<name>"
+                            },
+                            {
+                                "group": [
+                                    "@base-ui/*",
+                                    "@animate-ui/*",
+                                    "@streamdown/*",
+                                    "class-variance-authority",
+                                    "cn",
+                                    "lucide-react",
+                                    "motion",
+                                    "motion/*",
+                                    "shiki",
+                                    "sonner",
+                                    "streamdown",
+                                    "use-stick-to-bottom"
+                                ],
+                                "message": "import UI building blocks from @lemma/ui"
+                            }
+                        ]
+                    }
+                ]
             }
         },
         {

@@ -4,9 +4,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements conversation components as TypeScript source. Feature code imports controls from `@lemma/ui/components/<name>` and conversation components from `@lemma/ui/components/ai-elements/<name>`. The package owns their semantic theme, Streamdown styles, and `ui` i18next namespace; consuming applications register the locale JSON from `@lemma/ui/locales/<language>.json`.
+`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements conversation components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, together with `AnimateIcon`, `cn`, and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-Icons come from Animate UI's Lucide set under `@lemma/ui/icons/<name>`. An icon that the set does not provide uses the static icon of the same name from `lucide-react`. Brand logos come from `@lemma/ui/components/brand/<name>`.
+`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual conversation components, and `icons/` for Animate UI's Lucide set and the brand logos. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
 
 <a id="component-catalog"></a>
 
@@ -14,20 +14,21 @@ Icons come from Animate UI's Lucide set under `@lemma/ui/icons/<name>`. An icon 
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module                     | Use                                                      |
-| -------------------------- | -------------------------------------------------------- |
-| `badge`                    | Short status or count label                              |
-| `ai-elements/code-block`   | Syntax-highlighted code                                  |
-| `ai-elements/conversation` | Scroll-following transcript and scroll-to-latest control |
-| `ai-elements/message`      | Message layout, Markdown response, and message actions   |
-| `ai-elements/model-picker` | Provider-grouped model selection menu                    |
-| `ai-elements/prompt-input` | Message composer form, field, tools, and submit control  |
-| `ai-elements/reasoning`    | Collapsible reasoning text and streaming label           |
-| `ai-elements/shimmer`      | Sweeping text treatment for pending states               |
-| `ai-elements/suggestion`   | Suggested prompt button                                  |
-| `ai-elements/tool`         | Tool-call groups, status, arguments, and output          |
+| Module               | Use                                                         |
+| -------------------- | ----------------------------------------------------------- |
+| `ai/code-block`      | Syntax-highlighted code                                     |
+| `ai/conversation`    | Scroll-following transcript and scroll-to-latest control    |
+| `ai/message`         | Message layout, Markdown response, and message actions      |
+| `ai/model-picker`    | Provider-grouped model selection menu                       |
+| `ai/prompt-input`    | Message composer form, field, tools, and submit control     |
+| `ai/reasoning`       | Collapsible reasoning text and streaming label              |
+| `ai/shimmer`         | Sweeping text treatment for pending states                  |
+| `ai/suggestion`      | Suggested prompt button                                     |
+| `ai/thinking-loader` | Pending indicator before the first reply token              |
+| `ai/tool`            | Tool-call groups, status, arguments, and output             |
+| `primitives/reveal`  | Height and opacity transition for content toggled by `open` |
 
-`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls. Import `@lemma/ui/hooks/use-sidebar` for the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
+`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
 Two pairs are easy to confuse:
 
@@ -36,25 +37,45 @@ Two pairs are easy to confuse:
 
 ## Motion utilities
 
-`src/styles/motion.css` defines the shared animation classes. `globals.css` imports them for package consumers, and the web CSS entry imports `@lemma/ui/motion.css` directly.
+`src/styles/` holds only the token center `tokens.css` and the motion center `motion.css`; `index.css`, exported as `@lemma/ui/styles.css`, loads both with Tailwind. Components write static styling as Tailwind classes, and every keyframe and every transition that a utility class cannot express lives in `motion.css`.
 
-| Class             | Behavior                                                            |
-| ----------------- | ------------------------------------------------------------------- |
-| `animate-blur-in` | Reveals content from a slight vertical offset and blur              |
-| `animate-draw`    | Draws an SVG path whose `pathLength` is `1`, after an 80 ms delay   |
-| `animate-pop`     | Reveals content with a spring-like scale transition                 |
-| `text-sweep`      | Sweeps a theme-colored highlight across text                        |
-| `grid-collapse`   | Transitions between `0fr` and `1fr`; set `data-open="true"` to open |
+Tailwind utilities, usable with variants such as `before:`:
 
-The motion tokens also provide `duration-reveal`, `duration-settle`, `ease-morph`, and `ease-spring`. Every shared animation has a reduced-motion fallback that stops movement and looping while preserving the final state.
+| Class               | Behavior                                                            |
+| ------------------- | ------------------------------------------------------------------- |
+| `animate-blur-in`   | Reveals content from a slight vertical offset and blur              |
+| `animate-draw`      | Draws an SVG path whose `pathLength` is `1`, after an 80 ms delay   |
+| `animate-pop`       | Reveals content with a spring-like scale transition                 |
+| `animate-card-in`   | Lifts a card in from a slight offset and scale                      |
+| `animate-grow-y`    | Grows an element downward from zero height                          |
+| `animate-morph-in`  | Brings changed text up from below with a blur                       |
+| `animate-ray`       | Fades a spinner ray in a loop, offset by `--ray-index`              |
+| `animate-spin-loop` | Spins continuously                                                  |
+| `animate-spin-once` | Spins one turn; remount the element to spin again                   |
+| `text-sweep`        | Sweeps a theme-colored highlight across text                        |
+| `grid-collapse`     | Transitions between `0fr` and `1fr`; set `data-open="true"` to open |
+
+Motion classes, which coordinate state attributes and override a component's own transition:
+
+| Class              | Behavior                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `press-scale`      | Shrinks a button while pressed, to `--press-scale` (default `0.96`)                                                                                   |
+| `swap-layer`       | Cross-fades stacked layers: the one with `data-on="true"` shows, the others shrink and blur away                                                      |
+| `swap-turn`        | Like `swap-layer`, with a slight turn                                                                                                                 |
+| `status-swap`      | Turns the `data-part="spinner"` child into the drawn `data-part="check"` child once `data-done="true"`                                                |
+| `menu-morph`       | Grows a menu popup out of its trigger and staggers its `data-part="group"` and `"option"` children, a sliding `"fill"` highlight, and `"check"` marks |
+| `stagger-children` | Lifts the children in one after another                                                                                                               |
+| `streaming-caret`  | Draws a pulsing caret after Streamdown's last block while it streams                                                                                  |
+
+The motion tokens also provide `duration-reveal`, `duration-settle`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
 
 ## Conventions
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
-- Package-internal component and icon imports use the `#components/` and `#icons/` aliases. Public consumers use the `@lemma/ui` exports.
-- User-visible text, including accessible names, uses `useTranslation("ui")`; English and Chinese locale files carry the same keys. Colors come from theme roles, never the Tailwind palette.
+- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases. Public consumers import from `@lemma/ui`.
+- Components hold no text: every visible string and accessible name arrives through a required prop, such as `closeLabel`, `label`, or a typed `labels` object, and text that embeds a value the component computes arrives as a function, such as `thoughtFor(duration)`. Colors come from theme roles, never the Tailwind palette.
 - The `src/components/**` override in [`.oxlintrc.json`](.oxlintrc.json) lets components restyle composed controls, use arbitrary values for geometry, build classes with `cva`, and set ARIA roles directly.
 
 ## Adding a component
 
-Run `npx shadcn add <name>` from `packages/ui/` and bring the new file under the rules above: import `cn` from `cn`, drop `"use client"`, delete the parts Lemma does not use, move strings into the `ui` locale files, and replace palette colors with theme roles. Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory. Color and motion variables belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`. Then add the module to the catalog above. Existing components change by editing them; the CLI never overwrites them.
+Run `npx shadcn add <name>` from `packages/ui/`; the CLI writes into `src/components/primitives/`. Bring the new file under the rules above: import `cn` from `cn`, drop `"use client"`, delete the parts Lemma does not use, turn its strings into props, and replace palette colors with theme roles. Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory and move the generated file into `src/components/icons/`. Color and motion values shared with the desktop and Android clients belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`; tokens only the web uses belong in `src/styles/tokens.css`. Then export the module from `src/index.ts` and add it to the catalog above. Existing components change by editing them; the CLI never overwrites them.

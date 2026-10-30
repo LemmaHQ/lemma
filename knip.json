@@ -20,15 +20,11 @@
             "ignoreDependencies": [
                 "@bufbuild/protoc-gen-es",
                 "prettier-plugin-tailwindcss"
-            ],
-            "ignoreIssues": {
-                "src/components/ui/**": ["exports"],
-                "src/components/ai-elements/**": ["exports"]
-            }
+            ]
         },
         "packages/ui": {
             "ignoreIssues": {
-                "src/components/**": ["exports"]
+                "src/components/icons/**": ["exports", "types"]
             }
         }
     }

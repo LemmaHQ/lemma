@@ -3,18 +3,15 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import {
+    Button,
     PromptInput,
     PromptInputBody,
     PromptInputFooter,
     PromptInputSubmit,
     PromptInputTextarea,
     PromptInputTools,
-} from "@lemma/ui/components/ai-elements/prompt-input";
-import { Button } from "@lemma/ui/components/button";
-import type {
-    ModelOption,
-    ModelSelection,
-} from "@/features/agent/useModelSelection";
+} from "@lemma/ui";
+import type { ModelOption, ModelSelection } from "../useModelSelection";
 
 import { ModelSwitcher } from "./ModelSwitcher";
 

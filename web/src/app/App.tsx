@@ -1,7 +1,6 @@
 import { ThemeProvider } from "next-themes";
 
-import { THEME_STORAGE_KEY } from "@/features/preferences/theme";
-import { PlatformProvider } from "@/platform/PlatformProvider";
+import { THEME_STORAGE_KEY } from "@/features/preferences";
 
 import { AppToaster } from "./AppToaster";
 import { AppTooltipProvider } from "./AppTooltipProvider";
@@ -17,14 +16,12 @@ export function App() {
             storageKey={THEME_STORAGE_KEY}
             disableTransitionOnChange
         >
-            <PlatformProvider>
-                <TitleBar>
-                    <AppTooltipProvider>
-                        <AppRoutes />
-                        <AppToaster />
-                    </AppTooltipProvider>
-                </TitleBar>
-            </PlatformProvider>
+            <TitleBar>
+                <AppTooltipProvider>
+                    <AppRoutes />
+                    <AppToaster />
+                </AppTooltipProvider>
+            </TitleBar>
         </ThemeProvider>
     );
 }

@@ -39,7 +39,7 @@ These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, an
 - **Rust:** a leaf file is named after its primary item; a module with submodules holds only `mod` declarations and re-exports ([crates/AGENTS.md](../../../crates/AGENTS.md#code)).
 - **TypeScript:** a file exports one primary component, hook, store, or closely related type group. Types used by one module stay in it.
 - **Kotlin:** a file holding one top-level class, object, interface, or Composable is named after it; a file of several top-level declarations takes a PascalCase name that describes them. A data type used by several files gets its own file.
-- **No re-export-only modules** in TypeScript: import from the defining module. A package entry named in `package.json` `exports` is the exception.
+- **No re-export-only modules** in TypeScript: import from the defining module. A package entry named in `package.json` `exports` or a web feature's public `index.ts` is the exception.
 
 ### Order inside a file
 

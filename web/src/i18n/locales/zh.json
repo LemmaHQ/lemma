@@ -1,7 +1,35 @@
 {
     "agent": {
         "abortedNotice": "生成已停止。",
-        "stop": "停止生成"
+        "stop": "停止生成",
+        "thinking": "已思考",
+        "thinkingInProgress": "正在思考…",
+        "thinkingPending": "正在思考",
+        "thoughtFor": "思考了 {{duration}}",
+        "toolCall": {
+            "announce": {
+                "error": "{{name}} 失败：{{error}}",
+                "running": "{{name}} 正在运行",
+                "success": "{{name}} 已完成"
+            },
+            "arguments": "参数",
+            "copied": "已复制",
+            "copyArguments": "复制参数",
+            "copyResult": "复制结果",
+            "errorFallback": "工具调用失败",
+            "failed": "失败",
+            "output": "结果",
+            "showAll": "展开全部",
+            "showLess": "收起",
+            "waiting": "等待结果…"
+        },
+        "toolGroup": {
+            "failed": "{{count}} 个失败",
+            "running_one": "正在使用 {{count}} 个工具…",
+            "running_other": "正在使用 {{count}} 个工具…",
+            "used_one": "使用了 {{count}} 个工具",
+            "used_other": "使用了 {{count}} 个工具"
+        }
     },
     "auth": {
         "changeAccount": "更换",
@@ -26,6 +54,7 @@
     "common": {
         "appName": "Lemma",
         "cancel": "取消",
+        "close": "关闭",
         "copied": "已复制",
         "copy": "复制",
         "delete": "删除",
@@ -44,7 +73,10 @@
         "noModelAction": "前往设置",
         "noModelHint": "先在设置中配置服务商与模型。",
         "noModelPlaceholder": "配置服务商与模型后开始对话…",
+        "noProvider": "暂无服务商",
         "regenerate": "重新生成",
+        "scrollToBottom": "滚动到最新",
+        "selectModel": "选择模型",
         "send": "发送",
         "suggestion1": "逐步解释一个概念",
         "suggestion2": "帮我排查一个问题",
@@ -75,6 +107,10 @@
     },
     "language": {
         "toggle": "语言"
+    },
+    "passwordInput": {
+        "hide": "隐藏",
+        "show": "显示"
     },
     "providers": {
         "addModel": "添加模型",
@@ -156,8 +192,10 @@
         "collapse": "收起侧边栏",
         "expand": "展开侧边栏",
         "newConversation": "新会话",
+        "resize": "调整侧边栏宽度",
         "signOut": "退出登录",
-        "startConversation": "新建会话"
+        "startConversation": "新建会话",
+        "title": "侧边栏"
     },
     "theme": {
         "dark": "深色",

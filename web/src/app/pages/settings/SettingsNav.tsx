@@ -1,15 +1,15 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
 import {
+    AnimateIcon,
+    BotIcon,
+    PaletteIcon,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { BotIcon } from "@lemma/ui/icons/bot";
-import { PaletteIcon } from "@lemma/ui/icons/palette";
+    useSidebar,
+} from "@lemma/ui";
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch } from "react-router";

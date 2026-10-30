@@ -1,13 +1,14 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
     Conversation,
     ConversationContent,
     ConversationFollow,
     ConversationScrollButton,
-} from "@lemma/ui/components/ai-elements/conversation";
-import { ScrollArea } from "@lemma/ui/components/scroll-area";
-import type { AgentItem } from "@/features/agent/agent-item";
+    ScrollArea,
+} from "@lemma/ui";
+import type { AgentItem } from "../agent-item";
 
 import { EmptyState } from "./EmptyState";
 import { MessageItem } from "./MessageItem";
@@ -27,6 +28,7 @@ export function MessageList({
     onPickSuggestion,
     onRegenerate,
 }: MessageListProps) {
+    const { t } = useTranslation();
     const lastAssistantId = useMemo(
         () => items.findLast((m) => m.role === "assistant")?.id ?? null,
         [items],
@@ -56,7 +58,7 @@ export function MessageList({
 
     return (
         <Conversation key={conversationId}>
-            <ConversationContent className="mx-auto w-full max-w-3xl space-y-8 px-6 pt-4 pb-6">
+            <ConversationContent>
                 {items.map((m) => (
                     <MessageItem
                         key={m.id}
@@ -67,7 +69,9 @@ export function MessageList({
                     />
                 ))}
             </ConversationContent>
-            <ConversationScrollButton />
+            <ConversationScrollButton
+                label={t("conversation.scrollToBottom")}
+            />
             <ConversationFollow trigger={lastUserId} />
         </Conversation>
     );

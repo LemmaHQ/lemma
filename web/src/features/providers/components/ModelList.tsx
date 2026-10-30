@@ -1,33 +1,29 @@
-import { FieldError } from "@lemma/ui/components/field";
 import {
+    Button,
+    CheckIcon,
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    FieldError,
     InputGroup,
     InputGroupAddon,
     InputGroupButton,
     InputGroupInput,
-} from "@lemma/ui/components/input-group";
-import { CheckIcon } from "@lemma/ui/icons/check";
-import { PlusIcon } from "@lemma/ui/icons/plus";
-import { RefreshCwIcon } from "@lemma/ui/icons/refresh-cw";
-import { SearchIcon } from "@lemma/ui/icons/search";
-import { XIcon } from "@lemma/ui/icons/x";
-import { Fragment, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { Button } from "@lemma/ui/components/button";
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-} from "@lemma/ui/components/empty";
-import {
     Item,
     ItemActions,
     ItemContent,
     ItemGroup,
     ItemSeparator,
     ItemTitle,
-} from "@lemma/ui/components/item";
-import { errorText } from "@/data/rpc/errors";
+    PlusIcon,
+    RefreshCwIcon,
+    SearchIcon,
+    XIcon,
+} from "@lemma/ui";
+import { Fragment, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { errorText } from "@/i18n/error-text";
 
 import { FetchModelsDialog } from "./FetchModelsDialog";
 

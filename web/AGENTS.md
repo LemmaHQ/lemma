@@ -18,21 +18,24 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Layout
 
-- `src/app/` holds routing, pages, and the application shell; `src/features/<domain>/` holds each domain's components, store, and hooks.
-- `src/data/rpc/` creates the ConnectRPC clients and maps errors.
-- `src/platform/` selects the browser or desktop adapter; code outside it reaches desktop capabilities only through that adapter.
-- Shared shadcn controls and AI Elements chat components live in `@lemma/ui`; feature code imports them from `@lemma/ui/components/<name>` and `@lemma/ui/components/ai-elements/<name>` ([component README](../packages/ui/README.md)).
-- User-facing text goes through i18next; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
+- Dependencies point one way: `src/platform/` → `src/rpc/` → `src/features/` → `src/app/`. `src/i18n/` holds the locale files and `error-text.ts`, which turns a failed request into localized text.
+- `src/platform/` exports the `platform` adapter for the browser or the desktop engine; code outside it reaches desktop capabilities only through that adapter.
+- `src/rpc/` holds the transport, the ConnectRPC clients, the stored credentials, and `errors.ts`, which reads the `ErrorReason` of a failure.
+- `src/features/<domain>/` follows one layout: `index.ts` exports the feature's public components and hooks, `store.ts` is the only module that calls RPC and turns proto messages into view types, logic modules and their tests sit beside it, and every component lives in `components/`. Code outside a feature imports it through `@/features/<domain>`.
+- `src/app/` holds routing, the signed-in shell, the auth frame, and pages that only arrange feature components.
+- oxlint enforces the boundaries: in `src/app/` and `src/features/`, an import past a feature's `index.ts`, an import of `src/rpc/` other than `errors.ts` outside a `store.ts`, and any import of the libraries beneath `@lemma/ui` fail `just web-lint-check`.
+- Shared shadcn controls and AI Elements chat components live in `@lemma/ui`; feature code imports them, the icons, and `AnimateIcon`, `cn`, and `toast` from `@lemma/ui` alone ([component README](../packages/ui/README.md)).
+- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
 
 ## Styling
 
 - **Feature code uses only the semantic utilities of the shadcn theme,** with no hex color, no arbitrary value, and no `dark:` variant; the theme colors come from [design/tokens.json](../design/README.md).
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes, and across `src/` also `dark:` variants, Tailwind's numeric durations, default easings, shadow scale, and black and white colors; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
-- **Controls reuse `@lemma/ui/components/` and `@lemma/ui/components/ai-elements/`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
+- **Controls reuse `@lemma/ui`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
 
 ## Generated files
 
-`src/gen/` comes from `proto/` through the `gen:proto` script, and `src/tokens.css` comes from [design/tokens.json](../design/README.md) through the `gen:tokens` script. The `gen` script runs both, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores both outputs; edit `proto/` or `design/tokens.json`.
+`src/gen/` comes from `proto/` through the `gen:proto` script, and the `gen:tokens` script writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, which `src/index.css` loads through `@lemma/ui/styles.css`. The `gen` script runs both, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores both outputs; edit `proto/` or `design/tokens.json`.
 
 ## Commands
 

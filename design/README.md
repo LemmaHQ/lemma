@@ -16,12 +16,11 @@ English | [中文](README.zh.md)
 
 ## Output
 
-The generator writes four files, all ignored by Git:
+The generator writes three files, all ignored by Git:
 
 | File                                                            | Content                                                                                     | Consumer                                                     |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `web/src/tokens.css`                                            | One CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `web/src/index.css` imports it                               |
-| `packages/ui/src/styles/tokens.css`                             | The same content as `web/src/tokens.css`                                                    | `packages/ui/src/styles/globals.css` imports it              |
+| `packages/ui/src/styles/tokens.gen.css`                         | One CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `packages/ui/src/styles/tokens.css` imports it               |
 | `desktop/src/gen/theme-colors.ts`                               | The background, sidebar, and foreground of each theme                                       | `desktop/src/main.ts` colors the titlebar and window from it |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                     | `theme/Scheme.kt` maps it onto the app's color roles         |
 

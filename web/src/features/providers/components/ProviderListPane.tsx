@@ -1,34 +1,29 @@
 import {
+    AnimateIcon,
     Avatar,
     AvatarBadge,
     AvatarFallback,
-} from "@lemma/ui/components/avatar";
-import { Button } from "@lemma/ui/components/button";
-import {
+    Button,
+    ChevronDownIcon,
+    ChevronRightIcon,
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@lemma/ui/components/collapsible";
-import {
     InputGroup,
     InputGroupAddon,
     InputGroupInput,
-} from "@lemma/ui/components/input-group";
-import { ScrollArea } from "@lemma/ui/components/scroll-area";
-import { Skeleton } from "@lemma/ui/components/skeleton";
-import type { Provider } from "@/gen/lemma/v1/provider_pb";
-import { AnimateIcon } from "@animate-ui/react/icons";
-import {
+    PlusIcon,
+    ScrollArea,
+    SearchIcon,
+    Skeleton,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
-import { ChevronDownIcon } from "@lemma/ui/icons/chevron-down";
-import { ChevronRightIcon } from "@lemma/ui/icons/chevron-right";
-import { PlusIcon } from "@lemma/ui/icons/plus";
-import { SearchIcon } from "@lemma/ui/icons/search";
+} from "@lemma/ui";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import type { Provider } from "@/gen/lemma/v1/provider_pb";
 
 interface ProviderListPaneProps {
     providers: Provider[];

@@ -1,0 +1,91 @@
+import type { Interceptor } from "@connectrpc/connect";
+import { Code, ConnectError, createClient } from "@connectrpc/connect";
+import { createConnectTransport } from "@connectrpc/connect-web";
+
+import { AuthService } from "@/gen/lemma/v1/auth_pb";
+import { getPlatform } from "@/platform/platform";
+import {
+    clearTokens,
+    getAccessToken,
+    getRefreshToken,
+    setTokens,
+} from "@/rpc/credentials";
+
+const platform = getPlatform();
+const cookieMode = platform.auth.cookieMode;
+
+const bareTransport = createConnectTransport({
+    baseUrl: platform.baseUrl,
+    fetch: platform.fetch,
+});
+
+async function doRefresh(): Promise<boolean> {
+    const auth = createClient(AuthService, bareTransport);
+    try {
+        if (cookieMode) {
+            await auth.refresh({});
+            return true;
+        }
+        const refreshToken = getRefreshToken();
+        if (refreshToken === null || refreshToken === "") {
+            return false;
+        }
+        const res = await auth.refresh({ refreshToken });
+        if (res.tokens === undefined) {
+            return false;
+        }
+        setTokens(res.tokens.accessToken, res.tokens.refreshToken);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+function tryRefresh(): Promise<boolean> {
+    refreshPromise ??= doRefresh().finally(() => {
+        refreshPromise = null;
+    });
+    return refreshPromise;
+}
+
+const authInterceptor: Interceptor = (next) => async (req) => {
+    if (!cookieMode) {
+        const token = getAccessToken();
+        if (token !== null && token !== "") {
+            req.header.set("Authorization", `Bearer ${token}`);
+        }
+    }
+    try {
+        return await next(req);
+    } catch (e) {
+        if (
+            !(e instanceof ConnectError) ||
+            e.code !== Code.Unauthenticated ||
+            req.url.includes("AuthService/")
+        ) {
+            throw e;
+        }
+        if (!(await tryRefresh())) {
+            if (!cookieMode) {
+                clearTokens();
+            }
+            window.location.href = "/signin";
+            throw e;
+        }
+        if (!cookieMode) {
+            const fresh = getAccessToken();
+            if (fresh !== null && fresh !== "") {
+                req.header.set("Authorization", `Bearer ${fresh}`);
+            }
+        }
+        return await next(req);
+    }
+};
+
+export const transport = createConnectTransport({
+    baseUrl: platform.baseUrl,
+    fetch: platform.fetch,
+    interceptors: [authInterceptor],
+});

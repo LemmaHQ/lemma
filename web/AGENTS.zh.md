@@ -18,21 +18,24 @@
 
 ## 布局
 
-- `src/app/` 存放路由、页面与应用外壳；`src/features/<domain>/` 存放各领域的组件、store 与 hook。
-- `src/data/rpc/` 创建 ConnectRPC 客户端并映射错误。
-- `src/platform/` 选择浏览器或桌面适配器；它之外的代码只通过该适配器使用桌面能力。
-- 共享 shadcn 控件与 AI Elements 聊天组件位于 `@lemma/ui`；功能代码从 `@lemma/ui/components/<name>` 与 `@lemma/ui/components/ai-elements/<name>` 导入（[组件 README](../packages/ui/README.zh.md)）。
-- 面向用户的文本经由 i18next；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。
+- 依赖只朝一个方向：`src/platform/` → `src/rpc/` → `src/features/` → `src/app/`。`src/i18n/` 存放语言文件与 `error-text.ts`，后者把失败的请求转成本地化文字。
+- `src/platform/` 导出浏览器或桌面引擎的 `platform` 适配器；它之外的代码只通过该适配器使用桌面能力。
+- `src/rpc/` 存放传输层、ConnectRPC 客户端、已保存的凭据，以及读取失败原因 `ErrorReason` 的 `errors.ts`。
+- `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
+- `src/app/` 存放路由、登录后的外壳、登录页框架，以及只负责编排功能组件的页面。
+- oxlint 负责守住边界：在 `src/app/` 与 `src/features/` 中，越过功能 `index.ts` 的导入、在 `store.ts` 之外导入 `src/rpc/` 中 `errors.ts` 以外的模块、导入 `@lemma/ui` 底层的库，都会让 `just web-lint-check` 失败。
+- 共享 shadcn 控件与 AI Elements 聊天组件位于 `@lemma/ui`；功能代码只从 `@lemma/ui` 导入它们、图标以及 `AnimateIcon`、`cn` 与 `toast`（[组件 README](../packages/ui/README.zh.md)）。
+- 面向用户的文本经由 i18next，包括 `@lemma/ui` 组件以属性接收的文字；`src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键，由 `src/i18n/locales.test.ts` 检查。
 
 ## 样式
 
 - **功能代码只使用 shadcn 主题的语义工具类，**不写十六进制颜色、任意值或 `dark:` 变体；主题颜色来自 [design/tokens.json](../design/README.zh.md)。
 - **工具负责执行类名规则：** Prettier 对 Tailwind 类名排序；oxlint-tailwindcss 拒绝冲突、矛盾、重复与已弃用的类名，并在整个 `src/` 中拒绝 `dark:` 变体、Tailwind 的数字时长、默认缓动、阴影刻度以及黑白颜色；`@shadcn/lint` 拒绝未知类名、原始颜色、任意值、内联样式与动态类名字符串，也拒绝改写 shadcn 组件的颜色、间距、字体排印或形状。宽度、flex、外边距等布局类仍可用在组件上。
-- **控件复用 `@lemma/ui/components/` 与 `@lemma/ui/components/ai-elements/`；** 先查阅[组件目录](../packages/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
+- **控件复用 `@lemma/ui`；** 先查阅[组件目录](../packages/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
 
 ## 生成文件
 
-`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成，`src/tokens.css` 由 [design/tokens.json](../design/README.zh.md) 经 `gen:tokens` 脚本生成；`gen` 脚本运行两者，`dev`、`build`、`lint` 与 `test` 会先运行它，`format` 先运行 `gen:tokens`。两者都被 Git 忽略；修改 `proto/` 或 `design/tokens.json`。
+`src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成；`gen:tokens` 脚本把 [design/tokens.json](../design/README.zh.md) 的主题变量写入 `@lemma/ui`，`src/index.css` 通过 `@lemma/ui/styles.css` 加载它们。`gen` 脚本运行两者，`dev`、`build`、`lint` 与 `test` 会先运行它，`format` 先运行 `gen:tokens`。两者都被 Git 忽略；修改 `proto/` 或 `design/tokens.json`。
 
 ## 命令
 

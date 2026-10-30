@@ -16,12 +16,11 @@
 
 ## 输出
 
-生成器写出四个文件，均被 Git 忽略：
+生成器写出三个文件，均被 Git 忽略：
 
 | 文件                                                            | 内容                                                                                   | 使用方                                         |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `web/src/tokens.css`                                            | `:root` 中每个动效 token 一个 CSS 变量，`:root` 与 `.dark` 中每个颜色角色一个 CSS 变量 | `web/src/index.css` 导入它                     |
-| `packages/ui/src/styles/tokens.css`                             | 内容与 `web/src/tokens.css` 相同                                                       | `packages/ui/src/styles/globals.css` 导入它    |
+| `packages/ui/src/styles/tokens.gen.css`                         | `:root` 中每个动效 token 一个 CSS 变量，`:root` 与 `.dark` 中每个颜色角色一个 CSS 变量 | `packages/ui/src/styles/tokens.css` 导入它     |
 | `desktop/src/gen/theme-colors.ts`                               | 每套主题的背景、侧边栏与前景色                                                         | `desktop/src/main.ts` 据此设置标题栏与窗口颜色 |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | 以 Compose `Color` 表示的每个色板条目                                                  | `theme/Scheme.kt` 把它映射到应用的颜色角色     |
 

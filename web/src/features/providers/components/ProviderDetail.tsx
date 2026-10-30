@@ -1,10 +1,14 @@
-import { FieldError, FieldGroup } from "@lemma/ui/components/field";
+import {
+    Avatar,
+    AvatarFallback,
+    FieldError,
+    FieldGroup,
+    Switch,
+} from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Avatar, AvatarFallback } from "@lemma/ui/components/avatar";
-import { Switch } from "@lemma/ui/components/switch";
-import { errorText } from "@/data/rpc/errors";
+import { errorText } from "@/i18n/error-text";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 
 import {

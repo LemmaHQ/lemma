@@ -20,8 +20,7 @@ dist-ssr
 *.local
 # Generated code and design tokens
 web/src/gen
-web/src/tokens.css
-packages/ui/src/styles/tokens.css
+packages/ui/src/styles/tokens.gen.css
 desktop/src/gen/
 
 # Desktop (Electron Forge)

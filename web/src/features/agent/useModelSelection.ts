@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { useProviders } from "@/features/providers/useProviders";
+import { useProviders } from "@/features/providers";
 
 const MODEL_KEY = "lemma.model";
 

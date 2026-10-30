@@ -7,10 +7,10 @@ import {
     getRefreshToken,
     setStoredUserId,
     setTokens,
-} from "@/data/credentials";
-import { authClient } from "@/data/rpc/clients";
+} from "@/rpc/credentials";
+import { authClient } from "@/rpc/clients";
 import type { AuthTokens, User } from "@/gen/lemma/v1/auth_pb";
-import { getPlatform } from "@/platform/instance";
+import { getPlatform } from "@/platform/platform";
 
 const cookieMode = getPlatform().auth.cookieMode;
 
@@ -35,6 +35,7 @@ interface AuthState {
     user: User | null;
     ready: boolean;
     bootstrap: () => Promise<void>;
+    checkAccount: (login: string) => Promise<boolean>;
     login: (identifier: string, password: string) => Promise<void>;
     signup: (
         username: string,
@@ -75,6 +76,10 @@ export const useAuth = create<AuthState>()((set) => ({
             }
         }
         set({ ready: true });
+    },
+
+    checkAccount: async (login) => {
+        return (await authClient.checkAccount({ login })).exists;
     },
 
     login: async (identifier, password) => {

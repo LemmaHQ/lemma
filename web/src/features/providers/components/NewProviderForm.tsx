@@ -1,24 +1,23 @@
 import {
+    Avatar,
+    AvatarFallback,
     Field,
     FieldContent,
     FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
-} from "@lemma/ui/components/field";
-import { Input } from "@lemma/ui/components/input";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { Avatar, AvatarFallback } from "@lemma/ui/components/avatar";
-import {
+    Input,
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@lemma/ui/components/select";
-import { errorText } from "@/data/rpc/errors";
+} from "@lemma/ui";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { errorText } from "@/i18n/error-text";
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
 
 import { isBaseUrlValid, type ConnectionValues } from "../connection";

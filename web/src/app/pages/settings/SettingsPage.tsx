@@ -1,11 +1,11 @@
-import { Navigate, useParams } from "react-router";
+import { ScrollArea } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
+import { Navigate, useParams } from "react-router";
 
 import { ShellSidebar } from "@/app/shell/ShellSidebar";
 import { useShellTitle } from "@/app/shell/useShellTitle";
-import { ScrollArea } from "@lemma/ui/components/scroll-area";
-import { AppearancePanel } from "@/features/preferences/AppearancePanel";
-import { ProvidersPanel } from "@/features/providers/ProvidersPanel";
+import { AppearancePanel } from "@/features/preferences";
+import { ProvidersPanel } from "@/features/providers";
 
 import { parseSettingsSection } from "./sections";
 import { SettingsNav } from "./SettingsNav";

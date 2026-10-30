@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
-import { AuthPanel } from "@/app/auth/AuthPanel";
-import { SignInForm, type SignInStep } from "@/features/auth/SignInForm";
-import type { SignUpPrefill } from "@/features/auth/SignUpForm";
+import {
+    AuthPanel,
+    SignInForm,
+    type SignInStep,
+    type SignUpPrefill,
+} from "@/features/auth";
 
 export function SignInPage() {
     const { t } = useTranslation();

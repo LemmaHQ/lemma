@@ -2,10 +2,11 @@ import {
     Reasoning,
     ReasoningContent,
     ReasoningTrigger,
-} from "@lemma/ui/components/ai-elements/reasoning";
-import { ThinkingLoader } from "@lemma/ui/components/ai-elements/thinking-loader";
+    ThinkingLoader,
+} from "@lemma/ui";
+import { useTranslation } from "react-i18next";
 
-import type { AgentItem } from "@/features/agent/agent-item";
+import type { AgentItem } from "../agent-item";
 
 interface MessageThinkingProps {
     message: AgentItem;
@@ -13,13 +14,14 @@ interface MessageThinkingProps {
 }
 
 export function MessageThinking({ message, streaming }: MessageThinkingProps) {
+    const { t } = useTranslation();
     const pending =
         streaming &&
         message.thinking === "" &&
         message.content === "" &&
         message.toolCalls.length === 0;
     if (pending) {
-        return <ThinkingLoader />;
+        return <ThinkingLoader label={t("agent.thinkingPending")} />;
     }
     if (message.thinking === "") {
         return null;
@@ -35,7 +37,14 @@ export function MessageThinking({ message, streaming }: MessageThinkingProps) {
             }
             startedAt={message.thinkingStartedAt}
         >
-            <ReasoningTrigger />
+            <ReasoningTrigger
+                labels={{
+                    thinking: t("agent.thinkingInProgress"),
+                    thought: t("agent.thinking"),
+                    thoughtFor: (duration) =>
+                        t("agent.thoughtFor", { duration }),
+                }}
+            />
             <ReasoningContent>{message.thinking}</ReasoningContent>
         </Reasoning>
     );

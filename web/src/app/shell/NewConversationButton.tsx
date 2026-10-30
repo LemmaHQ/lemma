@@ -1,20 +1,17 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
-import { Button } from "@lemma/ui/components/button";
 import {
+    AnimateIcon,
+    Button,
+    MessageCirclePlusIcon,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { MessageCirclePlusIcon } from "@lemma/ui/icons/message-circle-plus";
-import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-
-import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
+    useSidebar,
+} from "@lemma/ui";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 /** Opens the home view for a new conversation: a labeled card in the sidebar, or an icon in the shell toolbar when `compact`. */
 export function NewConversationButton({

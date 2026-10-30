@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 
-import { AuthPanel } from "@/app/auth/AuthPanel";
-import { SignUpForm, type SignUpPrefill } from "@/features/auth/SignUpForm";
+import { AuthPanel, SignUpForm, type SignUpPrefill } from "@/features/auth";
 
 function readPrefill(state: unknown): SignUpPrefill {
     if (typeof state !== "object" || state === null) {

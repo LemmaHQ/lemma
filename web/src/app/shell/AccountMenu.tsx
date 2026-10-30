@@ -1,5 +1,8 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
 import {
+    AnimateIcon,
+    Avatar,
+    AvatarFallback,
+    ChevronDownIcon,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
@@ -7,21 +10,17 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@lemma/ui/components/dropdown-menu";
-import {
+    LogOutIcon,
+    SettingsIcon,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { ChevronDownIcon } from "@lemma/ui/icons/chevron-down";
-import { LogOutIcon } from "@lemma/ui/icons/log-out";
-import { SettingsIcon } from "@lemma/ui/icons/settings";
+    useSidebar,
+} from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { Avatar, AvatarFallback } from "@lemma/ui/components/avatar";
-import { useAuth } from "@/features/auth/store";
+import { useAuth } from "@/features/auth";
 
 /** The signed-in account at the bottom of the sidebar, opening settings and sign-out. */
 export function AccountMenu() {

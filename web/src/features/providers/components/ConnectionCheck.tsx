@@ -1,25 +1,22 @@
-import { Button } from "@lemma/ui/components/button";
 import {
+    Button,
+    CheckIcon,
     Field,
     FieldContent,
     FieldDescription,
     FieldError,
     FieldLabel,
-} from "@lemma/ui/components/field";
-import { CheckIcon } from "@lemma/ui/icons/check";
-import { XIcon } from "@lemma/ui/icons/x";
-import { cn } from "cn";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@lemma/ui/components/select";
-import { errorText } from "@/data/rpc/errors";
+    XIcon,
+} from "@lemma/ui";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { errorText } from "@/i18n/error-text";
 
 type CheckResult =
     | { status: "checking" }
@@ -114,12 +111,13 @@ export function ConnectionCheck({
                 <Button
                     type="button"
                     variant="outline"
-                    className={cn(
-                        current?.status === "passed" &&
-                            "border-success text-success",
-                        current?.status === "failed" &&
-                            "border-destructive-border text-destructive",
-                    )}
+                    tone={
+                        current?.status === "passed"
+                            ? "success"
+                            : current?.status === "failed"
+                              ? "destructive"
+                              : "default"
+                    }
                     loading={current?.status === "checking"}
                     disabled={disabled || model === undefined}
                     onClick={() => void check()}

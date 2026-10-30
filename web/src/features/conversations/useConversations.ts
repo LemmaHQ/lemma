@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 
-import { useConversationsStore } from "@/features/conversations/store";
+import { useConversationsStore } from "./store";
+
+export function refreshConversations(): Promise<void> {
+    return useConversationsStore.getState().refresh();
+}
 
 export function useConversations() {
     const store = useConversationsStore();

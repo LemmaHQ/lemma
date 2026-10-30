@@ -23,6 +23,7 @@ const SNAKE_CASE = /^[a-z][a-z0-9_]*$/u;
 const PASCAL_CASE = /^[A-Z][A-Za-z0-9]*$/u;
 const KEBAB_CASE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 const HOOK = /^use[A-Z][A-Za-z0-9]*$/u;
+const FEATURE_ENTRY = /^web\/src\/features\/[^/]+\/index\.ts$/u;
 const COMMENT = /\/\*[\s\S]*?\*\/|\/\/.*$/gmu;
 const RE_EXPORT =
     /export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+["'][^"']+["']\s*;?/gu;
@@ -187,7 +188,8 @@ function checkScript(file: string, text: string, isTest: boolean): void {
     if (
         code.trim() !== "" &&
         code.replaceAll(RE_EXPORT, "").trim() === "" &&
-        !packageEntries.has(file)
+        !packageEntries.has(file) &&
+        !FEATURE_ENTRY.test(file)
     ) {
         problems.push(
             `${file}: re-export-only module; import from the defining modules instead`,

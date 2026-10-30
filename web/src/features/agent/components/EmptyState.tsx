@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
 
-import { Suggestion } from "@lemma/ui/components/ai-elements/suggestion";
-import { MessageCirclePlusIcon } from "@lemma/ui/icons/message-circle-plus";
 import {
     Empty,
     EmptyContent,
@@ -9,7 +7,9 @@ import {
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
-} from "@lemma/ui/components/empty";
+    MessageCirclePlusIcon,
+    Suggestion,
+} from "@lemma/ui";
 
 const SUGGESTION_KEYS = [
     "conversation.suggestion1",

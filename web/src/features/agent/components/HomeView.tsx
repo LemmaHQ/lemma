@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type {
-    ModelOption,
-    ModelSelection,
-} from "@/features/agent/useModelSelection";
+import type { ModelOption, ModelSelection } from "../useModelSelection";
 
 import { MessageComposer } from "./MessageComposer";
 

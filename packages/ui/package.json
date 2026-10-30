@@ -4,25 +4,19 @@
     "private": true,
     "description": "Lemma UI components",
     "type": "module",
+    "sideEffects": [
+        "*.css"
+    ],
     "imports": {
-        "#components/*": "./src/components/*.tsx",
+        "#primitives/*": "./src/components/primitives/*.tsx",
+        "#ai/*": "./src/components/ai/*.tsx",
+        "#icons/*": "./src/components/icons/*.tsx",
         "#hooks/*": "./src/hooks/*.ts",
-        "#icons/*": "./src/components/animate-ui/icons/*.tsx"
+        "#lib/*": "./src/lib/*.ts"
     },
     "exports": {
-        "./globals.css": "./src/styles/globals.css",
-        "./motion.css": "./src/styles/motion.css",
-        "./chat-composer.css": "./src/styles/chat-composer.css",
-        "./thinking.css": "./src/styles/thinking.css",
-        "./streamdown.css": "./src/styles/streamdown.css",
-        "./tool-call.css": "./src/styles/tool-call.css",
-        "./tokens.css": "./src/tokens/index.css",
-        "./components/ai-elements/*": "./src/components/ai-elements/*.tsx",
-        "./components/*": "./src/components/*.tsx",
-        "./hooks/*": "./src/hooks/*.ts",
-        "./lib/*": "./src/lib/*.ts",
-        "./icons/*": "./src/components/animate-ui/icons/*.tsx",
-        "./locales/*": "./src/i18n/locales/*"
+        ".": "./src/index.ts",
+        "./styles.css": "./src/styles/index.css"
     },
     "scripts": {
         "type-check": "tsc",
@@ -32,15 +26,15 @@
         "format:check": "prettier --check . --ignore-path ../../.gitignore"
     },
     "peerDependencies": {
-        "i18next": "^26.4.7",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
-        "react-i18next": "^17.0.21",
         "tailwindcss": "^4.3.3"
     },
     "dependencies": {
         "@animate-ui/react": "^2.3.0",
         "@base-ui/react": "^1.9.0",
+        "@streamdown/cjk": "^1.0.4",
+        "@streamdown/code": "^2.0.0",
         "class-variance-authority": "^0.7.1",
         "cn": "^0.5.0",
         "lucide-react": "^1.64.0",

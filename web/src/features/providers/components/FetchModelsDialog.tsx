@@ -1,15 +1,6 @@
-import { Button } from "@lemma/ui/components/button";
-import { Checkbox } from "@lemma/ui/components/checkbox";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from "@lemma/ui/components/input-group";
-import { SearchIcon } from "@lemma/ui/icons/search";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import {
+    Button,
+    Checkbox,
     Dialog,
     DialogClose,
     DialogContent,
@@ -17,7 +8,13 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@lemma/ui/components/dialog";
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+    SearchIcon,
+} from "@lemma/ui";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface FetchModelsDialogProps {
     /** Upstream models of the last fetch; `null` keeps the dialog closed. */
@@ -44,7 +41,10 @@ export function FetchModelsDialog({
                 }
             }}
         >
-            <DialogContent className="sm:max-w-md">
+            <DialogContent
+                className="sm:max-w-md"
+                closeLabel={t("common.close")}
+            >
                 <DialogHeader>
                     <DialogTitle>{t("providers.pickModelsTitle")}</DialogTitle>
                     <DialogDescription>

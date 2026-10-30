@@ -1,11 +1,11 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
 import {
+    AnimateIcon,
+    ArrowLeftIcon,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { ArrowLeftIcon } from "@lemma/ui/icons/arrow-left";
+    useSidebar,
+} from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
@@ -18,7 +18,7 @@ export function BackHomeButton() {
             <SidebarMenuItem>
                 <AnimateIcon animateOnHover asChild>
                     <SidebarMenuButton
-                        className="font-medium text-sidebar-foreground"
+                        variant="strong"
                         render={<NavLink to="/" end viewTransition />}
                         onClick={() => setOpenMobile(false)}
                     >

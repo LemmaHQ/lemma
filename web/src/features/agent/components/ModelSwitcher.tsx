@@ -1,9 +1,7 @@
-import { ModelPicker } from "@lemma/ui/components/ai-elements/model-picker";
+import { ModelPicker } from "@lemma/ui";
+import { useTranslation } from "react-i18next";
 
-import type {
-    ModelOption,
-    ModelSelection,
-} from "@/features/agent/useModelSelection";
+import type { ModelOption, ModelSelection } from "../useModelSelection";
 
 interface ModelSwitcherProps {
     selection: ModelSelection | null;
@@ -16,11 +14,14 @@ export function ModelSwitcher({
     options,
     onSelect,
 }: ModelSwitcherProps) {
+    const { t } = useTranslation();
     return (
         <ModelPicker
             selection={selection}
             options={options}
             onSelect={onSelect}
+            label={t("conversation.selectModel")}
+            placeholder={t("conversation.noProvider")}
         />
     );
 }

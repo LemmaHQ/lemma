@@ -1,12 +1,11 @@
-import { SidebarTrigger } from "@lemma/ui/components/sidebar";
-import { useSidebar } from "@lemma/ui/hooks/use-sidebar";
-import { useTranslation } from "react-i18next";
-
 import {
+    SidebarTrigger,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
+    useSidebar,
+} from "@lemma/ui";
+import { useTranslation } from "react-i18next";
 
 /** Collapses or expands the sidebar, labeled with the action it takes next. */
 export function SidebarToggleButton() {

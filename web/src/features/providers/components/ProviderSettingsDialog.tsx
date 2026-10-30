@@ -1,23 +1,6 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
-import { Button } from "@lemma/ui/components/button";
 import {
-    Field,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@lemma/ui/components/field";
-import { Input } from "@lemma/ui/components/input";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@lemma/ui/components/tooltip";
-import { SettingsIcon } from "@lemma/ui/icons/settings";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import {
+    AnimateIcon,
+    Button,
     Dialog,
     DialogClose,
     DialogContent,
@@ -25,8 +8,21 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@lemma/ui/components/dialog";
-import { errorText } from "@/data/rpc/errors";
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    Input,
+    SettingsIcon,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@lemma/ui";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { errorText } from "@/i18n/error-text";
 import type { Provider } from "@/gen/lemma/v1/provider_pb";
 
 interface ProviderSettingsDialogProps {
@@ -89,7 +85,7 @@ export function ProviderSettingsDialog({
                 </AnimateIcon>
                 <TooltipContent>{t("common.settings")}</TooltipContent>
             </Tooltip>
-            <DialogContent>
+            <DialogContent closeLabel={t("common.close")}>
                 <DialogHeader>
                     <DialogTitle>{t("providers.settingsTitle")}</DialogTitle>
                 </DialogHeader>

@@ -4,9 +4,9 @@ import {
     FieldDescription,
     FieldError,
     FieldLabel,
-} from "@lemma/ui/components/field";
-import { Input } from "@lemma/ui/components/input";
-import { PasswordInput } from "@lemma/ui/components/password-input";
+    Input,
+    PasswordInput,
+} from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 import { ProviderKind } from "@/gen/lemma/v1/provider_pb";
@@ -46,6 +46,8 @@ export function ConnectionFields({
                     </FieldDescription>
                 </FieldContent>
                 <PasswordInput
+                    showLabel={t("passwordInput.show")}
+                    hideLabel={t("passwordInput.hide")}
                     id="provider-api-key"
                     className="@md/field-group:shrink-0 @md/field-group:basis-80"
                     value={values.apiKey}

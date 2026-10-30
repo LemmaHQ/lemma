@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import type { Provider, ProviderKind } from "@/gen/lemma/v1/provider_pb";
-import { providerClient } from "@/data/rpc/clients";
+import { providerClient } from "@/rpc/clients";
 
 export interface ProviderPatch {
     name?: string;

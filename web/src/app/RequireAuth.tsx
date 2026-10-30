@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 
-import { useAuth } from "@/features/auth/store";
+import { useAuth } from "@/features/auth";
 
 import { SplashScreen } from "./SplashScreen";
 

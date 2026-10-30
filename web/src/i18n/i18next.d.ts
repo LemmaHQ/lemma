@@ -1,5 +1,3 @@
-import type uiEn from "@lemma/ui/locales/en.json";
-
 import type en from "./locales/en.json";
 
 declare module "i18next" {
@@ -7,7 +5,6 @@ declare module "i18next" {
         defaultNS: "translation";
         resources: {
             translation: typeof en;
-            ui: typeof uiEn;
         };
     }
 }

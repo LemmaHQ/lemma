@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { conversationClient } from "@/data/rpc/clients";
+import { conversationClient } from "@/rpc/clients";
 import type { Conversation } from "@/gen/lemma/v1/conversation_pb";
 
 interface ConversationsState {

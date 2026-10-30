@@ -1,16 +1,14 @@
-import { AnimateIcon } from "@animate-ui/react/icons";
-import { GithubIcon } from "@lemma/ui/components/brand/github";
-import { Button } from "@lemma/ui/components/button";
-import { Separator } from "@lemma/ui/components/separator";
+import { AnimateIcon, Button, GithubIcon, Separator } from "@lemma/ui";
 import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router";
 
-import { useAuth } from "@/features/auth/store";
-import { LanguageToggle } from "@/features/preferences/LanguageToggle";
-import { ThemeToggle } from "@/features/preferences/ThemeToggle";
-import { setTitleBarSurface } from "@/features/preferences/theme";
-
-import { VersionTags } from "./VersionTags";
+import { useAuth } from "@/features/auth";
+import {
+    LanguageToggle,
+    setTitleBarSurface,
+    ThemeToggle,
+} from "@/features/preferences";
+import { VersionTags } from "@/features/system";
 
 const REPOSITORY_URL = "https://github.com/LemmaHQ/lemma";
 
