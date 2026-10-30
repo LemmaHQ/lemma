@@ -9,7 +9,7 @@ import {
     SidebarRail,
     useSidebar,
 } from "@lemma/ui";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatch } from "react-router";
 
@@ -48,12 +48,6 @@ export function AppShell() {
 
     useTitleBarSurface("sidebar");
 
-    useLayoutEffect(() => {
-        document.documentElement.dataset["shell"] = settings
-            ? "settings"
-            : "home";
-    }, [settings]);
-
     return (
         <ShellContext value={slots}>
             <div className="animate-in duration-slow ease-enter fade-in-0">
@@ -84,7 +78,14 @@ export function AppShell() {
                     className="h-dvh"
                 >
                     <Sidebar variant="inset" label={t("sidebar.title")}>
-                        <SidebarHeader className="shell-transition-sidebar-header">
+                        <SidebarHeader
+                            className={cn(
+                                "shell-transition-sidebar-header",
+                                settings
+                                    ? "view-transition-from-end"
+                                    : "view-transition-from-start",
+                            )}
+                        >
                             {settings ? (
                                 <BackHomeButton />
                             ) : (
@@ -102,11 +103,16 @@ export function AppShell() {
                         <SidebarContent>
                             <div
                                 ref={setSidebarTarget}
-                                className="flex flex-col shell-transition-sidebar"
+                                className={cn(
+                                    "flex flex-col shell-transition-sidebar",
+                                    settings
+                                        ? "view-transition-from-end"
+                                        : "view-transition-from-start",
+                                )}
                             />
                         </SidebarContent>
                         {collapsible && (
-                            <SidebarFooter className="shell-transition-sidebar-footer">
+                            <SidebarFooter className="shell-transition-sidebar-footer view-transition-fade">
                                 <AccountMenu />
                             </SidebarFooter>
                         )}
@@ -114,7 +120,7 @@ export function AppShell() {
                     </Sidebar>
                     <SidebarInset className="overflow-hidden">
                         <ShellHeader collapsible={collapsible} title={title} />
-                        <div className="flex min-h-0 flex-1 flex-col shell-transition-main">
+                        <div className="flex min-h-0 flex-1 flex-col shell-transition-main view-transition-rise">
                             <Outlet />
                         </div>
                     </SidebarInset>
@@ -146,7 +152,7 @@ function ShellHeader({
             <div className="invisible absolute left-2 opacity-0 transition-sidebar-reveal-hide group-data-revealed/shell-header:visible group-data-revealed/shell-header:opacity-100 group-data-revealed/shell-header:transition-sidebar-reveal-show motion-reduce:transition-none">
                 <ShellToolbar newConversation={collapsible} />
             </div>
-            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground shell-transition-title">
+            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground shell-transition-title view-transition-fade">
                 {title}
             </div>
         </header>

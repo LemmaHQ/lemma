@@ -53,39 +53,3 @@ html.custom-titlebar .h-dvh {
 ::view-transition-group(*) {
     animation: none;
 }
-
-::view-transition-old(*) {
-    animation: ui-fade-out var(--motion-duration-fast) var(--motion-easing-exit)
-        both;
-}
-
-::view-transition-new(shell-title),
-::view-transition-new(shell-sidebar-footer),
-::view-transition-new(auth-panel) {
-    animation: ui-fade-in var(--motion-duration-medium)
-        var(--motion-easing-enter) both;
-}
-
-::view-transition-new(shell-main) {
-    animation: ui-rise var(--motion-duration-medium) var(--motion-easing-enter)
-        both;
-}
-
-::view-transition-group(auth-panel) {
-    animation-name: revert;
-    animation-duration: var(--motion-duration-slow);
-    animation-timing-function: var(--motion-easing-move);
-    animation-fill-mode: both;
-}
-
-:root[data-shell="settings"]::view-transition-new(shell-sidebar-header),
-:root[data-shell="settings"]::view-transition-new(shell-sidebar) {
-    animation: ui-from-end var(--motion-duration-medium)
-        var(--motion-easing-enter) both;
-}
-
-:root[data-shell="home"]::view-transition-new(shell-sidebar-header),
-:root[data-shell="home"]::view-transition-new(shell-sidebar) {
-    animation: ui-from-start var(--motion-duration-medium)
-        var(--motion-easing-enter) both;
-}

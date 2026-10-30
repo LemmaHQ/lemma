@@ -245,6 +245,63 @@
     transition: var(--sidebar-rail-hide);
 }
 
+@utility view-transition-fade {
+    view-transition-class: ui-fade;
+}
+
+@utility view-transition-rise {
+    view-transition-class: ui-rise;
+}
+
+@utility view-transition-from-start {
+    view-transition-class: ui-from-start;
+}
+
+@utility view-transition-from-end {
+    view-transition-class: ui-from-end;
+}
+
+@utility view-transition-morph {
+    view-transition-class: ui-morph;
+}
+
+::view-transition-old(*.ui-fade),
+::view-transition-old(*.ui-rise),
+::view-transition-old(*.ui-from-start),
+::view-transition-old(*.ui-from-end),
+::view-transition-old(*.ui-morph) {
+    animation: ui-fade-out var(--motion-duration-fast) var(--motion-easing-exit)
+        both;
+}
+
+::view-transition-new(*.ui-fade),
+::view-transition-new(*.ui-morph) {
+    animation: ui-fade-in var(--motion-duration-medium)
+        var(--motion-easing-enter) both;
+}
+
+::view-transition-new(*.ui-rise) {
+    animation: ui-rise var(--motion-duration-medium) var(--motion-easing-enter)
+        both;
+}
+
+::view-transition-new(*.ui-from-start) {
+    animation: ui-from-start var(--motion-duration-medium)
+        var(--motion-easing-enter) both;
+}
+
+::view-transition-new(*.ui-from-end) {
+    animation: ui-from-end var(--motion-duration-medium)
+        var(--motion-easing-enter) both;
+}
+
+::view-transition-group(*.ui-morph) {
+    animation-name: revert;
+    animation-duration: var(--motion-duration-slow);
+    animation-timing-function: var(--motion-easing-move);
+    animation-fill-mode: both;
+}
+
 .press-scale {
     transition:
         transform var(--motion-duration-press) var(--motion-easing-enter),

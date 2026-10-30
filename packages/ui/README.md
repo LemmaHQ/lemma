@@ -64,6 +64,16 @@ Motion classes, which coordinate state attributes and override a component's own
 | `swap-turn`        | Like `swap-layer`, with a slight turn                                                            |
 | `stagger-children` | Lifts the children in one after another                                                          |
 
+View transition utilities, for an element the app gives a `view-transition-name`; its old snapshot fades out, and the app never references the keyframes:
+
+| Class                        | Behavior                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `view-transition-fade`       | Fades the new snapshot in                                                |
+| `view-transition-rise`       | Fades the new snapshot in from slightly below                            |
+| `view-transition-from-start` | Fades the new snapshot in from slightly left                             |
+| `view-transition-from-end`   | Fades the new snapshot in from slightly right                            |
+| `view-transition-morph`      | Moves and resizes the group to the new box and fades the new snapshot in |
+
 The motion tokens also provide `duration-reveal`, `duration-settle`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
 
 ## Conventions

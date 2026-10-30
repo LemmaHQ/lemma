@@ -18,7 +18,7 @@ export function AuthPanel({
     children: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-6 auth-transition-panel">
+        <div className="flex flex-col gap-6 auth-transition-panel view-transition-morph">
             <div className="flex flex-col gap-1.5 text-center">
                 <h1 className="text-xl font-semibold">{title}</h1>
                 <p className="text-sm text-muted-foreground">{description}</p>
