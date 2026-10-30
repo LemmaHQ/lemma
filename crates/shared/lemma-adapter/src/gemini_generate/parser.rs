@@ -53,6 +53,8 @@ impl Parser {
                     id,
                     name: call.name,
                     arguments: call.args,
+                    started_at: None,
+                    finished_at: None,
                 },
             });
             return;
@@ -177,6 +179,8 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"ge
                         id: "call_0".into(),
                         name: "get_weather".into(),
                         arguments: serde_json::json!({"city": "北京"}),
+                        started_at: None,
+                        finished_at: None,
                     },
                 },
                 StreamEvent::Done {

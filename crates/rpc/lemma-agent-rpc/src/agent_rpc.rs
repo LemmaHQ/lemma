@@ -4,21 +4,21 @@ use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use buffa::MessageField;
+use chrono::Utc;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use lemma_agent::{Agent, AgentError as TurnError, TurnEnd, TurnEvent, TurnRequest};
-use lemma_core::Usage;
+use lemma_agent::{Agent, AgentError as TurnError, TurnEnd, TurnRequest};
+use lemma_agent_loop::LoopError;
 use lemma_model::Connector;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    AbortMessageRequest, AbortMessageResponse, AgentAborted, AgentDelta, AgentDone, AgentError,
-    AgentEvent, AgentStarted, AgentTurnStarted, ErrorReason, ResumeStreamRequest,
-    ResumeStreamResponse, SendMessageRequest, SendMessageResponse, TextDelta, ThinkingDelta,
-    TokenUsage, ToolCallFinished, ToolCallStarted, agent_delta, agent_event,
+    AbortMessageRequest, AbortMessageResponse, ErrorReason, ResumeStreamRequest,
+    ResumeStreamResponse, SendMessageRequest, SendMessageResponse,
 };
 use uuid::Uuid;
 
+use crate::agent_event::{error_event, turn_event};
 use crate::live_turns::LiveTurns;
 
 /// Connect handler implementing the `AgentService` RPCs.
@@ -99,9 +99,12 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
                 .run(|ev| writer.push(turn_event(ev, &client_msg_id)))
                 .await
             {
-                Ok(TurnEnd::Done) => {}
-                Ok(TurnEnd::Aborted) => writer.push(aborted_event()),
-                Err(e) => writer.push(error_event(&e.to_string())),
+                Ok(TurnEnd::Done) | Ok(TurnEnd::Aborted) => {}
+                Err(e) => {
+                    if !matches!(&e, TurnError::Loop(LoopError::Model(_))) {
+                        writer.push(error_event(&e.to_string(), Utc::now()));
+                    }
+                }
             }
         });
 
@@ -145,146 +148,6 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
                 ..Default::default()
             })
         })))
-    }
-}
-
-fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
-    match ev {
-        TurnEvent::UserAppended { id } => started_event(id, client_msg_id.to_string()),
-        TurnEvent::AssistantStarted { id } => turn_started_event(id),
-        TurnEvent::Delta { delta } => text_delta_event(delta),
-        TurnEvent::ThinkingDelta { delta } => thinking_delta_event(delta),
-        TurnEvent::ToolStarted {
-            id,
-            name,
-            arguments,
-        } => tool_call_started_event(id, name, arguments),
-        TurnEvent::ToolFinished {
-            id,
-            name,
-            content,
-            is_error,
-        } => tool_call_finished_event(id, name, content, is_error),
-        TurnEvent::AssistantDone { usage, .. } => done_event(usage),
-    }
-}
-
-fn aborted_event() -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Aborted(Box::new(AgentAborted {
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn started_event(id: Uuid, client_msg_id: String) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Started(Box::new(AgentStarted {
-            message_id: id.to_string(),
-            client_msg_id,
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn text_delta_event(text: String) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Delta(Box::new(AgentDelta {
-            part: Some(agent_delta::Part::Text(Box::new(TextDelta {
-                content: text,
-                ..Default::default()
-            }))),
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn thinking_delta_event(thinking: String) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Delta(Box::new(AgentDelta {
-            part: Some(agent_delta::Part::Thinking(Box::new(ThinkingDelta {
-                content: thinking,
-                ..Default::default()
-            }))),
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn done_event(usage: Option<Usage>) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Done(Box::new(AgentDone {
-            usage: usage
-                .map(|u| {
-                    MessageField::some(TokenUsage {
-                        prompt_tokens: u.input as i32,
-                        completion_tokens: u.output as i32,
-                        total_tokens: (u.input + u.output) as i32,
-                        ..Default::default()
-                    })
-                })
-                .unwrap_or_default(),
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn error_event(message: &str) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::Error(Box::new(AgentError {
-            message: message.to_string(),
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn turn_started_event(id: Uuid) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::TurnStarted(Box::new(AgentTurnStarted {
-            message_id: id.to_string(),
-            ..Default::default()
-        }))),
-        ..Default::default()
-    }
-}
-
-fn tool_call_started_event(call_id: String, name: String, arguments: String) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::ToolCallStarted(Box::new(
-            ToolCallStarted {
-                call_id,
-                name,
-                arguments,
-                ..Default::default()
-            },
-        ))),
-        ..Default::default()
-    }
-}
-
-fn tool_call_finished_event(
-    call_id: String,
-    name: String,
-    content: String,
-    is_error: bool,
-) -> AgentEvent {
-    AgentEvent {
-        kind: Some(agent_event::Kind::ToolCallFinished(Box::new(
-            ToolCallFinished {
-                call_id,
-                name,
-                content,
-                is_error,
-                ..Default::default()
-            },
-        ))),
-        ..Default::default()
     }
 }
 

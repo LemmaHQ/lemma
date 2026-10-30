@@ -75,6 +75,8 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 消息随过程持久化：用户消息与每个占位消息在调用模型之前写入，每条工具结果在下一个 step 之前写入。流失败时，占位消息保留 `error` 状态与失败文本。
 
+每个 `AgentEvent` 都带有服务端 `occurred_at` 时刻，重放时保持不变。助手消息的 JSON 正文持久化思考与工具的开始、结束时刻供历史记录使用；旧行不包含这些字段，适配器也不会把这些服务端字段写入 provider 请求。计时时点由 [agent 事件](subsystems/agent.zh.md#turn-事件)定义。
+
 适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
 只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。

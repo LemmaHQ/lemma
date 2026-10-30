@@ -48,6 +48,8 @@ impl Parser {
                 id: acc.id.clone(),
                 name: acc.name.clone(),
                 arguments,
+                started_at: None,
+                finished_at: None,
             },
         }
     }
@@ -273,6 +275,8 @@ data: [DONE]\n";
                         id: "call_1".into(),
                         name: "get_weather".into(),
                         arguments: serde_json::json!({"city": "北京"}),
+                        started_at: None,
+                        finished_at: None,
                     },
                 },
                 StreamEvent::Done {

@@ -69,6 +69,23 @@ fn message_to_proto(m: &DomainMessage) -> Message {
                 _ => None,
             })
             .collect::<String>(),
+        thinking_started_at: core_msg
+            .content()
+            .iter()
+            .find_map(|b| match b {
+                ContentBlock::Thinking(t) => t.started_at.map(Timestamp::from),
+                _ => None,
+            })
+            .into(),
+        thinking_finished_at: core_msg
+            .content()
+            .iter()
+            .rev()
+            .find_map(|b| match b {
+                ContentBlock::Thinking(t) => t.finished_at.map(Timestamp::from),
+                _ => None,
+            })
+            .into(),
         provider_id: m.provider_id.map(|p| p.to_string()).unwrap_or_default(),
         model: m.model.clone().unwrap_or_default(),
         tool_calls: core_msg
@@ -77,6 +94,8 @@ fn message_to_proto(m: &DomainMessage) -> Message {
                 id: c.id.clone(),
                 name: c.name.clone(),
                 arguments: serde_json::to_string(&c.arguments).unwrap_or_default(),
+                started_at: c.started_at.map(Timestamp::from).into(),
+                finished_at: c.finished_at.map(Timestamp::from).into(),
                 ..Default::default()
             })
             .collect(),

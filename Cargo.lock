@@ -2302,10 +2302,13 @@ name = "lemma-agent-rpc"
 version = "0.1.0"
 dependencies = [
  "buffa",
+ "buffa-types",
+ "chrono",
  "connectrpc",
  "dashmap",
  "futures",
  "lemma-agent",
+ "lemma-agent-loop",
  "lemma-auth-rpc",
  "lemma-core",
  "lemma-model",
@@ -2383,6 +2386,7 @@ dependencies = [
 name = "lemma-core"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "serde",
  "serde_json",
 ]

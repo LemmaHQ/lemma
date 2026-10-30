@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd};
 use lemma_conversation::MessageStatus;
-use lemma_core::{Message, StopReason, StreamEvent, ToolCall};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_test_db::on_each_database;
 use lemma_tools::{LocalExecEnv, ToolRegistry};
@@ -30,11 +30,16 @@ impl Adapter for ToolThenText {
         let events = if self.steps.fetch_add(1, Ordering::SeqCst) == 0 {
             vec![
                 Ok(StreamEvent::Start),
+                Ok(StreamEvent::ThinkingDelta {
+                    delta: "choose a tool".into(),
+                }),
                 Ok(StreamEvent::ToolCallEnd {
                     call: ToolCall {
                         id: "call-1".into(),
                         name: "missing_tool".into(),
                         arguments: json!({}),
+                        started_at: None,
+                        finished_at: None,
                     },
                 }),
                 Ok(StreamEvent::Done {
@@ -47,6 +52,9 @@ impl Adapter for ToolThenText {
                 .store(req.messages.len(), Ordering::SeqCst);
             vec![
                 Ok(StreamEvent::Start),
+                Ok(StreamEvent::ThinkingDelta {
+                    delta: "answer now".into(),
+                }),
                 Ok(StreamEvent::TextDelta {
                     delta: "all done".into(),
                 }),
@@ -104,6 +112,35 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
             messages.iter().all(|m| m.status == MessageStatus::Done),
             "statuses: {messages:?}"
         );
+        let Some(call) = messages[1].body.0.tool_calls().next() else {
+            return Err("assistant message has no tool call".into());
+        };
+        let (Some(tool_started), Some(tool_finished)) = (call.started_at, call.finished_at) else {
+            return Err("tool call has no persisted timing".into());
+        };
+        assert!(
+            tool_started <= tool_finished,
+            "tool finish follows its start"
+        );
+        for index in [1, 3] {
+            let thinking = messages[index]
+                .body
+                .0
+                .content()
+                .iter()
+                .find_map(|block| match block {
+                    ContentBlock::Thinking(thinking) => Some(thinking),
+                    _ => None,
+                });
+            let Some(thinking) = thinking else {
+                return Err(format!("message {index} has no thinking block").into());
+            };
+            let (Some(started), Some(finished)) = (thinking.started_at, thinking.finished_at)
+            else {
+                return Err(format!("message {index} has no thinking timing").into());
+            };
+            assert!(started <= finished, "thinking finish follows its start");
+        }
         let Message::ToolResult {
             tool_call_id,
             is_error,

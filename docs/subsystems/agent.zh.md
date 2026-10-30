@@ -21,7 +21,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## Turn 事件
 
-循环按发生顺序向观察者报告 `TurnEvent`。每个宿主把它们映射为自己的事件类型，并根据运行结果追加一个终止事件：
+循环按发生顺序向观察者报告 `TurnEvent`。`lemma-agent-rpc` 把它们映射为 `AgentEvent`，并根据运行结果报告模型流之外的失败：
 
 | 来源 | `AgentEvent`（`lemma-agent-rpc`） | 含义 |
 | --- | --- | --- |
@@ -30,8 +30,10 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | `Delta`、`ThinkingDelta` | `delta`（`text` 或 `thinking`） | 模型流的一个分块。 |
 | `ToolStarted`、`ToolFinished` | `tool_call_started`、`tool_call_finished` | 一次工具调用：先是参数，然后是输出与错误标志。 |
 | `AssistantDone` | `done` | 最后一个 step 结束且不再请求工具；携带 token 用量。 |
-| `TurnEnd::Aborted` | `aborted` | turn 被中止。 |
-| `Err(AgentError)` | `error` | turn 失败；携带错误文本。 |
+| `TurnAborted` | `aborted` | turn 被中止。 |
+| `TurnFailed`、模型流之外的 `Err(AgentError)` | `error` | turn 失败；携带错误文本。 |
+
+每个 `AgentEvent` 都带有服务端 `occurred_at` 时刻。首个思考增量设置 `thinking_started_at`；之后的首个正文增量、工具调用、`done`、`aborted` 或 `error` 事件设置 `thinking_finished_at`。`tool_call_started` 与 `tool_call_finished` 分别在执行开始与结果到达时设置对应的工具时刻。助手消息的 JSON 正文把这些值保存为思考与工具调用块上可选的 `started_at` 和 `finished_at` 字段，存储的 `Message` proto 再将它们暴露给历史记录。加入计时前写入的行没有这些值。重放会原样返回已记录的事件。
 
 ## 中止
 

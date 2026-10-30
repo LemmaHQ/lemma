@@ -29,6 +29,10 @@ message ToolCall {
   string name = 2;
   // Invocation arguments formatted as serialized JSON text.
   string arguments = 3;
+  // Server instant at which tool execution started; absent in older rows.
+  google.protobuf.Timestamp started_at = 4;
+  // Server instant at which the tool result arrived; absent while running.
+  google.protobuf.Timestamp finished_at = 5;
 }
 
 // Tool execution metadata for tool-role messages; payload text resides in content.
@@ -59,6 +63,10 @@ message Message {
   repeated ToolCall tool_calls = 13;
   // Tool execution result metadata present on tool-role messages.
   ToolResultMeta tool_result = 14;
+  // Server instant of the first thinking delta; absent in older rows.
+  google.protobuf.Timestamp thinking_started_at = 15;
+  // Server instant of the first non-thinking event after thinking began.
+  google.protobuf.Timestamp thinking_finished_at = 16;
 }
 
 message ListConversationsRequest {}

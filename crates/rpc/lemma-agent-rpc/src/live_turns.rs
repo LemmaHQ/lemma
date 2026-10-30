@@ -110,6 +110,8 @@ fn follow(log: watch::Receiver<EventLog>, offset: usize) -> impl Stream<Item = A
 
 #[cfg(test)]
 mod tests {
+    use buffa_types::google::protobuf::Timestamp;
+    use chrono::DateTime;
     use futures::StreamExt;
     use lemma_proto::lemma::v1::{AgentError, agent_event};
     use tokio::task;
@@ -122,6 +124,10 @@ mod tests {
                 message: tag.to_string(),
                 ..Default::default()
             }))),
+            occurred_at: Timestamp::from(
+                DateTime::from_timestamp(1_700_000_000, 0).unwrap_or_default(),
+            )
+            .into(),
             ..Default::default()
         }
     }

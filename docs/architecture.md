@@ -75,6 +75,8 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 Messages persist as they happen: the user message and each placeholder are written before the model call, and every tool result is written before the next step. A failed stream leaves its placeholder with status `error` and the failure text.
 
+Every `AgentEvent` carries the server's `occurred_at` instant, preserved by replay. Assistant JSON bodies persist thinking and tool start/finish instants for history; old rows leave them absent, and adapters omit these server-only fields from provider requests. [Agent events](subsystems/agent.md#turn-events) define the timing points.
+
 The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
 Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.

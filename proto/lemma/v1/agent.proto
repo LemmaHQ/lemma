@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package lemma.v1;
 
+import "google/protobuf/timestamp.proto";
+
 // Agent execution: send message (server stream), abort, and stream resumption.
 service AgentService {
   rpc SendMessage(SendMessageRequest) returns (stream SendMessageResponse);
@@ -79,6 +81,10 @@ message AgentEvent {
     ToolCallStarted tool_call_started = 7;
     ToolCallFinished tool_call_finished = 8;
   }
+  // Server instant at which this event occurred. For thinking, the first
+  // thinking delta starts the interval and the first text delta, tool call,
+  // done, aborted, or error event finishes it. Replay preserves this value.
+  google.protobuf.Timestamp occurred_at = 9;
 }
 
 message SendMessageRequest {

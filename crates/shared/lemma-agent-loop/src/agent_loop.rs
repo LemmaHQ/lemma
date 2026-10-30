@@ -1,5 +1,6 @@
+use chrono::Utc;
 use lemma_conversation::{ConversationService, LastModel, Message as StoredMessage};
-use lemma_core::{Message, StopReason};
+use lemma_core::{ContentBlock, Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
 use lemma_tools::ExecEnv;
 use uuid::Uuid;
@@ -111,6 +112,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         let mut leaf_id = user_message_id;
         loop {
             if cancel.is_cancelled() {
+                observer(TurnEvent::TurnAborted { at: Utc::now() });
                 return Ok(TurnEnd::Aborted);
             }
             let entries = self.conversations.all_messages(conversation_id).await?;
@@ -133,54 +135,89 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 tools: tool_specs.clone(),
                 thinking_effort: model.thinking_effort.clone(),
             };
-            let outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
+            let mut outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
             self.conversations
                 .update_message(assistant_id, persist::settle(&outcome))
                 .await?;
 
             match outcome.end {
                 StepEnd::Completed => {}
-                StepEnd::Failed(message) => return Err(LoopError::Model(message)),
-                StepEnd::Aborted => return Ok(TurnEnd::Aborted),
+                StepEnd::Failed(message) => {
+                    observer(TurnEvent::TurnFailed {
+                        message: message.clone(),
+                        at: outcome.ended_at,
+                    });
+                    return Err(LoopError::Model(message));
+                }
+                StepEnd::Aborted => {
+                    observer(TurnEvent::TurnAborted {
+                        at: outcome.ended_at,
+                    });
+                    return Ok(TurnEnd::Aborted);
+                }
             }
 
-            let tool_calls = outcome.tool_calls();
+            let has_tool_calls = outcome
+                .blocks
+                .iter()
+                .any(|block| matches!(block, ContentBlock::ToolCall(_)));
             let runtime = match self.tools.as_ref() {
-                Some(runtime)
-                    if outcome.stop_reason == StopReason::ToolUse && !tool_calls.is_empty() =>
-                {
+                Some(runtime) if outcome.stop_reason == StopReason::ToolUse && has_tool_calls => {
                     runtime
                 }
                 _ => {
+                    if outcome.stop_reason == StopReason::ToolUse {
+                        outcome.finish_thinking(outcome.ended_at);
+                        self.conversations
+                            .update_message(assistant_id, persist::settle(&outcome))
+                            .await?;
+                    }
                     observer(TurnEvent::AssistantDone {
                         id: assistant_id,
                         usage: outcome.usage,
+                        at: outcome.ended_at,
                     });
                     return Ok(TurnEnd::Done);
                 }
             };
 
             leaf_id = assistant_id;
-            for call in tool_calls {
+            let mut results = Vec::new();
+            let mut thinking_finished_at = None;
+            for block in &mut outcome.blocks {
+                let ContentBlock::ToolCall(call) = block else {
+                    continue;
+                };
+                let started_at = Utc::now();
+                thinking_finished_at.get_or_insert(started_at);
+                call.started_at = Some(started_at);
                 observer(TurnEvent::ToolStarted {
                     id: call.id.clone(),
                     name: call.name.clone(),
                     arguments: serde_json::to_string(&call.arguments).unwrap_or_default(),
+                    at: started_at,
                 });
                 let tool_outcome = runtime.run(call).await;
+                let finished_at = Utc::now();
+                call.finished_at = Some(finished_at);
                 observer(TurnEvent::ToolFinished {
                     id: call.id.clone(),
                     name: call.name.clone(),
                     content: tool_outcome.text.clone(),
                     is_error: tool_outcome.is_error,
+                    at: finished_at,
                 });
+                results.push(persist::tool_result(call, tool_outcome));
+            }
+            if let Some(at) = thinking_finished_at {
+                outcome.finish_thinking(at);
+            }
+            self.conversations
+                .update_message(assistant_id, persist::settle(&outcome))
+                .await?;
+            for result in results {
                 let result_id = Uuid::new_v4();
-                let result = persist::settled(
-                    result_id,
-                    conversation_id,
-                    Some(leaf_id),
-                    persist::tool_result(call, tool_outcome),
-                );
+                let result = persist::settled(result_id, conversation_id, Some(leaf_id), result);
                 self.append(user_id, result).await?;
                 leaf_id = result_id;
             }

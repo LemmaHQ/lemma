@@ -21,7 +21,7 @@ An empty thinking effort reuses the effort of the conversation's last model sele
 
 ## Turn events
 
-The loop reports `TurnEvent`s to the observer in the order they happen. Each host maps them onto its own event type and adds a terminal event from the run's result:
+The loop reports `TurnEvent`s to the observer in the order they happen. `lemma-agent-rpc` maps them onto `AgentEvent` and reports failures outside the model stream from the run's result:
 
 | Source | `AgentEvent` (`lemma-agent-rpc`) | Meaning |
 | --- | --- | --- |
@@ -30,8 +30,10 @@ The loop reports `TurnEvent`s to the observer in the order they happen. Each hos
 | `Delta`, `ThinkingDelta` | `delta` (`text` or `thinking`) | One chunk of the model stream. |
 | `ToolStarted`, `ToolFinished` | `tool_call_started`, `tool_call_finished` | One tool call, with its arguments, then its output and error flag. |
 | `AssistantDone` | `done` | The last step finished without requesting tools; carries token usage. |
-| `TurnEnd::Aborted` | `aborted` | The turn was aborted. |
-| `Err(AgentError)` | `error` | The turn failed; carries the error text. |
+| `TurnAborted` | `aborted` | The turn was aborted. |
+| `TurnFailed`, non-model `Err(AgentError)` | `error` | The turn failed; carries the error text. |
+
+Every `AgentEvent` carries the server's `occurred_at` instant. The first thinking delta sets `thinking_started_at`; the first text delta, tool call, `done`, `aborted`, or `error` event sets `thinking_finished_at`. `tool_call_started` and `tool_call_finished` set the corresponding tool instants when execution starts and its result arrives. The assistant message JSON stores these as optional `started_at` and `finished_at` fields on thinking and tool-call blocks, and the stored `Message` proto exposes them for history. Rows written before timing have no values. Replay returns the logged event unchanged.
 
 ## Abort
 

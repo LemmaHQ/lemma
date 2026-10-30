@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// One block of message content, independent of any vendor format.
@@ -33,6 +34,12 @@ pub struct ThinkingContent {
     /// Opaque vendor signature required to replay the block verbatim
     /// (e.g. Anthropic signed thinking); `None` for unsigned reasoning.
     pub signature: Option<String>,
+    /// Server instant of the first reasoning delta.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<DateTime<Utc>>,
+    /// Server instant of the first non-thinking event after reasoning began.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finished_at: Option<DateTime<Utc>>,
 }
 
 /// A tool invocation requested by the model.
@@ -44,6 +51,12 @@ pub struct ToolCall {
     pub name: String,
     /// Call arguments, already parsed from the wire form.
     pub arguments: serde_json::Value,
+    /// Server instant at which tool execution started.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<DateTime<Utc>>,
+    /// Server instant at which the tool result arrived.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finished_at: Option<DateTime<Utc>>,
 }
 
 /// An inline image block.
@@ -65,5 +78,31 @@ impl ContentBlock {
             Self::Text(t) => Some(&t.text),
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn blocks_stored_before_timing_load_without_timestamps() {
+        let thinking: ThinkingContent =
+            serde_json::from_str(r#"{"thinking":"considering","signature":null}"#)
+                .unwrap_or_else(|e| panic!("legacy thinking JSON loads: {e}"));
+        let call: ToolCall =
+            serde_json::from_str(r#"{"id":"call-1","name":"read_file","arguments":{}}"#)
+                .unwrap_or_else(|e| panic!("legacy tool call JSON loads: {e}"));
+
+        assert_eq!(thinking.started_at, None, "thinking start defaults");
+        assert_eq!(thinking.finished_at, None, "thinking finish defaults");
+        assert_eq!(call.started_at, None, "tool start defaults");
+        assert_eq!(call.finished_at, None, "tool finish defaults");
+        assert!(
+            !serde_json::to_string(&call)
+                .unwrap_or_default()
+                .contains("started_at"),
+            "absent timestamps stay out of stored JSON"
+        );
     }
 }
