@@ -1,3 +1,5 @@
+import { timestampDate } from "@bufbuild/protobuf/wkt";
+
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
 import type { AgentItem } from "./agent-item";
@@ -76,6 +78,11 @@ export function createStreamReducer(
         if (kind === undefined) {
             return;
         }
+        const occurredAt = event?.occurredAt;
+        const at =
+            occurredAt === undefined
+                ? undefined
+                : timestampDate(occurredAt).getTime();
         switch (kind.case) {
             case "started":
                 onStarted(kind.value.messageId);
@@ -89,11 +96,16 @@ export function createStreamReducer(
                     patchCurrent((it) => ({
                         ...it,
                         content: it.content + part.value.content,
+                        thinkingFinishedAt:
+                            it.thinkingStartedAt === undefined
+                                ? undefined
+                                : (it.thinkingFinishedAt ?? at),
                     }));
                 } else if (part.case === "thinking") {
                     patchCurrent((it) => ({
                         ...it,
                         thinking: it.thinking + part.value.content,
+                        thinkingStartedAt: it.thinkingStartedAt ?? at,
                     }));
                 }
                 break;
@@ -101,6 +113,10 @@ export function createStreamReducer(
             case "toolCallStarted":
                 patchCurrent((it) => ({
                     ...it,
+                    thinkingFinishedAt:
+                        it.thinkingStartedAt === undefined
+                            ? undefined
+                            : (it.thinkingFinishedAt ?? at),
                     toolCalls: [
                         ...it.toolCalls,
                         {
@@ -110,6 +126,7 @@ export function createStreamReducer(
                             output: "",
                             isError: false,
                             state: "running",
+                            startedAt: at,
                         },
                     ],
                 }));
@@ -120,23 +137,48 @@ export function createStreamReducer(
                     ...it,
                     toolCalls: it.toolCalls.map((tc) =>
                         tc.id === callId
-                            ? { ...tc, output: content, isError, state: "done" }
+                            ? {
+                                  ...tc,
+                                  output: content,
+                                  isError,
+                                  state: "done",
+                                  finishedAt: at,
+                              }
                             : tc,
                     ),
                 }));
                 break;
             }
             case "done":
-                updateCurrent({ status: "done" });
+                patchCurrent((it) => ({
+                    ...it,
+                    status: "done",
+                    thinkingFinishedAt:
+                        it.thinkingStartedAt === undefined
+                            ? undefined
+                            : (it.thinkingFinishedAt ?? at),
+                }));
                 break;
             case "aborted":
-                updateCurrent({ status: "aborted" });
+                patchCurrent((it) => ({
+                    ...it,
+                    status: "aborted",
+                    thinkingFinishedAt:
+                        it.thinkingStartedAt === undefined
+                            ? undefined
+                            : (it.thinkingFinishedAt ?? at),
+                }));
                 break;
             case "error":
-                updateCurrent({
+                patchCurrent((it) => ({
+                    ...it,
                     status: "error",
                     error: kind.value.message,
-                });
+                    thinkingFinishedAt:
+                        it.thinkingStartedAt === undefined
+                            ? undefined
+                            : (it.thinkingFinishedAt ?? at),
+                }));
                 break;
             case undefined:
                 break;

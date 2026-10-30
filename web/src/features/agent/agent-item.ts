@@ -1,3 +1,5 @@
+import { type Timestamp, timestampDate } from "@bufbuild/protobuf/wkt";
+
 import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 
 export interface ToolCallItem {
@@ -7,6 +9,8 @@ export interface ToolCallItem {
     output: string;
     isError: boolean;
     state: "running" | "done";
+    startedAt?: number | undefined;
+    finishedAt?: number | undefined;
 }
 
 export interface AgentItem {
@@ -20,6 +24,8 @@ export interface AgentItem {
     toolCalls: ToolCallItem[];
     toolCallId?: string | undefined;
     toolIsError?: boolean | undefined;
+    thinkingStartedAt?: number | undefined;
+    thinkingFinishedAt?: number | undefined;
     error?: string | undefined;
 }
 
@@ -45,7 +51,11 @@ export function protoToItem(m: Message): AgentItem {
             output: "",
             isError: false,
             state: "done",
+            startedAt: epochMillis(tc.startedAt),
+            finishedAt: epochMillis(tc.finishedAt),
         })),
+        thinkingStartedAt: epochMillis(m.thinkingStartedAt),
+        thinkingFinishedAt: epochMillis(m.thinkingFinishedAt),
         toolCallId: m.toolResult?.toolCallId,
         toolIsError: m.toolResult?.isError,
         error: m.error === "" ? undefined : m.error,
@@ -80,6 +90,10 @@ export function hydrateToolResults(items: AgentItem[]): AgentItem[] {
             }),
         };
     });
+}
+
+function epochMillis(value: Timestamp | undefined): number | undefined {
+    return value === undefined ? undefined : timestampDate(value).getTime();
 }
 
 function statusFromProto(s: MessageStatus): AgentItem["status"] {
