@@ -1,34 +1,34 @@
 import { toast } from "@lemma/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useConversations } from "@/features/conversations";
-import { useProviders } from "@/features/providers";
 import { errorText } from "@/i18n/error-text";
 
 import { useActiveConversation } from "../store";
-import { useModelSelection } from "../useModelSelection";
+import { useModelSelection, type ModelOption } from "../useModelSelection";
 import { HomeView } from "./HomeView";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
 
-/** Active conversation or new-conversation composer, with navigation owned by the page. */
+/** Active conversation or new-conversation composer; the page supplies the models and creates conversations. */
 export function ConversationView({
     conversationId,
-    onConversationCreated,
+    modelOptions,
+    providerNames,
+    onCreateConversation,
     onModelMissing,
 }: {
     conversationId: string | null;
-    onConversationCreated: (id: string) => void;
+    modelOptions: ModelOption[];
+    providerNames: Map<string, string>;
+    onCreateConversation: () => Promise<string>;
     onModelMissing: () => void;
 }) {
     const { t } = useTranslation();
-    const conversations = useConversations();
     const conversation = useActiveConversation();
-    const providersStore = useProviders();
     const [draft, setDraft] = useState("");
     const inputRef = useRef<HTMLTextAreaElement>(null);
-    const { model, options: modelOptions, selectModel } = useModelSelection();
+    const { model, selectModel } = useModelSelection(modelOptions);
 
     const openConversation = useActiveConversation((s) => s.open);
     useEffect(() => {
@@ -48,8 +48,7 @@ export function ConversationView({
         try {
             let cid = conversationId;
             if (cid === null) {
-                cid = await conversations.create();
-                onConversationCreated(cid);
+                cid = await onCreateConversation();
                 await conversation.open(cid);
             }
             await conversation.send(model.providerId, model.model, text);
@@ -97,14 +96,6 @@ export function ConversationView({
         inputRef.current?.focus();
     };
 
-    const providerNameById = useMemo(() => {
-        const map = new Map<string, string>();
-        for (const p of providersStore.list) {
-            map.set(p.id, p.name);
-        }
-        return map;
-    }, [providersStore.list]);
-
     return conversationId === null ? (
         <HomeView
             onSubmit={(text) => void sendText(text)}
@@ -117,7 +108,7 @@ export function ConversationView({
             <MessageList
                 items={conversation.items}
                 conversationId={conversation.conversationId}
-                providerNameById={providerNameById}
+                providerNameById={providerNames}
                 onPickSuggestion={handlePickSuggestion}
                 onRegenerate={handleRegenerate}
             />

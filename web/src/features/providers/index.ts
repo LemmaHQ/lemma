@@ -1,2 +1,2 @@
 export { ProvidersPanel } from "./components/ProvidersPanel";
-export { useProviders } from "./useProviders";
+export { useModelOptions } from "./useModelOptions";

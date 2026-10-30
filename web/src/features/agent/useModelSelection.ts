@@ -1,6 +1,4 @@
-import { useMemo, useState } from "react";
-
-import { useProviders } from "@/features/providers";
+import { useState } from "react";
 
 const MODEL_KEY = "lemma.model";
 
@@ -26,23 +24,8 @@ function isModelSelection(value: unknown): value is ModelSelection {
     );
 }
 
-export function useModelSelection() {
-    const providers = useProviders();
-
-    const options = useMemo<ModelOption[]>(
-        () =>
-            providers.list
-                .filter((p) => p.enabled && p.models.length > 0)
-                .flatMap((p) =>
-                    p.models.map((model) => ({
-                        providerId: p.id,
-                        providerName: p.name,
-                        model,
-                    })),
-                ),
-        [providers.list],
-    );
-
+/** The stored model choice while `options` offers it, else the first option. */
+export function useModelSelection(options: ModelOption[]) {
     const [stored, setStored] = useState<ModelSelection | null>(() => {
         try {
             const raw = localStorage.getItem(MODEL_KEY);
@@ -56,27 +39,23 @@ export function useModelSelection() {
         }
     });
 
-    const model = useMemo<ModelSelection | null>(() => {
-        if (
-            stored !== null &&
-            options.some(
-                (o) =>
-                    o.providerId === stored.providerId &&
-                    o.model === stored.model,
-            )
-        ) {
-            return stored;
-        }
-        const first = options.at(0);
-        return first === undefined
-            ? null
-            : { providerId: first.providerId, model: first.model };
-    }, [stored, options]);
+    const storedOffered =
+        stored !== null &&
+        options.some(
+            (o) =>
+                o.providerId === stored.providerId && o.model === stored.model,
+        );
+    const first = options.at(0);
+    const model: ModelSelection | null = storedOffered
+        ? stored
+        : first === undefined
+          ? null
+          : { providerId: first.providerId, model: first.model };
 
     const selectModel = (selection: ModelSelection) => {
         localStorage.setItem(MODEL_KEY, JSON.stringify(selection));
         setStored(selection);
     };
 
-    return { model, options, selectModel };
+    return { model, selectModel };
 }
