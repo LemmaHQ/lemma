@@ -1,13 +1,9 @@
 import { AnimateIcon, Button, GithubIcon, Separator } from "@lemma/ui";
-import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router";
 
+import { useTitleBarSurface } from "@/app/shell/useTitleBarSurface";
 import { useAuth } from "@/features/auth";
-import {
-    LanguageToggle,
-    setTitleBarSurface,
-    ThemeToggle,
-} from "@/features/preferences";
+import { LanguageToggle, ThemeToggle } from "@/features/preferences";
 import { VersionTags } from "@/features/system";
 
 const REPOSITORY_URL = "https://github.com/LemmaHQ/lemma";
@@ -16,9 +12,7 @@ const REPOSITORY_URL = "https://github.com/LemmaHQ/lemma";
 export function AuthLayout() {
     const user = useAuth((s) => s.user);
 
-    useEffect(() => {
-        setTitleBarSurface("background");
-    }, []);
+    useTitleBarSurface("background");
     if (user !== null) {
         return <Navigate to="/" replace />;
     }

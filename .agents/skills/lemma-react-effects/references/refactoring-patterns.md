@@ -179,7 +179,7 @@ useEffect(() => {
 }, [layout.hasCustomTitlebar, layout.titlebarHeight]);
 ```
 
-Other integrations that fit: `useTitleBarTheme` in `theme.ts` sending the resolved theme to the desktop title bar, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
+Other integrations that fit: the effect in `app/shell/TitleBar.tsx` sending the resolved theme and surface to the desktop title bar through `platform`, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
 
 ## Prefer conditional mounting for integrations
 

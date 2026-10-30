@@ -9,11 +9,9 @@ import {
     SidebarRail,
     useSidebar,
 } from "@lemma/ui";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatch } from "react-router";
-
-import { setTitleBarSurface } from "@/features/preferences";
 
 import { AccountMenu } from "./AccountMenu";
 import { BackHomeButton } from "./BackHomeButton";
@@ -21,6 +19,7 @@ import { NewConversationButton } from "./NewConversationButton";
 import { ShellContext } from "./shell-context";
 import { ShellToolbar } from "./ShellToolbar";
 import { SidebarToggleButton } from "./SidebarToggleButton";
+import { useTitleBarSurface } from "./useTitleBarSurface";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -47,9 +46,7 @@ export function AppShell() {
     const [title, setTitle] = useState<string | undefined>(undefined);
     const slots = useMemo(() => ({ sidebarTarget, setTitle }), [sidebarTarget]);
 
-    useEffect(() => {
-        setTitleBarSurface("sidebar");
-    }, []);
+    useTitleBarSurface("sidebar");
 
     useLayoutEffect(() => {
         document.documentElement.dataset["shell"] = settings
