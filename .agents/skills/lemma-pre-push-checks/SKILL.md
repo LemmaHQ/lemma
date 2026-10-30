@@ -42,7 +42,6 @@ Notes on the rows:
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
 - Generated code is gitignored. The web and desktop npm scripts regenerate the contract code and design token outputs before reading them, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect the outputs.
 - Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode conversation against a real provider. Never print keys.
-- When the change adds or alters an async, resource-owning, or global-state test, apply [lemma-ci-test-reliability](../lemma-ci-test-reliability/SKILL.md) first.
 
 Do not repeat a check that already passed on the same content merely because a commit or push follows.
 
