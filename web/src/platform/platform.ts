@@ -6,8 +6,7 @@ let currentPlatform: PlatformAdapter | null = null;
 
 export function getPlatform(): PlatformAdapter {
     if (currentPlatform === null) {
-        const bridge =
-            typeof window === "undefined" ? undefined : window.lemmaDesktop;
+        const bridge = window.lemmaDesktop;
         currentPlatform =
             bridge === undefined
                 ? new BrowserAdapter()

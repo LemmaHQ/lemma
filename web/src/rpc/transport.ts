@@ -50,13 +50,18 @@ function tryRefresh(): Promise<boolean> {
     return refreshPromise;
 }
 
-const authInterceptor: Interceptor = (next) => async (req) => {
-    if (!cookieMode) {
-        const token = getAccessToken();
-        if (token !== null && token !== "") {
-            req.header.set("Authorization", `Bearer ${token}`);
-        }
+function attachAccessToken(header: Headers): void {
+    if (cookieMode) {
+        return;
     }
+    const token = getAccessToken();
+    if (token !== null && token !== "") {
+        header.set("Authorization", `Bearer ${token}`);
+    }
+}
+
+const authInterceptor: Interceptor = (next) => async (req) => {
+    attachAccessToken(req.header);
     try {
         return await next(req);
     } catch (e) {
@@ -74,12 +79,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
             window.location.href = "/signin";
             throw e;
         }
-        if (!cookieMode) {
-            const fresh = getAccessToken();
-            if (fresh !== null && fresh !== "") {
-                req.header.set("Authorization", `Bearer ${fresh}`);
-            }
-        }
+        attachAccessToken(req.header);
         return await next(req);
     }
 };

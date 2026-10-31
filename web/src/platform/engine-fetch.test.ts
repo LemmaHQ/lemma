@@ -1,7 +1,15 @@
-import type { EngineRequest, EngineResponse } from "@lemma/desktop-bridge";
-import { describe, expect, it } from "vitest";
+import type {
+    DesktopBridge,
+    EngineRequest,
+    EngineResponse,
+} from "@lemma/desktop-bridge";
+import { describe, expect, it, vi } from "vitest";
 
-import { createEngineFetch, ENGINE_BASE_URL } from "./engine-fetch";
+import {
+    connectEngine,
+    createEngineFetch,
+    ENGINE_BASE_URL,
+} from "./engine-fetch";
 
 interface Harness {
     fetch: typeof globalThis.fetch;
@@ -135,5 +143,123 @@ describe("createEngineFetch", () => {
         );
         await expect(post(h.fetch)).rejects.toThrow("local engine stopped");
         expect(h.requests).toHaveLength(1);
+    });
+
+    it("ignores responses to a request it already gave up", async () => {
+        const h = harness();
+        const abort = new AbortController();
+        const first = post(h.fetch, { signal: abort.signal });
+        await h.nextRequest();
+        abort.abort();
+        await expect(first).rejects.toThrow(/abort/iu);
+        await vi.waitFor(() => {
+            expect(h.requests.at(-1)).toEqual({ type: "cancel", id: 1 });
+        });
+        h.respond({ type: "head", id: 1, status: 200, headers: [] });
+
+        const second = post(h.fetch);
+        await vi.waitFor(() => {
+            expect(h.requests).toHaveLength(3);
+        });
+        h.respond({ type: "head", id: 2, status: 204, headers: [] });
+
+        expect((await second).status).toBe(204);
+    });
+
+    it("sends no cancel for a response the engine already finished", async () => {
+        const h = harness();
+        const abort = new AbortController();
+        const first = post(h.fetch, { signal: abort.signal });
+        await h.nextRequest();
+        h.respond({ type: "head", id: 1, status: 200, headers: [] });
+        h.respond({ type: "chunk", id: 1, data: bytes("unread") });
+        h.respond({ type: "end", id: 1 });
+        const second = post(h.fetch);
+        await h.nextRequest();
+        h.respond({ type: "head", id: 2, status: 204, headers: [] });
+        const finished = await first;
+        await second;
+
+        await finished.body?.cancel();
+        abort.abort();
+        const third = post(h.fetch);
+        await h.nextRequest();
+        h.respond({ type: "head", id: 3, status: 204, headers: [] });
+        await third;
+
+        expect(h.requests.map((r) => r.type)).toEqual([
+            "request",
+            "request",
+            "request",
+        ]);
+    });
+});
+
+const bridge = (
+    connect: DesktopBridge["connectEngine"] = () => {},
+): DesktopBridge => ({
+    appVersion: "1.0.0",
+    titlebarHeight: 40,
+    setTitleBar: () => {},
+    toggleMaximize: () => {},
+    connectEngine: connect,
+});
+
+const announce = (
+    data: unknown,
+    init: { source?: Window | null; ports?: MessagePort[] } = {},
+): void => {
+    window.dispatchEvent(
+        new MessageEvent("message", {
+            data,
+            source: init.source === undefined ? window : init.source,
+            ports: init.ports ?? [],
+        }),
+    );
+};
+
+const settled = async (promise: Promise<unknown>): Promise<boolean> => {
+    const pending = Symbol("pending");
+    return (
+        (await Promise.race([promise, Promise.resolve(pending)])) !== pending
+    );
+};
+
+describe("connectEngine", () => {
+    it("asks the preload for the engine port and takes the one it posts", async () => {
+        const connect = vi.fn<DesktopBridge["connectEngine"]>();
+        const connection = connectEngine(window, bridge(connect));
+        const { port1 } = new MessageChannel();
+        announce({ type: "lemma-engine-port" }, { ports: [port1] });
+
+        expect(connect).toHaveBeenCalledOnce();
+        await expect(connection.port).resolves.toBe(port1);
+    });
+
+    it("ignores foreign and malformed messages", async () => {
+        const connection = connectEngine(window, bridge());
+        const { port1 } = new MessageChannel();
+        announce(
+            { type: "lemma-engine-port" },
+            { source: null, ports: [port1] },
+        );
+        announce(null);
+        announce("lemma-engine-port");
+        announce({ kind: "lemma-engine-port" });
+        announce({ type: "lemma-engine-port" });
+        announce({ type: "lemma-engine-ready" });
+
+        expect(await settled(connection.port)).toBe(false);
+        expect(await settled(connection.exit)).toBe(false);
+    });
+
+    it("reports the engine exit with its detail, or empty without one", async () => {
+        const withDetail = connectEngine(window, bridge());
+        announce({ type: "lemma-engine-exit", detail: "exited with code 1" });
+        await expect(withDetail.exit).resolves.toBe("exited with code 1");
+
+        const withoutDetail = connectEngine(window, bridge());
+        announce({ type: "lemma-engine-exit", detail: 1 });
+        await expect(withoutDetail.exit).resolves.toBe("");
     });
 });

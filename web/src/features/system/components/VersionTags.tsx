@@ -20,17 +20,7 @@ export function VersionTags() {
     const [serverVersion, setServerVersion] = useState<string | null>(null);
 
     useEffect(() => {
-        let active = true;
-        const load = async () => {
-            const version = await loadServerVersion();
-            if (active) {
-                setServerVersion(version);
-            }
-        };
-        void load();
-        return () => {
-            active = false;
-        };
+        void loadServerVersion().then(setServerVersion);
     }, []);
 
     return (

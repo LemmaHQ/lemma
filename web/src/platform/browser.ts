@@ -1,19 +1,14 @@
 import type { PlatformAdapter } from "./types";
 
 function resolveBaseUrl(): string {
-    if (typeof localStorage !== "undefined") {
-        const stored = localStorage.getItem("lemma.serverUrl");
-        if (stored !== null && stored !== "") {
-            return stored;
-        }
+    const stored = localStorage.getItem("lemma.serverUrl");
+    if (stored !== null && stored !== "") {
+        return stored;
     }
     return "/";
 }
 
 function resolveCookieMode(baseUrl: string): boolean {
-    if (typeof window === "undefined") {
-        return false;
-    }
     try {
         return (
             new URL(baseUrl, window.location.href).origin ===
@@ -24,6 +19,8 @@ function resolveCookieMode(baseUrl: string): boolean {
     }
 }
 
+function ignoreWindowCommand(): void {}
+
 export class BrowserAdapter implements PlatformAdapter {
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch = (input, init) =>
@@ -32,8 +29,8 @@ export class BrowserAdapter implements PlatformAdapter {
     readonly clientVersion = null;
 
     readonly window = {
-        setTitleBar: (): void => {},
-        toggleMaximize: (): void => {},
+        setTitleBar: ignoreWindowCommand,
+        toggleMaximize: ignoreWindowCommand,
     };
 
     readonly auth = {
