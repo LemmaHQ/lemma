@@ -13,7 +13,6 @@
                 "success": "{{name}} finished"
             },
             "arguments": "Arguments",
-            "copied": "Copied",
             "copyArguments": "Copy arguments",
             "copyResult": "Copy result",
             "errorFallback": "The tool call failed.",
@@ -59,13 +58,10 @@
         "copy": "Copy",
         "delete": "Delete",
         "loading": "Loading…",
-        "retry": "Retry",
         "save": "Save",
         "settings": "Settings"
     },
     "conversation": {
-        "copied": "Copied",
-        "copy": "Copy",
         "disclaimer": "AI can make mistakes. Verify important information.",
         "emptySubtitle": "Ask anything, or pick a suggestion below.",
         "emptyTitle": "How can I help you today?",
@@ -146,7 +142,6 @@
         "modelList": "Model list",
         "modelPlaceholder": "e.g. gpt-4o",
         "modelSearchPlaceholder": "Search models…",
-        "models": "Models",
         "name": "Provider name",
         "nameDesc": "Display name; any characters allowed, editable anytime. Defaults to the provider ID when left blank.",
         "namePlaceholder": "Enter the provider display name",
@@ -160,7 +155,6 @@
         "searchPlaceholder": "Search providers…",
         "selectAll": "Select all",
         "settingsTitle": "Provider settings",
-        "title": "Providers",
         "type": "Type",
         "typeDesc": "API format the provider speaks; cannot be changed after creation.",
         "unsavedChanges": "You have unsaved changes."

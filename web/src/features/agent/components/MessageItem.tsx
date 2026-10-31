@@ -80,8 +80,8 @@ export function MessageItem({
                 <MessageActions>
                     <MessageCopyAction
                         text={message.content}
-                        label={t("conversation.copy")}
-                        copiedLabel={t("conversation.copied")}
+                        label={t("common.copy")}
+                        copiedLabel={t("common.copied")}
                     />
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageRegenerateAction

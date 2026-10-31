@@ -18,7 +18,7 @@ export function ToolCallList({ calls }: ToolCallListProps) {
         output: t("agent.toolCall.output"),
         copyResult: t("agent.toolCall.copyResult"),
         waiting: t("agent.toolCall.waiting"),
-        copied: t("agent.toolCall.copied"),
+        copied: t("common.copied"),
         showAll: t("agent.toolCall.showAll"),
         showLess: t("agent.toolCall.showLess"),
     };
