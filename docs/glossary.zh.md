@@ -2,7 +2,7 @@
 
 [English](glossary.md) | 中文
 
-Lemma 中每个概念只用一个术语。每个条目说明该术语在代码中的含义，并指出所属的 crate；跨 crate 的行为见 [architecture.zh.md](architecture.zh.md)，类型定义归 [subsystems/](subsystems/README.zh.md) 中规划的子系统页面。
+Lemma 中每个概念只用一个术语。每个条目说明该术语在代码中的含义，并指出所属的 crate；跨 crate 的行为见 [architecture.zh.md](architecture.zh.md)，类型定义归 [subsystems/](subsystems/README.zh.md) 中的子系统页面。
 
 ## 会话树
 

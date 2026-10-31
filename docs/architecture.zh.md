@@ -2,7 +2,7 @@
 
 [English](architecture.md) | 中文
 
-修改 `crates/` 下的任何内容之前先读本文。本文梳理 crate 分层、承载它们的三种运行时、一次 turn 的完整链路，以及新行为的接入点。术语以[术语表](glossary.zh.md)为准；类型定义放在 [subsystems/](subsystems/README.zh.md) 列出的规划中的子系统页面上。
+修改 `crates/` 下的任何内容之前先读本文。本文梳理 crate 分层、承载它们的三种运行时、一次 turn 的完整链路，以及新行为的接入点。术语以[术语表](glossary.zh.md)为准；类型定义放在 [subsystems/](subsystems/README.zh.md) 列出的子系统页面上。
 
 ## Crate 分层
 
@@ -31,7 +31,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
 | 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
 
-**服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供四个 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
+**服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
 **本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 

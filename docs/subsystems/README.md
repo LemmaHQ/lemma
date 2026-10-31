@@ -6,18 +6,7 @@ One page per subsystem of Lemma: what it is, the data structures it moves, and t
 
 | Page | Owns |
 | --- | --- |
-| `core.md` | the shared domain types in `lemma-core`: messages, content blocks, stream events, tool calls, token usage |
 | [agent.md](agent.md) | the agent in `lemma-agent` and the turn loop in `lemma-agent-loop`, with its `AgentService` exposure: turn assembly, ordered stream events, abort and resume |
 | [adapter.md](adapter.md) | the model interface in `lemma-model` and the adapters in `lemma-adapter`: request assembly, the connector, transport, model lists, and SSE parsing for OpenAI, Anthropic, and Gemini |
-| `tools.md` | the tool registry in `lemma-tools`: tool definitions, execution tiers, approval policy, the workspace environment, built-in tools |
-| `conversation.md` | conversation records, the message tree (the leaf pointer, branching, and the context path), and the conversation service in `lemma-conversation` |
-| `provider.md` | provider records, model catalogs, and stored credentials in `lemma-provider` |
-| `auth.md` | accounts, password hashing, JWT issuance, local-mode accounts, and secret encryption in `lemma-auth` and `lemma-crypto` |
-| `storage.md` | the database connection and the merged schema migrations in `lemma-host`, for SQLite and PostgreSQL |
-| `rpc.md` | the `proto/lemma/v1` contracts, ConnectRPC services under `crates/rpc/` and their assembly in `lemma-host`, and the error model in `lemma-proto` |
-| `server.md` | `lemma-server`: configuration, embedded web assets, server mode |
-| `web-client.md` | the React client in `web/`: RPC clients, stores, the conversation view |
-| `desktop-engine.md` | the Electron shell in `desktop/`, the `lemma-desktop` addon, and the engine process lifecycle |
-| `mobile-bridge.md` | the UniFFI bindings in `lemma-mobile` and the Android client in `mobile/` |
 
 Type declarations on these pages match their source declarations. The owning page updates in the same change that reshapes a documented type ([writing rules](../AGENTS.md#writing-rules)).

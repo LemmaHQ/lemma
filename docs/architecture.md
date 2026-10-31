@@ -2,7 +2,7 @@
 
 English | [中文](architecture.zh.md)
 
-Read this before changing anything under `crates/`. It maps the crate layers, the three runtimes that host them, the path of one turn, and where new behavior attaches. Terms follow the [glossary](glossary.md); type definitions live on the planned subsystem pages listed in [subsystems/](subsystems/README.md).
+Read this before changing anything under `crates/`. It maps the crate layers, the three runtimes that host them, the path of one turn, and where new behavior attaches. Terms follow the [glossary](glossary.md); type definitions live on the subsystem pages listed in [subsystems/](subsystems/README.md).
 
 ## Crate layers
 
@@ -31,7 +31,7 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 | Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`                      | per-conversation workspace | sealed with an engine-generated key |
 | In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`                      | per-conversation workspace | sealed with an engine-generated key |
 
-**Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the migrations at startup, and serves the four ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
+**Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the migrations at startup, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
 
 **The local engine** is the desktop runtime. Electron runs the `lemma-desktop` addon in a utility process; the addon opens the engine over Electron's `userData` directory, which stores its JWT and sealing secrets in `secrets.json`. Users register their own accounts; desktop has no default account. The renderer is the same web client; its requests travel over a `MessagePort` to the engine process, which serves them on the Connect router in-process, with no network listener ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
 

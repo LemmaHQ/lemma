@@ -2,7 +2,7 @@
 
 English | [中文](glossary.zh.md)
 
-Lemma uses one term per concept. Each entry states what the term means in code and names the owning crate; behavior across crates is in [architecture.md](architecture.md), and type definitions belong to the planned subsystem pages in [subsystems/](subsystems/README.md).
+Lemma uses one term per concept. Each entry states what the term means in code and names the owning crate; behavior across crates is in [architecture.md](architecture.md), and type definitions belong to the subsystem pages in [subsystems/](subsystems/README.md).
 
 ## Conversation tree
 
