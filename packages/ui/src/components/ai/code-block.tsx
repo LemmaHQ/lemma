@@ -8,12 +8,34 @@ import {
     useRef,
     useState,
 } from "react";
-import { type BundledLanguage, codeToHtml } from "shiki";
+import {
+    type BundledLanguage,
+    type Highlighter,
+    createHighlighter,
+} from "shiki";
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 import { useCopyText } from "#hooks/use-copy-text";
 import { CheckIcon } from "#icons/check";
 import { CopyIcon } from "#icons/copy";
+
+let highlighter: Promise<Highlighter> | undefined;
+
+async function highlight(code: string, language: BundledLanguage) {
+    highlighter ??= createHighlighter({
+        themes: ["one-light", "one-dark-pro"],
+        langs: [],
+        engine: createJavaScriptRegexEngine(),
+    });
+    const loaded = await highlighter;
+    await loaded.loadLanguage(language);
+    return loaded.codeToHtml(code, {
+        lang: language,
+        themes: { light: "one-light", dark: "one-dark-pro" },
+        defaultColor: "light-dark()",
+    });
+}
 
 type CodeBlockProps = ComponentProps<"div"> & {
     code: string;
@@ -30,17 +52,13 @@ export function CodeBlock({
 
     useEffect(() => {
         let current = true;
-        const highlight = async () => {
-            const highlighted = await codeToHtml(code, {
-                lang: language,
-                themes: { light: "one-light", dark: "one-dark-pro" },
-                defaultColor: "light-dark()",
-            });
+        const render = async () => {
+            const highlighted = await highlight(code, language);
             if (current) {
                 setHtml(highlighted);
             }
         };
-        void highlight();
+        void render();
         return () => {
             current = false;
         };
