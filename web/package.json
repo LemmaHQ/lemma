@@ -4,6 +4,11 @@
     "private": true,
     "description": "Lemma web client",
     "type": "module",
+    "sideEffects": [
+        "*.css",
+        "./src/main.tsx",
+        "./src/i18n/index.ts"
+    ],
     "scripts": {
         "gen": "npm run gen:tokens && npm run gen:proto",
         "gen:tokens": "node ../design/gen-tokens.ts",
