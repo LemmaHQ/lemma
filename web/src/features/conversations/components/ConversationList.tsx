@@ -51,10 +51,8 @@ export function ConversationList({
             />
             <AlertDialog
                 open={pendingDeleteId !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setPendingDeleteId(null);
-                    }
+                onOpenChange={() => {
+                    setPendingDeleteId(null);
                 }}
             >
                 <AlertDialogContent size="sm">
@@ -74,6 +72,7 @@ export function ConversationList({
                             variant="destructive"
                             onClick={() => {
                                 if (pendingDeleteId !== null) {
+                                    setPendingDeleteId(null);
                                     void runAction(() =>
                                         conversations.delete(pendingDeleteId),
                                     );
