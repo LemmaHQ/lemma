@@ -12,7 +12,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                           | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
 | Domains   | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; conversations, the message tree, and the `conversations` and `messages` tables; provider configuration, model lists, and the `providers` table; the migrations of these tables; API-key sealing            |
-| Engine    | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop`                   | Vendor wire formats and model lists; the tool registry, approval policy, and execution environment; the turn loop and its cancellation                                                                                                            |
+| Engine    | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop`                   | Vendor wire formats and model lists; the tool registry and execution environment; the turn loop and its cancellation                                                                                                                              |
 | Agent     | `lemma-agent`                                                        | Assembling one turn from a request (provider endpoint, adapter, conversations, workspace tools), running it, and aborting running turns                                                                                                           |
 | RPC       | `crates/rpc/*`, including `lemma-host`                               | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`    |
 | Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`                      | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                       |
@@ -68,7 +68,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
-      approval policy -> Tool::execute in the workspace                   -> tool_call_finished
+      Tool::execute in the workspace                                      -> tool_call_finished
       append the tool result message; move the leaf
     next step
 ```
@@ -79,7 +79,7 @@ Every `AgentEvent` carries the server's `occurred_at` instant, preserved by repl
 
 The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
-Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool, a `Prompt` or `Deny` approval decision, and a tool failure all become an error tool result that the model sees in the next step; none of them ends the turn.
+Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
 
 `AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`.
 
@@ -103,7 +103,6 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Add a vendor protocol                          | add a `ProviderKind` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector` |
 | Add a model-facing tool                        | implement `Tool` in `lemma-tools` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`)                                |
-| Gate tool calls                                | implement `ApprovalPolicy` and set it on the `ToolRuntime`                                                                               |
 | Run tools somewhere else                       | implement `ExecEnv`                                                                                                                      |
 | Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                      |
 | Add an RPC                                     | change the `.proto`, implement it in the matching `crates/rpc/` crate, and regenerate the clients                                        |

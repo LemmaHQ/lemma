@@ -35,12 +35,10 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Tools
 
-- **tool** — an implementation of `lemma_tools::Tool`: a `ToolSpec` advertised to the model, a tier, and an `execute` function. The built-in tools are `read_file`, `write_file`, and `bash`.
-- **tool tier** — the capability class of a tool: `Read`, `Write`, or `Exec`. An approval policy receives it with every call.
-- **approval policy** — an `ApprovalPolicy` that returns `Allow`, `Prompt`, or `Deny` for each tool call. `Prompt` and `Deny` turn the call into an error tool result.
+- **tool** — an implementation of `lemma_tools::Tool`: a `ToolSpec` advertised to the model and an `execute` function. The built-in tools are `read_file`, `write_file`, and `bash`.
 - **execution environment** — an `ExecEnv`: file reads and writes, directory listings, and shell commands that tools perform. `LocalExecEnv` roots them in a workspace.
 - **workspace** — the directory `workspaces/<conversation id>` under the local data directory where a conversation's tools run.
-- **tool runtime** — a `ToolRuntime`: the registry, environment, and optional approval policy a host attaches to the loop. A loop without one sends no tool definitions.
+- **tool runtime** — a `ToolRuntime`: the registry and environment a host attaches to the loop. A loop without one sends no tool definitions.
 
 ## Runtimes and accounts
 

@@ -48,7 +48,6 @@
 | access token | 访问令牌 | | |
 | adapter | 适配器 | | |
 | alert dialog | 确认对话框 | 警告框 | `AlertDialog` 组件 |
-| approval policy | 审批策略 | | |
 | branch | 分支 | | 消息树中的分支 |
 | canvas | 画布 | | |
 | composer | 输入框面板 | 编辑器 | 会话页底部的消息输入区 |

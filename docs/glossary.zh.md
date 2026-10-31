@@ -35,12 +35,10 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## 工具
 
-- **工具（tool）** — `lemma_tools::Tool` 的一个实现：提供给模型的 `ToolSpec`、一个等级，以及 `execute` 函数。内置工具是 `read_file`、`write_file` 与 `bash`。
-- **工具等级（tool tier）** — 工具的能力类别：`Read`、`Write` 或 `Exec`。审批策略在每次调用时收到它。
-- **审批策略（approval policy）** — 对每次工具调用返回 `Allow`、`Prompt` 或 `Deny` 的 `ApprovalPolicy`。`Prompt` 与 `Deny` 会把这次调用变成一条错误工具结果。
+- **工具（tool）** — `lemma_tools::Tool` 的一个实现：提供给模型的 `ToolSpec` 与 `execute` 函数。内置工具是 `read_file`、`write_file` 与 `bash`。
 - **执行环境（execution environment）** — 一个 `ExecEnv`：工具执行的文件读写、目录列举与 shell 命令。`LocalExecEnv` 把它们限定在一个工作区内。
 - **工作区（workspace）** — 本地数据目录下的 `workspaces/<conversation id>` 目录，会话的工具在其中运行。
-- **工具运行时（tool runtime）** — 一个 `ToolRuntime`：宿主挂到循环上的注册表、执行环境与可选的审批策略。没有它的循环不发送工具定义。
+- **工具运行时（tool runtime）** — 一个 `ToolRuntime`：宿主挂到循环上的注册表与执行环境。没有它的循环不发送工具定义。
 
 ## 运行时与账号
 

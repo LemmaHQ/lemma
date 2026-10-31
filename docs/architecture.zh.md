@@ -12,7 +12,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | ----- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                           | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
 | 领域  | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `conversations` 与 `messages` 表；provider 配置、模型列表，以及 provider 相关的表；这些表的迁移；API key 加密                                                          |
-| 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`                   | 厂商协议格式与模型列表；工具注册表、审批策略与执行环境；turn 循环及其取消                                                                                                                                               |
+| 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`                   | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
 | Agent | `lemma-agent`                                                        | 根据请求组装一个 turn（provider 端点、适配器、会话、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                       |
 | RPC   | `crates/rpc/*`，包括 `lemma-host`                                    | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
 | 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                      | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
@@ -68,7 +68,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
-      approval policy -> Tool::execute in the workspace                   -> tool_call_finished
+      Tool::execute in the workspace                                      -> tool_call_finished
       append the tool result message; move the leaf
     next step
 ```
@@ -79,7 +79,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具、审批结果为 `Prompt` 或 `Deny`、工具执行失败，都会成为一条错误工具结果，模型在下一个 step 中看到它；这些情况都不会结束 turn。
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
 
 `AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
@@ -103,7 +103,6 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | 新增厂商协议                   | 在 `lemma-model` 中加一个 `ProviderKind` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定      |
 | 新增面向模型的工具             | 在 `lemma-tools` 中实现 `Tool`，并在 `Agent` 构建 `ToolRegistry` 处注册（`lemma-agent`）                                          |
-| 管控工具调用                   | 实现 `ApprovalPolicy` 并设置到 `ToolRuntime` 上                                                                                   |
 | 在别处运行工具                 | 实现 `ExecEnv`                                                                                                                    |
 | 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector`                                                                                  |
 | 新增 RPC                       | 修改 `.proto`，在对应的 `crates/rpc/` crate 中实现，并重新生成客户端代码                                                          |

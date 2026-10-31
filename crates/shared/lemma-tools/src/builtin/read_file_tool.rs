@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::exec_env::ExecEnv;
-use crate::tool::{BoxToolFuture, Tool, ToolTier};
+use crate::tool::{BoxToolFuture, Tool};
 use crate::tool_error::ToolError;
 
 #[derive(Deserialize)]
@@ -33,10 +33,6 @@ impl<E: ExecEnv> Tool<E> for ReadFileTool {
                 "required": ["path"]
             }),
         }
-    }
-
-    fn tier(&self) -> ToolTier {
-        ToolTier::Read
     }
 
     fn execute<'exec>(&'exec self, args: Value, env: &'exec E) -> BoxToolFuture<'exec> {
