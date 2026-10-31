@@ -35,16 +35,13 @@ pub trait ExecEnv: Send + Sync {
         content: &str,
     ) -> impl Future<Output = Result<(), ToolError>> + Send;
 
-    /// Executes a shell command in the sandbox workspace, or in `cwd` below
-    /// it.
+    /// Executes a shell command in the sandbox workspace.
     ///
     /// # Errors
     ///
-    /// [`ToolError::Validation`] for a `cwd` outside the sandbox and
     /// [`ToolError::Execution`] when the process cannot start.
     fn exec_command(
         &self,
         command: &str,
-        cwd: Option<&Path>,
     ) -> impl Future<Output = Result<ExecCommandResult, ToolError>> + Send;
 }

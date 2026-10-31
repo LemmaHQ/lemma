@@ -62,15 +62,7 @@ impl ExecEnv for LocalExecEnv {
             .map_err(|e| ToolError::Execution(format!("write {}: {e}", path.display())))
     }
 
-    async fn exec_command(
-        &self,
-        command: &str,
-        cwd: Option<&Path>,
-    ) -> Result<ExecCommandResult, ToolError> {
-        let workdir = match cwd {
-            Some(path) => self.resolve(path)?,
-            None => self.root.clone(),
-        };
+    async fn exec_command(&self, command: &str) -> Result<ExecCommandResult, ToolError> {
         let mut process = if cfg!(windows) {
             let mut cmd = process::Command::new("cmd");
             cmd.arg("/C").arg(command);
@@ -81,7 +73,7 @@ impl ExecEnv for LocalExecEnv {
             cmd
         };
         let output = process
-            .current_dir(&workdir)
+            .current_dir(&self.root)
             .output()
             .await
             .map_err(|e| ToolError::Execution(format!("spawn command: {e}")))?;

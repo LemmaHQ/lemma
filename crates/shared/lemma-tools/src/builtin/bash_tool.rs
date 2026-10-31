@@ -37,7 +37,7 @@ impl<E: ExecEnv> Tool<E> for BashTool {
         Box::pin(async move {
             let parsed: BashArgs =
                 serde_json::from_value(args).map_err(|e| ToolError::Validation(e.to_string()))?;
-            let res = env.exec_command(&parsed.command, None).await?;
+            let res = env.exec_command(&parsed.command).await?;
             Ok(json!({
                 "exit_code": res.exit_code,
                 "stdout": res.stdout,
