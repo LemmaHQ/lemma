@@ -19,20 +19,10 @@ class LocalMessageRepository(database: LemmaDatabase) {
         conversationId: String,
         role: Long,
         content: String,
-        status: Long,
         createdAt: Long,
-        updatedAt: Long,
     ) {
         withContext(Dispatchers.Default) {
-            queries.insertOrReplaceMessage(
-                id,
-                conversationId,
-                role,
-                content,
-                status,
-                createdAt,
-                updatedAt,
-            )
+            queries.insertOrReplaceMessage(id, conversationId, role, content, createdAt)
         }
     }
 }

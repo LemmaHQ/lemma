@@ -13,6 +13,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.client.ClientProvider
@@ -78,6 +79,8 @@ fun ConversationScreen(
 
     LaunchedEffect(state.currentConversation?.id, state.providersLoaded) {
         if (!state.providersLoaded) return@LaunchedEffect
+        state.hasOlderMessages = false
+        state.isLoadingOlderMessages = false
         val convId = state.currentConversation?.id
         if (convId == null) {
             state.messages.clear()
@@ -101,7 +104,8 @@ fun ConversationScreen(
         }
 
         try {
-            val serverMsgs = client.listMessages(convId)
+            val page = client.listMessages(convId)
+            val serverMsgs = page.messages
             val list =
                 serverMsgs.asReversed().map {
                     UiMessage(
@@ -120,11 +124,10 @@ fun ConversationScreen(
                     conversationId = convId,
                     role = if (m.role == "user") 1L else 2L,
                     content = m.content,
-                    status = 2L,
                     createdAt = m.createdAtSeconds,
-                    updatedAt = m.updatedAtSeconds,
                 )
             }
+            state.hasOlderMessages = page.hasMore
             val lastUsed = serverMsgs.firstOrNull {
                 it.role == "assistant" && !it.model.isNullOrBlank()
             }
@@ -145,7 +148,22 @@ fun ConversationScreen(
         }
     }
 
-    LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.text) {
+    LaunchedEffect(state.currentConversation?.id) {
+        snapshotFlow {
+            Triple(
+                listState.firstVisibleItemIndex == 0,
+                state.hasOlderMessages,
+                state.messages.firstOrNull()?.id,
+            )
+        }
+            .collect { (atTop, hasOlder, _) ->
+                if (atTop && hasOlder && !state.isLoadingOlderMessages) {
+                    loadOlderMessages(state, client, localMessageRepository)
+                }
+            }
+    }
+
+    LaunchedEffect(state.messages.lastOrNull()?.id, state.messages.lastOrNull()?.text) {
         if (state.messages.isNotEmpty()) {
             listState.animateScrollToItem(state.messages.size - 1)
         }

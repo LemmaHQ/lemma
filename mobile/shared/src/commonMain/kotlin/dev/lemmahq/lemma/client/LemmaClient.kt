@@ -181,22 +181,28 @@ class LemmaClient(
         }
     }
 
-    /** Lists a conversation's settled messages. */
-    suspend fun listMessages(conversationId: String): List<ClientMessage> {
-        val request = listMessagesRequest { this.conversationId = conversationId }
+    /** Lists one newest-first page of a conversation's settled messages. */
+    suspend fun listMessages(conversationId: String, beforeId: String? = null): ClientMessagePage {
+        val request = listMessagesRequest {
+            this.conversationId = conversationId
+            beforeId?.let { this.beforeId = it }
+        }
         return when (val response = rpc.conversation.listMessages(request, emptyMap())) {
             is ResponseMessage.Success ->
-                response.message.messagesList.map {
-                    ClientMessage(
-                        id = it.id,
-                        role = it.role,
-                        content = it.content,
-                        providerId = it.providerId.ifBlank { null },
-                        model = it.model.ifBlank { null },
-                        createdAtSeconds = it.createdAt.seconds,
-                        updatedAtSeconds = it.updatedAt.seconds,
-                    )
-                }
+                ClientMessagePage(
+                    messages =
+                        response.message.messagesList.map {
+                            ClientMessage(
+                                id = it.id,
+                                role = it.role,
+                                content = it.content,
+                                providerId = it.providerId.ifBlank { null },
+                                model = it.model.ifBlank { null },
+                                createdAtSeconds = it.createdAt.seconds,
+                            )
+                        },
+                    hasMore = response.message.hasMore,
+                )
             is ResponseMessage.Failure -> throw response.cause
         }
     }
@@ -210,7 +216,6 @@ class LemmaClient(
         content: String,
         providerId: String,
         model: String,
-        clientMsgId: String,
     ): Flow<AgentStreamEvent> = flow {
         val stream = rpc.agent.sendMessage(emptyMap())
         stream.sendAndClose(
@@ -219,7 +224,6 @@ class LemmaClient(
                 this.content = content
                 this.providerId = providerId
                 this.model = model
-                this.clientMsgId = clientMsgId
             }
         )
         for (response in stream.responseChannel()) {
@@ -227,33 +231,8 @@ class LemmaClient(
             when {
                 event.hasDelta() && event.delta.hasText() ->
                     emit(AgentStreamEvent.Delta(event.delta.text.content))
-                event.hasDelta() && event.delta.hasThinking() ->
-                    emit(AgentStreamEvent.ThinkingDelta(event.delta.thinking.content))
                 event.hasStarted() -> emit(AgentStreamEvent.Started(event.started.messageId))
-                event.hasTurnStarted() ->
-                    emit(AgentStreamEvent.TurnStarted(event.turnStarted.messageId))
-                event.hasToolCallStarted() ->
-                    event.toolCallStarted.let {
-                        emit(AgentStreamEvent.ToolStarted(it.callId, it.name, it.arguments))
-                    }
-                event.hasToolCallFinished() ->
-                    event.toolCallFinished.let {
-                        emit(
-                            AgentStreamEvent.ToolFinished(
-                                it.callId,
-                                it.name,
-                                it.content,
-                                it.isError,
-                            )
-                        )
-                    }
-                event.hasDone() ->
-                    emit(
-                        AgentStreamEvent.Done(
-                            promptTokens = event.done.usage.promptTokens.toLong(),
-                            completionTokens = event.done.usage.completionTokens.toLong(),
-                        )
-                    )
+                event.hasDone() -> emit(AgentStreamEvent.Done)
                 event.hasAborted() -> emit(AgentStreamEvent.Aborted)
                 event.hasError() -> emit(AgentStreamEvent.Error(event.error.message))
             }

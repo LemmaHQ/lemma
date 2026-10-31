@@ -35,63 +35,57 @@ internal suspend fun sendTurn(
         conversationId = conv.id,
         role = 1L,
         content = text,
-        status = 0L,
         createdAt = 0L,
-        updatedAt = 0L,
     )
 
     state.isStreaming = true
 
     try {
-        client
-            .sendMessage(conv.id, text, state.selectedProviderId, state.selectedModel, userMsgId)
-            .collect { event ->
-                val lastIdx = state.messages.indexOfLast { it.id == aiMsgId }
-                when (event) {
-                    is AgentStreamEvent.Started -> {
-                        state.streamingMessageId = event.messageId
+        client.sendMessage(conv.id, text, state.selectedProviderId, state.selectedModel).collect {
+            event ->
+            val lastIdx = state.messages.indexOfLast { it.id == aiMsgId }
+            when (event) {
+                is AgentStreamEvent.Started -> {
+                    state.streamingMessageId = event.messageId
+                }
+                is AgentStreamEvent.Delta -> {
+                    if (lastIdx >= 0) {
+                        val old = state.messages[lastIdx]
+                        state.messages[lastIdx] = old.copy(text = old.text + event.text)
                     }
-                    is AgentStreamEvent.Delta -> {
-                        if (lastIdx >= 0) {
-                            val old = state.messages[lastIdx]
-                            state.messages[lastIdx] = old.copy(text = old.text + event.text)
-                        }
+                }
+                AgentStreamEvent.Done -> {
+                    if (lastIdx >= 0) {
+                        val aiText = state.messages[lastIdx].text
+                        localMessageRepository.saveMessage(
+                            id = aiMsgId,
+                            conversationId = conv.id,
+                            role = 2L,
+                            content = aiText,
+                            createdAt = 0L,
+                        )
                     }
-                    is AgentStreamEvent.Done -> {
-                        if (lastIdx >= 0) {
-                            val aiText = state.messages[lastIdx].text
-                            localMessageRepository.saveMessage(
-                                id = aiMsgId,
-                                conversationId = conv.id,
-                                role = 2L,
-                                content = aiText,
-                                status = 2L,
-                                createdAt = 0L,
-                                updatedAt = 0L,
+                }
+                AgentStreamEvent.Aborted -> {
+                    if (lastIdx >= 0) {
+                        val old = state.messages[lastIdx]
+                        state.messages[lastIdx] =
+                            old.copy(
+                                text =
+                                    if (old.text.isBlank()) "[$abortedNotice]"
+                                    else old.text + "\n[$abortedNotice]"
                             )
-                        }
                     }
-                    is AgentStreamEvent.Aborted -> {
-                        if (lastIdx >= 0) {
-                            val old = state.messages[lastIdx]
-                            state.messages[lastIdx] =
-                                old.copy(
-                                    text =
-                                        if (old.text.isBlank()) "[$abortedNotice]"
-                                        else old.text + "\n[$abortedNotice]"
-                                )
-                        }
+                }
+                is AgentStreamEvent.Error -> {
+                    if (lastIdx >= 0) {
+                        val old = state.messages[lastIdx]
+                        state.messages[lastIdx] =
+                            old.copy(text = old.text + "\n[Error: ${event.message}]")
                     }
-                    is AgentStreamEvent.Error -> {
-                        if (lastIdx >= 0) {
-                            val old = state.messages[lastIdx]
-                            state.messages[lastIdx] =
-                                old.copy(text = old.text + "\n[Error: ${event.message}]")
-                        }
-                    }
-                    else -> {}
                 }
             }
+        }
     } catch (e: Exception) {
         val formattedError = ErrorFormatter.format(e)
         state.bannerErrorMessage = formattedError

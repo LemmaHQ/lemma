@@ -8,5 +8,4 @@ data class ClientMessage(
     val providerId: String?,
     val model: String?,
     val createdAtSeconds: Long,
-    val updatedAtSeconds: Long,
 )

@@ -3,14 +3,12 @@ CREATE TABLE cached_message (
     conversation_id TEXT NOT NULL,
     role INTEGER NOT NULL,
     content TEXT NOT NULL,
-    status INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL
 );
 
 selectMessagesByConversation:
 SELECT * FROM cached_message WHERE conversation_id = ? ORDER BY created_at ASC;
 
 insertOrReplaceMessage:
-INSERT OR REPLACE INTO cached_message(id, conversation_id, role, content, status, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO cached_message(id, conversation_id, role, content, created_at)
+VALUES (?, ?, ?, ?, ?);

@@ -13,6 +13,8 @@ internal class ConversationState {
     val conversations = mutableStateListOf<ClientConversation>()
     var currentConversation by mutableStateOf<ClientConversation?>(null)
     val messages = mutableStateListOf<UiMessage>()
+    var hasOlderMessages by mutableStateOf(false)
+    var isLoadingOlderMessages by mutableStateOf(false)
     var inputText by mutableStateOf("")
     var isStreaming by mutableStateOf(false)
     var streamingMessageId by mutableStateOf<String?>(null)
