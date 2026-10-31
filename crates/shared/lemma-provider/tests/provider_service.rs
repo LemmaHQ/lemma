@@ -177,7 +177,6 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
         assert_eq!(toggled.api_key, "sk-original", "api key");
         assert_eq!(toggled.api_path, before.api_path, "generation path");
         assert_eq!(toggled.models_path, before.models_path, "model-list path");
-        assert_eq!(toggled.created_at, before.created_at, "creation time");
         assert_eq!(rekeyed.api_key, "sk-replaced", "replaced api key");
         assert!(!rekeyed.enabled, "enabled flag after the key change");
         assert_eq!(

@@ -74,8 +74,6 @@ impl<C: Connector> ProviderService<C> {
             enabled: r.enabled,
             api_path: r.api_path.clone(),
             models_path: r.models_path.clone(),
-            created_at: r.created_at,
-            updated_at: r.updated_at,
         }
     }
 
@@ -133,7 +131,6 @@ impl<C: Connector> ProviderService<C> {
             models: Set(Models(input.models)),
             enabled: Set(true),
             created_at: Set(now),
-            updated_at: Set(now),
         }
         .insert(&self.db)
         .await
@@ -174,7 +171,6 @@ impl<C: Connector> ProviderService<C> {
                 .map_or(NotSet, |s| Set(s.trim().to_owned())),
             models: input.models.map_or(NotSet, |m| Set(Models(m))),
             enabled: input.enabled.map_or(NotSet, Set),
-            updated_at: Set(Utc::now()),
             ..Default::default()
         })
         .validate()?

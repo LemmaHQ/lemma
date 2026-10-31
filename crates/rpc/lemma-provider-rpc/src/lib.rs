@@ -5,7 +5,6 @@
 use std::fmt::{self, Debug};
 use std::sync::Arc;
 
-use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_model::{Connector, Endpoint, ProviderKind};
 use lemma_proto::lemma::v1;
@@ -77,8 +76,6 @@ fn to_proto(v: ProviderView) -> Provider {
         enabled: v.enabled,
         api_path: v.api_path,
         models_path: v.models_path,
-        created_at: Timestamp::from(v.created_at).into(),
-        updated_at: Timestamp::from(v.updated_at).into(),
         ..Default::default()
     }
 }

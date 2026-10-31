@@ -35,8 +35,6 @@ pub struct Model {
     pub enabled: bool,
     /// Creation time.
     pub created_at: DateTimeUtc,
-    /// Last update time.
-    pub updated_at: DateTimeUtc,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

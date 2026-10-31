@@ -47,7 +47,6 @@ fn conversation_to_proto(c: &DomainConversation) -> Conversation {
     Conversation {
         id: c.id.to_string(),
         title: c.title.clone(),
-        created_at: Timestamp::from(c.created_at).into(),
         updated_at: Timestamp::from(c.updated_at).into(),
         ..Default::default()
     }

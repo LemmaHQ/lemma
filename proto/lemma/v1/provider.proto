@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package lemma.v1;
 
-import "google/protobuf/timestamp.proto";
-
 // Provider protocol kind.
 enum ProviderKind {
   PROVIDER_KIND_UNSPECIFIED = 0;
@@ -14,6 +12,9 @@ enum ProviderKind {
 
 // Provider configuration scoped per user account.
 message Provider {
+  reserved 10, 11;
+  reserved "created_at", "updated_at";
+
   string id = 1;
   ProviderKind kind = 2;
   string name = 3;
@@ -23,8 +24,6 @@ message Provider {
   bool enabled = 7;
   string api_path = 8; // Empty string uses provider kind default
   string models_path = 9; // Empty string uses provider kind default
-  google.protobuf.Timestamp created_at = 10;
-  google.protobuf.Timestamp updated_at = 11;
   // Machine identifier visible to users; restricted to ASCII, immutable after creation.
   string identifier = 12;
 }

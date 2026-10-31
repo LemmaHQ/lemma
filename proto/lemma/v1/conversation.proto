@@ -14,12 +14,11 @@ enum MessageStatus {
 }
 
 message Conversation {
-  reserved 3, 4;
-  reserved "status", "archived_at";
+  reserved 3, 4, 6;
+  reserved "status", "archived_at", "created_at";
 
   string id = 1;
   string title = 2;
-  google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
 }
 

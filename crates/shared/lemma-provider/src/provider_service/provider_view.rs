@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use lemma_model::ProviderKind;
 use uuid::Uuid;
 
@@ -26,8 +25,4 @@ pub struct ProviderView {
     pub api_path: String,
     /// Model-list endpoint path override.
     pub models_path: String,
-    /// Creation time.
-    pub created_at: DateTime<Utc>,
-    /// Last update time.
-    pub updated_at: DateTime<Utc>,
 }
