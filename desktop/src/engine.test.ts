@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+import { addonFile } from "./engine-addon";
 import { connect, onExit, start, stop } from "./engine";
 
 type FakeUtility = EventEmitter & {
@@ -78,6 +79,24 @@ it("forks the engine host with the addon of the selected profile and userData", 
     );
 });
 
+it("loads the addon from the resources directory when packaged", async () => {
+    mocks.app.isPackaged = true;
+    Object.defineProperty(process, "resourcesPath", {
+        value: "/resources",
+        configurable: true,
+    });
+    const started = start();
+    proc.emit("message", READY);
+    await started;
+    mocks.app.isPackaged = false;
+
+    expect(mocks.fork).toHaveBeenCalledWith(
+        expect.anything(),
+        [path.join("/resources", addonFile()), "/userData"],
+        expect.anything(),
+    );
+});
+
 it("rejects and kills the engine when it fails to open", async () => {
     const started = start();
     proc.emit("message", { type: "failed", reason: "open lemma.db: locked" });
@@ -86,9 +105,10 @@ it("rejects and kills the engine when it fails to open", async () => {
     expect(proc.kill).toHaveBeenCalled();
 });
 
-it("ignores a malformed message while waiting for readiness", async () => {
+it("ignores malformed messages while waiting for readiness", async () => {
     vi.useFakeTimers();
     const started = start();
+    proc.emit("message", "ready");
     proc.emit("message", { type: "failed" });
     vi.advanceTimersByTime(10_000);
 
@@ -184,4 +204,11 @@ it("kills the engine when it outlives the 3s stop grace period", async () => {
     await stopped;
 
     expect(proc.kill).toHaveBeenCalled();
+});
+
+it("returns at once when asked to stop an engine that is not running", async () => {
+    await stop();
+
+    expect(mocks.fork).not.toHaveBeenCalled();
+    expect(proc.postMessage).not.toHaveBeenCalled();
 });

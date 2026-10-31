@@ -96,6 +96,80 @@ it("reports a failed request as an error", async () => {
     });
 });
 
+it("reports a non-Error rejection by its text", async () => {
+    const port = new FakePort();
+    const engine = fakeEngine([]);
+    engine.request.mockRejectedValueOnce("engine closed");
+    serveEnginePort(port, engine);
+
+    port.deliver(request(6));
+    await vi.waitFor(() => {
+        expect(port.sent).toEqual([
+            { type: "error", id: 6, reason: "engine closed" },
+        ]);
+    });
+});
+
+it("reports a body that fails mid-stream as an error after its head", async () => {
+    const port = new FakePort();
+    const engine = fakeEngine([]);
+    engine.read.mockRejectedValueOnce(new Error("stream reset"));
+    serveEnginePort(port, engine);
+
+    port.deliver(request(7));
+    await vi.waitFor(() => {
+        expect(port.sent.map((m) => m.type)).toEqual(["head", "error"]);
+    });
+    expect(port.sent[1]).toEqual({
+        type: "error",
+        id: 7,
+        reason: "stream reset",
+    });
+});
+
+it("stays silent when a cancelled body fails afterwards", async () => {
+    const port = new FakePort();
+    const engine = fakeEngine([]);
+    const pendingRead = Promise.withResolvers<Uint8Array | null>();
+    engine.read.mockReturnValueOnce(pendingRead.promise);
+    serveEnginePort(port, engine);
+
+    port.deliver(request(8));
+    await vi.waitFor(() => {
+        expect(port.sent).toHaveLength(1);
+    });
+    port.deliver({ type: "cancel", id: 8 });
+    pendingRead.reject(new Error("cancelled"));
+    port.deliver(request(9));
+    await vi.waitFor(() => {
+        expect(port.sent.at(-1)).toEqual({ type: "end", id: 9 });
+    });
+
+    expect(engine.cancel).toHaveBeenCalledWith(7);
+    expect(port.sent.filter((m) => m.id === 8).map((m) => m.type)).toEqual([
+        "head",
+    ]);
+});
+
+it("stays silent when a request cancelled before its head fails", async () => {
+    const port = new FakePort();
+    const engine = fakeEngine([]);
+    const head =
+        Promise.withResolvers<Awaited<ReturnType<PortEngine["request"]>>>();
+    engine.request.mockReturnValueOnce(head.promise);
+    serveEnginePort(port, engine);
+
+    port.deliver(request(10));
+    port.deliver({ type: "cancel", id: 10 });
+    head.reject(new Error("aborted"));
+    port.deliver(request(11));
+    await vi.waitFor(() => {
+        expect(port.sent.at(-1)).toEqual({ type: "end", id: 11 });
+    });
+
+    expect(port.sent.some((m) => m.id === 10)).toBe(false);
+});
+
 it("closes the body and stops forwarding once the page cancels", async () => {
     const port = new FakePort();
     const engine = fakeEngine([]);
@@ -133,15 +207,18 @@ it("closes the body of a request cancelled before its head", async () => {
     expect(port.sent).toEqual([]);
 });
 
-it("rejects a malformed message without calling the engine", () => {
+it("rejects malformed messages without calling the engine", () => {
     const port = new FakePort();
     const engine = fakeEngine([]);
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     serveEnginePort(port, engine);
 
     port.deliver({ type: "request", id: 5, method: "POST" });
+    port.deliver(null);
+    port.deliver({ type: "cancel", id: "5" });
 
     expect(engine.request).not.toHaveBeenCalled();
-    expect(error).toHaveBeenCalled();
+    expect(engine.cancel).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(3);
     error.mockRestore();
 });
