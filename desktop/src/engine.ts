@@ -32,7 +32,7 @@ const isHostEvent = (value: unknown): value is HostEvent => {
 let running: Running | null = null;
 let ready = false;
 let exitDetail = "the local engine is not running";
-const exitListeners = new Set<(detail: string) => void>();
+let exitListener: ((detail: string) => void) | null = null;
 
 const addonPath = (): string => {
     if (app.isPackaged) {
@@ -52,7 +52,7 @@ const post = (
 
 /** Calls `listener` when a ready engine exits without being stopped. */
 export function onExit(listener: (detail: string) => void): void {
-    exitListeners.add(listener);
+    exitListener = listener;
 }
 
 /**
@@ -102,9 +102,7 @@ export async function start(): Promise<void> {
             new Error(`engine exited before ready (code ${code})`),
         );
         if (wasReady) {
-            for (const listener of exitListeners) {
-                listener(exitDetail);
-            }
+            exitListener?.(exitDetail);
         }
     });
 

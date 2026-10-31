@@ -129,6 +129,8 @@ it("hands one end of a new channel to the engine and the other to the window", a
 });
 
 it("tells a window that connects after a crash that the engine stopped", async () => {
+    const supersededExit = vi.fn<(detail: string) => void>();
+    onExit(supersededExit);
     const exits: string[] = [];
     onExit((detail) => {
         exits.push(detail);
@@ -142,6 +144,7 @@ it("tells a window that connects after a crash that the engine stopped", async (
     connect(target);
 
     expect(exits).toEqual(["the local engine exited with code 9"]);
+    expect(supersededExit).not.toHaveBeenCalled();
     expect(target.send).toHaveBeenCalledWith(
         "engine-exit",
         "the local engine exited with code 9",
