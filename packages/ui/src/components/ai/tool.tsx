@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { type ReactNode, useId, useState } from "react";
+import { useId, useState } from "react";
 
 import { CodeBlockSection } from "#ai/code-block";
 import { ToolCallStatusIcon, ToolIcon } from "#ai/tool-call-icon";
@@ -25,8 +25,6 @@ export type ToolCallLabels = {
 /** `announcement` is read to screen readers when it changes; `error` shows while `status` is `"error"`. */
 export type ToolCallCardProps = {
     name: string;
-    summary?: ReactNode;
-    icon?: ReactNode;
     status: ToolCallStatus;
     labels: ToolCallLabels;
     announcement: string;
@@ -35,18 +33,10 @@ export type ToolCallCardProps = {
     error?: string | undefined;
     startedAt?: number | undefined;
     finishedAt?: number | undefined;
-    defaultOpen?: boolean;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
-    openOnError?: boolean;
-    maxCodeHeight?: number;
-    className?: string;
 };
 
 export function ToolCallCard({
     name,
-    summary,
-    icon,
     status,
     labels,
     announcement,
@@ -55,47 +45,31 @@ export function ToolCallCard({
     error,
     startedAt,
     finishedAt,
-    defaultOpen = false,
-    open: openProp,
-    onOpenChange,
-    openOnError = true,
-    maxCodeHeight = 220,
-    className,
 }: ToolCallCardProps) {
     const id = useId();
-    const [openState, setOpenState] = useState(
-        defaultOpen || (openOnError && status === "error"),
-    );
-    const [autoOpened, setAutoOpened] = useState(
-        !defaultOpen && openOnError && status === "error",
-    );
+    const [open, setOpen] = useState(status === "error");
+    const [autoOpened, setAutoOpened] = useState(status === "error");
     const [previousStatus, setPreviousStatus] = useState(status);
-    const open = openProp ?? openState;
     const elapsed = useStopwatch(startedAt, finishedAt);
 
     if (status !== previousStatus) {
         setPreviousStatus(status);
-        if (openProp === undefined && openOnError) {
-            if (status === "error" && !openState) {
-                setOpenState(true);
-                setAutoOpened(true);
-            } else if (
-                previousStatus === "error" &&
-                status !== "error" &&
-                autoOpened
-            ) {
-                setOpenState(false);
-                setAutoOpened(false);
-            }
+        if (status === "error" && !open) {
+            setOpen(true);
+            setAutoOpened(true);
+        } else if (
+            previousStatus === "error" &&
+            status !== "error" &&
+            autoOpened
+        ) {
+            setOpen(false);
+            setAutoOpened(false);
         }
     }
 
-    const setOpen = (next: boolean) => {
+    const toggleOpen = () => {
         setAutoOpened(false);
-        if (openProp === undefined) {
-            setOpenState(next);
-        }
-        onOpenChange?.(next);
+        setOpen(!open);
     };
     const codeLabels = {
         copied: labels.copied,
@@ -109,10 +83,7 @@ export function ToolCallCard({
 
     return (
         <div
-            className={cn(
-                "group/tool min-w-0 rounded-xl border bg-card text-sm text-muted-foreground",
-                className,
-            )}
+            className="group/tool min-w-0 rounded-xl border bg-card text-sm text-muted-foreground"
             data-open={open}
             data-status={status}
         >
@@ -124,18 +95,13 @@ export function ToolCallCard({
                 className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl p-2 text-left transition-colors duration-base hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 aria-expanded={open}
                 aria-controls={`${id}-body`}
-                onClick={() => setOpen(!open)}
+                onClick={toggleOpen}
             >
-                <ToolIcon icon={icon} />
+                <ToolIcon />
                 <span className="flex min-w-0 flex-1 items-baseline gap-2">
                     <code className="max-w-[55%] truncate font-mono text-xs font-medium text-foreground">
                         {name}
                     </code>
-                    {summary !== undefined && summary !== null && (
-                        <span className="min-w-0 flex-1 truncate text-xs">
-                            {summary}
-                        </span>
-                    )}
                 </span>
                 <span
                     key={status}
@@ -167,7 +133,7 @@ export function ToolCallCard({
                         )}
                         {args !== undefined && (
                             <CodeBlockSection
-                                cap={maxCodeHeight}
+                                cap={220}
                                 labels={{
                                     ...codeLabels,
                                     copy: labels.copyArguments,
@@ -189,7 +155,7 @@ export function ToolCallCard({
                             ) : null
                         ) : (
                             <CodeBlockSection
-                                cap={maxCodeHeight}
+                                cap={220}
                                 labels={{
                                     ...codeLabels,
                                     copy: labels.copyResult,

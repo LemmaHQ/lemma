@@ -18,24 +18,15 @@ export type ToolCallGroupProps = {
     children: ReactNode;
     title: string;
     failedLabel: string;
-    defaultOpen?: boolean;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
-    className?: string;
 };
 
 export function ToolCallGroup({
     children,
     title,
     failedLabel,
-    defaultOpen = false,
-    open: openProp,
-    onOpenChange,
-    className,
 }: ToolCallGroupProps) {
     const id = useId();
-    const [openState, setOpenState] = useState(defaultOpen);
-    const open = openProp ?? openState;
+    const [open, setOpen] = useState(false);
     const calls = Children.toArray(children)
         .filter(isValidElement<Partial<ToolCallCardProps>>)
         .map((child) => child.props);
@@ -72,10 +63,7 @@ export function ToolCallGroup({
         .slice(-3);
 
     return (
-        <div
-            className={cn("group/tool-group grid", className)}
-            data-open={open}
-        >
+        <div className="group/tool-group grid" data-open={open}>
             <span className="sr-only" role="status" aria-live="polite">
                 {title}
             </span>
@@ -84,19 +72,13 @@ export function ToolCallGroup({
                 className="flex min-h-9 max-w-full cursor-pointer items-center justify-self-start gap-2 rounded-lg px-2 py-1 text-sm text-muted-foreground transition-colors duration-base hover:bg-muted/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 aria-expanded={open}
                 aria-controls={`${id}-list`}
-                onClick={() => {
-                    if (openProp === undefined) {
-                        setOpenState(!open);
-                    }
-                    onOpenChange?.(!open);
-                }}
+                onClick={() => setOpen(!open)}
             >
                 <span className="flex flex-none -space-x-1" aria-hidden="true">
                     {icons.map((call) => (
                         <ToolIcon
                             key={call.key ?? call.props.name}
                             className="animate-pop ring-2 ring-background"
-                            icon={call.props.icon}
                             small
                         />
                     ))}

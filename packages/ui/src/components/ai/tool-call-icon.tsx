@@ -1,15 +1,12 @@
 import { cn } from "cn";
 import { WrenchIcon } from "lucide-react";
-import type { ReactNode } from "react";
 
 import { CircleAlertIcon } from "#icons/circle-alert";
 
 export function ToolIcon({
-    icon,
     small = false,
     className,
 }: {
-    icon?: ReactNode;
     small?: boolean;
     className?: string;
 }) {
@@ -22,7 +19,7 @@ export function ToolIcon({
             )}
             aria-hidden="true"
         >
-            {icon ?? <WrenchIcon />}
+            <WrenchIcon />
         </span>
     );
 }
