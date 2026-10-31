@@ -6,11 +6,11 @@ use lemma_proto::lemma::v1::ErrorReason;
 use uuid::Uuid;
 
 /// Name of the cookie carrying the access token for browser clients.
-pub const ACCESS_COOKIE: &str = "lemma_access";
+pub(crate) const ACCESS_COOKIE: &str = "lemma_access";
 
 /// Reads a cookie from the request headers by name.
 #[must_use]
-pub fn cookie_value(ctx: &RequestContext, name: &str) -> Option<String> {
+pub(crate) fn cookie_value(ctx: &RequestContext, name: &str) -> Option<String> {
     ctx.headers()
         .get_all(COOKIE)
         .iter()

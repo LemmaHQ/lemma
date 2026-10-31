@@ -23,7 +23,7 @@ pub struct Claims {
 /// # Errors
 ///
 /// The signing [`Error`] from `jsonwebtoken`.
-pub fn sign_access_token(secret: &str, user_id: Uuid) -> Result<String, Error> {
+pub(crate) fn sign_access_token(secret: &str, user_id: Uuid) -> Result<String, Error> {
     let exp = (Utc::now() + Duration::seconds(ACCESS_TOKEN_TTL_SECS)).timestamp() as usize;
     let claims = Claims {
         sub: user_id.to_string(),

@@ -9,7 +9,7 @@ use argon2::password_hash::Error;
 /// # Errors
 ///
 /// The `argon2` [`Error`] when hashing fails.
-pub fn hash_password(password: &str) -> Result<String, Error> {
+pub(crate) fn hash_password(password: &str) -> Result<String, Error> {
     use argon2::password_hash::PasswordHasher;
 
     Ok(Argon2::default()
@@ -20,7 +20,7 @@ pub fn hash_password(password: &str) -> Result<String, Error> {
 /// Verifies a password against a PHC hash. Fails closed: treating a malformed hash
 /// as a verification mismatch.
 #[must_use]
-pub fn verify_password(password: &str, hash: &str) -> bool {
+pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
     use argon2::password_hash::PasswordVerifier;
 
     Argon2::default()

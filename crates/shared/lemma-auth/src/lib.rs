@@ -12,7 +12,5 @@ mod token;
 pub use auth_error::AuthError;
 pub use auth_service::{AuthService, AuthTokens, REFRESH_TTL_DAYS, Session};
 pub use entity::user::Model as User;
-pub use jwt::{ACCESS_TOKEN_TTL_SECS, Claims, sign_access_token, verify_access_token};
+pub use jwt::{ACCESS_TOKEN_TTL_SECS, Claims, verify_access_token};
 pub use migration::migrations;
-pub use password::{hash_password, verify_password};
-pub use token::{generate_refresh_token, hash_token};

@@ -6,4 +6,4 @@ mod auth_rpc;
 mod request_auth;
 
 pub use auth_rpc::AuthRpc;
-pub use request_auth::{ACCESS_COOKIE, cookie_value, require_user};
+pub use request_auth::require_user;
