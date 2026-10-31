@@ -74,7 +74,7 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 | `view-transition-from-end`   | 新快照从略偏右处淡入                       |
 | `view-transition-morph`      | 视图组移动并缩放到新位置与尺寸，新快照淡入 |
 
-动效 token 还提供 `duration-reveal`、`duration-settle`、`ease-morph` 与 `ease-spring`。每个动画与动效类都有减少动态效果的回退，停止移动与循环，同时保留最终状态。
+动效 token 还提供 `duration-reveal`、`ease-morph` 与 `ease-spring`。每个动画与动效类都有减少动态效果的回退，停止移动与循环，同时保留最终状态。
 
 ## 约定
 

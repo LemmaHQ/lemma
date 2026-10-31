@@ -41,11 +41,6 @@
         var(--sidebar-foreground) 30%,
         var(--sidebar)
     );
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -68,7 +63,6 @@
     --color-control: var(--control);
     --color-control-hover: var(--control-hover);
     --color-control-disabled: var(--control-disabled);
-    --color-raised-border: var(--raised-border);
     --color-secondary-hover: var(--secondary-hover);
     --color-track: var(--track);
     --color-thumb: var(--thumb);
@@ -94,7 +88,6 @@
     --duration-medium: var(--motion-duration-medium);
     --duration-slow: var(--motion-duration-slow);
     --duration-reveal: var(--motion-duration-reveal);
-    --duration-settle: var(--motion-duration-settle);
     --duration-press: var(--motion-duration-press);
     --duration-glide: var(--motion-duration-glide);
     --duration-option-fade: var(--motion-duration-option-fade);

@@ -74,7 +74,7 @@ View transition utilities, for an element the app gives a `view-transition-name`
 | `view-transition-from-end`   | Fades the new snapshot in from slightly right                            |
 | `view-transition-morph`      | Moves and resizes the group to the new box and fades the new snapshot in |
 
-The motion tokens also provide `duration-reveal`, `duration-settle`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
+The motion tokens also provide `duration-reveal`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
 
 ## Conventions
 
