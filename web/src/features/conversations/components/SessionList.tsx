@@ -21,7 +21,7 @@ import {
     Trash2Icon,
     useSidebar,
 } from "@lemma/ui";
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { groupSessions, type SessionSummary } from "../grouping";
@@ -80,14 +80,12 @@ function SessionItem({
 }) {
     const { t } = useTranslation();
     const [editing, setEditing] = useState(false);
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    const focusRef = useCallback((el: HTMLInputElement | null) => {
-        inputRef.current = el;
+    const selectOnMount = useCallback((el: HTMLInputElement | null) => {
         el?.select();
     }, []);
 
-    const commit = () => {
-        const title = inputRef.current?.value.trim() ?? "";
+    const commit = (value: string) => {
+        const title = value.trim();
         setEditing(false);
         if (title !== "" && title !== session.title) {
             onRename(session.id, title);
@@ -98,14 +96,16 @@ function SessionItem({
         return (
             <SidebarMenuItem>
                 <SidebarInput
-                    ref={focusRef}
+                    ref={selectOnMount}
                     defaultValue={session.title}
                     aria-label={t("sessions.rename")}
-                    onBlur={commit}
+                    onBlur={(e) => {
+                        commit(e.currentTarget.value);
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             e.preventDefault();
-                            commit();
+                            commit(e.currentTarget.value);
                         } else if (e.key === "Escape") {
                             setEditing(false);
                         }
