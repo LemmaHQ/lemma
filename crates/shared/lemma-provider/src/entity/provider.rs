@@ -23,8 +23,7 @@ pub struct Model {
     pub name: String,
     /// Normalized API base URL ending at host or path.
     pub base_url: String,
-    /// API key in the service's storage encoding: sealed with lemma-crypto
-    /// when the service has a secret key, plaintext otherwise.
+    /// API key sealed with lemma-crypto.
     pub api_key: String,
     /// Generation endpoint path override; empty means the adapter default.
     pub api_path: String,

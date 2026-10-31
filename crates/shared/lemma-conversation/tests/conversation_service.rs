@@ -411,7 +411,7 @@ async fn deleting_a_provider_keeps_the_messages_and_conversations_that_used_it()
         let ada = sign_up(&db, "ada").await?;
         let providers = ProviderService::new(
             db.clone(),
-            Some("test-secret-key".to_owned()),
+            "test-secret-key".to_owned(),
             HttpConnector::new(ReqwestTransport::new()),
         );
         let conversations = ConversationService::new(db);

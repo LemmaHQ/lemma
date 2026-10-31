@@ -93,7 +93,7 @@ AgentService.SendMessage(conversation, provider, model, content, thinking_effort
 
 分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 
-provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它派生的密钥以 AES-256-GCM 加密；没有密钥时（Android 引擎）以明文存储。refresh 令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
+`ProviderService` 用由配置的密钥派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。refresh 令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
 
 ## 新行为放在哪里
 

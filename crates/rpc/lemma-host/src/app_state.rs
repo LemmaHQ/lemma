@@ -35,7 +35,7 @@ impl AppState {
         let connector = HttpConnector::new(ReqwestTransport::new());
         let provider_service = Arc::new(ProviderService::new(
             db.clone(),
-            Some(secrets.secret_key),
+            secrets.secret_key,
             connector,
         ));
         let conversation_service = ConversationService::new(db.clone());

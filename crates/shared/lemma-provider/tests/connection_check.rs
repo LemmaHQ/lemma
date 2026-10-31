@@ -56,7 +56,11 @@ impl Connector for ScriptedConnector {
 }
 
 fn check(model: &str) -> Result<(), ProviderError> {
-    let service = ProviderService::new(DatabaseConnection::default(), None, ScriptedConnector);
+    let service = ProviderService::new(
+        DatabaseConnection::default(),
+        "test-secret-key".to_owned(),
+        ScriptedConnector,
+    );
     let endpoint = Endpoint {
         kind: ProviderKind::OpenAiCompatible,
         base_url: "https://api.example.com/v1".to_owned(),

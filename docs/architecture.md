@@ -93,7 +93,7 @@ A conversation is a tree of messages. Each message row stores its `parent_id`, t
 
 A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 
-Provider API keys pass through `ProviderService`, which seals them with AES-256-GCM under a key derived from the configured secret when it has one, and stores plaintext when it has none (the Android engine). Refresh tokens are stored as SHA-256 hashes; passwords as Argon2 hashes.
+`ProviderService` seals every nonempty provider API key with AES-256-GCM under a key derived from the configured secret. Refresh tokens are stored as SHA-256 hashes; passwords as Argon2 hashes.
 
 ## Where new behavior goes
 

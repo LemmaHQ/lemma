@@ -18,13 +18,11 @@ use super::update_input::UpdateInput;
 
 /// Provider domain service over a database holding the providers table.
 ///
-/// `secret_key` selects the API-key storage encoding: `Some` seals keys
-/// with lemma-crypto (server), `None` stores plaintext (local storage
-/// stays inspectable). `connector` binds providers to adapters and fetches
-/// live model lists.
+/// `secret_key` seals API keys with lemma-crypto. `connector` binds
+/// providers to adapters and fetches live model lists.
 pub struct ProviderService<C> {
     pub(super) db: DatabaseConnection,
-    pub(super) secret_key: Option<String>,
+    pub(super) secret_key: String,
     pub(super) connector: C,
 }
 
@@ -39,7 +37,7 @@ impl<C: Debug> Debug for ProviderService<C> {
 
 impl<C: Connector> ProviderService<C> {
     /// Creates the service over a database.
-    pub fn new(db: DatabaseConnection, secret_key: Option<String>, connector: C) -> Self {
+    pub fn new(db: DatabaseConnection, secret_key: String, connector: C) -> Self {
         Self {
             db,
             secret_key,
@@ -51,22 +49,16 @@ impl<C: Connector> ProviderService<C> {
         if plain.is_empty() {
             return Ok(String::new());
         }
-        match &self.secret_key {
-            Some(secret) => lemma_crypto::seal(&lemma_crypto::derive_key(secret), plain)
-                .map_err(|e| ProviderError::Crypto(e.to_string())),
-            None => Ok(plain.to_string()),
-        }
+        lemma_crypto::seal(&lemma_crypto::derive_key(&self.secret_key), plain)
+            .map_err(|e| ProviderError::Crypto(e.to_string()))
     }
 
     pub(super) fn open_key(&self, stored: &str) -> Result<String, ProviderError> {
         if stored.is_empty() {
             return Ok(String::new());
         }
-        match &self.secret_key {
-            Some(secret) => lemma_crypto::open(&lemma_crypto::derive_key(secret), stored)
-                .map_err(|e| ProviderError::Crypto(e.to_string())),
-            None => Ok(stored.to_string()),
-        }
+        lemma_crypto::open(&lemma_crypto::derive_key(&self.secret_key), stored)
+            .map_err(|e| ProviderError::Crypto(e.to_string()))
     }
 
     fn view(&self, r: &provider::Model) -> ProviderView {

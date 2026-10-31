@@ -57,7 +57,7 @@ async fn sign_up(db: &DatabaseConnection, username: &str) -> Result<Uuid, Box<dy
 }
 
 fn service(db: DatabaseConnection) -> ProviderService<EndpointConnector> {
-    ProviderService::new(db, Some("test-secret-key".to_owned()), EndpointConnector)
+    ProviderService::new(db, "test-secret-key".to_owned(), EndpointConnector)
 }
 
 fn new_provider(identifier: &str) -> CreateInput {
