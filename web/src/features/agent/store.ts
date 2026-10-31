@@ -21,9 +21,13 @@ interface ActiveConversationState {
     abort: () => Promise<void>;
 }
 
-let controller: AbortController | null = null;
-let activeMessageId: string | null = null;
-let userAborted = false;
+interface Turn {
+    controller: AbortController;
+    messageId: string | null;
+    userAborted: boolean;
+}
+
+let turn: Turn | null = null;
 
 const PAGE_SIZE = 50;
 const MAX_RESUME = 3;
@@ -82,10 +86,13 @@ export const useActiveConversation = create<ActiveConversationState>()(
 
             const clientMsgId = crypto.randomUUID();
             const aiTempId = `${clientMsgId}:ai`;
-            controller = new AbortController();
-            const { signal } = controller;
-            activeMessageId = null;
-            userAborted = false;
+            const own: Turn = {
+                controller: new AbortController(),
+                messageId: null,
+                userAborted: false,
+            };
+            turn = own;
+            const { signal } = own.controller;
 
             const reducer = createStreamReducer(
                 set,
@@ -94,7 +101,7 @@ export const useActiveConversation = create<ActiveConversationState>()(
                 model,
                 aiTempId,
                 (messageId) => {
-                    activeMessageId = messageId;
+                    own.messageId = messageId;
                 },
             );
 
@@ -129,7 +136,7 @@ export const useActiveConversation = create<ActiveConversationState>()(
             const openStream = (): AsyncIterable<{
                 event?: AgentEvent | undefined;
             }> => {
-                const resumeId = activeMessageId;
+                const resumeId = own.messageId;
                 if (resumeId !== null) {
                     return agentClient.resumeStream(
                         { messageId: resumeId, offset: BigInt(received) },
@@ -155,16 +162,19 @@ export const useActiveConversation = create<ActiveConversationState>()(
                         reducer.applyEvent(res.event);
                     }
                 } catch (e) {
-                    if (userAborted || signal.aborted) {
+                    if (own.userAborted || signal.aborted) {
                         reducer.updateCurrent({ status: "aborted" });
                         return;
                     }
                     if (errorReason(e) === ErrorReason.TURN_NOT_RUNNING) {
-                        set(await latestPage(conversationId));
+                        const page = await latestPage(conversationId);
+                        if (turn === own) {
+                            set(page);
+                        }
                         return;
                     }
                     const next = resumes + 1;
-                    if (activeMessageId === null || next > MAX_RESUME) {
+                    if (own.messageId === null || next > MAX_RESUME) {
                         reducer.updateCurrent({
                             status: "error",
                             error: errorText(e, i18n.t),
@@ -181,27 +191,32 @@ export const useActiveConversation = create<ActiveConversationState>()(
             try {
                 await attempt(0);
             } finally {
-                controller = null;
-                activeMessageId = null;
-                set({ streaming: false });
+                if (turn === own) {
+                    turn = null;
+                    set({ streaming: false });
+                }
             }
         },
 
         abort: async () => {
-            userAborted = true;
-            const id = activeMessageId;
-            if (id !== null) {
+            const current = turn;
+            if (current === null) {
+                return;
+            }
+            current.userAborted = true;
+            if (current.messageId !== null) {
                 await agentClient
-                    .abortMessage({ messageId: id })
+                    .abortMessage({ messageId: current.messageId })
                     .catch(() => {});
             }
-            controller?.abort();
+            current.controller.abort();
         },
     }),
 );
 
-/** Stops the running stream on this client and empties the open conversation. */
+/** Stops the running stream on this client and empties the open conversation; the stopped send leaves the new state alone. */
 export function clearActiveConversation(): void {
-    controller?.abort();
+    turn?.controller.abort();
+    turn = null;
     useActiveConversation.setState(useActiveConversation.getInitialState());
 }
