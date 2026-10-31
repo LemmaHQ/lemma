@@ -111,7 +111,9 @@ export function ConversationView({
             <MessageList
                 items={conversation.items}
                 conversationId={conversation.conversationId}
+                hasMore={conversation.hasMore}
                 providerNameById={providerNames}
+                onLoadMore={conversation.loadMore}
                 onPickSuggestion={handlePickSuggestion}
                 onRegenerate={handleRegenerate}
             />

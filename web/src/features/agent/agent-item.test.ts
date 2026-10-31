@@ -37,6 +37,46 @@ it("maps stored thinking and tool timestamps to epoch milliseconds", () => {
     expect(item.toolCalls[0]?.finishedAt).toBe(finishedMs);
 });
 
+it("hydrates a newer page's tool result into an older page's call", () => {
+    const olderPage = hydrateToolResults([
+        {
+            id: "assistant-1",
+            role: "assistant",
+            content: "",
+            thinking: "",
+            status: "done",
+            providerId: "provider-1",
+            model: "model-1",
+            toolCalls: [
+                {
+                    id: "call-1",
+                    name: "read_file",
+                    arguments: "{}",
+                    output: "",
+                    isError: false,
+                    state: "done",
+                },
+            ],
+        },
+    ]);
+    const currentPage = hydrateToolResults([
+        {
+            id: "tool-1",
+            role: "tool",
+            content: "contents",
+            thinking: "",
+            status: "done",
+            providerId: "",
+            model: "",
+            toolCalls: [],
+            toolCallId: "call-1",
+        },
+    ]);
+
+    const [assistant] = hydrateToolResults([...olderPage, ...currentPage]);
+    expect(assistant?.toolCalls[0]?.output).toBe("contents");
+});
+
 it("keeps timestamps absent for legacy rows and through result hydration", () => {
     const legacy = protoToItem(
         create(MessageSchema, {

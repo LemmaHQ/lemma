@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -16,7 +16,9 @@ import { MessageItem } from "./MessageItem";
 interface MessageListProps {
     items: AgentItem[];
     conversationId: string | null;
+    hasMore: boolean;
     providerNameById: Map<string, string>;
+    onLoadMore: () => Promise<void>;
     onPickSuggestion: (text: string) => void;
     onRegenerate: (messageId: string) => void;
 }
@@ -24,11 +26,21 @@ interface MessageListProps {
 export function MessageList({
     items,
     conversationId,
+    hasMore,
     providerNameById,
+    onLoadMore,
     onPickSuggestion,
     onRegenerate,
 }: MessageListProps) {
     const { t } = useTranslation();
+    const prepend = useRef<{
+        element: HTMLDivElement;
+        conversationId: string | null;
+        firstId: string | undefined;
+        scrollHeight: number;
+        scrollTop: number;
+    } | null>(null);
+    const firstId = items.at(0)?.id;
     const lastAssistantId = useMemo(
         () => items.findLast((m) => m.role === "assistant")?.id ?? null,
         [items],
@@ -37,6 +49,42 @@ export function MessageList({
         () => items.findLast((m) => m.role === "user")?.id ?? null,
         [items],
     );
+
+    useLayoutEffect(() => {
+        const pending = prepend.current;
+        if (pending === null || pending.firstId === firstId) {
+            return;
+        }
+        prepend.current = null;
+        if (pending.conversationId === conversationId) {
+            pending.element.scrollTop =
+                pending.scrollTop +
+                pending.element.scrollHeight -
+                pending.scrollHeight;
+        }
+    }, [conversationId, firstId]);
+
+    const handleScrollCapture = (event: UIEvent<HTMLDivElement>) => {
+        const element = event.target;
+        if (
+            !(element instanceof HTMLDivElement) ||
+            element.dataset["slot"] !== "scroll-area-viewport" ||
+            element.scrollTop > 0 ||
+            !hasMore
+        ) {
+            return;
+        }
+        prepend.current = {
+            element,
+            conversationId,
+            firstId,
+            scrollHeight: element.scrollHeight,
+            scrollTop: element.scrollTop,
+        };
+        void onLoadMore().catch(() => {
+            prepend.current = null;
+        });
+    };
 
     const sourceOf = (m: AgentItem): string | undefined => {
         if (m.model === "") {
@@ -57,7 +105,10 @@ export function MessageList({
     }
 
     return (
-        <Conversation key={conversationId}>
+        <Conversation
+            key={conversationId}
+            onScrollCapture={handleScrollCapture}
+        >
             <ConversationContent>
                 {items.map((m) => (
                     <MessageItem

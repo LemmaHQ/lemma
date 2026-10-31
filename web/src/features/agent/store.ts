@@ -28,6 +28,7 @@ interface Turn {
 }
 
 let turn: Turn | null = null;
+let loadingMore = false;
 
 const PAGE_SIZE = 50;
 const MAX_RESUME = 3;
@@ -59,23 +60,37 @@ export const useActiveConversation = create<ActiveConversationState>()(
         loadMore: async () => {
             const { conversationId, items, hasMore } = get();
             const first = items.at(0);
-            if (conversationId === null || !hasMore || first === undefined) {
+            if (
+                loadingMore ||
+                conversationId === null ||
+                !hasMore ||
+                first === undefined
+            ) {
                 return;
             }
-            const res = await conversationClient.listMessages({
-                conversationId,
-                beforeId: first.id,
-                limit: PAGE_SIZE,
-            });
-            set((s) => ({
-                items: [
-                    ...hydrateToolResults(
-                        res.messages.map(protoToItem).toReversed(),
-                    ),
-                    ...s.items,
-                ],
-                hasMore: res.hasMore,
-            }));
+            loadingMore = true;
+            try {
+                const res = await conversationClient.listMessages({
+                    conversationId,
+                    beforeId: first.id,
+                    limit: PAGE_SIZE,
+                });
+                const older = res.messages.map(protoToItem).toReversed();
+                set((s) => {
+                    if (
+                        s.conversationId !== conversationId ||
+                        s.items.at(0)?.id !== first.id
+                    ) {
+                        return {};
+                    }
+                    return {
+                        items: hydrateToolResults([...older, ...s.items]),
+                        hasMore: res.hasMore,
+                    };
+                });
+            } finally {
+                loadingMore = false;
+            }
         },
 
         send: async (providerId, model, content) => {
