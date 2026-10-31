@@ -8,6 +8,7 @@ import {
 } from "electron";
 import path from "node:path";
 
+import { addonFile } from "./engine-addon";
 import type { HostCommand, HostEvent } from "./engine-host-protocol";
 
 const READY_TIMEOUT_MS = 10_000;
@@ -32,20 +33,6 @@ let running: Running | null = null;
 let ready = false;
 let exitDetail = "the local engine is not running";
 const exitListeners = new Set<(detail: string) => void>();
-
-const addonFile = (): string => {
-    switch (process.platform) {
-        case "win32": {
-            return "lemma_desktop.dll";
-        }
-        case "darwin": {
-            return "liblemma_desktop.dylib";
-        }
-        default: {
-            return "liblemma_desktop.so";
-        }
-    }
-};
 
 const addonPath = (): string => {
     if (app.isPackaged) {

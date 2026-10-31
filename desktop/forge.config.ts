@@ -10,13 +10,10 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
+import { addonFile } from "./src/engine-addon";
+
 const engineAddonPath = (): string => {
-    const name =
-        process.platform === "win32"
-            ? "lemma_desktop.dll"
-            : process.platform === "darwin"
-              ? "liblemma_desktop.dylib"
-              : "liblemma_desktop.so";
+    const name = addonFile();
     const bin = path.join(__dirname, "bin", name);
     if (fs.existsSync(bin)) return bin;
     return path.join(__dirname, "..", "target", "release", name);
