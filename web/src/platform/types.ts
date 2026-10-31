@@ -9,17 +9,12 @@ export interface AuthCapabilities {
     readonly cookieMode: boolean;
 }
 
-export interface LayoutCapabilities {
-    readonly hasCustomTitlebar: boolean;
-    readonly titlebarHeight: number;
-}
-
 export interface PlatformAdapter {
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch;
     readonly window: WindowCapabilities;
     readonly auth: AuthCapabilities;
-    readonly layout: LayoutCapabilities;
+    readonly titlebarHeight: number;
     /** Version of the native client app; `null` in the browser. */
     readonly clientVersion: string | null;
 }

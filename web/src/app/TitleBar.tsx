@@ -10,7 +10,7 @@ import { router } from "./router";
 
 /** The desktop title bar overlay, painted to match the `titleBar` surface the current route declares; the page background until the first route loads. */
 export function TitleBar() {
-    const { layout, window: windowCaps } = getPlatform();
+    const { titlebarHeight, window: windowCaps } = getPlatform();
     const { resolvedTheme } = useTheme();
     const surface = useSyncExternalStore(subscribeToRouter, () =>
         titleBarSurface(router.state),
@@ -22,7 +22,7 @@ export function TitleBar() {
         }
     }, [windowCaps, resolvedTheme, surface]);
 
-    return layout.hasCustomTitlebar ? (
+    return titlebarHeight > 0 ? (
         <div
             className={cn(
                 "app-titlebar",

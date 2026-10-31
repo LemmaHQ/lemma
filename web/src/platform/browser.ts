@@ -40,10 +40,7 @@ export class BrowserAdapter implements PlatformAdapter {
         cookieMode: false,
     };
 
-    readonly layout = {
-        hasCustomTitlebar: false,
-        titlebarHeight: 0,
-    };
+    readonly titlebarHeight = 0;
 
     constructor() {
         this.baseUrl = resolveBaseUrl();

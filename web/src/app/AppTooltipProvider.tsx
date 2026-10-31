@@ -8,12 +8,12 @@ const TOOLTIP_TITLEBAR_GAP = 4;
 
 /** The tooltip provider, keeping every tooltip clear of the desktop titlebar. */
 export function AppTooltipProvider({ children }: { children: ReactNode }) {
-    const { hasCustomTitlebar, titlebarHeight } = getPlatform().layout;
+    const { titlebarHeight } = getPlatform();
 
     return (
         <TooltipProvider
             collisionPadding={
-                hasCustomTitlebar
+                titlebarHeight > 0
                     ? { top: titlebarHeight + TOOLTIP_TITLEBAR_GAP }
                     : TOOLTIP_EDGE_PADDING
             }

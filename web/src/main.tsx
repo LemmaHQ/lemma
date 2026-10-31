@@ -11,8 +11,11 @@ import "./index.css";
 
 installCrossTabGuard();
 installAccountDataReset();
-const { hasCustomTitlebar, titlebarHeight } = getPlatform().layout;
-document.documentElement.classList.toggle("custom-titlebar", hasCustomTitlebar);
+const { titlebarHeight } = getPlatform();
+document.documentElement.classList.toggle(
+    "custom-titlebar",
+    titlebarHeight > 0,
+);
 document.documentElement.style.setProperty(
     "--titlebar-height",
     `${titlebarHeight}px`,
