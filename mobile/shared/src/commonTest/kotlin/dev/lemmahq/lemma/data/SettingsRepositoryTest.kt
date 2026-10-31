@@ -9,7 +9,7 @@ class SettingsRepositoryTest {
 
     @Test
     fun testServerUrlPersistence() {
-        val repo = DefaultSettingsRepository(MapSettings())
+        val repo = SettingsRepository(MapSettings())
         assertNull(repo.getServerUrl())
 
         repo.setServerUrl("http://192.168.1.100:1025")
@@ -21,7 +21,7 @@ class SettingsRepositoryTest {
 
     @Test
     fun testAuthTokensPersistence() {
-        val repo = DefaultSettingsRepository(MapSettings())
+        val repo = SettingsRepository(MapSettings())
         assertNull(repo.getAccessToken())
         assertNull(repo.getRefreshToken())
 
@@ -33,14 +33,5 @@ class SettingsRepositoryTest {
         repo.clearAuth()
         assertNull(repo.getAccessToken())
         assertNull(repo.getRefreshToken())
-    }
-
-    @Test
-    fun testThemeModeDefault() {
-        val repo = DefaultSettingsRepository(MapSettings())
-        assertEquals(DefaultSettingsRepository.THEME_SYSTEM, repo.getThemeMode())
-
-        repo.setThemeMode(DefaultSettingsRepository.THEME_DARK)
-        assertEquals(DefaultSettingsRepository.THEME_DARK, repo.getThemeMode())
     }
 }

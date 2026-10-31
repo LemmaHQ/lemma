@@ -1,6 +1,5 @@
 package dev.lemmahq.lemma
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -15,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.lemmahq.lemma.client.LemmaClient
-import dev.lemmahq.lemma.data.DefaultSettingsRepository
 import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
@@ -30,22 +28,15 @@ fun App(
     localMessageRepository: LocalMessageRepository,
     localRpc: (suspend (SettingsRepository) -> LemmaRpcClient)? = null,
 ) {
-    val settingsRepository = remember { DefaultSettingsRepository() }
+    val settingsRepository = remember { SettingsRepository() }
     var appMode by remember {
         mutableStateOf(
             settingsRepository.getAppMode()
-                ?: settingsRepository.getServerUrl()?.let { DefaultSettingsRepository.MODE_REMOTE }
+                ?: settingsRepository.getServerUrl()?.let { SettingsRepository.MODE_REMOTE }
         )
     }
     var currentServerUrl by remember { mutableStateOf(settingsRepository.getServerUrl()) }
     var currentAccessToken by remember { mutableStateOf(settingsRepository.getAccessToken()) }
-    val themeMode = remember { settingsRepository.getThemeMode() }
-    val isDark =
-        when (themeMode) {
-            DefaultSettingsRepository.THEME_DARK -> true
-            DefaultSettingsRepository.THEME_LIGHT -> false
-            else -> isSystemInDarkTheme()
-        }
     var showProviders by remember { mutableStateOf(false) }
     var providersNonce by remember { mutableStateOf(0) }
 
@@ -53,19 +44,19 @@ fun App(
         produceState<LemmaClient?>(null, appMode, currentServerUrl) {
             value =
                 when {
-                    appMode == DefaultSettingsRepository.MODE_REMOTE &&
+                    appMode == SettingsRepository.MODE_REMOTE &&
                         !currentServerUrl.isNullOrBlank() ->
                         LemmaClient(
                             LemmaRpcClient(currentServerUrl.orEmpty(), settingsRepository),
                             settingsRepository,
                         )
-                    appMode == DefaultSettingsRepository.MODE_LOCAL && localRpc != null ->
+                    appMode == SettingsRepository.MODE_LOCAL && localRpc != null ->
                         LemmaClient(localRpc.invoke(settingsRepository), settingsRepository)
                     else -> null
                 }
         }
 
-    LemmaTheme(darkTheme = isDark) {
+    LemmaTheme {
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             when {
                 appMode.isNullOrBlank() -> {
@@ -73,13 +64,13 @@ fun App(
                         settingsRepository = settingsRepository,
                         localAvailable = localRpc != null,
                         onConnected = { url ->
-                            settingsRepository.setAppMode(DefaultSettingsRepository.MODE_REMOTE)
+                            settingsRepository.setAppMode(SettingsRepository.MODE_REMOTE)
                             currentServerUrl = url
-                            appMode = DefaultSettingsRepository.MODE_REMOTE
+                            appMode = SettingsRepository.MODE_REMOTE
                         },
                         onLocalSelected = {
-                            settingsRepository.setAppMode(DefaultSettingsRepository.MODE_LOCAL)
-                            appMode = DefaultSettingsRepository.MODE_LOCAL
+                            settingsRepository.setAppMode(SettingsRepository.MODE_LOCAL)
+                            appMode = SettingsRepository.MODE_LOCAL
                         },
                     )
                 }
@@ -91,13 +82,13 @@ fun App(
                         AuthScreen(
                             client = ready,
                             connectionLabel =
-                                if (appMode == DefaultSettingsRepository.MODE_LOCAL) {
+                                if (appMode == SettingsRepository.MODE_LOCAL) {
                                     "Running locally on this device"
                                 } else {
                                     "Connected to $currentServerUrl"
                                 },
                             changeModeLabel =
-                                if (appMode == DefaultSettingsRepository.MODE_LOCAL) {
+                                if (appMode == SettingsRepository.MODE_LOCAL) {
                                     "Use a server"
                                 } else {
                                     "Change server"

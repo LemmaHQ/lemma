@@ -4,7 +4,7 @@ import com.russhwolf.settings.MapSettings
 import dev.lemmahq.gen.lemma.v1.RefreshRequest
 import dev.lemmahq.gen.lemma.v1.authTokens
 import dev.lemmahq.gen.lemma.v1.refreshResponse
-import dev.lemmahq.lemma.data.DefaultSettingsRepository
+import dev.lemmahq.lemma.data.SettingsRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -22,7 +22,7 @@ private const val BASE = "http://engine.lemma.invalid"
 
 class AuthInterceptorTest {
 
-    private val settings = DefaultSettingsRepository(MapSettings())
+    private val settings = SettingsRepository(MapSettings())
     private val seen = mutableListOf<Request>()
 
     private fun client(answer: (Request) -> Response): OkHttpClient =

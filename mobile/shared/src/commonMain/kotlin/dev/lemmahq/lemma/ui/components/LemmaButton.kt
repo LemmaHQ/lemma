@@ -16,7 +16,6 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 enum class LemmaButtonVariant {
     Primary,
     Secondary,
-    Ghost,
 }
 
 @Composable
@@ -33,7 +32,6 @@ fun LemmaButton(
                 if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
             LemmaButtonVariant.Secondary ->
                 if (enabled) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
-            LemmaButtonVariant.Ghost -> Color.Transparent
         }
 
     val textColor =
@@ -42,8 +40,6 @@ fun LemmaButton(
                 if (enabled) Color.White else LemmaTheme.colors.textQuaternary
             LemmaButtonVariant.Secondary ->
                 if (enabled) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textQuaternary
-            LemmaButtonVariant.Ghost ->
-                if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.textQuaternary
         }
 
     Box(
