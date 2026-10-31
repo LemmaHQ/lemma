@@ -199,3 +199,9 @@ export const useActiveConversation = create<ActiveConversationState>()(
         },
     }),
 );
+
+/** Stops the running stream on this client and empties the open conversation. */
+export function clearActiveConversation(): void {
+    controller?.abort();
+    useActiveConversation.setState(useActiveConversation.getInitialState());
+}

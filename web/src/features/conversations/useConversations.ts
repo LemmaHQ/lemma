@@ -11,6 +11,11 @@ export function createConversation(): Promise<string> {
     return useConversationsStore.getState().create();
 }
 
+/** Drops the loaded conversation list; the next `useConversations` mount or `refreshConversations` call loads it again. */
+export function clearConversations(): void {
+    useConversationsStore.setState(useConversationsStore.getInitialState());
+}
+
 export function useConversations() {
     const store = useConversationsStore();
     const loaded = useConversationsStore((s) => s.loaded);
