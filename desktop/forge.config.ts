@@ -33,7 +33,6 @@ const config: ForgeConfig = {
             return !file.startsWith("/.vite") && !file.startsWith("/web-dist");
         },
     },
-    rebuildConfig: {},
     makers: [
         new MakerSquirrel({ name: "lemma" }),
         new MakerZIP({}, ["darwin"]),
@@ -50,7 +49,7 @@ const config: ForgeConfig = {
                 },
                 {
                     entry: "src/preload.ts",
-                    config: "vite.preload.config.mts",
+                    config: "vite.main.config.mts",
                     target: "preload",
                 },
                 {
