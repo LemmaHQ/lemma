@@ -2339,7 +2339,6 @@ dependencies = [
 name = "lemma-auth-rpc"
 version = "0.1.0"
 dependencies = [
- "buffa-types",
  "connectrpc",
  "http",
  "lemma-auth",

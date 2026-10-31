@@ -4,7 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-buffa-types.workspace = true
 connectrpc.workspace = true
 http.workspace = true
 lemma-auth.workspace = true

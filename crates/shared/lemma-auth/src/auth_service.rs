@@ -3,7 +3,7 @@
 
 use std::fmt::{self, Debug};
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, DbErr,
@@ -14,7 +14,6 @@ use uuid::Uuid;
 use crate::User;
 use crate::auth_error::AuthError;
 use crate::entity::{auth_credential, refresh_token, user};
-use crate::jwt::ACCESS_TOKEN_TTL_SECS;
 use crate::password::{hash_password, verify_password};
 use crate::{jwt, token};
 
@@ -26,8 +25,6 @@ pub const REFRESH_TTL_DAYS: i64 = 30;
 pub struct AuthTokens {
     /// Signed access token.
     pub access_token: String,
-    /// Access-token expiry time.
-    pub access_token_expires_at: DateTime<Utc>,
     /// Plaintext refresh token; only its hash is stored.
     pub refresh_token: String,
 }
@@ -94,7 +91,6 @@ impl AuthService {
         .await?;
         Ok(AuthTokens {
             access_token,
-            access_token_expires_at: now + Duration::seconds(ACCESS_TOKEN_TTL_SECS),
             refresh_token: plaintext,
         })
     }

@@ -2,22 +2,20 @@ syntax = "proto3";
 
 package lemma.v1;
 
-import "google/protobuf/timestamp.proto";
-
 message User {
-  reserved 4;
-  reserved "role";
+  reserved 3 to 5;
+  reserved "email", "role", "created_at";
 
   string id = 1;
   string username = 2;
-  string email = 3;
-  google.protobuf.Timestamp created_at = 5;
 }
 
 // Token pair: short-lived access token and database-backed revokable refresh token.
 message AuthTokens {
+  reserved 2;
+  reserved "access_token_expires_at";
+
   string access_token = 1;
-  google.protobuf.Timestamp access_token_expires_at = 2;
   string refresh_token = 3;
 }
 

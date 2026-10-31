@@ -2,7 +2,6 @@
 
 use std::fmt::{self, Debug};
 
-use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use http::HeaderValue;
 use http::header::SET_COOKIE;
@@ -110,8 +109,6 @@ fn user_to_proto(u: &User) -> v1::User {
     v1::User {
         id: u.id.to_string(),
         username: u.username.clone(),
-        email: u.email.clone(),
-        created_at: Timestamp::from(u.created_at).into(),
         ..Default::default()
     }
 }
@@ -119,7 +116,6 @@ fn user_to_proto(u: &User) -> v1::User {
 fn tokens_to_proto(t: AuthTokens) -> v1::AuthTokens {
     v1::AuthTokens {
         access_token: t.access_token,
-        access_token_expires_at: Timestamp::from(t.access_token_expires_at).into(),
         refresh_token: t.refresh_token,
         ..Default::default()
     }
