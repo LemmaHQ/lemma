@@ -43,7 +43,8 @@ enum ErrorReason {
 
 // Structured error details carried on ConnectError; rendered by client i18n based on reason.
 message ErrorInfo {
+  reserved 2;
+  reserved "attrs";
+
   ErrorReason reason = 1;
-  // Interpolation attributes for client i18n rendering
-  map<string, string> attrs = 2;
 }

@@ -37,12 +37,7 @@ export function errorText(e: unknown, t: TFunction): string {
         const info = e.findDetails(ErrorInfoSchema).at(0);
         const key = info === undefined ? undefined : reasonKeys[info.reason];
         if (info !== undefined && key !== undefined) {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- TFunction overloads cannot be narrowed by a type guard
-            const render = t as (
-                key: string,
-                options?: Record<string, string>,
-            ) => string;
-            return render(key, info.attrs);
+            return t(key);
         }
         return t(codeKeys[e.code] ?? "errors.unspecified");
     }

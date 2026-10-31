@@ -5,8 +5,6 @@
 //! a fallback, and the frontend localizes by reason code. Internal
 //! operational errors remain code-free and retain their raw diagnostic strings.
 
-use base64::engine::general_purpose::STANDARD_NO_PAD;
-use buffa::Message;
 use connectrpc::{ConnectError, ErrorCode, ErrorDetail};
 
 use crate::lemma::v1::{ErrorInfo, ErrorReason};
@@ -49,37 +47,13 @@ fn message(reason: ErrorReason) -> &'static str {
     }
 }
 
-/// Builds a coded business error with the fallback message and an empty
-/// attribute map.
+/// Builds a coded business error with the fallback message.
 #[must_use]
 pub fn app_error(reason: ErrorReason) -> ConnectError {
-    app_error_with(reason, &[])
-}
-
-/// Builds a coded business error, attaching `attrs` to the `ErrorInfo`
-/// detail for the frontend to interpolate into localized messages.
-#[must_use]
-pub fn app_error_with(reason: ErrorReason, attrs: &[(&str, &str)]) -> ConnectError {
     let info = ErrorInfo {
         reason: reason.into(),
-        attrs: attrs
-            .iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect(),
         ..Default::default()
     };
     ConnectError::new(transport_code(reason), message(reason))
         .with_detail(ErrorDetail::from_message(ERROR_INFO_TYPE, &info))
-}
-
-/// Extracts the business reason from an error, or `None` for code-free
-/// internal errors.
-#[must_use]
-pub fn error_reason(e: &ConnectError) -> Option<ErrorReason> {
-    use base64::Engine;
-
-    let d = e.details.iter().find(|d| d.type_url == ERROR_INFO_TYPE)?;
-    let value = d.value.as_deref()?;
-    let bytes = STANDARD_NO_PAD.decode(value).ok()?;
-    ErrorInfo::decode_from_slice(&bytes).ok()?.reason.as_known()
 }

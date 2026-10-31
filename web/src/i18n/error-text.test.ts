@@ -10,7 +10,7 @@ const t = ((key: string) => key) as unknown as TFunction;
 
 function withReason(reason: ErrorReason): ConnectError {
     return new ConnectError("raw message", Code.NotFound, undefined, [
-        { desc: ErrorInfoSchema, value: { reason, attrs: {} } },
+        { desc: ErrorInfoSchema, value: { reason } },
     ]);
 }
 

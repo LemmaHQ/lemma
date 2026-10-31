@@ -19,5 +19,5 @@ pub mod proto {
 
 pub mod error;
 
-pub use error::{app_error, app_error_with, error_reason};
+pub use error::app_error;
 pub use proto::lemma;
