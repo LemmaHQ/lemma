@@ -15,14 +15,16 @@ import {
     TooltipTrigger,
     Trash2Icon,
 } from "@lemma/ui";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /** Icon button that deletes a provider after a confirmation dialog. */
 export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {
     const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
 
     return (
-        <AlertDialog>
+        <AlertDialog open={open} onOpenChange={setOpen}>
             <Tooltip>
                 <AnimateIcon animateOnHover asChild>
                     <TooltipTrigger
@@ -56,7 +58,13 @@ export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={onDelete}>
+                    <AlertDialogAction
+                        variant="destructive"
+                        onClick={() => {
+                            setOpen(false);
+                            onDelete();
+                        }}
+                    >
                         {t("common.delete")}
                     </AlertDialogAction>
                 </AlertDialogFooter>
