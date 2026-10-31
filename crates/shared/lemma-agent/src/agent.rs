@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd, TurnEvent, TurnInput};
+use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEvent, TurnInput};
 use lemma_conversation::{ConversationService, LastModel};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
@@ -26,9 +26,6 @@ pub struct TurnRequest {
     pub model: String,
     /// User message text.
     pub content: String,
-    /// Reasoning effort; `None` or empty reuses the conversation's last
-    /// setting.
-    pub thinking_effort: Option<String>,
 }
 
 /// A running turn: the user that owns it and its cancel token.
@@ -70,7 +67,7 @@ impl<C: Connector> Agent<C> {
     }
 
     /// Validates the request and assembles its turn: opens the provider's
-    /// adapter, resolves the thinking effort, and prepares the workspace.
+    /// adapter and prepares the workspace.
     /// The turn is abortable from here until it is dropped.
     ///
     /// # Errors
@@ -78,8 +75,8 @@ impl<C: Connector> Agent<C> {
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
     /// blank content or model, [`AgentError::ProviderNotFound`] when the user
     /// owns no such provider, [`AgentError::Provider`] when opening it
-    /// fails, [`AgentError::Store`] when the database fails, and
-    /// [`AgentError::Workspace`] when the workspace cannot be created.
+    /// fails, and [`AgentError::Workspace`] when the workspace cannot be
+    /// created.
     pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<C::Adapter>, AgentError> {
         if req.content.trim().is_empty() {
             return Err(AgentError::ContentRequired);
@@ -88,15 +85,6 @@ impl<C: Connector> Agent<C> {
             return Err(AgentError::ModelRequired);
         }
         let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
-        let thinking_effort = match req.thinking_effort {
-            Some(effort) if !effort.is_empty() => Some(effort),
-            _ => self
-                .conversations
-                .find(req.user_id, req.conversation_id)
-                .await?
-                .and_then(|c| c.last_model)
-                .and_then(|m| m.thinking_effort),
-        };
 
         let agent_loop = AgentLoop::new(self.conversations.clone(), adapter);
         let agent_loop = match &self.workspaces_dir {
@@ -135,7 +123,6 @@ impl<C: Connector> Agent<C> {
                 model: LastModel {
                     provider_id: req.provider_id,
                     model: req.model,
-                    thinking_effort,
                 },
             },
             cancel,
@@ -179,10 +166,7 @@ impl<A: Adapter> Turn<A> {
     /// # Errors
     ///
     /// [`AgentError::Loop`] when the loop fails.
-    pub async fn run(
-        self,
-        observer: impl Fn(TurnEvent) + Send + Sync,
-    ) -> Result<TurnEnd, AgentError> {
+    pub async fn run(self, observer: impl Fn(TurnEvent) + Send + Sync) -> Result<(), AgentError> {
         Ok(self
             .agent_loop
             .run_turn(self.input, &observer, &self.cancel)

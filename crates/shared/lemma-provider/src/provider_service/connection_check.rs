@@ -1,5 +1,5 @@
 use futures::StreamExt;
-use lemma_core::{ContentBlock, Message, StreamEvent, TextContent};
+use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector, Endpoint, ModelRequest};
 use uuid::Uuid;
 
@@ -53,7 +53,6 @@ impl<C: Connector> ProviderService<C> {
                 })],
             }],
             tools: Vec::new(),
-            thinking_effort: None,
         };
         let mut events = self
             .connector
@@ -61,15 +60,13 @@ impl<C: Connector> ProviderService<C> {
             .stream(request)
             .await
             .map_err(|e| ProviderError::Check(e.message))?;
-        while let Some(event) = events.next().await {
-            match event.map_err(|e| ProviderError::Check(e.message))? {
-                StreamEvent::Start => {}
-                StreamEvent::Error { message } => return Err(ProviderError::Check(message)),
-                _ => return Ok(()),
-            }
+        match events.next().await {
+            Some(event) => event
+                .map(|_| ())
+                .map_err(|e| ProviderError::Check(e.message)),
+            None => Err(ProviderError::Check(
+                "stream ended without a response".to_owned(),
+            )),
         }
-        Err(ProviderError::Check(
-            "stream ended without a response".to_owned(),
-        ))
     }
 }

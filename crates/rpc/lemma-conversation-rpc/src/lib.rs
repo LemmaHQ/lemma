@@ -56,8 +56,6 @@ fn message_to_proto(m: &DomainMessage) -> Message {
     let core_msg = &m.body.0;
     Message {
         id: m.id.to_string(),
-        conversation_id: m.conversation_id.to_string(),
-        parent_id: m.parent_id.map(|p| p.to_string()).unwrap_or_default(),
         role: m.role().to_string(),
         content: core_msg.visible_text(),
         thinking: core_msg
@@ -101,12 +99,10 @@ fn message_to_proto(m: &DomainMessage) -> Message {
         tool_result: match core_msg {
             lemma_core::Message::ToolResult {
                 tool_call_id,
-                tool_name,
                 is_error,
                 ..
             } => MessageField::some(ToolResultMeta {
                 tool_call_id: tool_call_id.clone(),
-                name: tool_name.clone(),
                 is_error: *is_error,
                 ..Default::default()
             }),

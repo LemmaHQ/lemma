@@ -44,8 +44,6 @@ pub enum TurnEvent {
     ToolFinished {
         /// Provider-assigned call ID.
         id: String,
-        /// Tool name.
-        name: String,
         /// Tool output text.
         content: String,
         /// True when the tool reported a failure.
@@ -67,8 +65,6 @@ pub enum TurnEvent {
     },
     /// The final assistant message has been completed and persisted.
     AssistantDone {
-        /// Message ID.
-        id: Uuid,
         /// Token usage if provided.
         usage: Option<Usage>,
         /// Server instant at which generation ended.

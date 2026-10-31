@@ -53,8 +53,6 @@ impl From<UsageMeta> for Usage {
         Self {
             input: u.prompt.unwrap_or(0),
             output: u.completion.unwrap_or(0),
-            cache_read: None,
-            cache_write: None,
         }
     }
 }

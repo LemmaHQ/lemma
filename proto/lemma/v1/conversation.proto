@@ -36,14 +36,18 @@ message ToolCall {
 
 // Tool execution metadata for tool-role messages; payload text resides in content.
 message ToolResultMeta {
+  reserved 2;
+  reserved "name";
+
   string tool_call_id = 1;
-  string name = 2;
   bool is_error = 3;
 }
 
 message Message {
+  reserved 2, 10;
+  reserved "conversation_id", "parent_id";
+
   string id = 1;
-  string conversation_id = 2;
   string role = 3; // user | assistant | system | tool
   string content = 4;
   // Originating provider and model for assistant messages.
@@ -52,8 +56,6 @@ message Message {
   MessageStatus status = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
-  // Parent node in the message tree; empty for root messages.
-  string parent_id = 10;
   // Full chain-of-thought text concatenated from thinking blocks when produced by the model.
   string thinking = 11;
   // Error description populated when status is set to error.

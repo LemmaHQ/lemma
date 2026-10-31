@@ -5,7 +5,7 @@ mod common;
 use std::error::Error;
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, TurnEnd, TurnEvent};
+use lemma_agent_loop::{AgentLoop, CancelToken, TurnEvent};
 use lemma_conversation::{MessageBody, MessageStatus};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
@@ -22,12 +22,9 @@ impl Adapter for StalledAdapter {
     async fn stream(&self, _req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         use futures::StreamExt;
 
-        let head = stream::iter([
-            Ok(StreamEvent::Start),
-            Ok(StreamEvent::TextDelta {
-                delta: "partial".into(),
-            }),
-        ]);
+        let head = stream::iter([Ok(StreamEvent::TextDelta {
+            delta: "partial".into(),
+        })]);
         Ok(Box::pin(head.chain(stream::pending())))
     }
 }
@@ -52,12 +49,11 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
                 }
             }
         };
-        let end = tokio::select! {
+        tokio::select! {
             end = run => end?,
             () = watch => return Err("observer closed before the turn ended".into()),
-        };
+        }
 
-        assert_eq!(end, TurnEnd::Aborted, "turn end");
         let messages = conversations.all_messages(conversation_id).await?;
         assert_eq!(messages.len(), 2, "user message and assistant placeholder");
         let assistant = &messages[1];
@@ -99,9 +95,8 @@ async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn
 
         let turn = input(user_id, conversation_id);
         let user_message_id = turn.user_message_id;
-        let end = agent_loop.run_turn(turn, &|_| {}, &cancel).await?;
+        agent_loop.run_turn(turn, &|_| {}, &cancel).await?;
 
-        assert_eq!(end, TurnEnd::Aborted, "turn end");
         let messages = conversations.all_messages(conversation_id).await?;
         assert_eq!(messages.len(), 1, "only the user message");
         assert_eq!(messages[0].id, user_message_id, "user message id");

@@ -9,7 +9,4 @@ pub struct ModelRequest {
     pub messages: Vec<Message>,
     /// Tool definitions advertised to the model; empty disables tool use.
     pub tools: Vec<ToolSpec>,
-    /// Reasoning effort knob (`low`/`medium`/`high` or a numeric budget),
-    /// forwarded to the vendor's thinking control when set and non-empty.
-    pub thinking_effort: Option<String>,
 }

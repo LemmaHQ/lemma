@@ -15,9 +15,9 @@ The agent subsystem turns one user request into a running turn and reports its p
 | the provider does not belong to the user | `AgentError::ProviderNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
-An empty thinking effort reuses the effort of the conversation's last model selection. With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<conversation id>`; without one, the model is called without tools.
+With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<conversation id>`; without one, the model is called without tools.
 
-`Turn::run(observer)` runs the turn to its end and returns `TurnEnd::Done` or `TurnEnd::Aborted`; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
+`Turn::run(observer)` runs the turn to its end and returns `()` on success; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
 
 ## Turn events
 
@@ -25,11 +25,11 @@ The loop reports `TurnEvent`s to the observer in the order they happen. `lemma-a
 
 | Source | `AgentEvent` (`lemma-agent-rpc`) | Meaning |
 | --- | --- | --- |
-| `UserAppended` | `started` | The user message is stored; carries its id and the client's `client_msg_id`. |
+| `UserAppended` | `started` | The user message is stored; carries its id. |
 | `AssistantStarted` | `turn_started` | A step's placeholder is stored; carries the assistant message id. |
 | `Delta`, `ThinkingDelta` | `delta` (`text` or `thinking`) | One chunk of the model stream. |
 | `ToolStarted`, `ToolFinished` | `tool_call_started`, `tool_call_finished` | One tool call, with its arguments, then its output and error flag. |
-| `AssistantDone` | `done` | The last step finished without requesting tools; carries token usage. |
+| `AssistantDone` | `done` | The last step finished without requesting tools. |
 | `TurnAborted` | `aborted` | The turn was aborted. |
 | `TurnFailed`, non-model `Err(AgentError)` | `error` | The turn failed; carries the error text. |
 

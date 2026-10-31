@@ -98,7 +98,6 @@ pub(crate) fn anthropic_messages(messages: &[Message]) -> Vec<serde_json::Value>
                             "name": c.name,
                             "input": c.arguments,
                         })),
-                        _ => None,
                     })
                     .collect();
                 serde_json::json!({
@@ -179,15 +178,4 @@ pub(crate) fn gemini_contents(messages: &[Message]) -> Vec<serde_json::Value> {
             }),
         })
         .collect()
-}
-
-/// Maps a thinking-effort knob to a token budget: a numeric string is
-/// used verbatim, named tiers map to fixed budgets, and anything else
-/// falls back to the medium tier.
-pub(crate) fn thinking_budget(effort: &str) -> u32 {
-    effort.parse::<u32>().unwrap_or(match effort {
-        "low" => 2048,
-        "high" => 16384,
-        _ => 8192,
-    })
 }

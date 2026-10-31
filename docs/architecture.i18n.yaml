@@ -3,23 +3,23 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/architecture.md
 /lemma-architecture:
-  en: 15f197829c7e8735
-  zh: ec38442c0a7b13af
+  en: fb4b4b3cc51d065e
+  zh: f61f554ff08511f7
 /lemma-architecture/crate-layers:
-  en: 2be8a6ef526ec87d
-  zh: c6d0eda0c2c9f907
+  en: 2b3d44de49714bb3
+  zh: fe9b7d08d812136a
 /lemma-architecture/runtimes:
-  en: 9de408d5f7a7699c
-  zh: 4222320115381b11
+  en: 01ad59319157f25d
+  zh: 6f2cee796791177a
 /lemma-architecture/contracts-across-the-wire:
   en: d9ab448fc2e568cd
   zh: 2310d23a871feec7
 /lemma-architecture/the-path-of-one-turn:
-  en: 1d6e558d6f00762c
-  zh: d6bbcddb51277b7a
+  en: b4405e241255d26c
+  zh: ab831f820b6ba184
 /lemma-architecture/persistence:
-  en: 87d3e71e7491990b
-  zh: 93cb84685cea014d
+  en: 1f47ed49364db36b
+  zh: 3939a154984e4d76
 /lemma-architecture/where-new-behavior-goes:
-  en: 234d55031dce6829
-  zh: 6008ed25e596340d
+  en: 8418264784979327
+  zh: b9fda624590cf26c

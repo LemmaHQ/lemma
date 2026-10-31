@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEnd};
+use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime};
 use lemma_conversation::MessageStatus;
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
@@ -29,7 +29,6 @@ impl Adapter for ToolThenText {
     async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let events = if self.steps.fetch_add(1, Ordering::SeqCst) == 0 {
             vec![
-                Ok(StreamEvent::Start),
                 Ok(StreamEvent::ThinkingDelta {
                     delta: "choose a tool".into(),
                 }),
@@ -51,7 +50,6 @@ impl Adapter for ToolThenText {
             self.second_context
                 .store(req.messages.len(), Ordering::SeqCst);
             vec![
-                Ok(StreamEvent::Start),
                 Ok(StreamEvent::ThinkingDelta {
                     delta: "answer now".into(),
                 }),
@@ -81,7 +79,7 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
         let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
         let agent_loop = AgentLoop::new(conversations.clone(), adapter).with_tools(runtime);
 
-        let end = agent_loop
+        agent_loop
             .run_turn(
                 input(user_id, conversation_id),
                 &|_| {},
@@ -89,7 +87,6 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
             )
             .await?;
 
-        assert_eq!(end, TurnEnd::Done, "turn end");
         let messages = conversations.all_messages(conversation_id).await?;
         let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
         assert_eq!(

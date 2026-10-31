@@ -13,8 +13,6 @@ pub enum StopReason {
     Length,
     /// The model is calling tools and expects results.
     ToolUse,
-    /// Generation failed.
-    Error,
     /// The request was cancelled.
     Aborted,
 }
@@ -43,7 +41,7 @@ pub enum Message {
         tool_call_id: String,
         /// Name of the executed tool.
         tool_name: String,
-        /// Result content blocks (text and images).
+        /// Result content blocks.
         content: Vec<ContentBlock>,
         /// True when the tool reported a failure.
         is_error: bool,

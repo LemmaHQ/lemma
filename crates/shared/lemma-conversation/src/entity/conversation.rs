@@ -9,8 +9,6 @@ pub struct LastModel {
     pub provider_id: Uuid,
     /// Model identifier as configured on the provider.
     pub model: String,
-    /// Reasoning effort level, when the model exposes one.
-    pub thinking_effort: Option<String>,
 }
 
 /// A conversation owned by a user.

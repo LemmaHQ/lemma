@@ -12,8 +12,6 @@ use crate::usage::Usage;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StreamEvent {
-    /// Generation started.
-    Start,
     /// A text block started.
     TextStart,
     /// A fragment of generated text.
@@ -44,8 +42,6 @@ pub enum StreamEvent {
     },
     /// A fragment of the tool call's argument JSON.
     ToolCallDelta {
-        /// Call id from the matching start event.
-        id: String,
         /// Raw JSON fragment.
         delta: String,
     },
@@ -60,10 +56,5 @@ pub enum StreamEvent {
         stop_reason: StopReason,
         /// Token usage, when the provider reports it.
         usage: Option<Usage>,
-    },
-    /// Generation failed; partial content, if any, was already emitted.
-    Error {
-        /// Human-readable failure description.
-        message: String,
     },
 }

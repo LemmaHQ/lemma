@@ -18,11 +18,10 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 - **turn** — 由一条用户消息启动的工作：一个或多个 step，在某个 step 不再请求工具、流失败或 turn 被中止时结束。由 `lemma-agent` 中的 `Agent` 组装，由 `lemma-agent-loop` 中的 `AgentLoop::run_turn` 运行。
 - **step** — 一次模型请求，以及其响应所请求的工具调用。每个 step 写入一条 assistant 消息，并为每个工具调用写入一条工具结果消息。
 - **占位消息（placeholder）** — step 在调用模型前以 `streaming` 状态追加的 assistant 消息，之后用最终内容、状态与用量定稿。
-- **流事件（stream event）** — 一个 `StreamEvent`：每个适配器都会产出的、与厂商无关的封闭事件集合（文本、思考与工具调用的开始、增量与结束；`Done`；`Error`）。
+- **流事件（stream event）** — 一个 `StreamEvent`：每个适配器都会产出的、与厂商无关的封闭事件集合（文本、思考与工具调用的开始、增量与结束；`Done`）。
 - **turn 事件（turn event）** — 循环报告给观察者的一个 `TurnEvent`。`lemma-agent-rpc` 把它映射为 proto 消息 `AgentEvent`。
-- **内容块（content block）** — 消息中的一个 `ContentBlock`：`Text`、`Thinking`（带重放所需的厂商签名）、`ToolCall` 或 `Image`。
-- **停止原因（stop reason）** — 一次生成结束的原因：`stop`、`length`、`tool_use`、`error` 或 `aborted`。只有带至少一个工具调用的 `tool_use` 会开启下一个 step。
-- **思考强度（thinking effort）** — 转发给厂商思考控制的推理设置（`low`、`medium`、`high` 或数值预算）。`SendMessage` 中为空时沿用会话的上一次设置。
+- **内容块（content block）** — 消息中的一个 `ContentBlock`：`Text`、`Thinking`（带重放所需的厂商签名）或 `ToolCall`。
+- **停止原因（stop reason）** — 一次生成结束的原因：`stop`、`length`、`tool_use` 或 `aborted`。只有带至少一个工具调用的 `tool_use` 会开启下一个 step。
 
 ## Provider 与适配器
 

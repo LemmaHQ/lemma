@@ -100,7 +100,6 @@ async fn a_user_cannot_see_or_change_another_users_conversation() -> Result<(), 
         let model = LastModel {
             provider_id: Uuid::new_v4(),
             model: "m".to_owned(),
-            thinking_effort: None,
         };
 
         let listed = conversations.list_conversations(bob).await?;
@@ -366,12 +365,10 @@ async fn leaf_and_last_model_follow_the_turn_and_recent_conversations_come_first
         let first_model = LastModel {
             provider_id: Uuid::new_v4(),
             model: "model-a".to_owned(),
-            thinking_effort: Some("high".to_owned()),
         };
         let second_model = LastModel {
             provider_id: Uuid::new_v4(),
             model: "model-b".to_owned(),
-            thinking_effort: None,
         };
 
         conversations.update_leaf(ada, older.id, leaf_id).await?;
@@ -446,7 +443,6 @@ async fn deleting_a_provider_keeps_the_messages_and_conversations_that_used_it()
         let last_model = LastModel {
             provider_id: provider.id,
             model: "model-a".to_owned(),
-            thinking_effort: None,
         };
         conversations
             .update_last_model(ada, conversation.id, &last_model)

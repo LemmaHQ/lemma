@@ -12,7 +12,7 @@
 | --- | --- |
 | `ProviderKind` | API 方言：`OpenAiCompatible`、`Anthropic` 或 `Gemini`，存储形式为 `openai`、`anthropic` 或 `gemini`。 |
 | `Endpoint` | 一个 provider 的类型、base URL、生成路径覆盖、模型列表路径覆盖与明文 API 密钥。 |
-| `ModelRequest` | 一次流式调用：模型 id、规范消息、工具定义，以及可选的思考强度。 |
+| `ModelRequest` | 一次流式调用：模型 id、规范消息与工具定义。 |
 | `Adapter` | `stream(ModelRequest)` 发起上游调用，产出 `Result<StreamEvent, ModelError>` 条目。 |
 | `Connector` | `connect(Endpoint)` 返回绑定到该 endpoint 的 connector 自身的 `Adapter` 类型；`list_models(Endpoint)` 获取该 endpoint 报告的模型 id。 |
 | `ModelError` | 任何失败，都归结为一条消息。 |
@@ -23,15 +23,15 @@
 
 `HttpConnector` 按类型把 endpoint 绑定到一个适配器，并以 `ModelAdapter` 变体的形式返回。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
 
-| 类型 | 适配器 | 默认请求 | 凭据 | 思考强度 |
-| --- | --- | --- | --- | --- |
-| `openai` | `OpenAiCompatible` | `POST https://api.openai.com/v1/chat/completions` | `authorization: Bearer <key>` | 原样作为 `reasoning_effort` 发送 |
-| `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`，附带 `anthropic-version: 2023-06-01` | 换算为 `thinking.budget_tokens` 中的 token 预算 |
-| `gemini` | `GeminiGenerate` | `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:streamGenerateContent?alt=sse` | `x-goog-api-key` | 换算为 `generationConfig.thinkingConfig.thinkingBudget` 中的 token 预算 |
+| 类型 | 适配器 | 默认请求 | 凭据 |
+| --- | --- | --- | --- |
+| `openai` | `OpenAiCompatible` | `POST https://api.openai.com/v1/chat/completions` | `authorization: Bearer <key>` |
+| `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`，附带 `anthropic-version: 2023-06-01` |
+| `gemini` | `GeminiGenerate` | `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:streamGenerateContent?alt=sse` | `x-goog-api-key` |
 
 base URL 采用厂商 SDK 的写法：`openai` 的版本段属于 base URL，`anthropic` 与 `gemini` 的版本段属于默认路径。
 
-token 预算由思考强度换算：数字原样使用，`low` 为 2048，`high` 为 16384，其他值为 8192。Anthropic 请求的 `max_tokens` 为 8192；开启思考时为预算加 8192。Gemini 的路径覆盖可以包含 `{model}`，它会被替换为模型 id。
+Anthropic 请求的 `max_tokens` 为 8192。Gemini 的路径覆盖可以包含 `{model}`，它会被替换为模型 id。
 
 模型列表在与生成相同的 base URL 下发送 `GET`，凭据相同，时限 10 秒：`openai` 为 `/models`，`anthropic` 为 `/v1/models`，`gemini` 为 `/v1beta/models`。Gemini 的 id 会去掉 `models/` 前缀。
 
@@ -39,7 +39,7 @@ token 预算由思考强度换算：数字原样使用，`low` 为 2048，`high`
 
 每个适配器把厂商的 server-sent events 解析为 `StreamEvent`，其定义见 [glossary.zh.md](../glossary.zh.md#agent-循环)。共享的 SSE 层保证循环所依赖的事件顺序：
 
-- 流以 `Start` 开始。只解析 `data:` 行。
+- 只解析 `data:` 行。
 - 文本增量位于一对 `TextStart`/`TextEnd` 之间。思考块开始、工具调用开始以及 `Done` 之前，打开的文本块会先关闭。
 - 任何厂商的思考都以 `ThinkingStart`、若干增量、`ThinkingEnd` 的形式到达；Anthropic 与 Gemini 在 `ThinkingEnd` 上携带厂商签名，供下一次请求回放该块。
 - 流以一个 `Done` 结束，携带停止原因与 token 用量；厂商在没有终止分块的情况下关闭响应体时，SSE 层根据解析器已看到的内容补发 `Done`。

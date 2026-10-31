@@ -27,15 +27,6 @@ pub struct TurnInput {
     pub model: LastModel,
 }
 
-/// How a turn ended without failing.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TurnEnd {
-    /// A step ended without requesting tools.
-    Done,
-    /// The turn's cancel token fired.
-    Aborted,
-}
-
 /// Runs turns: assembles each step's context from the message tree, streams
 /// the model through its adapter, executes requested tool calls in an `E`
 /// environment, and persists every message as it settles.
@@ -78,7 +69,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         input: TurnInput,
         observer: &O,
         cancel: &CancelToken,
-    ) -> Result<TurnEnd, LoopError> {
+    ) -> Result<(), LoopError> {
         let TurnInput {
             user_id,
             conversation_id,
@@ -113,7 +104,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         loop {
             if cancel.is_cancelled() {
                 observer(TurnEvent::TurnAborted { at: Utc::now() });
-                return Ok(TurnEnd::Aborted);
+                return Ok(());
             }
             let entries = self.conversations.all_messages(conversation_id).await?;
             let messages = lemma_conversation::build_context_path(&entries, leaf_id)?;
@@ -133,7 +124,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 model: model.model.clone(),
                 messages,
                 tools: tool_specs.clone(),
-                thinking_effort: model.thinking_effort.clone(),
             };
             let mut outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
             self.conversations
@@ -153,7 +143,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                     observer(TurnEvent::TurnAborted {
                         at: outcome.ended_at,
                     });
-                    return Ok(TurnEnd::Aborted);
+                    return Ok(());
                 }
             }
 
@@ -173,11 +163,10 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                             .await?;
                     }
                     observer(TurnEvent::AssistantDone {
-                        id: assistant_id,
                         usage: outcome.usage,
                         at: outcome.ended_at,
                     });
-                    return Ok(TurnEnd::Done);
+                    return Ok(());
                 }
             };
 
@@ -202,7 +191,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 call.finished_at = Some(finished_at);
                 observer(TurnEvent::ToolFinished {
                     id: call.id.clone(),
-                    name: call.name.clone(),
                     content: tool_outcome.text.clone(),
                     is_error: tool_outcome.is_error,
                     at: finished_at,

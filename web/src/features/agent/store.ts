@@ -164,7 +164,6 @@ export const useActiveConversation = create<ActiveConversationState>()(
                         content,
                         providerId,
                         model,
-                        clientMsgId,
                     },
                     { signal },
                 );

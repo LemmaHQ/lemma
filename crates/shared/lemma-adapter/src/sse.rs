@@ -1,10 +1,10 @@
 //! SSE line decoding shared by the adapters.
 //!
 //! Beyond turning `data:` payloads into parser events, this layer
-//! synthesizes the canonical block lifecycle: every stream opens with
-//! `Start`, the first `TextDelta` is preceded by `TextStart`, and an open
-//! text block is closed with `TextEnd` before the terminal `Done`. `Done`
-//! is emitted exactly once, at the terminal event or at EOF.
+//! synthesizes the canonical block lifecycle: the first `TextDelta` is
+//! preceded by `TextStart`, and an open text block is closed with `TextEnd`
+//! before the terminal `Done`. `Done` is emitted exactly once, at the
+//! terminal event or at EOF.
 
 use std::pin::Pin;
 
@@ -66,7 +66,6 @@ fn lines(bytes: ByteStream) -> ByteLines {
 struct State {
     lines: ByteLines,
     parser: Box<dyn SseParser>,
-    started: bool,
     text_open: bool,
     done_seen: bool,
 }
@@ -76,7 +75,6 @@ impl State {
         Self {
             lines: lines(bytes),
             parser: Box::new(parser),
-            started: false,
             text_open: false,
             done_seen: false,
         }
@@ -129,10 +127,6 @@ pub(crate) fn events_from_sse(bytes: ByteStream, parser: impl SseParser) -> BoxE
             loop {
                 if let Some(event) = pending.next() {
                     return Ok(Some((event, (state, pending))));
-                }
-                if !state.started {
-                    state.started = true;
-                    return Ok(Some((StreamEvent::Start, (state, pending))));
                 }
                 if state.done_seen {
                     return Ok(None);

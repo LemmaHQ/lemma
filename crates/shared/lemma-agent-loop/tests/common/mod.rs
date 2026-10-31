@@ -50,7 +50,6 @@ pub(crate) fn input(user_id: Uuid, conversation_id: Uuid) -> TurnInput {
         model: LastModel {
             provider_id: Uuid::new_v4(),
             model: "m".into(),
-            thinking_effort: None,
         },
     }
 }

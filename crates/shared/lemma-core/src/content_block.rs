@@ -15,8 +15,6 @@ pub enum ContentBlock {
     Thinking(ThinkingContent),
     /// A request to execute a named tool.
     ToolCall(ToolCall),
-    /// An inline image.
-    Image(ImageContent),
 }
 
 /// Plain text block.
@@ -57,16 +55,6 @@ pub struct ToolCall {
     /// Server instant at which the tool result arrived.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<DateTime<Utc>>,
-}
-
-/// An inline image block.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ImageContent {
-    /// MIME type, e.g. `image/png`.
-    pub mime_type: String,
-    /// Reference to the content-addressed blob store; raw bytes remain
-    /// separated from the trace.
-    pub blob_ref: String,
 }
 
 impl ContentBlock {

@@ -27,8 +27,6 @@ impl Parser {
         self.usage.take().map(|u| Usage {
             input: u.prompt_tokens,
             output: u.completion_tokens,
-            cache_read: None,
-            cache_write: None,
         })
     }
 
@@ -93,10 +91,7 @@ impl Parser {
             if let Some(fragment) = fragment {
                 acc.args.push_str(&fragment);
                 if acc.started {
-                    events.push(StreamEvent::ToolCallDelta {
-                        id: acc.id.clone(),
-                        delta: fragment,
-                    });
+                    events.push(StreamEvent::ToolCallDelta { delta: fragment });
                 }
             }
         }
@@ -206,7 +201,6 @@ data: [DONE]\n";
         assert_eq!(
             events,
             vec![
-                StreamEvent::Start,
                 StreamEvent::TextStart,
                 StreamEvent::TextDelta {
                     delta: "你好".into()
@@ -220,8 +214,6 @@ data: [DONE]\n";
                     usage: Some(Usage {
                         input: 10,
                         output: 4,
-                        cache_read: None,
-                        cache_write: None,
                     }),
                 },
             ]
@@ -244,7 +236,6 @@ data: [DONE]\n";
         assert_eq!(
             events,
             vec![
-                StreamEvent::Start,
                 StreamEvent::ThinkingStart,
                 StreamEvent::ThinkingDelta {
                     delta: "让我".into()
@@ -263,11 +254,9 @@ data: [DONE]\n";
                     name: "get_weather".into(),
                 },
                 StreamEvent::ToolCallDelta {
-                    id: "call_1".into(),
                     delta: "{\"city\":".into(),
                 },
                 StreamEvent::ToolCallDelta {
-                    id: "call_1".into(),
                     delta: "\"北京\"}".into(),
                 },
                 StreamEvent::ToolCallEnd {

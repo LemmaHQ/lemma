@@ -1,16 +1,13 @@
-use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
 use chrono::{DateTime, Utc};
 use lemma_agent::TurnEvent;
-use lemma_core::Usage;
 use lemma_proto::lemma::v1::{
     AgentAborted, AgentDelta, AgentDone, AgentError, AgentEvent, AgentStarted, AgentTurnStarted,
-    TextDelta, ThinkingDelta, TokenUsage, ToolCallFinished, ToolCallStarted, agent_delta,
-    agent_event,
+    TextDelta, ThinkingDelta, ToolCallFinished, ToolCallStarted, agent_delta, agent_event,
 };
 use uuid::Uuid;
 
-pub(crate) fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
+pub(crate) fn turn_event(ev: TurnEvent) -> AgentEvent {
     let at = match &ev {
         TurnEvent::Delta { at, .. }
         | TurnEvent::ThinkingDelta { at, .. }
@@ -22,7 +19,7 @@ pub(crate) fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
         TurnEvent::UserAppended { .. } | TurnEvent::AssistantStarted { .. } => Utc::now(),
     };
     let mut event = match ev {
-        TurnEvent::UserAppended { id } => started_event(id, client_msg_id.to_string()),
+        TurnEvent::UserAppended { id } => started_event(id),
         TurnEvent::AssistantStarted { id } => turn_started_event(id),
         TurnEvent::Delta { delta, .. } => text_delta_event(delta),
         TurnEvent::ThinkingDelta { delta, .. } => thinking_delta_event(delta),
@@ -34,14 +31,13 @@ pub(crate) fn turn_event(ev: TurnEvent, client_msg_id: &str) -> AgentEvent {
         } => tool_call_started_event(id, name, arguments),
         TurnEvent::ToolFinished {
             id,
-            name,
             content,
             is_error,
             ..
-        } => tool_call_finished_event(id, name, content, is_error),
+        } => tool_call_finished_event(id, content, is_error),
         TurnEvent::TurnAborted { at } => aborted_event(at),
         TurnEvent::TurnFailed { message, at } => error_event(&message, at),
-        TurnEvent::AssistantDone { usage, .. } => done_event(usage),
+        TurnEvent::AssistantDone { .. } => done_event(),
     };
     event.occurred_at = Timestamp::from(at).into();
     event
@@ -68,11 +64,10 @@ fn aborted_event(at: DateTime<Utc>) -> AgentEvent {
     }
 }
 
-fn started_event(id: Uuid, client_msg_id: String) -> AgentEvent {
+fn started_event(id: Uuid) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::Started(Box::new(AgentStarted {
             message_id: id.to_string(),
-            client_msg_id,
             ..Default::default()
         }))),
         ..Default::default()
@@ -105,19 +100,9 @@ fn thinking_delta_event(thinking: String) -> AgentEvent {
     }
 }
 
-fn done_event(usage: Option<Usage>) -> AgentEvent {
+fn done_event() -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::Done(Box::new(AgentDone {
-            usage: usage
-                .map(|u| {
-                    MessageField::some(TokenUsage {
-                        prompt_tokens: u.input as i32,
-                        completion_tokens: u.output as i32,
-                        total_tokens: (u.input + u.output) as i32,
-                        ..Default::default()
-                    })
-                })
-                .unwrap_or_default(),
             ..Default::default()
         }))),
         ..Default::default()
@@ -148,17 +133,11 @@ fn tool_call_started_event(call_id: String, name: String, arguments: String) -> 
     }
 }
 
-fn tool_call_finished_event(
-    call_id: String,
-    name: String,
-    content: String,
-    is_error: bool,
-) -> AgentEvent {
+fn tool_call_finished_event(call_id: String, content: String, is_error: bool) -> AgentEvent {
     AgentEvent {
         kind: Some(agent_event::Kind::ToolCallFinished(Box::new(
             ToolCallFinished {
                 call_id,
-                name,
                 content,
                 is_error,
                 ..Default::default()

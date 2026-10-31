@@ -7,8 +7,4 @@ pub struct Usage {
     pub input: i64,
     /// Tokens produced in the response.
     pub output: i64,
-    /// Prompt tokens served from the provider's cache, when reported.
-    pub cache_read: Option<i64>,
-    /// Tokens written into the provider's cache, when reported.
-    pub cache_write: Option<i64>,
 }

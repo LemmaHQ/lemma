@@ -52,10 +52,9 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，`lemma-agent-rpc` 只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。`lemma-agent-rpc` 把它的 `TurnEvent` 映射为 `AgentEvent` 消息。
 
 ```text
-AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
+AgentService.SendMessage(conversation, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
-  thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:

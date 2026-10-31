@@ -10,7 +10,7 @@ mod stream;
 mod tool_runtime;
 mod turn_event;
 
-pub use agent_loop::{AgentLoop, TurnEnd, TurnInput};
+pub use agent_loop::{AgentLoop, TurnInput};
 pub use cancel_token::CancelToken;
 pub use loop_error::LoopError;
 pub use tool_runtime::ToolRuntime;

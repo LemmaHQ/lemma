@@ -2,7 +2,7 @@ use lemma_core::StopReason;
 use lemma_model::{Adapter, BoxEventStream, Endpoint, ModelError, ModelRequest};
 
 use crate::http_transport::HttpTransport;
-use crate::{request, sse};
+use crate::{connection, request, sse};
 
 use super::parser::Parser;
 
@@ -29,17 +29,12 @@ impl<T: HttpTransport> GeminiGenerate<T> {
 impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
     async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let endpoint = &self.endpoint;
-        let base_url = if endpoint.base_url.is_empty() {
-            "https://generativelanguage.googleapis.com"
-        } else {
-            endpoint.base_url.as_str()
-        };
         let path = if endpoint.api_path.is_empty() {
             format!("/v1beta/models/{}:streamGenerateContent?alt=sse", req.model)
         } else {
             endpoint.api_path.replace("{model}", &req.model)
         };
-        let url = format!("{}{}", base_url.trim_end_matches('/'), path);
+        let url = format!("{}{}", connection::base_url(endpoint), path);
         let mut body = serde_json::json!({
             "contents": request::gemini_contents(&req.messages),
         });
@@ -52,15 +47,7 @@ impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
                 })).collect::<Vec<_>>(),
             }]);
         }
-        if let Some(effort) = req.thinking_effort.as_deref().filter(|e| !e.is_empty()) {
-            body["generationConfig"]["thinkingConfig"]["thinkingBudget"] =
-                serde_json::json!(request::thinking_budget(effort));
-        }
-        let headers = if endpoint.api_key.is_empty() {
-            Vec::new()
-        } else {
-            vec![("x-goog-api-key".to_string(), endpoint.api_key.clone())]
-        };
+        let headers = connection::credential_headers(endpoint);
         let bytes = self.transport.post_stream(url, headers, body).await?;
         Ok(sse::events_from_sse(
             bytes,

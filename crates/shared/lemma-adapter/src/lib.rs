@@ -9,6 +9,7 @@
 //! their own networking stack.
 
 mod anthropic_messages;
+mod connection;
 mod error;
 mod gemini_generate;
 mod http_connector;

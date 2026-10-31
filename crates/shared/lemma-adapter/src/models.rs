@@ -1,6 +1,7 @@
 use lemma_model::{Endpoint, ModelError, ProviderKind};
 use serde::Deserialize;
 
+use crate::connection;
 use crate::error;
 use crate::http_transport::HttpTransport;
 
@@ -36,42 +37,18 @@ pub(crate) async fn list_models<T: HttpTransport>(
     transport: &T,
     endpoint: Endpoint,
 ) -> Result<Vec<String>, ModelError> {
-    let (default_base, default_path) = match endpoint.kind {
-        ProviderKind::OpenAiCompatible => ("https://api.openai.com/v1", "/models"),
-        ProviderKind::Anthropic => ("https://api.anthropic.com", "/v1/models"),
-        ProviderKind::Gemini => (
-            "https://generativelanguage.googleapis.com",
-            "/v1beta/models",
-        ),
-    };
-    let base = if endpoint.base_url.is_empty() {
-        default_base
-    } else {
-        endpoint.base_url.trim_end_matches('/')
+    let default_path = match endpoint.kind {
+        ProviderKind::OpenAiCompatible => "/models",
+        ProviderKind::Anthropic => "/v1/models",
+        ProviderKind::Gemini => "/v1beta/models",
     };
     let path = if endpoint.models_path.is_empty() {
         default_path
     } else {
         &endpoint.models_path
     };
-    let url = format!("{base}{path}");
-    let key = endpoint.api_key;
-    let mut headers = Vec::new();
-    match endpoint.kind {
-        ProviderKind::OpenAiCompatible if !key.is_empty() => {
-            headers.push(("authorization".to_string(), format!("Bearer {key}")));
-        }
-        ProviderKind::Anthropic => {
-            headers.push(("anthropic-version".to_string(), "2023-06-01".to_string()));
-            if !key.is_empty() {
-                headers.push(("x-api-key".to_string(), key));
-            }
-        }
-        ProviderKind::Gemini if !key.is_empty() => {
-            headers.push(("x-goog-api-key".to_string(), key));
-        }
-        _ => {}
-    }
+    let url = format!("{}{}", connection::base_url(&endpoint), path);
+    let headers = connection::credential_headers(&endpoint);
     let body = transport.get_json(url, headers).await?;
     let bad_body = |e: serde_json::Error| error::protocol(format!("bad model list: {e}"));
     match endpoint.kind {

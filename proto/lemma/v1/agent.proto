@@ -11,16 +11,11 @@ service AgentService {
   rpc ResumeStream(ResumeStreamRequest) returns (stream ResumeStreamResponse);
 }
 
-message TokenUsage {
-  int32 prompt_tokens = 1;
-  int32 completion_tokens = 2;
-  int32 total_tokens = 3;
-}
-
 message AgentStarted {
+  reserved 2;
+  reserved "client_msg_id";
+
   string message_id = 1;
-  // Echoes client-generated ID for optimistic rendering and deduplication.
-  string client_msg_id = 2;
 }
 
 message TextDelta {
@@ -40,7 +35,8 @@ message AgentDelta {
 }
 
 message AgentDone {
-  TokenUsage usage = 1;
+  reserved 1;
+  reserved "usage";
 }
 
 message AgentAborted {}
@@ -62,8 +58,10 @@ message ToolCallStarted {
 }
 
 message ToolCallFinished {
+  reserved 2;
+  reserved "name";
+
   string call_id = 1;
-  string name = 2;
   // Tool execution output text.
   string content = 3;
   bool is_error = 4;
@@ -88,14 +86,14 @@ message AgentEvent {
 }
 
 message SendMessageRequest {
+  reserved 5, 6;
+  reserved "client_msg_id", "thinking_effort";
+
   string conversation_id = 1;
   string content = 2;
   // Provider and model used for this turn, decoupled from conversation state.
   string provider_id = 3;
   string model = 4;
-  string client_msg_id = 5;
-  // Reasoning effort level; empty string retains the conversation's active configuration.
-  string thinking_effort = 6;
 }
 
 message SendMessageResponse {

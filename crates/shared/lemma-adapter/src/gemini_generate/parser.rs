@@ -154,7 +154,6 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"ge
         assert_eq!(
             events,
             vec![
-                StreamEvent::Start,
                 StreamEvent::ThinkingStart,
                 StreamEvent::ThinkingDelta {
                     delta: "想想".into()
@@ -188,8 +187,6 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"ge
                     usage: Some(Usage {
                         input: 5,
                         output: 10,
-                        cache_read: None,
-                        cache_write: None,
                     }),
                 },
             ]

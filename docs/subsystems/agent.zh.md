@@ -15,9 +15,9 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | provider 不属于该用户 | `AgentError::ProviderNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
-思考强度为空时，沿用会话最近一次模型选择中的思考强度。有工作区目录时，turn 获得以 `<workspaces_dir>/<conversation id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
+有工作区目录时，turn 获得以 `<workspaces_dir>/<conversation id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
 
-`Turn::run(observer)` 把 turn 运行到结束，返回 `TurnEnd::Done` 或 `TurnEnd::Aborted`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
+`Turn::run(observer)` 把 turn 运行到结束，成功时返回 `()`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
 
 ## Turn 事件
 
@@ -25,11 +25,11 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 | 来源 | `AgentEvent`（`lemma-agent-rpc`） | 含义 |
 | --- | --- | --- |
-| `UserAppended` | `started` | 用户消息已存储；携带它的 id 与客户端的 `client_msg_id`。 |
+| `UserAppended` | `started` | 用户消息已存储；携带它的 id。 |
 | `AssistantStarted` | `turn_started` | 某个 step 的占位消息已存储；携带 assistant 消息 id。 |
 | `Delta`、`ThinkingDelta` | `delta`（`text` 或 `thinking`） | 模型流的一个分块。 |
 | `ToolStarted`、`ToolFinished` | `tool_call_started`、`tool_call_finished` | 一次工具调用：先是参数，然后是输出与错误标志。 |
-| `AssistantDone` | `done` | 最后一个 step 结束且不再请求工具；携带 token 用量。 |
+| `AssistantDone` | `done` | 最后一个 step 结束且不再请求工具。 |
 | `TurnAborted` | `aborted` | turn 被中止。 |
 | `TurnFailed`、模型流之外的 `Err(AgentError)` | `error` | turn 失败；携带错误文本。 |
 

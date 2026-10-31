@@ -35,8 +35,6 @@ impl Parser {
         Some(Usage {
             input: self.input.unwrap_or(0),
             output: self.output.unwrap_or(0),
-            cache_read: None,
-            cache_write: None,
         })
     }
 
@@ -95,12 +93,9 @@ impl Parser {
                     return Vec::new();
                 };
                 match &mut self.block {
-                    Block::Tool { id, args, .. } => {
+                    Block::Tool { args, .. } => {
                         args.push_str(&fragment);
-                        vec![StreamEvent::ToolCallDelta {
-                            id: id.clone(),
-                            delta: fragment,
-                        }]
+                        vec![StreamEvent::ToolCallDelta { delta: fragment }]
                     }
                     _ => Vec::new(),
                 }
@@ -249,7 +244,6 @@ data: {\"type\":\"message_stop\"}\n";
         assert_eq!(
             events,
             vec![
-                StreamEvent::Start,
                 StreamEvent::ThinkingStart,
                 StreamEvent::ThinkingDelta {
                     delta: "让我想想".into(),
@@ -267,7 +261,6 @@ data: {\"type\":\"message_stop\"}\n";
                     name: "get_weather".into(),
                 },
                 StreamEvent::ToolCallDelta {
-                    id: "toolu_1".into(),
                     delta: "{\"city\": \"北京\"}".into(),
                 },
                 StreamEvent::ToolCallEnd {
@@ -284,8 +277,6 @@ data: {\"type\":\"message_stop\"}\n";
                     usage: Some(Usage {
                         input: 25,
                         output: 40,
-                        cache_read: None,
-                        cache_write: None,
                     }),
                 },
             ]

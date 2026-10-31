@@ -52,10 +52,9 @@ A business error carries an `ErrorReason` from the closed enum in `errors.proto`
 A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and `lemma-agent-rpc` calls only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. `lemma-agent-rpc` maps its `TurnEvent`s onto `AgentEvent` messages.
 
 ```text
-AgentService.SendMessage(conversation, provider, model, content, thinking_effort)
+AgentService.SendMessage(conversation, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
-  thinking_effort: the request's value, else the conversation's last model
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the conversation
   step:

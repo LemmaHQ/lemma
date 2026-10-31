@@ -11,7 +11,7 @@ mod stream_event;
 mod tool_spec;
 mod usage;
 
-pub use content_block::{ContentBlock, ImageContent, TextContent, ThinkingContent, ToolCall};
+pub use content_block::{ContentBlock, TextContent, ThinkingContent, ToolCall};
 pub use message::{Message, StopReason};
 pub use stream_event::StreamEvent;
 pub use tool_spec::ToolSpec;

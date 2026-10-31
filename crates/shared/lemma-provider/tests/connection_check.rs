@@ -15,26 +15,17 @@ impl Adapter for ScriptedAdapter {
     async fn stream(&self, req: ModelRequest) -> Result<BoxEventStream, ModelError> {
         let events = match req.model.as_str() {
             "answers" => vec![
-                Ok(StreamEvent::Start),
                 Ok(StreamEvent::TextStart),
                 Ok(StreamEvent::TextDelta {
                     delta: "pong".to_owned(),
                 }),
             ],
-            "errors-in-stream" => vec![
-                Ok(StreamEvent::Start),
-                Ok(StreamEvent::Error {
-                    message: "model overloaded".to_owned(),
-                }),
-            ],
-            "closes-early" => vec![Ok(StreamEvent::Start)],
-            "finishes-empty" => vec![
-                Ok(StreamEvent::Start),
-                Ok(StreamEvent::Done {
-                    stop_reason: StopReason::Stop,
-                    usage: None,
-                }),
-            ],
+            "errors-in-stream" => vec![Err(ModelError::new("model overloaded".to_owned()))],
+            "closes-early" => Vec::new(),
+            "finishes-empty" => vec![Ok(StreamEvent::Done {
+                stop_reason: StopReason::Stop,
+                usage: None,
+            })],
             _ => return Err(ModelError::new("HTTP 404: model not found".to_owned())),
         };
         Ok(Box::pin(stream::iter(events)))
@@ -94,7 +85,7 @@ fn a_rejected_request_fails_with_the_upstream_message() {
 }
 
 #[test]
-fn an_error_event_fails_with_its_message() {
+fn a_stream_error_fails_with_its_message() {
     assert_eq!(check_failure("errors-in-stream"), "model overloaded");
 }
 

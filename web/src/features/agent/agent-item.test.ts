@@ -90,7 +90,7 @@ it("keeps timestamps absent for legacy rows and through result hydration", () =>
             id: "tool-1",
             role: "tool",
             content: "contents",
-            toolResult: { toolCallId: "call-1", name: "read_file" },
+            toolResult: { toolCallId: "call-1" },
         }),
     );
     const [hydrated] = hydrateToolResults([legacy, result]);

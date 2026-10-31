@@ -8,7 +8,7 @@ use chrono::Utc;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use lemma_agent::{Agent, AgentError as TurnError, TurnEnd, TurnRequest};
+use lemma_agent::{Agent, AgentError as TurnError, TurnRequest};
 use lemma_agent_loop::LoopError;
 use lemma_model::Connector;
 use lemma_proto::lemma::v1;
@@ -86,20 +86,15 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
                 provider_id: parse_uuid(request.provider_id)?,
                 model: request.model.to_string(),
                 content: request.content.to_string(),
-                thinking_effort: Some(request.thinking_effort.to_string()),
             })
             .await
             .map_err(prepare_error)?;
 
         let user_message_id = turn.user_message_id();
         let (writer, events) = self.live.start(user_id, user_message_id);
-        let client_msg_id = request.client_msg_id.to_string();
         tokio::spawn(async move {
-            match turn
-                .run(|ev| writer.push(turn_event(ev, &client_msg_id)))
-                .await
-            {
-                Ok(TurnEnd::Done) | Ok(TurnEnd::Aborted) => {}
+            match turn.run(|ev| writer.push(turn_event(ev))).await {
+                Ok(()) => {}
                 Err(e) => {
                     if !matches!(&e, TurnError::Loop(LoopError::Model(_))) {
                         writer.push(error_event(&e.to_string(), Utc::now()));

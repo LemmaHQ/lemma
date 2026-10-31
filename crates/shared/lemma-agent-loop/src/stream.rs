@@ -156,7 +156,6 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
 
     fn apply(&mut self, event: StreamEvent) -> Result<(), String> {
         match event {
-            StreamEvent::Start => {}
             StreamEvent::TextStart => self.reopen(OpenBlock::Text(String::new())),
             StreamEvent::TextDelta { delta } => {
                 let at = Utc::now();
@@ -201,7 +200,7 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                     arguments: String::new(),
                 });
             }
-            StreamEvent::ToolCallDelta { delta, .. } => {
+            StreamEvent::ToolCallDelta { delta } => {
                 if let Some(OpenBlock::ToolCall { arguments, .. }) = &mut self.open {
                     arguments.push_str(&delta);
                 }
@@ -219,12 +218,6 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                 self.ended_at = Some(at);
                 self.stop_reason = stop_reason;
                 self.usage = usage;
-            }
-            StreamEvent::Error { message } => {
-                let at = Utc::now();
-                self.finish_thinking(at);
-                self.ended_at = Some(at);
-                return Err(message);
             }
         }
         Ok(())

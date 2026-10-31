@@ -93,7 +93,6 @@ it("uses server instants for thinking and tool execution", () => {
                 case: "toolCallFinished",
                 value: {
                     callId: "call-1",
-                    name: "read_file",
                     content: "contents",
                     isError: false,
                 },
@@ -126,7 +125,7 @@ it("finishes thinking on done and leaves legacy events untimed", () => {
             1000,
         ),
     );
-    reducer.applyEvent(at({ case: "done", value: { usage: {} } }, 5000));
+    reducer.applyEvent(at({ case: "done", value: {} }, 5000));
 
     expect(items()[0]).toMatchObject({
         thinkingStartedAt: 1000,
