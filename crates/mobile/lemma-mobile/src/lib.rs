@@ -6,7 +6,6 @@ use std::fmt;
 use std::path::Path;
 
 use lemma_host::{InProcessTransport, LocalEngine};
-use tokio::sync::Mutex;
 
 uniffi::setup_scaffolding!();
 
@@ -19,14 +18,12 @@ pub enum EngineError {
     /// A request was malformed, or its response body is not open or failed
     /// while streaming.
     Transport(String),
-    /// The database failed to close.
-    Shutdown(String),
 }
 
 impl fmt::Display for EngineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Open(e) | Self::Transport(e) | Self::Shutdown(e) => write!(f, "{e}"),
+            Self::Open(e) | Self::Transport(e) => write!(f, "{e}"),
         }
     }
 }
@@ -58,7 +55,6 @@ pub struct ResponseHead {
 #[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
     transport: InProcessTransport,
-    local: Mutex<Option<LocalEngine>>,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -75,7 +71,6 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Open(e.to_string()))?;
         Ok(Self {
             transport: InProcessTransport::new(local.router()),
-            local: Mutex::new(Some(local)),
         })
     }
 
@@ -128,22 +123,5 @@ impl LemmaEngine {
     /// Closes a response body before its end.
     pub fn cancel(&self, body: u32) {
         self.transport.cancel(body);
-    }
-
-    /// Closes the engine's database; call it once no request is in flight.
-    /// Named apart from `close`, which the Kotlin binding takes from
-    /// `AutoCloseable` to free the native object.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::Shutdown`] when the database fails to close.
-    pub async fn shutdown(&self) -> Result<(), EngineError> {
-        if let Some(local) = self.local.lock().await.take() {
-            local
-                .close()
-                .await
-                .map_err(|e| EngineError::Shutdown(e.to_string()))?;
-        }
-        Ok(())
     }
 }
