@@ -106,10 +106,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     <Select
                         value={kind}
                         onValueChange={(value) => {
-                            const option = KIND_OPTIONS.find(
+                            for (const option of KIND_OPTIONS.filter(
                                 (o) => o === value,
-                            );
-                            if (option !== undefined) {
+                            )) {
                                 setKind(option);
                             }
                         }}

@@ -50,9 +50,6 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     }, [models, query]);
 
     const fetchRemote = async () => {
-        if (fetching) {
-            return;
-        }
         setFetching(true);
         setFetchError(null);
         try {

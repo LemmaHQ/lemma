@@ -49,14 +49,11 @@ export function ConnectionCheck({
     const key = `${target}\n${model ?? ""}`;
     const current = result?.key === key ? result : null;
 
-    const check = async () => {
-        if (model === undefined) {
-            return;
-        }
+    const check = async (checked: string) => {
         setResult({ key, status: "checking" });
         let next: CheckResult;
         try {
-            const message = await onCheck(model);
+            const message = await onCheck(checked);
             next =
                 message === ""
                     ? { status: "passed" }
@@ -120,7 +117,11 @@ export function ConnectionCheck({
                     }
                     loading={current?.status === "checking"}
                     disabled={disabled || model === undefined}
-                    onClick={() => void check()}
+                    onClick={
+                        model === undefined
+                            ? undefined
+                            : () => void check(model)
+                    }
                 >
                     {current?.status === "passed" && <CheckIcon animate />}
                     {current?.status === "failed" && <XIcon animate />}

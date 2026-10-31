@@ -35,10 +35,8 @@ export function FetchModelsDialog({
     return (
         <Dialog
             open={remote !== null}
-            onOpenChange={(open) => {
-                if (!open) {
-                    onClose();
-                }
+            onOpenChange={() => {
+                onClose();
             }}
         >
             <DialogContent
