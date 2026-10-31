@@ -1,6 +1,6 @@
 import { create, type MessageInitShape } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { AgentEventSchema, type AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
@@ -145,4 +145,54 @@ it("finishes thinking on done and leaves legacy events untimed", () => {
         }),
     );
     expect(legacy.items()[0]?.thinkingStartedAt).toBeUndefined();
+});
+
+type Kind = NonNullable<MessageInitShape<typeof AgentEventSchema>["kind"]>;
+
+const thinkingDelta: Kind = {
+    case: "delta",
+    value: { part: { case: "thinking", value: { content: "hmm" } } },
+};
+
+const textDelta: Kind = {
+    case: "delta",
+    value: { part: { case: "text", value: { content: "answer" } } },
+};
+
+describe.each<[string, Kind]>([
+    ["a text delta", textDelta],
+    [
+        "a tool call",
+        {
+            case: "toolCallStarted",
+            value: { callId: "call-1", name: "bash", arguments: "{}" },
+        },
+    ],
+    ["done", { case: "done", value: {} }],
+    ["aborted", { case: "aborted", value: {} }],
+    ["an error", { case: "error", value: { message: "failed" } }],
+])("thinking interval on %s", (_name, kind) => {
+    it("stays unset without thinking", () => {
+        const { reducer, items } = harness();
+        reducer.applyEvent(at(kind, 2000));
+
+        expect(items()[0]?.thinkingFinishedAt).toBeUndefined();
+    });
+
+    it("ends at the first event after thinking", () => {
+        const { reducer, items } = harness();
+        reducer.applyEvent(at(thinkingDelta, 1000));
+        reducer.applyEvent(at(kind, 2000));
+
+        expect(items()[0]?.thinkingFinishedAt).toBe(2000);
+    });
+
+    it("keeps an interval that already ended", () => {
+        const { reducer, items } = harness();
+        reducer.applyEvent(at(thinkingDelta, 1000));
+        reducer.applyEvent(at(textDelta, 1500));
+        reducer.applyEvent(at(kind, 2000));
+
+        expect(items()[0]?.thinkingFinishedAt).toBe(1500);
+    });
 });

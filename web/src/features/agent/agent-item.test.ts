@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { expect, it } from "vitest";
 
-import { MessageSchema } from "@/gen/lemma/v1/conversation_pb";
+import { MessageSchema, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
 
 import { hydrateToolResults, protoToItem } from "./agent-item";
 
@@ -103,3 +103,20 @@ it("keeps timestamps absent for legacy rows and through result hydration", () =>
         finishedAt: undefined,
     });
 });
+
+it.each([
+    [MessageStatus.STREAMING, "", "streaming", undefined],
+    [MessageStatus.ABORTED, "", "aborted", undefined],
+    [MessageStatus.ERROR, "rate limited", "error", "rate limited"],
+    [MessageStatus.DONE, "", "done", undefined],
+] as const)(
+    "maps stored status %s with error %j",
+    (status, error, expectedStatus, expectedError) => {
+        const item = protoToItem(
+            create(MessageSchema, { id: "assistant-1", status, error }),
+        );
+
+        expect(item.status).toBe(expectedStatus);
+        expect(item.error).toBe(expectedError);
+    },
+);

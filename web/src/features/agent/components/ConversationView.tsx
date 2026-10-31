@@ -1,7 +1,6 @@
 import { toast } from "@lemma/ui";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 
 import { errorText } from "@/i18n/error-text";
 
@@ -26,7 +25,6 @@ export function ConversationView({
     onCreateConversation: () => Promise<string>;
 }) {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const conversation = useActiveConversation();
     const [draft, setDraft] = useState("");
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -40,11 +38,7 @@ export function ConversationView({
     }, [conversationId, openConversation]);
 
     const sendText = async (text: string) => {
-        if (conversation.streaming) {
-            return;
-        }
-        if (model === null) {
-            void navigate(providersPath, { viewTransition: true });
+        if (conversation.streaming || model === null) {
             return;
         }
         try {
@@ -60,12 +54,8 @@ export function ConversationView({
     };
 
     const handleSend = () => {
-        const text = draft.trim();
-        if (text === "") {
-            return;
-        }
         setDraft("");
-        void sendText(text);
+        void sendText(draft.trim());
     };
 
     const handleStop = () => {
@@ -77,9 +67,6 @@ export function ConversationView({
             return;
         }
         const idx = conversation.items.findIndex((m) => m.id === messageId);
-        if (idx < 0) {
-            return;
-        }
         for (let i = idx - 1; i >= 0; i--) {
             const prev = conversation.items[i];
             if (prev !== undefined && prev.role === "user") {
