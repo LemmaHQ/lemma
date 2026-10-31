@@ -108,7 +108,7 @@ provider 的 API key 经过 `ProviderService`：配置了密钥时，用由它�
 | 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector`                                                                                  |
 | 新增 RPC                       | 修改 `.proto`，在对应的 `crates/rpc/` crate 中实现，并重新生成客户端代码                                                          |
 | 新增 RPC 服务                  | 新增 `.proto` 与 `crates/rpc/` 下的新 crate，在 `lemma-proto/build.rs` 中列出该文件，并在 `lemma-host` 中路由                     |
-| 新增面向用户的错误             | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/data/rpc/errors.ts` 与两个语言文件中加入对应的 locale key |
+| 新增面向用户的错误             | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/i18n/error-text.ts` 与两个语言文件中加入对应的 locale key |
 | 修改 schema                    | 在所属 crate 的 `src/migration/` 中新增一个 SeaORM 迁移，并列入该 crate 的 `migrations()`；由 `lemma-host` 运行                   |
 | 新增数据库后端                 | 在连接它的宿主中启用对应的 `sea-orm` 驱动 feature                                                                                 |
 | 让 Web 客户端使用桌面能力      | 扩展 preload 桥与 `web/src/platform/` 中的适配器（[web/AGENTS.zh.md](../web/AGENTS.zh.md#布局)）                                  |

@@ -108,7 +108,7 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                      |
 | Add an RPC                                     | change the `.proto`, implement it in the matching `crates/rpc/` crate, and regenerate the clients                                        |
 | Add an RPC service                             | add a `.proto` and a new crate under `crates/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-host`                |
-| Add a user-facing error                        | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/data/rpc/errors.ts` and both locale files |
+| Add a user-facing error                        | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/i18n/error-text.ts` and both locale files |
 | Change the schema                              | add a SeaORM migration to the owning crate's `src/migration/` and list it in that crate's `migrations()`; `lemma-host` runs it           |
 | Add a database backend                         | enable its `sea-orm` driver feature in the host that connects to it                                                                      |
 | Reach a desktop capability from the web client | extend the preload bridge and the adapter in `web/src/platform/` ([web/AGENTS.md](../web/AGENTS.md#layout))                              |
