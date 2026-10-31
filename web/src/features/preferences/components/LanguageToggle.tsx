@@ -42,16 +42,21 @@ export function LanguageToggle() {
             <DropdownMenuContent align="end">
                 <DropdownMenuRadioGroup
                     value={i18n.language.startsWith("zh") ? "zh" : "en"}
-                    onValueChange={(value: unknown) => {
-                        if (value === "zh" || value === "en") {
-                            void i18n.changeLanguage(value);
-                        }
-                    }}
                 >
-                    <DropdownMenuRadioItem value="zh">
+                    <DropdownMenuRadioItem
+                        value="zh"
+                        onClick={() => {
+                            void i18n.changeLanguage("zh");
+                        }}
+                    >
                         中文
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="en">
+                    <DropdownMenuRadioItem
+                        value="en"
+                        onClick={() => {
+                            void i18n.changeLanguage("en");
+                        }}
+                    >
                         English
                     </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>

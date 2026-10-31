@@ -60,12 +60,7 @@ export function ThemeToggle() {
                 <TooltipContent>{t("theme.toggle")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                    value={current}
-                    onValueChange={(value: unknown) => {
-                        if (isThemePreference(value)) setTheme(value);
-                    }}
-                >
+                <DropdownMenuRadioGroup value={current}>
                     {THEME_PREFERENCES.map((preference) => {
                         const PreferenceIcon = THEME_ICONS[preference];
                         return (
@@ -74,7 +69,12 @@ export function ThemeToggle() {
                                 animateOnHover
                                 asChild
                             >
-                                <DropdownMenuRadioItem value={preference}>
+                                <DropdownMenuRadioItem
+                                    value={preference}
+                                    onClick={() => {
+                                        setTheme(preference);
+                                    }}
+                                >
                                     <PreferenceIcon />
                                     {t(`theme.${preference}`)}
                                 </DropdownMenuRadioItem>
