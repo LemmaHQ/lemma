@@ -23,7 +23,7 @@ export function ShellFrame({
 
     return (
         <>
-            <Sidebar variant="inset" label={t("sidebar.title")}>
+            <Sidebar label={t("sidebar.title")}>
                 {sidebar}
                 <SidebarRail aria-label={t("sidebar.resize")} />
             </Sidebar>
