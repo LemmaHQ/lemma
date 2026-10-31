@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-Skill 是 agent 按需加载的可复用工作流与专项决策标准：文档归属判断、文字审查、翻译、错误处理、客户端 UI、React effect、React 组件、测试可靠性、简化排查、推送前检查、提交信息，以及各语言的代码风格。产品与运行时契约存放在文档或源码中；常驻规则存放在根 `AGENTS.md` 中。
+Skill 是 agent 按需加载的可复用工作流与专项决策标准。产品与运行时契约存放在文档或源码中；常驻规则存放在根 `AGENTS.md` 中。
 
 ## 目录布局与命名
 
@@ -10,4 +10,4 @@ Skill 是 agent 按需加载的可复用工作流与专项决策标准：文档�
 - `SKILL.md` 以 frontmatter 开头：`name` 与目录名相同，`description` 说明何时加载该 skill。
 - 只在部分任务中需要的资料（例如上游风格指南、校准示例或诊断流程）放在 skill 目录下的 `references/` 中，按需阅读。
 - 按[双语契约](../../docs/i18n/README.zh.md#范围与例外)，skill 只用英文。
-- 第三方 skill 保留上游的目录名和内容。用 `npx skills add <source> --skill <name> -a universal --copy` 安装，`skills-lock.json` 记录其来源与哈希，`npx skills update` 负责更新。`.markdownlint-cli2.yaml` 让 markdownlint 跳过它们；目前已安装：来自 `cloudflare/security-audit-skill` 的 `security-audit`。
+- 第三方 skill 保留上游的目录名和内容。用 `npx skills add <source> --skill <name> -a universal --copy` 安装，[skills-lock.json](skills-lock.json) 记录其来源与哈希，`npx skills update` 负责更新。`.markdownlint-cli2.yaml` 让 markdownlint 跳过它们。

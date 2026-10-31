@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Skills are reusable workflows and specialized decision standards that an agent loads on demand: documentation placement, prose review, translation, error handling, client UI, React effects, React components, test reliability, simplification surveys, pre-push checks, commit messages, and per-language code style. Product and runtime contracts live in docs or source; standing orders live in the root `AGENTS.md`.
+Skills are reusable workflows and specialized decision standards that an agent loads on demand. Product and runtime contracts live in docs or source; standing orders live in the root `AGENTS.md`.
 
 ## Layout and naming
 
@@ -10,4 +10,4 @@ Skills are reusable workflows and specialized decision standards that an agent l
 - `SKILL.md` opens with frontmatter: `name` equals the directory name, and `description` states when to load the skill.
 - Material needed only for some tasks, such as an upstream style guide, calibration examples, or a diagnosis workflow, lives under `references/` inside the skill directory and is read on demand.
 - Skills are English only, per the [bilingual contract](../../docs/i18n/README.md#scope-and-exclusions).
-- Third-party skills keep their upstream directory name and content. `npx skills add <source> --skill <name> -a universal --copy` installs one, `skills-lock.json` records its source and hash, and `npx skills update` refreshes it. Markdownlint ignores them through `.markdownlint-cli2.yaml`; installed now: `security-audit` from `cloudflare/security-audit-skill`.
+- Third-party skills keep their upstream directory name and content. `npx skills add <source> --skill <name> -a universal --copy` installs one, [skills-lock.json](skills-lock.json) records its source and hash, and `npx skills update` refreshes it. Markdownlint ignores them through `.markdownlint-cli2.yaml`.
