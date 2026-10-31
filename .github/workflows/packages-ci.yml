@@ -65,3 +65,6 @@ jobs:
 
       - name: Type check
         run: just packages-type-check
+
+      - name: Test
+        run: just packages-test

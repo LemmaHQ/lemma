@@ -7,20 +7,22 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 ## 分层
 
 - **Rust**（`just rust-test`，在本地与 CI 中都运行 `cargo nextest run --workspace`）：这一层覆盖 provider 适配器的流解析器；`lemma-host` 中针对真实本地引擎运行的 `InProcessTransport`；以及 `lemma-auth` 中的认证服务、`lemma-provider` 中的 provider 服务、`lemma-conversation` 中的会话服务与 `lemma-agent-loop` 中 turn 循环的消息落库与取消，它们通过 `lemma-test-db` 在内存 SQLite 上运行，并在 `LEMMA_TEST_POSTGRES_URL` 指向 PostgreSQL 服务器时，再到该服务器上的一个全新数据库中运行一遍。其余领域服务与 RPC 服务没有测试。单元测试写在被测源文件底部的 `#[cfg(test)] mod tests` 中；集成测试放在 crate 的 `tests/` 目录，只使用其公开 API。
-- **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件，在 vitest 的 `node` 环境中运行。这一层覆盖数据、缓存与逻辑模块，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键；没有测试渲染 React 组件。
-- **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件。这一层在 mock 掉 `electron` 的情况下覆盖引擎进程生命周期与引擎端口上的请求转发。
+- **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 与 `src/**/*.test.tsx` 文件，在 vitest 的 `happy-dom` 环境中以英文界面文本运行。这一层覆盖数据、缓存与逻辑模块，在 mock 的 RPC 客户端上运行的 feature store，以及用 Testing Library 渲染、用 `user-event` 操作的 feature 组件，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键。`src/app/` 中的应用路由与布局没有测试。
+- **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件。这一层在 mock 掉 `electron` 的情况下覆盖引擎进程生命周期、addon 文件名、应用版本参数与引擎端口上的请求转发。
+- **Packages**（`just packages-test`，即在每个有测试的包中运行 `vitest run`）：`packages/ui` 在 `happy-dom` 中运行 `src/**/*.test.{ts,tsx}`；目前只有工具调用组有测试。
 - **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集；以及 SQLDelight 迁移校验，它对已提交的结构快照执行 `.sqm` 迁移，再与 `LemmaDatabase.sq` 比对。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。
 
 ## 覆盖率
 
-没有 recipe 或工作流因覆盖率百分比而失败；下文的 Codecov project 状态是唯一的覆盖率门槛。
+`just desktop-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；其他 recipe 与下文的 Codecov project 状态只报告覆盖率，没有逐文件门槛。
 
 - **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-server`、`lemma-core` 与 `lemma-proto`。
-- **Web**：`just web-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/` 与 `src/i18n/locales/`。
-- **桌面端**：`just desktop-cov` 以 v8 覆盖率运行 vitest，排除 `src/gen/`。
+- **Web**：`just web-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、`src/i18n/locales/` 与入口 `src/main.tsx`。
+- **桌面端**：`just desktop-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、Electron 入口 `src/main.ts`、`src/preload.ts`、`src/engine-host.ts` 与常量文件 `src/titlebar.ts`。
+- **Packages**：`just packages-cov` 以 v8 覆盖率对 `packages/ui/src/` 下的所有文件运行 vitest。
 - **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源与 `LemmaPalette`。
 
-Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop` 与 `mobile` 标记上传到 Codecov，并上传 Rust、Web 与桌面端的 JUnit 结果。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
+Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop`、`packages` 与 `mobile` 标记上传到 Codecov，并上传 Rust、Web、桌面端与 packages 的 JUnit 结果。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
 
 ## 测试如何运行
 

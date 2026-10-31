@@ -58,7 +58,7 @@ for (const file of files) {
         .replaceAll("\r\n", "\n");
     const isTest = TEST.some((pattern) => pattern.test(file));
     checkLength(file, text, isTest);
-    checkName(file, text);
+    checkName(file, text, isTest);
     if (SCRIPT.test(file)) {
         checkScript(file, text, isTest);
     } else if (file.endsWith("Test.kt") && !isTest) {
@@ -113,7 +113,7 @@ function checkLength(file: string, text: string, isTest: boolean): void {
     }
 }
 
-function checkName(file: string, text: string): void {
+function checkName(file: string, text: string, isTest: boolean): void {
     const base = path.posix.basename(file);
     const stem = base.split(".")[0] ?? base;
     if (/\.(?:rs|py|proto)$/u.test(file)) {
@@ -127,17 +127,22 @@ function checkName(file: string, text: string): void {
             problems.push(`${file}: file name must be PascalCase`);
         }
     } else if (SCRIPT.test(file)) {
-        checkScriptName(file, stem, text);
+        checkScriptName(file, stem, text, isTest);
     }
 }
 
-function checkScriptName(file: string, stem: string, text: string): void {
+function checkScriptName(
+    file: string,
+    stem: string,
+    text: string,
+    isTest: boolean,
+): void {
     if (PASCAL_CASE.test(stem)) {
         if (!file.endsWith("x")) {
             problems.push(
                 `${file}: a PascalCase name is reserved for component files (.tsx)`,
             );
-        } else if (!exportsName(text, stem)) {
+        } else if (!isTest && !exportsName(text, stem)) {
             problems.push(
                 `${file}: a component file must export a component named ${stem}`,
             );

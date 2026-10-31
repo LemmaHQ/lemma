@@ -28,13 +28,14 @@ export default defineConfig({
         },
     },
     test: {
-        environment: "node",
-        include: ["src/**/*.test.ts"],
+        environment: "happy-dom",
+        include: ["src/**/*.test.{ts,tsx}"],
+        setupFiles: ["./vitest.setup.ts"],
         coverage: {
             provider: "v8",
             reporter: ["text", "lcov"],
-            // Focus coverage on handwritten business logic and components.
-            exclude: ["src/gen/**", "src/i18n/locales/**"],
+            include: ["src/**/*.{ts,tsx}"],
+            exclude: ["src/gen/**", "src/i18n/locales/**", "src/main.tsx"],
         },
     },
 });

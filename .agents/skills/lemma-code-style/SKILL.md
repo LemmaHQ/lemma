@@ -31,7 +31,7 @@ These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, an
 ### Length
 
 - A source file stays within **300 lines**, counting every physical line, blank lines and comments included. A Rust `#[cfg(test)] mod tests` counts toward its file.
-- Tests (Rust `tests/` directories, `*.test.ts`, Kotlin test source sets) and build configuration (`*.gradle.kts`, `*.config.ts`, `*.config.mts`, `build.rs`) have no limit.
+- Tests (Rust `tests/` directories, `*.test.ts`, `*.test.tsx`, Kotlin test source sets) and build configuration (`*.gradle.kts`, `*.config.ts`, `*.config.mts`, `build.rs`) have no limit.
 - Split an oversized file by responsibility into files named after their content; `utils`, `helpers`, `misc`, and `common` are not names.
 
 ### One primary item per file
@@ -63,7 +63,7 @@ Higher-level code comes first, details below it.
 ### Test placement
 
 - **Rust:** unit tests live in one `#[cfg(test)] mod tests`, the last item of the file whose code they test; tests that go through a crate's public API live in its `tests/` directory.
-- **TypeScript:** `<name>.test.ts` sits beside `<name>.ts`, `<name>.tsx`, or the `<name>/` directory it tests.
+- **TypeScript:** `<name>.test.ts` sits beside `<name>.ts`, `<name>.tsx`, or the `<name>/` directory it tests; a test that renders JSX is `<name>.test.tsx` and keeps its subject's name, PascalCase for a component.
 - **Kotlin:** tests live in a test source set (`commonTest`, `androidHostTest`, or the app module's unit test set) under the package of the code they test, named `<Subject>Test.kt`.
 
 ## References

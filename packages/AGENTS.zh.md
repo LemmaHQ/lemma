@@ -17,4 +17,6 @@
 just packages-type-check # 对每个包运行 tsc
 just packages-lint-check # oxlint；packages-lint 应用修复
 just packages-fmt-check  # prettier --check；packages-fmt 格式化
+just packages-test      # 在有测试的包中运行 vitest
+just packages-cov       # vitest 覆盖率
 ```

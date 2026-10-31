@@ -17,4 +17,6 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions); th
 just packages-type-check # tsc in every package
 just packages-lint-check # oxlint; packages-lint applies fixes
 just packages-fmt-check  # prettier --check; packages-fmt formats
+just packages-test      # vitest in the packages that have tests
+just packages-cov       # vitest coverage
 ```

@@ -192,6 +192,16 @@ packages-fmt-check:
 packages-fmt:
     npm run format --workspace=packages
 
+# Run tests in the shared packages that have them
+[group('packages')]
+packages-test:
+    npm run test --workspace=packages --if-present
+
+# Coverage report for the shared packages; args go to vitest
+[group('packages')]
+packages-cov *args:
+    npm run test:cov --workspace=packages --if-present -- {{ args }}
+
 # Run Android Lint on androidApp
 [group('mobile')]
 mobile-android-lint-check:

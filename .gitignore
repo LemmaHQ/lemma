@@ -64,6 +64,8 @@ web/coverage/
 web/junit.xml
 desktop/coverage/
 desktop/junit.xml
+packages/ui/coverage/
+packages/ui/junit.xml
 
 # Mobile / Gradle
 .gradle/

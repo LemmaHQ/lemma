@@ -7,20 +7,22 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 ## Tiers
 
 - **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): the tier covers the provider adapters' stream parsers; `InProcessTransport` in `lemma-host`, which runs against a real local engine; and the auth service in `lemma-auth`, the provider service in `lemma-provider`, the conversation service in `lemma-conversation`, and the turn loop's persistence and cancellation in `lemma-agent-loop`, which run on in-memory SQLite and, when `LEMMA_TEST_POSTGRES_URL` names a PostgreSQL server, again on a fresh database there, through `lemma-test-db`. The other domain services and the RPC services have no tests. Unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; an integration test goes in the crate's `tests/` directory and uses only its public API.
-- **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` files beside the module they cover, run in vitest's `node` environment. The tier covers data, cache, and logic modules, plus a check that `en.json` and `zh.json` hold the same keys; no test renders a React component.
-- **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): tests are `src/**/*.test.ts` files beside the modules they cover. The tier covers the engine process lifecycle and request forwarding on the engine port, with `electron` mocked.
+- **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` and `src/**/*.test.tsx` files beside the module they cover, run in vitest's `happy-dom` environment with English interface text. The tier covers data, cache, and logic modules, the feature stores against mocked RPC clients, and the feature components rendered with Testing Library and driven with `user-event`, plus a check that `en.json` and `zh.json` hold the same keys. The app routes and layouts in `src/app/` have no tests.
+- **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): tests are `src/**/*.test.ts` files beside the modules they cover. The tier covers the engine process lifecycle, the addon file name, the app version argument, and request forwarding on the engine port, with `electron` mocked.
+- **Packages** (`just packages-test`, which runs `vitest run` in each package that has tests): `packages/ui` runs `src/**/*.test.{ts,tsx}` in `happy-dom`; only the tool call group has a test.
 - **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set, and the SQLDelight migration check, which applies the `.sqm` migrations to the committed schema snapshots and compares the result with `LemmaDatabase.sq`. These run on the JVM with no device, locally and in Mobile CI.
 
 ## Coverage
 
-No recipe or workflow fails on a coverage percentage; the Codecov project status below is the only coverage gate.
+`just desktop-cov` fails below 100% statement, branch, function, and line coverage; the other recipes and the Codecov project status below report coverage without a per-file gate.
 
 - **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-core`, and `lemma-proto`.
-- **Web**: `just web-cov` runs vitest with v8 coverage, excluding `src/gen/` and `src/i18n/locales/`.
-- **Desktop**: `just desktop-cov` runs vitest with v8 coverage, excluding `src/gen/`.
+- **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
+- **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, and the `src/titlebar.ts` constant.
+- **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.
 - **Android**: `just mobile-android-cov` writes Kover HTML and XML reports for `androidApp` and `shared`, excluding generated code: the contract code, SQLDelight, UniFFI bindings, Compose resources, and `LemmaPalette`.
 
-The Coverage workflow runs these recipes and uploads their reports to Codecov under the `rust`, `web`, `desktop`, and `mobile` flags, plus JUnit results for Rust, web, and desktop. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
+The Coverage workflow runs these recipes and uploads their reports to Codecov under the `rust`, `web`, `desktop`, `packages`, and `mobile` flags, plus JUnit results for Rust, web, desktop, and packages. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
 
 ## How tests run
 

@@ -17,6 +17,9 @@ flags:
   desktop:
     paths:
       - "desktop/"
+  packages:
+    paths:
+      - "packages/"
   mobile:
     paths:
       - "mobile/"
