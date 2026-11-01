@@ -211,7 +211,13 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                     Some(prev) => self.blocks.push(prev.close(None)),
                     None => {}
                 }
-                self.blocks.push(ContentBlock::ToolCall(call));
+                let closed = self.blocks.iter_mut().find(
+                    |block| matches!(block, ContentBlock::ToolCall(closed) if closed.id == call.id),
+                );
+                match closed {
+                    Some(block) => *block = ContentBlock::ToolCall(call),
+                    None => self.blocks.push(ContentBlock::ToolCall(call)),
+                }
             }
             StreamEvent::Done { stop_reason, usage } => {
                 let at = Utc::now();
