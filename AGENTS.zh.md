@@ -13,6 +13,7 @@ crates/       Rust workspace（crates/AGENTS.md）
   server/     lemma-server：服务端可执行文件
   desktop/    lemma-desktop：桌面外壳用来运行引擎的 Node-API addon
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
+  test/       只供测试使用的 crate，以 dev-dependency 引入
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
 web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.md）
 desktop/      Electron 外壳，在 utility process 中运行引擎（desktop/AGENTS.md）

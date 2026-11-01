@@ -20,7 +20,7 @@ members = [
     "crates/shared/lemma-tools",
     "crates/mobile/lemma-mobile",
     "crates/desktop/lemma-desktop",
-    "crates/shared/lemma-test-db",
+    "crates/test/lemma-test-db",
 ]
 resolver = "2"
 
@@ -58,7 +58,7 @@ lemma-provider = { path = "crates/shared/lemma-provider" }
 lemma-agent-rpc = { path = "crates/rpc/lemma-agent-rpc" }
 lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
 lemma-system-rpc = { path = "crates/rpc/lemma-system-rpc" }
-lemma-test-db = { path = "crates/shared/lemma-test-db" }
+lemma-test-db = { path = "crates/test/lemma-test-db" }
 lemma-tools = { path = "crates/shared/lemma-tools" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }

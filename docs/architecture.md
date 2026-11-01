@@ -19,7 +19,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 
 `lemma-auth`, `lemma-conversation`, and `lemma-provider` define their tables and migrations with SeaORM and run on SQLite and PostgreSQL alike through one `DatabaseConnection`; the engine and agent layers reach the data only through their services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host; crates under `crates/test/` serve only tests ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 

@@ -19,7 +19,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 `lemma-auth`、`lemma-conversation` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 同样运行在 SQLite 与 PostgreSQL 上；引擎层与 agent 层只通过它们的服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
-`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
 ## 运行时
 
