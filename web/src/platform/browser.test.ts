@@ -1,8 +1,9 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import { BrowserAdapter } from "./browser";
 
 afterEach(() => {
+    vi.unstubAllGlobals();
     localStorage.clear();
 });
 
@@ -34,4 +35,17 @@ it("falls back to bearer tokens when the configured server is not a URL", () => 
     localStorage.setItem("lemma.serverUrl", "http://[");
 
     expect(new BrowserAdapter().auth.cookieMode).toBe(false);
+});
+
+it("sends requests through the fetch current at call time", async () => {
+    const adapter = new BrowserAdapter();
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+        Promise.resolve(new Response("ok")),
+    );
+    vi.stubGlobal("fetch", fetch);
+
+    const response = await adapter.fetch("/ping", { method: "POST" });
+
+    expect(await response.text()).toBe("ok");
+    expect(fetch).toHaveBeenCalledWith("/ping", { method: "POST" });
 });

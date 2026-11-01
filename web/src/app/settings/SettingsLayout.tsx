@@ -10,15 +10,12 @@ import { SettingsSidebar } from "./SettingsSidebar";
 export function SettingsLayout() {
     const { t } = useTranslation();
     const { pathname } = useLocation();
-    const section = SETTINGS_SECTIONS.find(
+    const [title] = SETTINGS_SECTIONS.filter(
         (s) => matchPath(paths.settingsSection(s.segment), pathname) !== null,
-    );
+    ).map((s) => t(s.titleKey));
 
     return (
-        <ShellFrame
-            sidebar={<SettingsSidebar />}
-            title={section === undefined ? undefined : t(section.titleKey)}
-        >
+        <ShellFrame sidebar={<SettingsSidebar />} title={title}>
             <Outlet />
         </ShellFrame>
     );

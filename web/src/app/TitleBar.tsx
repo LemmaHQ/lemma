@@ -17,9 +17,10 @@ export function TitleBar() {
     );
 
     useEffect(() => {
-        if (resolvedTheme === "light" || resolvedTheme === "dark") {
-            windowCaps.setTitleBar({ theme: resolvedTheme, surface });
-        }
+        windowCaps.setTitleBar({
+            theme: resolvedTheme === "dark" ? "dark" : "light",
+            surface,
+        });
     }, [windowCaps, resolvedTheme, surface]);
 
     return titlebarHeight > 0 ? (
@@ -40,12 +41,8 @@ function subscribeToRouter(onChange: () => void) {
 }
 
 function titleBarSurface(state: RouterState) {
-    if (!state.initialized) {
-        return "background";
-    }
-    return (
-        mergeRouteHandles(
-            state.matches.map((match): unknown => match.route.handle),
-        ).titleBar ?? "background"
-    );
+    const handles = state.initialized
+        ? state.matches.map((match): unknown => match.route.handle)
+        : [];
+    return mergeRouteHandles(handles).titleBar ?? "background";
 }

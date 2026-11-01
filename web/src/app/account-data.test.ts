@@ -1,0 +1,46 @@
+import { create } from "@bufbuild/protobuf";
+import { beforeEach, expect, it, vi } from "vitest";
+
+import { clearActiveConversation } from "@/features/agent";
+import { useAuth } from "@/features/auth";
+import { clearConversations } from "@/features/conversations";
+import { clearProviders } from "@/features/providers";
+import { UserSchema } from "@/gen/lemma/v1/auth_pb";
+
+import { installAccountDataReset } from "./account-data";
+
+vi.mock("@/features/agent", () => ({
+    clearActiveConversation: vi.fn<() => void>(),
+}));
+vi.mock("@/features/conversations", () => ({
+    clearConversations: vi.fn<() => void>(),
+}));
+vi.mock("@/features/providers", () => ({
+    clearProviders: vi.fn<() => void>(),
+}));
+
+const user = (id: string) => create(UserSchema, { id, username: id });
+
+const clears = () => [
+    vi.mocked(clearActiveConversation).mock.calls.length,
+    vi.mocked(clearConversations).mock.calls.length,
+    vi.mocked(clearProviders).mock.calls.length,
+];
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
+
+it("empties account data when the user changes, not on a same-user update", () => {
+    installAccountDataReset();
+
+    useAuth.setState({ user: user("u1") });
+    expect(clears()).toEqual([1, 1, 1]);
+
+    useAuth.setState({ user: user("u1") });
+    expect(clears()).toEqual([1, 1, 1]);
+
+    useAuth.setState({ user: user("u2") });
+    useAuth.setState({ user: null });
+    expect(clears()).toEqual([3, 3, 3]);
+});
