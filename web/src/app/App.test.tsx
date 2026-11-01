@@ -145,6 +145,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.restoreAllMocks();
     localStorage.clear();
     delete window.lemmaDesktop;
     setViewportWidth(1024);
@@ -163,9 +164,10 @@ it("shows the splash, then sends a signed-out visitor to sign-in", async () => {
     );
 });
 
-it("switches from sign-in to sign-up", async () => {
+it("switches from sign-in to sign-up in a view transition", async () => {
     const user = userEvent.setup();
     await start("/signin");
+    const viewTransition = vi.spyOn(document, "startViewTransition");
 
     await user.click(await screen.findByRole("link", { name: "Sign up" }));
 
@@ -175,6 +177,7 @@ it("switches from sign-in to sign-up", async () => {
         }),
     ).toBeDefined();
     expect(window.location.pathname).toBe("/signup");
+    expect(viewTransition).toHaveBeenCalledOnce();
 });
 
 it("sends a signed-in user from sign-in to an untitled home", async () => {
