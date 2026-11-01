@@ -19,9 +19,7 @@ pub(crate) trait SseParser: Send + 'static {
     fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError>;
     /// Flushes pending state when the stream reaches EOF directly;
     /// extracts token usage from APIs providing usage metrics on the last chunk.
-    fn on_eof(&mut self) -> Option<Usage> {
-        None
-    }
+    fn on_eof(&mut self) -> Option<Usage>;
     /// Events emitted at stream closure, closing open blocks ahead of the synthesized
     /// `Done`.
     fn flush(&mut self) -> Vec<StreamEvent> {

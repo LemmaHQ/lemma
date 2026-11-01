@@ -2255,12 +2255,14 @@ dependencies = [
 name = "lemma-adapter"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "futures",
  "lemma-core",
  "lemma-model",
  "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2377,6 +2379,7 @@ dependencies = [
  "lemma-conversation",
  "lemma-core",
  "lemma-proto",
+ "sea-orm",
  "serde_json",
  "uuid",
 ]
@@ -2418,6 +2421,7 @@ dependencies = [
  "connectrpc",
  "futures",
  "hex",
+ "jsonwebtoken",
  "lemma-adapter",
  "lemma-agent",
  "lemma-agent-rpc",
@@ -2425,6 +2429,7 @@ dependencies = [
  "lemma-auth-rpc",
  "lemma-conversation",
  "lemma-conversation-rpc",
+ "lemma-proto",
  "lemma-provider",
  "lemma-provider-rpc",
  "lemma-system-rpc",
@@ -2495,6 +2500,7 @@ dependencies = [
  "lemma-model",
  "lemma-proto",
  "lemma-provider",
+ "sea-orm",
  "uuid",
 ]
 
@@ -2537,6 +2543,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

@@ -8,7 +8,7 @@ use lemma_model::{
 };
 use lemma_provider::{CreateInput, ProviderError, ProviderService, UpdateInput};
 use lemma_test_db::on_each_database;
-use sea_orm::DatabaseConnection;
+use sea_orm::{ConnectionTrait, DatabaseConnection};
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use uuid::Uuid;
 
@@ -27,10 +27,14 @@ struct BoundEndpoint(Endpoint);
 
 impl Adapter for BoundEndpoint {
     async fn stream(&self, _req: ModelRequest) -> Result<BoxEventStream, ModelError> {
-        Err(ModelError::new("unused".to_owned()))
+        Err(ModelError::new(format!(
+            "refused at {} with {}",
+            self.0.base_url, self.0.api_key
+        )))
     }
 }
 
+#[derive(Debug)]
 struct EndpointConnector;
 
 impl Connector for EndpointConnector {
@@ -40,8 +44,16 @@ impl Connector for EndpointConnector {
         BoundEndpoint(endpoint)
     }
 
-    async fn list_models(&self, _endpoint: Endpoint) -> Result<Vec<String>, ModelError> {
-        Ok(vec![])
+    async fn list_models(&self, endpoint: Endpoint) -> Result<Vec<String>, ModelError> {
+        if endpoint.base_url.contains("unreachable") {
+            return Err(ModelError::new("connection refused".to_owned()));
+        }
+        Ok(vec![
+            endpoint.kind.as_str().to_owned(),
+            endpoint.base_url,
+            endpoint.models_path,
+            endpoint.api_key,
+        ])
     }
 }
 
@@ -218,6 +230,255 @@ async fn delete_removes_only_the_owners_provider() -> Result<(), Box<dyn Error>>
         assert!(ada_after.is_empty(), "ada's providers: {ada_after:?}");
         assert_eq!(bob_after.len(), 1, "bob's providers: {bob_after:?}");
         assert_eq!(bob_after[0].id, theirs.id, "bob's provider");
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn create_requires_an_ascii_identifier_and_a_base_url() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let providers = service(db);
+
+        let blank = providers.create(ada, new_provider("  ")).await;
+        let non_ascii = providers.create(ada, new_provider("主要")).await;
+        let no_base_url = providers
+            .create(
+                ada,
+                CreateInput {
+                    base_url: " / ".to_owned(),
+                    ..new_provider("main")
+                },
+            )
+            .await;
+
+        assert!(
+            matches!(blank, Err(ProviderError::IdentifierInvalid)),
+            "blank identifier: {blank:?}"
+        );
+        assert!(
+            matches!(non_ascii, Err(ProviderError::IdentifierInvalid)),
+            "non-ASCII identifier: {non_ascii:?}"
+        );
+        assert!(
+            matches!(no_base_url, Err(ProviderError::FieldsRequired)),
+            "blank base URL: {no_base_url:?}"
+        );
+        assert!(providers.list(ada).await?.is_empty(), "nothing was created");
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_provider_without_a_key_or_name_keeps_them_empty_and_named_by_identifier()
+-> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let providers = service(db);
+
+        let created = providers
+            .create(
+                ada,
+                CreateInput {
+                    name: " ".to_owned(),
+                    api_key: String::new(),
+                    ..new_provider(" local ")
+                },
+            )
+            .await?;
+        let bound = providers.adapter(ada, created.id).await?;
+
+        assert_eq!(
+            (created.identifier.as_str(), created.name.as_str()),
+            ("local", "local"),
+            "identifier and name"
+        );
+        assert_eq!(created.api_key, "", "view key");
+        assert_eq!(bound.0.api_key, "", "key the adapter sends");
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn the_adapter_is_bound_to_the_stored_connection_details() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let providers = service(db);
+        let created = providers
+            .create(
+                ada,
+                CreateInput {
+                    kind: ProviderKind::Anthropic,
+                    ..new_provider("main")
+                },
+            )
+            .await?;
+
+        let bound = providers.adapter(ada, created.id).await?.0;
+
+        assert_eq!(bound.kind, ProviderKind::Anthropic, "kind");
+        assert_eq!(bound.base_url, "https://api.example.com/v1", "base URL");
+        assert_eq!(bound.api_key, "sk-original", "opened key");
+        assert_eq!(
+            (bound.api_path.as_str(), bound.models_path.as_str()),
+            ("/chat", "/models"),
+            "paths"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn live_models_and_checks_use_the_stored_or_given_details() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let bob = sign_up(&db, "bob").await?;
+        let providers = service(db);
+        let created = providers.create(ada, new_provider("main")).await?;
+
+        let stored = providers.fetch_models_for(ada, created.id).await?;
+        let adhoc = providers
+            .fetch_models_adhoc(
+                ProviderKind::Gemini,
+                " https://gemini.example.com/ ",
+                "g-key",
+                " /v1/models ",
+            )
+            .await?;
+        let unreachable = providers
+            .fetch_models_adhoc(ProviderKind::Gemini, "https://unreachable.example", "", "")
+            .await;
+        let foreign = providers.fetch_models_for(bob, created.id).await;
+        let checked = providers.check_for(ada, created.id, "model-a").await;
+        let foreign_check = providers.check_for(bob, created.id, "model-a").await;
+
+        assert_eq!(
+            stored,
+            [
+                "openai",
+                "https://api.example.com/v1",
+                "/models",
+                "sk-original"
+            ],
+            "stored details"
+        );
+        assert_eq!(
+            adhoc,
+            [
+                "gemini",
+                "https://gemini.example.com",
+                "/v1/models",
+                "g-key"
+            ],
+            "trimmed ad-hoc details"
+        );
+        assert!(
+            matches!(&unreachable, Err(ProviderError::Fetch(m)) if m == "connection refused"),
+            "failed fetch: {unreachable:?}"
+        );
+        assert!(
+            matches!(foreign, Err(ProviderError::NotFound)),
+            "bob fetching ada's models: {foreign:?}"
+        );
+        assert!(
+            matches!(&checked, Err(ProviderError::Check(m))
+                if m == "refused at https://api.example.com/v1 with sk-original"),
+            "check against the stored endpoint: {checked:?}"
+        );
+        assert!(
+            matches!(foreign_check, Err(ProviderError::NotFound)),
+            "bob checking ada's provider: {foreign_check:?}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
+-> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let created = service(db.clone()).create(ada, new_provider("main")).await?;
+        let rotated = ProviderService::new(db.clone(), "rotated".to_owned(), EndpointConnector);
+
+        let with_rotated_secret = rotated.adapter(ada, created.id).await;
+        let listed = rotated.list(ada).await?;
+        db.execute_unprepared("UPDATE providers SET api_key = 'not sealed'")
+            .await?;
+        let corrupted = service(db).adapter(ada, created.id).await;
+
+        assert!(
+            matches!(&with_rotated_secret, Err(ProviderError::Crypto(m)) if m == "decrypt failed"),
+            "rotated secret: {with_rotated_secret:?}"
+        );
+        assert_eq!(
+            listed.iter().map(|p| p.api_key.as_str()).collect::<Vec<_>>(),
+            [""],
+            "an unreadable key lists as empty"
+        );
+        assert!(
+            matches!(&corrupted, Err(ProviderError::Crypto(m)) if m == "invalid sealed key encoding"),
+            "corrupted key: {corrupted:?}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn debug_output_never_reveals_the_sealing_secret() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let debug = format!("{:?}", service(db));
+
+        assert!(
+            debug.starts_with("ProviderService") && !debug.contains("test-secret-key"),
+            "{debug}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn the_providers_table_rolls_back_and_reapplies() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let providers = service(db.clone());
+        let created = providers.create(ada, new_provider("main")).await?;
+
+        Migrator::down(&db, None).await?;
+        let listed = providers.list(ada).await;
+        let inserted = providers.create(ada, new_provider("main")).await;
+        let disabled = UpdateInput {
+            enabled: Some(false),
+            ..Default::default()
+        };
+        let updated = providers.update(ada, created.id, disabled).await;
+        let deleted = providers.delete(ada, created.id).await;
+        Migrator::up(&db, None).await?;
+
+        for (operation, failed) in [
+            ("list", listed.err()),
+            ("create", inserted.err()),
+            ("update", updated.err()),
+            ("delete", deleted.err()),
+        ] {
+            assert!(
+                matches!(failed, Some(ProviderError::Store(_))),
+                "{operation} without tables: {failed:?}"
+            );
+        }
+        let ada = sign_up(&db, "ada").await?;
+        assert!(
+            providers.list(ada).await?.is_empty(),
+            "rolled back rows are gone"
+        );
+        providers.create(ada, new_provider("main")).await?;
         Ok(())
     })
     .await

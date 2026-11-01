@@ -27,6 +27,8 @@ tokio.workspace = true
 tower.workspace = true
 
 [dev-dependencies]
+jsonwebtoken.workspace = true
+lemma-proto.workspace = true
 uuid.workspace = true
 
 [lints]

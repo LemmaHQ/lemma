@@ -131,9 +131,9 @@ fn map_domain(e: AuthError) -> ConnectError {
         AuthError::UserNotFound => lemma_proto::app_error(ErrorReason::UserNotFound),
         AuthError::UsernameTaken => lemma_proto::app_error(ErrorReason::UsernameTaken),
         AuthError::EmailTaken => lemma_proto::app_error(ErrorReason::EmailTaken),
-        AuthError::Sign(m) => ConnectError::internal(format!("jwt sign: {m}")),
-        AuthError::Hash(m) => ConnectError::internal(format!("hash password: {m}")),
-        AuthError::Store(m) => ConnectError::internal(format!("db: {m}")),
+        e @ (AuthError::Sign(_) | AuthError::Hash(_) | AuthError::Store(_)) => {
+            ConnectError::internal(e.to_string())
+        }
     }
 }
 

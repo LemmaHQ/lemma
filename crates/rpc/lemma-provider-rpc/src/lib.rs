@@ -96,10 +96,10 @@ fn map_domain(e: ProviderError) -> ConnectError {
             lemma_proto::app_error(ErrorReason::ProviderIdentifierTaken)
         }
         ProviderError::NotFound => lemma_proto::app_error(ErrorReason::ProviderNotFound),
-        ProviderError::Crypto(m) => ConnectError::internal(format!("crypto: {m}")),
         ProviderError::Store(m) => ConnectError::internal(format!("db: {m}")),
-        ProviderError::Fetch(m) => ConnectError::internal(format!("fetch models: {m}")),
-        ProviderError::Check(m) => ConnectError::internal(format!("check: {m}")),
+        e @ (ProviderError::Crypto(_) | ProviderError::Fetch(_) | ProviderError::Check(_)) => {
+            ConnectError::internal(e.to_string())
+        }
     }
 }
 

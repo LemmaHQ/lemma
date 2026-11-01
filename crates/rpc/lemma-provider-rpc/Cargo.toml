@@ -11,5 +11,8 @@ lemma-proto.workspace = true
 lemma-provider.workspace = true
 uuid.workspace = true
 
+[dev-dependencies]
+sea-orm.workspace = true
+
 [lints]
 workspace = true

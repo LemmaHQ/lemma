@@ -7,7 +7,7 @@ use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_auth::AuthService;
 use lemma_conversation::{
     ConversationError, ConversationService, LastModel, Message, MessageBody, MessagePage,
-    MessageStatus, MessageUpdate,
+    MessageStatus, MessageUpdate, build_context_path,
 };
 use lemma_core::{ContentBlock, Message as CoreMessage, StopReason, TextContent};
 use lemma_model::ProviderKind;
@@ -465,6 +465,63 @@ async fn deleting_a_provider_keeps_the_messages_and_conversations_that_used_it()
             Some(last_model),
             "conversation last model"
         );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn the_context_path_runs_from_the_root_to_the_leaf() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let conversations = ConversationService::new(db);
+        let conversation_id = conversations.create(ada).await?.id;
+        let ids = append_chain(&conversations, conversation_id, 3).await?;
+        let stored = conversations.all_messages(conversation_id).await?;
+        let Some(&leaf) = ids.last() else {
+            return Err("no messages appended".into());
+        };
+
+        let path = build_context_path(&stored, leaf)?;
+        let without_root = build_context_path(&stored[1..], leaf);
+
+        let texts: Vec<String> = path.iter().map(CoreMessage::visible_text).collect();
+        assert_eq!(texts, ["m0", "m1", "m2"], "root-first path");
+        assert!(
+            matches!(&without_root, Err(ConversationError::Missing(m)) if m == &format!("node {} missing in tree", ids[0])),
+            "path through an absent node: {without_root:?}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn the_conversation_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let conversations = ConversationService::new(db.clone());
+        let id = conversations.create(ada).await?.id;
+
+        Migrator::down(&db, None).await?;
+        let renamed = conversations.rename(ada, id, "Plans").await;
+        let created = conversations.create(ada).await;
+        Migrator::up(&db, None).await?;
+
+        assert!(
+            matches!(renamed, Err(ConversationError::Store(_))),
+            "rename without tables: {renamed:?}"
+        );
+        assert!(
+            matches!(created, Err(ConversationError::Store(_))),
+            "create without tables: {created:?}"
+        );
+        let ada = sign_up(&db, "ada").await?;
+        assert!(
+            conversations.list_conversations(ada).await?.is_empty(),
+            "rolled back rows are gone"
+        );
+        conversations.create(ada).await?;
         Ok(())
     })
     .await

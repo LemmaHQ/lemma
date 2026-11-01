@@ -130,8 +130,9 @@ fn map_domain(e: ConversationError) -> ConnectError {
     match e {
         ConversationError::TitleRequired => lemma_proto::app_error(ErrorReason::TitleRequired),
         ConversationError::NotFound => lemma_proto::app_error(ErrorReason::ConversationNotFound),
-        ConversationError::Missing(m) => ConnectError::internal(format!("not found: {m}")),
-        ConversationError::Store(m) => ConnectError::internal(format!("db: {m}")),
+        e @ (ConversationError::Missing(_) | ConversationError::Store(_)) => {
+            ConnectError::internal(e.to_string())
+        }
     }
 }
 

@@ -14,5 +14,8 @@ lemma-proto.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 
+[dev-dependencies]
+sea-orm.workspace = true
+
 [lints]
 workspace = true

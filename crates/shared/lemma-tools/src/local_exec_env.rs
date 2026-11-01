@@ -52,27 +52,17 @@ impl ExecEnv for LocalExecEnv {
 
     async fn write_file(&self, path: &Path, content: &str) -> Result<(), ToolError> {
         let resolved = self.resolve(path)?;
-        if let Some(parent) = resolved.parent() {
-            fs::create_dir_all(parent).await.map_err(|e| {
-                ToolError::Execution(format!("create dirs for {}: {e}", path.display()))
-            })?;
-        }
+        let parent = resolved.parent().unwrap_or(&self.root);
+        fs::create_dir_all(parent).await.map_err(|e| {
+            ToolError::Execution(format!("create dirs for {}: {e}", path.display()))
+        })?;
         fs::write(&resolved, content)
             .await
             .map_err(|e| ToolError::Execution(format!("write {}: {e}", path.display())))
     }
 
     async fn exec_command(&self, command: &str) -> Result<ExecCommandResult, ToolError> {
-        let mut process = if cfg!(windows) {
-            let mut cmd = process::Command::new("cmd");
-            cmd.arg("/C").arg(command);
-            cmd
-        } else {
-            let mut cmd = process::Command::new("sh");
-            cmd.arg("-c").arg(command);
-            cmd
-        };
-        let output = process
+        let output = shell(command)
             .current_dir(&self.root)
             .output()
             .await
@@ -83,4 +73,18 @@ impl ExecEnv for LocalExecEnv {
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         })
     }
+}
+
+#[cfg(windows)]
+fn shell(command: &str) -> process::Command {
+    let mut cmd = process::Command::new("cmd");
+    cmd.arg("/C").arg(command);
+    cmd
+}
+
+#[cfg(not(windows))]
+fn shell(command: &str) -> process::Command {
+    let mut cmd = process::Command::new("sh");
+    cmd.arg("-c").arg(command);
+    cmd
 }

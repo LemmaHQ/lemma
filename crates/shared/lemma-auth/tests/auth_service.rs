@@ -2,7 +2,7 @@
 
 use std::error::Error;
 
-use lemma_auth::{AuthError, AuthService};
+use lemma_auth::{AuthError, AuthService, verify_access_token};
 use lemma_test_db::on_each_database;
 use sea_orm::{ConnectionTrait, DatabaseConnection};
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
@@ -221,6 +221,93 @@ async fn me_returns_the_account_or_reports_it_missing() -> Result<(), Box<dyn Er
             matches!(missing, Err(AuthError::UserNotFound)),
             "unknown id: {missing:?}"
         );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn sign_up_requires_a_username_an_email_and_eight_password_characters()
+-> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db);
+
+        for (username, email, password) in [
+            ("  ", "ada@example.com", PASSWORD),
+            ("ada", " ", PASSWORD),
+            ("ada", "ada@example.com", "1234567"),
+        ] {
+            let result = auth.sign_up(username, email, password).await;
+            assert!(
+                matches!(result, Err(AuthError::SignupFieldsRequired)),
+                "{username:?} {email:?} {password:?}: {result:?}"
+            );
+        }
+        assert!(!auth.account_exists("ada").await?, "nothing was created");
+        let session = auth
+            .sign_up(" ada ", " ada@example.com ", "12345678")
+            .await?;
+        assert_eq!(
+            (session.user.username.as_str(), session.user.email.as_str()),
+            ("ada", "ada@example.com"),
+            "fields are stored trimmed"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn an_access_token_names_its_user_only_under_the_signing_secret() -> Result<(), Box<dyn Error>>
+{
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let session = service(db)
+            .sign_up("ada", "ada@example.com", PASSWORD)
+            .await?;
+
+        let claims = verify_access_token("test-secret", &session.tokens.access_token)?;
+        let forged = verify_access_token("other-secret", &session.tokens.access_token);
+
+        assert_eq!(claims.sub, session.user.id.to_string(), "subject");
+        assert!(forged.is_err(), "another secret rejects the token");
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn debug_output_never_reveals_the_signing_secret() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let debug = format!("{:?}", service(db));
+
+        assert!(
+            debug.starts_with("AuthService") && !debug.contains("test-secret"),
+            "{debug}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn the_auth_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db.clone());
+        auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+
+        Migrator::down(&db, None).await?;
+        let without_tables = auth.sign_up("bob", "bob@example.com", PASSWORD).await;
+        Migrator::up(&db, None).await?;
+
+        assert!(
+            matches!(without_tables, Err(AuthError::Store(_))),
+            "sign-up without tables: {without_tables:?}"
+        );
+        assert!(
+            !auth.account_exists("ada").await?,
+            "rolling back drops accounts"
+        );
+        auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
         Ok(())
     })
     .await

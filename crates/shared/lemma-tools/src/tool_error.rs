@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::{fmt, io};
+use std::fmt;
 
 /// Errors produced during tool argument validation and execution.
 #[derive(Debug)]
@@ -20,9 +20,3 @@ impl fmt::Display for ToolError {
 }
 
 impl Error for ToolError {}
-
-impl From<io::Error> for ToolError {
-    fn from(error: io::Error) -> Self {
-        Self::Execution(error.to_string())
-    }
-}

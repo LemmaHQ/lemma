@@ -36,9 +36,8 @@ impl CancelToken {
     /// Completes once the token is cancelled.
     pub async fn cancelled(&self) {
         let notified = self.0.notify.notified();
-        if self.is_cancelled() {
-            return;
+        if !self.is_cancelled() {
+            notified.await;
         }
-        notified.await;
     }
 }

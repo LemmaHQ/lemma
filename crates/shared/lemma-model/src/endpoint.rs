@@ -52,3 +52,21 @@ pub struct Endpoint {
     /// Plaintext API key; empty sends no credentials.
     pub api_key: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_kind_parses_back_from_its_stored_string() {
+        for (kind, stored) in [
+            (ProviderKind::OpenAiCompatible, "openai"),
+            (ProviderKind::Anthropic, "anthropic"),
+            (ProviderKind::Gemini, "gemini"),
+        ] {
+            assert_eq!(kind.as_str(), stored, "stored form of {kind:?}");
+            assert_eq!(stored.parse(), Ok(kind), "parsed {stored}");
+        }
+        assert_eq!("OpenAI".parse::<ProviderKind>(), Err(()), "unknown kind");
+    }
+}
