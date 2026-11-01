@@ -9,6 +9,7 @@ export default defineConfig({
             provider: "v8",
             reporter: ["text", "lcov"],
             include: ["src/**/*.{ts,tsx}"],
+            thresholds: { 100: true },
         },
     },
 });

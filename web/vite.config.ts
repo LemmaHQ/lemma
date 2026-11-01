@@ -36,6 +36,7 @@ export default defineConfig({
             reporter: ["text", "lcov"],
             include: ["src/**/*.{ts,tsx}"],
             exclude: ["src/gen/**", "src/i18n/locales/**", "src/main.tsx"],
+            thresholds: { 100: true },
         },
     },
 });
