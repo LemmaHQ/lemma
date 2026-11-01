@@ -18,6 +18,17 @@ const setReducedMotion = (reduce: boolean) => {
     reducedMotion.query.dispatchEvent(new Event("change"));
 };
 
+const REDUCED_MOTION_NOTICE = "You have Reduced Motion enabled on your device";
+
+const muteReducedMotionNotice = () => {
+    const warn = console.warn.bind(console);
+    vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+        if (!String(args[0]).startsWith(REDUCED_MOTION_NOTICE)) {
+            warn(...args);
+        }
+    });
+};
+
 const setMotionTokens = (duration: string, easing: string) => {
     const root = document.documentElement.style;
     root.setProperty("--motion-duration-slow", duration);
@@ -25,6 +36,7 @@ const setMotionTokens = (duration: string, easing: string) => {
 };
 
 afterEach(() => {
+    vi.restoreAllMocks();
     setReducedMotion(false);
     document.documentElement.removeAttribute("style");
 });
@@ -80,6 +92,7 @@ it.each([
 );
 
 it("reveals and removes content without motion when reduced", async () => {
+    muteReducedMotionNotice();
     setReducedMotion(true);
 
     await expectRevealCycle();

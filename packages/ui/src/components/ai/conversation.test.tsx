@@ -32,6 +32,17 @@ const setReducedMotion = (reduce: boolean) => {
     reducedMotion.query.dispatchEvent(new Event("change"));
 };
 
+const REDUCED_MOTION_NOTICE = "You have Reduced Motion enabled on your device";
+
+const muteReducedMotionNotice = () => {
+    const warn = console.warn.bind(console);
+    vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+        if (!String(args[0]).startsWith(REDUCED_MOTION_NOTICE)) {
+            warn(...args);
+        }
+    });
+};
+
 const log = (trigger: string | null = null) => (
     <TooltipProvider>
         <Conversation>
@@ -108,6 +119,7 @@ it("offers a way back once the reader scrolls up", async () => {
 
 it("jumps back without animation under reduced motion", async () => {
     const user = userEvent.setup();
+    muteReducedMotionNotice();
     setReducedMotion(true);
     render(log());
 
