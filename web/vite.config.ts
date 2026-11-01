@@ -53,6 +53,7 @@ export default defineConfig({
     },
     test: {
         environment: "happy-dom",
+        isolate: true,
         include: ["src/**/*.test.{ts,tsx}"],
         setupFiles: ["./vitest.setup.ts"],
         coverage: {
