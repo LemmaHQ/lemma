@@ -63,6 +63,7 @@ beforeEach(() => {
 afterEach(() => {
     proc.emit("exit", 0);
     vi.useRealTimers();
+    vi.restoreAllMocks();
     delete process.env.LEMMA_ENGINE_PROFILE;
 });
 
@@ -105,14 +106,19 @@ it("rejects and kills the engine when it fails to open", async () => {
     expect(proc.kill).toHaveBeenCalled();
 });
 
-it("ignores malformed messages while waiting for readiness", async () => {
+it("logs and ignores malformed messages while waiting for readiness", async () => {
     vi.useFakeTimers();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const started = start();
     proc.emit("message", "ready");
     proc.emit("message", { type: "failed" });
     vi.advanceTimersByTime(10_000);
 
     await expect(started).rejects.toThrow("within 10s");
+    expect(log.mock.calls).toEqual([
+        ["engine message rejected:", "ready"],
+        ["engine message rejected:", { type: "failed" }],
+    ]);
 });
 
 it("rejects when the engine exits before announcing readiness", async () => {
