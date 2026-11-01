@@ -10,7 +10,11 @@ import { AppearancePanel } from "./AppearancePanel";
 
 const renderPanel = () =>
     render(
-        <ThemeProvider attribute="class" storageKey={THEME_STORAGE_KEY}>
+        <ThemeProvider
+            attribute="class"
+            storageKey={THEME_STORAGE_KEY}
+            scriptProps={{ type: "application/json" }}
+        >
             <AppearancePanel />
         </ThemeProvider>,
     );

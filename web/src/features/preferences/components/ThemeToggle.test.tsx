@@ -9,7 +9,11 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const renderToggle = () =>
     render(
-        <ThemeProvider attribute="class" storageKey={THEME_STORAGE_KEY}>
+        <ThemeProvider
+            attribute="class"
+            storageKey={THEME_STORAGE_KEY}
+            scriptProps={{ type: "application/json" }}
+        >
             <TooltipProvider>
                 <ThemeToggle />
             </TooltipProvider>

@@ -15,6 +15,7 @@ export function App() {
             storageKey={THEME_STORAGE_KEY}
             defaultTheme={DEFAULT_THEME}
             disableTransitionOnChange
+            scriptProps={{ type: "application/json" }}
         >
             <TitleBar />
             <AppTooltipProvider>
