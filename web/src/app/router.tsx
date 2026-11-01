@@ -65,7 +65,11 @@ export const router = createBrowserRouter([
                             ).SettingsLayout,
                         }),
                         children: [
-                            { index: true, loader: toDefaultSettings },
+                            {
+                                index: true,
+                                loader: toDefaultSettings,
+                                element: null,
+                            },
                             ...SETTINGS_SECTIONS.map((section) => ({
                                 path: section.segment,
                                 caseSensitive: true,
@@ -73,12 +77,16 @@ export const router = createBrowserRouter([
                                     Component: await section.loadPage(),
                                 }),
                             })),
-                            { path: ":section", loader: toDefaultSettings },
+                            {
+                                path: ":section",
+                                loader: toDefaultSettings,
+                                element: null,
+                            },
                         ],
                     },
                 ],
             },
-            { path: "*", loader: () => replace(paths.home) },
+            { path: "*", loader: () => replace(paths.home), element: null },
         ],
     },
 ]);
