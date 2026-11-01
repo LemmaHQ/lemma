@@ -2,10 +2,9 @@ import { cn } from "cn";
 import {
     type CSSProperties,
     type ComponentProps,
+    useCallback,
     useEffect,
     useId,
-    useLayoutEffect,
-    useRef,
     useState,
 } from "react";
 import {
@@ -101,23 +100,16 @@ export function CodeBlockSection({
     cap,
 }: CodeBlockSectionProps) {
     const id = useId();
-    const codeRef = useRef<HTMLDivElement>(null);
     const [full, setFull] = useState(false);
     const [height, setHeight] = useState(0);
     const text = toText(value);
-
-    useLayoutEffect(() => {
-        const element = codeRef.current;
-        if (element === null) {
-            return;
-        }
+    const measureCode = useCallback((element: HTMLDivElement) => {
         const measure = () => setHeight(element.scrollHeight);
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(element);
-        const content = element.firstElementChild;
-        if (content !== null) {
-            observer.observe(content);
+        for (const child of Array.from(element.children)) {
+            observer.observe(child);
         }
         return () => observer.disconnect();
     }, []);
@@ -145,7 +137,7 @@ export function CodeBlockSection({
             </div>
             <div
                 id={id}
-                ref={codeRef}
+                ref={measureCode}
                 className="relative max-h-(--tool-call-code-height) overflow-hidden rounded-md transition-[max-height] duration-reveal ease-enter after:pointer-events-none after:absolute after:inset-x-px after:bottom-px after:h-14 after:rounded-b-sm after:bg-linear-to-b after:from-transparent after:to-background after:opacity-0 after:transition-opacity after:duration-medium after:ease-enter after:content-[''] data-[capped=true]:after:opacity-100 motion-reduce:transition-none motion-reduce:after:transition-none"
                 data-capped={capped && !full}
                 style={style}

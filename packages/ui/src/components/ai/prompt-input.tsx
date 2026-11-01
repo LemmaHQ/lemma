@@ -6,7 +6,6 @@ import {
     type KeyboardEvent,
     useCallback,
     useLayoutEffect,
-    useRef,
     useState,
 } from "react";
 
@@ -64,28 +63,25 @@ export function PromptInputTextarea({
     ...props
 }: ComponentProps<typeof InputGroupTextarea>) {
     const [isComposing, setIsComposing] = useState(false);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
     const setTextareaRef = useCallback(
-        (textarea: HTMLTextAreaElement | null) => {
-            textareaRef.current = textarea;
+        (element: HTMLTextAreaElement | null) => {
+            setTextarea(element);
             if (typeof ref === "function") {
-                ref(textarea);
+                ref(element);
             } else if (ref !== undefined && ref !== null) {
-                ref.current = textarea;
+                ref.current = element;
             }
         },
         [ref],
     );
 
     useLayoutEffect(() => {
-        const textarea = textareaRef.current;
-        if (
-            textarea !== null &&
-            (value === undefined || textarea.value === String(value))
-        ) {
+        if (textarea !== null) {
             resizeTextarea(textarea);
         }
-    }, [value]);
+        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- a new value prop changes the text the textarea is sized to
+    }, [textarea, value]);
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         onKeyDown?.(event);

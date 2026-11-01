@@ -157,18 +157,6 @@ export function ModelPicker({
                         <Menu.RadioGroup
                             className="contents"
                             value={selectionKey}
-                            onValueChange={(value: string) => {
-                                const option = options.find(
-                                    (candidate) =>
-                                        modelKey(candidate) === value,
-                                );
-                                if (option !== undefined) {
-                                    onSelect({
-                                        providerId: option.providerId,
-                                        model: option.model,
-                                    });
-                                }
-                            }}
                         >
                             {groups.map(([providerName, models]) => (
                                 <Menu.Group
@@ -182,6 +170,13 @@ export function ModelPicker({
                                         <Menu.RadioItem
                                             key={modelKey(option)}
                                             closeOnClick
+                                            onClick={() => {
+                                                onSelect({
+                                                    providerId:
+                                                        option.providerId,
+                                                    model: option.model,
+                                                });
+                                            }}
                                             className="relative flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 py-2 text-sm outline-none select-none"
                                             data-part="option"
                                             label={option.model}

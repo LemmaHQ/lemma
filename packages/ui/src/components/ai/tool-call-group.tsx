@@ -77,7 +77,7 @@ export function ToolCallGroup({
                 <span className="flex flex-none -space-x-1" aria-hidden="true">
                     {icons.map((call) => (
                         <ToolIcon
-                            key={call.key ?? call.props.name}
+                            key={call.key}
                             className="animate-pop ring-2 ring-background"
                             small
                         />
