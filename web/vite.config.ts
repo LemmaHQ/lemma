@@ -1,14 +1,38 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
+import {
+    DEFAULT_THEME,
+    THEME_STORAGE_KEY,
+} from "./src/features/preferences/theme.ts";
+
 const codecovToken = process.env.CODECOV_TOKEN;
+
+const THEME_BOOT_SCRIPT = `(() => {
+    try {
+        const theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)}) || ${JSON.stringify(DEFAULT_THEME)};
+        const dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+    } catch {}
+})();`;
+
+function themeBootScript(): Plugin {
+    return {
+        name: "lemma-theme-boot-script",
+        transformIndexHtml: () => [
+            { tag: "script", children: THEME_BOOT_SCRIPT, injectTo: "head" },
+        ],
+    };
+}
 
 export default defineConfig({
     plugins: [
         react(),
         tailwindcss(),
+        themeBootScript(),
         // Uploads bundle stats to Codecov during `vite build` when provided
         // with an upload token.
         codecovVitePlugin({

@@ -37,6 +37,8 @@
 
 `src/gen/` 由 `proto/` 经 `gen:proto` 脚本生成；`gen:tokens` 脚本把 [design/tokens.json](../design/README.zh.md) 的主题变量写入 `@lemma/ui`，`src/index.css` 通过 `@lemma/ui/styles.css` 加载它们。`gen` 脚本运行两者，`dev`、`build`、`lint` 与 `test` 会先运行它，`format` 先运行 `gen:tokens`。两者都被 Git 忽略；修改 `proto/` 或 `design/tokens.json`。
 
+`vite.config.ts` 向 `index.html` 注入一段内联脚本，在首次绘制前应用已保存的主题；脚本由 `src/features/preferences/theme.ts` 中的 `THEME_STORAGE_KEY` 与 `DEFAULT_THEME` 生成，`ThemeProvider` 读取的也是这两个常量；修改主题存储方式时改那里。
+
 ## 命令
 
 ```sh

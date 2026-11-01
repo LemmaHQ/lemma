@@ -1,7 +1,7 @@
 import { ThemeProvider } from "next-themes";
 import { RouterProvider } from "react-router/dom";
 
-import { THEME_STORAGE_KEY } from "@/features/preferences";
+import { DEFAULT_THEME, THEME_STORAGE_KEY } from "@/features/preferences";
 
 import { AppToaster } from "./AppToaster";
 import { AppTooltipProvider } from "./AppTooltipProvider";
@@ -13,6 +13,7 @@ export function App() {
         <ThemeProvider
             attribute="class"
             storageKey={THEME_STORAGE_KEY}
+            defaultTheme={DEFAULT_THEME}
             disableTransitionOnChange
         >
             <TitleBar />

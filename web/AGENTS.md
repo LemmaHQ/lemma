@@ -37,6 +37,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 `src/gen/` comes from `proto/` through the `gen:proto` script, and the `gen:tokens` script writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, which `src/index.css` loads through `@lemma/ui/styles.css`. The `gen` script runs both, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores both outputs; edit `proto/` or `design/tokens.json`.
 
+`vite.config.ts` injects into `index.html` the inline script that applies the stored theme before the first paint, built from `THEME_STORAGE_KEY` and `DEFAULT_THEME` in `src/features/preferences/theme.ts`, the constants `ThemeProvider` also reads; change the theme storage there.
+
 ## Commands
 
 ```sh
