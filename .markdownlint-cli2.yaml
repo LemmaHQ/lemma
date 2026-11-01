@@ -8,3 +8,4 @@ config:
 ignores:
   - .agents/skills/security-audit/**
   - .agents/skills/frontend-design/**
+  - .agents/skills/impeccable/**
