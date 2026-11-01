@@ -2,7 +2,7 @@ import type {
     EngineHeader,
     EngineRequest,
     EngineResponse,
-} from "@lemma/desktop-bridge";
+} from "@lemma/desktop-contract";
 
 /** The addon's engine, as far as a port needs it. */
 export interface PortEngine {

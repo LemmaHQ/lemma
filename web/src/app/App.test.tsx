@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import type { DesktopBridge } from "@lemma/desktop-bridge";
+import type { DesktopBridge } from "@lemma/desktop-contract";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Window as HappyWindow } from "happy-dom";

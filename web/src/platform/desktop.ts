@@ -1,4 +1,4 @@
-import type { DesktopBridge, TitleBarState } from "@lemma/desktop-bridge";
+import type { DesktopBridge, TitleBarState } from "@lemma/desktop-contract";
 
 import {
     connectEngine,

@@ -2,7 +2,7 @@ import type {
     DesktopBridge,
     EngineRequest,
     EngineResponse,
-} from "@lemma/desktop-bridge";
+} from "@lemma/desktop-contract";
 import { describe, expect, it, vi } from "vitest";
 
 import {

@@ -2,7 +2,7 @@ import type {
     DesktopBridge,
     EngineRequest,
     EngineResponse,
-} from "@lemma/desktop-bridge";
+} from "@lemma/desktop-contract";
 
 /** Base URL of the desktop engine; its requests never reach the network. */
 export const ENGINE_BASE_URL = "http://engine.lemma.invalid";

@@ -1,4 +1,4 @@
-import type { TitleBarState } from "@lemma/desktop-bridge";
+import type { TitleBarState } from "@lemma/desktop-contract";
 import {
     app,
     BrowserWindow,

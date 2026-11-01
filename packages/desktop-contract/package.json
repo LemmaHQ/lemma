@@ -1,8 +1,8 @@
 {
-    "name": "@lemma/desktop-bridge",
+    "name": "@lemma/desktop-contract",
     "version": "0.1.0",
     "private": true,
-    "description": "Lemma desktop bridge types",
+    "description": "Types of the contract between the Lemma desktop shell and the web client",
     "type": "module",
     "exports": {
         ".": "./src/index.ts"

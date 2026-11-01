@@ -1,4 +1,4 @@
-import type { DesktopBridge } from "@lemma/desktop-bridge";
+import type { DesktopBridge } from "@lemma/desktop-contract";
 import { afterEach, expect, it, vi } from "vitest";
 
 const loadPlatform = () => {

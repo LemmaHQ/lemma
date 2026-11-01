@@ -3,7 +3,7 @@ import type {
     EngineExitNotice,
     EnginePortHandoff,
     TitleBarState,
-} from "@lemma/desktop-bridge";
+} from "@lemma/desktop-contract";
 import { contextBridge, ipcRenderer } from "electron";
 import { readAppVersion } from "./app-version";
 import { TITLEBAR_HEIGHT } from "./titlebar";

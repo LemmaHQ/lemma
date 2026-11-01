@@ -1,4 +1,4 @@
-import type { EngineResponse } from "@lemma/desktop-bridge";
+import type { EngineResponse } from "@lemma/desktop-contract";
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
 
