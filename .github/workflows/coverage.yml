@@ -22,6 +22,18 @@ jobs:
   rust:
     name: Rust
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
 
@@ -45,10 +57,12 @@ jobs:
 
       - name: Coverage
         # NEXTEST_PROFILE selects the ci profile, which also writes JUnit
-        # XML for the test-results upload below.
+        # XML for the test-results upload below. The database tests run on
+        # SQLite and again on the postgres service.
         run: just rust-cov --lcov --output-path lcov.info
         env:
           NEXTEST_PROFILE: ci
+          LEMMA_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v7

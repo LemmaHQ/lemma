@@ -61,7 +61,7 @@ rust-test:
 # Coverage under nextest; args replace the terminal summary
 [group('rust')]
 rust-cov *args="--summary-only":
-    cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-core --exclude lemma-proto {{ args }}
+    cargo llvm-cov nextest --workspace --exclude lemma-server --exclude lemma-proto --exclude lemma-desktop --exclude lemma-test-db --ignore-filename-regex '[\\/]entity[\\/]' {{ args }}
 
 # Run oxlint
 [group('web')]
