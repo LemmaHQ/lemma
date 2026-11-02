@@ -260,23 +260,49 @@ async fn arguments_that_miss_a_parameter_fail_validation() -> Result<(), Box<dyn
 async fn an_execution_error_tells_the_model_what_failed() -> Result<(), Box<dyn Error>> {
     let workspace = Workspace::new()?;
     let env = workspace.env();
+    fs::create_dir(workspace.0.join("dir"))?;
+    let without_workspace =
+        LocalExecEnv::new(env::temp_dir().join(format!("missing-{}", Uuid::new_v4())));
+    let registry = registry();
 
-    let result = run(
-        &registry(),
-        &env,
-        "read_file",
-        json!({ "path": "missing.txt" }),
-    )
-    .await;
+    let cases = [
+        (
+            run(
+                &registry,
+                &env,
+                "read_file",
+                json!({ "path": "missing.txt" }),
+            )
+            .await,
+            "execution error: read missing.txt: ",
+        ),
+        (
+            run(
+                &registry,
+                &env,
+                "write_file",
+                json!({ "path": "dir", "content": "x" }),
+            )
+            .await,
+            "execution error: write dir: ",
+        ),
+        (
+            run(
+                &registry,
+                &without_workspace,
+                "bash",
+                json!({ "command": "echo out" }),
+            )
+            .await,
+            "execution error: spawn command: ",
+        ),
+    ];
 
-    let Err(error) = result else {
-        return Err("reading a missing file succeeded".into());
-    };
-    assert!(
-        error
-            .to_string()
-            .starts_with("execution error: read missing.txt: "),
-        "{error}"
-    );
+    for (result, prefix) in cases {
+        let Err(error) = result else {
+            return Err(format!("expected {prefix}, got {result:?}").into());
+        };
+        assert!(error.to_string().starts_with(prefix), "{error}");
+    }
     Ok(())
 }
