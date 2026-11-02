@@ -324,10 +324,14 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
     let mut engine = Engine::open().await?;
     engine.close().await?;
 
-    let reply = engine
+    let check = engine
         .call(CHECK_ACCOUNT, &json!({ "login": "ada" }))
         .await?;
+    let logout = engine
+        .call(LOGOUT, &json!({ "refreshToken": "issued-earlier" }))
+        .await?;
 
-    assert_internal(&reply, "db: ");
+    assert_internal(&check, "db: ");
+    assert_internal(&logout, "db: ");
     Ok(())
 }

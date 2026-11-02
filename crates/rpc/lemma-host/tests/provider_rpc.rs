@@ -192,6 +192,32 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             ErrorReason::TokenInvalid,
         ),
         (
+            engine
+                .call(CREATE, &provider("https://api.example.com"))
+                .await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine
+                .call(UPDATE, &json!({ "id": id, "name": "n" }))
+                .await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine.call(DELETE, &json!({ "id": id })).await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine.call(FETCH, &json!({ "id": id })).await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine
+                .call(CHECK, &json!({ "id": id, "model": "m1" }))
+                .await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
             engine.call_as(&ada, CREATE, &no_kind).await?,
             ErrorReason::ProviderKindInvalid,
         ),
@@ -264,6 +290,12 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
                 .call_as(&bob, CHECK, &json!({ "id": id, "model": "m1" }))
                 .await?,
             ErrorReason::ProviderNotFound,
+        ),
+        (
+            engine
+                .call_as(&ada, CHECK, &json!({ "id": "x", "model": "m1" }))
+                .await?,
+            ErrorReason::IdInvalid,
         ),
     ];
 

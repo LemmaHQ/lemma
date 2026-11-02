@@ -74,7 +74,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let ada = engine.token("ada").await?;
     let bob = engine.token("bob").await?;
     let id = conversation_id(&engine.call_as(&ada, CREATE, &json!({})).await?)?;
-    let calls: [(&str, &str, Value, ErrorReason); 11] = [
+    let calls: [(&str, &str, Value, ErrorReason); 13] = [
         ("", LIST, json!({}), ErrorReason::TokenInvalid),
         ("", CREATE, json!({}), ErrorReason::TokenInvalid),
         (
@@ -121,6 +121,18 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             ErrorReason::ConversationNotFound,
         ),
         ("", DELETE, json!({ "id": id }), ErrorReason::TokenInvalid),
+        (
+            "",
+            RENAME,
+            json!({ "id": id, "title": "t" }),
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            "",
+            MESSAGES,
+            json!({ "conversationId": id }),
+            ErrorReason::TokenInvalid,
+        ),
     ];
 
     for (token, path, body, reason) in calls {
@@ -147,8 +159,10 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
     let token = engine.token("ada").await?;
     engine.close().await?;
 
-    let reply = engine.call_as(&token, LIST, &json!({})).await?;
+    let list = engine.call_as(&token, LIST, &json!({})).await?;
+    let create = engine.call_as(&token, CREATE, &json!({})).await?;
 
-    assert_internal(&reply, "db: ");
+    assert_internal(&list, "db: ");
+    assert_internal(&create, "db: ");
     Ok(())
 }
