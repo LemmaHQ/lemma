@@ -4,9 +4,7 @@
 use std::error::Error;
 
 mod config;
-mod http_server;
 mod server_mode;
-mod web;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

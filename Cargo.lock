@@ -2529,9 +2529,11 @@ dependencies = [
  "axum",
  "dotenvy",
  "lemma-host",
+ "reqwest",
  "rust-embed",
  "sea-orm",
  "tokio",
+ "tower",
  "tower-http 0.7.1",
 ]
 
