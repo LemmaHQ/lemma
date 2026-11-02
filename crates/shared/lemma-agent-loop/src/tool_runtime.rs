@@ -38,7 +38,7 @@ impl<E: ExecEnv> ToolRuntime<E> {
         };
         match tool.execute(call.arguments.clone(), &self.env).await {
             Ok(value) => ToolOutcome {
-                text: serde_json::to_string_pretty(&value).unwrap_or_else(|_| value.to_string()),
+                text: format!("{value:#}"),
                 is_error: false,
             },
             Err(e) => ToolOutcome::error(e.to_string()),
