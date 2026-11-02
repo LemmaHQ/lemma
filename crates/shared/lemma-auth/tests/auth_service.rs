@@ -4,7 +4,7 @@ use std::error::Error;
 
 use lemma_auth::{AuthError, AuthService, verify_access_token};
 use lemma_test_db::on_each_database;
-use sea_orm::{ConnectionTrait, DatabaseConnection};
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, DbErr};
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use uuid::Uuid;
 
@@ -20,6 +20,38 @@ const PASSWORD: &str = "correct-horse";
 
 fn service(db: DatabaseConnection) -> AuthService {
     AuthService::new(db, "test-secret".to_owned())
+}
+
+async fn refuse_inserts(db: &DatabaseConnection, table: &str) -> Result<(), DbErr> {
+    if db.get_database_backend() == DbBackend::Postgres {
+        db.execute_unprepared(
+            "CREATE OR REPLACE FUNCTION refuse_insert() RETURNS trigger LANGUAGE plpgsql \
+             AS $$ BEGIN RAISE EXCEPTION 'insert refused'; END $$",
+        )
+        .await?;
+        db.execute_unprepared(&format!(
+            "CREATE TRIGGER refuse_insert BEFORE INSERT ON {table} \
+             FOR EACH ROW EXECUTE FUNCTION refuse_insert()"
+        ))
+        .await?;
+    } else {
+        db.execute_unprepared(&format!(
+            "CREATE TRIGGER refuse_insert BEFORE INSERT ON {table} \
+             BEGIN SELECT RAISE(ABORT, 'insert refused'); END"
+        ))
+        .await?;
+    }
+    Ok(())
+}
+
+async fn allow_inserts(db: &DatabaseConnection, table: &str) -> Result<(), DbErr> {
+    let statement = if db.get_database_backend() == DbBackend::Postgres {
+        format!("DROP TRIGGER refuse_insert ON {table}")
+    } else {
+        "DROP TRIGGER refuse_insert".to_owned()
+    };
+    db.execute_unprepared(&statement).await?;
+    Ok(())
 }
 
 #[tokio::test]
@@ -188,6 +220,51 @@ async fn refresh_rejects_an_unknown_or_expired_token() -> Result<(), Box<dyn Err
             matches!(expired, Err(AuthError::TokenInvalid)),
             "expired token: {expired:?}"
         );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_sign_up_failing_midway_leaves_no_account() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db.clone());
+
+        for table in ["auth_credentials", "refresh_tokens"] {
+            refuse_inserts(&db, table).await?;
+            let failed = auth.sign_up("ada", "ada@example.com", PASSWORD).await;
+            allow_inserts(&db, table).await?;
+
+            assert!(
+                matches!(failed, Err(AuthError::Store(_))),
+                "insert into {table} refused: {failed:?}"
+            );
+            assert!(
+                !auth.account_exists("ada").await?,
+                "insert into {table} refused: the account is rolled back"
+            );
+        }
+        auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_refresh_failing_to_issue_keeps_the_presented_token() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db.clone());
+        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+
+        refuse_inserts(&db, "refresh_tokens").await?;
+        let failed = auth.refresh(&session.tokens.refresh_token).await;
+        allow_inserts(&db, "refresh_tokens").await?;
+
+        assert!(
+            matches!(failed, Err(AuthError::Store(_))),
+            "issuing refused: {failed:?}"
+        );
+        auth.refresh(&session.tokens.refresh_token).await?;
         Ok(())
     })
     .await
