@@ -1,10 +1,17 @@
-//! Requests through `InProcessTransport` against a real local engine.
+//! Requests through `InProcessTransport` against a real local engine, and
+//! response bodies that fail while streaming.
 
 use std::env;
 use std::error::Error;
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 
+use axum::Router;
+use axum::body::{Body, Bytes};
+use axum::http::Method;
+use axum::routing::get;
+use futures::stream;
 use lemma_host::{InProcessTransport, InProcessTransportError, LocalEngine};
 use uuid::Uuid;
 
@@ -64,10 +71,15 @@ async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result
         head.headers
     );
     assert_eq!(body["user"]["username"], "ada", "signed-up user");
+    let closed = transport.read(head.body).await;
     assert_eq!(
-        transport.read(head.body).await,
+        closed,
         Err(InProcessTransportError::UnknownBody(head.body)),
         "a finished body is closed"
+    );
+    assert!(
+        closed.is_err_and(|e| e.to_string().contains(&head.body.to_string())),
+        "the error names the body id"
     );
     engine.close().await?;
     Ok(())
@@ -114,10 +126,48 @@ async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<
         )
         .await;
 
+    let method_error = Method::from_bytes(b"NOT A METHOD")
+        .err()
+        .ok_or("the method parses")?
+        .to_string();
     assert!(
-        matches!(result, Err(InProcessTransportError::InvalidRequest(_))),
+        matches!(&result, Err(e @ InProcessTransportError::InvalidRequest(_)) if e.to_string().contains(&method_error)),
         "{result:?}"
     );
     engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_failing_body_reports_its_error_and_closes() -> Result<(), Box<dyn Error>> {
+    let router = Router::new().route(
+        "/",
+        get(|| async {
+            Body::from_stream(stream::iter([
+                Ok(Bytes::from_static(b"first")),
+                Err(io::Error::other("connection reset")),
+            ]))
+        }),
+    );
+    let transport = InProcessTransport::new(router);
+
+    let head = transport.request("GET", "/", &[], Vec::new()).await?;
+    let first = transport.read(head.body).await?;
+    let failed = transport.read(head.body).await;
+
+    assert_eq!(
+        first,
+        Some(Bytes::from_static(b"first")),
+        "chunk before the failure"
+    );
+    assert!(
+        matches!(&failed, Err(e @ InProcessTransportError::Body(_)) if e.to_string().contains("connection reset")),
+        "{failed:?}"
+    );
+    assert_eq!(
+        transport.read(head.body).await,
+        Err(InProcessTransportError::UnknownBody(head.body)),
+        "a failed body is closed"
+    );
     Ok(())
 }
