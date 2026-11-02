@@ -92,6 +92,28 @@ impl HttpTransport for ScriptedTransport {
     }
 }
 
+#[derive(Clone)]
+struct RefusingTransport;
+
+impl HttpTransport for RefusingTransport {
+    async fn post_stream(
+        &self,
+        _url: String,
+        _headers: Vec<(String, String)>,
+        _body: Value,
+    ) -> Result<ByteStream, ModelError> {
+        Err(ModelError::new("upstream 401: bad key".to_owned()))
+    }
+
+    async fn get_json(
+        &self,
+        _url: String,
+        _headers: Vec<(String, String)>,
+    ) -> Result<Value, ModelError> {
+        Err(ModelError::new("upstream 401: bad key".to_owned()))
+    }
+}
+
 fn endpoint(kind: ProviderKind) -> Endpoint {
     Endpoint {
         kind,
@@ -461,6 +483,7 @@ async fn openai_closes_open_blocks_when_the_stream_ends_without_done() -> Result
 #[tokio::test]
 async fn anthropic_ignores_unknown_and_empty_stream_parts() -> Result<(), Box<dyn Error>> {
     let lines = [
+        r#"{"type":"message_start","message":{}}"#,
         r#"{"type":"message_start","message":{"usage":{"input_tokens":5}}}"#,
         r#"{"type":"ping"}"#,
         r#"{"type":"content_block_start","index":0,"content_block":{"type":"redacted_thinking"}}"#,
@@ -469,6 +492,7 @@ async fn anthropic_ignores_unknown_and_empty_stream_parts() -> Result<(), Box<dy
         r#"{"type":"content_block_start","index":1,"content_block":{"type":"thinking"}}"#,
         r#"{"type":"content_block_delta","index":1,"delta":{"type":"thinking_delta","thinking":""}}"#,
         r#"{"type":"content_block_delta","index":1,"delta":{"type":"thinking_delta","thinking":"hm"}}"#,
+        r#"{"type":"content_block_delta","index":1,"delta":{"type":"signature_delta"}}"#,
         r#"{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{}"}}"#,
         r#"{"type":"content_block_stop","index":1}"#,
         r#"{"type":"content_block_delta","index":2}"#,
@@ -481,6 +505,7 @@ async fn anthropic_ignores_unknown_and_empty_stream_parts() -> Result<(), Box<dy
         r#"{"type":"content_block_delta","index":3,"delta":{"type":"input_json_delta","partial_json":""}}"#,
         r#"{"type":"content_block_delta","index":3,"delta":{"type":"input_json_delta","partial_json":"{\"command\":\"ls\"}"}}"#,
         r#"{"type":"content_block_stop","index":3}"#,
+        r#"{"type":"message_delta","delta":{}}"#,
     ];
     let sse: String = lines
         .iter()
@@ -551,7 +576,10 @@ async fn gemini_maps_the_finish_reason_of_a_text_answer() -> Result<(), Box<dyn 
             "data: {}\n\ndata: {}\n\n",
             r#"{"candidates":[{"content":{"parts":[{"text":"","thought":true},{"text":"Hi"}]}}]}"#,
             json!({
-                "candidates": [{ "content": { "parts": [{ "text": " there" }] }, "finishReason": reason }],
+                "candidates": [{
+                    "content": { "parts": [{ "text": " there" }, { "text": "" }] },
+                    "finishReason": reason,
+                }],
                 "usageMetadata": { "candidatesTokenCount": 7 },
             }),
         );
@@ -595,6 +623,26 @@ async fn a_malformed_payload_fails_the_stream() -> Result<(), Box<dyn Error>> {
             return Err(format!("{kind:?} accepted a malformed payload").into());
         };
         assert!(error.message.starts_with(expected), "{kind:?}: {error}");
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_refused_request_fails_before_streaming() -> Result<(), Box<dyn Error>> {
+    for kind in [
+        ProviderKind::OpenAiCompatible,
+        ProviderKind::Anthropic,
+        ProviderKind::Gemini,
+    ] {
+        let adapter = HttpConnector::new(RefusingTransport).connect(endpoint(kind));
+
+        let result = adapter.stream(ask()).await;
+
+        assert_eq!(
+            result.err().map(|e| e.message),
+            Some("upstream 401: bad key".to_owned()),
+            "{kind:?}"
+        );
     }
     Ok(())
 }
@@ -902,6 +950,39 @@ async fn openai_keeps_the_raw_arguments_of_a_call_cut_off_by_the_length_limit()
                 call: call("c1", "bash", json!("{\"comm"))
             },
             done(StopReason::Length, None),
+        ],
+        "events"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn openai_keeps_argument_fragments_sent_before_the_call_name() -> Result<(), Box<dyn Error>> {
+    let transport = ScriptedTransport::streaming(concat!(
+        "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",",
+        "\"function\":{\"arguments\":\"{\\\"command\\\":\"}}]}}]}\n\n",
+        "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,",
+        "\"function\":{\"name\":\"bash\",\"arguments\":\"\\\"ls\\\"}\"}}]}}]}\n\n",
+        "data: {\"choices\":[{\"finish_reason\":\"tool_calls\"}]}\n\n",
+        "data: [DONE]\n\n",
+    ));
+
+    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+
+    assert_eq!(
+        events,
+        [
+            StreamEvent::ToolCallStart {
+                id: "c1".to_owned(),
+                name: "bash".to_owned()
+            },
+            StreamEvent::ToolCallDelta {
+                delta: "\"ls\"}".to_owned()
+            },
+            StreamEvent::ToolCallEnd {
+                call: call("c1", "bash", json!({ "command": "ls" }))
+            },
+            done(StopReason::ToolUse, None),
         ],
         "events"
     );

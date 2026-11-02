@@ -1,11 +1,13 @@
 //! `ReqwestTransport` against a real HTTP server on the loopback interface.
 
 use std::error::Error;
+use std::io;
 
 use axum::Router;
+use axum::body::{Body, Bytes};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
-use futures::StreamExt;
+use futures::{StreamExt, stream};
 use lemma_adapter::{HttpTransport, ReqwestTransport};
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -60,6 +62,33 @@ async fn an_error_status_fails_with_the_status_and_body() -> Result<(), Box<dyn 
         return Err("a rejected request streamed".into());
     };
     assert_eq!(error.message, "upstream 401: missing key", "error");
+    Ok(())
+}
+
+#[tokio::test]
+async fn an_error_body_cut_off_midway_fails_as_a_transport_error() -> Result<(), Box<dyn Error>> {
+    let router = Router::new().route(
+        "/stream",
+        post(|| async {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Body::from_stream(stream::iter([
+                    Ok(Bytes::from_static(b"partial")),
+                    Err(io::Error::other("connection reset")),
+                ])),
+            )
+        }),
+    );
+    let base = serve(router).await?;
+
+    let result = ReqwestTransport::new()
+        .post_stream(format!("{base}/stream"), Vec::new(), json!({}))
+        .await;
+
+    let Err(error) = result else {
+        return Err("a cut-off error body streamed".into());
+    };
+    assert!(error.message.starts_with("transport: "), "{error}");
     Ok(())
 }
 
