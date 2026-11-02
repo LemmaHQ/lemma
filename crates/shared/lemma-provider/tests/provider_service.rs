@@ -105,6 +105,12 @@ async fn a_user_cannot_see_or_change_another_users_provider() -> Result<(), Box<
                 },
             )
             .await;
+        let read_through_update = providers
+            .update(bob, created.id, UpdateInput::default())
+            .await;
+        let missing = providers
+            .update(bob, Uuid::new_v4(), UpdateInput::default())
+            .await;
         let own = providers.list(ada).await?;
 
         assert!(listed.is_empty(), "bob's providers: {listed:?}");
@@ -115,6 +121,14 @@ async fn a_user_cannot_see_or_change_another_users_provider() -> Result<(), Box<
         assert!(
             matches!(updated, Err(ProviderError::NotFound)),
             "bob's update: {updated:?}"
+        );
+        assert!(
+            matches!(read_through_update, Err(ProviderError::NotFound)),
+            "bob's empty update: {read_through_update:?}"
+        );
+        assert!(
+            matches!(missing, Err(ProviderError::NotFound)),
+            "empty update of a missing provider: {missing:?}"
         );
         assert_eq!(own.len(), 1, "ada's providers: {own:?}");
         assert_eq!(own[0].name, "Main", "ada's name survives bob's update");
@@ -180,6 +194,9 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
                 },
             )
             .await?;
+        let untouched = providers
+            .update(ada, before.id, UpdateInput::default())
+            .await?;
         let bound = providers.adapter(ada, before.id).await?;
 
         assert!(!toggled.enabled, "enabled flag");
@@ -197,6 +214,10 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
             "model list after the key change"
         );
         assert_eq!(bound.0.api_key, "sk-replaced", "key the adapter opens");
+        assert_eq!(
+            untouched.api_key, "sk-replaced",
+            "an empty update returns the stored provider"
+        );
         Ok(())
     })
     .await

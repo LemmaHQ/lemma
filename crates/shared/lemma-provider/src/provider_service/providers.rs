@@ -158,7 +158,7 @@ impl<C: Connector> ProviderService<C> {
             Some(k) => Set(self.seal_key(&k)?),
             None => NotSet,
         };
-        let row = provider::Entity::update(provider::ActiveModel {
+        let changes = provider::ActiveModel {
             id: Unchanged(id),
             name: input.name.map_or(NotSet, |s| Set(s.trim().to_owned())),
             base_url: input
@@ -172,15 +172,24 @@ impl<C: Connector> ProviderService<C> {
             models: input.models.map_or(NotSet, |m| Set(Models(m))),
             enabled: input.enabled.map_or(NotSet, Set),
             ..Default::default()
-        })
-        .validate()?
-        .filter(provider::Column::UserId.eq(user_id))
-        .exec(&self.db)
-        .await
-        .map_err(|e| match e {
-            DbErr::RecordNotUpdated => ProviderError::NotFound,
-            e => e.into(),
-        })?;
+        };
+        if !changes.is_changed() {
+            let row = provider::Entity::find_by_id(id)
+                .filter(provider::Column::UserId.eq(user_id))
+                .one(&self.db)
+                .await?
+                .ok_or(ProviderError::NotFound)?;
+            return Ok(self.view(&row));
+        }
+        let row = provider::Entity::update(changes)
+            .validate()?
+            .filter(provider::Column::UserId.eq(user_id))
+            .exec(&self.db)
+            .await
+            .map_err(|e| match e {
+                DbErr::RecordNotUpdated => ProviderError::NotFound,
+                e => e.into(),
+            })?;
         Ok(self.view(&row))
     }
 
