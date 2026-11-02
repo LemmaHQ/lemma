@@ -1,30 +1,19 @@
-use std::error::Error;
-use std::fmt;
-
 use lemma_conversation::ConversationError;
+use thiserror::Error;
 
 /// Failure that ends a turn.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum LoopError {
     /// The model stream failed; the step's placeholder carries the message.
+    #[error("model error: {0}")]
     Model(String),
     /// The conversation database failed.
+    #[error("store error: {0}")]
     Store(String),
     /// The conversation or a message on its path is absent.
+    #[error("not found: {0}")]
     NotFound(String),
 }
-
-impl fmt::Display for LoopError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Model(e) => write!(f, "model error: {e}"),
-            Self::Store(e) => write!(f, "store error: {e}"),
-            Self::NotFound(e) => write!(f, "not found: {e}"),
-        }
-    }
-}
-
-impl Error for LoopError {}
 
 impl From<ConversationError> for LoopError {
     fn from(err: ConversationError) -> Self {

@@ -4,36 +4,25 @@
 //! Secrets are encrypted with AES-256-GCM under a key derived from the
 //! configured master secret and stored base64-encoded in the database.
 
-use std::error::Error;
-use std::fmt;
-
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aead::{Aead, Key, KeyInit, Nonce};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use sha2::Sha256;
+use thiserror::Error;
 
 /// Failure modes of [`seal`] and [`open`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 pub enum CryptoError {
     /// AEAD operation failed. In practice this means decryption with the
     /// wrong key or a tampered payload.
+    #[error("decrypt failed")]
     Decrypt,
     /// Input payload is malformed: invalid base64 encoding, truncated length,
     /// or corrupted plaintext following decryption.
+    #[error("invalid sealed key encoding")]
     Encoding,
 }
-
-impl fmt::Display for CryptoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Decrypt => write!(f, "decrypt failed"),
-            Self::Encoding => write!(f, "invalid sealed key encoding"),
-        }
-    }
-}
-
-impl Error for CryptoError {}
 
 /// Derives the AES-256 key from the master secret via SHA-256.
 ///

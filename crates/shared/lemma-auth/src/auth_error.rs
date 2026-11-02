@@ -1,51 +1,40 @@
 //! Error types for the auth domain.
 
-use std::error::Error;
-use std::fmt;
-
 use sea_orm::DbErr;
+use thiserror::Error;
 
 /// Errors surfaced by the auth domain. The RPC shell maps these to wire
 /// error reasons; local callers match on them directly.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AuthError {
     /// A required signup field was empty or the password was too short.
+    #[error("signup fields required")]
     SignupFieldsRequired,
     /// Provided credentials failed authentication.
+    #[error("credentials invalid")]
     CredentialsInvalid,
     /// The refresh token was missing, expired, rotated, or revoked.
+    #[error("token invalid")]
     TokenInvalid,
     /// Target account is absent.
+    #[error("user not found")]
     UserNotFound,
     /// The username is already registered.
+    #[error("username taken")]
     UsernameTaken,
     /// The email is already registered.
+    #[error("email taken")]
     EmailTaken,
     /// Access-token signing failed.
+    #[error("jwt sign: {0}")]
     Sign(String),
     /// Password hashing failed.
+    #[error("hash password: {0}")]
     Hash(String),
     /// The database failed.
+    #[error("db: {0}")]
     Store(String),
 }
-
-impl fmt::Display for AuthError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::SignupFieldsRequired => write!(f, "signup fields required"),
-            Self::CredentialsInvalid => write!(f, "credentials invalid"),
-            Self::TokenInvalid => write!(f, "token invalid"),
-            Self::UserNotFound => write!(f, "user not found"),
-            Self::UsernameTaken => write!(f, "username taken"),
-            Self::EmailTaken => write!(f, "email taken"),
-            Self::Sign(e) => write!(f, "jwt sign: {e}"),
-            Self::Hash(e) => write!(f, "hash password: {e}"),
-            Self::Store(e) => write!(f, "db: {e}"),
-        }
-    }
-}
-
-impl Error for AuthError {}
 
 impl From<DbErr> for AuthError {
     fn from(e: DbErr) -> Self {

@@ -1,25 +1,15 @@
-use std::error::Error;
-use std::fmt;
+use thiserror::Error;
 
 /// Failures of [`InProcessTransport`](crate::InProcessTransport).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum InProcessTransportError {
     /// The method, path, or a header is not valid HTTP.
+    #[error("invalid request: {0}")]
     InvalidRequest(String),
     /// No open response body has this id.
+    #[error("no open response body {0}")]
     UnknownBody(u32),
     /// The response body failed while streaming.
+    #[error("response body: {0}")]
     Body(String),
 }
-
-impl fmt::Display for InProcessTransportError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidRequest(e) => write!(f, "invalid request: {e}"),
-            Self::UnknownBody(id) => write!(f, "no open response body {id}"),
-            Self::Body(e) => write!(f, "response body: {e}"),
-        }
-    }
-}
-
-impl Error for InProcessTransportError {}

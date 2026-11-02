@@ -1,8 +1,8 @@
-use std::error::Error;
-use std::fmt;
+use thiserror::Error;
 
 /// Any model call failure, reduced to a message.
-#[derive(Debug)]
+#[derive(Debug, Error)]
+#[error("{message}")]
 pub struct ModelError {
     /// Human-readable failure description.
     pub message: String,
@@ -15,11 +15,3 @@ impl ModelError {
         Self { message }
     }
 }
-
-impl fmt::Display for ModelError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.message)
-    }
-}
-
-impl Error for ModelError {}

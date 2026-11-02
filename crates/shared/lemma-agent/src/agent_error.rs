@@ -1,40 +1,29 @@
-use std::error::Error;
-use std::fmt;
-
 use lemma_agent_loop::LoopError;
 use lemma_provider::ProviderError;
+use thiserror::Error;
 
 /// Failure preparing or running a turn.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AgentError {
     /// The message content is empty after trimming.
+    #[error("content required")]
     ContentRequired,
     /// The model id is empty after trimming.
+    #[error("model required")]
     ModelRequired,
     /// The provider is absent for this user.
+    #[error("provider not found")]
     ProviderNotFound,
     /// The provider domain failed, e.g. opening the API key.
+    #[error("provider: {0}")]
     Provider(ProviderError),
     /// The conversation's tool workspace could not be created.
+    #[error("create workspace: {0}")]
     Workspace(String),
     /// The running turn failed.
+    #[error(transparent)]
     Loop(LoopError),
 }
-
-impl fmt::Display for AgentError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ContentRequired => f.write_str("content required"),
-            Self::ModelRequired => f.write_str("model required"),
-            Self::ProviderNotFound => f.write_str("provider not found"),
-            Self::Provider(e) => write!(f, "provider: {e}"),
-            Self::Workspace(e) => write!(f, "create workspace: {e}"),
-            Self::Loop(e) => e.fmt(f),
-        }
-    }
-}
-
-impl Error for AgentError {}
 
 impl From<ProviderError> for AgentError {
     fn from(err: ProviderError) -> Self {

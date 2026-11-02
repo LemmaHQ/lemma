@@ -1,34 +1,25 @@
 //! UniFFI facade for Android local mode: opens the local engine over a data
 //! directory and serves its Connect router through an in-process transport.
 
-use std::error::Error;
-use std::fmt;
 use std::path::Path;
 
 use lemma_host::{InProcessTransport, LocalEngine};
+use thiserror::Error;
 
 uniffi::setup_scaffolding!();
 
 /// Failures of the engine facade.
-#[derive(Debug, uniffi::Error)]
+#[derive(Debug, Error, uniffi::Error)]
 #[uniffi(flat_error)]
 pub enum EngineError {
     /// A startup step of [`LemmaEngine::open`] failed.
+    #[error("{0}")]
     Open(String),
     /// A request was malformed, or its response body is not open or failed
     /// while streaming.
+    #[error("{0}")]
     Transport(String),
 }
-
-impl fmt::Display for EngineError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Open(e) | Self::Transport(e) => write!(f, "{e}"),
-        }
-    }
-}
-
-impl Error for EngineError {}
 
 /// One HTTP header.
 #[derive(Debug, uniffi::Record)]

@@ -11,6 +11,7 @@ lemma-core.workspace = true
 lemma-model.workspace = true
 lemma-tools.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 
