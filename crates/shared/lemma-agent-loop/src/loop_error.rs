@@ -18,7 +18,6 @@ pub enum LoopError {
 impl From<ConversationError> for LoopError {
     fn from(err: ConversationError) -> Self {
         match err {
-            ConversationError::Store(e) => Self::Store(e),
             ConversationError::Missing(e) => Self::NotFound(e),
             other => Self::Store(other.to_string()),
         }
