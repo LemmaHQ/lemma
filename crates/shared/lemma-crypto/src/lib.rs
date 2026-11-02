@@ -49,13 +49,15 @@ pub fn seal(key: &Key<Aes256Gcm>, plaintext: &str) -> Result<String, CryptoError
 
     let cipher = Aes256Gcm::new(key);
     let nonce = Nonce::<Aes256Gcm>::generate();
-    let ct = cipher
+    cipher
         .encrypt(&nonce, plaintext.as_bytes())
-        .map_err(|_| CryptoError::Decrypt)?;
-    let mut out = Vec::with_capacity(12 + ct.len());
-    out.extend_from_slice(nonce.as_slice());
-    out.extend_from_slice(&ct);
-    Ok(STANDARD.encode(out))
+        .map(|ct| {
+            let mut out = Vec::with_capacity(12 + ct.len());
+            out.extend_from_slice(nonce.as_slice());
+            out.extend_from_slice(&ct);
+            STANDARD.encode(out)
+        })
+        .map_err(|_| CryptoError::Decrypt)
 }
 
 /// Reverses [`seal`].

@@ -6,16 +6,10 @@ use lemma_proto::lemma::v1::AgentEvent;
 use tokio::sync::watch;
 use uuid::Uuid;
 
-#[derive(Debug, Default)]
-struct EventLog {
-    events: Vec<AgentEvent>,
-    ended: bool,
-}
-
 #[derive(Debug)]
 struct LiveTurn {
     user_id: Uuid,
-    log: watch::Receiver<EventLog>,
+    log: watch::Receiver<Vec<AgentEvent>>,
 }
 
 /// The event logs of running turns, by user message id; any number of
@@ -26,7 +20,7 @@ pub(crate) struct LiveTurns(DashMap<Uuid, LiveTurn>);
 /// Appends a running turn's events. Dropping it ends the log and
 /// unregisters the turn; open streams finish reading the log.
 pub(crate) struct LogWriter {
-    log: watch::Sender<EventLog>,
+    log: watch::Sender<Vec<AgentEvent>>,
     turns: Arc<LiveTurns>,
     user_message_id: Uuid,
 }
@@ -39,7 +33,7 @@ impl LiveTurns {
         user_id: Uuid,
         user_message_id: Uuid,
     ) -> (LogWriter, impl Stream<Item = AgentEvent> + use<>) {
-        let (log, reader) = watch::channel(EventLog::default());
+        let (log, reader) = watch::channel(Vec::new());
         self.0.insert(
             user_message_id,
             LiveTurn {
@@ -71,39 +65,24 @@ impl LiveTurns {
 impl LogWriter {
     /// Appends one event.
     pub(crate) fn push(&self, event: AgentEvent) {
-        self.log.send_modify(|log| log.events.push(event));
+        self.log.send_modify(|events| events.push(event));
     }
 }
 
 impl Drop for LogWriter {
     fn drop(&mut self) {
-        self.log.send_modify(|log| log.ended = true);
         self.turns.0.remove(&self.user_message_id);
     }
 }
 
-enum Read {
-    Event(AgentEvent),
-    Ended,
-    Pending,
-}
-
-fn follow(log: watch::Receiver<EventLog>, offset: usize) -> impl Stream<Item = AgentEvent> {
+fn follow(log: watch::Receiver<Vec<AgentEvent>>, offset: usize) -> impl Stream<Item = AgentEvent> {
     stream::unfold((log, offset), |(mut log, next)| async move {
         loop {
-            let read = {
-                let current = log.borrow_and_update();
-                match current.events.get(next) {
-                    Some(event) => Read::Event(event.clone()),
-                    None if current.ended => Read::Ended,
-                    None => Read::Pending,
-                }
-            };
-            match read {
-                Read::Event(event) => return Some((event, (log, next + 1))),
-                Read::Ended => return None,
-                Read::Pending => log.changed().await.ok()?,
+            let event = log.borrow_and_update().get(next).cloned();
+            if let Some(event) = event {
+                return Some((event, (log, next + 1)));
             }
+            log.changed().await.ok()?;
         }
     })
 }

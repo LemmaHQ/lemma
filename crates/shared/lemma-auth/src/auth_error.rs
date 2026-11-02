@@ -1,5 +1,7 @@
 //! Error types for the auth domain.
 
+use argon2::password_hash::Error as PasswordHashError;
+use jsonwebtoken::errors::Error as JwtError;
 use sea_orm::DbErr;
 use thiserror::Error;
 
@@ -27,10 +29,10 @@ pub enum AuthError {
     EmailTaken,
     /// Access-token signing failed.
     #[error("jwt sign: {0}")]
-    Sign(String),
+    Sign(JwtError),
     /// Password hashing failed.
     #[error("hash password: {0}")]
-    Hash(String),
+    Hash(PasswordHashError),
     /// The database failed.
     #[error("db: {0}")]
     Store(String),

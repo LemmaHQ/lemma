@@ -3,8 +3,8 @@ use std::fmt::{self, Debug};
 use chrono::Utc;
 use lemma_model::{Connector, ProviderKind};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, NotSet, QueryFilter,
-    QueryOrder, Set, SqlErr, Unchanged,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    QueryOrder, Set, SqlErr,
 };
 use uuid::Uuid;
 
@@ -50,7 +50,7 @@ impl<C: Connector> ProviderService<C> {
             return Ok(String::new());
         }
         lemma_crypto::seal(&lemma_crypto::derive_key(&self.secret_key), plain)
-            .map_err(|e| ProviderError::Crypto(e.to_string()))
+            .map_err(ProviderError::Crypto)
     }
 
     pub(super) fn open_key(&self, stored: &str) -> Result<String, ProviderError> {
@@ -58,7 +58,7 @@ impl<C: Connector> ProviderService<C> {
             return Ok(String::new());
         }
         lemma_crypto::open(&lemma_crypto::derive_key(&self.secret_key), stored)
-            .map_err(|e| ProviderError::Crypto(e.to_string()))
+            .map_err(ProviderError::Crypto)
     }
 
     fn view(&self, r: &provider::Model) -> ProviderView {
@@ -159,7 +159,6 @@ impl<C: Connector> ProviderService<C> {
             None => NotSet,
         };
         let changes = provider::ActiveModel {
-            id: Unchanged(id),
             name: input.name.map_or(NotSet, |s| Set(s.trim().to_owned())),
             base_url: input
                 .base_url
@@ -181,16 +180,15 @@ impl<C: Connector> ProviderService<C> {
                 .ok_or(ProviderError::NotFound)?;
             return Ok(self.view(&row));
         }
-        let row = provider::Entity::update(changes)
-            .validate()?
+        provider::Entity::update_many()
+            .set(changes)
+            .filter(provider::Column::Id.eq(id))
             .filter(provider::Column::UserId.eq(user_id))
-            .exec(&self.db)
-            .await
-            .map_err(|e| match e {
-                DbErr::RecordNotUpdated => ProviderError::NotFound,
-                e => e.into(),
-            })?;
-        Ok(self.view(&row))
+            .exec_with_returning(&self.db)
+            .await?
+            .pop()
+            .map(|row| self.view(&row))
+            .ok_or(ProviderError::NotFound)
     }
 
     /// Deletes a provider owned by the user.

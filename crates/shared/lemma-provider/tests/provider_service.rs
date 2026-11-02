@@ -3,6 +3,7 @@
 use std::error::Error;
 
 use lemma_auth::AuthService;
+use lemma_crypto::CryptoError;
 use lemma_model::{
     Adapter, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest, ProviderKind,
 };
@@ -424,7 +425,9 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
 -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
-        let created = service(db.clone()).create(ada, new_provider("main")).await?;
+        let created = service(db.clone())
+            .create(ada, new_provider("main"))
+            .await?;
         let rotated = ProviderService::new(db.clone(), "rotated".to_owned(), EndpointConnector);
 
         let with_rotated_secret = rotated.adapter(ada, created.id).await;
@@ -434,16 +437,25 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
         let corrupted = service(db).adapter(ada, created.id).await;
 
         assert!(
-            matches!(&with_rotated_secret, Err(ProviderError::Crypto(m)) if m == "decrypt failed"),
+            matches!(
+                &with_rotated_secret,
+                Err(ProviderError::Crypto(CryptoError::Decrypt))
+            ),
             "rotated secret: {with_rotated_secret:?}"
         );
         assert_eq!(
-            listed.iter().map(|p| p.api_key.as_str()).collect::<Vec<_>>(),
+            listed
+                .iter()
+                .map(|p| p.api_key.as_str())
+                .collect::<Vec<_>>(),
             [""],
             "an unreadable key lists as empty"
         );
         assert!(
-            matches!(&corrupted, Err(ProviderError::Crypto(m)) if m == "invalid sealed key encoding"),
+            matches!(
+                &corrupted,
+                Err(ProviderError::Crypto(CryptoError::Encoding))
+            ),
             "corrupted key: {corrupted:?}"
         );
         Ok(())

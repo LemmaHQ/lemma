@@ -126,6 +126,19 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 tools: tool_specs.clone(),
             };
             let mut outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
+            let calls_tools = outcome.stop_reason == StopReason::ToolUse
+                && outcome
+                    .blocks
+                    .iter()
+                    .any(|block| matches!(block, ContentBlock::ToolCall(_)));
+            let tool_runtime = if calls_tools {
+                self.tools.as_ref()
+            } else {
+                None
+            };
+            if tool_runtime.is_none() {
+                outcome.finish_thinking(outcome.ended_at);
+            }
             self.conversations
                 .update_message(assistant_id, persist::settle(&outcome))
                 .await?;
@@ -147,38 +160,22 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 }
             }
 
-            let has_tool_calls = outcome
-                .blocks
-                .iter()
-                .any(|block| matches!(block, ContentBlock::ToolCall(_)));
-            let runtime = match self.tools.as_ref() {
-                Some(runtime) if outcome.stop_reason == StopReason::ToolUse && has_tool_calls => {
-                    runtime
-                }
-                _ => {
-                    if outcome.stop_reason == StopReason::ToolUse {
-                        outcome.finish_thinking(outcome.ended_at);
-                        self.conversations
-                            .update_message(assistant_id, persist::settle(&outcome))
-                            .await?;
-                    }
-                    observer(TurnEvent::AssistantDone {
-                        usage: outcome.usage,
-                        at: outcome.ended_at,
-                    });
-                    return Ok(());
-                }
+            let Some(runtime) = tool_runtime else {
+                observer(TurnEvent::AssistantDone {
+                    usage: outcome.usage,
+                    at: outcome.ended_at,
+                });
+                return Ok(());
             };
 
             leaf_id = assistant_id;
+            outcome.finish_thinking(Utc::now());
             let mut results = Vec::new();
-            let mut thinking_finished_at = None;
             for block in &mut outcome.blocks {
                 let ContentBlock::ToolCall(call) = block else {
                     continue;
                 };
                 let started_at = Utc::now();
-                thinking_finished_at.get_or_insert(started_at);
                 call.started_at = Some(started_at);
                 observer(TurnEvent::ToolStarted {
                     id: call.id.clone(),
@@ -196,9 +193,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                     at: finished_at,
                 });
                 results.push(persist::tool_result(call, tool_outcome));
-            }
-            if let Some(at) = thinking_finished_at {
-                outcome.finish_thinking(at);
             }
             self.conversations
                 .update_message(assistant_id, persist::settle(&outcome))

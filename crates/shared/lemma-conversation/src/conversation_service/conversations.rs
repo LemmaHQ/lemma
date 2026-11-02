@@ -1,7 +1,6 @@
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder,
-    Set, Unchanged,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
 };
 use uuid::Uuid;
 
@@ -97,20 +96,18 @@ impl ConversationService {
         if title.is_empty() {
             return Err(ConversationError::TitleRequired);
         }
-        conversation::Entity::update(conversation::ActiveModel {
-            id: Unchanged(id),
-            title: Set(title.to_owned()),
-            updated_at: Set(Utc::now()),
-            ..Default::default()
-        })
-        .validate()?
-        .filter(conversation::Column::UserId.eq(user_id))
-        .exec(&self.db)
-        .await
-        .map_err(|e| match e {
-            DbErr::RecordNotUpdated => ConversationError::NotFound,
-            e => e.into(),
-        })
+        conversation::Entity::update_many()
+            .set(conversation::ActiveModel {
+                title: Set(title.to_owned()),
+                updated_at: Set(Utc::now()),
+                ..Default::default()
+            })
+            .filter(conversation::Column::Id.eq(id))
+            .filter(conversation::Column::UserId.eq(user_id))
+            .exec_with_returning(&self.db)
+            .await?
+            .pop()
+            .ok_or(ConversationError::NotFound)
     }
 
     /// Permanently deletes a conversation owned by the user together

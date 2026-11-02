@@ -3,7 +3,6 @@
 use std::fmt::{self, Debug};
 
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use http::HeaderValue;
 use http::header::SET_COOKIE;
 use lemma_auth::{
     ACCESS_TOKEN_TTL_SECS, AuthError, AuthService, AuthTokens, REFRESH_TTL_DAYS, User,
@@ -64,9 +63,7 @@ fn clear_session_cookies(secure: bool) -> [String; 2] {
 fn with_cookies<B>(body: B, cookies: [String; 2]) -> ServiceResult<B> {
     let mut response = Response::new(body);
     for cookie in cookies {
-        let value = HeaderValue::from_str(&cookie)
-            .map_err(|e| ConnectError::internal(format!("set-cookie header: {e}")))?;
-        response.headers.append(SET_COOKIE, value);
+        response = response.try_with_header(SET_COOKIE, cookie)?;
     }
     Ok(response)
 }

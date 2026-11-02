@@ -21,7 +21,7 @@ pub enum ProviderError {
     NotFound,
     /// Sealing or opening a stored API key failed.
     #[error("crypto: {0}")]
-    Crypto(String),
+    Crypto(lemma_crypto::CryptoError),
     /// The database failed.
     #[error("store: {0}")]
     Store(String),

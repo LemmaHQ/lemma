@@ -2,7 +2,7 @@
 
 use axum::{
     body::Body,
-    http::{Response, StatusCode, Uri, header, header::HeaderValue},
+    http::{Response, StatusCode, Uri, header},
     response::IntoResponse,
 };
 
@@ -15,22 +15,21 @@ pub async fn handler(uri: Uri) -> Response<Body> {
 
 fn serve(path: &str) -> Response<Body> {
     match WebDist::get(path) {
-        Some(file) => {
-            let mut res = Response::new(Body::from(file.data.into_owned()));
-            let headers = res.headers_mut();
-            if let Ok(v) = HeaderValue::from_str(file.metadata.mimetype()) {
-                headers.insert(header::CONTENT_TYPE, v);
-            }
-            headers.insert(
-                header::CACHE_CONTROL,
-                if path.starts_with("assets/") {
-                    HeaderValue::from_static("public, max-age=31536000, immutable")
-                } else {
-                    HeaderValue::from_static("no-cache")
-                },
-            );
-            res
-        }
+        Some(file) => (
+            [
+                (header::CONTENT_TYPE, file.metadata.mimetype()),
+                (
+                    header::CACHE_CONTROL,
+                    if path.starts_with("assets/") {
+                        "public, max-age=31536000, immutable"
+                    } else {
+                        "no-cache"
+                    },
+                ),
+            ],
+            Body::from(file.data),
+        )
+            .into_response(),
         None if !path.contains('.') => serve("index.html"),
         None => StatusCode::NOT_FOUND.into_response(),
     }

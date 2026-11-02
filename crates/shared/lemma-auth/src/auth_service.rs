@@ -89,8 +89,8 @@ impl AuthService {
         user_id: Uuid,
         family_id: Uuid,
     ) -> Result<AuthTokens, AuthError> {
-        let access_token = jwt::sign_access_token(&self.secret, user_id)
-            .map_err(|e| AuthError::Sign(e.to_string()))?;
+        let access_token =
+            jwt::sign_access_token(&self.secret, user_id).map_err(AuthError::Sign)?;
         let plaintext = token::generate_refresh_token();
         let now = Utc::now();
         refresh_token::ActiveModel {
@@ -129,7 +129,7 @@ impl AuthService {
         if username.is_empty() || email.is_empty() || password.len() < 8 {
             return Err(AuthError::SignupFieldsRequired);
         }
-        let password_hash = hash_password(password).map_err(|e| AuthError::Hash(e.to_string()))?;
+        let password_hash = hash_password(password).map_err(AuthError::Hash)?;
         let tx = self.db.begin().await?;
         let inserted = user::ActiveModel {
             id: Set(Uuid::new_v4()),
