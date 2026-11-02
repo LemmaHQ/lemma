@@ -7,7 +7,8 @@ use chrono::{Duration, Utc};
 use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
-    QueryFilter, Set, SqlErr, TransactionTrait,
+    FromQueryResult, JoinType, QueryFilter, QuerySelect, RelationDef, Set, SqlErr,
+    TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -50,6 +51,19 @@ impl Debug for AuthService {
             .field("db", &self.db)
             .finish_non_exhaustive()
     }
+}
+
+#[derive(FromQueryResult)]
+struct Credentialed {
+    #[sea_orm(nested)]
+    user: User,
+    password_hash: String,
+}
+
+fn matches_login(login: &str) -> Condition {
+    Condition::any()
+        .add(user::Column::Username.eq(login))
+        .add(user::Column::Email.eq(login))
 }
 
 async fn revoke<C: ConnectionTrait, F: IntoCondition>(db: &C, scope: F) -> Result<u64, AuthError> {
@@ -165,11 +179,7 @@ impl AuthService {
 
     async fn find_by_login(&self, login: &str) -> Result<Option<User>, AuthError> {
         Ok(user::Entity::find()
-            .filter(
-                Condition::any()
-                    .add(user::Column::Username.eq(login))
-                    .add(user::Column::Email.eq(login)),
-            )
+            .filter(matches_login(login))
             .one(&self.db)
             .await?)
     }
@@ -191,15 +201,24 @@ impl AuthService {
     /// password, [`AuthError::Sign`] when signing fails, and
     /// [`AuthError::Store`] when the database fails.
     pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
-        let user = self
-            .find_by_login(login.trim())
-            .await?
-            .ok_or(AuthError::CredentialsInvalid)?;
-        let credential = auth_credential::Entity::find_by_id(user.id)
+        let credential: RelationDef = auth_credential::Entity::belongs_to(user::Entity)
+            .from(auth_credential::Column::UserId)
+            .to(user::Column::Id)
+            .into();
+        let Some(Credentialed {
+            user,
+            password_hash,
+        }) = user::Entity::find()
+            .join(JoinType::InnerJoin, credential.rev())
+            .column(auth_credential::Column::PasswordHash)
+            .filter(matches_login(login.trim()))
+            .into_model::<Credentialed>()
             .one(&self.db)
             .await?
-            .ok_or(AuthError::CredentialsInvalid)?;
-        if !verify_password(password, &credential.password_hash) {
+        else {
+            return Err(AuthError::CredentialsInvalid);
+        };
+        if !verify_password(password, &password_hash) {
             return Err(AuthError::CredentialsInvalid);
         }
         let tokens = self.issue_tokens(&self.db, user.id, Uuid::new_v4()).await?;
