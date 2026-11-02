@@ -13,7 +13,7 @@ use lemma_core::{ContentBlock, Message as CoreMessage, StopReason, TextContent};
 use lemma_model::ProviderKind;
 use lemma_provider::{CreateInput, ProviderService};
 use lemma_test_db::on_each_database;
-use sea_orm::DatabaseConnection;
+use sea_orm::{ConnectionTrait, DatabaseConnection};
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use uuid::Uuid;
 
@@ -502,26 +502,75 @@ async fn the_conversation_tables_roll_back_and_reapply() -> Result<(), Box<dyn E
         let ada = sign_up(&db, "ada").await?;
         let conversations = ConversationService::new(db.clone());
         let id = conversations.create(ada).await?.id;
+        let last_model = LastModel {
+            provider_id: Uuid::new_v4(),
+            model: "model-a".to_owned(),
+        };
 
         Migrator::down(&db, None).await?;
+        let listed = conversations.list_conversations(ada).await;
+        let found = conversations.find(ada, id).await;
         let renamed = conversations.rename(ada, id, "Plans").await;
         let created = conversations.create(ada).await;
+        let deleted = conversations.delete(ada, id).await;
+        let page = conversations.list_messages(ada, id, None, 2).await;
+        let appended = conversations
+            .append_message(entry(id, None, "message", at(0)))
+            .await;
+        let message_updated = conversations
+            .update_message(
+                Uuid::new_v4(),
+                MessageUpdate {
+                    body: entry(id, None, "settled", at(1)).body,
+                    status: MessageStatus::Done,
+                    error: None,
+                },
+            )
+            .await;
+        let all_messages = conversations.all_messages(id).await;
+        let leaf_updated = conversations.update_leaf(ada, id, Uuid::new_v4()).await;
+        let model_updated = conversations.update_last_model(ada, id, &last_model).await;
         Migrator::up(&db, None).await?;
 
-        assert!(
-            matches!(renamed, Err(ConversationError::Store(_))),
-            "rename without tables: {renamed:?}"
-        );
-        assert!(
-            matches!(created, Err(ConversationError::Store(_))),
-            "create without tables: {created:?}"
-        );
+        for (operation, failed) in [
+            ("list conversations", listed.err()),
+            ("find", found.err()),
+            ("rename", renamed.err()),
+            ("create", created.err()),
+            ("delete", deleted.err()),
+            ("initial message page", page.err()),
+            ("append message", appended.err()),
+            ("update message", message_updated.err()),
+            ("all messages", all_messages.err()),
+            ("update leaf", leaf_updated.err()),
+            ("update last model", model_updated.err()),
+        ] {
+            assert!(
+                matches!(failed, Some(ConversationError::Store(_))),
+                "{operation} without tables: {failed:?}"
+            );
+        }
         let ada = sign_up(&db, "ada").await?;
         assert!(
             conversations.list_conversations(ada).await?.is_empty(),
             "rolled back rows are gone"
         );
-        conversations.create(ada).await?;
+        let id = conversations.create(ada).await?.id;
+        db.execute_unprepared("DROP TABLE messages").await?;
+        let first_page = conversations.list_messages(ada, id, None, 2).await;
+        let cursor_page = conversations
+            .list_messages(ada, id, Some(Uuid::new_v4()), 2)
+            .await;
+
+        for (operation, failed) in [
+            ("first page", first_page.err()),
+            ("cursor lookup", cursor_page.err()),
+        ] {
+            assert!(
+                matches!(failed, Some(ConversationError::Store(_))),
+                "{operation} without the messages table: {failed:?}"
+            );
+        }
         Ok(())
     })
     .await

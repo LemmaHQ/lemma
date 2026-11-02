@@ -492,6 +492,12 @@ async fn the_providers_table_rolls_back_and_reapplies() -> Result<(), Box<dyn Er
             ..Default::default()
         };
         let updated = providers.update(ada, created.id, disabled).await;
+        let empty_updated = providers
+            .update(ada, created.id, UpdateInput::default())
+            .await;
+        let adapted = providers.adapter(ada, created.id).await;
+        let fetched = providers.fetch_models_for(ada, created.id).await;
+        let checked = providers.check_for(ada, created.id, "model-a").await;
         let deleted = providers.delete(ada, created.id).await;
         Migrator::up(&db, None).await?;
 
@@ -499,6 +505,10 @@ async fn the_providers_table_rolls_back_and_reapplies() -> Result<(), Box<dyn Er
             ("list", listed.err()),
             ("create", inserted.err()),
             ("update", updated.err()),
+            ("empty update", empty_updated.err()),
+            ("adapter", adapted.err()),
+            ("fetch models", fetched.err()),
+            ("check", checked.err()),
             ("delete", deleted.err()),
         ] {
             assert!(

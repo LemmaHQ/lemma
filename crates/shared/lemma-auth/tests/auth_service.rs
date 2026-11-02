@@ -22,33 +22,33 @@ fn service(db: DatabaseConnection) -> AuthService {
     AuthService::new(db, "test-secret".to_owned())
 }
 
-async fn refuse_inserts(db: &DatabaseConnection, table: &str) -> Result<(), DbErr> {
+async fn refuse_writes(db: &DatabaseConnection, table: &str, operation: &str) -> Result<(), DbErr> {
     if db.get_database_backend() == DbBackend::Postgres {
         db.execute_unprepared(
-            "CREATE OR REPLACE FUNCTION refuse_insert() RETURNS trigger LANGUAGE plpgsql \
-             AS $$ BEGIN RAISE EXCEPTION 'insert refused'; END $$",
+            "CREATE OR REPLACE FUNCTION refuse_write() RETURNS trigger LANGUAGE plpgsql \
+             AS $$ BEGIN RAISE EXCEPTION 'write refused'; END $$",
         )
         .await?;
         db.execute_unprepared(&format!(
-            "CREATE TRIGGER refuse_insert BEFORE INSERT ON {table} \
-             FOR EACH ROW EXECUTE FUNCTION refuse_insert()"
+            "CREATE TRIGGER refuse_write BEFORE {operation} ON {table} \
+             FOR EACH ROW EXECUTE FUNCTION refuse_write()"
         ))
         .await?;
     } else {
         db.execute_unprepared(&format!(
-            "CREATE TRIGGER refuse_insert BEFORE INSERT ON {table} \
-             BEGIN SELECT RAISE(ABORT, 'insert refused'); END"
+            "CREATE TRIGGER refuse_write BEFORE {operation} ON {table} \
+             BEGIN SELECT RAISE(ABORT, 'write refused'); END"
         ))
         .await?;
     }
     Ok(())
 }
 
-async fn allow_inserts(db: &DatabaseConnection, table: &str) -> Result<(), DbErr> {
+async fn allow_writes(db: &DatabaseConnection, table: &str) -> Result<(), DbErr> {
     let statement = if db.get_database_backend() == DbBackend::Postgres {
-        format!("DROP TRIGGER refuse_insert ON {table}")
+        format!("DROP TRIGGER refuse_write ON {table}")
     } else {
-        "DROP TRIGGER refuse_insert".to_owned()
+        "DROP TRIGGER refuse_write".to_owned()
     };
     db.execute_unprepared(&statement).await?;
     Ok(())
@@ -231,9 +231,9 @@ async fn a_sign_up_failing_midway_leaves_no_account() -> Result<(), Box<dyn Erro
         let auth = service(db.clone());
 
         for table in ["auth_credentials", "refresh_tokens"] {
-            refuse_inserts(&db, table).await?;
+            refuse_writes(&db, table, "INSERT").await?;
             let failed = auth.sign_up("ada", "ada@example.com", PASSWORD).await;
-            allow_inserts(&db, table).await?;
+            allow_writes(&db, table).await?;
 
             assert!(
                 matches!(failed, Err(AuthError::Store(_))),
@@ -256,15 +256,47 @@ async fn a_refresh_failing_to_issue_keeps_the_presented_token() -> Result<(), Bo
         let auth = service(db.clone());
         let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        refuse_inserts(&db, "refresh_tokens").await?;
+        refuse_writes(&db, "refresh_tokens", "INSERT").await?;
+        let failed_login = auth.login("ada", PASSWORD).await;
         let failed = auth.refresh(&session.tokens.refresh_token).await;
-        allow_inserts(&db, "refresh_tokens").await?;
+        allow_writes(&db, "refresh_tokens").await?;
 
         assert!(
-            matches!(failed, Err(AuthError::Store(_))),
+            matches!(&failed_login, Err(AuthError::Store(message)) if message.contains("write refused")),
+            "login issuing refused: {failed_login:?}"
+        );
+        assert!(
+            matches!(&failed, Err(AuthError::Store(message)) if message.contains("write refused")),
             "issuing refused: {failed:?}"
         );
         auth.refresh(&session.tokens.refresh_token).await?;
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_refresh_failing_to_revoke_leaves_every_token_as_it_was() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let auth = service(db.clone());
+        let first = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let second = auth.refresh(&first.tokens.refresh_token).await?;
+
+        refuse_writes(&db, "refresh_tokens", "UPDATE").await?;
+        let rotation = auth.refresh(&second.refresh_token).await;
+        let replay = auth.refresh(&first.tokens.refresh_token).await;
+        allow_writes(&db, "refresh_tokens").await?;
+
+        for (operation, failed) in [
+            ("revoking the presented token", rotation.err()),
+            ("revoking the replayed token's family", replay.err()),
+        ] {
+            assert!(
+                matches!(&failed, Some(AuthError::Store(message)) if message.contains("write refused")),
+                "{operation}: {failed:?}"
+            );
+        }
+        auth.refresh(&second.refresh_token).await?;
         Ok(())
     })
     .await
@@ -375,16 +407,30 @@ async fn debug_output_never_reveals_the_signing_secret() -> Result<(), Box<dyn E
 async fn the_auth_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db.clone());
-        auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
         Migrator::down(&db, None).await?;
-        let without_tables = auth.sign_up("bob", "bob@example.com", PASSWORD).await;
+        let signed_up = auth.sign_up("bob", "bob@example.com", PASSWORD).await;
+        let account_exists = auth.account_exists("ada").await;
+        let logged_in = auth.login("ada", PASSWORD).await;
+        let refreshed = auth.refresh(&session.tokens.refresh_token).await;
+        let logged_out = auth.logout(Some(&session.tokens.refresh_token)).await;
+        let me = auth.me(session.user.id).await;
         Migrator::up(&db, None).await?;
 
-        assert!(
-            matches!(without_tables, Err(AuthError::Store(_))),
-            "sign-up without tables: {without_tables:?}"
-        );
+        for (operation, failed) in [
+            ("sign-up", signed_up.err()),
+            ("account exists", account_exists.err()),
+            ("login", logged_in.err()),
+            ("refresh", refreshed.err()),
+            ("logout", logged_out.err()),
+            ("me", me.err()),
+        ] {
+            assert!(
+                matches!(failed, Some(AuthError::Store(_))),
+                "{operation} without tables: {failed:?}"
+            );
+        }
         assert!(
             !auth.account_exists("ada").await?,
             "rolling back drops accounts"
