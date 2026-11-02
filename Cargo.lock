@@ -2270,12 +2270,17 @@ name = "lemma-agent"
 version = "0.1.0"
 dependencies = [
  "dashmap",
+ "futures",
  "lemma-agent-loop",
+ "lemma-auth",
  "lemma-conversation",
  "lemma-core",
  "lemma-model",
  "lemma-provider",
+ "lemma-test-db",
  "lemma-tools",
+ "sea-orm-migration",
+ "serde_json",
  "thiserror",
  "tokio",
  "uuid",
