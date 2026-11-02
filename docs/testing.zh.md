@@ -16,7 +16,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 `just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖行时失败，其余指标只报告；`just mobile-android-cov` 只报告覆盖率，没有门槛。
 
-- **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-server`、`lemma-proto`、Node-API addon `lemma-desktop`、UniFFI facade `lemma-mobile`、只供测试使用的 `lemma-test-db`，以及 `entity/` 下的 SeaORM entity 文件。
+- **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-proto`、Node-API addon `lemma-desktop`、UniFFI facade `lemma-mobile`、只供测试使用的 `lemma-test-db`、`lemma-server` 的二进制文件 `main.rs`、`config.rs` 与 `server_mode.rs`，以及 `entity/` 下的 SeaORM entity 文件。
 - **Web**：`just web-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、`src/i18n/locales/` 与入口 `src/main.tsx`。
 - **桌面端**：`just desktop-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、Electron 入口 `src/main.ts`、`src/preload.ts`、`src/engine-host.ts` 与常量文件 `src/titlebar.ts`。
 - **Packages**：`just packages-cov` 以 v8 覆盖率对 `packages/ui/src/` 下的所有文件运行 vitest。
@@ -28,7 +28,7 @@ Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop`�
 
 `cargo nextest` 让每个 Rust 测试在独立进程中运行，不运行 doctest。[.config/nextest.toml](../.config/nextest.toml) 中的 `ci` profile 把 JUnit XML 写到 `target/nextest/ci/junit.xml`；Coverage 工作流通过 `NEXTEST_PROFILE=ci` 选用它。
 
-编译 workspace 会编译嵌入 `web/dist` 的 `lemma-server`；因此 Rust CI 在 clippy 与测试之前先构建 Web 客户端。
+编译 workspace 会编译嵌入 `web/dist` 的 `lemma-server`；因此 Rust CI 与 Coverage 工作流的 Rust job 都先构建 Web 客户端。
 
 ## 用真实实现代替 mock
 

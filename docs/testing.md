@@ -16,7 +16,7 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 `just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line and reports the other metrics; `just mobile-android-cov` reports coverage without a gate.
 
-- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the test-only `lemma-test-db`, and the SeaORM entity files under `entity/`.
+- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the test-only `lemma-test-db`, the `lemma-server` binary files `main.rs`, `config.rs`, and `server_mode.rs`, and the SeaORM entity files under `entity/`.
 - **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
 - **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, and the `src/titlebar.ts` constant.
 - **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.
@@ -28,7 +28,7 @@ The Coverage workflow runs these recipes and uploads their reports to Codecov un
 
 `cargo nextest` runs each Rust test in its own process and does not run doctests. Its `ci` profile in [.config/nextest.toml](../.config/nextest.toml) writes JUnit XML to `target/nextest/ci/junit.xml`; the Coverage workflow selects it with `NEXTEST_PROFILE=ci`.
 
-Compiling the workspace includes `lemma-server`, which embeds `web/dist`; Rust CI therefore builds the web client before clippy and tests.
+Compiling the workspace includes `lemma-server`, which embeds `web/dist`; Rust CI and the Coverage workflow's Rust job therefore build the web client first.
 
 ## Real implementations over mocks
 

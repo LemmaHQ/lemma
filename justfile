@@ -62,12 +62,11 @@ rust-test:
 [group('rust')]
 rust-cov *args="--summary-only":
     cargo llvm-cov nextest --workspace \
-        --exclude lemma-server \
         --exclude lemma-proto \
         --exclude lemma-desktop \
         --exclude lemma-mobile \
         --exclude lemma-test-db \
-        --ignore-filename-regex '[/\\\\]entity[/\\\\]' \
+        --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode)\.rs$)' \
         --fail-uncovered-lines 0 \
         {{ args }}
 
