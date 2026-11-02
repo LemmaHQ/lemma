@@ -1,15 +1,14 @@
 //! `ReqwestTransport` against a real HTTP server on the loopback interface.
 
 use std::error::Error;
-use std::io;
 
 use axum::Router;
-use axum::body::{Body, Bytes};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
-use futures::{StreamExt, stream};
+use futures::StreamExt;
 use lemma_adapter::{HttpTransport, ReqwestTransport};
 use serde_json::{Value, json};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 async fn serve(router: Router) -> Result<String, Box<dyn Error>> {
@@ -67,28 +66,39 @@ async fn an_error_status_fails_with_the_status_and_body() -> Result<(), Box<dyn 
 
 #[tokio::test]
 async fn an_error_body_cut_off_midway_fails_as_a_transport_error() -> Result<(), Box<dyn Error>> {
-    let router = Router::new().route(
-        "/stream",
-        post(|| async {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Body::from_stream(stream::iter([
-                    Ok(Bytes::from_static(b"partial")),
-                    Err(io::Error::other("connection reset")),
-                ])),
-            )
-        }),
-    );
-    let base = serve(router).await?;
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let address = listener.local_addr()?;
+    let server = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await?;
+        let mut request = Vec::new();
+        while !request.ends_with(b"\r\n\r\n{}") {
+            let mut chunk = [0; 1024];
+            let read = socket.read(&mut chunk).await?;
+            if read == 0 {
+                break;
+            }
+            request.extend_from_slice(&chunk[..read]);
+        }
+        socket
+            .write_all(b"HTTP/1.1 500 Internal Server Error\r\ncontent-length: 64\r\n\r\npartial")
+            .await?;
+        socket.shutdown().await
+    });
 
     let result = ReqwestTransport::new()
-        .post_stream(format!("{base}/stream"), Vec::new(), json!({}))
+        .post_stream(format!("http://{address}/stream"), Vec::new(), json!({}))
         .await;
 
     let Err(error) = result else {
         return Err("a cut-off error body streamed".into());
     };
-    assert!(error.message.starts_with("transport: "), "{error}");
+    assert!(
+        error
+            .message
+            .starts_with("transport: error decoding response body"),
+        "{error}"
+    );
+    server.await??;
     Ok(())
 }
 
