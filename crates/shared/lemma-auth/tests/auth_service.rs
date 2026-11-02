@@ -170,18 +170,23 @@ async fn concurrent_refreshes_of_one_token_revoke_its_family() -> Result<(), Box
 }
 
 #[tokio::test]
-async fn refresh_rejects_an_expired_token() -> Result<(), Box<dyn Error>> {
+async fn refresh_rejects_an_unknown_or_expired_token() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db.clone());
         let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
         db.execute_unprepared("UPDATE refresh_tokens SET expires_at = '2020-01-01 00:00:00+00:00'")
             .await?;
 
-        let refreshed = auth.refresh(&session.tokens.refresh_token).await;
+        let unknown = auth.refresh("never-issued").await;
+        let expired = auth.refresh(&session.tokens.refresh_token).await;
 
         assert!(
-            matches!(refreshed, Err(AuthError::TokenInvalid)),
-            "expired token: {refreshed:?}"
+            matches!(unknown, Err(AuthError::TokenInvalid)),
+            "unknown token: {unknown:?}"
+        );
+        assert!(
+            matches!(expired, Err(AuthError::TokenInvalid)),
+            "expired token: {expired:?}"
         );
         Ok(())
     })
