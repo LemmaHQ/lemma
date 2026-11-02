@@ -154,17 +154,15 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
         self.open = Some(block);
     }
 
-    fn apply(&mut self, event: StreamEvent) -> Result<(), String> {
+    fn apply(&mut self, event: StreamEvent) {
         match event {
             StreamEvent::TextStart => self.reopen(OpenBlock::Text(String::new())),
             StreamEvent::TextDelta { delta } => {
                 let at = Utc::now();
                 self.finish_thinking(at);
-                if !matches!(self.open, Some(OpenBlock::Text(_))) {
-                    self.reopen(OpenBlock::Text(String::new()));
-                }
-                if let Some(OpenBlock::Text(text)) = &mut self.open {
-                    text.push_str(&delta);
+                match &mut self.open {
+                    Some(OpenBlock::Text(text)) => text.push_str(&delta),
+                    _ => self.reopen(OpenBlock::Text(delta.clone())),
                 }
                 (self.observer)(TurnEvent::Delta { delta, at });
             }
@@ -176,19 +174,18 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
             }),
             StreamEvent::ThinkingDelta { delta } => {
                 let at = Utc::now();
-                if !matches!(self.open, Some(OpenBlock::Thinking { .. })) {
-                    self.reopen(OpenBlock::Thinking {
-                        text: String::new(),
-                        started_at: None,
+                match &mut self.open {
+                    Some(OpenBlock::Thinking {
+                        text, started_at, ..
+                    }) => {
+                        text.push_str(&delta);
+                        started_at.get_or_insert(at);
+                    }
+                    _ => self.reopen(OpenBlock::Thinking {
+                        text: delta.clone(),
+                        started_at: Some(at),
                         finished_at: None,
-                    });
-                }
-                if let Some(OpenBlock::Thinking {
-                    text, started_at, ..
-                }) = &mut self.open
-                {
-                    text.push_str(&delta);
-                    started_at.get_or_insert(at);
+                    }),
                 }
                 (self.observer)(TurnEvent::ThinkingDelta { delta, at });
             }
@@ -226,14 +223,13 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                 self.usage = usage;
             }
         }
-        Ok(())
     }
 
     async fn drain(&mut self, mut stream: BoxEventStream) -> Result<(), String> {
         use futures::StreamExt;
 
         while let Some(event) = stream.next().await {
-            self.apply(event.map_err(|e: ModelError| e.message)?)?;
+            self.apply(event.map_err(|e: ModelError| e.message)?);
         }
         Ok(())
     }
