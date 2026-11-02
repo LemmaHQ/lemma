@@ -19,5 +19,11 @@ lemma-proto.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 
+[dev-dependencies]
+lemma-adapter.workspace = true
+lemma-conversation.workspace = true
+lemma-provider.workspace = true
+sea-orm.workspace = true
+
 [lints]
 workspace = true
