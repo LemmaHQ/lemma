@@ -66,9 +66,9 @@ pub fn seal(key: &Key<Aes256Gcm>, plaintext: &str) -> Result<String, CryptoError
 /// for a wrong key or tampered data.
 pub fn open(key: &Key<Aes256Gcm>, sealed: &str) -> Result<String, CryptoError> {
     let raw = STANDARD.decode(sealed).map_err(|_| CryptoError::Encoding)?;
-    let (nonce, ct) = raw.split_at_checked(12).ok_or(CryptoError::Encoding)?;
+    let (nonce, ct) = raw.split_first_chunk::<12>().ok_or(CryptoError::Encoding)?;
     let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::<Aes256Gcm>::try_from(nonce).map_err(|_| CryptoError::Encoding)?;
+    let nonce = Nonce::<Aes256Gcm>::from(*nonce);
     let pt = cipher
         .decrypt(&nonce, ct)
         .map_err(|_| CryptoError::Decrypt)?;
