@@ -6,8 +6,8 @@ use std::fmt::{self, Debug};
 use chrono::{Duration, Utc};
 use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, DbErr,
-    EntityTrait, QueryFilter, Set, SqlErr, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait,
+    QueryFilter, Set, SqlErr, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -129,7 +129,7 @@ impl AuthService {
             Ok(user) => user,
             Err(e) if matches!(e.sql_err(), Some(SqlErr::UniqueConstraintViolation(_))) => {
                 tx.rollback().await?;
-                return Err(self.conflict(username, email, e).await?);
+                return Err(self.conflict(username, email).await?);
             }
             Err(e) => return Err(e.into()),
         };
@@ -144,14 +144,8 @@ impl AuthService {
         Ok(Session { user, tokens })
     }
 
-    /// Names the field a rejected signup collides with, the username first;
-    /// `violation` becomes a store error when no colliding account remains.
-    async fn conflict(
-        &self,
-        username: &str,
-        email: &str,
-        violation: DbErr,
-    ) -> Result<AuthError, AuthError> {
+    /// Names the field a rejected signup collides with, the username first.
+    async fn conflict(&self, username: &str, email: &str) -> Result<AuthError, AuthError> {
         let existing = user::Entity::find()
             .filter(
                 Condition::any()
@@ -163,8 +157,6 @@ impl AuthService {
         Ok(
             if existing.iter().any(|account| account.username == username) {
                 AuthError::UsernameTaken
-            } else if existing.is_empty() {
-                violation.into()
             } else {
                 AuthError::EmailTaken
             },
