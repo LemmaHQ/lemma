@@ -5,11 +5,8 @@ use axum::{
     http::{Response, StatusCode, Uri, header, header::HeaderValue},
     response::IntoResponse,
 };
-use rust_embed::Embed;
 
-#[derive(Embed)]
-#[folder = "../../../web/dist"]
-struct WebDist;
+use crate::web_dist::WebDist;
 
 pub async fn handler(uri: Uri) -> Response<Body> {
     let path = uri.path().trim_start_matches('/');

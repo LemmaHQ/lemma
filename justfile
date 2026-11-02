@@ -66,7 +66,7 @@ rust-cov *args="--summary-only":
         --exclude lemma-desktop \
         --exclude lemma-mobile \
         --exclude lemma-test-db \
-        --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode)\.rs$)' \
+        --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$)' \
         --fail-uncovered-lines 0 \
         {{ args }}
 

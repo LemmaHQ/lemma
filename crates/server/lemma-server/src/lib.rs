@@ -3,5 +3,6 @@
 
 mod http_server;
 mod web;
+mod web_dist;
 
 pub use http_server::{app, serve};
