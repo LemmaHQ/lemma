@@ -4,7 +4,7 @@ mod common;
 
 use std::error::Error;
 
-use futures::stream;
+use futures::{FutureExt, stream};
 use lemma_agent_loop::{AgentLoop, CancelToken, TurnEvent};
 use lemma_conversation::{MessageBody, MessageStatus};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
@@ -109,4 +109,16 @@ async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn
         Ok(())
     })
     .await
+}
+
+#[test]
+fn cancelled_completes_at_once_for_a_token_cancelled_earlier() {
+    let token = CancelToken::new();
+    token.cancel();
+
+    assert_eq!(
+        token.cancelled().now_or_never(),
+        Some(()),
+        "an earlier cancel is already observed"
+    );
 }
