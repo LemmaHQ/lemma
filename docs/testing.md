@@ -14,9 +14,9 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 ## Coverage
 
-`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` and `just mobile-android-cov` report coverage without a gate.
+`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line and reports the other metrics; `just mobile-android-cov` reports coverage without a gate.
 
-- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-proto`, the Node-API addon `lemma-desktop`, the test-only `lemma-test-db`, and the SeaORM entity files under `entity/`.
+- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-server`, `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the test-only `lemma-test-db`, and the SeaORM entity files under `entity/`.
 - **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
 - **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, and the `src/titlebar.ts` constant.
 - **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.
