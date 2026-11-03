@@ -12,7 +12,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 - **Modules** use `foo.rs` beside a `foo/` directory. A module with submodules, crate roots included, holds only `mod` declarations, re-exports, and a binary's `fn main`; a leaf file is named after its primary item (`AuthService` lives in `auth_service.rs`). A type's methods split across files take one file per resource (`session_service/messages.rs`).
 - **Ownership:** pass data by borrow (`&str`, `&[T]`, `Option<&T>`) and avoid copies. `Arc` holds only values that spawned tasks or request handlers share. Parameters are generic instead of `dyn Trait` and take concrete types instead of `impl Into<T>`; `dyn` remains only for heterogeneous collections such as the tool registry and at the UniFFI boundary.
 - **Lifetimes** appear only where inference needs them and carry descriptive names (`'conn`, not `'a`).
-- **Workspace lints** in the root `Cargo.toml` deny `missing_docs`, `clippy::unwrap_used`, and the clippy lints that encode the style guide, and warn on `clippy::expect_used`; every crate opts in with `[lints] workspace = true`.
+- **Workspace lints** live in the root `Cargo.toml`; every crate opts in with `[lints] workspace = true`.
 
 ## Doc comments
 
@@ -23,7 +23,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, including Android through `lemma-mobile`. `rpc/` holds one crate per proto service, plus `lemma-host`, which assembles them into one router and serves it in-process. Crates under a host directory build only into that host: `server/` into `lemma-server`, `desktop/` into the Electron shell, `mobile/` into the Android app. `test/` holds crates that only tests use, as dev-dependencies; no runtime links them.
+- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
 - Crates are named `lemma-<concept>`.
 - `lemma-auth`, `lemma-session`, and `lemma-provider` own their tables and SeaORM migrations in `src/migration/`; `lemma-host` runs them in name order. Scaffold one with `sea-orm-cli migrate init -d <tmp>` and `migrate generate <name> -d <tmp>`, then move it in.
 
@@ -33,5 +33,5 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 just rust-lint-check    # clippy over all targets, warnings denied; rust-lint applies fixes
 just rust-fmt-check     # cargo fmt --check; rust-fmt formats
 just rust-test          # cargo nextest run --workspace
-just rust-cov           # llvm-cov summary, fails on any uncovered line or function; `just rust-cov --html --open` opens the report
+just rust-cov           # llvm-cov summary, fails on any uncovered line or function
 ```

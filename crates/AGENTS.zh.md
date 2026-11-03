@@ -12,7 +12,7 @@
 - **模块** 采用 `foo.rs` 与同名 `foo/` 目录并列。含子模块的模块（包括 crate 根）只包含 `mod` 声明、re-export 以及二进制的 `fn main`；叶子文件以其主要条目命名（`AuthService` 位于 `auth_service.rs`）。一个类型的方法拆到多个文件时，每个资源一个文件（`session_service/messages.rs`）。
 - **所有权：** 数据以借用传递（`&str`、`&[T]`、`Option<&T>`），避免拷贝。`Arc` 只持有由派生任务或请求处理器共享的值。参数用泛型而非 `dyn Trait`，取具体类型而非 `impl Into<T>`；`dyn` 只保留给工具注册表这类异构集合以及 UniFFI 边界。
 - **生命周期** 只在推断不足时显式标注，并使用描述性名称（`'conn`，而非 `'a`）。
-- **Workspace lint** 定义在根 `Cargo.toml`，禁止 `missing_docs`、`clippy::unwrap_used` 以及落实本风格指南的 clippy lint，对 `clippy::expect_used` 给出警告；每个 crate 通过 `[lints] workspace = true` 启用。
+- **Workspace lint** 定义在根 `Cargo.toml`；每个 crate 通过 `[lints] workspace = true` 启用。
 
 ## 文档注释
 
@@ -23,7 +23,7 @@
 
 ## 布局
 
-- `shared/` 中的 crate 为所有运行时构建，Android 通过 `lemma-mobile` 链接。`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host` 把它们组装成一个路由，并在进程内提供它。宿主目录下的 crate 只编入该宿主：`server/` 编入 `lemma-server`，`desktop/` 编入 Electron 外壳，`mobile/` 编入 Android 应用。`test/` 中的 crate 只供测试使用，以 dev-dependency 引入，不链接进任何运行时。
+- `shared/` 中的 crate 为所有运行时构建，包括 Android；`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host`；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主；`test/` 中的 crate 只作为 dev-dependency 使用。
 - crate 命名为 `lemma-<concept>`。
 - `lemma-auth`、`lemma-session` 与 `lemma-provider` 在各自的 `src/migration/` 中拥有自己的表及其 SeaORM migration；`lemma-host` 按名称顺序运行它们。新增时用 `sea-orm-cli migrate init -d <tmp>` 与 `migrate generate <name> -d <tmp>` 在临时目录中生成骨架，再把文件移进来。
 
@@ -33,5 +33,5 @@
 just rust-lint-check    # 对全部 target 运行 clippy，拒绝警告；rust-lint 应用修复
 just rust-fmt-check     # cargo fmt --check；rust-fmt 格式化
 just rust-test          # cargo nextest run --workspace
-just rust-cov           # llvm-cov 汇总，存在未覆盖的行或函数时失败；`just rust-cov --html --open` 打开报告
+just rust-cov           # llvm-cov 汇总，存在未覆盖的行或函数时失败
 ```
