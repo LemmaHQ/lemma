@@ -6,7 +6,7 @@ use crate::error;
 use crate::http_transport::HttpTransport;
 
 #[derive(Deserialize)]
-struct ModelsList {
+struct ModelList {
     data: Vec<IdOnly>,
 }
 
@@ -16,7 +16,7 @@ struct IdOnly {
 }
 
 #[derive(Deserialize)]
-struct GeminiModels {
+struct GeminiModelList {
     models: Vec<NameOnly>,
 }
 
@@ -53,7 +53,7 @@ pub(crate) async fn list_models<T: HttpTransport>(
     let bad_body = |e: serde_json::Error| error::protocol(format!("bad model list: {e}"));
     match endpoint.kind {
         ProviderKind::Gemini => {
-            let list: GeminiModels = serde_json::from_value(body).map_err(bad_body)?;
+            let list: GeminiModelList = serde_json::from_value(body).map_err(bad_body)?;
             Ok(list
                 .models
                 .into_iter()
@@ -64,7 +64,7 @@ pub(crate) async fn list_models<T: HttpTransport>(
                 .collect())
         }
         ProviderKind::OpenAiCompatible | ProviderKind::Anthropic => {
-            let list: ModelsList = serde_json::from_value(body).map_err(bad_body)?;
+            let list: ModelList = serde_json::from_value(body).map_err(bad_body)?;
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }
     }
