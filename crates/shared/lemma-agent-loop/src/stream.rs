@@ -103,19 +103,17 @@ impl OpenBlock {
     }
 }
 
-/// Folds stream events into content blocks, forwarding deltas to the
-/// observer.
-struct Accumulator<'obs, O> {
+/// Folds stream events into content blocks.
+struct Accumulator {
     blocks: Vec<ContentBlock>,
     open: Option<OpenBlock>,
     usage: Option<Usage>,
     stop_reason: StopReason,
-    observer: &'obs O,
     pending_thinking: Option<usize>,
     ended_at: Option<DateTime<Utc>>,
 }
 
-impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
+impl Accumulator {
     fn close_open(&mut self, signature: Option<String>) {
         if let Some(prev) = self.open.take() {
             let block = prev.close(signature);
@@ -154,7 +152,7 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
         self.open = Some(block);
     }
 
-    fn apply(&mut self, event: StreamEvent) {
+    fn apply(&mut self, event: StreamEvent) -> Option<TurnEvent> {
         match event {
             StreamEvent::TextStart => self.reopen(OpenBlock::Text(String::new())),
             StreamEvent::TextDelta { delta } => {
@@ -164,7 +162,7 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                     Some(OpenBlock::Text(text)) => text.push_str(&delta),
                     _ => self.reopen(OpenBlock::Text(delta.clone())),
                 }
-                (self.observer)(TurnEvent::Delta { delta, at });
+                return Some(TurnEvent::Delta { delta, at });
             }
             StreamEvent::TextEnd => self.close_open(None),
             StreamEvent::ThinkingStart => self.reopen(OpenBlock::Thinking {
@@ -187,7 +185,7 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                         finished_at: None,
                     }),
                 }
-                (self.observer)(TurnEvent::ThinkingDelta { delta, at });
+                return Some(TurnEvent::ThinkingDelta { delta, at });
             }
             StreamEvent::ThinkingEnd { signature } => self.close_open(signature),
             StreamEvent::ToolCallStart { id, name } => {
@@ -223,13 +221,20 @@ impl<O: Fn(TurnEvent)> Accumulator<'_, O> {
                 self.usage = usage;
             }
         }
+        None
     }
 
-    async fn drain(&mut self, mut stream: BoxEventStream) -> Result<(), String> {
+    async fn drain<O: Fn(TurnEvent)>(
+        &mut self,
+        mut stream: BoxEventStream,
+        observer: &O,
+    ) -> Result<(), String> {
         use futures::StreamExt;
 
         while let Some(event) = stream.next().await {
-            self.apply(event.map_err(|e: ModelError| e.message)?);
+            if let Some(delta) = self.apply(event.map_err(|e: ModelError| e.message)?) {
+                observer(delta);
+            }
         }
         Ok(())
     }
@@ -248,13 +253,12 @@ pub(crate) async fn run_stream<A: Adapter, O: Fn(TurnEvent)>(
         open: None,
         usage: None,
         stop_reason: StopReason::Stop,
-        observer,
         pending_thinking: None,
         ended_at: None,
     };
     let streamed = async {
         let stream = adapter.stream(req).await.map_err(|e| e.message)?;
-        acc.drain(stream).await
+        acc.drain(stream, observer).await
     };
     let end = tokio::select! {
         result = streamed => match result {
