@@ -81,7 +81,7 @@ service AuthService {
   rpc CheckAccount(CheckAccountRequest) returns (CheckAccountResponse);
   // Token rotation: revokes the previous refresh token and issues a new pair.
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
-  // Revokes the active refresh token session.
+  // Revokes the presented refresh token, ending its token family.
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc Me(MeRequest) returns (MeResponse);
 }

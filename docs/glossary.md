@@ -48,6 +48,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **in-process engine** — `LemmaEngine` from `lemma-mobile`, which serves the Connect router inside the Android app; the app reaches it through UniFFI bindings.
 - **access token** — a JWT signed with the JWT secret, valid for 15 minutes, carrying the user id in `sub`.
 - **refresh token** — a random token valid for 30 days; the store keeps only its SHA-256 hash, and each refresh revokes it and issues a new pair.
+- **token family** — the refresh tokens a login and its rotations issue, sharing one `family_id`. Presenting a rotated or revoked token again revokes the whole family.
 - **cookie mode** — the browser client's authentication when the API shares its origin: tokens travel in the `lemma_access` and `lemma_refresh` cookies instead of an `Authorization` header.
 - **sealed key** — a provider API key encrypted with AES-256-GCM by `lemma-crypto` under a key derived from the secret key. Changing the secret key makes every sealed key unreadable.
 

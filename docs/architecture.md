@@ -45,7 +45,7 @@ The web client fetches conversations and messages from the host on each view. Th
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
-`AuthService.Me` and every RPC of `ProviderService`, `ConversationService`, and `AgentService` resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id. The other `AuthService` RPCs and `SystemService` answer without a session.
+`AuthService.Me` and every RPC of `ProviderService`, `ConversationService`, and `AgentService` resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id. The other `AuthService` RPCs and `SystemService` answer without authentication.
 
 ## The path of one turn
 

@@ -10,7 +10,7 @@ import {
 } from "@/gen/lemma/v1/auth_pb";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
-type Session = {
+type SignedIn = {
     tokens?: AuthTokens | undefined;
     user?: User | undefined;
 };
@@ -30,17 +30,17 @@ const rpc = vi.hoisted(() => ({
     checkAccount:
         vi.fn<(req: { login: string }) => Promise<{ exists: boolean }>>(),
     login: vi.fn<
-        (req: { login: string; password: string }) => Promise<Session>
+        (req: { login: string; password: string }) => Promise<SignedIn>
     >(),
     signUp: vi.fn<
         (req: {
             username: string;
             email: string;
             password: string;
-        }) => Promise<Session>
+        }) => Promise<SignedIn>
     >(),
     logout: vi.fn<(req: { refreshToken?: string }) => Promise<unknown>>(),
-    me: vi.fn<(req: object) => Promise<Session>>(),
+    me: vi.fn<(req: object) => Promise<SignedIn>>(),
 }));
 
 vi.mock("@/platform/platform", () => ({
@@ -96,7 +96,7 @@ describe("with bearer tokens", () => {
     it.each<[string, (auth: AuthActions) => Promise<void>]>([
         ["signs in", (auth) => auth.login("alice", "pw")],
         ["signs up", (auth) => auth.signup("alice", "a@x.io", "pw")],
-    ])("stores the session when it %s", async (_case, act) => {
+    ])("stores the tokens and user when it %s", async (_case, act) => {
         const { useAuth } = await loadStore(false);
         rpc.login.mockResolvedValue({ tokens: tokens(), user: user() });
         rpc.signUp.mockResolvedValue({ tokens: tokens(), user: user() });
@@ -111,7 +111,7 @@ describe("with bearer tokens", () => {
         });
     });
 
-    it("rejects a session without tokens", async () => {
+    it("rejects a response without tokens", async () => {
         const { useAuth } = await loadStore(false);
         rpc.login.mockResolvedValue({ user: user() });
 
@@ -122,7 +122,7 @@ describe("with bearer tokens", () => {
         expect(stored().userId).toBeNull();
     });
 
-    it("stays signed out when the session names no user", async () => {
+    it("stays signed out when the response names no user", async () => {
         const { useAuth } = await loadStore(false);
         rpc.login.mockResolvedValue({ tokens: tokens() });
 
@@ -132,7 +132,7 @@ describe("with bearer tokens", () => {
         expect(stored().userId).toBeNull();
     });
 
-    it("revokes the refresh token and forgets the session on sign-out", async () => {
+    it("revokes the refresh token and forgets the tokens on sign-out", async () => {
         const { useAuth } = await loadStore(false);
         rpc.login.mockResolvedValue({ tokens: tokens(), user: user() });
         rpc.logout.mockRejectedValue(new Error("offline"));
@@ -153,7 +153,7 @@ describe("with bearer tokens", () => {
         expect(rpc.logout).not.toHaveBeenCalled();
     });
 
-    it("skips the session check without a stored access token", async () => {
+    it("skips the account check without a stored access token", async () => {
         const { ensureAuthReady, useAuth } = await loadStore(false);
 
         await ensureAuthReady();
@@ -162,7 +162,7 @@ describe("with bearer tokens", () => {
         expect(useAuth.getState().user).toBeNull();
     });
 
-    it("restores the stored session once", async () => {
+    it("restores the signed-in user from stored tokens once", async () => {
         localStorage.setItem("lemma.access_token", "access");
         const { ensureAuthReady, useAuth } = await loadStore(false);
         rpc.me.mockResolvedValue({ user: user() });
@@ -174,7 +174,7 @@ describe("with bearer tokens", () => {
         expect(stored().userId).toBe("u1");
     });
 
-    it("keeps no user when the session check names none", async () => {
+    it("keeps no user when the account check names none", async () => {
         localStorage.setItem("lemma.access_token", "access");
         const { ensureAuthReady, useAuth } = await loadStore(false);
         rpc.me.mockResolvedValue({});
@@ -197,8 +197,8 @@ describe("with bearer tokens", () => {
     });
 });
 
-describe("with session cookies", () => {
-    it("keeps no tokens and ends the cookie session on sign-out", async () => {
+describe("in cookie mode", () => {
+    it("keeps no tokens and clears the auth cookies on sign-out", async () => {
         const { useAuth } = await loadStore(true);
         rpc.login.mockResolvedValue({ user: user() });
 
@@ -209,7 +209,7 @@ describe("with session cookies", () => {
         expect(stored()).toEqual({ access: null, refresh: null, userId: null });
     });
 
-    it("restores the cookie session and discards leftover tokens", async () => {
+    it("restores the signed-in user from cookies and discards leftover tokens", async () => {
         localStorage.setItem("lemma.access_token", "stale");
         const { ensureAuthReady, useAuth } = await loadStore(true);
         rpc.me.mockResolvedValue({ user: user() });
@@ -224,9 +224,9 @@ describe("with session cookies", () => {
         ["names no user", () => rpc.me.mockResolvedValue({})],
         [
             "fails",
-            () => rpc.me.mockRejectedValue(new ConnectError("no session")),
+            () => rpc.me.mockRejectedValue(new ConnectError("unauthenticated")),
         ],
-    ])("stays signed out when the session check %s", async (_case, answer) => {
+    ])("stays signed out when the account check %s", async (_case, answer) => {
         const { ensureAuthReady, useAuth } = await loadStore(true);
         answer();
 

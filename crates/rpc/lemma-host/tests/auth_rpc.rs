@@ -1,4 +1,4 @@
-//! `AuthService` over Connect on a local engine: responses, session cookies,
+//! `AuthService` over Connect on a local engine: responses, auth cookies,
 //! and the error reasons clients receive.
 
 mod common;
@@ -38,7 +38,7 @@ fn cookie_pair(reply: &Reply, name: &str) -> Option<String> {
 }
 
 #[tokio::test]
-async fn sign_up_returns_the_user_and_sets_both_session_cookies() -> Result<(), Box<dyn Error>> {
+async fn sign_up_returns_the_user_and_sets_both_auth_cookies() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
 
     let reply = engine.call(SIGN_UP, &ada()).await?;
@@ -55,7 +55,7 @@ async fn sign_up_returns_the_user_and_sets_both_session_cookies() -> Result<(), 
                 "lemma_refresh={refresh}; HttpOnly; SameSite=Lax; Path=/lemma.v1.AuthService; Max-Age=2592000"
             ),
         ],
-        "session cookies"
+        "auth cookies"
     );
     engine.close().await?;
     Ok(())
@@ -115,7 +115,7 @@ async fn sign_up_and_login_rejections_carry_their_reasons() -> Result<(), Box<dy
 }
 
 #[tokio::test]
-async fn login_opens_a_session_by_username_or_email() -> Result<(), Box<dyn Error>> {
+async fn login_issues_tokens_by_username_or_email() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     engine.call(SIGN_UP, &ada()).await?;
 

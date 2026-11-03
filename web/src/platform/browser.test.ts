@@ -7,7 +7,7 @@ afterEach(() => {
     localStorage.clear();
 });
 
-it("talks to its own origin with session cookies by default", () => {
+it("talks to its own origin in cookie mode by default", () => {
     const adapter = new BrowserAdapter();
 
     expect(adapter.baseUrl).toBe("/");

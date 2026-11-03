@@ -66,6 +66,7 @@
 | semantic alias | 语义别名 | | |
 | theme | 主题 | | |
 | toast | 提示消息 | 吐司 | `sonner` 的 `toast` |
+| token family | 令牌族 | 令牌家族 | 一次登录及其后续轮换签发的全部 refresh token，共享 `family_id` |
 | tool | 工具 | | |
 | tooltip | 工具提示 | 提示、气泡提示 | `Tooltip` 组件 |
 | tutorial | 教程 | | 文档类型 |

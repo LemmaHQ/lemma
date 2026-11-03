@@ -85,7 +85,7 @@ class AuthInterceptorTest {
     }
 
     @Test
-    fun aFailedRotationClearsTheSessionAndReturnsThe401() {
+    fun aFailedRotationClearsTheTokensAndReturnsThe401() {
         settings.setAccessToken("access-1")
         settings.setRefreshToken("refresh-1")
         val client = client { respond(it, 401) }

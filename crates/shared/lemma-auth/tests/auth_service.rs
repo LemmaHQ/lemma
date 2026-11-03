@@ -130,13 +130,13 @@ async fn login_accepts_the_username_or_the_email() -> Result<(), Box<dyn Error>>
 async fn refresh_rotates_the_token_and_rejects_the_consumed_one() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        let rotated = auth.refresh(&session.tokens.refresh_token).await?;
-        let replayed = auth.refresh(&session.tokens.refresh_token).await;
+        let rotated = auth.refresh(&signed_in.tokens.refresh_token).await?;
+        let replayed = auth.refresh(&signed_in.tokens.refresh_token).await;
 
         assert_ne!(
-            rotated.refresh_token, session.tokens.refresh_token,
+            rotated.refresh_token, signed_in.tokens.refresh_token,
             "rotation issues a new token"
         );
         assert!(
@@ -182,8 +182,8 @@ async fn replaying_a_consumed_token_revokes_its_whole_family() -> Result<(), Box
 async fn concurrent_refreshes_of_one_token_revoke_its_family() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
-        let presented = &session.tokens.refresh_token;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let presented = &signed_in.tokens.refresh_token;
 
         let (a, b) = tokio::join!(auth.refresh(presented), auth.refresh(presented));
         let winner = [a, b].into_iter().flatten().collect::<Vec<_>>();
@@ -205,12 +205,12 @@ async fn concurrent_refreshes_of_one_token_revoke_its_family() -> Result<(), Box
 async fn refresh_rejects_an_unknown_or_expired_token() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db.clone());
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
         db.execute_unprepared("UPDATE refresh_tokens SET expires_at = '2020-01-01 00:00:00+00:00'")
             .await?;
 
         let unknown = auth.refresh("never-issued").await;
-        let expired = auth.refresh(&session.tokens.refresh_token).await;
+        let expired = auth.refresh(&signed_in.tokens.refresh_token).await;
 
         assert!(
             matches!(unknown, Err(AuthError::TokenInvalid)),
@@ -254,11 +254,11 @@ async fn a_sign_up_failing_midway_leaves_no_account() -> Result<(), Box<dyn Erro
 async fn a_refresh_failing_to_issue_keeps_the_presented_token() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db.clone());
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
         refuse_writes(&db, "refresh_tokens", "INSERT").await?;
         let failed_login = auth.login("ada", PASSWORD).await;
-        let failed = auth.refresh(&session.tokens.refresh_token).await;
+        let failed = auth.refresh(&signed_in.tokens.refresh_token).await;
         allow_writes(&db, "refresh_tokens").await?;
 
         assert!(
@@ -269,7 +269,7 @@ async fn a_refresh_failing_to_issue_keeps_the_presented_token() -> Result<(), Bo
             matches!(&failed, Err(AuthError::Store(message)) if message.contains("write refused")),
             "issuing refused: {failed:?}"
         );
-        auth.refresh(&session.tokens.refresh_token).await?;
+        auth.refresh(&signed_in.tokens.refresh_token).await?;
         Ok(())
     })
     .await
@@ -306,11 +306,11 @@ async fn a_refresh_failing_to_revoke_leaves_every_token_as_it_was() -> Result<()
 async fn logout_revokes_the_presented_token() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        auth.logout(Some(&session.tokens.refresh_token)).await?;
+        auth.logout(Some(&signed_in.tokens.refresh_token)).await?;
         auth.logout(None).await?;
-        let refreshed = auth.refresh(&session.tokens.refresh_token).await;
+        let refreshed = auth.refresh(&signed_in.tokens.refresh_token).await;
 
         assert!(
             matches!(refreshed, Err(AuthError::TokenInvalid)),
@@ -325,9 +325,9 @@ async fn logout_revokes_the_presented_token() -> Result<(), Box<dyn Error>> {
 async fn me_returns_the_account_or_reports_it_missing() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        let found = auth.me(session.user.id).await?;
+        let found = auth.me(signed_in.user.id).await?;
         let missing = auth.me(Uuid::new_v4()).await;
 
         assert_eq!(found.username, "ada", "account username");
@@ -358,11 +358,14 @@ async fn sign_up_requires_a_username_an_email_and_eight_password_characters()
             );
         }
         assert!(!auth.account_exists("ada").await?, "nothing was created");
-        let session = auth
+        let signed_in = auth
             .sign_up(" ada ", " ada@example.com ", "12345678")
             .await?;
         assert_eq!(
-            (session.user.username.as_str(), session.user.email.as_str()),
+            (
+                signed_in.user.username.as_str(),
+                signed_in.user.email.as_str()
+            ),
             ("ada", "ada@example.com"),
             "fields are stored trimmed"
         );
@@ -375,14 +378,14 @@ async fn sign_up_requires_a_username_an_email_and_eight_password_characters()
 async fn an_access_token_names_its_user_only_under_the_signing_secret() -> Result<(), Box<dyn Error>>
 {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let session = service(db)
+        let signed_in = service(db)
             .sign_up("ada", "ada@example.com", PASSWORD)
             .await?;
 
-        let claims = verify_access_token("test-secret", &session.tokens.access_token)?;
-        let forged = verify_access_token("other-secret", &session.tokens.access_token);
+        let claims = verify_access_token("test-secret", &signed_in.tokens.access_token)?;
+        let forged = verify_access_token("other-secret", &signed_in.tokens.access_token);
 
-        assert_eq!(claims.sub, session.user.id.to_string(), "subject");
+        assert_eq!(claims.sub, signed_in.user.id.to_string(), "subject");
         assert!(forged.is_err(), "another secret rejects the token");
         Ok(())
     })
@@ -407,15 +410,15 @@ async fn debug_output_never_reveals_the_signing_secret() -> Result<(), Box<dyn E
 async fn the_auth_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db.clone());
-        let session = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
+        let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
         Migrator::down(&db, None).await?;
         let signed_up = auth.sign_up("bob", "bob@example.com", PASSWORD).await;
         let account_exists = auth.account_exists("ada").await;
         let logged_in = auth.login("ada", PASSWORD).await;
-        let refreshed = auth.refresh(&session.tokens.refresh_token).await;
-        let logged_out = auth.logout(Some(&session.tokens.refresh_token)).await;
-        let me = auth.me(session.user.id).await;
+        let refreshed = auth.refresh(&signed_in.tokens.refresh_token).await;
+        let logged_out = auth.logout(Some(&signed_in.tokens.refresh_token)).await;
+        let me = auth.me(signed_in.user.id).await;
         Migrator::up(&db, None).await?;
 
         for (operation, failed) in [

@@ -201,8 +201,8 @@ describe("with bearer tokens on another origin", () => {
     });
 });
 
-describe("with session cookies on the same origin", () => {
-    it("refreshes the session cookie and retries without a bearer", async () => {
+describe("in cookie mode on the same origin", () => {
+    it("refreshes the auth cookies and retries without a bearer", async () => {
         localStorage.setItem("lemma.access_token", "stale");
         route(VERSION, unauthenticated, () => json(200, { version: "3" }));
         route(REFRESH, () => json(200, {}));
@@ -218,7 +218,7 @@ describe("with session cookies on the same origin", () => {
         ]);
     });
 
-    it("signs out but keeps stored tokens when the session cannot refresh", async () => {
+    it("signs out but keeps stored tokens when the auth cookies cannot refresh", async () => {
         localStorage.setItem("lemma.access_token", "stale");
         route(VERSION, unauthenticated);
         route(REFRESH, unauthenticated);

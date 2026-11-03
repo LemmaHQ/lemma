@@ -28,7 +28,7 @@ class LemmaClient(
     private val settings: SettingsRepository,
 ) {
 
-    /** Authenticates by username or email and persists the session. */
+    /** Authenticates by username or email and persists the issued tokens. */
     suspend fun login(login: String, password: String) {
         val request = loginRequest {
             this.login = login.trim()
@@ -44,7 +44,7 @@ class LemmaClient(
         }
     }
 
-    /** Registers a new account and persists the session. */
+    /** Registers a new account and persists the issued tokens. */
     suspend fun signUp(username: String, email: String, password: String) {
         val request = signUpRequest {
             this.username = username.trim()

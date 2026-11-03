@@ -10,7 +10,7 @@ mod password;
 mod token;
 
 pub use auth_error::AuthError;
-pub use auth_service::{AuthService, AuthTokens, REFRESH_TTL_DAYS, Session};
+pub use auth_service::{AuthService, AuthTokens, REFRESH_TTL_DAYS, SignedIn};
 pub use entity::user::Model as User;
 pub use jwt::{ACCESS_TOKEN_TTL_SECS, Claims, verify_access_token};
 pub use migration::migrations;

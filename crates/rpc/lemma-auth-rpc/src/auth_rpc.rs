@@ -31,7 +31,7 @@ fn set_cookie(value: &str, path: &str, max_age_secs: i64, secure: bool) -> Strin
     format!("{value}; HttpOnly; SameSite=Lax; Path={path}; Max-Age={max_age_secs}{secure_attr}")
 }
 
-fn session_cookies(tokens: &AuthTokens, secure: bool) -> [String; 2] {
+fn auth_cookies(tokens: &AuthTokens, secure: bool) -> [String; 2] {
     [
         set_cookie(
             &format!("{ACCESS_COOKIE}={}", tokens.access_token),
@@ -48,7 +48,7 @@ fn session_cookies(tokens: &AuthTokens, secure: bool) -> [String; 2] {
     ]
 }
 
-fn clear_session_cookies(secure: bool) -> [String; 2] {
+fn clear_auth_cookies(secure: bool) -> [String; 2] {
     [
         set_cookie(&format!("{ACCESS_COOKIE}="), "/", 0, secure),
         set_cookie(
@@ -141,16 +141,16 @@ impl v1::AuthService for AuthRpc {
         ctx: RequestContext,
         request: ServiceRequest<'_, SignUpRequest>,
     ) -> ServiceResult<SignUpResponse> {
-        let session = self
+        let signed_in = self
             .domain
             .sign_up(request.username, request.email, request.password)
             .await
             .map_err(map_domain)?;
-        let cookies = session_cookies(&session.tokens, cookie_secure(&ctx));
+        let cookies = auth_cookies(&signed_in.tokens, cookie_secure(&ctx));
         with_cookies(
             SignUpResponse {
-                user: user_to_proto(&session.user).into(),
-                tokens: tokens_to_proto(session.tokens).into(),
+                user: user_to_proto(&signed_in.user).into(),
+                tokens: tokens_to_proto(signed_in.tokens).into(),
                 ..Default::default()
             },
             cookies,
@@ -162,16 +162,16 @@ impl v1::AuthService for AuthRpc {
         ctx: RequestContext,
         request: ServiceRequest<'_, LoginRequest>,
     ) -> ServiceResult<LoginResponse> {
-        let session = self
+        let signed_in = self
             .domain
             .login(request.login, request.password)
             .await
             .map_err(map_domain)?;
-        let cookies = session_cookies(&session.tokens, cookie_secure(&ctx));
+        let cookies = auth_cookies(&signed_in.tokens, cookie_secure(&ctx));
         with_cookies(
             LoginResponse {
-                user: user_to_proto(&session.user).into(),
-                tokens: tokens_to_proto(session.tokens).into(),
+                user: user_to_proto(&signed_in.user).into(),
+                tokens: tokens_to_proto(signed_in.tokens).into(),
                 ..Default::default()
             },
             cookies,
@@ -205,7 +205,7 @@ impl v1::AuthService for AuthRpc {
             .refresh(&refresh_token)
             .await
             .map_err(map_domain)?;
-        let cookies = session_cookies(&tokens, cookie_secure(&ctx));
+        let cookies = auth_cookies(&tokens, cookie_secure(&ctx));
         with_cookies(
             RefreshResponse {
                 tokens: tokens_to_proto(tokens).into(),
@@ -231,7 +231,7 @@ impl v1::AuthService for AuthRpc {
             .map_err(map_domain)?;
         with_cookies(
             LogoutResponse::default(),
-            clear_session_cookies(cookie_secure(&ctx)),
+            clear_auth_cookies(cookie_secure(&ctx)),
         )
     }
 

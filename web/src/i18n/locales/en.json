@@ -95,7 +95,7 @@
         "signupFieldsRequired": "Username and email are required; password must be at least 8 characters",
         "timeout": "The request timed out, please try again",
         "titleRequired": "Title is required",
-        "tokenInvalid": "Your session has expired, please sign in again",
+        "tokenInvalid": "You've been signed out. Please sign in again.",
         "turnNotRunning": "This reply has already finished",
         "unspecified": "Something went wrong, please try again",
         "userNotFound": "User not found",

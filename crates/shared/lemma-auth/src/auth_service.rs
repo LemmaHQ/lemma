@@ -30,9 +30,9 @@ pub struct AuthTokens {
     pub refresh_token: String,
 }
 
-/// An authenticated session: the account plus its issued tokens.
+/// A signed-in account: the account plus its issued tokens.
 #[derive(Debug, Clone)]
-pub struct Session {
+pub struct SignedIn {
     /// The authenticated account.
     pub user: User,
     /// Issued tokens.
@@ -109,7 +109,7 @@ impl AuthService {
         })
     }
 
-    /// Registers a new account and opens a session.
+    /// Registers a new account and signs it in.
     ///
     /// # Errors
     ///
@@ -123,7 +123,7 @@ impl AuthService {
         username: &str,
         email: &str,
         password: &str,
-    ) -> Result<Session, AuthError> {
+    ) -> Result<SignedIn, AuthError> {
         let username = username.trim();
         let email = email.trim();
         if username.is_empty() || email.is_empty() || password.len() < 8 {
@@ -155,7 +155,7 @@ impl AuthService {
         .await?;
         let tokens = self.issue_tokens(&tx, user.id, Uuid::new_v4()).await?;
         tx.commit().await?;
-        Ok(Session { user, tokens })
+        Ok(SignedIn { user, tokens })
     }
 
     /// Names the field a rejected signup collides with, the username first.
@@ -193,14 +193,14 @@ impl AuthService {
         Ok(self.find_by_login(login.trim()).await?.is_some())
     }
 
-    /// Authenticates by username or email and opens a session.
+    /// Authenticates by username or email and signs the account in.
     ///
     /// # Errors
     ///
     /// [`AuthError::CredentialsInvalid`] for an unknown login or a wrong
     /// password, [`AuthError::Sign`] when signing fails, and
     /// [`AuthError::Store`] when the database fails.
-    pub async fn login(&self, login: &str, password: &str) -> Result<Session, AuthError> {
+    pub async fn login(&self, login: &str, password: &str) -> Result<SignedIn, AuthError> {
         let credential: RelationDef = auth_credential::Entity::belongs_to(user::Entity)
             .from(auth_credential::Column::UserId)
             .to(user::Column::Id)
@@ -222,7 +222,7 @@ impl AuthService {
             return Err(AuthError::CredentialsInvalid);
         }
         let tokens = self.issue_tokens(&self.db, user.id, Uuid::new_v4()).await?;
-        Ok(Session { user, tokens })
+        Ok(SignedIn { user, tokens })
     }
 
     /// Rotates a refresh token and returns a fresh token pair. A rotated

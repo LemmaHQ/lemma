@@ -9,7 +9,7 @@ message GetVersionResponse {
   string version = 1;
 }
 
-// Facts about the running server; every RPC answers without a session.
+// Facts about the running server; every RPC answers without authentication.
 service SystemService {
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
 }

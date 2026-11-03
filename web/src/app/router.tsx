@@ -39,7 +39,7 @@ export const router = createBrowserRouter([
             {
                 Component: SignedInLayout,
                 handle: { titleBar: "sidebar" } satisfies RouteHandle,
-                loader: startSignedInSession,
+                loader: requireSignedIn,
                 shouldRevalidate: () => false,
                 children: [
                     {
@@ -96,7 +96,7 @@ async function authReady() {
     return null;
 }
 
-async function startSignedInSession() {
+async function requireSignedIn() {
     await ensureAuthReady();
     if (useAuth.getState().user === null) {
         return replace(paths.signIn);

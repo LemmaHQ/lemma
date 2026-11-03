@@ -17,7 +17,7 @@ private val PROTO = "application/proto".toMediaType()
 /**
  * Sends the stored access token with every request. When a request outside `AuthService` comes back
  * 401, rotates the token pair once through the same chain and resends the request; a failed
- * rotation clears the session and returns the 401.
+ * rotation clears the stored tokens and returns the 401.
  */
 class AuthInterceptor(private val settings: SettingsRepository) : Interceptor {
 

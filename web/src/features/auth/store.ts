@@ -16,7 +16,7 @@ import { getPlatform } from "@/platform/platform";
 
 const cookieMode = getPlatform().auth.cookieMode;
 
-function openSession(res: {
+function storeAuth(res: {
     tokens?: AuthTokens | undefined;
     user?: User | undefined;
 }): User | null {
@@ -45,7 +45,7 @@ interface AuthState {
     logout: () => Promise<void>;
 }
 
-let sessionRestored: Promise<void> | undefined;
+let authRestored: Promise<void> | undefined;
 
 export const useAuth = create<AuthState>()((set) => ({
     user: null,
@@ -56,12 +56,12 @@ export const useAuth = create<AuthState>()((set) => ({
 
     login: async (identifier, password) => {
         const res = await authClient.login({ login: identifier, password });
-        set({ user: openSession(res) });
+        set({ user: storeAuth(res) });
     },
 
     signup: async (username, email, password) => {
         const res = await authClient.signUp({ username, email, password });
-        set({ user: openSession(res) });
+        set({ user: storeAuth(res) });
     },
 
     logout: async () => {
@@ -78,13 +78,13 @@ export const useAuth = create<AuthState>()((set) => ({
     },
 }));
 
-/** Resolves once the stored session has been checked and `user` holds its result; the first call starts the check. */
+/** Resolves once the stored credentials have been checked and `user` holds its result; the first call starts the check. */
 export function ensureAuthReady(): Promise<void> {
-    sessionRestored ??= restoreSession();
-    return sessionRestored;
+    authRestored ??= restoreAuth();
+    return authRestored;
 }
 
-async function restoreSession(): Promise<void> {
+async function restoreAuth(): Promise<void> {
     if (cookieMode) {
         clearTokens();
         try {

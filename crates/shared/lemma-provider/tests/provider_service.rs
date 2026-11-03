@@ -59,14 +59,14 @@ impl Connector for EndpointConnector {
 }
 
 async fn sign_up(db: &DatabaseConnection, username: &str) -> Result<Uuid, Box<dyn Error>> {
-    let session = AuthService::new(db.clone(), "test-jwt-secret".to_owned())
+    let signed_in = AuthService::new(db.clone(), "test-jwt-secret".to_owned())
         .sign_up(
             username,
             &format!("{username}@example.com"),
             "correct-horse",
         )
         .await?;
-    Ok(session.user.id)
+    Ok(signed_in.user.id)
 }
 
 fn service(db: DatabaseConnection) -> ProviderService<EndpointConnector> {

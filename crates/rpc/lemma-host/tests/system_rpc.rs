@@ -8,7 +8,7 @@ use common::Engine;
 use serde_json::json;
 
 #[tokio::test]
-async fn get_version_answers_without_a_session() -> Result<(), Box<dyn Error>> {
+async fn get_version_answers_unauthenticated() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
 
     let reply = engine

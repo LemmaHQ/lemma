@@ -1,5 +1,5 @@
 //! Connect handler for the `SystemService`: facts about the running server,
-//! answered without a session.
+//! answered without authentication.
 
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 use lemma_proto::lemma::v1;
