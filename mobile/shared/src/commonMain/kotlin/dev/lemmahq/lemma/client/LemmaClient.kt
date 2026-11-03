@@ -9,9 +9,9 @@ import dev.lemmahq.gen.lemma.v1.deleteProviderRequest
 import dev.lemmahq.gen.lemma.v1.fetchModelsRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
 import dev.lemmahq.gen.lemma.v1.listProvidersRequest
-import dev.lemmahq.gen.lemma.v1.loginRequest
 import dev.lemmahq.gen.lemma.v1.providerModelsPatch
 import dev.lemmahq.gen.lemma.v1.sendMessageRequest
+import dev.lemmahq.gen.lemma.v1.signInRequest
 import dev.lemmahq.gen.lemma.v1.signUpRequest
 import dev.lemmahq.gen.lemma.v1.updateProviderRequest
 import dev.lemmahq.lemma.data.SettingsRepository
@@ -29,12 +29,12 @@ class LemmaClient(
 ) {
 
     /** Authenticates by username or email and persists the issued tokens. */
-    suspend fun login(login: String, password: String) {
-        val request = loginRequest {
-            this.login = login.trim()
+    suspend fun signIn(identifier: String, password: String) {
+        val request = signInRequest {
+            this.identifier = identifier.trim()
             this.password = password
         }
-        when (val response = rpc.auth.login(request, emptyMap())) {
+        when (val response = rpc.auth.signIn(request, emptyMap())) {
             is ResponseMessage.Success ->
                 persistTokens(
                     response.message.tokens.accessToken,

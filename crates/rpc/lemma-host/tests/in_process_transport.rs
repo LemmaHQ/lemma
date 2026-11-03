@@ -120,7 +120,7 @@ async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<
     let result = transport
         .request(
             "NOT A METHOD",
-            "/lemma.v1.AuthService/Login",
+            "/lemma.v1.AuthService/SignIn",
             &[],
             Vec::new(),
         )

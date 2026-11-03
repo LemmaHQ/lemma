@@ -11,7 +11,7 @@ import { useAuth } from "../store";
 import { AccountMenu } from "./AccountMenu";
 
 const rpc = vi.hoisted(() => ({
-    logout: vi.fn<(req: object) => Promise<object>>(),
+    signOut: vi.fn<(req: object) => Promise<object>>(),
 }));
 
 vi.mock("@/platform/platform", () => ({
@@ -42,7 +42,7 @@ const renderMenu = () =>
 
 beforeEach(() => {
     vi.resetAllMocks();
-    rpc.logout.mockResolvedValue({});
+    rpc.signOut.mockResolvedValue({});
     useAuth.setState({
         user: create(UserSchema, { id: "u1", username: "alice" }),
     });
@@ -70,5 +70,5 @@ it("signs out from the account menu", async () => {
     await vi.waitFor(() => {
         expect(useAuth.getState().user).toBeNull();
     });
-    expect(rpc.logout).toHaveBeenCalledWith({});
+    expect(rpc.signOut).toHaveBeenCalledWith({});
 });

@@ -9,9 +9,9 @@ use lemma_auth::{
 };
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
-    CheckAccountRequest, CheckAccountResponse, ErrorReason, LoginRequest, LoginResponse,
-    LogoutRequest, LogoutResponse, MeRequest, MeResponse, RefreshRequest, RefreshResponse,
-    SignUpRequest, SignUpResponse,
+    CheckAccountRequest, CheckAccountResponse, ErrorReason, MeRequest, MeResponse, RefreshRequest,
+    RefreshResponse, SignInRequest, SignInResponse, SignOutRequest, SignOutResponse, SignUpRequest,
+    SignUpResponse,
 };
 use sea_orm::DatabaseConnection;
 
@@ -157,19 +157,19 @@ impl v1::AuthService for AuthRpc {
         )
     }
 
-    async fn login(
+    async fn sign_in(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, LoginRequest>,
-    ) -> ServiceResult<LoginResponse> {
+        request: ServiceRequest<'_, SignInRequest>,
+    ) -> ServiceResult<SignInResponse> {
         let signed_in = self
             .domain
-            .login(request.login, request.password)
+            .sign_in(request.identifier, request.password)
             .await
             .map_err(map_domain)?;
         let cookies = auth_cookies(&signed_in.tokens, cookie_secure(&ctx));
         with_cookies(
-            LoginResponse {
+            SignInResponse {
                 user: user_to_proto(&signed_in.user).into(),
                 tokens: tokens_to_proto(signed_in.tokens).into(),
                 ..Default::default()
@@ -185,7 +185,7 @@ impl v1::AuthService for AuthRpc {
     ) -> ServiceResult<CheckAccountResponse> {
         let exists = self
             .domain
-            .account_exists(request.login)
+            .account_exists(request.identifier)
             .await
             .map_err(map_domain)?;
         Response::ok(CheckAccountResponse {
@@ -215,22 +215,22 @@ impl v1::AuthService for AuthRpc {
         )
     }
 
-    async fn logout(
+    async fn sign_out(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, LogoutRequest>,
-    ) -> ServiceResult<LogoutResponse> {
+        request: ServiceRequest<'_, SignOutRequest>,
+    ) -> ServiceResult<SignOutResponse> {
         let token = if request.refresh_token.is_empty() {
             request_auth::cookie_value(&ctx, REFRESH_COOKIE)
         } else {
             Some(request.refresh_token.to_owned())
         };
         self.domain
-            .logout(token.as_deref())
+            .sign_out(token.as_deref())
             .await
             .map_err(map_domain)?;
         with_cookies(
-            LogoutResponse::default(),
+            SignOutResponse::default(),
             clear_auth_cookies(cookie_secure(&ctx)),
         )
     }

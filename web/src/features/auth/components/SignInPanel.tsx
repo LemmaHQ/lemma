@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
-import { prefillFromLogin } from "../sign-up-prefill";
+import { prefillFromIdentifier } from "../sign-up-prefill";
 import { AuthPanel } from "./AuthPanel";
 import { SignInForm, type SignInStep } from "./SignInForm";
 
@@ -28,9 +28,9 @@ export function SignInPanel({ signUpPath }: { signUpPath: string }) {
             <SignInForm
                 step={step}
                 onStepChange={setStep}
-                onUnknownAccount={(login) => {
+                onUnknownAccount={(identifier) => {
                     void navigate(signUpPath, {
-                        state: prefillFromLogin(login),
+                        state: prefillFromIdentifier(identifier),
                         viewTransition: true,
                     });
                 }}

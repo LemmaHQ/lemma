@@ -101,7 +101,7 @@ class AuthInterceptorTest {
     @Test
     fun anAuthServiceRejectionIsReturnedWithoutRotation() {
         settings.setRefreshToken("refresh-1")
-        val response = call(client { respond(it, 401) }, "AuthService/Login")
+        val response = call(client { respond(it, 401) }, "AuthService/SignIn")
 
         assertEquals(401, response.code)
         assertEquals(1, seen.size)

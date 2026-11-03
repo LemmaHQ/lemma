@@ -15,9 +15,9 @@ import { SignUpPanel } from "./SignUpPanel";
 
 const rpc = vi.hoisted(() => ({
     checkAccount:
-        vi.fn<(req: { login: string }) => Promise<{ exists: boolean }>>(),
-    login: vi.fn<
-        (req: { login: string; password: string }) => Promise<object>
+        vi.fn<(req: { identifier: string }) => Promise<{ exists: boolean }>>(),
+    signIn: vi.fn<
+        (req: { identifier: string; password: string }) => Promise<object>
     >(),
 }));
 
@@ -58,7 +58,7 @@ beforeEach(() => {
 it("asks for the password of a known account, then signs in", async () => {
     const user = userEvent.setup();
     rpc.checkAccount.mockResolvedValue({ exists: true });
-    rpc.login.mockResolvedValue({
+    rpc.signIn.mockResolvedValue({
         tokens: create(AuthTokensSchema, {
             accessToken: "a",
             refreshToken: "r",
@@ -76,7 +76,7 @@ it("asks for the password of a known account, then signs in", async () => {
     expect(
         await screen.findByRole("heading", { name: "Enter your password" }),
     ).toBeDefined();
-    expect(rpc.checkAccount).toHaveBeenCalledWith({ login: "alice" });
+    expect(rpc.checkAccount).toHaveBeenCalledWith({ identifier: "alice" });
     expect(document.activeElement).toBe(passwordField());
     await user.type(passwordField(), "secret");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
@@ -84,8 +84,8 @@ it("asks for the password of a known account, then signs in", async () => {
     await vi.waitFor(() => {
         expect(useAuth.getState().user?.username).toBe("alice");
     });
-    expect(rpc.login).toHaveBeenCalledWith({
-        login: "alice",
+    expect(rpc.signIn).toHaveBeenCalledWith({
+        identifier: "alice",
         password: "secret",
     });
 });
@@ -93,7 +93,7 @@ it("asks for the password of a known account, then signs in", async () => {
 it("flags a rejected password and lets the user change the account", async () => {
     const user = userEvent.setup();
     rpc.checkAccount.mockResolvedValue({ exists: true });
-    rpc.login.mockRejectedValue(
+    rpc.signIn.mockRejectedValue(
         new ConnectError("bad", Code.Unauthenticated, undefined, [
             {
                 desc: ErrorInfoSchema,
@@ -149,12 +149,12 @@ it.each([
     ["a username", "newbie", "Username"],
 ])(
     "continues an unknown %s at sign-up with it filled in",
-    async (_case, login, field) => {
+    async (_case, identifier, field) => {
         const user = userEvent.setup();
         rpc.checkAccount.mockResolvedValue({ exists: false });
         renderSignIn();
 
-        await user.type(accountField(), login);
+        await user.type(accountField(), identifier);
         await user.click(screen.getByRole("button", { name: "Continue" }));
 
         expect(
@@ -164,7 +164,7 @@ it.each([
         ).toBeDefined();
         expect(screen.getByRole("textbox", { name: field })).toHaveProperty(
             "value",
-            login,
+            identifier,
         );
         expect(
             screen.getByRole("link", { name: "Sign in" }).getAttribute("href"),

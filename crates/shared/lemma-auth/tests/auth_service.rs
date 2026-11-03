@@ -93,33 +93,33 @@ async fn account_exists_matches_the_username_or_the_email() -> Result<(), Box<dy
             auth.account_exists(" ada@example.com ").await?,
             "padded email"
         );
-        assert!(!auth.account_exists("nobody").await?, "unknown login");
-        assert!(!auth.account_exists("").await?, "blank login");
+        assert!(!auth.account_exists("nobody").await?, "unknown identifier");
+        assert!(!auth.account_exists("").await?, "blank identifier");
         Ok(())
     })
     .await
 }
 
 #[tokio::test]
-async fn login_accepts_the_username_or_the_email() -> Result<(), Box<dyn Error>> {
+async fn sign_in_accepts_the_username_or_the_email() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
         let signed_up = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        let by_username = auth.login("ada", PASSWORD).await?;
-        let by_email = auth.login("ada@example.com", PASSWORD).await?;
-        let wrong_password = auth.login("ada", "wrong-password").await;
-        let unknown = auth.login("nobody", PASSWORD).await;
+        let by_username = auth.sign_in("ada", PASSWORD).await?;
+        let by_email = auth.sign_in("ada@example.com", PASSWORD).await?;
+        let wrong_password = auth.sign_in("ada", "wrong-password").await;
+        let unknown = auth.sign_in("nobody", PASSWORD).await;
 
-        assert_eq!(by_username.user.id, signed_up.user.id, "username login");
-        assert_eq!(by_email.user.id, signed_up.user.id, "email login");
+        assert_eq!(by_username.user.id, signed_up.user.id, "username sign-in");
+        assert_eq!(by_email.user.id, signed_up.user.id, "email sign-in");
         assert!(
             matches!(wrong_password, Err(AuthError::CredentialsInvalid)),
             "wrong password: {wrong_password:?}"
         );
         assert!(
             matches!(unknown, Err(AuthError::CredentialsInvalid)),
-            "unknown login: {unknown:?}"
+            "unknown identifier: {unknown:?}"
         );
         Ok(())
     })
@@ -155,11 +155,11 @@ async fn replaying_a_consumed_token_revokes_its_whole_family() -> Result<(), Box
         let first = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
         let second = auth.refresh(&first.tokens.refresh_token).await?;
         let third = auth.refresh(&second.refresh_token).await?;
-        let other_login = auth.login("ada", PASSWORD).await?;
+        let other_sign_in = auth.sign_in("ada", PASSWORD).await?;
 
         let replayed = auth.refresh(&first.tokens.refresh_token).await;
         let latest = auth.refresh(&third.refresh_token).await;
-        let other_family = auth.refresh(&other_login.tokens.refresh_token).await;
+        let other_family = auth.refresh(&other_sign_in.tokens.refresh_token).await;
 
         assert!(
             matches!(replayed, Err(AuthError::TokenInvalid)),
@@ -171,7 +171,7 @@ async fn replaying_a_consumed_token_revokes_its_whole_family() -> Result<(), Box
         );
         assert!(
             other_family.is_ok(),
-            "a token of another login stays valid: {other_family:?}"
+            "a token of another sign-in stays valid: {other_family:?}"
         );
         Ok(())
     })
@@ -257,13 +257,13 @@ async fn a_refresh_failing_to_issue_keeps_the_presented_token() -> Result<(), Bo
         let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
         refuse_writes(&db, "refresh_tokens", "INSERT").await?;
-        let failed_login = auth.login("ada", PASSWORD).await;
+        let failed_sign_in = auth.sign_in("ada", PASSWORD).await;
         let failed = auth.refresh(&signed_in.tokens.refresh_token).await;
         allow_writes(&db, "refresh_tokens").await?;
 
         assert!(
-            matches!(&failed_login, Err(AuthError::Store(message)) if message.contains("write refused")),
-            "login issuing refused: {failed_login:?}"
+            matches!(&failed_sign_in, Err(AuthError::Store(message)) if message.contains("write refused")),
+            "sign-in issuing refused: {failed_sign_in:?}"
         );
         assert!(
             matches!(&failed, Err(AuthError::Store(message)) if message.contains("write refused")),
@@ -303,13 +303,13 @@ async fn a_refresh_failing_to_revoke_leaves_every_token_as_it_was() -> Result<()
 }
 
 #[tokio::test]
-async fn logout_revokes_the_presented_token() -> Result<(), Box<dyn Error>> {
+async fn sign_out_revokes_the_presented_token() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let auth = service(db);
         let signed_in = auth.sign_up("ada", "ada@example.com", PASSWORD).await?;
 
-        auth.logout(Some(&signed_in.tokens.refresh_token)).await?;
-        auth.logout(None).await?;
+        auth.sign_out(Some(&signed_in.tokens.refresh_token)).await?;
+        auth.sign_out(None).await?;
         let refreshed = auth.refresh(&signed_in.tokens.refresh_token).await;
 
         assert!(
@@ -415,18 +415,18 @@ async fn the_auth_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>> {
         Migrator::down(&db, None).await?;
         let signed_up = auth.sign_up("bob", "bob@example.com", PASSWORD).await;
         let account_exists = auth.account_exists("ada").await;
-        let logged_in = auth.login("ada", PASSWORD).await;
+        let signed_in_again = auth.sign_in("ada", PASSWORD).await;
         let refreshed = auth.refresh(&signed_in.tokens.refresh_token).await;
-        let logged_out = auth.logout(Some(&signed_in.tokens.refresh_token)).await;
+        let signed_out = auth.sign_out(Some(&signed_in.tokens.refresh_token)).await;
         let me = auth.me(signed_in.user.id).await;
         Migrator::up(&db, None).await?;
 
         for (operation, failed) in [
             ("sign-up", signed_up.err()),
             ("account exists", account_exists.err()),
-            ("login", logged_in.err()),
+            ("sign-in", signed_in_again.err()),
             ("refresh", refreshed.err()),
-            ("logout", logged_out.err()),
+            ("sign-out", signed_out.err()),
             ("me", me.err()),
         ] {
             assert!(

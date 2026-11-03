@@ -12,7 +12,7 @@ pub struct Model {
     pub id: Uuid,
     /// Owning user.
     pub user_id: Uuid,
-    /// Shared by every token a login and its rotations issue.
+    /// Shared by every token a sign-in and its rotations issue.
     pub family_id: Uuid,
     /// SHA-256 hash of the plaintext token.
     #[sea_orm(unique)]

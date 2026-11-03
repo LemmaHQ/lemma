@@ -4,9 +4,11 @@ export interface SignUpPrefill {
     email?: string;
 }
 
-/** The prefill for an account sign-in did not find: an email when `login` contains `@`, else a username. */
-export function prefillFromLogin(login: string): SignUpPrefill {
-    return login.includes("@") ? { email: login } : { username: login };
+/** The prefill for an account sign-in did not find: an email when `identifier` contains `@`, else a username. */
+export function prefillFromIdentifier(identifier: string): SignUpPrefill {
+    return identifier.includes("@")
+        ? { email: identifier }
+        : { username: identifier };
 }
 
 /** The prefill carried in navigation `state`; empty when `state` holds none. */

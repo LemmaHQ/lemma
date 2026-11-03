@@ -1,4 +1,4 @@
-//! Auth domain: signup, login, token refresh and rotation over the auth
+//! Auth domain: sign-up, sign-in, token refresh and rotation over the auth
 //! tables, which this crate defines and migrates.
 
 mod auth_error;

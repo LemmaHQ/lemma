@@ -34,10 +34,10 @@ export function SignInForm({
 }: {
     step: SignInStep;
     onStepChange: (step: SignInStep) => void;
-    onUnknownAccount: (login: string) => void;
+    onUnknownAccount: (identifier: string) => void;
 }) {
     const { t } = useTranslation();
-    const login = useAuth((s) => s.login);
+    const signIn = useAuth((s) => s.signIn);
     const checkAccount = useAuth((s) => s.checkAccount);
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
@@ -62,7 +62,7 @@ export function SignInForm({
                     onUnknownAccount(account);
                 }
             } else {
-                await login(account, password);
+                await signIn(account, password);
             }
         } catch (e) {
             setInvalid(true);

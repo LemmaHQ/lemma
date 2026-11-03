@@ -52,7 +52,7 @@ const loadClients = async () => {
 
 const VERSION = "/lemma.v1.SystemService/GetVersion";
 const REFRESH = "/lemma.v1.AuthService/Refresh";
-const LOGIN = "/lemma.v1.AuthService/Login";
+const SIGN_IN = "/lemma.v1.AuthService/SignIn";
 
 beforeEach(() => {
     calls = [];
@@ -176,14 +176,14 @@ describe("with bearer tokens on another origin", () => {
 
     it("passes an auth service failure through without refreshing", async () => {
         localStorage.setItem("lemma.refresh_token", "r1");
-        route(LOGIN, unauthenticated);
+        route(SIGN_IN, unauthenticated);
         const { auth } = await loadClients();
 
         await expect(
-            auth.login({ login: "lemma", password: "wrong" }),
+            auth.signIn({ identifier: "lemma", password: "wrong" }),
         ).rejects.toMatchObject({ code: Code.Unauthenticated });
 
-        expect(calls.map((c) => c.path)).toEqual([LOGIN]);
+        expect(calls.map((c) => c.path)).toEqual([SIGN_IN]);
         expect(window.location.pathname).toBe("/");
     });
 

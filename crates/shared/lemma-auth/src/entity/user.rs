@@ -8,7 +8,7 @@ pub struct Model {
     /// User id.
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    /// Login name.
+    /// Sign-in name.
     #[sea_orm(unique)]
     pub username: String,
     /// Contact email.

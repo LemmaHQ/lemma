@@ -1,12 +1,12 @@
 import { expect, it } from "vitest";
 
-import { prefillFromLogin, readSignUpPrefill } from "./sign-up-prefill";
+import { prefillFromIdentifier, readSignUpPrefill } from "./sign-up-prefill";
 
 it.each([
     ["alice@example.com", { email: "alice@example.com" }],
     ["alice", { username: "alice" }],
-])("prefills sign-up from the login %s", (login, prefill) => {
-    expect(prefillFromLogin(login)).toEqual(prefill);
+])("prefills sign-up from the identifier %s", (identifier, prefill) => {
+    expect(prefillFromIdentifier(identifier)).toEqual(prefill);
 });
 
 it.each([

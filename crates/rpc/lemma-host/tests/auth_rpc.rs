@@ -11,10 +11,10 @@ use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 
 const SIGN_UP: &str = "/lemma.v1.AuthService/SignUp";
-const LOGIN: &str = "/lemma.v1.AuthService/Login";
+const SIGN_IN: &str = "/lemma.v1.AuthService/SignIn";
 const CHECK_ACCOUNT: &str = "/lemma.v1.AuthService/CheckAccount";
 const REFRESH: &str = "/lemma.v1.AuthService/Refresh";
-const LOGOUT: &str = "/lemma.v1.AuthService/Logout";
+const SIGN_OUT: &str = "/lemma.v1.AuthService/SignOut";
 const ME: &str = "/lemma.v1.AuthService/Me";
 
 fn ada() -> Value {
@@ -80,7 +80,7 @@ async fn cookies_are_secure_behind_an_https_proxy() -> Result<(), Box<dyn Error>
 }
 
 #[tokio::test]
-async fn sign_up_and_login_rejections_carry_their_reasons() -> Result<(), Box<dyn Error>> {
+async fn sign_up_and_sign_in_rejections_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     engine.call(SIGN_UP, &ada()).await?;
 
@@ -103,7 +103,10 @@ async fn sign_up_and_login_rejections_carry_their_reasons() -> Result<(), Box<dy
         )
         .await?;
     let wrong_password = engine
-        .call(LOGIN, &json!({ "login": "ada", "password": "wrong-horse" }))
+        .call(
+            SIGN_IN,
+            &json!({ "identifier": "ada", "password": "wrong-horse" }),
+        )
         .await?;
 
     assert_reason(&blank, ErrorReason::SignupFieldsRequired);
@@ -115,26 +118,29 @@ async fn sign_up_and_login_rejections_carry_their_reasons() -> Result<(), Box<dy
 }
 
 #[tokio::test]
-async fn login_issues_tokens_by_username_or_email() -> Result<(), Box<dyn Error>> {
+async fn sign_in_issues_tokens_by_username_or_email() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     engine.call(SIGN_UP, &ada()).await?;
 
-    for login in ["ada", "ada@example.com"] {
+    for identifier in ["ada", "ada@example.com"] {
         let reply = engine
             .call(
-                LOGIN,
-                &json!({ "login": login, "password": "correct-horse" }),
+                SIGN_IN,
+                &json!({ "identifier": identifier, "password": "correct-horse" }),
             )
             .await?;
 
-        assert_eq!(reply.body["user"]["username"], "ada", "{login}: {reply:?}");
+        assert_eq!(
+            reply.body["user"]["username"], "ada",
+            "{identifier}: {reply:?}"
+        );
         assert_eq!(
             cookie_pair(&reply, "lemma_refresh"),
             Some(format!(
                 "lemma_refresh={}",
                 token(&reply.body, "refreshToken")?
             )),
-            "{login} refresh cookie"
+            "{identifier} refresh cookie"
         );
     }
     engine.close().await?;
@@ -142,18 +148,22 @@ async fn login_issues_tokens_by_username_or_email() -> Result<(), Box<dyn Error>
 }
 
 #[tokio::test]
-async fn check_account_reports_whether_a_login_is_registered() -> Result<(), Box<dyn Error>> {
+async fn check_account_reports_whether_an_identifier_is_registered() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     engine.call(SIGN_UP, &ada()).await?;
 
     let known = engine
-        .call(CHECK_ACCOUNT, &json!({ "login": "ada" }))
+        .call(CHECK_ACCOUNT, &json!({ "identifier": "ada" }))
         .await?;
     let unknown = engine
-        .call(CHECK_ACCOUNT, &json!({ "login": "bob" }))
+        .call(CHECK_ACCOUNT, &json!({ "identifier": "bob" }))
         .await?;
 
-    assert_eq!(known.body, json!({ "exists": true }), "registered login");
+    assert_eq!(
+        known.body,
+        json!({ "exists": true }),
+        "registered identifier"
+    );
     assert!(
         !unknown.body["exists"].as_bool().unwrap_or(false),
         "{unknown:?}"
@@ -199,25 +209,25 @@ async fn refresh_takes_the_token_from_the_body_or_the_cookie() -> Result<(), Box
 }
 
 #[tokio::test]
-async fn logout_revokes_the_token_and_clears_the_cookies() -> Result<(), Box<dyn Error>> {
+async fn sign_out_revokes_the_token_and_clears_the_cookies() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     let first = token(&engine.call(SIGN_UP, &ada()).await?.body, "refreshToken")?;
-    let login = engine
+    let signed_in = engine
         .call(
-            LOGIN,
-            &json!({ "login": "ada", "password": "correct-horse" }),
+            SIGN_IN,
+            &json!({ "identifier": "ada", "password": "correct-horse" }),
         )
         .await?;
-    let second = token(&login.body, "refreshToken")?;
+    let second = token(&signed_in.body, "refreshToken")?;
 
     let by_body = engine
-        .call(LOGOUT, &json!({ "refreshToken": first }))
+        .call(SIGN_OUT, &json!({ "refreshToken": first }))
         .await?;
     let cookie = format!("lemma_refresh={second}");
     let by_cookie = engine
-        .call_with(LOGOUT, &[("cookie", &cookie)], &json!({}))
+        .call_with(SIGN_OUT, &[("cookie", &cookie)], &json!({}))
         .await?;
-    let anonymous = engine.call(LOGOUT, &json!({})).await?;
+    let anonymous = engine.call(SIGN_OUT, &json!({})).await?;
 
     assert_eq!(
         by_body.header_values("set-cookie"),
@@ -230,7 +240,7 @@ async fn logout_revokes_the_token_and_clears_the_cookies() -> Result<(), Box<dyn
     assert_eq!(
         (by_cookie.status, anonymous.status),
         (200, 200),
-        "logout always succeeds"
+        "sign-out always succeeds"
     );
     for revoked in [first, second] {
         let reply = engine
@@ -325,13 +335,13 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
     engine.close().await?;
 
     let check = engine
-        .call(CHECK_ACCOUNT, &json!({ "login": "ada" }))
+        .call(CHECK_ACCOUNT, &json!({ "identifier": "ada" }))
         .await?;
-    let logout = engine
-        .call(LOGOUT, &json!({ "refreshToken": "issued-earlier" }))
+    let signed_out = engine
+        .call(SIGN_OUT, &json!({ "refreshToken": "issued-earlier" }))
         .await?;
 
     assert_internal(&check, "db: ");
-    assert_internal(&logout, "db: ");
+    assert_internal(&signed_out, "db: ");
     Ok(())
 }

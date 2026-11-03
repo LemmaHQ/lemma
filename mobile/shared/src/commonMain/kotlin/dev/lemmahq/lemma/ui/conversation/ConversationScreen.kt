@@ -33,7 +33,7 @@ import org.jetbrains.compose.resources.stringResource
 fun ConversationScreen(
     client: LemmaClient,
     settingsRepository: SettingsRepository,
-    onLogout: () -> Unit,
+    onSignOut: () -> Unit,
     onManageProviders: () -> Unit,
     localMessageRepository: LocalMessageRepository,
     modifier: Modifier = Modifier,
@@ -197,7 +197,7 @@ fun ConversationScreen(
                     scope.launch { drawerState.close() }
                     onManageProviders()
                 },
-                onLogout = onLogout,
+                onSignOut = onSignOut,
             )
         },
     ) {

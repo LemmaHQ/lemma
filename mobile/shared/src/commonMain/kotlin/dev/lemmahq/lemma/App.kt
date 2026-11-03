@@ -124,7 +124,7 @@ fun App(
                             ConversationScreen(
                                 client = ready,
                                 settingsRepository = settingsRepository,
-                                onLogout = {
+                                onSignOut = {
                                     settingsRepository.clearAuth()
                                     currentAccessToken = null
                                 },

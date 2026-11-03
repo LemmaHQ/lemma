@@ -35,7 +35,7 @@ internal fun ConversationDrawer(
     onNewConversation: () -> Unit,
     onSelectConversation: (ClientConversation) -> Unit,
     onManageProviders: () -> Unit,
-    onLogout: () -> Unit,
+    onSignOut: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = LemmaTheme.colors.backgroundGroup,
@@ -108,7 +108,7 @@ internal fun ConversationDrawer(
 
             LemmaButton(
                 text = "Sign Out",
-                onClick = onLogout,
+                onClick = onSignOut,
                 modifier = Modifier.fillMaxWidth(),
                 variant = LemmaButtonVariant.Secondary,
             )

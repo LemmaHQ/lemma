@@ -35,14 +35,14 @@ function storeAuth(res: {
 
 interface AuthState {
     user: User | null;
-    checkAccount: (login: string) => Promise<boolean>;
-    login: (identifier: string, password: string) => Promise<void>;
-    signup: (
+    checkAccount: (identifier: string) => Promise<boolean>;
+    signIn: (identifier: string, password: string) => Promise<void>;
+    signUp: (
         username: string,
         email: string,
         password: string,
     ) => Promise<void>;
-    logout: () => Promise<void>;
+    signOut: () => Promise<void>;
 }
 
 let authRestored: Promise<void> | undefined;
@@ -50,27 +50,27 @@ let authRestored: Promise<void> | undefined;
 export const useAuth = create<AuthState>()((set) => ({
     user: null,
 
-    checkAccount: async (login) => {
-        return (await authClient.checkAccount({ login })).exists;
+    checkAccount: async (identifier) => {
+        return (await authClient.checkAccount({ identifier })).exists;
     },
 
-    login: async (identifier, password) => {
-        const res = await authClient.login({ login: identifier, password });
+    signIn: async (identifier, password) => {
+        const res = await authClient.signIn({ identifier, password });
         set({ user: storeAuth(res) });
     },
 
-    signup: async (username, email, password) => {
+    signUp: async (username, email, password) => {
         const res = await authClient.signUp({ username, email, password });
         set({ user: storeAuth(res) });
     },
 
-    logout: async () => {
+    signOut: async () => {
         const refreshToken = getRefreshToken();
         const request = cookieMode
-            ? authClient.logout({})
+            ? authClient.signOut({})
             : refreshToken === null
               ? null
-              : authClient.logout({ refreshToken });
+              : authClient.signOut({ refreshToken });
         await request?.catch(() => {});
         clearTokens();
         clearStoredUserId();

@@ -21,7 +21,7 @@ import {
 
 const rpc = vi.hoisted(() => ({
     me: vi.fn<(req: object) => Promise<{ user?: User }>>(),
-    logout: vi.fn<(req: object) => Promise<object>>(),
+    signOut: vi.fn<(req: object) => Promise<object>>(),
     listConversations:
         vi.fn<(req: object) => Promise<{ conversations: Conversation[] }>>(),
     createConversation:
@@ -33,7 +33,7 @@ const rpc = vi.hoisted(() => ({
 }));
 
 vi.mock("@/rpc/clients", () => ({
-    authClient: { me: rpc.me, logout: rpc.logout },
+    authClient: { me: rpc.me, signOut: rpc.signOut },
     conversationClient: {
         listConversations: rpc.listConversations,
         createConversation: rpc.createConversation,
@@ -132,7 +132,7 @@ function setViewportWidth(width: number) {
 beforeEach(() => {
     vi.resetAllMocks();
     rpc.me.mockResolvedValue({});
-    rpc.logout.mockResolvedValue({});
+    rpc.signOut.mockResolvedValue({});
     rpc.listConversations.mockResolvedValue({
         conversations: [
             conversation("c1", "Trip plans"),

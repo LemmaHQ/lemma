@@ -1,4 +1,4 @@
-//! Auth business flows: signup, login, token refresh and rotation over a
+//! Auth business flows: sign-up, sign-in, token refresh and rotation over a
 //! database.
 
 use std::fmt::{self, Debug};
@@ -60,10 +60,10 @@ struct Credentialed {
     password_hash: String,
 }
 
-fn matches_login(login: &str) -> Condition {
+fn matches_identifier(identifier: &str) -> Condition {
     Condition::any()
-        .add(user::Column::Username.eq(login))
-        .add(user::Column::Email.eq(login))
+        .add(user::Column::Username.eq(identifier))
+        .add(user::Column::Email.eq(identifier))
 }
 
 async fn revoke<C: ConnectionTrait, F: IntoCondition>(db: &C, scope: F) -> Result<u64, AuthError> {
@@ -177,30 +177,30 @@ impl AuthService {
         )
     }
 
-    async fn find_by_login(&self, login: &str) -> Result<Option<User>, AuthError> {
+    async fn find_by_identifier(&self, identifier: &str) -> Result<Option<User>, AuthError> {
         Ok(user::Entity::find()
-            .filter(matches_login(login))
+            .filter(matches_identifier(identifier))
             .one(&self.db)
             .await?)
     }
 
-    /// Reports whether an account has `login` as its username or email.
+    /// Reports whether an account has `identifier` as its username or email.
     ///
     /// # Errors
     ///
     /// [`AuthError::Store`] when the database fails.
-    pub async fn account_exists(&self, login: &str) -> Result<bool, AuthError> {
-        Ok(self.find_by_login(login.trim()).await?.is_some())
+    pub async fn account_exists(&self, identifier: &str) -> Result<bool, AuthError> {
+        Ok(self.find_by_identifier(identifier.trim()).await?.is_some())
     }
 
     /// Authenticates by username or email and signs the account in.
     ///
     /// # Errors
     ///
-    /// [`AuthError::CredentialsInvalid`] for an unknown login or a wrong
+    /// [`AuthError::CredentialsInvalid`] for an unknown identifier or a wrong
     /// password, [`AuthError::Sign`] when signing fails, and
     /// [`AuthError::Store`] when the database fails.
-    pub async fn login(&self, login: &str, password: &str) -> Result<SignedIn, AuthError> {
+    pub async fn sign_in(&self, identifier: &str, password: &str) -> Result<SignedIn, AuthError> {
         let credential: RelationDef = auth_credential::Entity::belongs_to(user::Entity)
             .from(auth_credential::Column::UserId)
             .to(user::Column::Id)
@@ -211,7 +211,7 @@ impl AuthService {
         }) = user::Entity::find()
             .join(JoinType::InnerJoin, credential.rev())
             .column(auth_credential::Column::PasswordHash)
-            .filter(matches_login(login.trim()))
+            .filter(matches_identifier(identifier.trim()))
             .into_model::<Credentialed>()
             .one(&self.db)
             .await?
@@ -259,7 +259,7 @@ impl AuthService {
     /// # Errors
     ///
     /// [`AuthError::Store`] when the database fails.
-    pub async fn logout(&self, presented: Option<&str>) -> Result<(), AuthError> {
+    pub async fn sign_out(&self, presented: Option<&str>) -> Result<(), AuthError> {
         let Some(plaintext) = presented else {
             return Ok(());
         };

@@ -27,7 +27,7 @@ export function AccountMenu({ settingsPath }: { settingsPath: string }) {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
     const username = useAuth((s) => s.user?.username ?? "");
-    const logout = useAuth((s) => s.logout);
+    const signOut = useAuth((s) => s.signOut);
 
     return (
         <SidebarMenu>
@@ -71,7 +71,7 @@ export function AccountMenu({ settingsPath }: { settingsPath: string }) {
                         <AnimateIcon animateOnHover asChild>
                             <DropdownMenuItem
                                 onClick={() => {
-                                    void logout();
+                                    void signOut();
                                 }}
                             >
                                 <LogOutIcon />

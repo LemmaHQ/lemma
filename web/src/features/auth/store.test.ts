@@ -16,8 +16,8 @@ type SignedIn = {
 };
 
 type AuthActions = {
-    login: (identifier: string, password: string) => Promise<void>;
-    signup: (
+    signIn: (identifier: string, password: string) => Promise<void>;
+    signUp: (
         username: string,
         email: string,
         password: string,
@@ -28,9 +28,9 @@ const env = vi.hoisted(() => ({ cookieMode: false }));
 
 const rpc = vi.hoisted(() => ({
     checkAccount:
-        vi.fn<(req: { login: string }) => Promise<{ exists: boolean }>>(),
-    login: vi.fn<
-        (req: { login: string; password: string }) => Promise<SignedIn>
+        vi.fn<(req: { identifier: string }) => Promise<{ exists: boolean }>>(),
+    signIn: vi.fn<
+        (req: { identifier: string; password: string }) => Promise<SignedIn>
     >(),
     signUp: vi.fn<
         (req: {
@@ -39,7 +39,7 @@ const rpc = vi.hoisted(() => ({
             password: string;
         }) => Promise<SignedIn>
     >(),
-    logout: vi.fn<(req: { refreshToken?: string }) => Promise<unknown>>(),
+    signOut: vi.fn<(req: { refreshToken?: string }) => Promise<unknown>>(),
     me: vi.fn<(req: object) => Promise<SignedIn>>(),
 }));
 
@@ -90,15 +90,15 @@ describe("with bearer tokens", () => {
         await expect(useAuth.getState().checkAccount("alice")).resolves.toBe(
             true,
         );
-        expect(rpc.checkAccount).toHaveBeenCalledWith({ login: "alice" });
+        expect(rpc.checkAccount).toHaveBeenCalledWith({ identifier: "alice" });
     });
 
     it.each<[string, (auth: AuthActions) => Promise<void>]>([
-        ["signs in", (auth) => auth.login("alice", "pw")],
-        ["signs up", (auth) => auth.signup("alice", "a@x.io", "pw")],
+        ["signs in", (auth) => auth.signIn("alice", "pw")],
+        ["signs up", (auth) => auth.signUp("alice", "a@x.io", "pw")],
     ])("stores the tokens and user when it %s", async (_case, act) => {
         const { useAuth } = await loadStore(false);
-        rpc.login.mockResolvedValue({ tokens: tokens(), user: user() });
+        rpc.signIn.mockResolvedValue({ tokens: tokens(), user: user() });
         rpc.signUp.mockResolvedValue({ tokens: tokens(), user: user() });
 
         await act(useAuth.getState());
@@ -113,9 +113,9 @@ describe("with bearer tokens", () => {
 
     it("rejects a response without tokens", async () => {
         const { useAuth } = await loadStore(false);
-        rpc.login.mockResolvedValue({ user: user() });
+        rpc.signIn.mockResolvedValue({ user: user() });
 
-        await expect(useAuth.getState().login("alice", "pw")).rejects.toThrow(
+        await expect(useAuth.getState().signIn("alice", "pw")).rejects.toThrow(
             "no tokens in response",
         );
         expect(useAuth.getState().user).toBeNull();
@@ -124,9 +124,9 @@ describe("with bearer tokens", () => {
 
     it("stays signed out when the response names no user", async () => {
         const { useAuth } = await loadStore(false);
-        rpc.login.mockResolvedValue({ tokens: tokens() });
+        rpc.signIn.mockResolvedValue({ tokens: tokens() });
 
-        await useAuth.getState().login("alice", "pw");
+        await useAuth.getState().signIn("alice", "pw");
 
         expect(useAuth.getState().user).toBeNull();
         expect(stored().userId).toBeNull();
@@ -134,13 +134,13 @@ describe("with bearer tokens", () => {
 
     it("revokes the refresh token and forgets the tokens on sign-out", async () => {
         const { useAuth } = await loadStore(false);
-        rpc.login.mockResolvedValue({ tokens: tokens(), user: user() });
-        rpc.logout.mockRejectedValue(new Error("offline"));
-        await useAuth.getState().login("alice", "pw");
+        rpc.signIn.mockResolvedValue({ tokens: tokens(), user: user() });
+        rpc.signOut.mockRejectedValue(new Error("offline"));
+        await useAuth.getState().signIn("alice", "pw");
 
-        await useAuth.getState().logout();
+        await useAuth.getState().signOut();
 
-        expect(rpc.logout).toHaveBeenCalledWith({ refreshToken: "refresh" });
+        expect(rpc.signOut).toHaveBeenCalledWith({ refreshToken: "refresh" });
         expect(useAuth.getState().user).toBeNull();
         expect(stored()).toEqual({ access: null, refresh: null, userId: null });
     });
@@ -148,9 +148,9 @@ describe("with bearer tokens", () => {
     it("signs out locally without a refresh token", async () => {
         const { useAuth } = await loadStore(false);
 
-        await useAuth.getState().logout();
+        await useAuth.getState().signOut();
 
-        expect(rpc.logout).not.toHaveBeenCalled();
+        expect(rpc.signOut).not.toHaveBeenCalled();
     });
 
     it("skips the account check without a stored access token", async () => {
@@ -200,12 +200,12 @@ describe("with bearer tokens", () => {
 describe("in cookie mode", () => {
     it("keeps no tokens and clears the auth cookies on sign-out", async () => {
         const { useAuth } = await loadStore(true);
-        rpc.login.mockResolvedValue({ user: user() });
+        rpc.signIn.mockResolvedValue({ user: user() });
 
-        await useAuth.getState().login("alice", "pw");
-        await useAuth.getState().logout();
+        await useAuth.getState().signIn("alice", "pw");
+        await useAuth.getState().signOut();
 
-        expect(rpc.logout).toHaveBeenCalledWith({});
+        expect(rpc.signOut).toHaveBeenCalledWith({});
         expect(stored()).toEqual({ access: null, refresh: null, userId: null });
     });
 

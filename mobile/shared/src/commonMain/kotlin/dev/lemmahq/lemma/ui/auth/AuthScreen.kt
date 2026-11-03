@@ -39,7 +39,7 @@ fun AuthScreen(
     onChangeMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isLoginMode by remember { mutableStateOf(true) }
+    var isSignInMode by remember { mutableStateOf(true) }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -57,7 +57,7 @@ fun AuthScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = if (isLoginMode) "Sign In" else "Create Account",
+                text = if (isSignInMode) "Sign In" else "Create Account",
                 style = LemmaTheme.typography.titleLarge,
                 color = LemmaTheme.colors.textPrimary,
             )
@@ -72,7 +72,7 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (!isLoginMode) {
+            if (!isSignInMode) {
                 LemmaTextField(
                     value = username,
                     onValueChange = {
@@ -91,7 +91,7 @@ fun AuthScreen(
                     email = it
                     errorMessage = null
                 },
-                placeholder = if (isLoginMode) "Username or Email" else "Email",
+                placeholder = if (isSignInMode) "Username or Email" else "Email",
                 enabled = !isLoading,
             )
 
@@ -126,12 +126,12 @@ fun AuthScreen(
                 )
             } else {
                 LemmaButton(
-                    text = if (isLoginMode) "Sign In" else "Sign Up",
+                    text = if (isSignInMode) "Sign In" else "Sign Up",
                     onClick = {
                         if (
                             email.isBlank() ||
                                 password.isBlank() ||
-                                (!isLoginMode && username.isBlank())
+                                (!isSignInMode && username.isBlank())
                         ) {
                             errorMessage = "Please fill in all required fields"
                             return@LemmaButton
@@ -142,8 +142,8 @@ fun AuthScreen(
 
                         scope.launch {
                             try {
-                                if (isLoginMode) {
-                                    client.login(email, password)
+                                if (isSignInMode) {
+                                    client.signIn(email, password)
                                 } else {
                                     client.signUp(username, email, password)
                                 }
@@ -168,12 +168,12 @@ fun AuthScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (isLoginMode) "No account? Sign up" else "Have an account? Sign in",
+                    text = if (isSignInMode) "No account? Sign up" else "Have an account? Sign in",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.primary,
                     modifier =
                         Modifier.clickable {
-                            isLoginMode = !isLoginMode
+                            isSignInMode = !isSignInMode
                             errorMessage = null
                         },
                 )

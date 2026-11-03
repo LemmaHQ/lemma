@@ -24,7 +24,7 @@ type SignUpField = "username" | "email" | "confirm";
 /** Sign-up with username, email, and a confirmed password. */
 export function SignUpForm({ prefill }: { prefill: SignUpPrefill }) {
     const { t } = useTranslation();
-    const signup = useAuth((s) => s.signup);
+    const signUp = useAuth((s) => s.signUp);
     const [username, setUsername] = useState(prefill.username ?? "");
     const [email, setEmail] = useState(prefill.email ?? "");
     const [password, setPassword] = useState("");
@@ -42,7 +42,7 @@ export function SignUpForm({ prefill }: { prefill: SignUpPrefill }) {
         setBusy(true);
         setInvalidField(null);
         try {
-            await signup(username.trim(), email.trim(), password);
+            await signUp(username.trim(), email.trim(), password);
         } catch (e) {
             setInvalidField(takenSignUpField(e));
             toast.error(errorText(e, t));
