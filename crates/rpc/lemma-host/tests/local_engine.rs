@@ -24,7 +24,10 @@ async fn unreadable_secrets_json_fails_the_secrets_step() -> Result<(), Box<dyn 
 
     let error = open_error(LocalEngine::open(&dir.0).await);
 
-    assert!(matches!(error, LocalEngineError::Secrets(_)), "{error:?}");
+    assert!(
+        matches!(error, LocalEngineError::SecretsJson(_)),
+        "{error:?}"
+    );
     assert!(error.to_string().contains("secrets.json"), "{error}");
     assert_eq!(
         fs::read_to_string(dir.0.join("secrets.json"))?,

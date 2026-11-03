@@ -69,8 +69,7 @@ fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> 
 
     let path = data_dir.join("secrets.json");
     match fs::read_to_string(&path) {
-        Ok(raw) => serde_json::from_str(&raw)
-            .map_err(|e| LocalEngineError::Secrets(format!("secrets.json: {e}"))),
+        Ok(raw) => serde_json::from_str(&raw).map_err(LocalEngineError::SecretsJson),
         Err(_) => {
             let secrets = Secrets {
                 jwt_secret: hex::encode(rand::rng().random::<[u8; 32]>()),
@@ -79,8 +78,7 @@ fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> 
             fs::create_dir_all(data_dir).map_err(|e| {
                 LocalEngineError::Secrets(format!("create {}: {e}", data_dir.display()))
             })?;
-            let json = serde_json::to_string(&secrets)
-                .map_err(|e| LocalEngineError::Secrets(format!("secrets.json: {e}")))?;
+            let json = serde_json::to_string(&secrets).map_err(LocalEngineError::SecretsJson)?;
             fs::write(&path, json)
                 .map_err(|e| LocalEngineError::Secrets(format!("write {}: {e}", path.display())))?;
             Ok(secrets)
