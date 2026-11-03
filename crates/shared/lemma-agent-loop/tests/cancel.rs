@@ -34,7 +34,7 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
     on_each_database::<Migrator, _, _>(|db| async move {
         let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), StalledAdapter);
+            AgentLoop::new(conversations.clone(), StalledAdapter, None);
         let cancel = CancelToken::new();
         let (tx, mut rx) = mpsc::unbounded_channel();
         let observer = move |ev: TurnEvent| {
@@ -89,7 +89,7 @@ async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn
     on_each_database::<Migrator, _, _>(|db| async move {
         let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), StalledAdapter);
+            AgentLoop::new(conversations.clone(), StalledAdapter, None);
         let cancel = CancelToken::new();
         cancel.cancel();
 

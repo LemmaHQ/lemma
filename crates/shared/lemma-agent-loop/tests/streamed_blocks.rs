@@ -37,7 +37,7 @@ async fn answer(
 ) -> Result<(Result<(), LoopError>, StoredMessage), Box<dyn Error>> {
     let (conversations, user_id, conversation_id) = new_conversation(db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
-        AgentLoop::new(conversations.clone(), Scripted(events));
+        AgentLoop::new(conversations.clone(), Scripted(events), None);
 
     let turn = agent_loop
         .run_turn(

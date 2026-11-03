@@ -77,7 +77,7 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
             second_context: Arc::clone(&second_context),
         };
         let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
-        let agent_loop = AgentLoop::new(conversations.clone(), adapter).with_tools(runtime);
+        let agent_loop = AgentLoop::new(conversations.clone(), adapter, Some(runtime));
 
         agent_loop
             .run_turn(

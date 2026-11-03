@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use dashmap::DashMap;
@@ -86,21 +86,8 @@ impl<C: Connector> Agent<C> {
         }
         let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
 
-        let agent_loop = AgentLoop::new(self.conversations.clone(), adapter);
-        let agent_loop = match &self.workspaces_dir {
-            Some(dir) => {
-                let workspace = dir.join(req.conversation_id.to_string());
-                fs::create_dir_all(&workspace)
-                    .await
-                    .map_err(|e| AgentError::Workspace(e.to_string()))?;
-                let mut registry = ToolRegistry::new();
-                registry.register(ReadFileTool);
-                registry.register(WriteFileTool);
-                registry.register(BashTool);
-                agent_loop.with_tools(ToolRuntime::new(registry, LocalExecEnv::new(workspace)))
-            }
-            None => agent_loop,
-        };
+        let tools = workspace_tools(self.workspaces_dir.as_deref(), req.conversation_id).await?;
+        let agent_loop = AgentLoop::new(self.conversations.clone(), adapter, tools);
 
         let user_message_id = Uuid::new_v4();
         let cancel = CancelToken::new();
@@ -185,4 +172,27 @@ impl Drop for Registration {
     fn drop(&mut self) {
         self.running.remove(&self.user_message_id);
     }
+}
+
+/// Prepares `<workspaces_dir>/<conversation_id>` and the tools that run in
+/// it; `None` without a workspaces directory.
+async fn workspace_tools(
+    workspaces_dir: Option<&Path>,
+    conversation_id: Uuid,
+) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
+    let Some(dir) = workspaces_dir else {
+        return Ok(None);
+    };
+    let workspace = dir.join(conversation_id.to_string());
+    fs::create_dir_all(&workspace)
+        .await
+        .map_err(|e| AgentError::Workspace(e.to_string()))?;
+    let mut registry = ToolRegistry::new();
+    registry.register(ReadFileTool);
+    registry.register(WriteFileTool);
+    registry.register(BashTool);
+    Ok(Some(ToolRuntime::new(
+        registry,
+        LocalExecEnv::new(workspace),
+    )))
 }

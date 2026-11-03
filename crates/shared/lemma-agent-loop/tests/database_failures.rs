@@ -207,7 +207,7 @@ async fn persistence_failures_end_the_turn_at_the_failed_statement() -> Result<(
                 step: AtomicUsize::new(0),
             };
             let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
-            let agent_loop = AgentLoop::new(conversations.clone(), adapter).with_tools(runtime);
+            let agent_loop = AgentLoop::new(conversations.clone(), adapter, Some(runtime));
             let turn_input = input(user_id, conversation_id);
             let user_message_id = turn_input.user_message_id;
             let drop_db = db.clone();

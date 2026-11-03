@@ -38,20 +38,18 @@ pub struct AgentLoop<A, E> {
 }
 
 impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
-    /// Creates a loop that calls the model without tools.
-    pub fn new(conversations: ConversationService, adapter: A) -> Self {
+    /// Creates a loop that runs tool calls with `tools`, or calls the model
+    /// without tools when it is `None`.
+    pub fn new(
+        conversations: ConversationService,
+        adapter: A,
+        tools: Option<ToolRuntime<E>>,
+    ) -> Self {
         Self {
             conversations,
             adapter,
-            tools: None,
+            tools,
         }
-    }
-
-    /// Attaches tool execution wiring to the loop.
-    #[must_use]
-    pub fn with_tools(mut self, runtime: ToolRuntime<E>) -> Self {
-        self.tools = Some(runtime);
-        self
     }
 
     /// Appends the user message under the active leaf and runs steps until

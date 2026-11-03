@@ -57,7 +57,7 @@ async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<()
     on_each_database::<Migrator, _, _>(|db| async move {
         let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), AsksForTool);
+            AgentLoop::new(conversations.clone(), AsksForTool, None);
         let events = Mutex::new(Vec::new());
 
         agent_loop
@@ -121,7 +121,7 @@ async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<()
 async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(conversations, Refuses);
+        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(conversations, Refuses, None);
 
         let result = agent_loop
             .run_turn(
@@ -144,7 +144,8 @@ async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(
 async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(conversations, AsksForTool);
+        let agent_loop: AgentLoop<_, LocalExecEnv> =
+            AgentLoop::new(conversations, AsksForTool, None);
         db.close().await?;
 
         let result = agent_loop
@@ -173,7 +174,7 @@ async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(),
             .update_leaf(user_id, conversation_id, missing)
             .await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), AsksForTool);
+            AgentLoop::new(conversations.clone(), AsksForTool, None);
 
         let result = agent_loop
             .run_turn(
