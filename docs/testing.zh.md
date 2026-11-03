@@ -14,7 +14,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 ## 覆盖率
 
-`just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖行时失败，其余指标只报告；`just mobile-android-cov` 只报告覆盖率，没有门槛。
+`just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖的行或函数时失败，只报告 region 覆盖率；`just mobile-android-cov` 只报告覆盖率，没有门槛。
 
 - **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-proto`、Node-API addon `lemma-desktop`、UniFFI facade `lemma-mobile`、只供测试使用的 `lemma-test-db`、`lemma-server` 的二进制文件 `main.rs`、`config.rs` 与 `server_mode.rs`、`lemma-server` 中只含 `rust-embed` derive 的 `web_dist.rs`，以及 `entity/` 下的 SeaORM entity 文件。
 - **Web**：`just web-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、`src/i18n/locales/` 与入口 `src/main.tsx`。

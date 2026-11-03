@@ -33,5 +33,5 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 just rust-lint-check    # clippy over all targets, warnings denied; rust-lint applies fixes
 just rust-fmt-check     # cargo fmt --check; rust-fmt formats
 just rust-test          # cargo nextest run --workspace
-just rust-cov           # llvm-cov summary, fails on any uncovered line; `just rust-cov --html --open` opens the report
+just rust-cov           # llvm-cov summary, fails on any uncovered line or function; `just rust-cov --html --open` opens the report
 ```

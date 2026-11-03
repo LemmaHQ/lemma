@@ -14,7 +14,7 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 ## Coverage
 
-`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line and reports the other metrics; `just mobile-android-cov` reports coverage without a gate.
+`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line or function and only reports region coverage; `just mobile-android-cov` reports coverage without a gate.
 
 - **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the test-only `lemma-test-db`, the `lemma-server` binary files `main.rs`, `config.rs`, and `server_mode.rs`, `lemma-server`'s `web_dist.rs`, which holds only the `rust-embed` derive, and the SeaORM entity files under `entity/`.
 - **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.

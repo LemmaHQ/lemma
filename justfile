@@ -58,7 +58,7 @@ rust-dev:
 rust-test:
     cargo nextest run --workspace
 
-# Coverage under nextest, failing on any uncovered line; args replace the terminal summary
+# Coverage under nextest, failing on any uncovered line or function; args replace the terminal summary
 [group('rust')]
 rust-cov *args="--summary-only":
     cargo llvm-cov nextest --workspace \
@@ -68,6 +68,7 @@ rust-cov *args="--summary-only":
         --exclude lemma-test-db \
         --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$)' \
         --fail-uncovered-lines 0 \
+        --fail-uncovered-functions 0 \
         {{ args }}
 
 # Run oxlint
