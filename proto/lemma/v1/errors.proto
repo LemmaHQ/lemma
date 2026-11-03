@@ -11,8 +11,6 @@ enum ErrorReason {
   ERROR_REASON_CREDENTIALS_INVALID = 1; // Invalid credentials provided
   ERROR_REASON_USERNAME_TAKEN = 2; // Username is already registered
   ERROR_REASON_SIGNUP_FIELDS_REQUIRED = 3; // Required signup fields missing or password length below minimum
-  reserved 4;
-  reserved "ERROR_REASON_LOGIN_TARGET_REQUIRED";
   ERROR_REASON_TOKEN_INVALID = 5; // Token is missing, expired, or invalid
   ERROR_REASON_USER_NOT_FOUND = 6;
   ERROR_REASON_EMAIL_TAKEN = 7; // Email is already registered
@@ -21,8 +19,6 @@ enum ErrorReason {
   ERROR_REASON_PROVIDER_FIELDS_REQUIRED = 10; // Required provider configuration fields missing
   ERROR_REASON_PROVIDER_KIND_INVALID = 11;
   ERROR_REASON_PROVIDER_NOT_FOUND = 12;
-  reserved 13;
-  reserved "ERROR_REASON_PROVIDER_DISABLED";
   ERROR_REASON_PROVIDER_IDENTIFIER_INVALID = 14; // Identifier must contain valid non-empty ASCII characters
   ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists for this user account
 
@@ -30,10 +26,6 @@ enum ErrorReason {
   ERROR_REASON_ID_INVALID = 20; // Shared invalid UUID identifier error
   ERROR_REASON_TITLE_REQUIRED = 21;
   ERROR_REASON_CONVERSATION_NOT_FOUND = 22;
-  reserved 23 to 25;
-  reserved "ERROR_REASON_CONVERSATION_NOT_ACTIVE", "ERROR_REASON_CONVERSATION_NOT_ARCHIVED", "ERROR_REASON_ARCHIVED_CONVERSATION_NOT_FOUND";
-  reserved 26, 27;
-  reserved "ERROR_REASON_MESSAGE_NOT_FOUND", "ERROR_REASON_NOT_ASSISTANT_MESSAGE";
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
 
@@ -43,8 +35,5 @@ enum ErrorReason {
 
 // Structured error details carried on ConnectError; rendered by client i18n based on reason.
 message ErrorInfo {
-  reserved 2;
-  reserved "attrs";
-
   ErrorReason reason = 1;
 }

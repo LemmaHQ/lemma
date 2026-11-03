@@ -14,9 +14,6 @@ enum MessageStatus {
 }
 
 message Conversation {
-  reserved 3, 4, 6;
-  reserved "status", "archived_at", "created_at";
-
   string id = 1;
   string title = 2;
   google.protobuf.Timestamp updated_at = 7;
@@ -36,17 +33,11 @@ message ToolCall {
 
 // Tool execution metadata for tool-role messages; payload text resides in content.
 message ToolResultMeta {
-  reserved 2;
-  reserved "name";
-
   string tool_call_id = 1;
   bool is_error = 3;
 }
 
 message Message {
-  reserved 2, 10;
-  reserved "conversation_id", "parent_id";
-
   string id = 1;
   string role = 3; // user | assistant | system | tool
   string content = 4;

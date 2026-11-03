@@ -3,18 +3,12 @@ syntax = "proto3";
 package lemma.v1;
 
 message User {
-  reserved 3 to 5;
-  reserved "email", "role", "created_at";
-
   string id = 1;
   string username = 2;
 }
 
 // Token pair: short-lived access token and database-backed revokable refresh token.
 message AuthTokens {
-  reserved 2;
-  reserved "access_token_expires_at";
-
   string access_token = 1;
   string refresh_token = 3;
 }
@@ -31,9 +25,6 @@ message SignUpResponse {
 }
 
 message SignInRequest {
-  reserved 1, 2;
-  reserved "username", "email";
-
   // Username or email of the account.
   string identifier = 4;
   string password = 3;

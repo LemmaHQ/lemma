@@ -12,9 +12,6 @@ enum ProviderKind {
 
 // Provider configuration scoped per user account.
 message Provider {
-  reserved 10, 11;
-  reserved "created_at", "updated_at";
-
   string id = 1;
   ProviderKind kind = 2;
   string name = 3;

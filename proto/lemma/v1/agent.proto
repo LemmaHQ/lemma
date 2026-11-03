@@ -12,9 +12,6 @@ service AgentService {
 }
 
 message AgentStarted {
-  reserved 2;
-  reserved "client_msg_id";
-
   string message_id = 1;
 }
 
@@ -34,10 +31,7 @@ message AgentDelta {
   }
 }
 
-message AgentDone {
-  reserved 1;
-  reserved "usage";
-}
+message AgentDone {}
 
 message AgentAborted {}
 
@@ -58,9 +52,6 @@ message ToolCallStarted {
 }
 
 message ToolCallFinished {
-  reserved 2;
-  reserved "name";
-
   string call_id = 1;
   // Tool execution output text.
   string content = 3;
@@ -86,9 +77,6 @@ message AgentEvent {
 }
 
 message SendMessageRequest {
-  reserved 5, 6;
-  reserved "client_msg_id", "thinking_effort";
-
   string conversation_id = 1;
   string content = 2;
   // Provider and model used for this turn, decoupled from conversation state.
