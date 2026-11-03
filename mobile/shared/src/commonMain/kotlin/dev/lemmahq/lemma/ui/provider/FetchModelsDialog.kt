@@ -36,7 +36,7 @@ import dev.lemmahq.lemma.ui.components.LemmaTextField
  * receives the picked ones in upstream order.
  */
 @Composable
-internal fun FetchedModelsDialog(
+internal fun FetchModelsDialog(
     remote: List<String>,
     existing: List<String>,
     onAdd: (List<String>) -> Unit,

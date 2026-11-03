@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 
 /** Provider management screen listing, creating, editing, and deleting provider configurations. */
 @Composable
-fun ProvidersScreen(
+fun ProviderScreen(
     client: LemmaClient,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,

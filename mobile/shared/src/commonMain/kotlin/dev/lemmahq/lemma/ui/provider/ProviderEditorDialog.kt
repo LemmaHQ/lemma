@@ -207,7 +207,7 @@ internal fun ProviderEditorDialog(
             )
 
             fetched?.let { remote ->
-                FetchedModelsDialog(
+                FetchModelsDialog(
                     remote = remote,
                     existing = models,
                     onAdd = { picked ->
