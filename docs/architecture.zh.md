@@ -8,16 +8,16 @@
 
 Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其上方的层；`lemma-core` 是各层共用的语言。
 
-| 层    | Crate                                                                | 负责                                                                                                                                                                                                                    |
-| ----- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                           | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
-| 领域  | `lemma-auth`、`lemma-conversation`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `conversations` 与 `messages` 表；provider 配置、模型列表，以及 provider 相关的表；这些表的迁移；API key 加密                                                          |
-| 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`                   | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
-| Agent | `lemma-agent`                                                        | 根据请求组装一个 turn（provider 端点、适配器、会话、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                       |
-| RPC   | `crates/rpc/*`，包括 `lemma-host`                                    | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
-| 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                      | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
+| 层    | Crate                                                           | 负责                                                                                                                                                                                                                    |
+| ----- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                      | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
+| 领域  | `lemma-auth`、`lemma-session`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `sessions` 与 `messages` 表；provider 配置、模型列表，以及 provider 相关的表；这些表的迁移；API key 加密                                                               |
+| 引擎  | `lemma-adapter`、`lemma-tools`、`lemma-agent-loop`              | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
+| Agent | `lemma-agent`                                                   | 根据请求组装一个 turn（provider 端点、适配器、会话、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                       |
+| RPC   | `crates/rpc/*`，包括 `lemma-host`                               | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
+| 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                 | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
 
-`lemma-auth`、`lemma-conversation` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 同样运行在 SQLite 与 PostgreSQL 上；引擎层与 agent 层只通过它们的服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
+`lemma-auth`、`lemma-session` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 同样运行在 SQLite 与 PostgreSQL 上；引擎层与 agent 层只通过它们的服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
 `crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
@@ -41,22 +41,22 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 
 ## 跨线路的契约
 
-`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`ConversationService`、`AgentService`、`SystemService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`SessionService`、`AgentService`、`SystemService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 业务错误携带 `errors.proto` 中封闭枚举里的一个 `ErrorReason`，由 `lemma_proto::app_error` 作为 `ErrorInfo` detail 附加；客户端按原因码本地化。基础设施故障（数据库、解密、上游）返回 internal 级别的 Connect 错误，带原始英文信息，不带原因码。
 
-`AuthService.Me` 与 `ProviderService`、`ConversationService`、`AgentService` 的每个 RPC 都用 `require_user` 解析调用者：优先取 `Bearer` 访问令牌，否则取 `lemma_access` cookie。之后每个请求只操作该用户 id 名下的行。`AuthService` 的其余 RPC 与 `SystemService` 无需认证即可调用。
+`AuthService.Me` 与 `ProviderService`、`SessionService`、`AgentService` 的每个 RPC 都用 `require_user` 解析调用者：优先取 `Bearer` 访问令牌，否则取 `lemma_access` cookie。之后每个请求只操作该用户 id 名下的行。`AuthService` 的其余 RPC 与 `SystemService` 无需认证即可调用。
 
 ## 一次 turn 的完整链路
 
 一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 组装每个 turn，`lemma-agent-rpc` 只调用它；循环是 `lemma-agent-loop` 中的 `AgentLoop::run_turn`。`lemma-agent-rpc` 把它的 `TurnEvent` 映射为 `AgentEvent` 消息。
 
 ```text
-AgentService.SendMessage(conversation, provider, model, content)
+AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
   append the user message under the active leaf; move the leaf            -> started
-  record the model selection on the conversation
+  record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
@@ -78,7 +78,7 @@ AgentService.SendMessage(conversation, provider, model, content)
 
 适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<conversation id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<session id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
 
 `AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
@@ -86,9 +86,9 @@ AgentService.SendMessage(conversation, provider, model, content)
 
 ## 持久化
 
-认证表 `users`、`auth_credentials` 与 `refresh_tokens` 属于 `lemma-auth`，`providers` 属于 `lemma-provider`，`conversations` 与 `messages` 属于 `lemma-conversation`；每个 crate 用 SeaORM 定义自己的表并拥有它们的迁移，宿主打开数据库时，`lemma-host` 按名称顺序合并这些迁移，并在 SQLite 与 PostgreSQL 上同样执行（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+认证表 `users`、`auth_credentials` 与 `refresh_tokens` 属于 `lemma-auth`，`providers` 属于 `lemma-provider`，`sessions` 与 `messages` 属于 `lemma-session`；每个 crate 用 SeaORM 定义自己的表并拥有它们的迁移，宿主打开数据库时，`lemma-host` 按名称顺序合并这些迁移，并在 SQLite 与 PostgreSQL 上同样执行（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
-一个会话是一棵消息树。每条消息行保存它的 `parent_id`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider 与模型；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-conversation` 中的 `ConversationService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
+一个会话是一棵消息树。每条消息行保存它的 `parent_id`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider 与模型；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-session` 中的 `SessionService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
 
 分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 

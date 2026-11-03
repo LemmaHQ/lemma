@@ -15,7 +15,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | provider 不属于该用户 | `AgentError::ProviderNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
-有工作区目录时，turn 获得以 `<workspaces_dir>/<conversation id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
+有工作区目录时，turn 获得以 `<workspaces_dir>/<session id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
 
 `Turn::run(observer)` 把 turn 运行到结束，成功时返回 `()`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
 

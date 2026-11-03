@@ -6,12 +6,12 @@ use std::sync::{Arc, Mutex};
 use futures::stream;
 use lemma_agent::{Agent, TurnEvent, TurnRequest};
 use lemma_auth::AuthService;
-use lemma_conversation::ConversationService;
 use lemma_core::{StopReason, StreamEvent, ToolCall};
 use lemma_model::{
     Adapter, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest, ProviderKind,
 };
 use lemma_provider::{CreateInput, ProviderService};
+use lemma_session::SessionService;
 use lemma_test_db::on_each_database;
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use serde_json::json;
@@ -23,7 +23,7 @@ impl MigratorTrait for Migrator {
         let mut all: Vec<_> = [
             lemma_auth::migrations(),
             lemma_provider::migrations(),
-            lemma_conversation::migrations(),
+            lemma_session::migrations(),
         ]
         .into_iter()
         .flatten()
@@ -105,15 +105,15 @@ async fn without_a_workspaces_dir_the_model_is_offered_no_tools() -> Result<(), 
             )
             .await?
             .id;
-        let conversations = ConversationService::new(db);
-        let conversation_id = conversations.create(user_id).await?.id;
-        let agent = Agent::new(conversations.clone(), Arc::new(providers), None);
+        let sessions = SessionService::new(db);
+        let session_id = sessions.create(user_id).await?.id;
+        let agent = Agent::new(sessions.clone(), Arc::new(providers), None);
         let events = Mutex::new(Vec::new());
 
         agent
             .prepare(TurnRequest {
                 user_id,
-                conversation_id,
+                session_id,
                 provider_id,
                 model: "model-a".to_owned(),
                 content: "list the files".to_owned(),
@@ -131,7 +131,7 @@ async fn without_a_workspaces_dir_the_model_is_offered_no_tools() -> Result<(), 
                 .any(|event| matches!(event, TurnEvent::ToolStarted { .. })),
             "no tool runs: {events:?}"
         );
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
         assert_eq!(
             roles,

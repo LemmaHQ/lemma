@@ -11,7 +11,7 @@ import { NavLink } from "react-router";
 
 import { paths } from "../route-paths";
 
-/** The way back to conversations, shown as the sidebar header of the settings pages. */
+/** The way back to sessions, shown as the sidebar header of the settings pages. */
 export function BackHomeButton() {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();

@@ -41,7 +41,7 @@ Notes on the rows:
 - Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) need the user's consent first. Without it, report those rows as not run; never as passing.
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
 - Generated code is gitignored. The web and desktop npm scripts regenerate the contract code and design token outputs before reading them, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect the outputs.
-- Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode conversation against a real provider. Never print keys.
+- Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode session against a real provider. Never print keys.
 
 Do not repeat a check that already passed on the same content merely because a commit or push follows.
 

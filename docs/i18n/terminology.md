@@ -39,7 +39,7 @@
 | token | token | 令牌、标记 | 指设计 token 与模型用量 token；认证用的 token 见"访问令牌" |
 | trait | trait | 特征、特质 | |
 | turn | turn | 轮次、回合 | 由一条用户消息启动的工作 |
-| workspace | workspace | | 指 Cargo 与 npm 的 workspace；`workspaces/<conversation id>` 工具目录写作"工作区" |
+| workspace | workspace | | 指 Cargo 与 npm 的 workspace；`workspaces/<session id>` 工具目录写作"工作区" |
 
 ## 中文类（中文文本中使用中文）
 
@@ -52,7 +52,7 @@
 | canvas | 画布 | | |
 | composer | 输入框面板 | 编辑器 | 会话页底部的消息输入区 |
 | control | 控件 | | |
-| conversation | 会话 | 对话 | 界面上新建会话的操作与 chat 消息可写作"对话" |
+| session | 会话 | 对话 | 属于某个用户的一棵消息树 |
 | elevation | 层级 | 海拔、高度 | |
 | hairline | 细线 | 发丝线 | |
 | leaf | 叶子 | | |

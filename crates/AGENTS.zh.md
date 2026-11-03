@@ -25,7 +25,7 @@
 
 - `shared/` 中的 crate 为所有运行时构建，Android 通过 `lemma-mobile` 链接。`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host` 把它们组装成一个路由，并在进程内提供它。宿主目录下的 crate 只编入该宿主：`server/` 编入 `lemma-server`，`desktop/` 编入 Electron 外壳，`mobile/` 编入 Android 应用。`test/` 中的 crate 只供测试使用，以 dev-dependency 引入，不链接进任何运行时。
 - crate 以单数形式命名为 `lemma-<concept>`；现存的复数名称逐步改正。
-- `lemma-auth`、`lemma-conversation` 与 `lemma-provider` 在各自的 `src/migration/` 中拥有自己的表及其 SeaORM migration；`lemma-host` 按名称顺序运行它们。新增时用 `sea-orm-cli migrate init -d <tmp>` 与 `migrate generate <name> -d <tmp>` 在临时目录中生成骨架，再把文件移进来。
+- `lemma-auth`、`lemma-session` 与 `lemma-provider` 在各自的 `src/migration/` 中拥有自己的表及其 SeaORM migration；`lemma-host` 按名称顺序运行它们。新增时用 `sea-orm-cli migrate init -d <tmp>` 与 `migrate generate <name> -d <tmp>` 在临时目录中生成骨架，再把文件移进来。
 
 ## 命令
 

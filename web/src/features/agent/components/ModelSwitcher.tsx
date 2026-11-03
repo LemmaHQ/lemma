@@ -20,8 +20,8 @@ export function ModelSwitcher({
             selection={selection}
             options={options}
             onSelect={onSelect}
-            label={t("conversation.selectModel")}
-            placeholder={t("conversation.noProvider")}
+            label={t("session.selectModel")}
+            placeholder={t("session.noProvider")}
         />
     );
 }

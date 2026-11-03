@@ -29,7 +29,7 @@ export * from "./components/primitives/toggle-group";
 export * from "./components/primitives/toggle";
 export * from "./components/primitives/tooltip";
 export * from "./components/ai/code-block";
-export * from "./components/ai/conversation";
+export * from "./components/ai/session";
 export * from "./components/ai/message";
 export * from "./components/ai/model-picker";
 export * from "./components/ai/prompt-input";

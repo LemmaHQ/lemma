@@ -1,2 +1,2 @@
-export { ConversationView } from "./components/ConversationView";
-export { clearActiveConversation } from "./store";
+export { SessionView } from "./components/SessionView";
+export { clearActiveSession } from "./store";

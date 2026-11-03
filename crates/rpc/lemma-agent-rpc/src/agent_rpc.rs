@@ -82,7 +82,7 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
             .agent
             .prepare(TurnRequest {
                 user_id,
-                conversation_id: parse_uuid(request.conversation_id)?,
+                session_id: parse_uuid(request.session_id)?,
                 provider_id: parse_uuid(request.provider_id)?,
                 model: request.model.to_string(),
                 content: request.content.to_string(),

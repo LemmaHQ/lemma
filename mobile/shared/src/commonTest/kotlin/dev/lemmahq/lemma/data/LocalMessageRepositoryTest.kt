@@ -9,7 +9,7 @@ import kotlinx.coroutines.runBlocking
 class LocalMessageRepositoryTest {
 
     @Test
-    fun savedMessagesListPerConversationInCreationOrder() = runBlocking {
+    fun savedMessagesListPerSessionInCreationOrder() = runBlocking {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         LemmaDatabase.Schema.create(driver)
         val repo = LocalMessageRepository(LemmaDatabase(driver))

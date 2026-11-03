@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useProviders } from "./useProviders";
 
-/** A model a conversation can use, with the provider that serves it. */
+/** A model a session can use, with the provider that serves it. */
 export interface ModelOption {
     providerId: string;
     providerName: string;

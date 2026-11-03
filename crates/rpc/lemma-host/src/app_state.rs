@@ -5,10 +5,10 @@ use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_agent::Agent;
 use lemma_agent_rpc::AgentRpc;
 use lemma_auth_rpc::AuthRpc;
-use lemma_conversation::ConversationService;
-use lemma_conversation_rpc::ConversationRpc;
 use lemma_provider::ProviderService;
 use lemma_provider_rpc::ProviderRpc;
+use lemma_session::SessionService;
+use lemma_session_rpc::SessionRpc;
 use lemma_system_rpc::SystemRpc;
 use sea_orm::DatabaseConnection;
 
@@ -22,7 +22,7 @@ type HostConnector = HttpConnector<ReqwestTransport>;
 pub struct AppState {
     pub(crate) auth: AuthRpc,
     pub(crate) providers: ProviderRpc<HostConnector>,
-    pub(crate) conversations: ConversationRpc,
+    pub(crate) sessions: SessionRpc,
     pub(crate) agent: AgentRpc<HostConnector>,
     pub(crate) system: SystemRpc,
 }
@@ -38,16 +38,16 @@ impl AppState {
             secrets.secret_key,
             connector,
         ));
-        let conversation_service = ConversationService::new(db.clone());
+        let session_service = SessionService::new(db.clone());
         let agent = Agent::new(
-            conversation_service.clone(),
+            session_service.clone(),
             Arc::clone(&provider_service),
             workspaces_dir,
         );
         Self {
             auth: AuthRpc::new(db, secrets.jwt_secret.clone()),
             providers: ProviderRpc::new(provider_service, secrets.jwt_secret.clone()),
-            conversations: ConversationRpc::new(conversation_service, secrets.jwt_secret.clone()),
+            sessions: SessionRpc::new(session_service, secrets.jwt_secret.clone()),
             agent: AgentRpc::new(agent, secrets.jwt_secret),
             system: SystemRpc,
         }

@@ -1,7 +1,7 @@
 import { createBrowserRouter, replace } from "react-router";
 
 import { ensureAuthReady, useAuth } from "@/features/auth";
-import { refreshConversations } from "@/features/conversations";
+import { refreshSessions } from "@/features/session";
 
 import { AuthLayout } from "./auth/AuthLayout";
 import type { RouteHandle } from "./route-handle";
@@ -44,15 +44,14 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         lazy: async () => ({
-                            Component: (
-                                await import("./conversation/ConversationLayout")
-                            ).ConversationLayout,
+                            Component: (await import("./session/SessionLayout"))
+                                .SessionLayout,
                         }),
                         children: [
-                            { path: paths.home, lazy: conversationPage },
+                            { path: paths.home, lazy: sessionPage },
                             {
-                                path: "/conversations/:id",
-                                lazy: conversationPage,
+                                path: "/sessions/:id",
+                                lazy: sessionPage,
                             },
                         ],
                     },
@@ -101,14 +100,13 @@ async function requireSignedIn() {
     if (useAuth.getState().user === null) {
         return replace(paths.signIn);
     }
-    void refreshConversations();
+    void refreshSessions();
     return null;
 }
 
-async function conversationPage() {
+async function sessionPage() {
     return {
-        Component: (await import("./conversation/ConversationPage"))
-            .ConversationPage,
+        Component: (await import("./session/SessionPage")).SessionPage,
     };
 }
 

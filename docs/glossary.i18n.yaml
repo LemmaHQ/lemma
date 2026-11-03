@@ -5,9 +5,9 @@
 /glossary:
   en: 8dfafa2bac90e244
   zh: 3984e5f07bcb3eca
-/glossary/conversation-tree:
-  en: 4ea223bb7cbddb5e
-  zh: c033e316c5215b62
+/glossary/session-tree:
+  en: e50e2293e37de1b0
+  zh: 1cba0e1367bacbcb
 /glossary/agent-loop:
   en: 62e92f1048757100
   zh: 497d59711d00d038
@@ -15,10 +15,10 @@
   en: 3b569f725c1427ff
   zh: 65cd82cfd0170984
 /glossary/tools:
-  en: ae36f7c0ed646074
-  zh: 17d8b63d18ea5965
+  en: 9eb5e2f62bf5c49e
+  zh: f14f69f657519558
 /glossary/runtimes-and-accounts:
-  en: f4df58760379e613
+  en: 78559cd48b2643a3
   zh: 530eae3d3a7b8125
 /glossary/errors:
   en: 4d556714dfe2d666

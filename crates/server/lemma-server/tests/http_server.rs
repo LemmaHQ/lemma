@@ -75,7 +75,7 @@ async fn hashed_assets_are_cached_as_immutable() -> Result<(), Box<dyn Error>> {
 async fn a_client_route_falls_back_to_the_index() -> Result<(), Box<dyn Error>> {
     let index = to_bytes(get("/").await?.into_body(), usize::MAX).await?;
 
-    let route = get("/conversations/42").await?;
+    let route = get("/sessions/42").await?;
 
     assert_eq!(route.status(), StatusCode::OK, "status");
     assert_eq!(

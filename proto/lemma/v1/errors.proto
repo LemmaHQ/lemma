@@ -22,10 +22,10 @@ enum ErrorReason {
   ERROR_REASON_PROVIDER_IDENTIFIER_INVALID = 14; // Identifier must contain valid non-empty ASCII characters
   ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists for this user account
 
-  // Conversation and messages
+  // Session and messages
   ERROR_REASON_ID_INVALID = 20; // Shared invalid UUID identifier error
   ERROR_REASON_TITLE_REQUIRED = 21;
-  ERROR_REASON_CONVERSATION_NOT_FOUND = 22;
+  ERROR_REASON_SESSION_NOT_FOUND = 22;
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
 

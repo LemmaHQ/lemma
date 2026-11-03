@@ -4,10 +4,10 @@ members = [
     "crates/shared/lemma-proto",
     "crates/shared/lemma-auth",
     "crates/shared/lemma-provider",
-    "crates/shared/lemma-conversation",
+    "crates/shared/lemma-session",
     "crates/rpc/lemma-agent-rpc",
     "crates/rpc/lemma-auth-rpc",
-    "crates/rpc/lemma-conversation-rpc",
+    "crates/rpc/lemma-session-rpc",
     "crates/rpc/lemma-host",
     "crates/rpc/lemma-provider-rpc",
     "crates/rpc/lemma-system-rpc",
@@ -49,8 +49,8 @@ lemma-agent = { path = "crates/shared/lemma-agent" }
 lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
 lemma-auth = { path = "crates/shared/lemma-auth" }
 lemma-auth-rpc = { path = "crates/rpc/lemma-auth-rpc" }
-lemma-conversation = { path = "crates/shared/lemma-conversation" }
-lemma-conversation-rpc = { path = "crates/rpc/lemma-conversation-rpc" }
+lemma-session = { path = "crates/shared/lemma-session" }
+lemma-session-rpc = { path = "crates/rpc/lemma-session-rpc" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
 lemma-host = { path = "crates/rpc/lemma-host" }
 lemma-proto = { path = "crates/shared/lemma-proto" }

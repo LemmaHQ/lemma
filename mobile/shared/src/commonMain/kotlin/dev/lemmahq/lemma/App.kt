@@ -19,8 +19,8 @@ import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.auth.AuthScreen
-import dev.lemmahq.lemma.ui.conversation.ConversationScreen
 import dev.lemmahq.lemma.ui.provider.ProvidersScreen
+import dev.lemmahq.lemma.ui.session.SessionScreen
 import dev.lemmahq.lemma.ui.setup.SetupScreen
 
 @Composable
@@ -121,7 +121,7 @@ fun App(
                         )
                     } else {
                         key(providersNonce) {
-                            ConversationScreen(
+                            SessionScreen(
                                 client = ready,
                                 settingsRepository = settingsRepository,
                                 onSignOut = {

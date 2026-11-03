@@ -8,7 +8,7 @@ impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         let mut all: Vec<_> = [
             lemma_auth::migrations(),
-            lemma_conversation::migrations(),
+            lemma_session::migrations(),
             lemma_provider::migrations(),
         ]
         .into_iter()

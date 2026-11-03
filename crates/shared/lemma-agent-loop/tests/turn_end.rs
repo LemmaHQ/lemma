@@ -7,15 +7,15 @@ use std::sync::Mutex;
 
 use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, LoopError, TurnEvent};
-use lemma_conversation::MessageStatus;
 use lemma_core::{ContentBlock, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
 use lemma_tools::LocalExecEnv;
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::common::{Migrator, input, new_conversation};
+use crate::common::{Migrator, input, new_session};
 
 /// Thinks, then stops for tool use with one tool call.
 struct AsksForTool;
@@ -55,14 +55,14 @@ impl Adapter for Refuses {
 #[tokio::test]
 async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), AsksForTool, None);
+            AgentLoop::new(sessions.clone(), AsksForTool, None);
         let events = Mutex::new(Vec::new());
 
         agent_loop
             .run_turn(
-                input(user_id, conversation_id),
+                input(user_id, session_id),
                 &|event| events.lock().unwrap_or_else(|e| e.into_inner()).push(event),
                 &CancelToken::new(),
             )
@@ -79,7 +79,7 @@ async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<()
                 .any(|event| matches!(event, TurnEvent::ToolStarted { .. })),
             "no tool runs: {events:?}"
         );
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
         assert_eq!(
             roles,
@@ -120,12 +120,12 @@ async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<()
 #[tokio::test]
 async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(conversations, Refuses, None);
+        let (sessions, user_id, session_id) = new_session(&db).await?;
+        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, Refuses, None);
 
         let result = agent_loop
             .run_turn(
-                input(user_id, conversation_id),
+                input(user_id, session_id),
                 &|_| {},
                 &CancelToken::new(),
             )
@@ -143,14 +143,14 @@ async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(
 #[tokio::test]
 async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations, AsksForTool, None);
+            AgentLoop::new(sessions, AsksForTool, None);
         db.close().await?;
 
         let result = agent_loop
             .run_turn(
-                input(user_id, conversation_id),
+                input(user_id, session_id),
                 &|_| {},
                 &CancelToken::new(),
             )
@@ -168,17 +168,17 @@ async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<
 #[tokio::test]
 async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let missing = Uuid::new_v4();
-        conversations
-            .update_leaf(user_id, conversation_id, missing)
+        sessions
+            .update_leaf(user_id, session_id, missing)
             .await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), AsksForTool, None);
+            AgentLoop::new(sessions.clone(), AsksForTool, None);
 
         let result = agent_loop
             .run_turn(
-                input(user_id, conversation_id),
+                input(user_id, session_id),
                 &|_| {},
                 &CancelToken::new(),
             )
@@ -188,7 +188,7 @@ async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(),
             matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
             "{result:?}"
         );
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         assert_eq!(messages.len(), 1, "only the user message: {messages:?}");
         Ok(())
     })

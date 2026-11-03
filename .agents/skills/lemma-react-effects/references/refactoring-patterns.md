@@ -118,7 +118,7 @@ const lastAssistantId =
     items.findLast((m) => m.role === "assistant")?.id ?? null;
 ```
 
-Stability is a correctness requirement when a changed identity changes behavior. In `SessionList.tsx`, the callback ref selects the input's text. React calls a callback ref again whenever its identity changes, so without `useCallback` any re-render while the input is open, such as a session list update, would select the text again and discard the user's cursor position:
+Stability is a correctness requirement when a changed identity changes behavior. In `SessionGroups.tsx`, the callback ref selects the input's text. React calls a callback ref again whenever its identity changes, so without `useCallback` any re-render while the input is open, such as a session list update, would select the text again and discard the user's cursor position:
 
 ```tsx
 const focusRef = useCallback((el: HTMLInputElement | null) => {
@@ -144,8 +144,8 @@ const handleSaveNew = async (data: NewProviderData) => {
 `store.create` calls the RPC and appends the result to `list`; the handler does the follow-up work after `await`. Work that must follow an RPC, such as a toast, navigation, or a new selection, stays in that handler instead of a "completed" flag another effect watches. Code outside React calls a store action through `getState()`:
 
 ```ts
-export function refreshConversations(): Promise<void> {
-    return useConversationsStore.getState().refresh();
+export function refreshSessions(): Promise<void> {
+    return useSessionStore.getState().refresh();
 }
 ```
 

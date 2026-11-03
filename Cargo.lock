@@ -2273,10 +2273,10 @@ dependencies = [
  "futures",
  "lemma-agent-loop",
  "lemma-auth",
- "lemma-conversation",
  "lemma-core",
  "lemma-model",
  "lemma-provider",
+ "lemma-session",
  "lemma-test-db",
  "lemma-tools",
  "sea-orm-migration",
@@ -2293,9 +2293,9 @@ dependencies = [
  "chrono",
  "futures",
  "lemma-auth",
- "lemma-conversation",
  "lemma-core",
  "lemma-model",
+ "lemma-session",
  "lemma-test-db",
  "lemma-tools",
  "sea-orm",
@@ -2320,11 +2320,11 @@ dependencies = [
  "lemma-agent",
  "lemma-agent-loop",
  "lemma-auth-rpc",
- "lemma-conversation",
  "lemma-core",
  "lemma-model",
  "lemma-proto",
  "lemma-provider",
+ "lemma-session",
  "sea-orm",
  "tokio",
  "uuid",
@@ -2358,42 +2358,6 @@ dependencies = [
  "lemma-auth",
  "lemma-proto",
  "sea-orm",
- "uuid",
-]
-
-[[package]]
-name = "lemma-conversation"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "lemma-adapter",
- "lemma-auth",
- "lemma-core",
- "lemma-model",
- "lemma-provider",
- "lemma-test-db",
- "sea-orm",
- "sea-orm-migration",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "lemma-conversation-rpc"
-version = "0.1.0"
-dependencies = [
- "buffa",
- "buffa-types",
- "connectrpc",
- "lemma-auth-rpc",
- "lemma-conversation",
- "lemma-core",
- "lemma-proto",
- "sea-orm",
- "serde_json",
  "uuid",
 ]
 
@@ -2441,11 +2405,11 @@ dependencies = [
  "lemma-agent-rpc",
  "lemma-auth",
  "lemma-auth-rpc",
- "lemma-conversation",
- "lemma-conversation-rpc",
  "lemma-proto",
  "lemma-provider",
  "lemma-provider-rpc",
+ "lemma-session",
+ "lemma-session-rpc",
  "lemma-system-rpc",
  "rand 0.10.3",
  "sea-orm",
@@ -2535,6 +2499,42 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http 0.7.1",
+]
+
+[[package]]
+name = "lemma-session"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "lemma-adapter",
+ "lemma-auth",
+ "lemma-core",
+ "lemma-model",
+ "lemma-provider",
+ "lemma-test-db",
+ "sea-orm",
+ "sea-orm-migration",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "lemma-session-rpc"
+version = "0.1.0"
+dependencies = [
+ "buffa",
+ "buffa-types",
+ "connectrpc",
+ "lemma-auth-rpc",
+ "lemma-core",
+ "lemma-proto",
+ "lemma-session",
+ "sea-orm",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]

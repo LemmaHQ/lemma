@@ -8,16 +8,16 @@ Read this before changing anything under `crates/`. It maps the crate layers, th
 
 Lemma is one Rust workspace. A crate depends only on crates in its own layer or the layers above it in this table; `lemma-core` is the language every layer speaks.
 
-| Layer     | Crates                                                               | Owns                                                                                                                                                                                                                                              |
-| --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                           | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
-| Domains   | `lemma-auth`, `lemma-conversation`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; conversations, the message tree, and the `conversations` and `messages` tables; provider configuration, model lists, and the `providers` table; the migrations of these tables; API-key sealing            |
-| Engine    | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop`                   | Vendor wire formats and model lists; the tool registry and execution environment; the turn loop and its cancellation                                                                                                                              |
-| Agent     | `lemma-agent`                                                        | Assembling one turn from a request (provider endpoint, adapter, conversations, workspace tools), running it, and aborting running turns                                                                                                           |
-| RPC       | `crates/rpc/*`, including `lemma-host`                               | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`    |
-| Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`                      | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                       |
+| Layer     | Crates                                                          | Owns                                                                                                                                                                                                                                              |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                      | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
+| Domains   | `lemma-auth`, `lemma-session`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; sessions, the message tree, and the `sessions` and `messages` tables; provider configuration, model lists, and the `providers` table; the migrations of these tables; API-key sealing                      |
+| Engine    | `lemma-adapter`, `lemma-tools`, `lemma-agent-loop`              | Vendor wire formats and model lists; the tool registry and execution environment; the turn loop and its cancellation                                                                                                                              |
+| Agent     | `lemma-agent`                                                   | Assembling one turn from a request (provider endpoint, adapter, sessions, workspace tools), running it, and aborting running turns                                                                                                                |
+| RPC       | `crates/rpc/*`, including `lemma-host`                          | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`    |
+| Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`                 | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                       |
 
-`lemma-auth`, `lemma-conversation`, and `lemma-provider` define their tables and migrations with SeaORM and run on SQLite and PostgreSQL alike through one `DatabaseConnection`; the engine and agent layers reach the data only through their services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
+`lemma-auth`, `lemma-session`, and `lemma-provider` define their tables and migrations with SeaORM and run on SQLite and PostgreSQL alike through one `DatabaseConnection`; the engine and agent layers reach the data only through their services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
 Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host; crates under `crates/test/` serve only tests ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
@@ -25,11 +25,11 @@ Crates under `crates/shared/` build for every runtime, including Android; `crate
 
 The same domain services and turn loop run in three hosts. Clients choose a host; the core does not know which client is calling.
 
-| Runtime      | Host                                                                         | Storage                                              | Tools                      | Stored API keys                     |
-| ------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------- | ----------------------------------- |
-| Server mode  | `lemma-server`, port 1025                                                    | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none                       | sealed with `LEMMA_SECRET_KEY`      |
-| Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`                      | per-conversation workspace | sealed with an engine-generated key |
-| In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`                      | per-conversation workspace | sealed with an engine-generated key |
+| Runtime      | Host                                                                         | Storage                                              | Tools                 | Stored API keys                     |
+| ------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------- | ----------------------------------- |
+| Server mode  | `lemma-server`, port 1025                                                    | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none                  | sealed with `LEMMA_SECRET_KEY`      |
+| Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`                      | per-session workspace | sealed with an engine-generated key |
+| In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`                      | per-session workspace | sealed with an engine-generated key |
 
 **Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the migrations at startup, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
 
@@ -37,26 +37,26 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 
 **In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; like the desktop addon, it opens the engine over a data directory, the app's `filesDir`, and serves the Connect router in-process. The app talks to it with the same Connect Kotlin clients as to a server in remote mode: an OkHttp interceptor hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)). Users register their own accounts; there is no default account.
 
-The web client fetches conversations and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown; the cache belongs to the client, and the host's store remains the record.
+The web client fetches sessions and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown; the cache belongs to the client, and the host's store remains the record.
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `ConversationService`, `AgentService`, and `SystemService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `SessionService`, `AgentService`, and `SystemService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
-`AuthService.Me` and every RPC of `ProviderService`, `ConversationService`, and `AgentService` resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id. The other `AuthService` RPCs and `SystemService` answer without authentication.
+`AuthService.Me` and every RPC of `ProviderService`, `SessionService`, and `AgentService` resolve the caller with `require_user`: a `Bearer` access token, else the `lemma_access` cookie. Each request then works only on rows owned by that user id. The other `AuthService` RPCs and `SystemService` answer without authentication.
 
 ## The path of one turn
 
 A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and `lemma-agent-rpc` calls only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. `lemma-agent-rpc` maps its `TurnEvent`s onto `AgentEvent` messages.
 
 ```text
-AgentService.SendMessage(conversation, provider, model, content)
+AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
   append the user message under the active leaf; move the leaf            -> started
-  record the model selection on the conversation
+  record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
@@ -78,7 +78,7 @@ Every `AgentEvent` carries the server's `occurred_at` instant, preserved by repl
 
 The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
-Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<conversation id>` under the data directory; server mode attaches no tools. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
+Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<session id>` under the data directory; server mode attaches no tools. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
 
 `AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`.
 
@@ -86,9 +86,9 @@ A turn runs to its end whether or not a client reads its stream. `lemma-agent-rp
 
 ## Persistence
 
-The auth tables `users`, `auth_credentials`, and `refresh_tokens` belong to `lemma-auth`, `providers` to `lemma-provider`, and `conversations` and `messages` to `lemma-conversation`; each crate defines its tables with SeaORM and owns their migrations, and `lemma-host` applies them, merged in name order, to SQLite and PostgreSQL alike when a host opens its database ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+The auth tables `users`, `auth_credentials`, and `refresh_tokens` belong to `lemma-auth`, `providers` to `lemma-provider`, and `sessions` and `messages` to `lemma-session`; each crate defines its tables with SeaORM and owns their migrations, and `lemma-host` applies them, merged in name order, to SQLite and PostgreSQL alike when a host opens its database ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
-A conversation is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider and model that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or conversation. The conversation row stores the active `leaf_id` and the last model selection. `ConversationService` in `lemma-conversation` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through conversations. Every operation on a conversation takes the caller's user id and touches only that user's rows.
+A session is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider and model that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through sessions. Every operation on a session takes the caller's user id and touches only that user's rows.
 
 A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 

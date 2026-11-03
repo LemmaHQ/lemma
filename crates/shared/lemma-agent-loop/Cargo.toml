@@ -6,7 +6,7 @@ edition.workspace = true
 [dependencies]
 chrono.workspace = true
 futures.workspace = true
-lemma-conversation.workspace = true
+lemma-session.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true
 lemma-tools.workspace = true

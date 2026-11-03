@@ -1,6 +1,6 @@
 import { type Timestamp, timestampDate } from "@bufbuild/protobuf/wkt";
 
-import { type Message, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
+import { type Message, MessageStatus } from "@/gen/lemma/v1/session_pb";
 
 export interface ToolCallItem {
     id: string;

@@ -1,6 +1,6 @@
 use chrono::Utc;
-use lemma_conversation::{Message as StoredMessage, MessageBody, MessageStatus, MessageUpdate};
 use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
+use lemma_session::{Message as StoredMessage, MessageBody, MessageStatus, MessageUpdate};
 use uuid::Uuid;
 
 use crate::stream::{StepEnd, StepOutcome};
@@ -10,14 +10,14 @@ use crate::tool_runtime::ToolOutcome;
 /// tool result.
 pub(crate) fn settled(
     id: Uuid,
-    conversation_id: Uuid,
+    session_id: Uuid,
     parent_id: Option<Uuid>,
     message: Message,
 ) -> StoredMessage {
     let now = Utc::now();
     StoredMessage {
         id,
-        conversation_id,
+        session_id,
         parent_id,
         body: MessageBody(message),
         status: MessageStatus::Done,
@@ -33,7 +33,7 @@ pub(crate) fn settled(
 /// model.
 pub(crate) fn placeholder(
     id: Uuid,
-    conversation_id: Uuid,
+    session_id: Uuid,
     parent_id: Uuid,
     model: &str,
     provider_id: Uuid,
@@ -41,7 +41,7 @@ pub(crate) fn placeholder(
     let now = Utc::now();
     StoredMessage {
         id,
-        conversation_id,
+        session_id,
         parent_id: Some(parent_id),
         body: MessageBody(Message::Assistant {
             content: vec![ContentBlock::Text(TextContent {

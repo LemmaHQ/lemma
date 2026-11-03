@@ -85,7 +85,7 @@ export function MessageItem({
                     />
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageRegenerateAction
-                            label={t("conversation.regenerate")}
+                            label={t("session.regenerate")}
                             onRegenerate={() => onRegenerate(message.id)}
                         />
                     )}

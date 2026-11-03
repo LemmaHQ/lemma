@@ -8,9 +8,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, LoopError, ToolRuntime, TurnEvent};
-use lemma_conversation::MessageStatus;
 use lemma_core::{StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
 use lemma_tools::{LocalExecEnv, ToolRegistry};
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend};
@@ -18,7 +18,7 @@ use serde_json::json;
 use tokio::runtime::Handle;
 use tokio::task;
 
-use crate::common::{Migrator, input, new_conversation};
+use crate::common::{Migrator, input, new_session};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Failure {
@@ -85,13 +85,13 @@ impl Failure {
         match self {
             Self::UserInsert => Some(Trigger::on("messages", "INSERT", user, user_pg)),
             Self::UserLeaf => Some(Trigger::on(
-                "conversations",
+                "sessions",
                 "UPDATE OF leaf_id",
                 user_leaf,
                 user_leaf_pg,
             )),
             Self::LastModel => Some(Trigger::on(
-                "conversations",
+                "sessions",
                 "UPDATE OF last_model",
                 "TRUE",
                 "TRUE",
@@ -111,7 +111,7 @@ impl Failure {
             )),
             Self::ToolInsert => Some(Trigger::on("messages", "INSERT", tool, tool_pg)),
             Self::ToolLeaf => Some(Trigger::on(
-                "conversations",
+                "sessions",
                 "UPDATE OF leaf_id",
                 tool_leaf,
                 tool_leaf_pg,
@@ -200,15 +200,15 @@ async fn install(db: &DatabaseConnection, failure: Failure) -> Result<(), Box<dy
 async fn persistence_failures_end_the_turn_at_the_failed_statement() -> Result<(), Box<dyn Error>> {
     for failure in Failure::ALL {
         on_each_database::<Migrator, _, _>(|db| async move {
-            let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+            let (sessions, user_id, session_id) = new_session(&db).await?;
             install(&db, failure).await?;
             let adapter = Scripted {
                 tools: failure.uses_tools(),
                 step: AtomicUsize::new(0),
             };
             let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
-            let agent_loop = AgentLoop::new(conversations.clone(), adapter, Some(runtime));
-            let turn_input = input(user_id, conversation_id);
+            let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
+            let turn_input = input(user_id, session_id);
             let user_message_id = turn_input.user_message_id;
             let drop_db = db.clone();
             let observer = |event| {
@@ -236,28 +236,28 @@ async fn persistence_failures_end_the_turn_at_the_failed_statement() -> Result<(
                 "turn write refused"
             };
             assert!(cause.contains(expected), "{failure:?}: {cause}");
-            let conversation = conversations
-                .find(user_id, conversation_id)
+            let session = sessions
+                .find(user_id, session_id)
                 .await?
-                .ok_or("conversation disappeared")?;
+                .ok_or("session disappeared")?;
             if failure == Failure::DroppedMessages {
-                assert_eq!(conversation.leaf_id, Some(user_message_id), "{failure:?}");
-                assert!(conversation.last_model.is_some(), "{failure:?}");
+                assert_eq!(session.leaf_id, Some(user_message_id), "{failure:?}");
+                assert!(session.last_model.is_some(), "{failure:?}");
                 return Ok(());
             }
-            let messages = conversations.all_messages(conversation_id).await?;
+            let messages = sessions.all_messages(session_id).await?;
             let roles: Vec<_> = messages.iter().map(|message| message.role()).collect();
             let leaf = messages
                 .iter()
-                .find(|message| Some(message.id) == conversation.leaf_id);
+                .find(|message| Some(message.id) == session.leaf_id);
             match failure {
                 Failure::UserInsert => {
                     assert!(messages.is_empty(), "{failure:?}: {messages:?}");
-                    assert_eq!(conversation.leaf_id, None);
+                    assert_eq!(session.leaf_id, None);
                 }
                 Failure::UserLeaf => {
                     assert_eq!(roles, ["user"], "{failure:?}");
-                    assert_eq!(conversation.leaf_id, None);
+                    assert_eq!(session.leaf_id, None);
                 }
                 Failure::LastModel | Failure::AssistantInsert => {
                     assert_eq!(roles, ["user"], "{failure:?}");

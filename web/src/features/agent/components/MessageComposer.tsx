@@ -60,10 +60,10 @@ export function MessageComposer({
                         disabled={model === null}
                         placeholder={
                             model === null
-                                ? t("conversation.noModelPlaceholder")
-                                : t("conversation.inputPlaceholder")
+                                ? t("session.noModelPlaceholder")
+                                : t("session.inputPlaceholder")
                         }
-                        aria-label={t("conversation.inputPlaceholder")}
+                        aria-label={t("session.inputPlaceholder")}
                     />
                 </PromptInputBody>
                 <PromptInputFooter>
@@ -80,7 +80,7 @@ export function MessageComposer({
                         disabled={!streaming && !canSend}
                         onClick={streaming ? onStop : undefined}
                         aria-label={
-                            streaming ? t("agent.stop") : t("conversation.send")
+                            streaming ? t("agent.stop") : t("session.send")
                         }
                     />
                 </PromptInputFooter>
@@ -88,18 +88,18 @@ export function MessageComposer({
             <p className="text-center text-xs text-muted-foreground">
                 {model === null ? (
                     <>
-                        {t("conversation.noModelHint")}{" "}
+                        {t("session.noModelHint")}{" "}
                         <Button
                             variant="link"
                             size="xs"
                             nativeButton={false}
                             render={<Link to={providersPath} viewTransition />}
                         >
-                            {t("conversation.noModelAction")}
+                            {t("session.noModelAction")}
                         </Button>
                     </>
                 ) : (
-                    t("conversation.disclaimer")
+                    t("session.disclaimer")
                 )}
             </p>
         </div>

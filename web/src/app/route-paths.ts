@@ -7,6 +7,6 @@ export const paths = {
     signIn: "/signin",
     signUp: "/signup",
     settings: "/settings",
-    conversation: (id: string) => `/conversations/${id}`,
+    session: (id: string) => `/sessions/${id}`,
     settingsSection: (segment: SettingsSegment) => `/settings/${segment}`,
 };

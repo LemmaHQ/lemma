@@ -22,7 +22,7 @@ const confirm = (onConfirm: () => void) => (
         </AlertDialogTrigger>
         <AlertDialogContent size="sm">
             <AlertDialogHeader>
-                <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+                <AlertDialogTitle>Delete session?</AlertDialogTitle>
                 <AlertDialogDescription>
                     This cannot be undone.
                 </AlertDialogDescription>
@@ -44,7 +44,7 @@ it("asks before a destructive action and cancels without acting", async () => {
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
     const dialog = await screen.findByRole("alertdialog", {
-        name: "Delete conversation?",
+        name: "Delete session?",
     });
     expect(dialog.textContent).toContain("This cannot be undone.");
 

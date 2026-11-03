@@ -12,9 +12,9 @@ import {
 } from "@lemma/ui";
 
 const SUGGESTION_KEYS = [
-    "conversation.suggestion1",
-    "conversation.suggestion2",
-    "conversation.suggestion3",
+    "session.suggestion1",
+    "session.suggestion2",
+    "session.suggestion3",
 ] as const;
 
 interface EmptyStateProps {
@@ -30,9 +30,9 @@ export function EmptyState({ onPickSuggestion }: EmptyStateProps) {
                 <EmptyMedia variant="icon">
                     <MessageCirclePlusIcon />
                 </EmptyMedia>
-                <EmptyTitle>{t("conversation.emptyTitle")}</EmptyTitle>
+                <EmptyTitle>{t("session.emptyTitle")}</EmptyTitle>
                 <EmptyDescription>
-                    {t("conversation.emptySubtitle")}
+                    {t("session.emptySubtitle")}
                 </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex-row flex-wrap justify-center">

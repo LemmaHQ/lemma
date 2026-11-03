@@ -6,14 +6,14 @@ use std::error::Error;
 
 use futures::{FutureExt, stream};
 use lemma_agent_loop::{AgentLoop, CancelToken, TurnEvent};
-use lemma_conversation::{MessageBody, MessageStatus};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_session::{MessageBody, MessageStatus};
 use lemma_test_db::on_each_database;
 use lemma_tools::LocalExecEnv;
 use tokio::sync::mpsc;
 
-use crate::common::{Migrator, input, new_conversation};
+use crate::common::{Migrator, input, new_session};
 
 /// Streams one text delta, then waits forever for more.
 struct StalledAdapter;
@@ -32,16 +32,16 @@ impl Adapter for StalledAdapter {
 #[tokio::test]
 async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), StalledAdapter, None);
+            AgentLoop::new(sessions.clone(), StalledAdapter, None);
         let cancel = CancelToken::new();
         let (tx, mut rx) = mpsc::unbounded_channel();
         let observer = move |ev: TurnEvent| {
             let _ = tx.send(ev);
         };
 
-        let run = agent_loop.run_turn(input(user_id, conversation_id), &observer, &cancel);
+        let run = agent_loop.run_turn(input(user_id, session_id), &observer, &cancel);
         let watch = async {
             while let Some(ev) = rx.recv().await {
                 if matches!(ev, TurnEvent::Delta { .. }) {
@@ -54,7 +54,7 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
             () = watch => return Err("observer closed before the turn ended".into()),
         }
 
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         assert_eq!(messages.len(), 2, "user message and assistant placeholder");
         let assistant = &messages[1];
         assert_eq!(
@@ -73,12 +73,8 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
             }),
             "settled body keeps the streamed text"
         );
-        let conversation = conversations.find(user_id, conversation_id).await?;
-        assert_eq!(
-            conversation.and_then(|c| c.leaf_id),
-            Some(assistant.id),
-            "leaf"
-        );
+        let session = sessions.find(user_id, session_id).await?;
+        assert_eq!(session.and_then(|c| c.leaf_id), Some(assistant.id), "leaf");
         Ok(())
     })
     .await
@@ -87,22 +83,22 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
 #[tokio::test]
 async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(conversations.clone(), StalledAdapter, None);
+            AgentLoop::new(sessions.clone(), StalledAdapter, None);
         let cancel = CancelToken::new();
         cancel.cancel();
 
-        let turn = input(user_id, conversation_id);
+        let turn = input(user_id, session_id);
         let user_message_id = turn.user_message_id;
         agent_loop.run_turn(turn, &|_| {}, &cancel).await?;
 
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         assert_eq!(messages.len(), 1, "only the user message");
         assert_eq!(messages[0].id, user_message_id, "user message id");
-        let conversation = conversations.find(user_id, conversation_id).await?;
+        let session = sessions.find(user_id, session_id).await?;
         assert_eq!(
-            conversation.and_then(|c| c.leaf_id),
+            session.and_then(|c| c.leaf_id),
             Some(user_message_id),
             "leaf"
         );

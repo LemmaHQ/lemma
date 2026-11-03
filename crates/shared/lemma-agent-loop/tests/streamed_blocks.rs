@@ -6,15 +6,15 @@ use std::error::Error;
 
 use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, LoopError};
-use lemma_conversation::{Message as StoredMessage, MessageStatus};
 use lemma_core::{ContentBlock, StopReason, StreamEvent, TextContent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_session::{Message as StoredMessage, MessageStatus};
 use lemma_test_db::on_each_database;
 use lemma_tools::LocalExecEnv;
 use sea_orm::DatabaseConnection;
 use serde_json::json;
 
-use crate::common::{Migrator, input, new_conversation};
+use crate::common::{Migrator, input, new_session};
 
 /// Replays one scripted stream; an `Err` item fails it at that point.
 struct Scripted(Vec<Result<StreamEvent, String>>);
@@ -35,23 +35,19 @@ async fn answer(
     db: &DatabaseConnection,
     events: Vec<Result<StreamEvent, String>>,
 ) -> Result<(Result<(), LoopError>, StoredMessage), Box<dyn Error>> {
-    let (conversations, user_id, conversation_id) = new_conversation(db).await?;
+    let (sessions, user_id, session_id) = new_session(db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
-        AgentLoop::new(conversations.clone(), Scripted(events), None);
+        AgentLoop::new(sessions.clone(), Scripted(events), None);
 
     let turn = agent_loop
-        .run_turn(
-            input(user_id, conversation_id),
-            &|_| {},
-            &CancelToken::new(),
-        )
+        .run_turn(input(user_id, session_id), &|_| {}, &CancelToken::new())
         .await;
 
-    let answer = conversations
-        .all_messages(conversation_id)
+    let answer = sessions
+        .all_messages(session_id)
         .await?
         .pop()
-        .ok_or("the conversation has no messages")?;
+        .ok_or("the session has no messages")?;
     Ok((turn, answer))
 }
 

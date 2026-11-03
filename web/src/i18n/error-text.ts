@@ -19,7 +19,7 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.PROVIDER_NOT_FOUND]: "errors.providerNotFound",
     [ErrorReason.ID_INVALID]: "errors.idInvalid",
     [ErrorReason.TITLE_REQUIRED]: "errors.titleRequired",
-    [ErrorReason.CONVERSATION_NOT_FOUND]: "errors.conversationNotFound",
+    [ErrorReason.SESSION_NOT_FOUND]: "errors.sessionNotFound",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
     [ErrorReason.TURN_NOT_RUNNING]: "errors.turnNotRunning",

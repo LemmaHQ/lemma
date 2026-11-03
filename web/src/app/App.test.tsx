@@ -9,10 +9,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
 import { type User, UserSchema } from "@/gen/lemma/v1/auth_pb";
 import {
-    type Conversation,
-    ConversationSchema,
+    type Session,
+    SessionSchema,
     ListMessagesResponseSchema,
-} from "@/gen/lemma/v1/conversation_pb";
+} from "@/gen/lemma/v1/session_pb";
 import {
     type Provider,
     ProviderKind,
@@ -22,10 +22,8 @@ import {
 const rpc = vi.hoisted(() => ({
     me: vi.fn<(req: object) => Promise<{ user?: User }>>(),
     signOut: vi.fn<(req: object) => Promise<object>>(),
-    listConversations:
-        vi.fn<(req: object) => Promise<{ conversations: Conversation[] }>>(),
-    createConversation:
-        vi.fn<(req: object) => Promise<{ conversation?: Conversation }>>(),
+    listSessions: vi.fn<(req: object) => Promise<{ sessions: Session[] }>>(),
+    createSession: vi.fn<(req: object) => Promise<{ session?: Session }>>(),
     listMessages: vi.fn<(req: object) => Promise<object>>(),
     listProviders: vi.fn<(req: object) => Promise<{ providers: Provider[] }>>(),
     sendMessage: vi.fn<(req: object) => AsyncIterable<object>>(),
@@ -34,9 +32,9 @@ const rpc = vi.hoisted(() => ({
 
 vi.mock("@/rpc/clients", () => ({
     authClient: { me: rpc.me, signOut: rpc.signOut },
-    conversationClient: {
-        listConversations: rpc.listConversations,
-        createConversation: rpc.createConversation,
+    sessionClient: {
+        listSessions: rpc.listSessions,
+        createSession: rpc.createSession,
         listMessages: rpc.listMessages,
     },
     providerClient: { listProviders: rpc.listProviders },
@@ -44,8 +42,8 @@ vi.mock("@/rpc/clients", () => ({
     systemClient: { getVersion: rpc.getVersion },
 }));
 
-const conversation = (id: string, title: string) =>
-    create(ConversationSchema, {
+const session = (id: string, title: string) =>
+    create(SessionSchema, {
         id,
         title,
         updatedAt: timestampFromDate(new Date()),
@@ -92,12 +90,12 @@ const sidebar = () => {
     return element;
 };
 
-const conversationRows = async () => {
+const sessionRows = async () => {
     const list = (await within(document.body).findAllByText("Trip plans"))
         .map((element) => element.closest("ul"))
         .find((element) => element !== null);
     if (list === undefined) {
-        throw new TypeError("no conversation list");
+        throw new TypeError("no session list");
     }
     return within(list);
 };
@@ -133,11 +131,8 @@ beforeEach(() => {
     vi.resetAllMocks();
     rpc.me.mockResolvedValue({});
     rpc.signOut.mockResolvedValue({});
-    rpc.listConversations.mockResolvedValue({
-        conversations: [
-            conversation("c1", "Trip plans"),
-            conversation("c2", ""),
-        ],
+    rpc.listSessions.mockResolvedValue({
+        sessions: [session("c1", "Trip plans"), session("c2", "")],
     });
     rpc.listMessages.mockResolvedValue(create(ListMessagesResponseSchema, {}));
     rpc.listProviders.mockResolvedValue({ providers: [] });
@@ -184,7 +179,7 @@ it("sends a signed-in user from sign-in to an untitled home", async () => {
     signIn();
     await start("/signin");
 
-    await conversationRows();
+    await sessionRows();
     expect(window.location.pathname).toBe("/");
     expect(pageTitle()).toBe("");
 });
@@ -193,36 +188,36 @@ it("sends an unknown path home", async () => {
     signIn();
     await start("/nowhere");
 
-    await conversationRows();
+    await sessionRows();
     expect(window.location.pathname).toBe("/");
 });
 
-it("titles an open conversation, untitled ones as new", async () => {
+it("titles an open session, untitled ones as new", async () => {
     const user = userEvent.setup();
     signIn();
     await start("/");
 
-    await user.click((await conversationRows()).getByText("Trip plans"));
-    await atPath("/conversations/c1");
+    await user.click((await sessionRows()).getByText("Trip plans"));
+    await atPath("/sessions/c1");
     await waitFor(() => {
         expect(pageTitle()).toBe("Trip plans");
     });
 
-    await user.click((await conversationRows()).getByText("New conversation"));
-    await atPath("/conversations/c2");
+    await user.click((await sessionRows()).getByText("New session"));
+    await atPath("/sessions/c2");
     await waitFor(() => {
-        expect(pageTitle()).toBe("New conversation");
+        expect(pageTitle()).toBe("New session");
     });
 
     await user.click(
         within(sidebar()).getAllByRole("button", {
-            name: "New conversation",
+            name: "New session",
         })[0]!,
     );
     await atPath("/");
 });
 
-it("creates a conversation for the first message and opens it", async () => {
+it("creates a session for the first message and opens it", async () => {
     const user = userEvent.setup();
     signIn();
     rpc.listProviders.mockResolvedValue({
@@ -236,8 +231,8 @@ it("creates a conversation for the first message and opens it", async () => {
             }),
         ],
     });
-    rpc.createConversation.mockResolvedValue({
-        conversation: conversation("c9", ""),
+    rpc.createSession.mockResolvedValue({
+        session: session("c9", ""),
     });
     rpc.sendMessage.mockImplementation(doneStream);
     await start("/");
@@ -249,10 +244,10 @@ it("creates a conversation for the first message and opens it", async () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     await waitFor(() => {
-        expect(window.location.pathname).toBe("/conversations/c9");
+        expect(window.location.pathname).toBe("/sessions/c9");
     });
     expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
-        conversationId: "c9",
+        sessionId: "c9",
         content: "hello",
     });
 });
@@ -260,23 +255,21 @@ it("creates a conversation for the first message and opens it", async () => {
 it("remembers a collapsed sidebar and starts from the toolbar", async () => {
     const user = userEvent.setup();
     signIn();
-    const view = await start("/conversations/c1");
+    const view = await start("/sessions/c1");
 
-    await conversationRows();
+    await sessionRows();
     await user.click(
         within(sidebar()).getByRole("button", { name: "Collapse sidebar" }),
     );
     expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
     expect(sidebar().dataset.state).toBe("collapsed");
 
-    await user.click(
-        header().getByRole("button", { name: "New conversation" }),
-    );
+    await user.click(header().getByRole("button", { name: "New session" }));
     await atPath("/");
     view.unmount();
 
     await start("/");
-    await conversationRows();
+    await sessionRows();
     expect(sidebar().dataset.state).toBe("collapsed");
     await user.click(header().getByRole("button", { name: "Expand sidebar" }));
     expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
@@ -303,7 +296,7 @@ it("navigates the settings sections from the account menu", async () => {
     });
 
     await user.click(screen.getByRole("link", { name: "Back to home" }));
-    await conversationRows();
+    await sessionRows();
     await atPath("/");
 });
 
@@ -352,8 +345,8 @@ it("returns to sign-in after signing out", async () => {
 it("opens the sidebar as a sheet on a narrow window", async () => {
     const user = userEvent.setup();
     setViewportWidth(500);
-    rpc.listConversations.mockResolvedValue({
-        conversations: [conversation("c1", "Trip plans")],
+    rpc.listSessions.mockResolvedValue({
+        sessions: [session("c1", "Trip plans")],
     });
     signIn();
     await start("/");
@@ -363,7 +356,7 @@ it("opens the sidebar as a sheet on a narrow window", async () => {
     );
     const sheet = await screen.findByRole("dialog", { name: "Sidebar" });
     await user.click(
-        within(sheet).getByRole("button", { name: "New conversation" }),
+        within(sheet).getByRole("button", { name: "New session" }),
     );
 
     await waitFor(() => {
@@ -397,7 +390,7 @@ it("paints the desktop title bar as the sidebar once signed in", async () => {
     signIn();
     await start("/");
 
-    await conversationRows();
+    await sessionRows();
     await waitFor(() => {
         expect(bridge.setTitleBar).toHaveBeenLastCalledWith({
             theme: "light",

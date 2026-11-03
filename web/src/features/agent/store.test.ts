@@ -7,10 +7,10 @@ import {
     type ListMessagesResponse,
     ListMessagesResponseSchema,
     MessageStatus,
-} from "@/gen/lemma/v1/conversation_pb";
+} from "@/gen/lemma/v1/session_pb";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
-import { clearActiveConversation, useActiveConversation } from "./store";
+import { clearActiveSession, useActiveSession } from "./store";
 
 type StreamResponse = { event?: AgentEvent | undefined };
 type Stream = AsyncIterable<StreamResponse>;
@@ -23,7 +23,7 @@ const rpc = vi.hoisted(() => ({
     listMessages:
         vi.fn<
             (req: {
-                conversationId: string;
+                sessionId: string;
                 beforeId?: string;
                 limit: number;
             }) => Promise<ListMessagesResponse>
@@ -31,7 +31,7 @@ const rpc = vi.hoisted(() => ({
     sendMessage: vi.fn<
         (
             req: {
-                conversationId: string;
+                sessionId: string;
                 content: string;
                 providerId: string;
                 model: string;
@@ -55,7 +55,7 @@ vi.mock("@/rpc/clients", () => ({
         resumeStream: rpc.resumeStream,
         abortMessage: rpc.abortMessage,
     },
-    conversationClient: { listMessages: rpc.listMessages },
+    sessionClient: { listMessages: rpc.listMessages },
 }));
 
 const event = (kind: EventKind): StreamResponse => ({
@@ -108,7 +108,7 @@ async function* untilAborted(
 const page = (messages: MessageInit[], hasMore = false) =>
     create(ListMessagesResponseSchema, { messages, hasMore });
 
-const state = () => useActiveConversation.getState();
+const state = () => useActiveSession.getState();
 
 const turnNotRunning = () =>
     new ConnectError("finished", Code.FailedPrecondition, undefined, [
@@ -119,7 +119,7 @@ const turnNotRunning = () =>
     ]);
 
 beforeEach(() => {
-    clearActiveConversation();
+    clearActiveSession();
     vi.resetAllMocks();
 });
 
@@ -153,10 +153,10 @@ describe("open", () => {
             ),
         );
 
-        await state().open("conversation-1");
+        await state().open("session-1");
 
         expect(rpc.listMessages).toHaveBeenCalledWith({
-            conversationId: "conversation-1",
+            sessionId: "session-1",
             limit: 50,
         });
         expect(state().items.map((item) => item.id)).toEqual([
@@ -176,7 +176,7 @@ const openWith = async (hasMore: boolean) => {
     rpc.listMessages.mockResolvedValueOnce(
         page([{ id: "user-2", role: "user" }], hasMore),
     );
-    await state().open("conversation-1");
+    await state().open("session-1");
 };
 
 describe("loadMore", () => {
@@ -192,7 +192,7 @@ describe("loadMore", () => {
         await state().loadMore();
 
         expect(rpc.listMessages).toHaveBeenLastCalledWith({
-            conversationId: "conversation-1",
+            sessionId: "session-1",
             beforeId: "user-2",
             limit: 50,
         });
@@ -218,17 +218,17 @@ describe("loadMore", () => {
         expect(state().items).toHaveLength(2);
     });
 
-    it("loads nothing without more history or an open conversation", async () => {
+    it("loads nothing without more history or an open session", async () => {
         await state().loadMore();
         await openWith(false);
         await state().loadMore();
-        useActiveConversation.setState({ hasMore: true, items: [] });
+        useActiveSession.setState({ hasMore: true, items: [] });
         await state().loadMore();
 
         expect(rpc.listMessages).toHaveBeenCalledOnce();
     });
 
-    it("drops a page that arrives after the conversation changed", async () => {
+    it("drops a page that arrives after the session changed", async () => {
         await openWith(true);
         const older = Promise.withResolvers<ListMessagesResponse>();
         rpc.listMessages.mockReturnValueOnce(older.promise);
@@ -237,7 +237,7 @@ describe("loadMore", () => {
         rpc.listMessages.mockResolvedValueOnce(
             page([{ id: "other-1", role: "user" }]),
         );
-        await state().open("conversation-2");
+        await state().open("session-2");
         older.resolve(page([{ id: "user-1", role: "user" }]));
         await loading;
 
@@ -250,7 +250,7 @@ describe("loadMore", () => {
         rpc.listMessages.mockReturnValueOnce(older.promise);
 
         const loading = state().loadMore();
-        useActiveConversation.setState({ items: [] });
+        useActiveSession.setState({ items: [] });
         older.resolve(page([{ id: "user-1", role: "user" }]));
         await loading;
 
@@ -261,7 +261,7 @@ describe("loadMore", () => {
 describe("send", () => {
     beforeEach(async () => {
         rpc.listMessages.mockResolvedValue(page([]));
-        await state().open("conversation-1");
+        await state().open("session-1");
     });
 
     it("streams thinking, text, tool calls, and a follow-up turn", async () => {
@@ -299,7 +299,7 @@ describe("send", () => {
         await state().send("provider-1", "model-1", "what is in a?");
 
         expect(rpc.sendMessage.mock.lastCall?.[0]).toEqual({
-            conversationId: "conversation-1",
+            sessionId: "session-1",
             content: "what is in a?",
             providerId: "provider-1",
             model: "model-1",
@@ -354,11 +354,11 @@ describe("send", () => {
         expect(state().items.at(-1)).toMatchObject(expected);
     });
 
-    it("ignores a send without an open conversation or while streaming", async () => {
-        clearActiveConversation();
+    it("ignores a send without an open session or while streaming", async () => {
+        clearActiveSession();
         await state().send("provider-1", "model-1", "hi");
-        useActiveConversation.setState({
-            conversationId: "conversation-1",
+        useActiveSession.setState({
+            sessionId: "session-1",
             streaming: true,
         });
         await state().send("provider-1", "model-1", "hi");
@@ -420,7 +420,7 @@ describe("send", () => {
         expect(state().items.at(-1)).toMatchObject({ status: "error" });
     });
 
-    it("reloads the conversation when the turn already finished", async () => {
+    it("reloads the session when the turn already finished", async () => {
         vi.useFakeTimers();
         rpc.sendMessage.mockReturnValue(
             stream(
@@ -447,7 +447,7 @@ describe("send", () => {
         expect(state().streaming).toBe(false);
     });
 
-    it("keeps a newer conversation when a finished turn reloads late", async () => {
+    it("keeps a newer session when a finished turn reloads late", async () => {
         const reload = Promise.withResolvers<ListMessagesResponse>();
         rpc.sendMessage.mockReturnValue(
             stream([started("user-msg")], turnNotRunning()),
@@ -458,12 +458,12 @@ describe("send", () => {
         await vi.waitFor(() => {
             expect(rpc.listMessages).toHaveBeenCalledTimes(2);
         });
-        clearActiveConversation();
+        clearActiveSession();
         reload.resolve(page([{ id: "user-msg", role: "user" }]));
         await sending;
 
         expect(state().items).toEqual([]);
-        expect(state().conversationId).toBeNull();
+        expect(state().sessionId).toBeNull();
     });
 
     it("stops the turn on the server and marks the reply aborted", async () => {
@@ -500,7 +500,7 @@ describe("send", () => {
         expect(state().items.at(-1)?.status).toBe("aborted");
     });
 
-    it("leaves the emptied conversation alone when cleared mid-stream", async () => {
+    it("leaves the emptied session alone when cleared mid-stream", async () => {
         rpc.sendMessage.mockImplementation((_req, { signal }) =>
             untilAborted([started("user-msg")], signal),
         );
@@ -509,11 +509,11 @@ describe("send", () => {
         await vi.waitFor(() => {
             expect(rpc.sendMessage).toHaveBeenCalled();
         });
-        clearActiveConversation();
+        clearActiveSession();
         await sending;
 
         expect(state()).toMatchObject({
-            conversationId: null,
+            sessionId: null,
             items: [],
             streaming: false,
         });

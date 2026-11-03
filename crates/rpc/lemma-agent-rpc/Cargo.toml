@@ -21,7 +21,7 @@ uuid.workspace = true
 
 [dev-dependencies]
 lemma-adapter.workspace = true
-lemma-conversation.workspace = true
+lemma-session.workspace = true
 lemma-provider.workspace = true
 sea-orm.workspace = true
 

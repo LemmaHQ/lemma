@@ -4,9 +4,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements conversation components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, together with `AnimateIcon`, `cn`, and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
+`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements session components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, together with `AnimateIcon`, `cn`, and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual conversation components, and `icons/` for Animate UI's Lucide set and the brand logos. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
+`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set and the brand logos. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
 
 <a id="component-catalog"></a>
 
@@ -17,7 +17,7 @@ Check this list before writing a control in feature code, and reuse what fits.
 | Module               | Use                                                         |
 | -------------------- | ----------------------------------------------------------- |
 | `ai/code-block`      | Syntax-highlighted code                                     |
-| `ai/conversation`    | Scroll-following transcript and scroll-to-latest control    |
+| `ai/session`         | Scroll-following transcript and scroll-to-latest control    |
 | `ai/message`         | Message layout, Markdown response, and message actions      |
 | `ai/model-picker`    | Provider-grouped model selection menu                       |
 | `ai/prompt-input`    | Message composer form, field, tools, and submit control     |

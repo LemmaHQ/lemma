@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEvent, TurnInput};
-use lemma_conversation::{ConversationService, LastModel};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
 use lemma_provider::ProviderService;
+use lemma_session::{LastModel, SessionService};
 use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::fs;
 use uuid::Uuid;
@@ -18,8 +18,8 @@ use crate::agent_error::AgentError;
 pub struct TurnRequest {
     /// Authenticated caller.
     pub user_id: Uuid,
-    /// Conversation the turn continues from its active leaf.
-    pub conversation_id: Uuid,
+    /// Session the turn continues from its active leaf.
+    pub session_id: Uuid,
     /// Provider the turn is dispatched to.
     pub provider_id: Uuid,
     /// Model id on that provider.
@@ -40,26 +40,26 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 
 /// Assembles and runs turns, and aborts the ones still running.
 ///
-/// With `workspaces_dir` set, each conversation's tools (`read_file`,
-/// `write_file`, `bash`) run in `<workspaces_dir>/<conversation id>`;
+/// With `workspaces_dir` set, each session's tools (`read_file`,
+/// `write_file`, `bash`) run in `<workspaces_dir>/<session id>`;
 /// without it, turns call the model without tools.
 #[derive(Debug)]
 pub struct Agent<C> {
-    conversations: ConversationService,
+    sessions: SessionService,
     providers: Arc<ProviderService<C>>,
     workspaces_dir: Option<PathBuf>,
     running: Arc<RunningTurns>,
 }
 
 impl<C: Connector> Agent<C> {
-    /// Creates the agent over the conversation and provider domains.
+    /// Creates the agent over the session and provider domains.
     pub fn new(
-        conversations: ConversationService,
+        sessions: SessionService,
         providers: Arc<ProviderService<C>>,
         workspaces_dir: Option<PathBuf>,
     ) -> Self {
         Self {
-            conversations,
+            sessions,
             providers,
             workspaces_dir,
             running: Arc::default(),
@@ -86,8 +86,8 @@ impl<C: Connector> Agent<C> {
         }
         let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
 
-        let tools = workspace_tools(self.workspaces_dir.as_deref(), req.conversation_id).await?;
-        let agent_loop = AgentLoop::new(self.conversations.clone(), adapter, tools);
+        let tools = workspace_tools(self.workspaces_dir.as_deref(), req.session_id).await?;
+        let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, tools);
 
         let user_message_id = Uuid::new_v4();
         let cancel = CancelToken::new();
@@ -102,7 +102,7 @@ impl<C: Connector> Agent<C> {
             agent_loop,
             input: TurnInput {
                 user_id: req.user_id,
-                conversation_id: req.conversation_id,
+                session_id: req.session_id,
                 user_message_id,
                 user_message: Message::User {
                     content: vec![ContentBlock::Text(TextContent { text: req.content })],
@@ -174,16 +174,16 @@ impl Drop for Registration {
     }
 }
 
-/// Prepares `<workspaces_dir>/<conversation_id>` and the tools that run in
+/// Prepares `<workspaces_dir>/<session_id>` and the tools that run in
 /// it; `None` without a workspaces directory.
 async fn workspace_tools(
     workspaces_dir: Option<&Path>,
-    conversation_id: Uuid,
+    session_id: Uuid,
 ) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
     let Some(dir) = workspaces_dir else {
         return Ok(None);
     };
-    let workspace = dir.join(conversation_id.to_string());
+    let workspace = dir.join(session_id.to_string());
     fs::create_dir_all(&workspace)
         .await
         .map_err(|e| AgentError::Workspace(e.to_string()))?;

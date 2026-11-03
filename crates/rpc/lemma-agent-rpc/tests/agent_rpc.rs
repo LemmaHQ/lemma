@@ -5,8 +5,8 @@ use std::sync::Arc;
 use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_agent::Agent;
 use lemma_agent_rpc::AgentRpc;
-use lemma_conversation::ConversationService;
 use lemma_provider::ProviderService;
+use lemma_session::SessionService;
 use sea_orm::DatabaseConnection;
 
 #[test]
@@ -17,7 +17,7 @@ fn debug_output_never_reveals_the_signing_secret() {
         "00".repeat(32),
         HttpConnector::new(ReqwestTransport::new()),
     );
-    let agent = Agent::new(ConversationService::new(db), Arc::new(providers), None);
+    let agent = Agent::new(SessionService::new(db), Arc::new(providers), None);
     let rpc = AgentRpc::new(agent, "jwt-secret".to_owned());
 
     let debug = format!("{rpc:?}");

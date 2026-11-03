@@ -187,8 +187,7 @@ fun ProvidersScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text =
-                        "Conversations keep their history; the provider configuration is removed.",
+                    text = "Sessions keep their history; the provider configuration is removed.",
                     style = LemmaTheme.typography.bodyMedium,
                     color = LemmaTheme.colors.textSecondary,
                 )

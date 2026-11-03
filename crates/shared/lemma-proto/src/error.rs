@@ -16,7 +16,7 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         ErrorReason::CredentialsInvalid | ErrorReason::TokenInvalid => ErrorCode::Unauthenticated,
         ErrorReason::UserNotFound
         | ErrorReason::ProviderNotFound
-        | ErrorReason::ConversationNotFound
+        | ErrorReason::SessionNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
         _ => ErrorCode::InvalidArgument,
     }
@@ -39,7 +39,7 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::ProviderIdentifierTaken => "identifier already taken",
         ErrorReason::IdInvalid => "invalid id",
         ErrorReason::TitleRequired => "title required",
-        ErrorReason::ConversationNotFound => "conversation not found",
+        ErrorReason::SessionNotFound => "session not found",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
         ErrorReason::TurnNotRunning => "turn not running",

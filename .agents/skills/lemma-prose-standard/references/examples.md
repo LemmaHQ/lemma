@@ -62,9 +62,9 @@ Keep the precedence and the fallback; let the table show its own entries.
 
 ## Delete reasoning transcripts entirely
 
-**Over-detailed:** "First the handler checks whether the conversation is archived. If it is not, the next branch returns an error. Otherwise it deletes, which is why active conversations survive."
+**Over-detailed:** "First the handler checks whether the session is archived. If it is not, the next branch returns an error. Otherwise it deletes, which is why active sessions survive."
 
-**Balanced:** No comment when the code already expresses those branches. If the guard protects a non-obvious invariant, state only that invariant at the owner: "Only archived conversations can be deleted."
+**Balanced:** No comment when the code already expresses those branches. If the guard protects a non-obvious invariant, state only that invariant at the owner: "Only archived sessions can be deleted."
 
 Do not compress a reasoning transcript into shorter narration; remove it.
 
@@ -96,7 +96,7 @@ Keep the consequence of order or a surprising scope rule. Let the configuration 
 
 **Over-trimmed:** Rewording a `ToolSpec` description in a prose-only pass because it reads awkwardly.
 
-**Balanced:** Leave model-visible wording unchanged in a prose-only pass and report it. Change it in a task that owns tool behavior, state the change in the commit body, and exercise it in a local-mode conversation against a real provider.
+**Balanced:** Leave model-visible wording unchanged in a prose-only pass and report it. Change it in a task that owns tool behavior, state the change in the commit body, and exercise it in a local-mode session against a real provider.
 
 Wording that reaches a model changes what the model does.
 

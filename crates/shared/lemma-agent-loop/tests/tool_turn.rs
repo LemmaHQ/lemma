@@ -9,14 +9,14 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime};
-use lemma_conversation::MessageStatus;
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
 use lemma_tools::{LocalExecEnv, ToolRegistry};
 use serde_json::json;
 
-use crate::common::{Migrator, input, new_conversation};
+use crate::common::{Migrator, input, new_session};
 
 /// Calls a tool on its first step and answers in text on the next, noting
 /// how many messages that second request carried.
@@ -70,24 +70,20 @@ impl Adapter for ToolThenText {
 async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
 -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
-        let (conversations, user_id, conversation_id) = new_conversation(&db).await?;
+        let (sessions, user_id, session_id) = new_session(&db).await?;
         let second_context = Arc::new(AtomicUsize::new(0));
         let adapter = ToolThenText {
             steps: AtomicUsize::new(0),
             second_context: Arc::clone(&second_context),
         };
         let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
-        let agent_loop = AgentLoop::new(conversations.clone(), adapter, Some(runtime));
+        let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
 
         agent_loop
-            .run_turn(
-                input(user_id, conversation_id),
-                &|_| {},
-                &CancelToken::new(),
-            )
+            .run_turn(input(user_id, session_id), &|_| {}, &CancelToken::new())
             .await?;
 
-        let messages = conversations.all_messages(conversation_id).await?;
+        let messages = sessions.all_messages(session_id).await?;
         let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
         assert_eq!(
             roles,
@@ -158,9 +154,9 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
             3,
             "the second step sees the user message, the call, and its result"
         );
-        let conversation = conversations.find(user_id, conversation_id).await?;
+        let session = sessions.find(user_id, session_id).await?;
         assert_eq!(
-            conversation.and_then(|c| c.leaf_id),
+            session.and_then(|c| c.leaf_id),
             Some(messages[3].id),
             "leaf"
         );

@@ -22,8 +22,8 @@ const SEND: &str = "/lemma.v1.AgentService/SendMessage";
 const ABORT: &str = "/lemma.v1.AgentService/AbortMessage";
 const RESUME: &str = "/lemma.v1.AgentService/ResumeStream";
 const CREATE_PROVIDER: &str = "/lemma.v1.ProviderService/CreateProvider";
-const CREATE_CONVERSATION: &str = "/lemma.v1.ConversationService/CreateConversation";
-const MESSAGES: &str = "/lemma.v1.ConversationService/ListMessages";
+const CREATE_SESSION: &str = "/lemma.v1.SessionService/CreateSession";
+const MESSAGES: &str = "/lemma.v1.SessionService/ListMessages";
 #[cfg(windows)]
 const WAIT_FOR_GO: &str = "for /L %i in (1,1,60) do @if not exist go ping -n 2 127.0.0.1 >nul";
 #[cfg(not(windows))]
@@ -102,7 +102,7 @@ struct Setup {
     engine: Engine,
     token: String,
     provider_id: String,
-    conversation_id: String,
+    session_id: String,
 }
 
 async fn setup() -> Result<Setup, Box<dyn Error>> {
@@ -121,9 +121,7 @@ async fn setup() -> Result<Setup, Box<dyn Error>> {
             }),
         )
         .await?;
-    let conversation = engine
-        .call_as(&token, CREATE_CONVERSATION, &json!({}))
-        .await?;
+    let session = engine.call_as(&token, CREATE_SESSION, &json!({})).await?;
     let id = |reply: &Value, field: &str| {
         reply[field]["id"]
             .as_str()
@@ -132,7 +130,7 @@ async fn setup() -> Result<Setup, Box<dyn Error>> {
     };
     Ok(Setup {
         provider_id: id(&provider.body, "provider")?,
-        conversation_id: id(&conversation.body, "conversation")?,
+        session_id: id(&session.body, "session")?,
         engine,
         token,
     })
@@ -145,7 +143,7 @@ impl Setup {
                 &self.token,
                 SEND,
                 &json!({
-                    "conversationId": self.conversation_id,
+                    "sessionId": self.session_id,
                     "providerId": self.provider_id,
                     "model": model,
                     "content": "hi",
@@ -160,7 +158,7 @@ impl Setup {
             .call_as(
                 &self.token,
                 MESSAGES,
-                &json!({ "conversationId": self.conversation_id }),
+                &json!({ "sessionId": self.session_id }),
             )
             .await?;
         Ok(reply.body["messages"]
@@ -262,7 +260,7 @@ async fn a_turn_streams_thinking_and_text_and_persists_the_answer() -> Result<()
 }
 
 #[tokio::test]
-async fn tool_calls_run_in_the_conversation_workspace() -> Result<(), Box<dyn Error>> {
+async fn tool_calls_run_in_the_session_workspace() -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
 
     let mut frames = setup.send("tools").await?;
@@ -273,7 +271,7 @@ async fn tool_calls_run_in_the_conversation_workspace() -> Result<(), Box<dyn Er
             .engine
             .data_dir()
             .join("workspaces")
-            .join(&setup.conversation_id)
+            .join(&setup.session_id)
             .join("notes.txt"),
     )?;
 
@@ -450,7 +448,7 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
             .engine
             .data_dir()
             .join("workspaces")
-            .join(&setup.conversation_id)
+            .join(&setup.session_id)
             .join("go"),
         "",
     )?;
@@ -483,15 +481,14 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
 }
 
 #[tokio::test]
-async fn a_turn_in_a_conversation_the_user_lacks_reports_an_error_event()
--> Result<(), Box<dyn Error>> {
+async fn a_turn_in_a_session_the_user_lacks_reports_an_error_event() -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
     let bob = setup.engine.token("bob").await?;
     let bobs = setup
         .engine
-        .call_as(&bob, CREATE_CONVERSATION, &json!({}))
+        .call_as(&bob, CREATE_SESSION, &json!({}))
         .await?;
-    let bobs_id = bobs.body["conversation"]["id"].clone();
+    let bobs_id = bobs.body["session"]["id"].clone();
 
     let mut frames = setup
         .engine
@@ -499,7 +496,7 @@ async fn a_turn_in_a_conversation_the_user_lacks_reports_an_error_event()
             &setup.token,
             SEND,
             &json!({
-                "conversationId": bobs_id,
+                "sessionId": bobs_id,
                 "providerId": setup.provider_id,
                 "model": "answer",
                 "content": "hi",
@@ -511,7 +508,7 @@ async fn a_turn_in_a_conversation_the_user_lacks_reports_an_error_event()
     assert_eq!(
         labels(&events),
         [format!(
-            "error:not found: conversation {} not found",
+            "error:not found: session {} not found",
             bobs_id.as_str().unwrap_or_default()
         )],
         "events"
@@ -525,20 +522,20 @@ async fn a_turn_in_a_conversation_the_user_lacks_reports_an_error_event()
 async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
     let unknown = "00000000-0000-4000-8000-000000000000";
-    let send = |conversation: &str, provider: &str, model: &str, content: &str| {
+    let send = |session: &str, provider: &str, model: &str, content: &str| {
         json!({
-            "conversationId": conversation,
+            "sessionId": session,
             "providerId": provider,
             "model": model,
             "content": content,
         })
     };
-    let (conversation, provider) = (setup.conversation_id.clone(), setup.provider_id.clone());
+    let (session, provider) = (setup.session_id.clone(), setup.provider_id.clone());
     let cases = [
         (
             "",
             SEND,
-            send(&conversation, &provider, "m", "hi"),
+            send(&session, &provider, "m", "hi"),
             ErrorReason::TokenInvalid,
         ),
         (
@@ -550,25 +547,25 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
         (
             &setup.token,
             SEND,
-            send(&conversation, "x", "m", "hi"),
+            send(&session, "x", "m", "hi"),
             ErrorReason::IdInvalid,
         ),
         (
             &setup.token,
             SEND,
-            send(&conversation, &provider, "m", " "),
+            send(&session, &provider, "m", " "),
             ErrorReason::ContentRequired,
         ),
         (
             &setup.token,
             SEND,
-            send(&conversation, &provider, " ", "hi"),
+            send(&session, &provider, " ", "hi"),
             ErrorReason::ModelRequired,
         ),
         (
             &setup.token,
             SEND,
-            send(&conversation, unknown, "m", "hi"),
+            send(&session, unknown, "m", "hi"),
             ErrorReason::ProviderNotFound,
         ),
         (

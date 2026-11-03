@@ -77,9 +77,9 @@ message AgentEvent {
 }
 
 message SendMessageRequest {
-  string conversation_id = 1;
+  string session_id = 1;
   string content = 2;
-  // Provider and model used for this turn, decoupled from conversation state.
+  // Provider and model used for this turn, decoupled from session state.
   string provider_id = 3;
   string model = 4;
 }

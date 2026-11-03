@@ -2,10 +2,10 @@ import { useLayoutEffect, useMemo, useRef, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
-    Conversation,
-    ConversationContent,
-    ConversationFollow,
-    ConversationScrollButton,
+    Session,
+    SessionContent,
+    SessionFollow,
+    SessionScrollButton,
     ScrollArea,
 } from "@lemma/ui";
 import type { AgentItem } from "../agent-item";
@@ -15,7 +15,7 @@ import { MessageItem } from "./MessageItem";
 
 interface MessageListProps {
     items: AgentItem[];
-    conversationId: string | null;
+    sessionId: string | null;
     hasMore: boolean;
     providerNameById: Map<string, string>;
     onLoadMore: () => Promise<void>;
@@ -25,7 +25,7 @@ interface MessageListProps {
 
 export function MessageList({
     items,
-    conversationId,
+    sessionId,
     hasMore,
     providerNameById,
     onLoadMore,
@@ -35,7 +35,7 @@ export function MessageList({
     const { t } = useTranslation();
     const prepend = useRef<{
         element: HTMLDivElement;
-        conversationId: string | null;
+        sessionId: string | null;
         firstId: string | undefined;
         scrollHeight: number;
         scrollTop: number;
@@ -56,13 +56,13 @@ export function MessageList({
             return;
         }
         prepend.current = null;
-        if (pending.conversationId === conversationId) {
+        if (pending.sessionId === sessionId) {
             pending.element.scrollTop =
                 pending.scrollTop +
                 pending.element.scrollHeight -
                 pending.scrollHeight;
         }
-    }, [conversationId, firstId]);
+    }, [sessionId, firstId]);
 
     const handleScrollCapture = (event: UIEvent<HTMLDivElement>) => {
         const element = event.target;
@@ -76,7 +76,7 @@ export function MessageList({
         }
         prepend.current = {
             element,
-            conversationId,
+            sessionId,
             firstId,
             scrollHeight: element.scrollHeight,
             scrollTop: element.scrollTop,
@@ -105,11 +105,8 @@ export function MessageList({
     }
 
     return (
-        <Conversation
-            key={conversationId}
-            onScrollCapture={handleScrollCapture}
-        >
-            <ConversationContent>
+        <Session key={sessionId} onScrollCapture={handleScrollCapture}>
+            <SessionContent>
                 {items.map((m) => (
                     <MessageItem
                         key={m.id}
@@ -119,11 +116,9 @@ export function MessageList({
                         onRegenerate={onRegenerate}
                     />
                 ))}
-            </ConversationContent>
-            <ConversationScrollButton
-                label={t("conversation.scrollToBottom")}
-            />
-            <ConversationFollow trigger={lastUserId} />
-        </Conversation>
+            </SessionContent>
+            <SessionScrollButton label={t("session.scrollToBottom")} />
+            <SessionFollow trigger={lastUserId} />
+        </Session>
     );
 }

@@ -22,7 +22,7 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 ## Composition
 
 - A component owns meaningful presentation or complex logic. When most of the logic is independent of JSX, write a pure function and keep the trivial JSX at each call site; write a hook instead only when the logic needs React state or lifecycle.
-- One component has one presentation. When an action looks different in different places, write one component per presentation instead of choosing with a mode prop or flag. Starting a conversation is the labeled sidebar card `NewConversationButton` and the toolbar icon with a tooltip `NewConversationIconButton`, which share the `useStartConversation` hook.
+- One component has one presentation. When an action looks different in different places, write one component per presentation instead of choosing with a mode prop or flag. Starting a session is the labeled sidebar card `NewSessionButton` and the toolbar icon with a tooltip `NewSessionIconButton`, which share the `useStartSession` hook.
 - One component has one workflow. When a prop would select fundamentally different workflows, split them: creating and editing a provider are `NewProviderForm` and `ProviderDetail`, not one form with a `mode`.
 - Extract only what call sites share. Shared presentation becomes a presentational component; shared state or behavior alone becomes a hook, and each call site keeps its own presentation.
 

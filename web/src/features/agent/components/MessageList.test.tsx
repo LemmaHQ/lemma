@@ -21,7 +21,7 @@ const item = (id: string, patch: Partial<AgentItem> = {}): AgentItem => ({
 
 const baseProps: Props = {
     items: [item("a2")],
-    conversationId: "c1",
+    sessionId: "c1",
     hasMore: true,
     providerNameById: new Map(),
     onLoadMore: () => Promise.resolve(),
@@ -98,14 +98,14 @@ it("keeps the reading position when older messages load at the top", () => {
     expect(element.scrollTop).toBe(400);
 });
 
-it("does not move a conversation the user switched to meanwhile", () => {
+it("does not move a session the user switched to meanwhile", () => {
     const { rerender } = render(view({}));
     setScrollHeight(viewport(), 500);
 
     scrollToTop();
-    rerender(view({ conversationId: "c2", items: [item("b1")] }));
+    rerender(view({ sessionId: "c2", items: [item("b1")] }));
     setScrollHeight(viewport(), 900);
-    rerender(view({ conversationId: "c2", items: [item("b0"), item("b1")] }));
+    rerender(view({ sessionId: "c2", items: [item("b0"), item("b1")] }));
 
     expect(viewport().scrollTop).toBe(0);
 });

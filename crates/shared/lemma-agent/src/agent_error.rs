@@ -17,7 +17,7 @@ pub enum AgentError {
     /// The provider domain failed, e.g. opening the API key.
     #[error("provider: {0}")]
     Provider(ProviderError),
-    /// The conversation's tool workspace could not be created.
+    /// The session's tool workspace could not be created.
     #[error("create workspace: {0}")]
     Workspace(String),
     /// The running turn failed.

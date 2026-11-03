@@ -1,7 +1,7 @@
 use chrono::Utc;
-use lemma_conversation::{ConversationService, LastModel, Message as StoredMessage};
 use lemma_core::{ContentBlock, Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
+use lemma_session::{LastModel, Message as StoredMessage, SessionService};
 use lemma_tools::ExecEnv;
 use uuid::Uuid;
 
@@ -15,15 +15,15 @@ use crate::turn_event::TurnEvent;
 /// One user message and where it goes.
 #[derive(Debug)]
 pub struct TurnInput {
-    /// Authenticated caller conversation queries are scoped to.
+    /// Authenticated caller session queries are scoped to.
     pub user_id: Uuid,
-    /// Conversation the turn continues from its active leaf.
-    pub conversation_id: Uuid,
+    /// Session the turn continues from its active leaf.
+    pub session_id: Uuid,
     /// Id the user message is stored under.
     pub user_message_id: Uuid,
     /// The user message.
     pub user_message: Message,
-    /// Model selection, also recorded as the conversation's last model.
+    /// Model selection, also recorded as the session's last model.
     pub model: LastModel,
 }
 
@@ -32,7 +32,7 @@ pub struct TurnInput {
 /// environment, and persists every message as it settles.
 #[derive(Debug)]
 pub struct AgentLoop<A, E> {
-    conversations: ConversationService,
+    sessions: SessionService,
     adapter: A,
     tools: Option<ToolRuntime<E>>,
 }
@@ -40,13 +40,9 @@ pub struct AgentLoop<A, E> {
 impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     /// Creates a loop that runs tool calls with `tools`, or calls the model
     /// without tools when it is `None`.
-    pub fn new(
-        conversations: ConversationService,
-        adapter: A,
-        tools: Option<ToolRuntime<E>>,
-    ) -> Self {
+    pub fn new(sessions: SessionService, adapter: A, tools: Option<ToolRuntime<E>>) -> Self {
         Self {
-            conversations,
+            sessions,
             adapter,
             tools,
         }
@@ -59,7 +55,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     ///
     /// # Errors
     ///
-    /// [`LoopError::NotFound`] when the user owns no such conversation or a
+    /// [`LoopError::NotFound`] when the user owns no such session or a
     /// message on the context path is missing, [`LoopError::Model`] when a
     /// model stream fails, and [`LoopError::Store`] when the database fails.
     pub async fn run_turn<O: Fn(TurnEvent) + Sync>(
@@ -70,26 +66,25 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     ) -> Result<(), LoopError> {
         let TurnInput {
             user_id,
-            conversation_id,
+            session_id,
             user_message_id,
             user_message,
             model,
         } = input;
-        let Some(meta) = self.conversations.find(user_id, conversation_id).await? else {
+        let Some(meta) = self.sessions.find(user_id, session_id).await? else {
             return Err(LoopError::NotFound(format!(
-                "conversation {conversation_id} not found"
+                "session {session_id} not found"
             )));
         };
 
-        let user_entry =
-            persist::settled(user_message_id, conversation_id, meta.leaf_id, user_message);
+        let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
         self.append(user_id, user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
         });
 
-        self.conversations
-            .update_last_model(user_id, conversation_id, &model)
+        self.sessions
+            .update_last_model(user_id, session_id, &model)
             .await?;
 
         let tool_specs = self
@@ -104,13 +99,13 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 observer(TurnEvent::TurnAborted { at: Utc::now() });
                 return Ok(());
             }
-            let entries = self.conversations.all_messages(conversation_id).await?;
-            let messages = lemma_conversation::build_context_path(&entries, leaf_id)?;
+            let entries = self.sessions.all_messages(session_id).await?;
+            let messages = lemma_session::build_context_path(&entries, leaf_id)?;
 
             let assistant_id = Uuid::new_v4();
             let placeholder = persist::placeholder(
                 assistant_id,
-                conversation_id,
+                session_id,
                 leaf_id,
                 &model.model,
                 model.provider_id,
@@ -137,7 +132,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             if tool_runtime.is_none() {
                 outcome.finish_thinking(outcome.ended_at);
             }
-            self.conversations
+            self.sessions
                 .update_message(assistant_id, persist::settle(&outcome))
                 .await?;
 
@@ -192,12 +187,12 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 });
                 results.push(persist::tool_result(call, tool_outcome));
             }
-            self.conversations
+            self.sessions
                 .update_message(assistant_id, persist::settle(&outcome))
                 .await?;
             for result in results {
                 let result_id = Uuid::new_v4();
-                let result = persist::settled(result_id, conversation_id, Some(leaf_id), result);
+                let result = persist::settled(result_id, session_id, Some(leaf_id), result);
                 self.append(user_id, result).await?;
                 leaf_id = result_id;
             }
@@ -205,11 +200,9 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     }
 
     async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
-        let (conversation_id, id) = (entry.conversation_id, entry.id);
-        self.conversations.append_message(entry).await?;
-        self.conversations
-            .update_leaf(user_id, conversation_id, id)
-            .await?;
+        let (session_id, id) = (entry.session_id, entry.id);
+        self.sessions.append_message(entry).await?;
+        self.sessions.update_leaf(user_id, session_id, id).await?;
         Ok(())
     }
 }

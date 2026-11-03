@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { expect, it } from "vitest";
 
-import { MessageSchema, MessageStatus } from "@/gen/lemma/v1/conversation_pb";
+import { MessageSchema, MessageStatus } from "@/gen/lemma/v1/session_pb";
 
 import { hydrateToolResults, protoToItem } from "./agent-item";
 

@@ -3,8 +3,8 @@ package dev.lemmahq.lemma.client
 import com.connectrpc.ResponseMessage
 import dev.lemmahq.gen.lemma.v1.abortMessageRequest
 import dev.lemmahq.gen.lemma.v1.checkProviderRequest
-import dev.lemmahq.gen.lemma.v1.createConversationRequest
 import dev.lemmahq.gen.lemma.v1.createProviderRequest
+import dev.lemmahq.gen.lemma.v1.createSessionRequest
 import dev.lemmahq.gen.lemma.v1.deleteProviderRequest
 import dev.lemmahq.gen.lemma.v1.fetchModelsRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
@@ -167,27 +167,26 @@ class LemmaClient(
         }
     }
 
-    /** Creates an empty conversation. */
-    suspend fun createConversation(): ClientConversation {
+    /** Creates an empty session. */
+    suspend fun createSession(): ClientSession {
         return when (
-            val response =
-                rpc.conversation.createConversation(createConversationRequest {}, emptyMap())
+            val response = rpc.session.createSession(createSessionRequest {}, emptyMap())
         ) {
             is ResponseMessage.Success ->
-                response.message.conversation.let {
-                    ClientConversation(id = it.id, title = it.title)
+                response.message.session.let {
+                    ClientSession(id = it.id, title = it.title)
                 }
             is ResponseMessage.Failure -> throw response.cause
         }
     }
 
-    /** Lists one newest-first page of a conversation's settled messages. */
-    suspend fun listMessages(conversationId: String, beforeId: String? = null): ClientMessagePage {
+    /** Lists one newest-first page of a session's settled messages. */
+    suspend fun listMessages(sessionId: String, beforeId: String? = null): ClientMessagePage {
         val request = listMessagesRequest {
-            this.conversationId = conversationId
+            this.sessionId = sessionId
             beforeId?.let { this.beforeId = it }
         }
-        return when (val response = rpc.conversation.listMessages(request, emptyMap())) {
+        return when (val response = rpc.session.listMessages(request, emptyMap())) {
             is ResponseMessage.Success ->
                 ClientMessagePage(
                     messages =
@@ -212,7 +211,7 @@ class LemmaClient(
      * or [AgentStreamEvent.Error].
      */
     fun sendMessage(
-        conversationId: String,
+        sessionId: String,
         content: String,
         providerId: String,
         model: String,
@@ -220,7 +219,7 @@ class LemmaClient(
         val stream = rpc.agent.sendMessage(emptyMap())
         stream.sendAndClose(
             sendMessageRequest {
-                this.conversationId = conversationId
+                this.sessionId = sessionId
                 this.content = content
                 this.providerId = providerId
                 this.model = model
