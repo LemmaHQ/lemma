@@ -38,10 +38,10 @@ export function ConnectionFields({
             <Field orientation="responsive">
                 <FieldContent>
                     <FieldLabel htmlFor="provider-api-key">
-                        {t("providers.apiKey")}
+                        {t("provider.apiKey")}
                     </FieldLabel>
                     <FieldDescription>
-                        {t("providers.apiKeyDesc")}
+                        {t("provider.apiKeyDesc")}
                     </FieldDescription>
                 </FieldContent>
                 <PasswordInput
@@ -53,19 +53,19 @@ export function ConnectionFields({
                     onChange={(e) =>
                         onChange({ ...values, apiKey: e.target.value })
                     }
-                    placeholder={t("providers.apiKeyPlaceholder")}
+                    placeholder={t("provider.apiKeyPlaceholder")}
                 />
             </Field>
             <Field orientation="responsive" data-invalid={baseUrlInvalid}>
                 <FieldContent>
                     <FieldLabel htmlFor="provider-base-url">
-                        {t("providers.baseUrl")}
+                        {t("provider.baseUrl")}
                     </FieldLabel>
                     {baseUrlInvalid ? (
-                        <FieldError>{t("providers.baseUrlInvalid")}</FieldError>
+                        <FieldError>{t("provider.baseUrlInvalid")}</FieldError>
                     ) : (
                         <FieldDescription>
-                            {t("providers.baseUrlDesc")}
+                            {t("provider.baseUrlDesc")}
                         </FieldDescription>
                     )}
                 </FieldContent>
@@ -83,12 +83,12 @@ export function ConnectionFields({
             <Field orientation="responsive">
                 <FieldContent>
                     <FieldLabel htmlFor="provider-api-path">
-                        {t("providers.apiPath")}
+                        {t("provider.apiPath")}
                     </FieldLabel>
                     <FieldDescription>
                         {kind === "gemini"
-                            ? t("providers.apiPathDescGemini")
-                            : t("providers.apiPathDesc")}
+                            ? t("provider.apiPathDescGemini")
+                            : t("provider.apiPathDesc")}
                     </FieldDescription>
                 </FieldContent>
                 <Input

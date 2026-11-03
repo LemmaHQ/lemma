@@ -71,15 +71,15 @@ export function ConnectionCheck({
         >
             <FieldContent>
                 <FieldLabel htmlFor="provider-check-model">
-                    {t("providers.check")}
+                    {t("provider.check")}
                 </FieldLabel>
                 {current?.status === "failed" ? (
                     <FieldError>{current.message}</FieldError>
                 ) : (
                     <FieldDescription>
                         {current?.status === "passed"
-                            ? t("providers.checkPassed")
-                            : t("providers.checkDesc")}
+                            ? t("provider.checkPassed")
+                            : t("provider.checkDesc")}
                     </FieldDescription>
                 )}
             </FieldContent>
@@ -94,7 +94,7 @@ export function ConnectionCheck({
                         className="min-w-0 flex-1"
                     >
                         <SelectValue
-                            placeholder={t("providers.checkNoModels")}
+                            placeholder={t("provider.checkNoModels")}
                         />
                     </SelectTrigger>
                     <SelectContent>
@@ -125,7 +125,7 @@ export function ConnectionCheck({
                 >
                     {current?.status === "passed" && <CheckIcon animate />}
                     {current?.status === "failed" && <XIcon animate />}
-                    {t("providers.checkAction")}
+                    {t("provider.checkAction")}
                 </Button>
             </div>
         </Field>

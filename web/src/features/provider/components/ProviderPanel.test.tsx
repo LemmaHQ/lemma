@@ -12,7 +12,7 @@ import {
 } from "@/gen/lemma/v1/provider_pb";
 
 import { clearProviders } from "../useProviders";
-import { ProvidersPanel } from "./ProvidersPanel";
+import { ProviderPanel } from "./ProviderPanel";
 
 type Reply = { provider?: Provider | undefined };
 type UpdateRequest = {
@@ -53,7 +53,7 @@ const renderPanel = () =>
     render(
         <TooltipProvider>
             <Toaster />
-            <ProvidersPanel />
+            <ProviderPanel />
         </TooltipProvider>,
     );
 

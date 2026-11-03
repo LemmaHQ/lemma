@@ -44,9 +44,9 @@ export function FetchModelsDialog({
                 closeLabel={t("common.close")}
             >
                 <DialogHeader>
-                    <DialogTitle>{t("providers.pickModelsTitle")}</DialogTitle>
+                    <DialogTitle>{t("provider.pickModelsTitle")}</DialogTitle>
                     <DialogDescription>
-                        {t("providers.pickModelsDesc", {
+                        {t("provider.pickModelsDesc", {
                             count: remote?.length ?? 0,
                         })}
                     </DialogDescription>
@@ -121,7 +121,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                 <InputGroupInput
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t("providers.modelSearchPlaceholder")}
+                    placeholder={t("provider.modelSearchPlaceholder")}
                 />
             </InputGroup>
             <label className="flex items-center gap-2 px-2 text-muted-foreground">
@@ -131,7 +131,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                     disabled={selectable.length === 0}
                     onCheckedChange={(on) => toggleAll(on)}
                 />
-                {t("providers.selectAll")}
+                {t("provider.selectAll")}
             </label>
             <div className="-mx-1 max-h-80 overflow-y-auto">
                 {visible.length > 0 ? (
@@ -152,7 +152,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                                 </span>
                                 {isAdded && (
                                     <span className="text-xs text-muted-foreground">
-                                        {t("providers.modelAdded")}
+                                        {t("provider.modelAdded")}
                                     </span>
                                 )}
                             </label>
@@ -160,7 +160,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                     })
                 ) : (
                     <p className="px-3 py-6 text-center text-muted-foreground">
-                        {t("providers.noModels")}
+                        {t("provider.noModels")}
                     </p>
                 )}
             </div>
@@ -173,7 +173,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                     disabled={picked.size === 0}
                     onClick={() => onAdd(remote.filter((m) => picked.has(m)))}
                 >
-                    {t("providers.addPicked", { count: picked.size })}
+                    {t("provider.addPicked", { count: picked.size })}
                 </Button>
             </DialogFooter>
         </>

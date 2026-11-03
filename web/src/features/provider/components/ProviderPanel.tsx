@@ -10,7 +10,7 @@ import { NewProviderForm, type NewProviderData } from "./NewProviderForm";
 import { ProviderDetail } from "./ProviderDetail";
 import { ProviderListPane } from "./ProviderListPane";
 
-export function ProvidersPanel() {
+export function ProviderPanel() {
     const { t } = useTranslation();
     const store = useProviders();
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export function ProvidersPanel() {
                 ) : selected === null ? (
                     store.loaded && (
                         <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                            {t("providers.emptyList")}
+                            {t("provider.emptyList")}
                         </div>
                     )
                 ) : (

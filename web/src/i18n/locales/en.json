@@ -91,7 +91,7 @@
         "hide": "Hide",
         "show": "Show"
     },
-    "providers": {
+    "provider": {
         "addModel": "Add model",
         "addPicked_one": "Add {{count}} model",
         "addPicked_other": "Add {{count}} models",

@@ -68,7 +68,7 @@ If a diagram needs a paragraph to be understood, redraw the diagram.
 <div class="rounded-lg border border-slate-200 bg-white p-4">
     <pre class="mermaid">
         flowchart LR
-            A[ProvidersPanel] --> B[providers store]
+            A[ProviderPanel] --> B[provider store]
             B --> C[ProviderService]
             C -.leak.-> D[adapter model listing]
             classDef leak stroke:#dc2626,stroke-width:2px;

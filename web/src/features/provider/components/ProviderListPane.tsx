@@ -123,7 +123,7 @@ export function ProviderListPane({
                     <InputGroupInput
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("providers.searchPlaceholder")}
+                        placeholder={t("provider.searchPlaceholder")}
                     />
                 </InputGroup>
                 <Tooltip>
@@ -134,7 +134,7 @@ export function ProviderListPane({
                                     type="button"
                                     variant="outline"
                                     size="icon"
-                                    aria-label={t("providers.newProvider")}
+                                    aria-label={t("provider.newProvider")}
                                     onClick={onCreate}
                                 />
                             }
@@ -142,22 +142,20 @@ export function ProviderListPane({
                             <PlusIcon />
                         </TooltipTrigger>
                     </AnimateIcon>
-                    <TooltipContent>
-                        {t("providers.newProvider")}
-                    </TooltipContent>
+                    <TooltipContent>{t("provider.newProvider")}</TooltipContent>
                 </Tooltip>
             </div>
             <ScrollArea className="min-h-0 flex-1">
                 {loaded ? (
                     <div className="px-2 pb-3">
                         <ProviderGroup
-                            label={t("providers.enabledGroup")}
+                            label={t("provider.enabledGroup")}
                             providers={enabledProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}
                         />
                         <ProviderGroup
-                            label={t("providers.disabledGroup")}
+                            label={t("provider.disabledGroup")}
                             providers={disabledProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}

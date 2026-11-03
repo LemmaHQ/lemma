@@ -88,12 +88,12 @@ export function ProviderSettingsDialog({
             </Tooltip>
             <DialogContent closeLabel={t("common.close")}>
                 <DialogHeader>
-                    <DialogTitle>{t("providers.settingsTitle")}</DialogTitle>
+                    <DialogTitle>{t("provider.settingsTitle")}</DialogTitle>
                 </DialogHeader>
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="provider-settings-identifier">
-                            {t("providers.identifier")}
+                            {t("provider.identifier")}
                         </FieldLabel>
                         <Input
                             id="provider-settings-identifier"
@@ -102,21 +102,21 @@ export function ProviderSettingsDialog({
                             disabled
                         />
                         <FieldDescription>
-                            {t("providers.identifierHint")}
+                            {t("provider.identifierHint")}
                         </FieldDescription>
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="provider-settings-name">
-                            {t("providers.name")}
+                            {t("provider.name")}
                         </FieldLabel>
                         <Input
                             id="provider-settings-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder={t("providers.namePlaceholder")}
+                            placeholder={t("provider.namePlaceholder")}
                         />
                         <FieldDescription>
-                            {t("providers.nameDesc")}
+                            {t("provider.nameDesc")}
                         </FieldDescription>
                     </Field>
                     {error !== null && <FieldError>{error}</FieldError>}

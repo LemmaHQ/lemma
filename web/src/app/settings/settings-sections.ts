@@ -41,7 +41,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
                 icon: BotIcon,
                 titleKey: "settings.aiProviders",
                 loadPage: async () =>
-                    (await import("@/features/providers")).ProvidersPanel,
+                    (await import("@/features/provider")).ProviderPanel,
             },
         ],
     },

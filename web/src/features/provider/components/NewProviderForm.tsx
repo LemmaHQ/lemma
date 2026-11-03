@@ -55,7 +55,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const handleSave = async () => {
         const trimmedIdentifier = identifier.trim();
         if (!/^[\u0020-\u007E]+$/u.test(trimmedIdentifier)) {
-            setFailed(t("providers.identifierInvalid"));
+            setFailed(t("provider.identifierInvalid"));
             return;
         }
         if (connection.baseUrl.trim() === "") {
@@ -89,7 +89,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     </AvatarFallback>
                 </Avatar>
                 <h2 className="truncate text-base font-medium">
-                    {title === "" ? t("providers.newProvider") : title}
+                    {title === "" ? t("provider.newProvider") : title}
                 </h2>
             </header>
 
@@ -97,10 +97,10 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 <Field orientation="responsive">
                     <FieldContent>
                         <FieldLabel htmlFor="provider-kind">
-                            {t("providers.type")}
+                            {t("provider.type")}
                         </FieldLabel>
                         <FieldDescription>
-                            {t("providers.typeDesc")}
+                            {t("provider.typeDesc")}
                         </FieldDescription>
                     </FieldContent>
                     <Select
@@ -131,10 +131,10 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 <Field orientation="responsive">
                     <FieldContent>
                         <FieldLabel htmlFor="provider-identifier">
-                            {t("providers.identifier")}
+                            {t("provider.identifier")}
                         </FieldLabel>
                         <FieldDescription>
-                            {t("providers.identifierHint")}
+                            {t("provider.identifierHint")}
                         </FieldDescription>
                     </FieldContent>
                     <Input
@@ -142,17 +142,17 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder={t("providers.identifierPlaceholder")}
+                        placeholder={t("provider.identifierPlaceholder")}
                         required
                     />
                 </Field>
                 <Field orientation="responsive">
                     <FieldContent>
                         <FieldLabel htmlFor="provider-name">
-                            {t("providers.name")}
+                            {t("provider.name")}
                         </FieldLabel>
                         <FieldDescription>
-                            {t("providers.nameDesc")}
+                            {t("provider.nameDesc")}
                         </FieldDescription>
                     </FieldContent>
                     <Input
@@ -160,7 +160,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder={t("providers.namePlaceholder")}
+                        placeholder={t("provider.namePlaceholder")}
                     />
                 </Field>
                 <ConnectionFields
@@ -170,7 +170,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 />
                 {failed !== null && <FieldError>{failed}</FieldError>}
                 <SaveBar
-                    message={t("providers.newProviderHint")}
+                    message={t("provider.newProviderHint")}
                     busy={busy}
                     saveDisabled={
                         connection.baseUrl.trim() !== "" &&

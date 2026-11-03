@@ -53,7 +53,7 @@ export interface CheckRequest {
     model: string;
 }
 
-interface ProvidersState {
+interface ProviderState {
     list: Provider[];
     loaded: boolean;
     refresh: () => Promise<void>;
@@ -76,7 +76,7 @@ const KIND_PROTOS: Record<ProviderKind, ProviderKindProto> = {
     gemini: ProviderKindProto.GEMINI,
 };
 
-export const useProvidersStore = create<ProvidersState>()((set) => ({
+export const useProviderStore = create<ProviderState>()((set) => ({
     list: [],
     loaded: false,
 

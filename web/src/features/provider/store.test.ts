@@ -7,7 +7,7 @@ import {
     ProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
-import { useProvidersStore } from "./store";
+import { useProviderStore } from "./store";
 import { clearProviders } from "./useProviders";
 
 type Reply = { provider?: ProviderProto | undefined };
@@ -54,7 +54,7 @@ const provider = (id: string, kind: ProviderKind, patch = {}) =>
         ...patch,
     });
 
-const state = () => useProvidersStore.getState();
+const state = () => useProviderStore.getState();
 
 beforeEach(async () => {
     vi.resetAllMocks();

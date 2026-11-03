@@ -103,7 +103,7 @@ export function ProviderDetail({
                         className="ml-2"
                         checked={provider.enabled}
                         onCheckedChange={onToggleEnabled}
-                        aria-label={t("providers.enableProvider")}
+                        aria-label={t("provider.enableProvider")}
                     />
                 </div>
             </header>
@@ -129,7 +129,7 @@ export function ProviderDetail({
                 {error !== null && <FieldError>{error}</FieldError>}
                 {dirty && (
                     <SaveBar
-                        message={t("providers.unsavedChanges")}
+                        message={t("provider.unsavedChanges")}
                         busy={busy}
                         saveDisabled={!isBaseUrlValid(values.baseUrl)}
                         onSave={() => void save()}

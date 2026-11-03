@@ -4,7 +4,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { clearActiveSession } from "@/features/agent";
 import { useAuth } from "@/features/auth";
 import { clearSessions } from "@/features/session";
-import { clearProviders } from "@/features/providers";
+import { clearProviders } from "@/features/provider";
 import { UserSchema } from "@/gen/lemma/v1/auth_pb";
 
 import { installAccountDataReset } from "./account-data";
@@ -15,7 +15,7 @@ vi.mock("@/features/agent", () => ({
 vi.mock("@/features/session", () => ({
     clearSessions: vi.fn<() => void>(),
 }));
-vi.mock("@/features/providers", () => ({
+vi.mock("@/features/provider", () => ({
     clearProviders: vi.fn<() => void>(),
 }));
 

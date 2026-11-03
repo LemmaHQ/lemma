@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router";
 
 import { SessionView } from "@/features/agent";
 import { createSession } from "@/features/session";
-import { useModelOptions } from "@/features/providers";
+import { useModelOptions } from "@/features/provider";
 
 import { paths } from "../route-paths";
 

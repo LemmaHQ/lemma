@@ -35,7 +35,7 @@ export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {
                                         variant="ghost"
                                         size="icon"
                                         aria-label={t(
-                                            "providers.deleteProvider",
+                                            "provider.deleteProvider",
                                         )}
                                     />
                                 }
@@ -45,15 +45,15 @@ export function DeleteProviderButton({ onDelete }: { onDelete: () => void }) {
                         <Trash2Icon />
                     </TooltipTrigger>
                 </AnimateIcon>
-                <TooltipContent>{t("providers.deleteProvider")}</TooltipContent>
+                <TooltipContent>{t("provider.deleteProvider")}</TooltipContent>
             </Tooltip>
             <AlertDialogContent size="sm">
                 <AlertDialogHeader>
                     <AlertDialogTitle>
-                        {t("providers.deleteTitle")}
+                        {t("provider.deleteTitle")}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        {t("providers.deleteDescription")}
+                        {t("provider.deleteDescription")}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

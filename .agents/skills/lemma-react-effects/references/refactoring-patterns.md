@@ -4,10 +4,10 @@ Use the smallest pattern that makes ownership and lifecycle explicit. The exampl
 
 ## Load server data through the feature store
 
-The feature store owns the data and its `loaded` flag; the feature's data hook starts the first load. From `web/src/features/providers/store.ts` and `useProviders.ts`:
+The feature store owns the data and its `loaded` flag; the feature's data hook starts the first load. From `web/src/features/provider/store.ts` and `useProviders.ts`:
 
 ```ts
-export const useProvidersStore = create<ProvidersState>()((set) => ({
+export const useProviderStore = create<ProviderState>()((set) => ({
     list: [],
     loaded: false,
 
@@ -18,9 +18,9 @@ export const useProvidersStore = create<ProvidersState>()((set) => ({
 }));
 
 export function useProviders() {
-    const store = useProvidersStore();
-    const loaded = useProvidersStore((s) => s.loaded);
-    const refresh = useProvidersStore((s) => s.refresh);
+    const store = useProviderStore();
+    const loaded = useProviderStore((s) => s.loaded);
+    const refresh = useProviderStore((s) => s.refresh);
     useEffect(() => {
         if (!loaded) {
             void refresh();
@@ -54,10 +54,10 @@ Move the value into the feature store with a `loaded` flag and read it through t
 
 ## Mount after the data is ready, then seed the child
 
-A stateful form never mounts with missing defaults to be repaired after paint. The parent waits for `loaded`, then mounts the child with complete initial values. From `ProvidersPanel.tsx` and `ProviderDetail.tsx`:
+A stateful form never mounts with missing defaults to be repaired after paint. The parent waits for `loaded`, then mounts the child with complete initial values. From `ProviderPanel.tsx` and `ProviderDetail.tsx`:
 
 ```tsx
-function ProvidersPanel() {
+function ProviderPanel() {
     const { t } = useTranslation();
     const store = useProviders();
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -67,7 +67,7 @@ function ProvidersPanel() {
         store.list.find((p) => p.id === effectiveSelectedId) ?? null;
 
     if (selected === null) {
-        return store.loaded && <p>{t("providers.emptyList")}</p>;
+        return store.loaded && <p>{t("provider.emptyList")}</p>;
     }
     return <ProviderDetail key={selected.id} provider={selected} />;
 }
@@ -131,7 +131,7 @@ The same holds for a value in the dependency list of a retained effect: memoize 
 
 ## Put user-triggered work in an event handler and a store action
 
-Never encode "when this flag becomes true, save" as state plus an effect. Call the workflow from the event that caused it. From `ProvidersPanel.tsx`:
+Never encode "when this flag becomes true, save" as state plus an effect. Call the workflow from the event that caused it. From `ProviderPanel.tsx`:
 
 ```tsx
 const handleSaveNew = async (data: NewProviderData) => {

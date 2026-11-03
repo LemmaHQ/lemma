@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
-import { type Provider, useProvidersStore } from "./store";
+import { type Provider, useProviderStore } from "./store";
 import { useModelOptions } from "./useModelOptions";
 
 const rpc = vi.hoisted(() => ({
@@ -25,11 +25,11 @@ const provider = (patch: Partial<Provider>): Provider => ({
 
 beforeEach(() => {
     vi.resetAllMocks();
-    useProvidersStore.setState(useProvidersStore.getInitialState());
+    useProviderStore.setState(useProviderStore.getInitialState());
 });
 
 it("offers the models of enabled providers and names every provider", () => {
-    useProvidersStore.setState({
+    useProviderStore.setState({
         loaded: true,
         list: [
             provider({ id: "a", name: "Acme", models: ["m1", "m2"] }),
@@ -58,7 +58,7 @@ it("loads the providers on first use", async () => {
     renderHook(() => useModelOptions());
 
     await vi.waitFor(() => {
-        expect(useProvidersStore.getState().loaded).toBe(true);
+        expect(useProviderStore.getState().loaded).toBe(true);
     });
     expect(rpc.listProviders).toHaveBeenCalledOnce();
 });

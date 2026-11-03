@@ -91,7 +91,7 @@
         "hide": "隐藏",
         "show": "显示"
     },
-    "providers": {
+    "provider": {
         "addModel": "添加模型",
         "addPicked_one": "添加 {{count}} 个模型",
         "addPicked_other": "添加 {{count}} 个模型",

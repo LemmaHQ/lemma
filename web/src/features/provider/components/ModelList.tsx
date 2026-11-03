@@ -77,7 +77,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         <section className="flex flex-col gap-3 pt-6">
             <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium">
-                    {t("providers.modelList")}
+                    {t("provider.modelList")}
                 </h3>
                 <div className="ml-auto flex items-center gap-2">
                     <InputGroup className="w-48">
@@ -87,7 +87,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         <InputGroupInput
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t("providers.modelSearchPlaceholder")}
+                            placeholder={t("provider.modelSearchPlaceholder")}
                         />
                     </InputGroup>
                     <Button
@@ -97,13 +97,13 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         loading={fetching}
                     >
                         {!fetching && <RefreshCwIcon />}
-                        {t("providers.fetchModelList")}
+                        {t("provider.fetchModelList")}
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
                         size="icon"
-                        aria-label={t("providers.addModel")}
+                        aria-label={t("provider.addModel")}
                         onClick={() => setAdding((v) => !v)}
                     >
                         <PlusIcon />
@@ -128,7 +128,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                     <InputGroupInput
                         value={newModel}
                         onChange={(e) => setNewModel(e.target.value)}
-                        placeholder={t("providers.modelPlaceholder")}
+                        placeholder={t("provider.modelPlaceholder")}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
@@ -142,7 +142,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                     <InputGroupAddon align="inline-end">
                         <InputGroupButton
                             size="icon-xs"
-                            aria-label={t("providers.addModel")}
+                            aria-label={t("provider.addModel")}
                             onClick={confirmAdd}
                             disabled={newModel.trim() === ""}
                         >
@@ -176,7 +176,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                                         type="button"
                                         variant="ghost"
                                         size="icon-sm"
-                                        aria-label={t("providers.removeModel")}
+                                        aria-label={t("provider.removeModel")}
                                         onClick={() => remove(model)}
                                     >
                                         <XIcon />
@@ -190,7 +190,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                 <Empty>
                     <EmptyHeader>
                         <EmptyDescription>
-                            {t("providers.noModels")}
+                            {t("provider.noModels")}
                         </EmptyDescription>
                     </EmptyHeader>
                 </Empty>
