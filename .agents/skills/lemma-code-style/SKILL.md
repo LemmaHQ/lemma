@@ -66,6 +66,12 @@ Higher-level code comes first, details below it.
 - **TypeScript:** `<name>.test.ts` sits beside `<name>.ts`, `<name>.tsx`, or the `<name>/` directory it tests; a test that renders JSX is `<name>.test.tsx` and keeps its subject's name, PascalCase for a component.
 - **Kotlin:** tests live in a test source set (`commonTest`, `androidHostTest`, or the app module's unit test set) under the package of the code they test, named `<Subject>Test.kt`.
 
+## Singular and plural
+
+- **Singular:** names for one concept — crates, modules, packages, feature directories, proto files and messages, i18n namespaces — and a noun that modifies another noun: `lemma-provider`, `features/provider/`, `provider.proto`, `ProviderPanel`, `useProviderStore`.
+- **Plural:** names for a collection — a directory of entries of one kind, a value or field holding several items, a `repeated` field, a function returning several items, a database table, a URL segment naming a collection: `crates/`, `components/`, `messages: Vec<Message>`, `list_messages`, the `messages` table, `/sessions/:id`.
+- **Upstream form:** names a framework or tool fixes (`tests/`, SeaORM `entity/` and `migration/`, `.github/workflows/`, Android `res/values/`), vendor and RPC names (`AnthropicMessages`, `FetchModels`), and words used only in the plural (`settings`, `preferences`).
+
 ## References
 
 Read only the section the question needs.
