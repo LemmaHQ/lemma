@@ -47,10 +47,10 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 - **引擎端口（engine port）** — 网页与桌面引擎进程之间的 `MessagePort`。请求、响应数据块与取消都经它传递；它不传递会话消息。
 - **进程内引擎（in-process engine）** — `lemma-mobile` 中的 `LemmaEngine`，在 Android 应用内提供 Connect 路由；应用通过 UniFFI 绑定访问它。
 - **访问令牌（access token）** — 用 JWT 密钥签名、有效期 15 分钟的 JWT，`sub` 中携带用户 id。
-- **refresh 令牌（refresh token）** — 有效期 30 天的随机令牌；存储中只保留其 SHA-256 哈希，每次刷新都会吊销它并签发新的一对令牌。
-- **令牌族（token family）** — 一次登录及其后续轮换签发的全部 refresh 令牌，共享同一个 `family_id`。再次出示已轮换或已吊销的令牌会吊销整个令牌族。
+- **刷新令牌（refresh token）** — 有效期 30 天的随机令牌；存储中只保留其 SHA-256 哈希，每次刷新都会吊销它并签发新的一对令牌。
+- **令牌族（token family）** — 一次登录及其后续轮换签发的全部刷新令牌，共享同一个 `family_id`。再次出示已轮换或已吊销的令牌会吊销整个令牌族。
 - **cookie 模式（cookie mode）** — API 与页面同源时浏览器客户端的认证方式：令牌通过 `lemma_access` 与 `lemma_refresh` cookie 传递，而不是 `Authorization` 头。
-- **加密 key（sealed key）** — 由 `lemma-crypto` 以 AES-256-GCM、用从加密密钥派生的密钥加密的 provider API key。更换加密密钥后，所有已加密的 key 都无法读取。
+- **加密 key（sealed key）** — 由 `lemma-crypto` 以 AES-256-GCM、用从主密钥派生的密钥加密的 provider API key。更换主密钥后，所有已加密的 key 都无法读取。
 
 ## 错误
 

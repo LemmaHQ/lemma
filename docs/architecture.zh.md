@@ -33,7 +33,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
-**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与加密密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
+**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与主密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它与桌面 addon 一样，在数据目录（应用的 `filesDir`）上打开引擎，并在进程内提供 Connect 路由。应用访问它时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
 
@@ -92,7 +92,7 @@ AgentService.SendMessage(session, provider, model, content)
 
 分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 
-`ProviderService` 用由配置的密钥派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。refresh 令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
+`ProviderService` 用由配置的主密钥派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。刷新令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
 
 ## 新行为放在哪里
 
