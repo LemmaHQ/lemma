@@ -2278,7 +2278,7 @@ dependencies = [
  "lemma-provider",
  "lemma-session",
  "lemma-test-db",
- "lemma-tools",
+ "lemma-tool",
  "sea-orm-migration",
  "serde_json",
  "thiserror",
@@ -2297,7 +2297,7 @@ dependencies = [
  "lemma-model",
  "lemma-session",
  "lemma-test-db",
- "lemma-tools",
+ "lemma-tool",
  "sea-orm",
  "sea-orm-migration",
  "serde_json",
@@ -2555,7 +2555,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-tools"
+name = "lemma-tool"
 version = "0.1.0"
 dependencies = [
  "futures",

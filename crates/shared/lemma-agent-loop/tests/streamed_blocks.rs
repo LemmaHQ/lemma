@@ -10,7 +10,7 @@ use lemma_core::{ContentBlock, StopReason, StreamEvent, TextContent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::{Message as StoredMessage, MessageStatus};
 use lemma_test_db::on_each_database;
-use lemma_tools::LocalExecEnv;
+use lemma_tool::LocalExecEnv;
 use sea_orm::DatabaseConnection;
 use serde_json::json;
 

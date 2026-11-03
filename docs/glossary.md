@@ -34,7 +34,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Tools
 
-- **tool** — an implementation of `lemma_tools::Tool`: a `ToolSpec` advertised to the model and an `execute` function. The built-in tools are `read_file`, `write_file`, and `bash`.
+- **tool** — an implementation of `lemma_tool::Tool`: a `ToolSpec` advertised to the model and an `execute` function. The built-in tools are `read_file`, `write_file`, and `bash`.
 - **execution environment** — an `ExecEnv`: file reads and writes, directory listings, and shell commands that tools perform. `LocalExecEnv` roots them in a workspace.
 - **workspace** — the directory `workspaces/<session id>` under the local data directory where a session's tools run.
 - **tool runtime** — a `ToolRuntime`: the registry and environment a host attaches to the loop. A loop without one sends no tool definitions.

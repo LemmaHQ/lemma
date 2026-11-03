@@ -1,5 +1,5 @@
 use lemma_core::ToolCall;
-use lemma_tools::{ExecEnv, ToolRegistry};
+use lemma_tool::{ExecEnv, ToolRegistry};
 
 /// Tool execution wiring available to the loop.
 #[derive(Debug)]

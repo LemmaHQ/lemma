@@ -34,7 +34,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## 工具
 
-- **工具（tool）** — `lemma_tools::Tool` 的一个实现：提供给模型的 `ToolSpec` 与 `execute` 函数。内置工具是 `read_file`、`write_file` 与 `bash`。
+- **工具（tool）** — `lemma_tool::Tool` 的一个实现：提供给模型的 `ToolSpec` 与 `execute` 函数。内置工具是 `read_file`、`write_file` 与 `bash`。
 - **执行环境（execution environment）** — 一个 `ExecEnv`：工具执行的文件读写、目录列举与 shell 命令。`LocalExecEnv` 把它们限定在一个工作区内。
 - **工作区（workspace）** — 本地数据目录下的 `workspaces/<session id>` 目录，会话的工具在其中运行。
 - **工具运行时（tool runtime）** — 一个 `ToolRuntime`：宿主挂到循环上的注册表与执行环境。没有它的循环不发送工具定义。

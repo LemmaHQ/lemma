@@ -7,7 +7,7 @@ use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
 use lemma_provider::ProviderService;
 use lemma_session::{LastModel, SessionService};
-use lemma_tools::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
+use lemma_tool::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::fs;
 use uuid::Uuid;
 

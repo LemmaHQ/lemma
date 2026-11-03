@@ -13,7 +13,7 @@ use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
-use lemma_tools::{LocalExecEnv, ToolRegistry};
+use lemma_tool::{LocalExecEnv, ToolRegistry};
 use serde_json::json;
 
 use crate::common::{Migrator, input, new_session};

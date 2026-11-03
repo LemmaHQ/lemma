@@ -11,7 +11,7 @@ use lemma_core::{ContentBlock, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
-use lemma_tools::LocalExecEnv;
+use lemma_tool::LocalExecEnv;
 use serde_json::json;
 use uuid::Uuid;
 

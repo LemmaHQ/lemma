@@ -6,7 +6,7 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use lemma_tools::{
+use lemma_tool::{
     BashTool, ExecEnv, LocalExecEnv, ReadFileTool, ToolError, ToolRegistry, WriteFileTool,
 };
 use serde_json::{Value, json};
@@ -16,7 +16,7 @@ struct Workspace(PathBuf);
 
 impl Workspace {
     fn new() -> Result<Self, Box<dyn Error>> {
-        let root = env::temp_dir().join(format!("lemma-tools-test-{}", Uuid::new_v4()));
+        let root = env::temp_dir().join(format!("lemma-tool-test-{}", Uuid::new_v4()));
         fs::create_dir_all(&root)?;
         Ok(Self(root))
     }

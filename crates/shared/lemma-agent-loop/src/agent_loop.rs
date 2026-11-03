@@ -2,7 +2,7 @@ use chrono::Utc;
 use lemma_core::{ContentBlock, Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
 use lemma_session::{LastModel, Message as StoredMessage, SessionService};
-use lemma_tools::ExecEnv;
+use lemma_tool::ExecEnv;
 use uuid::Uuid;
 
 use crate::cancel_token::CancelToken;
