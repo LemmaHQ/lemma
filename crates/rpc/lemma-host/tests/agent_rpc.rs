@@ -24,6 +24,11 @@ const RESUME: &str = "/lemma.v1.AgentService/ResumeStream";
 const CREATE_PROVIDER: &str = "/lemma.v1.ProviderService/CreateProvider";
 const CREATE_CONVERSATION: &str = "/lemma.v1.ConversationService/CreateConversation";
 const MESSAGES: &str = "/lemma.v1.ConversationService/ListMessages";
+#[cfg(windows)]
+const WAIT_FOR_GO: &str = "for /L %i in (1,1,60) do @if not exist go ping -n 2 127.0.0.1 >nul";
+#[cfg(not(windows))]
+const WAIT_FOR_GO: &str =
+    "i=0; while [ ! -e go ] && [ $i -lt 600 ]; do sleep 0.1; i=$((i+1)); done";
 
 fn sse(chunks: &[Value]) -> String {
     let mut body: String = chunks
@@ -74,6 +79,11 @@ async fn completions(axum::Json(request): axum::Json<Value>) -> Response {
             ),
             tool_call(1, "c2", "read_file", &json!({ "path": "missing.txt" })),
             tool_call(2, "c3", "fly", &json!({})),
+            finish("tool_calls"),
+        ])
+        .into_response(),
+        "wait" => sse(&[
+            tool_call(0, "w1", "bash", &json!({ "command": WAIT_FOR_GO })),
             finish("tool_calls"),
         ])
         .into_response(),
@@ -410,6 +420,64 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts_for_its_owner_only()
         "settled placeholder"
     );
     assert_stream_reason(&ended_end, ErrorReason::TurnNotRunning);
+    setup.engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more()
+-> Result<(), Box<dyn Error>> {
+    let mut setup = setup().await?;
+    let mut frames = setup.send("wait").await?;
+    let mut seen: Vec<Value> = Vec::new();
+    while !seen
+        .last()
+        .is_some_and(|event| event["event"].get("toolCallStarted").is_some())
+    {
+        match setup.engine.next_frame(&mut frames).await? {
+            Some(Frame::Message(event)) => seen.push(event),
+            other => return Err(format!("turn ended before the tool ran: {other:?}").into()),
+        }
+    }
+    let message_id = seen[0]["event"]["started"]["messageId"].clone();
+
+    let aborted = setup
+        .engine
+        .call_as(&setup.token, ABORT, &json!({ "messageId": message_id }))
+        .await?;
+    fs::write(
+        setup
+            .engine
+            .data_dir()
+            .join("workspaces")
+            .join(&setup.conversation_id)
+            .join("go"),
+        "",
+    )?;
+    let (rest, end) = setup.engine.finish(&mut frames).await?;
+    let messages = setup.messages().await?;
+
+    assert_eq!(aborted.status, 200, "{aborted:?}");
+    assert_eq!(
+        labels(&rest),
+        [r#"toolCallFinished:"w1":false"#, "aborted"],
+        "events after the abort"
+    );
+    assert_eq!(end, json!({}), "clean end of stream");
+    assert_eq!(
+        by_role(&messages, "assistant").len(),
+        1,
+        "no model call after the abort: {messages:?}"
+    );
+    let answered: Vec<&Value> = by_role(&messages, "tool")
+        .into_iter()
+        .map(|m| &m["toolResult"]["toolCallId"])
+        .collect();
+    assert_eq!(
+        answered,
+        [&json!("w1")],
+        "the tool call keeps its result: {messages:?}"
+    );
     setup.engine.close().await?;
     Ok(())
 }
