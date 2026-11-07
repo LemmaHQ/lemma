@@ -18,11 +18,11 @@
 
 生成器写出三个文件，均被 Git 忽略：
 
-| 文件                                                            | 内容                                                                                   | 使用方                                         |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `packages/ui/src/styles/tokens.gen.css`                         | `:root` 中每个动效 token 一个 CSS 变量，`:root` 与 `.dark` 中每个颜色角色一个 CSS 变量 | `packages/ui/src/styles/tokens.css` 导入它     |
-| `desktop/src/gen/theme-colors.ts`                               | 每套主题的背景、侧边栏与前景色                                                         | `desktop/src/main.ts` 据此设置标题栏与窗口颜色 |
-| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | 以 Compose `Color` 表示的每个色板条目                                                  | `theme/Scheme.kt` 把它映射到应用的颜色角色     |
+| 文件                                                            | 内容                                                                                   | 使用方                                               |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `packages/ui/src/styles/tokens.gen.css`                         | `:root` 中每个动效 token 一个 CSS 变量，`:root` 与 `.dark` 中每个颜色角色一个 CSS 变量 | `packages/ui/src/styles/tokens.css` 导入它           |
+| `desktop/src/gen/theme-colors.ts`                               | 每套主题的背景、侧边栏与前景色                                                         | `desktop/src/main.ts` 据此设置标题栏与窗口颜色       |
+| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | 以 Compose `Color` 表示的每个色板条目                                                  | `theme/LemmaColorScheme.kt` 把它映射到应用的颜色角色 |
 
 Android 应用只读取色板，只有 Web 主题读取动效 token。每个使用方在读取输出前运行生成器：
 
