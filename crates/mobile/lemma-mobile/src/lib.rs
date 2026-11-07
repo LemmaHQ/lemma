@@ -5,6 +5,7 @@ use std::path::Path;
 
 use lemma_host::{InProcessTransport, LocalEngine};
 use thiserror::Error;
+use tokio::sync::Mutex;
 
 uniffi::setup_scaffolding!();
 
@@ -19,6 +20,9 @@ pub enum EngineError {
     /// while streaming.
     #[error("{0}")]
     Transport(String),
+    /// The database failed to close in [`LemmaEngine::shutdown`].
+    #[error("{0}")]
+    Shutdown(String),
 }
 
 /// One HTTP header.
@@ -46,6 +50,7 @@ pub struct ResponseHead {
 #[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
     transport: InProcessTransport,
+    local: Mutex<Option<LocalEngine>>,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -62,6 +67,7 @@ impl LemmaEngine {
             .map_err(|e| EngineError::Open(e.to_string()))?;
         Ok(Self {
             transport: InProcessTransport::new(local.router()),
+            local: Mutex::new(Some(local)),
         })
     }
 
@@ -114,5 +120,21 @@ impl LemmaEngine {
     /// Closes a response body before its end.
     pub fn cancel(&self, body: u32) {
         self.transport.cancel(body);
+    }
+
+    /// Closes the engine's database; call it once no request is in flight.
+    /// Requests after it fail, and a second call does nothing.
+    ///
+    /// # Errors
+    ///
+    /// [`EngineError::Shutdown`] when the database fails to close.
+    pub async fn shutdown(&self) -> Result<(), EngineError> {
+        let Some(local) = self.local.lock().await.take() else {
+            return Ok(());
+        };
+        local
+            .close()
+            .await
+            .map_err(|e| EngineError::Shutdown(e.to_string()))
     }
 }
