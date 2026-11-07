@@ -8,7 +8,7 @@ import { errorText } from "./error-text";
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mock t only needs the call signature
 const t = ((key: string) => key) as unknown as TFunction;
 
-function withReason(reason: ErrorReason): ConnectError {
+function withReason(reason: number): ConnectError {
     return new ConnectError("raw message", Code.NotFound, undefined, [
         { desc: ErrorInfoSchema, value: { reason } },
     ]);
@@ -21,13 +21,7 @@ it("maps app error reason to i18n key", () => {
 });
 
 it("reads an unmapped reason as unspecified", () => {
-    expect(
-        errorText(
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- out-of-range enum value exercises the fallback
-            withReason(999 as ErrorReason),
-            t,
-        ),
-    ).toBe("errors.unspecified");
+    expect(errorText(withReason(999), t)).toBe("errors.unspecified");
 });
 
 it("maps a transport code when no ErrorInfo detail is present", () => {
