@@ -72,7 +72,7 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 
 - Commit messages follow [lemma-commit](.agents/skills/lemma-commit/SKILL.md), in English.
 - Commit and push only on explicit request.
-- One commit does one complete thing; split independent hunks into separate commits.
+- One commit does one complete thing; split independent hunks into separate commits. Only the latest snapshot must build; intermediate commits need not build on their own.
 - Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.
 
 ## Documentation

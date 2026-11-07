@@ -85,7 +85,8 @@ Risk: <if destructive or migration>
 
 ## Atomicity
 
-- **One concern per commit.** Two changes are separate concerns when either could be reverted alone and leave the repository coherent; split them. A conjunction in the subject is the usual sign, not the rule.
+- **One concern per commit.** Two changes are separate concerns when each has its own reason to exist and could be reviewed or reverted as a unit; split them. A conjunction in the subject is the usual sign, not the rule.
+- **Split by scope, not by build state.** Only the branch tip must build and pass checks; intermediate commits need not compile on their own. Order commits so dependencies come first, and spend no effort proving each snapshot builds.
 - **Tests for behavior changes ship in the same commit.** Not a follow-up.
 - **Squash WIP before push.** A 6-commit branch with `wip: testing`, `wip: more`, `oops typo` should land as 1-2 clean commits.
 - **Don't amend a published commit on a shared branch.** Follow up with a new commit instead.
