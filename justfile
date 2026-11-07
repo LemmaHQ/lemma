@@ -210,10 +210,10 @@ packages-test:
 packages-cov *args:
     npm run test:cov --workspace=packages --if-present -- {{ args }}
 
-# Run Android Lint on androidApp
+# Run Android Lint on androidApp with its shared dependency, then Detekt on both modules
 [group('mobile')]
 mobile-android-lint-check:
-    ./gradlew :mobile:androidApp:lint
+    ./gradlew :mobile:androidApp:lint :mobile:androidApp:detektMain :mobile:androidApp:detektTest :mobile:shared:detektMainAndroid :mobile:shared:detektHostTestAndroid
 
 # Apply Android Lint fixes
 [group('mobile')]

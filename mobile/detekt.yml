@@ -1,0 +1,137 @@
+config:
+  warningsAsErrors: true
+
+comments:
+  excludes: &generated ['build/**', '**/build/**']
+
+complexity:
+  excludes: *generated
+  CyclomaticComplexMethod:
+    ignoreSimpleWhenEntries: true
+  LargeClass:
+    excludes: &tests ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/androidHostTest/**']
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    active: false
+
+coroutines:
+  excludes: *generated
+  InjectDispatcher:
+    excludes: *tests
+
+empty-blocks:
+  excludes: *generated
+
+exceptions:
+  excludes: *generated
+
+naming:
+  excludes: *generated
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+    excludes: *tests
+
+performance:
+  excludes: *generated
+  SpreadOperator:
+    excludes: *tests
+
+potential-bugs:
+  excludes: *generated
+  UnsafeCallOnNullableType:
+    excludes: *tests
+
+style:
+  excludes: *generated
+  MagicNumber:
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/androidHostTest/**', '**/*.kts']
+  ReturnCount:
+    excludeGuardClauses: true
+
+Compose:
+  excludes: *generated
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableParamOrder:
+    active: true
+  CompositionLocalAllowlist:
+    active: true
+    allowedCompositionLocals: LocalLemmaColors,LocalLemmaTypography,LocalLemmaShapes
+  CompositionLocalNaming:
+    active: true
+  ConditionHoist:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+  ContentTrailingLambda:
+    active: true
+  ContentSlotReused:
+    active: true
+  DefaultsVisibility:
+    active: true
+  InvalidReadOnlyComposable:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+  LambdaParameterInRestartableEffect:
+    active: true
+  MissingNonRestartableComposable:
+    active: true
+  MissingReadOnlyComposable:
+    active: true
+  ModifierClickableOrder:
+    active: true
+  ModifierComposed:
+    active: true
+  ModifierMissing:
+    active: true
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierShouldBeForwardedToEveryBranch:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewPublic:
+    active: true
+  RememberContentMissing:
+    active: true
+  RememberMissing:
+    active: true
+  StaleRememberUpdatedStateInRemember:
+    active: true
+  StateParam:
+    active: true
+  UnnecessaryComposable:
+    active: true
+  UnnecessaryLaunchedEffect:
+    active: true
+    allowedCallReceiverTypes:
+      - androidx.navigation.NavController
+      - androidx.navigation.NavHostController
+  VarsWithoutStateBacking:
+    active: true
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true

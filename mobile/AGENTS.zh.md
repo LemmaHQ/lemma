@@ -38,7 +38,7 @@
 ```sh
 just mobile-android-build       # 构建 debug APK
 just mobile-android-test        # androidApp 单元测试、shared 的 host 测试与 SQLDelight 迁移校验
-just mobile-android-lint-check  # 对 androidApp 运行 Android Lint；mobile-android-lint 应用修复
+just mobile-android-lint-check  # 对 androidApp 与 shared 运行 Android Lint，再按 detekt.yml 运行 Detekt；mobile-android-lint 应用 Lint 修复
 just mobile-android-cov         # androidApp 与 shared 的 Kover HTML 报告
 just mobile-fmt-check           # 经 Spotless 运行 kotlinlang 风格的 ktfmt；mobile-fmt 格式化
 ```

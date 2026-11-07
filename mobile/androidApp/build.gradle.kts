@@ -4,11 +4,13 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kover)
+    alias(libs.plugins.detekt)
 }
 
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
+        allWarningsAsErrors = true
     }
 }
 
@@ -22,6 +24,13 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.compose.uiTestJunit4)
     testImplementation(libs.androidx.test.espresso.core)
+
+    detektPlugins(libs.compose.rules.detekt)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("mobile/detekt.yml"))
 }
 
 kover {
@@ -72,5 +81,9 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+    }
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
     }
 }

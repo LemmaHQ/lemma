@@ -5,10 +5,12 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.androidLint)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kover)
+    alias(libs.plugins.detekt)
 }
 
 val designTokensDir = layout.buildDirectory.dir("generated/source/tokens")
@@ -74,6 +76,10 @@ val generateProtoBindings =
     }
 
 kotlin {
+    compilerOptions {
+        allWarningsAsErrors = true
+    }
+
     android {
         namespace = "dev.lemmahq.lemma.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -158,7 +164,24 @@ sqldelight {
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+    detektPlugins(libs.compose.rules.detekt)
 }
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("mobile/detekt.yml"))
+}
+
+tasks
+    .withType<dev.detekt.gradle.Detekt>()
+    .named { it == "detektMainAndroid" }
+    .configureEach {
+        classpath.from(
+            tasks.named<JavaCompile>("compileAndroidMainJavaWithJavac").flatMap {
+                it.destinationDirectory
+            }
+        )
+    }
 
 androidComponents {
     onVariants {
