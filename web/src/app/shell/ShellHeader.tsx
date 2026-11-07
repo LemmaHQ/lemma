@@ -1,5 +1,5 @@
 import { cn, useSidebar } from "@lemma/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, ViewTransition } from "react";
 
 import { ShellToolbar } from "./ShellToolbar";
 
@@ -28,9 +28,11 @@ export function ShellHeader({
             <div className="invisible absolute left-2 opacity-0 transition-sidebar-reveal-hide group-data-revealed/shell-header:visible group-data-revealed/shell-header:opacity-100 group-data-revealed/shell-header:transition-sidebar-reveal-show motion-reduce:transition-none">
                 <ShellToolbar actions={toolbarActions} />
             </div>
-            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground shell-transition-title view-transition-fade">
-                {title}
-            </div>
+            <ViewTransition name="shell-title" share="ui-fade" default="none">
+                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                    {title}
+                </div>
+            </ViewTransition>
         </header>
     );
 }

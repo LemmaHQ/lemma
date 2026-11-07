@@ -24,30 +24,6 @@ html.custom-titlebar .h-dvh {
     height: calc(100dvh - var(--titlebar-height));
 }
 
-@utility auth-transition-panel {
-    view-transition-name: auth-panel;
-}
-
-@utility shell-transition-sidebar-header {
-    view-transition-name: shell-sidebar-header;
-}
-
-@utility shell-transition-sidebar {
-    view-transition-name: shell-sidebar;
-}
-
-@utility shell-transition-sidebar-footer {
-    view-transition-name: shell-sidebar-footer;
-}
-
-@utility shell-transition-title {
-    view-transition-name: shell-title;
-}
-
-@utility shell-transition-main {
-    view-transition-name: shell-main;
-}
-
 ::view-transition-old(root),
 ::view-transition-new(root),
 ::view-transition-group(*) {

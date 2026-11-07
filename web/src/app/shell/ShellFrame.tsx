@@ -1,5 +1,5 @@
 import { Sidebar, SidebarInset, SidebarRail } from "@lemma/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, ViewTransition } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ShellHeader } from "./ShellHeader";
@@ -29,9 +29,15 @@ export function ShellFrame({
             </Sidebar>
             <SidebarInset className="overflow-hidden">
                 <ShellHeader toolbarActions={toolbarActions} title={title} />
-                <div className="flex min-h-0 flex-1 flex-col shell-transition-main view-transition-rise">
-                    {children}
-                </div>
+                <ViewTransition
+                    name="shell-main"
+                    share="ui-rise"
+                    default="none"
+                >
+                    <div className="flex min-h-0 flex-1 flex-col">
+                        {children}
+                    </div>
+                </ViewTransition>
             </SidebarInset>
         </>
     );

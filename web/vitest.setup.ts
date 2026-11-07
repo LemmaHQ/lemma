@@ -3,7 +3,14 @@ import { afterEach, beforeAll } from "vitest";
 
 import { i18n } from "./src/i18n";
 
+Object.defineProperty(document.documentElement, "animate", {
+    value: Reflect.get(Element.prototype, "animate"),
+});
 Reflect.deleteProperty(Element.prototype, "animate");
+
+Object.defineProperty(document, "fonts", {
+    value: { status: "loaded", ready: Promise.resolve() },
+});
 
 document.startViewTransition = function startInstantViewTransition(
     callbackOptions,

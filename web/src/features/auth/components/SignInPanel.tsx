@@ -31,7 +31,6 @@ export function SignInPanel({ signUpPath }: { signUpPath: string }) {
                 onUnknownAccount={(identifier) => {
                     void navigate(signUpPath, {
                         state: prefillFromIdentifier(identifier),
-                        viewTransition: true,
                     });
                 }}
             />

@@ -21,7 +21,7 @@ export function BackHomeButton() {
                 <AnimateIcon animateOnHover asChild>
                     <SidebarMenuButton
                         variant="strong"
-                        render={<NavLink to={paths.home} end viewTransition />}
+                        render={<NavLink to={paths.home} end />}
                         onClick={() => setOpenMobile(false)}
                     >
                         <ArrowLeftIcon />
