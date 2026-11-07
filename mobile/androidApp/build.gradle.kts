@@ -152,5 +152,6 @@ android {
     lint {
         warningsAsErrors = true
         checkDependencies = true
+        disable += setOf("AndroidGradlePluginVersion", "GradleDependency", "NewerVersionAvailable")
     }
 }
