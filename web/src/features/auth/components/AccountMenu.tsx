@@ -57,9 +57,7 @@ export function AccountMenu({ settingsPath }: { settingsPath: string }) {
                         <DropdownMenuSeparator />
                         <AnimateIcon animateOnHover asChild>
                             <DropdownMenuItem
-                                render={
-                                    <Link to={settingsPath} viewTransition />
-                                }
+                                render={<Link to={settingsPath} />}
                                 onClick={() => {
                                     setOpenMobile(false);
                                 }}

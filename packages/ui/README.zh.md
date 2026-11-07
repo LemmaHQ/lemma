@@ -64,15 +64,15 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 | `swap-turn`        | 与 `swap-layer` 相同，另带轻微旋转                                      |
 | `stagger-children` | 让子元素依次升起                                                        |
 
-视图过渡工具类，用于应用设置了 `view-transition-name` 的元素；旧快照淡出，应用不直接引用 keyframe：
+视图过渡类，由应用作为 React `<ViewTransition>` 的 `share`、`enter` 或 `exit` 类传入；旧快照淡出，应用不直接引用 keyframe：
 
-| 类名                         | 行为                                       |
-| ---------------------------- | ------------------------------------------ |
-| `view-transition-fade`       | 新快照淡入                                 |
-| `view-transition-rise`       | 新快照从略低处淡入                         |
-| `view-transition-from-start` | 新快照从略偏左处淡入                       |
-| `view-transition-from-end`   | 新快照从略偏右处淡入                       |
-| `view-transition-morph`      | 视图组移动并缩放到新位置与尺寸，新快照淡入 |
+| 类名            | 行为                                       |
+| --------------- | ------------------------------------------ |
+| `ui-fade`       | 新快照淡入                                 |
+| `ui-rise`       | 新快照从略低处淡入                         |
+| `ui-from-start` | 新快照从略偏左处淡入                       |
+| `ui-from-end`   | 新快照从略偏右处淡入                       |
+| `ui-morph`      | 视图组移动并缩放到新位置与尺寸，新快照淡入 |
 
 动效 token 还提供 `duration-reveal`、`ease-morph` 与 `ease-spring`。每个动画与动效类都有减少动态效果的回退，停止移动与循环，同时保留最终状态。
 

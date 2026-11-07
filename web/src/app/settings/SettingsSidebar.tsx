@@ -1,4 +1,5 @@
 import { SidebarContent, SidebarHeader } from "@lemma/ui";
+import { ViewTransition } from "react";
 
 import { BackHomeButton } from "./BackHomeButton";
 import { SettingsNav } from "./SettingsNav";
@@ -7,13 +8,25 @@ import { SettingsNav } from "./SettingsNav";
 export function SettingsSidebar() {
     return (
         <>
-            <SidebarHeader className="shell-transition-sidebar-header view-transition-from-end">
-                <BackHomeButton />
-            </SidebarHeader>
+            <ViewTransition
+                name="shell-sidebar-header"
+                share="ui-from-end"
+                default="none"
+            >
+                <SidebarHeader>
+                    <BackHomeButton />
+                </SidebarHeader>
+            </ViewTransition>
             <SidebarContent>
-                <div className="flex flex-col shell-transition-sidebar view-transition-from-end">
-                    <SettingsNav />
-                </div>
+                <ViewTransition
+                    name="shell-sidebar"
+                    share="ui-from-end"
+                    default="none"
+                >
+                    <div className="flex flex-col">
+                        <SettingsNav />
+                    </div>
+                </ViewTransition>
             </SidebarContent>
         </>
     );

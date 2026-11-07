@@ -245,26 +245,6 @@
     transition: var(--sidebar-rail-hide);
 }
 
-@utility view-transition-fade {
-    view-transition-class: ui-fade;
-}
-
-@utility view-transition-rise {
-    view-transition-class: ui-rise;
-}
-
-@utility view-transition-from-start {
-    view-transition-class: ui-from-start;
-}
-
-@utility view-transition-from-end {
-    view-transition-class: ui-from-end;
-}
-
-@utility view-transition-morph {
-    view-transition-class: ui-morph;
-}
-
 ::view-transition-old(*.ui-fade),
 ::view-transition-old(*.ui-rise),
 ::view-transition-old(*.ui-from-start),
