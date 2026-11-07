@@ -14,13 +14,13 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 ## 覆盖率
 
-`just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖的行或函数时失败，只报告 region 覆盖率；`just mobile-android-cov` 只报告覆盖率，没有门槛。
+`just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖的行或函数时失败，只报告 region 覆盖率；`just mobile-android-cov` 在存在未覆盖的行、从未调用的方法或 Composable 函数之外未走到的分支时失败。
 
 - **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-proto`、Node-API addon `lemma-desktop`、UniFFI facade `lemma-mobile`、只供测试使用的 `lemma-test-db`、`lemma-server` 的二进制文件 `main.rs`、`config.rs` 与 `server_mode.rs`、`lemma-server` 中只含 `rust-embed` derive 的 `web_dist.rs`，以及 `entity/` 下的 SeaORM entity 文件。
 - **Web**：`just web-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、`src/i18n/locales/` 与入口 `src/main.tsx`。
 - **桌面端**：`just desktop-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、Electron 入口 `src/main.ts`、`src/preload.ts`、`src/engine-host.ts` 与常量文件 `src/titlebar.ts`。
 - **Packages**：`just packages-cov` 以 v8 覆盖率对 `packages/ui/src/` 下的所有文件运行 vitest。
-- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源与 `LemmaPalette`。
+- **Android**：`just mobile-android-cov` 为 `androidApp` 与 `shared` 生成 Kover HTML 与 XML 报告，排除生成代码：契约代码、SQLDelight、UniFFI 绑定、Compose 资源、`BuildConfig`、`LemmaPalette`，以及 `@Serializable` 声明，它们的构造函数里是序列化插件加入的代码。随后由 `verifyCoverage` 任务检查 XML 报告；Composable 函数中的分支不参与这项检查，因为 Compose 编译器会加入测试无法到达的分支。
 
 Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop`、`packages` 与 `mobile` 标记上传到 Codecov，并上传 Rust、Web、桌面端与 packages 的 JUnit 结果。其 Rust job 把 `LEMMA_TEST_POSTGRES_URL` 指向一个 PostgreSQL 服务，因此数据库测试在那里也会在 PostgreSQL 上运行。[codecov.yml](../codecov.yml) 在总覆盖率比基准提交下降超过 1% 时让 project 状态失败，并关闭 patch 状态。
 

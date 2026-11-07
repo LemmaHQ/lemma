@@ -240,10 +240,10 @@ mobile-android-build:
 mobile-android-test *args:
     ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest :mobile:shared:verifySqlDelightMigration {{ args }}
 
-# Kover HTML and XML reports for androidApp and shared
+# Kover HTML and XML reports for androidApp and shared, failing on any uncovered line, uncalled method, or missed branch outside Composable functions
 [group('mobile')]
 mobile-android-cov:
-    ./gradlew :mobile:androidApp:koverHtmlReport :mobile:androidApp:koverXmlReport
+    ./gradlew :mobile:androidApp:koverHtmlReport :mobile:androidApp:verifyCoverage
 
 # Generate the web theme, desktop window colors, and Android palette from design tokens
 [group('design')]

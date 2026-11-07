@@ -39,6 +39,6 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 just mobile-android-build       # assemble the debug APK
 just mobile-android-test        # androidApp unit tests, shared host tests, and SQLDelight migration checks
 just mobile-android-lint-check  # Android Lint on androidApp and shared, then Detekt with detekt.yml; mobile-android-lint applies Lint fixes
-just mobile-android-cov         # Kover HTML report for androidApp and shared
+just mobile-android-cov         # Kover reports for androidApp and shared; fails on an uncovered line, an uncalled method, or a missed branch outside Composable functions
 just mobile-fmt-check           # ktfmt in kotlinlang style through Spotless; mobile-fmt formats
 ```

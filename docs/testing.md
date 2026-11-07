@@ -14,13 +14,13 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 ## Coverage
 
-`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line or function and only reports region coverage; `just mobile-android-cov` reports coverage without a gate.
+`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line or function and only reports region coverage; `just mobile-android-cov` fails on any uncovered line, any method never called, or any missed branch outside Composable functions.
 
 - **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the test-only `lemma-test-db`, the `lemma-server` binary files `main.rs`, `config.rs`, and `server_mode.rs`, `lemma-server`'s `web_dist.rs`, which holds only the `rust-embed` derive, and the SeaORM entity files under `entity/`.
 - **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
 - **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, and the `src/titlebar.ts` constant.
 - **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.
-- **Android**: `just mobile-android-cov` writes Kover HTML and XML reports for `androidApp` and `shared`, excluding generated code: the contract code, SQLDelight, UniFFI bindings, Compose resources, and `LemmaPalette`.
+- **Android**: `just mobile-android-cov` writes Kover HTML and XML reports for `androidApp` and `shared`, excluding generated code: the contract code, SQLDelight, UniFFI bindings, Compose resources, `BuildConfig`, `LemmaPalette`, and the `@Serializable` declarations, whose constructors hold the code the serialization plugin adds. Its `verifyCoverage` task then checks the XML report; branches in Composable functions stay out of that check, since the Compose compiler adds branches that tests cannot reach.
 
 The Coverage workflow runs these recipes and uploads their reports to Codecov under the `rust`, `web`, `desktop`, `packages`, and `mobile` flags, plus JUnit results for Rust, web, desktop, and packages. Its Rust job sets `LEMMA_TEST_POSTGRES_URL` to a PostgreSQL service, so the database tests also run on PostgreSQL there. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
 
