@@ -1,14 +1,18 @@
 CREATE TABLE cached_messages (
-    id TEXT NOT NULL PRIMARY KEY,
     session_id TEXT NOT NULL,
-    role INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    created_at INTEGER NOT NULL
+    position INTEGER NOT NULL,
+    body TEXT NOT NULL,
+    PRIMARY KEY (session_id, position)
 );
 
-selectMessagesBySession:
-SELECT * FROM cached_messages WHERE session_id = ? ORDER BY created_at ASC;
+selectMessageBodies:
+SELECT body FROM cached_messages WHERE session_id = ? ORDER BY position ASC;
 
-insertOrReplaceMessage:
-INSERT OR REPLACE INTO cached_messages(id, session_id, role, content, created_at)
-VALUES (?, ?, ?, ?, ?);
+insertMessage:
+INSERT INTO cached_messages(session_id, position, body) VALUES (?, ?, ?);
+
+deleteSessionMessages:
+DELETE FROM cached_messages WHERE session_id = ?;
+
+deleteAllMessages:
+DELETE FROM cached_messages;

@@ -17,17 +17,19 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 
 `:mobile:shared` code lives under `dev.lemmahq.lemma`, one package per responsibility:
 
-- `client/` holds `LemmaClient` and the data types it exposes; `network/` holds the Connect RPC client, the OkHttp interceptors, and error formatting; `data/` holds the repositories and SQLDelight drivers.
-- `ui/<feature>/` holds each feature's screen and its private Composables; `ui/components/` holds the `Lemma*` components several features share; `theme/` holds colors, typography, and shapes.
-- Android-only code lives under `androidMain`, in the matching package (`data/`) or its own (`engine/`); tests live in `commonTest` or `androidHostTest` under the package of the code they test.
+- The root package holds the navigation host `App` and its `AppViewModel`.
+- `client/` holds the `LemmaClient` and `Connector` interfaces with their types; `network/` implements them over Connect; `data/` holds the repositories and the SQLDelight driver.
+- `ui/<feature>/` holds each feature's ViewModel, screen, and private Composables; `ui/components/` holds the shared `Lemma*` components; `theme/` holds colors, typography, and shapes.
+- `i18n/` holds `UiText` and `errorText`; user-facing text lives in `composeResources/values/strings.xml` and `values-zh/strings.xml` under the same keys and format arguments.
+- `commonMain` uses no JVM-only library: Connect, OkHttp, the engine, and the SQLDelight driver live under `androidMain`, in the matching package or `engine/`.
 
 ## Modules and generated code
 
 - `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI, the SQLDelight database, and both generated binding sets.
 - Gradle generates the Protobuf and Connect Kotlin code into `shared/build/generated/source/bufgen/` before compiling Kotlin, running `buf` with `protoc` and `protoc-gen-connect-kotlin` from Maven at the runtime libraries' versions; this needs `buf` and Java ([proto/AGENTS.md](../proto/AGENTS.md)).
 - Gradle builds `crates/mobile/lemma-mobile` for the host and generates its UniFFI Kotlin bindings into `shared/build/generated/source/uniffi/` before compiling Kotlin. Packaging the APK also cross-compiles its JNI libraries into `shared/src/androidMain/jniLibs/`, which needs `cargo-ndk` and an Android NDK. A public API change in `lemma-mobile` is a Kotlin API change.
-- Local mode uses the same Connect Kotlin clients as remote mode. `engine/LocalEngine.kt` opens `LemmaEngine` over `filesDir` and answers OkHttp requests through its `request`, `read`, and `cancel` calls; `network/AuthInterceptor.kt` attaches the access token and rotates the token pair in both modes.
-- Gradle runs `design/gen-tokens.ts` before compiling, which writes `LemmaPalette`, the static palette from [design/tokens.json](../design/tokens.json), into `shared/build/generated/source/tokens/`; this needs Node. `theme/Scheme.kt` maps the palette onto the app's color roles.
+- Local mode uses the same Connect Kotlin clients as remote mode. `engine/LocalEngine.kt` opens `LemmaEngine` over a data directory and answers OkHttp requests through its `request`, `read`, and `cancel` calls; `network/AuthInterceptor.kt` attaches the access token and rotates the token pair in both modes.
+- Gradle runs `design/gen-tokens.ts` before compiling, which writes `LemmaPalette`, the static palette from [design/tokens.json](../design/tokens.json), into `shared/build/generated/source/tokens/`; this needs Node. `theme/LemmaColorScheme.kt` maps the palette onto the app's color roles.
 - A schema change in `LemmaDatabase.sq` adds the next `<N>.sqm` migration. Before editing, run `./gradlew :mobile:shared:generateCommonMainLemmaDatabaseSchema` to snapshot the current schema as `shared/src/commonMain/sqldelight/databases/<N>.db`, and commit the snapshot. `verifySqlDelightMigration` applies the migrations to each snapshot and fails when the result differs from `LemmaDatabase.sq`.
 - Generated code is never edited or committed.
 

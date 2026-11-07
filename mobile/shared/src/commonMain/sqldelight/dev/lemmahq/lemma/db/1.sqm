@@ -1,0 +1,8 @@
+DROP TABLE cached_messages;
+
+CREATE TABLE cached_messages (
+    session_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    body TEXT NOT NULL,
+    PRIMARY KEY (session_id, position)
+);

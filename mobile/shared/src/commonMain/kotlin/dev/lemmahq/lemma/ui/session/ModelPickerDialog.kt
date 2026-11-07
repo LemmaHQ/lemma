@@ -18,16 +18,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.lemmahq.lemma.client.ClientProvider
+import dev.lemmahq.lemma.data.ModelSelection
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
+import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.session_manage_providers
+import lemma.mobile.shared.generated.resources.session_select_model
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun ModelPickerDialog(
     providers: List<ClientProvider>,
-    selectedProviderId: String,
-    selectedModel: String,
-    onSelect: (providerId: String, model: String) -> Unit,
+    selection: ModelSelection?,
+    onSelect: (ModelSelection) -> Unit,
     onManageProviders: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -39,7 +43,7 @@ internal fun ModelPickerDialog(
                     .padding(20.dp)
         ) {
             Text(
-                text = "Select Model",
+                text = stringResource(Res.string.session_select_model),
                 style = LemmaTheme.typography.titleMedium,
                 color = LemmaTheme.colors.textPrimary,
             )
@@ -60,17 +64,16 @@ internal fun ModelPickerDialog(
                             )
                         }
                         items(provider.models, key = { "${provider.id}/$it" }) { model ->
-                            val isSelected =
-                                provider.id == selectedProviderId && model == selectedModel
+                            val option = ModelSelection(provider.id, model)
                             Box(
                                 modifier =
                                     Modifier.fillMaxWidth()
                                         .clip(LemmaTheme.shapes.medium)
                                         .background(
-                                            if (isSelected) LemmaTheme.colors.fill2
+                                            if (option == selection) LemmaTheme.colors.fill2
                                             else LemmaTheme.colors.fill1
                                         )
-                                        .clickable { onSelect(provider.id, model) }
+                                        .clickable { onSelect(option) }
                                         .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Text(
@@ -84,7 +87,7 @@ internal fun ModelPickerDialog(
             }
             Spacer(modifier = Modifier.height(12.dp))
             LemmaButton(
-                text = "Manage Providers",
+                text = stringResource(Res.string.session_manage_providers),
                 onClick = onManageProviders,
                 modifier = Modifier.fillMaxWidth(),
                 variant = LemmaButtonVariant.Secondary,

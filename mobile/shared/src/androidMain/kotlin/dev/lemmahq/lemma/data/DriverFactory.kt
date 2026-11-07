@@ -5,8 +5,6 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import dev.lemmahq.lemma.db.LemmaDatabase
 
-actual class DriverFactory(private val context: Context) {
-    actual fun createDriver(): SqlDriver {
-        return AndroidSqliteDriver(LemmaDatabase.Schema, context, "lemma.db")
-    }
+class DriverFactory(private val context: Context) {
+    fun createDriver(): SqlDriver = AndroidSqliteDriver(LemmaDatabase.Schema, context, "lemma.db")
 }

@@ -1,15 +1,10 @@
 package dev.lemmahq.lemma.engine
 
-import android.content.Context
-import dev.lemmahq.lemma.data.SettingsRepository
-import dev.lemmahq.lemma.network.LemmaRpcClient
 import dev.lemmahq.lemma.uniffi.EngineException
 import dev.lemmahq.lemma.uniffi.Header
 import dev.lemmahq.lemma.uniffi.LemmaEngine
 import java.io.IOException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okhttp3.Call
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -25,22 +20,25 @@ import okio.buffer
 /** Base URL of the local engine; its requests never reach the network. */
 const val ENGINE_BASE_URL = "http://engine.lemma.invalid"
 
-/** Opens the process-lifetime local engine over the app's files directory, once. */
-object LocalEngine {
-    private val mutex = Mutex()
-    private var engine: LemmaEngine? = null
+/** The in-process engine over one data directory, answering OkHttp requests through [transport]. */
+class LocalEngine private constructor(private val engine: LemmaEngine) {
 
-    /** A Connect client of the local engine, opening and migrating its database on first use. */
-    suspend fun client(context: Context, settings: SettingsRepository): LemmaRpcClient =
-        LemmaRpcClient(ENGINE_BASE_URL, settings, transport(context))
+    /** Answers every request of an OkHttp client from the engine instead of the network. */
+    val transport: Interceptor = EngineInterceptor(engine)
 
-    /** The open engine as an OkHttp transport, opening and migrating its database on first use. */
-    private suspend fun transport(context: Context): Interceptor =
-        EngineInterceptor(
-            mutex.withLock {
-                engine ?: LemmaEngine.open(context.filesDir.absolutePath).also { engine = it }
-            }
-        )
+    /**
+     * Closes the engine's database once no request is in flight; requests after it fail. Throws
+     * [EngineException] when the database fails to close.
+     */
+    suspend fun shutdown() = engine.shutdown()
+
+    companion object {
+        /**
+         * Opens the engine over [dataDir], creating and migrating its database; throws
+         * [EngineException] when the engine cannot start.
+         */
+        suspend fun open(dataDir: String): LocalEngine = LocalEngine(LemmaEngine.open(dataDir))
+    }
 }
 
 /** Answers every request of an OkHttp client from [engine] instead of the network. */
@@ -55,7 +53,7 @@ private class EngineInterceptor(private val engine: LemmaEngine) : Interceptor {
         if (contentType != null && request.header("Content-Type") == null) {
             headers += Header("Content-Type", contentType.toString())
         }
-        val path = request.url.encodedPath + (request.url.encodedQuery?.let { "?$it" } ?: "")
+        val path = request.url.encodedPath + request.url.encodedQuery?.let { "?$it" }.orEmpty()
         val head = engineCall { engine.request(request.method, path, headers, bytes) }
         val responseHeaders =
             Headers.Builder().apply { head.headers.forEach { add(it.name, it.value) } }.build()

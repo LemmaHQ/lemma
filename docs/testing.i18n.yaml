@@ -6,8 +6,8 @@
   en: 656397c5c8c42926
   zh: f0ca2a8c758a1180
 /testing/tiers:
-  en: ef80bf843ebefcfe
-  zh: c6e720ab512ac5cc
+  en: 73c6a62667ba4041
+  zh: b4a895b97135b17e
 /testing/coverage:
   en: 27856c54343bf9d4
   zh: 0fd0c89ed639ac56
@@ -15,5 +15,5 @@
   en: f1196380f5d1c1a5
   zh: c199b1ad60b6a4e9
 /testing/real-implementations-over-mocks:
-  en: 87e756c67dda8736
-  zh: 2a7216996d9b9984
+  en: ba416970b1a54d86
+  zh: 797dd25e141666f5

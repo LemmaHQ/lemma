@@ -37,7 +37,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它与桌面 addon 一样，在数据目录（应用的 `filesDir`）上打开引擎，并在进程内提供 Connect 路由。应用访问它时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
 
-Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息缓存在 SQLDelight 中；缓存归客户端所有，宿主的存储才是记录本身。
+Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息完整缓存在 SQLDelight 中；删除会话时删去该会话的消息，客户端每次退出登录时清空整个缓存；缓存归客户端所有，宿主的存储才是记录本身。Android 客户端用 Android Keystore 中的密钥加密保存访问令牌和刷新令牌，所在文件不进入设备备份。备份会把引擎的 `lemma.db` 和 `secrets.json` 一起保留，因为数据库中的加密 key 只有用 `secrets.json` 里的密钥才能解开。
 
 ## 跨线路的契约
 

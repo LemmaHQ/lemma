@@ -17,17 +17,19 @@
 
 `:mobile:shared` 的代码位于 `dev.lemmahq.lemma` 下，按职责分包：
 
-- `client/` 存放 `LemmaClient` 及其对外暴露的数据类型；`network/` 存放 Connect RPC 客户端、OkHttp 拦截器与错误格式化；`data/` 存放仓库类与 SQLDelight 驱动。
-- `ui/<功能>/` 存放每个功能的界面及其私有 Composable；`ui/components/` 存放多个功能共用的 `Lemma*` 组件；`theme/` 存放颜色、字体与形状。
-- 只用于 Android 的代码放在 `androidMain` 下，放进对应的包（`data/`）或单独的包（`engine/`）；测试放在 `commonTest` 或 `androidHostTest` 中被测代码所在的包。
+- 根包存放承载导航的 `App` 及其 `AppViewModel`。
+- `client/` 存放 `LemmaClient` 与 `Connector` 接口及其类型；`network/` 基于 Connect 实现它们；`data/` 存放仓库类与 SQLDelight 驱动。
+- `ui/<功能>/` 存放每个功能的 ViewModel、界面及其私有 Composable；`ui/components/` 存放共用的 `Lemma*` 组件；`theme/` 存放颜色、字体与形状。
+- `i18n/` 存放 `UiText` 与 `errorText`；面向用户的文本放在 `composeResources/values/strings.xml` 与 `values-zh/strings.xml` 中，两者的键与格式参数相同。
+- `commonMain` 不使用仅限 JVM 的库：Connect、OkHttp、引擎与 SQLDelight 驱动放在 `androidMain` 下对应的包或 `engine/` 中。
 
 ## 模块与生成代码
 
 - `:mobile:androidApp` 是 Android 应用；`:mobile:shared` 是 Kotlin Multiplatform 模块，包含 UI、SQLDelight 数据库与两套生成的绑定代码。
 - Gradle 在编译 Kotlin 之前把 Protobuf 与 Connect 的 Kotlin 代码生成到 `shared/build/generated/source/bufgen/`：它运行 `buf`，所用的 `protoc` 与 `protoc-gen-connect-kotlin` 来自 Maven，版本与运行时库相同；这需要 `buf` 与 Java（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 - Gradle 在编译 Kotlin 之前为宿主机构建 `crates/mobile/lemma-mobile`，并把它的 UniFFI Kotlin 绑定生成到 `shared/build/generated/source/uniffi/`。打包 APK 时还会把它的 JNI 库交叉编译到 `shared/src/androidMain/jniLibs/`，这需要 `cargo-ndk` 与 Android NDK。`lemma-mobile` 的公共 API 变更就是 Kotlin API 变更。
-- 本地模式与远程模式使用相同的 Connect Kotlin 客户端。`engine/LocalEngine.kt` 在 `filesDir` 上打开 `LemmaEngine`，通过它的 `request`、`read` 与 `cancel` 响应 OkHttp 请求；`network/AuthInterceptor.kt` 在两种模式下都附上访问令牌并轮换令牌对。
-- Gradle 在编译前运行 `design/gen-tokens.ts`，把 [design/tokens.json](../design/tokens.json) 中的静态色板 `LemmaPalette` 写入 `shared/build/generated/source/tokens/`；这需要 Node。`theme/Scheme.kt` 把色板映射到应用的颜色角色。
+- 本地模式与远程模式使用相同的 Connect Kotlin 客户端。`engine/LocalEngine.kt` 在数据目录上打开 `LemmaEngine`，通过它的 `request`、`read` 与 `cancel` 响应 OkHttp 请求；`network/AuthInterceptor.kt` 在两种模式下都附上访问令牌并轮换令牌对。
+- Gradle 在编译前运行 `design/gen-tokens.ts`，把 [design/tokens.json](../design/tokens.json) 中的静态色板 `LemmaPalette` 写入 `shared/build/generated/source/tokens/`；这需要 Node。`theme/LemmaColorScheme.kt` 把色板映射到应用的颜色角色。
 - 修改 `LemmaDatabase.sq` 的表结构时，要新增下一个 `<N>.sqm` 迁移。修改前先运行 `./gradlew :mobile:shared:generateCommonMainLemmaDatabaseSchema`，把当前结构快照为 `shared/src/commonMain/sqldelight/databases/<N>.db`，并提交这个快照。`verifySqlDelightMigration` 对每个快照执行迁移，结果与 `LemmaDatabase.sq` 不一致时失败。
 - 生成代码不手工修改，也不提交。
 

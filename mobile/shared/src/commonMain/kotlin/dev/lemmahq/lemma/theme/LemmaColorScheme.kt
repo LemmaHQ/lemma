@@ -3,8 +3,10 @@ package dev.lemmahq.lemma.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
+/** The app's color roles; [isDark] marks the dark scheme for content that picks its own colors. */
 @Immutable
 data class LemmaColorScheme(
+    val isDark: Boolean,
     val primary: Color,
     val background: Color,
     val backgroundGroup: Color,
@@ -18,13 +20,12 @@ data class LemmaColorScheme(
     val separator: Color,
     val userBubble: Color,
     val userBubbleText: Color,
-    val assistantBubble: Color,
-    val assistantBubbleText: Color,
     val danger: Color,
 )
 
 val LightLemmaColorScheme =
     LemmaColorScheme(
+        isDark = false,
         primary = LemmaPalette.Blue500,
         background = LemmaPalette.White,
         backgroundGroup = LemmaPalette.White,
@@ -38,13 +39,12 @@ val LightLemmaColorScheme =
         separator = LemmaPalette.BlackAlpha13,
         userBubble = LemmaPalette.Blue500,
         userBubbleText = LemmaPalette.White,
-        assistantBubble = LemmaPalette.Gray100,
-        assistantBubbleText = LemmaPalette.BlackAlpha90,
         danger = LemmaPalette.Red600,
     )
 
 val DarkLemmaColorScheme =
     LemmaColorScheme(
+        isDark = true,
         primary = LemmaPalette.Blue400,
         background = LemmaPalette.Gray900,
         backgroundGroup = LemmaPalette.Gray850,
@@ -58,7 +58,5 @@ val DarkLemmaColorScheme =
         separator = LemmaPalette.WhiteAlpha12,
         userBubble = LemmaPalette.Blue400,
         userBubbleText = LemmaPalette.White,
-        assistantBubble = LemmaPalette.Gray800,
-        assistantBubbleText = LemmaPalette.WhiteAlpha84,
         danger = LemmaPalette.Red400,
     )

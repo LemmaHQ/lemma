@@ -10,7 +10,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 - **Web**（`just web-test`，即在 `web/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 与 `src/**/*.test.tsx` 文件，在 vitest 的 `happy-dom` 环境中以英文界面文本运行。这一层覆盖数据、缓存与逻辑模块，在 mock 的 RPC 客户端上运行的 feature store，以及用 Testing Library 渲染、用 `user-event` 操作的 feature 组件，另有一项检查 `en.json` 与 `zh.json` 拥有相同的键。`src/app/App.test.tsx` 在 mock 的 RPC 客户端上用浏览器路由渲染整个应用，走过登录、登录后的外壳、设置分区与桌面端标题栏。
 - **桌面端**（`just desktop-test`，即在 `desktop/` 中运行 `vitest run`）：测试是与被测模块并列的 `src/**/*.test.ts` 文件。这一层在 mock 掉 `electron` 的情况下覆盖引擎进程生命周期、addon 文件名、应用版本参数与引擎端口上的请求转发。
 - **Packages**（`just packages-test`，即在每个有测试的包中运行 `vitest run`）：`packages/ui` 在 `happy-dom` 中运行 `src/**/*.test.{ts,tsx}`，覆盖聊天组件、以应用实际渲染的组合方式覆盖基础组件，并用一个表驱动测试覆盖全部图标。
-- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集；以及 SQLDelight 迁移校验，它对已提交的结构快照执行 `.sqm` 迁移，再与 `LemmaDatabase.sq` 比对。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。
+- **Android**（`just mobile-android-test`）：`androidApp` 的 debug 单元测试，加上 `:mobile:shared` 的宿主机测试，后者包含 `commonTest` 源集；以及 SQLDelight 迁移校验，它对已提交的结构快照执行 `.sqm` 迁移，再与 `LemmaDatabase.sq` 比对。它们在 JVM 上运行，不需要设备，本地与 Mobile CI 都运行。宿主机测试覆盖在 fake `LemmaClient` 上运行的 ViewModel 及其逻辑、设置与消息仓库、认证拦截器、从 Connect 错误到本地化文本的转换，以及针对本地引擎运行的 `ConnectLemmaClient`，另有一项检查英文与中文字符串资源拥有相同的键与格式参数。`AppTest` 在 Robolectric 下针对 fake `LemmaClient` 渲染整个应用，走过连接设置、登录、provider 页面与退出登录；页面测试以同样方式渲染会话页与 provider 页面。
 
 ## 覆盖率
 
@@ -35,5 +35,6 @@ Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop`�
 只替换模型这一边界，用写在测试中的厂商输出代替；边界之后全部运行交付代码，需要存储时使用内存后端：
 
 - provider 适配器测试把写在测试中的厂商 SSE 载荷以字节流形式送入适配器的解析器，并比对完整的 `StreamEvent` 序列。
-- Android 仓库层测试在 `JdbcSqliteDriver.IN_MEMORY` 上运行真实的 SQLDelight schema，设置测试使用 `MapSettings`。
+- Android 仓库层测试在 `JdbcSqliteDriver.IN_MEMORY` 上运行真实的 SQLDelight schema，设置测试使用 `MapSettings`。Robolectric 没有 AndroidKeyStore，令牌存储测试因此注册一个在内存中保存密钥的 `AndroidKeyStore` provider。
+- Android 客户端测试在临时数据目录上打开 `lemma-mobile` 宿主机构建的本地引擎，通过 `ConnectLemmaClient` 调用它；本机回环地址上的 MockWebServer 作为 OpenAI 兼容的厂商应答模型调用。
 - 依赖时间的 Web 逻辑用 vitest 的 fake timers 固定时钟。

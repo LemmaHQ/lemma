@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -31,7 +32,7 @@ val protocClassifier =
         else -> "linux-$hostArch"
     }
 
-val protoGenerators by configurations.creating { isTransitive = false }
+val protoGenerators = configurations.create("protoGenerators") { isTransitive = false }
 val protoGeneratorsDir = layout.buildDirectory.dir("proto-generators")
 
 dependencies {
@@ -92,17 +93,23 @@ kotlin {
 
     sourceSets {
         androidMain {
+            kotlin.srcDir(generateProtoBindings)
             kotlin.srcDir("build/generated/source/uniffi")
             dependencies {
                 implementation(libs.compose.uiToolingPreview)
                 implementation(libs.compose.uiTooling)
+                implementation(libs.connect.kotlin)
+                implementation(libs.connect.kotlin.okhttp)
+                implementation(libs.connect.kotlin.javalite.ext)
+                implementation(libs.okhttp)
+                implementation(libs.protobuf.javalite)
+                implementation(libs.protobuf.kotlin.lite)
                 implementation(libs.sqldelight.android.driver)
                 implementation(libs.kotlinx.coroutines.android)
-                implementation("net.java.dev.jna:jna:5.19.1@aar")
+                implementation(project.dependencies.variantOf(libs.jna) { artifactType("aar") })
             }
         }
         commonMain {
-            kotlin.srcDir(generateProtoBindings)
             kotlin.srcDir(generateDesignTokens)
             dependencies {
                 implementation(libs.compose.runtime)
@@ -111,22 +118,30 @@ kotlin {
                 implementation(libs.compose.ui)
                 implementation(libs.compose.components.resources)
                 implementation(libs.compose.uiToolingPreview)
+                implementation(libs.androidx.lifecycle.viewmodel.compose)
+                implementation(libs.androidx.navigation.compose)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
                 implementation(libs.multiplatform.settings)
-                implementation(libs.multiplatform.settings.no.arg)
-                implementation(libs.connect.kotlin)
-                implementation(libs.connect.kotlin.okhttp)
-                implementation(libs.connect.kotlin.javalite.ext)
-                implementation(libs.okhttp)
-                implementation(libs.protobuf.javalite)
-                implementation(libs.protobuf.kotlin.lite)
                 implementation(libs.markdown.renderer)
                 implementation(libs.markdown.renderer.m3)
+                implementation(libs.highlights)
             }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
             implementation(libs.multiplatform.settings.test)
+        }
+        getByName("androidHostTest").dependencies {
             implementation(libs.sqldelight.sqlite.driver)
+            implementation(libs.jna)
+            implementation(libs.okhttp.mockwebserver)
+            implementation(libs.robolectric)
+            implementation(libs.compose.uiTestJunit4)
+            implementation(libs.androidx.compose.uiTestManifest)
+            implementation(libs.androidx.test.espresso.core)
         }
     }
 }
@@ -185,6 +200,15 @@ val buildLemmaMobileHost =
         inputs.file(rootProject.file("Cargo.lock"))
         outputs.file(rootProject.file(lemmaHostLibPath))
     }
+
+tasks.withType<Test>().configureEach {
+    dependsOn(buildLemmaMobileHost)
+    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    systemProperty(
+        "uniffi.component.lemma_mobile.libraryOverride",
+        rootProject.file(lemmaHostLibPath).absolutePath,
+    )
+}
 
 val generateUniffiBindings =
     tasks.register<Exec>("generateUniffiBindings") {

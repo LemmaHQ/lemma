@@ -37,7 +37,7 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 
 **In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; like the desktop addon, it opens the engine over a data directory, the app's `filesDir`, and serves the Connect router in-process. The app talks to it with the same Connect Kotlin clients as to a server in remote mode: an OkHttp interceptor hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)). Users register their own accounts; there is no default account.
 
-The web client fetches sessions and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown; the cache belongs to the client, and the host's store remains the record.
+The web client fetches sessions and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown, each stored whole; it drops a session's messages when the session is deleted and empties the cache whenever the client signs out; the cache belongs to the client, and the host's store remains the record. The Android client stores its access and refresh tokens encrypted with an Android Keystore key, in a file that device backups exclude. Backups keep the engine's `lemma.db` and `secrets.json` together, because the database's sealed keys open only with the key in `secrets.json`.
 
 ## Contracts across the wire
 

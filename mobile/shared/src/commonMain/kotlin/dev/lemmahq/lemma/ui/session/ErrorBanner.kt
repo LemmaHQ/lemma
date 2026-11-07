@@ -2,19 +2,29 @@ package dev.lemmahq.lemma.ui.session
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
+import dev.lemmahq.lemma.ui.components.LemmaIconButton
+import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.common_close
+import lemma.mobile.shared.generated.resources.common_retry
+import lemma.mobile.shared.generated.resources.icon_x
+import org.jetbrains.compose.resources.stringResource
 
+/** The last failure's [message], announced when it appears, with retry and dismiss actions. */
 @Composable
 internal fun ErrorBanner(
     message: String,
@@ -28,31 +38,33 @@ internal fun ErrorBanner(
             modifier
                 .fillMaxWidth()
                 .background(LemmaTheme.colors.danger.copy(alpha = 0.12f))
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .semantics { liveRegion = LiveRegionMode.Polite }
+                .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = message,
             style = LemmaTheme.typography.bodyMedium,
             color = LemmaTheme.colors.danger,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
         )
         if (showRetry) {
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Retry",
+                text = stringResource(Res.string.common_retry),
                 style = LemmaTheme.typography.bodyMedium,
                 color = LemmaTheme.colors.primary,
-                modifier = Modifier.clickable(onClick = onRetry),
+                modifier =
+                    Modifier.heightIn(min = 48.dp)
+                        .clickable(role = Role.Button, onClick = onRetry)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .padding(horizontal = 12.dp),
             )
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = "✕",
-            style = LemmaTheme.typography.bodyMedium,
-            color = LemmaTheme.colors.textSecondary,
-            modifier = Modifier.clickable(onClick = onDismiss),
+        LemmaIconButton(
+            icon = Res.drawable.icon_x,
+            contentDescription = stringResource(Res.string.common_close),
+            onClick = onDismiss,
+            tint = LemmaTheme.colors.textSecondary,
         )
     }
 }

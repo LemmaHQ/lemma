@@ -17,6 +17,11 @@ dependencies {
     kover(project(":mobile:shared"))
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.multiplatform.settings)
+
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.uiTestJunit4)
+    testImplementation(libs.androidx.test.espresso.core)
 }
 
 kover {
@@ -33,6 +38,10 @@ kover {
             }
         }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
 }
 
 android {
@@ -56,6 +65,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }

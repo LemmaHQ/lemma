@@ -1,47 +1,59 @@
 package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
+import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.icon_arrow_up
+import lemma.mobile.shared.generated.resources.icon_square
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 
+/**
+ * A message field with a round button that sends the text, or stops the reply while [isStreaming];
+ * [focusRequester] moves the keyboard focus into the field.
+ */
 @Composable
 fun LemmaInput(
     value: String,
     onValueChange: (String) -> Unit,
+    placeholder: String,
+    sendDescription: String,
     onSend: () -> Unit,
+    focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    placeholder: String = "Type a message...",
     isStreaming: Boolean = false,
-    onStop: () -> Unit = {},
     stopDescription: String = "",
+    onStop: () -> Unit = {},
 ) {
-    val canSend = value.isNotBlank()
-
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .clip(LemmaTheme.shapes.full)
                 .background(LemmaTheme.colors.fill2)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f).padding(vertical = 4.dp)) {
+        Box(modifier = Modifier.weight(1f).padding(vertical = 12.dp)) {
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
@@ -55,45 +67,46 @@ fun LemmaInput(
                 textStyle =
                     LemmaTheme.typography.bodyMedium.copy(color = LemmaTheme.colors.textPrimary),
                 cursorBrush = SolidColor(LemmaTheme.colors.primary),
-                modifier = Modifier.fillMaxWidth(),
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             )
         }
-
         if (isStreaming) {
-            Box(
-                modifier =
-                    Modifier.size(32.dp)
-                        .clip(LemmaTheme.shapes.full)
-                        .background(LemmaTheme.colors.primary)
-                        .clickable(onClick = onStop)
-                        .semantics { contentDescription = stopDescription },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "■",
-                    color = LemmaTheme.colors.userBubbleText,
-                    style = LemmaTheme.typography.bodyMedium,
-                )
-            }
+            RoundButton(Res.drawable.icon_square, stopDescription, enabled = true, onClick = onStop)
         } else {
-            Box(
-                modifier =
-                    Modifier.size(32.dp)
-                        .clip(LemmaTheme.shapes.full)
-                        .background(
-                            if (canSend) LemmaTheme.colors.primary else LemmaTheme.colors.fill3
-                        )
-                        .clickable(enabled = canSend, onClick = onSend),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "↑",
-                    color =
-                        if (canSend) LemmaTheme.colors.userBubbleText
-                        else LemmaTheme.colors.textQuaternary,
-                    style = LemmaTheme.typography.bodyMedium,
-                )
-            }
+            RoundButton(
+                Res.drawable.icon_arrow_up,
+                sendDescription,
+                enabled = value.isNotBlank(),
+                onClick = onSend,
+            )
         }
+    }
+}
+
+@Composable
+private fun RoundButton(
+    icon: DrawableResource,
+    description: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                containerColor = LemmaTheme.colors.primary,
+                contentColor = LemmaTheme.colors.userBubbleText,
+                disabledContainerColor = LemmaTheme.colors.fill3,
+                disabledContentColor = LemmaTheme.colors.textQuaternary,
+            ),
+        shape = CircleShape,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = description,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }

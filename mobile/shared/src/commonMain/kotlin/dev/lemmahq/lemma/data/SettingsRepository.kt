@@ -1,94 +1,100 @@
 package dev.lemmahq.lemma.data
 
 import com.russhwolf.settings.Settings
+import dev.lemmahq.lemma.client.Connection
+import kotlin.concurrent.Volatile
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-class SettingsRepository(private val settings: Settings = Settings()) {
+private const val KEY_APP_MODE = "lemma_app_mode"
+private const val KEY_SERVER_URL = "lemma_server_url"
+private const val KEY_DEFAULT_PROVIDER_ID = "lemma_default_provider_id"
+private const val KEY_DEFAULT_MODEL = "lemma_default_model"
+private const val KEY_THEME = "lemma_theme"
+private const val KEY_LANGUAGE = "lemma_language"
+private const val MODE_REMOTE = "remote"
+private const val MODE_LOCAL = "local"
 
-    companion object {
-        private const val KEY_APP_MODE = "lemma_app_mode"
-        private const val KEY_SERVER_URL = "lemma_server_url"
-        private const val KEY_ACCESS_TOKEN = "lemma_access_token"
-        private const val KEY_REFRESH_TOKEN = "lemma_refresh_token"
-        private const val KEY_DEFAULT_PROVIDER_ID = "lemma_default_provider_id"
-        private const val KEY_DEFAULT_MODEL = "lemma_default_model"
-        const val MODE_REMOTE = "remote"
-        const val MODE_LOCAL = "local"
-    }
+/** The stored connection, appearance, token pair, and default model for the whole process. */
+class SettingsRepository(private val settings: Settings, private val tokenStore: TokenStore) {
+    @Volatile private var tokens: TokenPair? = tokenStore.load()
+    private val _signedIn = MutableStateFlow(tokens != null)
+    private val _theme =
+        MutableStateFlow(
+            ThemePreference.valueOf(settings.getString(KEY_THEME, ThemePreference.System.name))
+        )
+    private val _language =
+        MutableStateFlow(
+            LanguagePreference.valueOf(
+                settings.getString(KEY_LANGUAGE, LanguagePreference.System.name)
+            )
+        )
 
-    fun getAppMode(): String? {
-        return settings.getStringOrNull(KEY_APP_MODE)
-    }
+    /** Whether a token pair is stored; turns false when the pair is cleared. */
+    val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
 
-    fun setAppMode(mode: String?) {
-        if (mode == null) {
-            settings.remove(KEY_APP_MODE)
-        } else {
-            settings.putString(KEY_APP_MODE, mode)
+    val theme: StateFlow<ThemePreference> = _theme.asStateFlow()
+
+    val language: StateFlow<LanguagePreference> = _language.asStateFlow()
+
+    fun getConnection(): Connection? {
+        val serverUrl = settings.getStringOrNull(KEY_SERVER_URL)
+        return when (settings.getStringOrNull(KEY_APP_MODE)) {
+            MODE_LOCAL -> Connection.Local
+            else -> serverUrl?.let { Connection.Remote(it) }
         }
     }
 
-    fun getServerUrl(): String? {
-        return settings.getStringOrNull(KEY_SERVER_URL)
-    }
-
-    fun setServerUrl(url: String?) {
-        if (url == null) {
-            settings.remove(KEY_SERVER_URL)
-        } else {
-            settings.putString(KEY_SERVER_URL, url)
+    /** Stores [connection]; null forgets the connection and its server URL. */
+    fun setConnection(connection: Connection?) {
+        when (connection) {
+            null -> {
+                settings.remove(KEY_APP_MODE)
+                settings.remove(KEY_SERVER_URL)
+            }
+            Connection.Local -> settings.putString(KEY_APP_MODE, MODE_LOCAL)
+            is Connection.Remote -> {
+                settings.putString(KEY_APP_MODE, MODE_REMOTE)
+                settings.putString(KEY_SERVER_URL, connection.serverUrl)
+            }
         }
     }
 
-    fun getAccessToken(): String? {
-        return settings.getStringOrNull(KEY_ACCESS_TOKEN)
-    }
+    fun getAccessToken(): String? = tokens?.accessToken
 
-    fun setAccessToken(token: String?) {
-        if (token == null) {
-            settings.remove(KEY_ACCESS_TOKEN)
-        } else {
-            settings.putString(KEY_ACCESS_TOKEN, token)
-        }
-    }
+    fun getRefreshToken(): String? = tokens?.refreshToken
 
-    fun getRefreshToken(): String? {
-        return settings.getStringOrNull(KEY_REFRESH_TOKEN)
-    }
-
-    fun setRefreshToken(token: String?) {
-        if (token == null) {
-            settings.remove(KEY_REFRESH_TOKEN)
-        } else {
-            settings.putString(KEY_REFRESH_TOKEN, token)
-        }
-    }
-
-    fun getDefaultProviderId(): String? {
-        return settings.getStringOrNull(KEY_DEFAULT_PROVIDER_ID)
-    }
-
-    fun setDefaultProviderId(providerId: String?) {
-        if (providerId == null) {
-            settings.remove(KEY_DEFAULT_PROVIDER_ID)
-        } else {
-            settings.putString(KEY_DEFAULT_PROVIDER_ID, providerId)
-        }
-    }
-
-    fun getDefaultModel(): String? {
-        return settings.getStringOrNull(KEY_DEFAULT_MODEL)
-    }
-
-    fun setDefaultModel(model: String?) {
-        if (model == null) {
-            settings.remove(KEY_DEFAULT_MODEL)
-        } else {
-            settings.putString(KEY_DEFAULT_MODEL, model)
-        }
+    fun setTokens(accessToken: String, refreshToken: String) {
+        val pair = TokenPair(accessToken, refreshToken)
+        tokenStore.save(pair)
+        tokens = pair
+        _signedIn.value = true
     }
 
     fun clearAuth() {
-        settings.remove(KEY_ACCESS_TOKEN)
-        settings.remove(KEY_REFRESH_TOKEN)
+        tokenStore.clear()
+        tokens = null
+        _signedIn.value = false
+    }
+
+    fun setTheme(preference: ThemePreference) {
+        settings.putString(KEY_THEME, preference.name)
+        _theme.value = preference
+    }
+
+    fun setLanguage(preference: LanguagePreference) {
+        settings.putString(KEY_LANGUAGE, preference.name)
+        _language.value = preference
+    }
+
+    fun getModelSelection(): ModelSelection? {
+        val providerId = settings.getStringOrNull(KEY_DEFAULT_PROVIDER_ID) ?: return null
+        return ModelSelection(providerId, settings.getString(KEY_DEFAULT_MODEL, ""))
+    }
+
+    fun setModelSelection(selection: ModelSelection) {
+        settings.putString(KEY_DEFAULT_PROVIDER_ID, selection.providerId)
+        settings.putString(KEY_DEFAULT_MODEL, selection.model)
     }
 }
