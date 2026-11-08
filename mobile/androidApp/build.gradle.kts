@@ -36,6 +36,11 @@ detekt {
 }
 
 kover {
+    currentProject {
+        instrumentation {
+            disabledForTestTasks.add("testReleaseUnitTest")
+        }
+    }
     reports {
         filters {
             excludes {
