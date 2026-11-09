@@ -104,22 +104,28 @@ function readTokenValues(group: object, label: string): Map<string, unknown> {
     return values;
 }
 
-function readDurations(group: object): Map<string, number> {
-    const durations = new Map<string, number>();
-    for (const [name, value] of readTokenValues(group, "motion.duration")) {
+function readAmounts(
+    group: object,
+    label: string,
+    unit: string,
+): Map<string, number> {
+    const amounts = new Map<string, number>();
+    for (const [name, value] of readTokenValues(group, label)) {
         const isObject = typeof value === "object" && value !== null;
         const amount: unknown = isObject
             ? Reflect.get(value, "value")
             : undefined;
-        const unit: unknown = isObject ? Reflect.get(value, "unit") : undefined;
-        if (typeof amount !== "number" || amount < 0 || unit !== "ms") {
+        const valueUnit: unknown = isObject
+            ? Reflect.get(value, "unit")
+            : undefined;
+        if (typeof amount !== "number" || amount < 0 || valueUnit !== unit) {
             throw new Error(
-                `motion.duration.${name} must be { "value": <milliseconds>, "unit": "ms" }`,
+                `${label}.${name} must be { "value": <non-negative number>, "unit": "${unit}" }`,
             );
         }
-        durations.set(name, amount);
+        amounts.set(name, amount);
     }
-    return durations;
+    return amounts;
 }
 
 function isCubicBezier(value: unknown): value is number[] {
@@ -157,7 +163,18 @@ function readEasings(group: object): Map<string, number[]> {
 export function readMotion(tokens: object, tokensPath: string): Motion {
     const motion = readGroup(tokens, "motion", tokensPath);
     return {
-        durations: readDurations(readGroup(motion, "duration", "motion")),
+        durations: readAmounts(
+            readGroup(motion, "duration", "motion"),
+            "motion.duration",
+            "ms",
+        ),
         easings: readEasings(readGroup(motion, "easing", "motion")),
     };
+}
+
+export function readRadii(
+    tokens: object,
+    tokensPath: string,
+): Map<string, number> {
+    return readAmounts(readGroup(tokens, "radius", tokensPath), "radius", "px");
 }

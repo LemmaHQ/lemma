@@ -18,7 +18,7 @@ web/          React Web 客户端（web/AGENTS.md）
 packages/     @lemma 命名空间下的共享 npm 包（packages/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
-design/       各客户端颜色 token（tokens.json）及其生成器
+design/       各客户端的设计 token（tokens.json）及其生成器
 i18n/         平台中立的界面文案（i18n/README.md）及其生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）

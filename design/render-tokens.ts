@@ -16,7 +16,11 @@ function cssBlock(
 export function generateWebCss(
     themes: Record<ThemeName, Theme>,
     motion: Motion,
+    radii: Map<string, number>,
 ): string {
+    const radiusVariables = [...radii].map(
+        ([name, pixels]): [string, string] => [`radius-${name}`, `${pixels}px`],
+    );
     const motionVariables: [string, string][] = [
         ...[...motion.durations].map(
             ([name, milliseconds]): [string, string] => [
@@ -31,6 +35,7 @@ export function generateWebCss(
     ];
     return `/* ${NOTICE} */
 
+${cssBlock("@theme", radiusVariables)}
 ${cssBlock(":root", motionVariables)}
 ${cssBlock(":root", themes.light)}
 ${cssBlock(".dark", themes.dark)}`;

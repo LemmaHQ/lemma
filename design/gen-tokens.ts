@@ -5,6 +5,7 @@ import {
     collectColors,
     readGroup,
     readMotion,
+    readRadii,
     resolveTheme,
 } from "./read-tokens.ts";
 import { generateAndroidKt, generateWebCss } from "./render-tokens.ts";
@@ -47,8 +48,9 @@ function main(): void {
     };
     checkThemesMatch(themes.light, themes.dark);
     const motion = readMotion(tokens, TOKENS_PATH);
+    const radii = readRadii(tokens, TOKENS_PATH);
     const outputs: [string, string][] = [
-        [UI_CSS_PATH, generateWebCss(themes, motion)],
+        [UI_CSS_PATH, generateWebCss(themes, motion, radii)],
         [ANDROID_KT_PATH, generateAndroidKt(colors)],
     ];
     for (const [file, content] of outputs) {

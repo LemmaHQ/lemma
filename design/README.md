@@ -4,26 +4,37 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`design/` holds the colors and motion values of the web and Android clients and their generator. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, and the motion durations and easings, and [`gen-tokens.ts`](gen-tokens.ts) writes them into the web theme and the Android palette.
+`design/` holds the colors, corner radii, and motion values of the web and Android clients and their generator. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, and the motion durations and easings, and [`gen-tokens.ts`](gen-tokens.ts) writes them into the web theme and the Android palette.
 
 ## Token file
 
-`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has four groups:
+`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has five groups:
 
-- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, the gray steps of the Android app, the neutral steps of the web theme, blue and red steps with their alpha tiers, green steps, and alpha tiers of black and white. Palette names describe the color, not its use.
-- `light` and `dark` hold the same color roles: the shadcn theme variables such as `background`, `primary`, and `sidebar-border`, plus the state roles of the shared web controls such as `control-hover` and `destructive-ring`. Each role references a palette entry, for example `{palette.blue.500}`.
+- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, a cool gray ramp, blue, red, green, and amber steps, and alpha tiers of red, black, and white. Palette names describe the color, not its use.
+- `light` and `dark` hold the same color roles, each referencing a palette entry such as `{palette.blue.600}`.
+- `radius` holds `dimension` tokens as `{ "value": <pixels>, "unit": "px" }`: `sm`, `md`, and `lg`.
 - `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`.
+
+The color roles fall into five families:
+
+- Surfaces: `background`, `card`, `popover`, `muted`, `sidebar`, and `control` for inputs and outline buttons.
+- Text, in three levels: `foreground`, `muted-foreground` for descriptions, and `subtle-foreground` for timestamps, labels, and placeholders.
+- Interaction: `primary` with `primary-hover`, `secondary` with `secondary-hover`, `accent` as the hover tint, `selected` as the tint of the current item, and `ring` for focus.
+- Status: `destructive` with its `-border`, `-ring`, `-subtle`, and `-subtle-hover` tints, `success`, and `warning`.
+- The rest: `border`, `input`, `track`, `thumb`, `brand` for the logo, `scrim`, and `shadow`, the color of the elevation shadows.
+
+Every text role, `primary`, and the status roles reach a 4.5:1 contrast ratio on `background`, `card`, `popover`, `muted`, and `sidebar` in both themes; on the `accent` and `selected` tints, `foreground` and `muted-foreground` do. `primary-foreground` reaches it on `primary` and `primary-hover`.
 
 ## Output
 
 The generator writes two files, all ignored by Git:
 
-| File                                                            | Content                                                                                     | Consumer                                                       |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `packages/ui/src/styles/tokens.gen.css`                         | One CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `packages/ui/src/styles/tokens.css` imports it                 |
-| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                     | `theme/LemmaColorScheme.kt` maps it onto the app's color roles |
+| File                                                            | Content                                                                                                                                                                | Consumer                                                       |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `packages/ui/src/styles/tokens.gen.css`                         | A Tailwind `@theme` block with one `--radius-*` variable per radius token, one CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `packages/ui/src/styles/tokens.css` imports it                 |
+| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                                                                                                | `theme/LemmaColorScheme.kt` maps it onto the app's color roles |
 
-The Android app reads only the palette, and only the web theme reads the motion tokens. Each consumer runs the generator before reading the output:
+The Android app reads only the palette, and only the web theme reads the radius and motion tokens. Each consumer runs the generator before reading the output:
 
 - The web npm scripts run it before `dev`, `build`, `lint`, `test`, `test:cov`, `format`, and `format:check`; the `@lemma/ui` npm scripts run it before `lint`.
 - The Gradle task `generateDesignTokens` runs it before Kotlin compiles.
@@ -34,10 +45,11 @@ The Android app reads only the palette, and only the web theme reads the motion 
 
 The generator exits with an error, writing nothing, when:
 
-- `tokens.json` lacks the `palette`, `light`, `dark`, or `motion` group, or `motion` lacks `duration` or `easing`;
+- `tokens.json` lacks the `palette`, `light`, `dark`, `radius`, or `motion` group, or `motion` lacks `duration` or `easing`;
 - a palette entry is neither a group nor a `#rrggbb` or `#rrggbbaa` color;
 - a theme role does not reference an existing palette entry;
 - `light` and `dark` define different roles;
+- a radius is not a non-negative number of pixels;
 - a duration is not a non-negative number of milliseconds, or an easing is not four numbers with `x1` and `x2` between 0 and 1.
 
 Spec CI runs it on every change under `design/`, and Web CI runs on those changes too.

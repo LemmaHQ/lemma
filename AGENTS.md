@@ -18,7 +18,7 @@ web/          React web client (web/AGENTS.md)
 packages/     shared npm packages under the @lemma scope (packages/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
-design/       color tokens for all clients (tokens.json) and their generator
+design/       design tokens for all clients (tokens.json) and their generator
 i18n/         platform-neutral UI strings (i18n/README.md) and their generator
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
