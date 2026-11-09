@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::spinner::Spinner;
-use gpui_kit::component::{ActiveTheme, Icon, Sizable, StyledExt, TitleBar, v_flex};
+use gpui_kit::component::{ActiveTheme, Icon, Sizable, StyledExt, v_flex};
+use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{
     AnyElement, App, AppContext, Context, Div, Entity, InteractiveElement, IntoElement,
     ParentElement, Render, Role, SharedString, StatefulInteractiveElement, Styled, Subscription,
@@ -16,12 +17,13 @@ use crate::interface_language::InterfaceLanguage;
 use crate::memory_token_store::MemoryTokenStore;
 use crate::sign_in_view::{SignInEvent, SignInView};
 use crate::strings;
+use crate::window_header::window_header;
 use crate::workspace_view::{WorkspaceEvent, WorkspaceView};
 
 /// The client of the connection the window works with.
 pub(crate) type DesktopClient = Client<MemoryTokenStore>;
 
-/// The window's root view: the title bar over the startup, sign-in, or workspace screen.
+/// The window's root view: the startup, sign-in, or workspace screen, each reaching up into the window's title area.
 #[derive(Debug)]
 pub struct LemmaApp {
     screen: Screen,
@@ -117,19 +119,12 @@ impl LemmaApp {
 
 impl Render for LemmaApp {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let language = InterfaceLanguage::current(cx);
+        let workspace = matches!(self.screen, Screen::Workspace(_));
         v_flex()
             .size_full()
             .bg(cx.theme().background)
             .text_color(cx.theme().foreground)
-            .child(
-                TitleBar::new().child(
-                    div()
-                        .text_sm()
-                        .font_semibold()
-                        .child(strings::common::app_name(language)),
-                ),
-            )
+            .when(!workspace, |app| app.child(window_header(None, cx)))
             .child(div().flex_1().min_h_0().child(self.render_screen(cx)))
     }
 }

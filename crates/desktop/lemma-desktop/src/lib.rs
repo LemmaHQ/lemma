@@ -11,6 +11,7 @@ mod message_row;
 mod session_list;
 mod sign_in_view;
 pub mod strings;
+mod window_header;
 mod workspace_view;
 
 pub use engine_runtime::{EngineRuntime, InRuntime};

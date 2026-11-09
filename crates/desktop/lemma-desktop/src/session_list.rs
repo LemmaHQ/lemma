@@ -1,11 +1,11 @@
 use chrono::Local;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants};
-use gpui_kit::component::{ActiveTheme, Selectable, v_flex};
+use gpui_kit::component::{ActiveTheme, Selectable, StyledExt, v_flex};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{
     AnyElement, Context, EventEmitter, InteractiveElement, IntoElement, ParentElement, Render,
-    SharedString, StatefulInteractiveElement, Styled, Task, Window, div,
+    SharedString, StatefulInteractiveElement, Styled, Task, Window, WindowControlArea, div,
 };
 use lemma_client::{SessionPeriod, group_sessions};
 use lemma_proto::lemma::v1::Session;
@@ -14,11 +14,11 @@ use crate::engine_runtime::EngineRuntime;
 use crate::error_text::error_text;
 use crate::interface_language::InterfaceLanguage;
 use crate::lemma_app::DesktopClient;
-use crate::strings::{Language, session, sidebar};
+use crate::strings::{Language, common, session, sidebar};
 
 /// Requests the session list makes of the workspace.
 pub(crate) enum SessionListEvent {
-    Open(String),
+    Open { id: String, title: SharedString },
     StartNew,
     SignedOut,
 }
@@ -71,9 +71,12 @@ impl SessionList {
         cx.notify();
     }
 
-    fn open(&mut self, id: &str, cx: &mut Context<Self>) {
+    fn open(&mut self, id: &str, title: SharedString, cx: &mut Context<Self>) {
         self.selected = Some(id.to_owned());
-        cx.emit(SessionListEvent::Open(id.to_owned()));
+        cx.emit(SessionListEvent::Open {
+            id: id.to_owned(),
+            title,
+        });
         cx.notify();
     }
 
@@ -107,20 +110,18 @@ impl SessionList {
                     .child(period_label(group.period, language)),
             );
             for listed in group.sessions {
-                let title: SharedString = if listed.title.is_empty() {
-                    sidebar::new_session(language).into()
-                } else {
-                    listed.title.clone().into()
-                };
+                let title = session_title(listed, language);
                 let id = listed.id.clone();
                 rows = rows.child(
                     Button::new(SharedString::from(format!("session-{id}")))
                         .ghost()
                         .w_full()
                         .justify_start()
-                        .label(title)
+                        .label(title.clone())
                         .selected(self.selected.as_deref() == Some(id.as_str()))
-                        .on_click(cx.listener(move |list, _, _, cx| list.open(&id, cx))),
+                        .on_click(cx.listener(move |list, _, _, cx| {
+                            list.open(&id, title.clone(), cx);
+                        })),
                 );
             }
             list = list.child(rows);
@@ -134,44 +135,72 @@ impl Render for SessionList {
         let language = InterfaceLanguage::current(cx);
         v_flex()
             .size_full()
-            .p_2()
-            .gap_2()
             .bg(cx.theme().sidebar)
             .child(
-                Button::new("new-session")
-                    .ghost()
-                    .w_full()
-                    .justify_start()
-                    .icon(IconName::SquarePen)
-                    .label(sidebar::new_session(language))
-                    .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
+                div()
+                    .id("sidebar-header")
+                    .flex_shrink_0()
+                    .h_12()
+                    .px_4()
+                    .flex()
+                    .items_center()
+                    .window_control_area(WindowControlArea::Drag)
+                    .text_sm()
+                    .font_semibold()
+                    .child(common::app_name(language)),
             )
             .child(
-                div()
-                    .id("sessions")
+                v_flex()
                     .flex_1()
                     .min_h_0()
-                    .overflow_y_scroll()
-                    .child(self.render_groups(language, cx))
-                    .when_some(self.load_error.clone(), |this, error| {
-                        this.child(
-                            div()
-                                .px_2()
-                                .text_sm()
-                                .text_color(cx.theme().danger)
-                                .child(error),
-                        )
-                    }),
+                    .px_2()
+                    .pb_2()
+                    .gap_2()
+                    .child(
+                        Button::new("new-session")
+                            .ghost()
+                            .w_full()
+                            .justify_start()
+                            .icon(IconName::SquarePen)
+                            .label(sidebar::new_session(language))
+                            .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
+                    )
+                    .child(
+                        div()
+                            .id("sessions")
+                            .flex_1()
+                            .min_h_0()
+                            .overflow_y_scroll()
+                            .child(self.render_groups(language, cx))
+                            .when_some(self.load_error.clone(), |this, error| {
+                                this.child(
+                                    div()
+                                        .px_2()
+                                        .text_sm()
+                                        .text_color(cx.theme().danger)
+                                        .child(error),
+                                )
+                            }),
+                    )
+                    .child(
+                        Button::new("sign-out")
+                            .ghost()
+                            .w_full()
+                            .justify_start()
+                            .icon(IconName::LogOut)
+                            .label(sidebar::sign_out(language))
+                            .on_click(cx.listener(|list, _, _, cx| list.sign_out(cx))),
+                    ),
             )
-            .child(
-                Button::new("sign-out")
-                    .ghost()
-                    .w_full()
-                    .justify_start()
-                    .icon(IconName::LogOut)
-                    .label(sidebar::sign_out(language))
-                    .on_click(cx.listener(|list, _, _, cx| list.sign_out(cx))),
-            )
+    }
+}
+
+/// The session's title, or the new-session label for a session not yet titled.
+pub(crate) fn session_title(session: &Session, language: Language) -> SharedString {
+    if session.title.is_empty() {
+        sidebar::new_session(language).into()
+    } else {
+        session.title.clone().into()
     }
 }
 
