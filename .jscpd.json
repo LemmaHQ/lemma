@@ -5,10 +5,12 @@
         "packages",
         "mobile",
         "scripts",
-        "design"
+        "design",
+        "i18n"
     ],
     "ignore": [
         "**/*.json",
+        "**/*.yaml",
         "**/*.toml",
         "**/*.xml",
         "**/*.md",

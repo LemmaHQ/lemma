@@ -193,6 +193,16 @@ mobile-android-cov:
 design-gen:
     node design/gen-tokens.ts
 
+# Generate client strings from the platform-neutral sources
+[group('i18n')]
+i18n-gen:
+    node i18n/gen-i18n.ts
+
+# Test source validation and client rendering
+[group('i18n')]
+i18n-test:
+    node --test i18n/*.test.ts
+
 # Lint Markdown (markdownlint + autocorrect)
 [group('docs')]
 docs-lint-check:
@@ -225,20 +235,20 @@ docs-brief *files:
 docs-refs-check:
     node scripts/verify-repo-references.ts
 
-# Type-check the repository scripts in scripts/ and design/
+# Type-check the repository scripts in scripts/, design/, and i18n/
 [group('scripts')]
 scripts-type-check:
     npx --no-install tsc -p .
 
-# Lint the repository scripts in scripts/ and design/
+# Lint the repository scripts in scripts/, design/, and i18n/
 [group('scripts')]
 scripts-lint-check:
-    npx --no-install oxlint scripts design
+    npx --no-install oxlint scripts design i18n
 
 # Apply oxlint fixes to the repository scripts
 [group('scripts')]
 scripts-lint:
-    npx --no-install oxlint --fix scripts design
+    npx --no-install oxlint --fix scripts design i18n
 
 # Report copy-pasted code
 [group('dup')]

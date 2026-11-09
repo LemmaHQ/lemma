@@ -1,0 +1,33 @@
+sidebar:
+  appSettings:
+    platforms: [web]
+    en: "App settings"
+    zh: "应用设置"
+  collapse:
+    platforms: [web]
+    en: "Collapse sidebar"
+    zh: "收起侧边栏"
+  expand:
+    platforms: [web]
+    en: "Expand sidebar"
+    zh: "展开侧边栏"
+  newSession:
+    platforms: [web]
+    en: "New session"
+    zh: "新会话"
+  resize:
+    platforms: [web]
+    en: "Resize sidebar"
+    zh: "调整侧边栏宽度"
+  signOut:
+    platforms: [web]
+    en: "Sign out"
+    zh: "退出登录"
+  startSession:
+    platforms: [web]
+    en: "New session"
+    zh: "新建会话"
+  title:
+    platforms: [web]
+    en: "Sidebar"
+    zh: "侧边栏"

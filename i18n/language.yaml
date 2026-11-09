@@ -1,0 +1,5 @@
+language:
+  toggle:
+    platforms: [web]
+    en: "Language"
+    zh: "语言"

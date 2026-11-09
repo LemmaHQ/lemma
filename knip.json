@@ -6,9 +6,14 @@
     },
     "workspaces": {
         ".": {
-            "entry": ["scripts/{verify,gen}-*.ts", "design/gen-tokens.ts"],
+            "entry": [
+                "scripts/{verify,gen}-*.ts",
+                "design/gen-tokens.ts",
+                "i18n/gen-i18n.ts",
+                "i18n/*.test.ts"
+            ],
             "ignoreBinaries": ["just"],
-            "project": ["scripts/**/*.ts", "design/**/*.ts"],
+            "project": ["scripts/**/*.ts", "design/**/*.ts", "i18n/**/*.ts"],
             "ignoreDependencies": [
                 "autocorrect-node",
                 "jscpd",

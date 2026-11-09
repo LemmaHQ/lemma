@@ -1,0 +1,37 @@
+common:
+  appName:
+    platforms: [web]
+    en: "Lemma"
+    zh: "Lemma"
+  cancel:
+    platforms: [web]
+    en: "Cancel"
+    zh: "取消"
+  close:
+    platforms: [web]
+    en: "Close"
+    zh: "关闭"
+  copied:
+    platforms: [web]
+    en: "Copied"
+    zh: "已复制"
+  copy:
+    platforms: [web]
+    en: "Copy"
+    zh: "复制"
+  delete:
+    platforms: [web]
+    en: "Delete"
+    zh: "删除"
+  loading:
+    platforms: [web]
+    en: "Loading…"
+    zh: "加载中…"
+  save:
+    platforms: [web]
+    en: "Save"
+    zh: "保存"
+  settings:
+    platforms: [web]
+    en: "Settings"
+    zh: "设置"

@@ -1,0 +1,6 @@
+version:
+  server:
+    platforms: [web]
+    params: { version: string }
+    en: "Server v{version}"
+    zh: "服务端 v{version}"

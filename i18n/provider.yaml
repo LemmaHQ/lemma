@@ -1,0 +1,199 @@
+provider:
+  addModel:
+    platforms: [web]
+    en: "Add model"
+    zh: "添加模型"
+  addPicked:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "Add {count} model"
+      other: "Add {count} models"
+    zh:
+      other: "添加 {count} 个模型"
+  apiKey:
+    platforms: [web]
+    en: "API key"
+    zh: "API key"
+  apiKeyDesc:
+    platforms: [web]
+    en: "Authentication key for requests to the provider."
+    zh: "用于向服务商发起请求的认证密钥。"
+  apiKeyPlaceholder:
+    platforms: [web]
+    en: "sk-…"
+    zh: "sk-…"
+  apiPath:
+    platforms: [web]
+    en: "Request path"
+    zh: "请求路径"
+  apiPathDesc:
+    platforms: [web]
+    en: "Path appended to the base URL; leave blank for the default."
+    zh: "接在 Base URL 后面的接口路径，留空时使用默认路径。"
+  apiPathDescGemini:
+    platforms: [web]
+    en: 'Path appended to the base URL; leave blank for the default. \{model\} is replaced by the model ID.'
+    zh: '接在 Base URL 后面的接口路径，留空时使用默认路径。\{model\} 会替换为模型 ID。'
+  baseUrl:
+    platforms: [web]
+    en: "Base URL"
+    zh: "Base URL"
+  baseUrlDesc:
+    platforms: [web]
+    en: "API endpoint in the form the vendor's official SDK takes."
+    zh: "API 接口地址，按厂商官方 SDK 的写法填写。"
+  baseUrlInvalid:
+    platforms: [web]
+    en: "Must start with http:// or https://."
+    zh: "必须以 http:// 或 https:// 开头"
+  check:
+    platforms: [web]
+    en: "Connectivity check"
+    zh: "连通性检查"
+  checkAction:
+    platforms: [web]
+    en: "Check"
+    zh: "检查"
+  checkDesc:
+    platforms: [web]
+    en: "Sends a short request with the selected model to confirm the provider answers."
+    zh: "用所选模型发送一条简短请求，确认服务商能正常响应。"
+  checkNoModels:
+    platforms: [web]
+    en: "Add a model first"
+    zh: "请先添加模型"
+  checkPassed:
+    platforms: [web]
+    en: "The provider answered."
+    zh: "服务商响应正常。"
+  deleteDescription:
+    platforms: [web]
+    en: "Its API key and model list are removed. This cannot be undone."
+    zh: "API key 和模型列表会一并删除，此操作不可恢复。"
+  deleteProvider:
+    platforms: [web]
+    en: "Delete provider"
+    zh: "删除服务商"
+  deleteTitle:
+    platforms: [web]
+    en: "Delete this provider?"
+    zh: "删除该服务商？"
+  disabledGroup:
+    platforms: [web]
+    en: "Disabled"
+    zh: "已停用"
+  emptyList:
+    platforms: [web]
+    en: "No providers yet."
+    zh: "还没有服务商。"
+  enableProvider:
+    platforms: [web]
+    en: "Enable provider"
+    zh: "启用服务商"
+  enabledGroup:
+    platforms: [web]
+    en: "Enabled"
+    zh: "已启用"
+  fetchModelList:
+    platforms: [web]
+    en: "Fetch model list"
+    zh: "拉取模型列表"
+  identifier:
+    platforms: [web]
+    en: "Provider ID"
+    zh: "服务商 ID"
+  identifierHint:
+    platforms: [web]
+    en: "Serves as the unique identifier of this provider; cannot be changed after creation."
+    zh: "作为服务商唯一标识符，创建后将无法修改。"
+  identifierInvalid:
+    platforms: [web]
+    en: "Provider ID must be non-empty and contain only ASCII characters."
+    zh: "服务商 ID 不能为空，且仅限 ASCII 字符。"
+  identifierPlaceholder:
+    platforms: [web]
+    en: "e.g. open-ai"
+    zh: "例如 open-ai"
+  modelAdded:
+    platforms: [web]
+    en: "Added"
+    zh: "已添加"
+  modelList:
+    platforms: [web]
+    en: "Model list"
+    zh: "模型列表"
+  modelPlaceholder:
+    platforms: [web]
+    en: "e.g. gpt-4o"
+    zh: "例如 gpt-4o"
+  modelSearchPlaceholder:
+    platforms: [web]
+    en: "Search models…"
+    zh: "搜索模型…"
+  name:
+    platforms: [web]
+    en: "Provider name"
+    zh: "服务商名称"
+  nameDesc:
+    platforms: [web]
+    en: "Display name; any characters allowed, editable anytime. Defaults to the provider ID when left blank."
+    zh: "显示名称，支持任意字符，可随时修改；留空时默认使用服务商 ID。"
+  namePlaceholder:
+    platforms: [web]
+    en: "Enter the provider display name"
+    zh: "请输入服务商的展示名称"
+  newProvider:
+    platforms: [web]
+    en: "New provider"
+    zh: "新建服务商"
+  newProviderHint:
+    platforms: [web]
+    en: "Save to create the provider."
+    zh: "保存后即创建服务商"
+  noModels:
+    platforms: [web]
+    en: "No models match the current filter."
+    zh: "没有符合当前筛选的模型。"
+  pickModelsDesc:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "The provider returned {count} model. Pick the ones to add to the list."
+      other: "The provider returned {count} models. Pick the ones to add to the list."
+    zh:
+      other: "服务商返回了 {count} 个模型，勾选要加入列表的模型。"
+  pickModelsTitle:
+    platforms: [web]
+    en: "Pick models"
+    zh: "选择模型"
+  removeModel:
+    platforms: [web]
+    en: "Remove model"
+    zh: "移除模型"
+  searchPlaceholder:
+    platforms: [web]
+    en: "Search providers…"
+    zh: "搜索服务商…"
+  selectAll:
+    platforms: [web]
+    en: "Select all"
+    zh: "全选"
+  settingsTitle:
+    platforms: [web]
+    en: "Provider settings"
+    zh: "服务商设置"
+  type:
+    platforms: [web]
+    en: "Type"
+    zh: "类型"
+  typeDesc:
+    platforms: [web]
+    en: "API format the provider speaks; cannot be changed after creation."
+    zh: "服务商使用的 API 格式，创建后无法修改。"
+  unsavedChanges:
+    platforms: [web]
+    en: "You have unsaved changes."
+    zh: "有未保存的更改"

@@ -18,8 +18,9 @@ lerna-debug.log*
 dist
 dist-ssr
 *.local
-# Generated code and design tokens
+# Generated code, design tokens, and locales
 web/src/gen
+web/src/i18n/locales
 packages/ui/src/styles/tokens.gen.css
 
 # Environment variables and secrets

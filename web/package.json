@@ -10,8 +10,9 @@
         "./src/i18n/index.ts"
     ],
     "scripts": {
-        "gen": "npm run gen:tokens && npm run gen:proto",
+        "gen": "npm run gen:tokens && npm run gen:i18n && npm run gen:proto",
         "gen:tokens": "node ../design/gen-tokens.ts",
+        "gen:i18n": "node ../i18n/gen-i18n.ts",
         "gen:proto": "cd ../proto && buf generate",
         "predev": "npm run gen",
         "dev": "vite",

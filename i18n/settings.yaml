@@ -1,0 +1,37 @@
+settings:
+  aiProviders:
+    platforms: [web]
+    en: "AI Providers"
+    zh: "AI 服务商"
+  appearance:
+    platforms: [web]
+    en: "Appearance"
+    zh: "外观"
+  backToHome:
+    platforms: [web]
+    en: "Back to home"
+    zh: "回到首页"
+  groupAgent:
+    platforms: [web]
+    en: "Agent"
+    zh: "智能体"
+  groupGeneral:
+    platforms: [web]
+    en: "General"
+    zh: "通用"
+  languageDesc:
+    platforms: [web]
+    en: "Choose the interface language."
+    zh: "选择界面语言。"
+  languageLabel:
+    platforms: [web]
+    en: "Language"
+    zh: "语言"
+  themeDesc:
+    platforms: [web]
+    en: "Choose light, dark, or follow the system."
+    zh: "选择浅色、深色或跟随系统。"
+  themeLabel:
+    platforms: [web]
+    en: "Theme"
+    zh: "主题"

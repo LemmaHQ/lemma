@@ -1,0 +1,17 @@
+theme:
+  dark:
+    platforms: [web]
+    en: "Dark"
+    zh: "深色"
+  light:
+    platforms: [web]
+    en: "Light"
+    zh: "浅色"
+  system:
+    platforms: [web]
+    en: "System"
+    zh: "跟随系统"
+  toggle:
+    platforms: [web]
+    en: "Toggle theme"
+    zh: "切换主题"

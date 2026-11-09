@@ -19,6 +19,7 @@ packages/     @lemma 命名空间下的共享 npm 包（packages/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
 design/       各客户端颜色 token（tokens.json）及其生成器
+i18n/         平台中立的界面文案（i18n/README.md）及其生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
 scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
@@ -30,6 +31,8 @@ scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
 just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just design-gen          # 根据设计 token 重新生成 Web 主题与 Android 色板
+just i18n-gen            # 根据平台中立的源文件重新生成客户端文案
+just i18n-test           # 测试 i18n 源文件验证与客户端渲染
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径

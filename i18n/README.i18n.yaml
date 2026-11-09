@@ -1,0 +1,19 @@
+# Translation-pairing record for README.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing i18n/README.md
+/interface-strings:
+  en: 5f480afab84126ce
+  zh: 58d53c6a82d98f02
+/interface-strings/source-files:
+  en: 7df5a1fa1e6b0ed7
+  zh: c8c4566824e37246
+/interface-strings/literal-braces:
+  en: 547d07a35a8c03a8
+  zh: 47e1b7598bf66b2e
+/interface-strings/adding-a-string:
+  en: 02ede2e00901cf6d
+  zh: 157654f60cf95c42
+/interface-strings/outputs:
+  en: 32eb7413dc366690
+  zh: 5bc3758c066a3f82

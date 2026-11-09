@@ -1,0 +1,97 @@
+session:
+  actions:
+    platforms: [web]
+    en: "More actions"
+    zh: "更多操作"
+  delete:
+    platforms: [web]
+    en: "Delete permanently"
+    zh: "彻底删除"
+  deleteDescription:
+    platforms: [web]
+    en: "This cannot be undone."
+    zh: "此操作不可恢复。"
+  deleteTitle:
+    platforms: [web]
+    en: "Permanently delete this session?"
+    zh: "彻底删除该会话？"
+  disclaimer:
+    platforms: [web]
+    en: "AI can make mistakes. Verify important information."
+    zh: "AI 可能出错，请核实重要信息。"
+  earlier:
+    platforms: [web]
+    en: "Earlier"
+    zh: "更早"
+  emptySubtitle:
+    platforms: [web]
+    en: "Ask anything, or pick a suggestion below."
+    zh: "随便问，或从下面的建议开始。"
+  emptyTitle:
+    platforms: [web]
+    en: "How can I help you today?"
+    zh: "今天想聊点什么？"
+  inputPlaceholder:
+    platforms: [web]
+    en: "Message the assistant…"
+    zh: "给助手发消息…"
+  last7Days:
+    platforms: [web]
+    en: "Last 7 days"
+    zh: "近 7 天"
+  noModelAction:
+    platforms: [web]
+    en: "Open settings"
+    zh: "前往设置"
+  noModelHint:
+    platforms: [web]
+    en: "Set up a provider and model in Settings first."
+    zh: "先在设置中配置服务商与模型。"
+  noModelPlaceholder:
+    platforms: [web]
+    en: "Configure a provider and model to start…"
+    zh: "配置服务商与模型后开始对话…"
+  noProvider:
+    platforms: [web]
+    en: "No provider"
+    zh: "暂无服务商"
+  regenerate:
+    platforms: [web]
+    en: "Regenerate"
+    zh: "重新生成"
+  rename:
+    platforms: [web]
+    en: "Rename"
+    zh: "重命名"
+  scrollToBottom:
+    platforms: [web]
+    en: "Scroll to latest"
+    zh: "滚动到最新"
+  selectModel:
+    platforms: [web]
+    en: "Select model"
+    zh: "选择模型"
+  send:
+    platforms: [web]
+    en: "Send"
+    zh: "发送"
+  suggestion1:
+    platforms: [web]
+    en: "Explain a concept step by step"
+    zh: "逐步解释一个概念"
+  suggestion2:
+    platforms: [web]
+    en: "Help me debug an issue"
+    zh: "帮我排查一个问题"
+  suggestion3:
+    platforms: [web]
+    en: "Draft and refine some text"
+    zh: "起草并润色一段文字"
+  today:
+    platforms: [web]
+    en: "Today"
+    zh: "今天"
+  yesterday:
+    platforms: [web]
+    en: "Yesterday"
+    zh: "昨天"

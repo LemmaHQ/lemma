@@ -13,8 +13,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Modules use ES named exports;** types move through `import type` and `export type`.
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
-- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/` and `design/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
-- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/` and `design/`. `web/.oxlintrc.json` and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
+- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/`, `design/`, and `i18n/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
+- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`, `design/`, and `i18n/`. `web/.oxlintrc.json` and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
 
 ## Layout
 
@@ -25,7 +25,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/app/` holds the route table in `router.tsx`, the paths in `route-paths.ts`, and one directory per layout route: `auth/`, `session/`, and `settings/`, each with the pages that only arrange feature components. `shell/` holds `SignedInLayout`, which guards the signed-in routes and owns the sidebar state, and `ShellFrame`, which both signed-in layouts fill with their sidebar, toolbar actions, and title. Features take paths as props instead of naming routes. `account-data.ts` empties the feature stores that hold account data whenever the signed-in user changes; a store added to that set is cleared there.
 - oxlint enforces the boundaries: in `src/app/` and `src/features/`, an import past a feature's `index.ts`, an import of `src/rpc/` other than `errors.ts` outside a `store.ts`, and any import of the libraries beneath `@lemma/ui` fail `just web-lint-check`.
 - Shared shadcn controls and AI Elements chat components live in `@lemma/ui`; feature code imports them, the icons, and `AnimateIcon`, `cn`, and `toast` from `@lemma/ui` alone ([component README](../packages/ui/README.md)).
-- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; `src/i18n/locales/en.json` and `zh.json` carry the same keys, which `src/i18n/locales.test.ts` checks.
+- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; [i18n/README.md](../i18n/README.md) defines the source entries, whose generated `src/i18n/locales/en.json` and `zh.json` carry the same keys, checked by `src/i18n/locales.test.ts`.
 
 ## Styling
 
@@ -35,7 +35,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Generated files
 
-`src/gen/` comes from `proto/` through the `gen:proto` script, and the `gen:tokens` script writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, which `src/index.css` loads through `@lemma/ui/styles.css`. The `gen` script runs both, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores both outputs; edit `proto/` or `design/tokens.json`.
+`src/gen/` comes from `proto/` through `gen:proto`, `gen:tokens` writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, and `gen:i18n` writes `src/i18n/locales/en.json` and `zh.json` from the [i18n sources](../i18n/README.md). `src/index.css` loads the tokens through `@lemma/ui/styles.css`. The `gen` script runs all three generators, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores all outputs; edit `proto/`, `design/tokens.json`, or `i18n/`.
 
 `vite.config.ts` injects into `index.html` the inline script that applies the stored theme before the first paint, built from `THEME_STORAGE_KEY` and `DEFAULT_THEME` in `src/features/preferences/theme.ts`, the constants `ThemeProvider` also reads; change the theme storage there.
 

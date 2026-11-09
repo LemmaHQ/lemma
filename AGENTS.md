@@ -19,6 +19,7 @@ packages/     shared npm packages under the @lemma scope (packages/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
 design/       color tokens for all clients (tokens.json) and their generator
+i18n/         platform-neutral UI strings (i18n/README.md) and their generator
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
 scripts/      documentation checks: translation pairing, brief generator, repository references
@@ -30,6 +31,8 @@ scripts/      documentation checks: translation pairing, brief generator, reposi
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
 just design-gen          # regenerate the web theme and Android palette from design tokens
+just i18n-gen            # regenerate client strings from the platform-neutral sources
+just i18n-test           # test i18n source validation and client rendering
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 just docs-refs-check     # check recipe names and repository paths cited in Markdown

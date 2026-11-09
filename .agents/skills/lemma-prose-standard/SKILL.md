@@ -53,7 +53,7 @@ This is not a one-way shortening pass. Add or restore prose when code, types, an
 - **Skills and agent instructions:** state behavioral guardrails and explicit scope limitations such as "guidance, not a script". Keep the workflow concise and link its source of truth.
 - **Configuration comments** (`justfile`, workflows, Gradle, Vite): explain access limits, non-obvious wiring or load order, and likely misuse. A `justfile` recipe's comment is its `just --list` summary. Do not narrate entries the configuration already shows.
 - **Model-visible text:** tool and parameter descriptions in `lemma-tool` `ToolSpec`s reach every model request that advertises the tool. Treat their wording as behavior: change it deliberately, state the change in the commit body, and exercise it in a local-mode session against a real provider when the change can alter tool use.
-- **UI strings:** wording is behavior. Web copy lives in the [locale files](../../../web/src/i18n/locales/) with matching keys; inspect text, accessible names, tooltips, and placeholders together. Chinese terms follow [terminology.md](../../../docs/i18n/terminology.md).
+- **UI strings:** wording is behavior. Web copy lives in the [i18n sources](../../../i18n/README.md); inspect text, accessible names, tooltips, and placeholders together. Chinese terms follow [terminology.md](../../../docs/i18n/terminology.md).
 - **Diagnostics and errors:** name the failing subject or path, the violated rule, and the correction when it is non-obvious. A client-visible failure carries an `ErrorReason` that clients translate; its English message is a fallback. Remove internal execution narration.
 
 Preserve searchable mechanism names and meaningful modal, temporal, or negative emphasis. Normalize decorative emphasis only.
