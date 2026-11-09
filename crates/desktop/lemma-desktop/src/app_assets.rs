@@ -25,3 +25,40 @@ impl AssetSource for AppAssets {
         Ok(paths)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use gpui_kit::assets::IconName;
+
+    use super::*;
+
+    #[test]
+    fn every_icon_the_app_draws_loads() {
+        for icon in [
+            IconName::ArrowUp,
+            IconName::CircleAlert,
+            IconName::LogOut,
+            IconName::Square,
+            IconName::SquarePen,
+        ] {
+            let path = icon.path();
+            assert!(
+                matches!(AppAssets.load(path.as_ref()), Ok(Some(_))),
+                "{path} loads"
+            );
+        }
+    }
+
+    #[test]
+    fn the_icon_list_holds_lemma_and_component_icons_once() -> Result<()> {
+        let paths = AppAssets.list("icons/")?;
+        for path in [IconName::SquarePen.path(), IconName::ArrowUp.path()] {
+            assert_eq!(
+                paths.iter().filter(|listed| **listed == path).count(),
+                1,
+                "{path} listed once"
+            );
+        }
+        Ok(())
+    }
+}
