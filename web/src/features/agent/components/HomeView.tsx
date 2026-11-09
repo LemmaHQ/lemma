@@ -26,7 +26,7 @@ export function HomeView({
     return (
         <div className="grid flex-1 place-items-center px-4 md:px-6">
             <div className="w-full max-w-3xl">
-                <h1 className="mb-8 text-center text-display">
+                <h1 className="mb-8 text-center font-brand text-display font-normal">
                     {t("common.appName")}
                 </h1>
                 <MessageComposer

@@ -48,6 +48,7 @@ Components and feature code style through the theme's utilities. The color roles
 | `text-title`   | 16 / 24 px, weight 600 | Page, section, and dialog titles                                 |
 | `text-display` | 24 / 32 px, weight 600 | Home and sign-in headings                                        |
 
+- **Brand font:** `font-brand` sets the system serif for the product name and the home heading only; every other text uses the interface sans.
 - **Radius:** `rounded-sm` (6px) for badges, checkboxes, and controls inside inputs; `rounded-md` (8px) for buttons, inputs, list rows, menu items, code blocks, and alerts; `rounded-lg` (12px) for cards, popovers, dialogs, the composer, and the main panel; `rounded-full` for avatars, switches, and pills.
 - **Sizes:** controls are `h-7`, `h-8` (the default), or `h-9`, and `h-6` only inside inputs; one row uses one height. List rows are `h-8` with `text-small`; `Button variant="row"` draws one and marks the current row through `data-active`.
 - **Hover and selection:** `bg-accent` is the hover color of every row, menu item, and ghost or outline button; `bg-selected` marks the current row and a pressed toggle. Text on these tints uses `text-foreground` or `text-muted-foreground`.

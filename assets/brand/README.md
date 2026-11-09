@@ -58,7 +58,7 @@ assets/brand/
 
 - Always reference the `svg/` masters for vector contexts; use PNGs only for raster-only pipelines (e.g. `.ico` generation, mipmap intermediates).
 - Platform-local copies (e.g. `web/public/favicon.svg`, mipmap PNGs) must be derived from these masters: generate copies exclusively from masters, refreshing them upon any master update.
-- The client UI draws the mark with `LemmaLogo` from `packages/ui`: the serif L in the text color beside an enlarged brand dot, without a plate, so it reads at 20px; the name beside it uses the interface font.
+- The client UI draws the mark with `LemmaLogo` from `packages/ui`: the serif L in the text color beside an enlarged brand dot, without a plate, so it reads at 20px; the name beside it, and the home heading, use the system serif through the `font-brand` utility.
 - Dark and light variants are swapped in pairs on theme change: deploy paired theme-specific assets directly.
 
 ## Regeneration

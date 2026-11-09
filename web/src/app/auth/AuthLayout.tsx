@@ -1,16 +1,11 @@
-import {
-    AnimateIcon,
-    Button,
-    GithubIcon,
-    LemmaLogo,
-    Separator,
-} from "@lemma/ui";
+import { AnimateIcon, Button, GithubIcon, Separator } from "@lemma/ui";
 import { Navigate, Outlet } from "react-router";
 
 import { useAuth } from "@/features/auth";
 import { LanguageToggle, ThemeToggle } from "@/features/preferences";
 import { VersionTags } from "@/features/system";
 
+import { AppBrand } from "../AppBrand";
 import { paths } from "../route-paths";
 
 const REPOSITORY_URL = "https://github.com/LemmaHQ/lemma";
@@ -25,9 +20,8 @@ export function AuthLayout() {
 
     return (
         <div className="flex min-h-dvh flex-col bg-background">
-            <header className="flex items-center gap-2 px-6 py-4">
-                <LemmaLogo className="size-5" />
-                <span className="text-body font-semibold">Lemma</span>
+            <header className="flex items-center px-6 py-4">
+                <AppBrand />
             </header>
             <main className="flex flex-1 items-center justify-center px-4 py-8">
                 <div className="w-full max-w-sm animate-in duration-slow ease-enter fade-in-0 slide-in-from-bottom-2">
