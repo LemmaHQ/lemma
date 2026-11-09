@@ -8,6 +8,7 @@ use gpui_kit::{
 use lemma_client::{MessageError, MessageItem, MessageRole, MessageStatus, ToolCallItem};
 
 use crate::error_text::error_text;
+use crate::reading_text::ReadingText;
 use crate::strings::{Language, agent};
 
 /// One row of the conversation: a user bubble, or an assistant reply with its thinking, tool calls, text, and outcome.
@@ -33,6 +34,7 @@ pub(crate) fn render_message(
                         .py_2()
                         .rounded_xl()
                         .bg(cx.theme().muted)
+                        .text_reading()
                         .child(item.content.clone()),
                 ),
             )
@@ -50,7 +52,7 @@ pub(crate) fn render_message(
                     .map(|call| render_tool_call(call, language, cx)),
             )
             .when_some(body, |this, body| {
-                this.child(TextView::new(body).stream_fade(true))
+                this.child(TextView::new(body).text_reading().stream_fade(true))
             })
             .when_some(item.error.as_ref(), |this, error| {
                 let text: SharedString = match error {

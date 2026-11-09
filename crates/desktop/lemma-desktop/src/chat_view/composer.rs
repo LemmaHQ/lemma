@@ -10,6 +10,7 @@ use lemma_client::OpenSession;
 
 use super::messages::ChatView;
 use crate::interface_language::InterfaceLanguage;
+use crate::reading_text::ReadingText;
 use crate::strings::{agent, session};
 
 impl ChatView {
@@ -45,7 +46,8 @@ impl ChatView {
             .child(
                 Textarea::new(&self.composer)
                     .aria_label(session::input_placeholder(language))
-                    .appearance(false),
+                    .appearance(false)
+                    .text_reading(),
             )
             .child(
                 h_flex()

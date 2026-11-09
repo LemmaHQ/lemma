@@ -5,7 +5,7 @@
 use std::io;
 
 use gpui_kit::component::TitleBar;
-use gpui_kit::{AppContext, Bounds, WindowBounds, WindowOptions, px, size};
+use gpui_kit::{AppContext, Bounds, TextRenderingMode, WindowBounds, WindowOptions, px, size};
 use lemma_desktop::{AppAssets, EngineRuntime, InterfaceLanguage, Language, LemmaApp, lemma_theme};
 
 fn main() -> io::Result<()> {
@@ -21,6 +21,7 @@ fn main() -> io::Result<()> {
         .with_assets(AppAssets)
         .run(move |cx| {
             gpui_kit::init(cx);
+            cx.set_text_rendering_mode(TextRenderingMode::Grayscale);
             cx.set_global(runtime);
             InterfaceLanguage::set(language, cx);
             let options = WindowOptions {
