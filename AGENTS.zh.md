@@ -31,6 +31,7 @@ scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
 just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just design-gen          # 根据设计 token 重新生成 Web 主题与 Android 色板
+just design-test         # 测试设计 token 渲染器
 just i18n-gen            # 根据平台中立的源文件重新生成客户端文案
 just i18n-test           # 测试 i18n 源文件验证与客户端渲染
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect

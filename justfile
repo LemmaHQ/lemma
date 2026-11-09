@@ -193,6 +193,11 @@ mobile-android-cov:
 design-gen:
     node design/gen-tokens.ts
 
+# Test the design token renderers
+[group('design')]
+design-test:
+    node --test design/*.test.ts
+
 # Generate client strings from the platform-neutral sources
 [group('i18n')]
 i18n-gen:

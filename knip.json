@@ -8,8 +8,9 @@
         ".": {
             "entry": [
                 "scripts/{verify,gen}-*.ts",
-                "design/gen-tokens.ts",
-                "i18n/gen-i18n.ts",
+                "design/gen-{tokens,desktop}.ts",
+                "design/*.test.ts",
+                "i18n/gen-{i18n,desktop}.ts",
                 "i18n/*.test.ts"
             ],
             "ignoreBinaries": ["just"],

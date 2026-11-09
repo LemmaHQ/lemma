@@ -31,6 +31,7 @@ scripts/      documentation checks: translation pairing, brief generator, reposi
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
 just design-gen          # regenerate the web theme and Android palette from design tokens
+just design-test         # test the design token renderers
 just i18n-gen            # regenerate client strings from the platform-neutral sources
 just i18n-test           # test i18n source validation and client rendering
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
