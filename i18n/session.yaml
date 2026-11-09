@@ -20,7 +20,7 @@ session:
     en: "AI can make mistakes. Verify important information."
     zh: "AI 可能出错，请核实重要信息。"
   earlier:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Earlier"
     zh: "更早"
   emptySubtitle:
@@ -28,15 +28,15 @@ session:
     en: "Ask anything, or pick a suggestion below."
     zh: "随便问，或从下面的建议开始。"
   emptyTitle:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "How can I help you today?"
     zh: "今天想聊点什么？"
   inputPlaceholder:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Message the assistant…"
     zh: "给助手发消息…"
   last7Days:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Last 7 days"
     zh: "近 7 天"
   noModelAction:
@@ -52,7 +52,7 @@ session:
     en: "Configure a provider and model to start…"
     zh: "配置服务商与模型后开始对话…"
   noProvider:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "No provider"
     zh: "暂无服务商"
   regenerate:
@@ -72,7 +72,7 @@ session:
     en: "Select model"
     zh: "选择模型"
   send:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Send"
     zh: "发送"
   suggestion1:
@@ -88,10 +88,10 @@ session:
     en: "Draft and refine some text"
     zh: "起草并润色一段文字"
   today:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Today"
     zh: "今天"
   yesterday:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Yesterday"
     zh: "昨天"

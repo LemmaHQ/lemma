@@ -2,15 +2,16 @@
 
 [English](AGENTS.md) | 中文
 
-Lemma 用同一套 Rust 核心为 Web 与 Android 客户端运行 LLM agent。修改 `crates/` 之前先读 [docs/architecture.zh.md](docs/architecture.zh.md)；编写文档遵循 [docs/AGENTS.zh.md](docs/AGENTS.zh.md)。
+Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent。修改 `crates/` 之前先读 [docs/architecture.zh.md](docs/architecture.zh.md)；编写文档遵循 [docs/AGENTS.zh.md](docs/AGENTS.zh.md)。
 
 ## 仓库布局
 
 ```text
 crates/       Rust workspace（crates/AGENTS.md）
-  shared/     服务端与 Android 共同链接的 crate
+  shared/     服务端、桌面应用与 Android 共同链接的 crate
   rpc/        每个 proto service 对应一个 ConnectRPC 服务 crate，以及组装它们的 lemma-host
   server/     lemma-server：服务端可执行文件
+  desktop/    lemma-desktop：基于 GPUI Kit 的桌面应用
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
   test/       只供测试使用的 crate，以 dev-dependency 引入
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
@@ -32,6 +33,7 @@ just rust-dev            # 读取 .env 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just design-gen          # 根据设计 token 重新生成 Web 主题与 Android 色板
 just design-test         # 测试设计 token 渲染器
+just desktop-dev         # 运行桌面应用
 just i18n-gen            # 根据平台中立的源文件重新生成客户端文案
 just i18n-test           # 测试 i18n 源文件验证与客户端渲染
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect

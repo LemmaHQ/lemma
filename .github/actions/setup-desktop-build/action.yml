@@ -1,0 +1,25 @@
+name: Setup desktop build
+description: Install what building lemma-desktop needs besides Rust, the GPUI system libraries on Linux and the npm packages its build script's generators import. Node must already be installed.
+
+runs:
+  using: composite
+  steps:
+    - name: Install GPUI system libraries
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libfontconfig-dev libwayland-dev libwebkit2gtk-4.1-dev \
+          libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libvulkan1
+
+    - name: Cache npm
+      uses: actions/cache@v6
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+
+    - name: Install npm dependencies
+      shell: bash
+      run: npm ci

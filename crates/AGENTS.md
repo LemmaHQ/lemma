@@ -23,7 +23,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
+- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
+- `lemma-desktop` is a GPUI Kit app. Its build script runs the `i18n/` and `design/` generators with Node, so building it needs Node and `npm ci`; on Linux it also needs the GPUI system libraries that [the desktop build action](../.github/actions/setup-desktop-build/action.yml) installs. Its views run the client's calls on the engine's tokio runtime through `EngineRuntime::spawn`, and its tests open real windows headless with `#[gpui_kit::test]`.
 - Crates are named `lemma-<concept>`.
 - `lemma-auth`, `lemma-session`, and `lemma-provider` own their tables and SeaORM migrations in `src/migration/`; `lemma-host` runs them in name order. Scaffold one with `sea-orm-cli migrate init -d <tmp>` and `migrate generate <name> -d <tmp>`, then move it in.
 

@@ -1,6 +1,6 @@
 common:
   appName:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Lemma"
     zh: "Lemma"
   cancel:

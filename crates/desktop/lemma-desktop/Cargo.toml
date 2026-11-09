@@ -1,0 +1,24 @@
+[package]
+name = "lemma-desktop"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+dirs.workspace = true
+futures.workspace = true
+gpui-kit.workspace = true
+lemma-client.workspace = true
+lemma-host.workspace = true
+lemma-proto.workspace = true
+serde_json.workspace = true
+sys-locale.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+gpui-kit = { workspace = true, features = ["test-support"] }
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,5 @@
+startup:
+  engineFailed:
+    platforms: [desktop]
+    en: "Lemma couldn't start"
+    zh: "Lemma 无法启动"

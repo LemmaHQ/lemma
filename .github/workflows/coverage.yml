@@ -55,16 +55,8 @@ jobs:
         with:
           install_args: node buf protobuf cargo:cargo-nextest cargo:cargo-llvm-cov just
 
-      - name: Cache npm
-        uses: actions/cache@v6
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup desktop build
+        uses: ./.github/actions/setup-desktop-build
 
       - name: Build web
         run: just web-build

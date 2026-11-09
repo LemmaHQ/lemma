@@ -1,85 +1,85 @@
 errors:
   agentFailed:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "The model request failed"
     zh: "模型请求失败"
   contentRequired:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Message content is required"
     zh: "消息内容不能为空"
   sessionNotFound:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Session not found"
     zh: "会话不存在"
   credentialsInvalid:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Incorrect username or password"
     zh: "用户名或密码错误"
   emailTaken:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "This email is already registered"
     zh: "该邮箱已注册"
   idInvalid:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Invalid ID"
     zh: "无效的 ID"
   modelRequired:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Please select a model"
     zh: "请先选择模型"
   network:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Can't reach the server, check your connection and try again"
     zh: "无法连接服务器，请检查网络后重试"
   providerFieldsRequired:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Base URL is required"
     zh: "请填写 Base URL"
   providerIdentifierInvalid:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Provider ID must be non-empty and contain only ASCII characters"
     zh: "服务商 ID 不能为空，且仅限 ASCII 字符"
   providerIdentifierTaken:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "This provider ID is already taken"
     zh: "该服务商 ID 已被占用，请换一个"
   providerKindInvalid:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Invalid provider type"
     zh: "无效的服务商类型"
   providerNotFound:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Provider not found"
     zh: "服务商不存在"
   signupFieldsRequired:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Username and email are required; password must be at least 8 characters"
     zh: "请填写用户名和邮箱，密码至少 8 位"
   timeout:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "The request timed out, please try again"
     zh: "请求超时，请重试"
   titleRequired:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Title is required"
     zh: "标题不能为空"
   tokenInvalid:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "You've been signed out. Please sign in again."
     zh: "登录状态已失效，请重新登录"
   turnNotRunning:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "This reply has already finished"
     zh: "该回复已结束"
   unspecified:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "Something went wrong, please try again"
     zh: "操作失败，请重试"
   userNotFound:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "User not found"
     zh: "用户不存在"
   usernameTaken:
-    platforms: [web]
+    platforms: [web, desktop]
     en: "This username is already taken"
     zh: "该用户名已被占用"
