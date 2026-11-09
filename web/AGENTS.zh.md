@@ -37,7 +37,7 @@
 
 `src/gen/` 由 `proto/` 经 `gen:proto` 生成；`gen:tokens` 把 [design/tokens.json](../design/README.zh.md) 的主题变量写入 `@lemma/ui`；`gen:i18n` 根据 [i18n 源文件](../i18n/README.zh.md) 生成 `src/i18n/locales/en.json` 与 `zh.json`。`src/index.css` 通过 `@lemma/ui/styles.css` 加载 token。`gen` 脚本运行这三个生成器，`dev`、`build`、`lint` 与 `test` 会先运行它，`format` 先运行 `gen:tokens`。所有输出都被 Git 忽略；修改 `proto/`、`design/tokens.json` 或 `i18n/`。
 
-`vite.config.ts` 向 `index.html` 注入一段内联脚本，在首次绘制前应用已保存的主题；脚本由 `src/features/preferences/theme.ts` 中的 `THEME_STORAGE_KEY` 与 `DEFAULT_THEME` 生成，`ThemeProvider` 读取的也是这两个常量；修改主题存储方式时改那里。
+`vite.config.ts` 向 `index.html` 注入一段内联脚本，在首次绘制前应用已保存的主题；脚本由 `src/features/preferences/theme.ts` 中的 `THEME_STORAGE_KEY` 与 `DEFAULT_THEME` 生成，`ThemeProvider` 读取的也是这两个常量；修改主题存储方式时改那里。它还注入两套主题的页面背景色与文字颜色，取自 [design/tokens.json](../design/README.zh.md)，使 `index.html` 中的启动标记在任何样式表加载之前就能正确绘制；这段标记用内联样式复现 `src/app/SplashScreen.tsx`，两者需要一起修改。
 
 ## 命令
 

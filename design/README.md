@@ -39,7 +39,7 @@ The Android app reads only the palette, and only the web theme reads the radius 
 - The web npm scripts run it before `dev`, `build`, `lint`, `test`, `test:cov`, `format`, and `format:check`; the `@lemma/ui` npm scripts run it before `lint`.
 - The Gradle task `generateDesignTokens` runs it before Kotlin compiles.
 
-`just design-gen` runs it by hand.
+`just design-gen` runs it by hand. `web/vite.config.ts` also reads `tokens.json` through the same reader, taking the `background` and `foreground` roles to color the web client's first paint.
 
 ## Checks
 

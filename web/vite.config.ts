@@ -1,9 +1,11 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
+import { readThemes, readTokenFile } from "../design/read-tokens.ts";
 import {
     DEFAULT_THEME,
     THEME_STORAGE_KEY,
@@ -16,14 +18,25 @@ const THEME_BOOT_SCRIPT = `(() => {
         const theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)}) || ${JSON.stringify(DEFAULT_THEME)};
         const dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
     } catch {}
 })();`;
+const TOKENS_PATH = fileURLToPath(
+    new URL("../design/tokens.json", import.meta.url),
+);
+const { themes } = readThemes(readTokenFile(TOKENS_PATH), TOKENS_PATH);
 
+const BOOT_STYLE = `body { margin: 0; }
+html { background: ${themes.light.get("background")}; color: ${themes.light.get("foreground")}; }
+html.dark { background: ${themes.dark.get("background")}; color: ${themes.dark.get("foreground")}; }`;
+
+/** Applies the stored theme and its page colors before the first paint, so the boot markup in `index.html` matches the app before any stylesheet loads. */
 function themeBootScript(): Plugin {
     return {
         name: "lemma-theme-boot-script",
         transformIndexHtml: () => [
             { tag: "script", children: THEME_BOOT_SCRIPT, injectTo: "head" },
+            { tag: "style", children: BOOT_STYLE, injectTo: "head" },
         ],
     };
 }

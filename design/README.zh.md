@@ -39,7 +39,7 @@ Android 应用只读取色板，只有 Web 主题读取圆角与动效 token。�
 - Web 的 npm 脚本在 `dev`、`build`、`lint`、`test`、`test:cov`、`format` 与 `format:check` 之前运行它；`@lemma/ui` 的 npm 脚本在 `lint` 之前运行它。
 - Gradle 任务 `generateDesignTokens` 在 Kotlin 编译前运行它。
 
-`just design-gen` 用于手动运行。
+`just design-gen` 用于手动运行。`web/vite.config.ts` 也通过同一个读取模块读取 `tokens.json`，用 `background` 与 `foreground` 角色为 Web 客户端的首次绘制着色。
 
 ## 检查
 

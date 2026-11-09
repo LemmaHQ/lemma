@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 export type ThemeName = "light" | "dark";
 export type Theme = Map<string, string>;
 
@@ -14,7 +16,7 @@ export interface Motion {
 const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/iu;
 const PALETTE_REFERENCE = /^\{palette\.(.+)\}$/u;
 
-export function readGroup(parent: object, key: string, label: string): object {
+function readGroup(parent: object, key: string, label: string): object {
     const group: unknown = Reflect.get(parent, key);
     if (typeof group !== "object" || group === null) {
         throw new Error(`${label} must contain a ${key} group`);
@@ -26,7 +28,7 @@ function tokenKeys(group: object): string[] {
     return Object.keys(group).filter((key) => !key.startsWith("$"));
 }
 
-export function collectColors(
+function collectColors(
     group: object,
     prefix: string[],
     colors: Color[],
@@ -52,7 +54,7 @@ export function collectColors(
     return colors;
 }
 
-export function resolveTheme(
+function resolveTheme(
     group: object,
     themeName: ThemeName,
     palette: Map<string, string>,
@@ -80,7 +82,7 @@ export function resolveTheme(
     return theme;
 }
 
-export function checkThemesMatch(light: Theme, dark: Theme): void {
+function checkThemesMatch(light: Theme, dark: Theme): void {
     const missing = [
         ...[...light.keys()].filter((role) => !dark.has(role)),
         ...[...dark.keys()].filter((role) => !light.has(role)),
@@ -90,6 +92,35 @@ export function checkThemesMatch(light: Theme, dark: Theme): void {
             `light and dark must define the same roles; mismatched: ${missing.join(", ")}`,
         );
     }
+}
+
+export function readTokenFile(tokensPath: string): object {
+    const tokens: unknown = JSON.parse(fs.readFileSync(tokensPath, "utf8"));
+    if (typeof tokens !== "object" || tokens === null) {
+        throw new Error(`${tokensPath} must contain a token tree`);
+    }
+    return tokens;
+}
+
+/** Reads the palette and resolves both themes' roles to hex colors; throws when a role misses the palette or the themes define different roles. */
+export function readThemes(
+    tokens: object,
+    tokensPath: string,
+): { colors: Color[]; themes: Record<ThemeName, Theme> } {
+    const colors = collectColors(
+        readGroup(tokens, "palette", tokensPath),
+        [],
+        [],
+    );
+    const palette = new Map(
+        colors.map(({ name, hex }) => [name.join("."), hex]),
+    );
+    const themes = {
+        light: resolveTheme(readGroup(tokens, "light", tokensPath), "light", palette),
+        dark: resolveTheme(readGroup(tokens, "dark", tokensPath), "dark", palette),
+    };
+    checkThemesMatch(themes.light, themes.dark);
+    return { colors, themes };
 }
 
 function readTokenValues(group: object, label: string): Map<string, unknown> {

@@ -1,12 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-    checkThemesMatch,
-    collectColors,
-    readGroup,
     readMotion,
     readRadii,
-    resolveTheme,
+    readThemes,
+    readTokenFile,
 } from "./read-tokens.ts";
 import { generateAndroidKt, generateWebCss } from "./render-tokens.ts";
 
@@ -22,31 +20,8 @@ const ANDROID_KT_PATH = path.join(
 );
 
 function main(): void {
-    const tokens: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
-    if (typeof tokens !== "object" || tokens === null) {
-        throw new Error(`${TOKENS_PATH} must contain a token tree`);
-    }
-    const colors = collectColors(
-        readGroup(tokens, "palette", TOKENS_PATH),
-        [],
-        [],
-    );
-    const palette = new Map(
-        colors.map(({ name, hex }) => [name.join("."), hex]),
-    );
-    const themes = {
-        light: resolveTheme(
-            readGroup(tokens, "light", TOKENS_PATH),
-            "light",
-            palette,
-        ),
-        dark: resolveTheme(
-            readGroup(tokens, "dark", TOKENS_PATH),
-            "dark",
-            palette,
-        ),
-    };
-    checkThemesMatch(themes.light, themes.dark);
+    const tokens = readTokenFile(TOKENS_PATH);
+    const { colors, themes } = readThemes(tokens, TOKENS_PATH);
     const motion = readMotion(tokens, TOKENS_PATH);
     const radii = readRadii(tokens, TOKENS_PATH);
     const outputs: [string, string][] = [

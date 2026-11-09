@@ -37,7 +37,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 `src/gen/` comes from `proto/` through `gen:proto`, `gen:tokens` writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, and `gen:i18n` writes `src/i18n/locales/en.json` and `zh.json` from the [i18n sources](../i18n/README.md). `src/index.css` loads the tokens through `@lemma/ui/styles.css`. The `gen` script runs all three generators, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores all outputs; edit `proto/`, `design/tokens.json`, or `i18n/`.
 
-`vite.config.ts` injects into `index.html` the inline script that applies the stored theme before the first paint, built from `THEME_STORAGE_KEY` and `DEFAULT_THEME` in `src/features/preferences/theme.ts`, the constants `ThemeProvider` also reads; change the theme storage there.
+`vite.config.ts` injects into `index.html` the inline script that applies the stored theme before the first paint, built from `THEME_STORAGE_KEY` and `DEFAULT_THEME` in `src/features/preferences/theme.ts`, the constants `ThemeProvider` also reads; change the theme storage there. It also injects the page background and text colors of both themes, read from [design/tokens.json](../design/README.md), so the boot markup in `index.html` paints before any stylesheet loads; that markup repeats `src/app/SplashScreen.tsx` with inline styles and changes together with it.
 
 ## Commands
 

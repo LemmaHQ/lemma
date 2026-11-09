@@ -1,6 +1,8 @@
-import { LemmaLogo } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
+import { AppBrand } from "./AppBrand";
+
+/** Shown while the router hydrates; it matches the boot markup in `index.html`, so the first paint and this screen look the same. */
 export function SplashScreen() {
     const { t } = useTranslation();
     return (
@@ -8,10 +10,7 @@ export function SplashScreen() {
             aria-label={t("common.loading")}
             className="grid min-h-dvh place-items-center"
         >
-            <div className="flex items-center gap-3 motion-safe:animate-pulse">
-                <LemmaLogo className="size-10" />
-                <span className="text-body font-semibold">Lemma</span>
-            </div>
+            <AppBrand large />
         </output>
     );
 }
