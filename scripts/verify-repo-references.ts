@@ -4,7 +4,7 @@ import path from "node:path";
 import { ROOT_DIR, git, readText } from "./translation-pairing.ts";
 
 const EXCLUDED =
-    /^\.agents\/skills\/(lemma-code-style\/references|impeccable)\//u;
+    /^\.agents\/skills\/(lemma-code-style\/references|impeccable|gpui-kit)\//u;
 const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([\w-]*)/u;
 const SHELL_FENCES = new Set(["sh", "bash", "shell", "console"]);
 const CODE_SPAN = /(`+)(?!`)(.+?)(?<!`)\1(?!`)/gu;
