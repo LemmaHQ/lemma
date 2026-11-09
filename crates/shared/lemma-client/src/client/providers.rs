@@ -16,11 +16,9 @@ impl<S: TokenStore> Client<S> {
     pub async fn list_providers(&self) -> Result<Vec<Provider>, ClientError> {
         let providers = &self.inner.providers;
         let response = self
-            .authorized(async |options| {
+            .authorized(|options| {
                 let request = ListProvidersRequest::default();
-                providers
-                    .list_providers_with_options(request, options)
-                    .await
+                providers.list_providers_with_options(request, options)
             })
             .await?;
         Ok(response.into_owned().providers)
@@ -37,12 +35,7 @@ impl<S: TokenStore> Client<S> {
     ) -> Result<Provider, ClientError> {
         let providers = &self.inner.providers;
         let response = self
-            .authorized(async |options| {
-                let request = request.clone();
-                providers
-                    .create_provider_with_options(request, options)
-                    .await
-            })
+            .authorized(|options| providers.create_provider_with_options(request.clone(), options))
             .await?;
         Ok(response
             .into_owned()
@@ -62,12 +55,7 @@ impl<S: TokenStore> Client<S> {
     ) -> Result<Provider, ClientError> {
         let providers = &self.inner.providers;
         let response = self
-            .authorized(async |options| {
-                let request = request.clone();
-                providers
-                    .update_provider_with_options(request, options)
-                    .await
-            })
+            .authorized(|options| providers.update_provider_with_options(request.clone(), options))
             .await?;
         Ok(response
             .into_owned()
@@ -83,14 +71,12 @@ impl<S: TokenStore> Client<S> {
     /// The call's [`ClientError`].
     pub async fn delete_provider(&self, id: &str) -> Result<(), ClientError> {
         let providers = &self.inner.providers;
-        self.authorized(async |options| {
+        self.authorized(|options| {
             let request = DeleteProviderRequest {
                 id: id.to_owned(),
                 ..Default::default()
             };
-            providers
-                .delete_provider_with_options(request, options)
-                .await
+            providers.delete_provider_with_options(request, options)
         })
         .await?;
         Ok(())
@@ -107,10 +93,7 @@ impl<S: TokenStore> Client<S> {
     ) -> Result<Vec<String>, ClientError> {
         let providers = &self.inner.providers;
         let response = self
-            .authorized(async |options| {
-                let request = request.clone();
-                providers.fetch_models_with_options(request, options).await
-            })
+            .authorized(|options| providers.fetch_models_with_options(request.clone(), options))
             .await?;
         Ok(response.into_owned().models)
     }
@@ -126,12 +109,7 @@ impl<S: TokenStore> Client<S> {
     ) -> Result<Option<String>, ClientError> {
         let providers = &self.inner.providers;
         let response = self
-            .authorized(async |options| {
-                let request = request.clone();
-                providers
-                    .check_provider_with_options(request, options)
-                    .await
-            })
+            .authorized(|options| providers.check_provider_with_options(request.clone(), options))
             .await?;
         let error = response.into_owned().error;
         Ok((!error.is_empty()).then_some(error))

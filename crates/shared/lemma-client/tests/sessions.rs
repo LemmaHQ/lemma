@@ -44,3 +44,21 @@ async fn sessions_are_created_renamed_and_deleted() -> TestResult {
     );
     Ok(())
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn calls_run_as_tasks_on_any_worker_thread() -> TestResult {
+    let engine = Engine::open().await?;
+    let (client, _) = engine.signed_up("ada").await?;
+    let creating = client.clone();
+    let created = tokio::spawn(async move { creating.create_session().await }).await??;
+    let listing = client.clone();
+    let listed = tokio::spawn(async move { listing.list_sessions().await }).await??;
+    assert_eq!(
+        listed.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+        [created.id.as_str()],
+        "a session created in one task is listed by another"
+    );
+    let user = tokio::spawn(async move { client.me().await }).await??;
+    assert_eq!(user.username, "ada", "the signed-in user");
+    Ok(())
+}

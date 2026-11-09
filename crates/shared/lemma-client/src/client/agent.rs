@@ -47,12 +47,12 @@ impl<S: TokenStore> Client<S> {
     /// The call's [`ClientError`].
     pub async fn abort_message(&self, message_id: &str) -> Result<(), ClientError> {
         let agent = &self.inner.agent;
-        self.authorized(async |options| {
+        self.authorized(|options| {
             let request = AbortMessageRequest {
                 message_id: message_id.to_owned(),
                 ..Default::default()
             };
-            agent.abort_message_with_options(request, options).await
+            agent.abort_message_with_options(request, options)
         })
         .await?;
         Ok(())

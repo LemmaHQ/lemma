@@ -190,16 +190,19 @@ impl<S: TokenStore> Client<S> {
     pub async fn me(&self) -> Result<User, ClientError> {
         let auth = &self.inner.auth;
         let response = self
-            .authorized(async |options| auth.me_with_options(MeRequest::default(), options).await)
+            .authorized(|options| auth.me_with_options(MeRequest::default(), options))
             .await?;
         Ok(response.into_owned().user.into_option().unwrap_or_default())
     }
 
     /// Runs `rpc` with the access token; on an authentication failure, refreshes the tokens once and retries.
-    pub(crate) async fn authorized<R>(
+    pub(crate) async fn authorized<R, Call>(
         &self,
-        rpc: impl AsyncFn(CallOptions) -> Result<R, ConnectError>,
-    ) -> Result<R, ClientError> {
+        rpc: impl Fn(CallOptions) -> Call,
+    ) -> Result<R, ClientError>
+    where
+        Call: Future<Output = Result<R, ConnectError>>,
+    {
         let sent = self.access_token();
         match rpc(bearer(sent.as_deref())).await {
             Err(error) if error.code == ErrorCode::Unauthenticated => {

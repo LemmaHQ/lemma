@@ -18,9 +18,9 @@ impl<S: TokenStore> Client<S> {
     pub async fn list_sessions(&self) -> Result<Vec<Session>, ClientError> {
         let sessions = &self.inner.sessions;
         let response = self
-            .authorized(async |options| {
+            .authorized(|options| {
                 let request = ListSessionsRequest::default();
-                sessions.list_sessions_with_options(request, options).await
+                sessions.list_sessions_with_options(request, options)
             })
             .await?;
         Ok(response.into_owned().sessions)
@@ -34,9 +34,9 @@ impl<S: TokenStore> Client<S> {
     pub async fn create_session(&self) -> Result<Session, ClientError> {
         let sessions = &self.inner.sessions;
         let response = self
-            .authorized(async |options| {
+            .authorized(|options| {
                 let request = CreateSessionRequest::default();
-                sessions.create_session_with_options(request, options).await
+                sessions.create_session_with_options(request, options)
             })
             .await?;
         Ok(response
@@ -54,13 +54,13 @@ impl<S: TokenStore> Client<S> {
     pub async fn rename_session(&self, id: &str, title: &str) -> Result<Session, ClientError> {
         let sessions = &self.inner.sessions;
         let response = self
-            .authorized(async |options| {
+            .authorized(|options| {
                 let request = RenameSessionRequest {
                     id: id.to_owned(),
                     title: title.trim().to_owned(),
                     ..Default::default()
                 };
-                sessions.rename_session_with_options(request, options).await
+                sessions.rename_session_with_options(request, options)
             })
             .await?;
         Ok(response
@@ -77,12 +77,12 @@ impl<S: TokenStore> Client<S> {
     /// The call's [`ClientError`].
     pub async fn delete_session(&self, id: &str) -> Result<(), ClientError> {
         let sessions = &self.inner.sessions;
-        self.authorized(async |options| {
+        self.authorized(|options| {
             let request = DeleteSessionRequest {
                 id: id.to_owned(),
                 ..Default::default()
             };
-            sessions.delete_session_with_options(request, options).await
+            sessions.delete_session_with_options(request, options)
         })
         .await?;
         Ok(())
@@ -100,14 +100,14 @@ impl<S: TokenStore> Client<S> {
     ) -> Result<ListMessagesResponse, ClientError> {
         let sessions = &self.inner.sessions;
         let response = self
-            .authorized(async |options| {
+            .authorized(|options| {
                 let request = ListMessagesRequest {
                     session_id: session_id.to_owned(),
                     before_id: before_id.unwrap_or_default().to_owned(),
                     limit: MESSAGE_PAGE_SIZE,
                     ..Default::default()
                 };
-                sessions.list_messages_with_options(request, options).await
+                sessions.list_messages_with_options(request, options)
             })
             .await?;
         Ok(response.into_owned())
