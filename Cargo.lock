@@ -855,15 +855,19 @@ dependencies = [
  "http-body",
  "http-body-util",
  "hyper",
+ "hyper-rustls",
  "hyper-util",
  "libc",
  "percent-encoding",
  "pin-project",
+ "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "sync_wrapper",
  "thiserror",
  "tokio",
+ "tokio-rustls",
  "tokio-util",
  "tower",
  "tower-http 0.6.11",
@@ -2347,6 +2351,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-client"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "base64 0.23.1",
+ "buffa",
+ "buffa-types",
+ "chrono",
+ "connectrpc",
+ "futures",
+ "http",
+ "lemma-host",
+ "lemma-proto",
+ "rustls-platform-verifier",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "lemma-core"
 version = "0.1.0"
 dependencies = [
@@ -3566,6 +3591,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "aws-lc-rs",
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
