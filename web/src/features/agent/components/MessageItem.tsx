@@ -81,11 +81,13 @@ export function MessageItem({
             </MessageContent>
             {!streaming && (
                 <MessageActions>
-                    <MessageCopyAction
-                        text={message.content}
-                        label={t("common.copy")}
-                        copiedLabel={t("common.copied")}
-                    />
+                    {message.content !== "" && (
+                        <MessageCopyAction
+                            text={message.content}
+                            label={t("common.copy")}
+                            copiedLabel={t("common.copied")}
+                        />
+                    )}
                     {canRegenerate === true && onRegenerate !== undefined && (
                         <MessageRegenerateAction
                             label={t("session.regenerate")}

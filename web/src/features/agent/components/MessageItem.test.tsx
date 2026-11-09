@@ -94,6 +94,7 @@ it.each([
     expect(notice.textContent).toBe(
         ["The model request failed", ...extra].join(""),
     );
+    expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
 });
 
 it("marks a stopped reply", () => {
