@@ -157,13 +157,12 @@ impl Render for SessionList {
                     .pb_2()
                     .gap_2()
                     .child(
-                        Button::new("new-session")
-                            .ghost()
-                            .w_full()
-                            .justify_start()
-                            .icon(IconName::SquarePen)
-                            .label(sidebar::new_session(language))
-                            .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
+                        sidebar_button(
+                            "new-session",
+                            IconName::SquarePen,
+                            sidebar::new_session(language),
+                        )
+                        .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
                     )
                     .child(
                         div()
@@ -183,12 +182,7 @@ impl Render for SessionList {
                             }),
                     )
                     .child(
-                        Button::new("sign-out")
-                            .ghost()
-                            .w_full()
-                            .justify_start()
-                            .icon(IconName::LogOut)
-                            .label(sidebar::sign_out(language))
+                        sidebar_button("sign-out", IconName::LogOut, sidebar::sign_out(language))
                             .on_click(cx.listener(|list, _, _, cx| list.sign_out(cx))),
                     ),
             )
@@ -202,6 +196,16 @@ pub(crate) fn session_title(session: &Session, language: Language) -> SharedStri
     } else {
         session.title.clone().into()
     }
+}
+
+/// A full-width sidebar action with its icon and label at the start.
+fn sidebar_button(id: &'static str, icon: IconName, label: &'static str) -> Button {
+    Button::new(id)
+        .ghost()
+        .w_full()
+        .icon(icon)
+        .label(label)
+        .child(div().flex_1())
 }
 
 fn period_label(period: SessionPeriod, language: Language) -> &'static str {

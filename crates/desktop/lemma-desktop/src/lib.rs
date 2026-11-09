@@ -1,5 +1,6 @@
 //! The Lemma desktop application: a GPUI Kit window over the local engine, which runs in the same process.
 
+mod app_assets;
 mod chat_view;
 mod engine_runtime;
 mod error_text;
@@ -14,6 +15,7 @@ pub mod strings;
 mod window_header;
 mod workspace_view;
 
+pub use app_assets::AppAssets;
 pub use engine_runtime::{EngineRuntime, InRuntime};
 pub use interface_language::InterfaceLanguage;
 pub use lemma_app::LemmaApp;
