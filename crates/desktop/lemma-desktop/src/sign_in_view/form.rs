@@ -11,6 +11,7 @@ use gpui_kit::{
 use super::steps::{SignInView, Step};
 use crate::interface_language::InterfaceLanguage;
 use crate::strings::{Language, auth};
+use crate::text_role::TextRole;
 
 impl SignInView {
     fn render_fields(&self, language: Language, cx: &mut Context<Self>) -> AnyElement {
@@ -29,7 +30,8 @@ impl SignInView {
                     Field::new().child(
                         h_flex()
                             .justify_between()
-                            .text_sm()
+                            .text_body()
+                            .font_medium()
                             .child(self.identifier.read(cx).value())
                             .child(
                                 Button::new("change-account")
@@ -100,10 +102,10 @@ impl Render for SignInView {
                 .child(
                     v_flex()
                         .gap_1()
-                        .child(div().text_2xl().font_semibold().child(title))
+                        .child(div().text_display().child(title))
                         .child(
                             div()
-                                .text_sm()
+                                .text_body()
                                 .text_color(cx.theme().muted_foreground)
                                 .child(description),
                         ),
@@ -116,7 +118,7 @@ impl Render for SignInView {
                             .role(Role::Alert)
                             .test_support()
                             .aria_label(error.clone())
-                            .text_sm()
+                            .text_small()
                             .text_color(cx.theme().danger)
                             .child(error),
                     )
@@ -124,6 +126,7 @@ impl Render for SignInView {
                 .child(
                     Button::new("submit")
                         .primary()
+                        .font_medium()
                         .w_full()
                         .label(submit)
                         .loading(self.busy)
@@ -134,14 +137,18 @@ impl Render for SignInView {
                         h_flex()
                             .justify_center()
                             .gap_1()
-                            .text_sm()
+                            .text_body()
                             .text_color(cx.theme().muted_foreground)
                             .child(prompt)
-                            .child(Button::new("switch-step").ghost().label(label).on_click(
-                                cx.listener(move |view, _, window, cx| {
-                                    view.show(step, window, cx);
-                                }),
-                            )),
+                            .child(
+                                Button::new("switch-step")
+                                    .ghost()
+                                    .font_medium()
+                                    .label(label)
+                                    .on_click(cx.listener(move |view, _, window, cx| {
+                                        view.show(step, window, cx);
+                                    })),
+                            ),
                     )
                 }),
         )

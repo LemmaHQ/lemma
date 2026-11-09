@@ -65,7 +65,7 @@ mod tests {
                 "light background"
             );
             assert_eq!(cx.theme().title_bar, Hsla::from(rgb(0xfafafa)), "title bar");
-            assert_eq!(cx.theme().font_size, px(14.), "base font size");
+            assert_eq!(cx.theme().font_size, px(16.), "base font size");
             assert_eq!(cx.theme().radius, px(8.), "medium radius");
             assert_eq!(cx.theme().radius_lg, px(12.), "large radius");
 

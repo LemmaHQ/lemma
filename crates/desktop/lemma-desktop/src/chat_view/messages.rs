@@ -16,6 +16,7 @@ use crate::interface_language::InterfaceLanguage;
 use crate::lemma_app::DesktopClient;
 use crate::message_row::render_message;
 use crate::strings::session;
+use crate::text_role::TextRole;
 
 /// What the conversation reports to the workspace.
 pub(crate) enum ChatEvent {
@@ -192,8 +193,8 @@ impl Render for ChatView {
                 .justify_center()
                 .child(
                     div()
-                        .text_2xl()
-                        .font_semibold()
+                        .text_display()
+                        .font_normal()
                         .child(session::empty_title(language)),
                 )
                 .into_any_element()

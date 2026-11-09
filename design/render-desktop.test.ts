@@ -50,7 +50,7 @@ void test("generates native light and dark themes with Lemma typography and radi
     assert.equal(light?.mode, "light");
     assert.equal(dark?.mode, "dark");
     for (const config of [light, dark]) {
-        assert.equal(config?.["font.size"], 14);
+        assert.equal(config?.["font.size"], 16);
         assert.equal(config?.["font.family"], undefined);
         assert.equal(config?.radius, 8);
         assert.equal(config?.["radius.lg"], 12);

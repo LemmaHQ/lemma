@@ -15,6 +15,7 @@ use crate::error_text::error_text;
 use crate::interface_language::InterfaceLanguage;
 use crate::lemma_app::DesktopClient;
 use crate::strings::{Language, common, session, sidebar};
+use crate::text_role::TextRole;
 
 /// Requests the session list makes of the workspace.
 pub(crate) enum SessionListEvent {
@@ -105,16 +106,19 @@ impl SessionList {
             let mut rows = v_flex().gap_0p5().child(
                 div()
                     .px_2()
-                    .text_xs()
+                    .text_caption()
                     .text_color(cx.theme().muted_foreground)
                     .child(period_label(group.period, language)),
             );
             for listed in group.sessions {
                 let title = session_title(listed, language);
                 let id = listed.id.clone();
+                let selected = self.selected.as_deref() == Some(id.as_str());
                 rows = rows.child(
                     sidebar_row(format!("session-{id}"), title.clone())
-                        .selected(self.selected.as_deref() == Some(id.as_str()))
+                        .text_small()
+                        .when(selected, StyledExt::font_medium)
+                        .selected(selected)
                         .on_click(cx.listener(move |list, _, _, cx| {
                             list.open(&id, title.clone(), cx);
                         })),
@@ -141,8 +145,7 @@ impl Render for SessionList {
                     .flex()
                     .items_center()
                     .window_control_area(WindowControlArea::Drag)
-                    .text_sm()
-                    .font_semibold()
+                    .text_title()
                     .child(common::app_name(language)),
             )
             .child(
@@ -155,6 +158,7 @@ impl Render for SessionList {
                     .child(
                         sidebar_row("new-session", sidebar::new_session(language))
                             .icon(IconName::SquarePen)
+                            .font_medium()
                             .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
                     )
                     .child(
@@ -168,7 +172,7 @@ impl Render for SessionList {
                                 this.child(
                                     div()
                                         .px_2()
-                                        .text_sm()
+                                        .text_small()
                                         .text_color(cx.theme().danger)
                                         .child(error),
                                 )

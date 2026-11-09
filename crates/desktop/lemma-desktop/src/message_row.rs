@@ -1,15 +1,31 @@
-use gpui_kit::component::text::{TextView, TextViewState};
-use gpui_kit::component::{ActiveTheme, StyledExt, h_flex, v_flex};
+use std::sync::{Arc, LazyLock};
+
+use gpui_kit::component::text::{TextView, TextViewState, TextViewStyle};
+use gpui_kit::component::{ActiveTheme, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{
     AnyElement, App, Entity, InteractiveElement, IntoElement, ParentElement, Role, SharedString,
-    StatefulInteractiveElement, Styled, TestSupportExt, div, relative,
+    StatefulInteractiveElement, StyleRefinement, Styled, TestSupportExt, div, px, relative,
 };
 use lemma_client::{MessageError, MessageItem, MessageRole, MessageStatus, ToolCallItem};
 
 use crate::error_text::error_text;
-use crate::reading_text::ReadingText;
 use crate::strings::{Language, agent};
+use crate::text_role::TextRole;
+
+static MESSAGE_STYLE: LazyLock<TextViewStyle> = LazyLock::new(|| TextViewStyle {
+    heading_font_size: Some(Arc::new(|level, _| match level {
+        1 => px(24.),
+        2 => px(20.),
+        4 => px(18.),
+        6 => px(14.),
+        _ => px(16.),
+    })),
+    table_cell: StyleRefinement::default()
+        .text_size(px(13.))
+        .line_height(px(20.)),
+    ..TextViewStyle::default()
+});
 
 /// One row of the conversation: a user bubble, or an assistant reply with its thinking, tool calls, text, and outcome.
 pub(crate) fn render_message(
@@ -52,7 +68,12 @@ pub(crate) fn render_message(
                     .map(|call| render_tool_call(call, language, cx)),
             )
             .when_some(body, |this, body| {
-                this.child(TextView::new(body).text_reading().stream_fade(true))
+                this.child(
+                    TextView::new(body)
+                        .style(MESSAGE_STYLE.clone())
+                        .text_reading()
+                        .stream_fade(true),
+                )
             })
             .when_some(item.error.as_ref(), |this, error| {
                 let text: SharedString = match error {
@@ -65,7 +86,7 @@ pub(crate) fn render_message(
                         .role(Role::Alert)
                         .test_support()
                         .aria_label(text.clone())
-                        .text_sm()
+                        .text_small()
                         .text_color(cx.theme().danger)
                         .child(text),
                 )
@@ -76,7 +97,7 @@ pub(crate) fn render_message(
                         .id(SharedString::from(format!("aborted-{}", item.id)))
                         .test_support()
                         .aria_label(agent::aborted_notice(language))
-                        .text_sm()
+                        .text_caption()
                         .text_color(cx.theme().muted_foreground)
                         .child(agent::aborted_notice(language)),
                 )
@@ -93,9 +114,9 @@ fn render_thinking(item: &MessageItem, language: Language, cx: &App) -> AnyEleme
     };
     v_flex()
         .gap_1()
-        .text_sm()
+        .text_small()
         .text_color(cx.theme().muted_foreground)
-        .child(div().font_medium().child(label))
+        .child(label)
         .child(
             div()
                 .pl_3()
@@ -127,7 +148,7 @@ fn render_tool_call(call: &ToolCallItem, language: Language, cx: &App) -> AnyEle
         .id(SharedString::from(format!("tool-call-{}", call.id)))
         .test_support()
         .aria_label(text.clone())
-        .text_sm()
+        .text_small()
         .text_color(color)
         .child(text)
         .into_any_element()

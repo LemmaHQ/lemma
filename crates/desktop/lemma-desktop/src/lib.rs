@@ -9,10 +9,10 @@ mod lemma_app;
 pub mod lemma_theme;
 mod memory_token_store;
 mod message_row;
-mod reading_text;
 mod session_list;
 mod sign_in_view;
 pub mod strings;
+mod text_role;
 mod window_header;
 mod workspace_view;
 

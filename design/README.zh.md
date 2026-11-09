@@ -35,7 +35,7 @@
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | 以 Compose `Color` 表示的每个色板条目 | `theme/LemmaColorScheme.kt` 把它映射到应用的颜色角色 |
 | 桌面 Cargo 输出 | 包含 Lemma 亮色与暗色 `ThemeConfig` 值的 gpui-kit `ThemeSet` | `crates/desktop/lemma-desktop/src/lemma_theme.rs` 包含并应用它 |
 
-桌面渲染器把 Lemma 角色映射到 gpui-kit 颜色，包括侧边栏式标题栏、显式悬停与激活颜色、状态颜色、选中状态、边框与组件表面。它把基础字号设为 14 px，字体族保留系统默认值，并以 `radius.md` 作为通用圆角、`radius.lg` 作为大型元素圆角。构建脚本在 Rust 编译前运行 `node design/gen-desktop.ts <output>`。
+桌面渲染器把 Lemma 角色映射到 gpui-kit 颜色，包括侧边栏式标题栏、显式悬停与激活颜色、状态颜色、选中状态、边框与组件表面。它把基础字号设为 16 px，与 Web 客户端 rem 单位所用的根字号相同，因此 gpui-kit 以 rem 计的字号与 Tailwind 换算出同样的像素；字体族保留系统默认值，并以 `radius.md` 作为通用圆角、`radius.lg` 作为大型元素圆角。构建脚本在 Rust 编译前运行 `node design/gen-desktop.ts <output>`。
 
 Android 应用只读取色板。Web 与桌面主题读取圆角 token；只有 Web 主题读取动效 token。每个现有使用方在读取输出前运行 `gen-tokens.ts`：
 

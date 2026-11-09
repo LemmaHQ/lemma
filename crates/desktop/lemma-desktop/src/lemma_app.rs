@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use gpui_kit::assets::IconName;
 use gpui_kit::component::spinner::Spinner;
-use gpui_kit::component::{ActiveTheme, Icon, Sizable, StyledExt, v_flex};
+use gpui_kit::component::{ActiveTheme, Icon, Sizable, v_flex};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{
     AnyElement, App, AppContext, Context, Div, Entity, InteractiveElement, IntoElement,
@@ -17,6 +17,7 @@ use crate::interface_language::InterfaceLanguage;
 use crate::memory_token_store::MemoryTokenStore;
 use crate::sign_in_view::{SignInEvent, SignInView};
 use crate::strings;
+use crate::text_role::TextRole;
 use crate::window_header::window_header;
 use crate::workspace_view::{WorkspaceEvent, WorkspaceView};
 
@@ -144,8 +145,7 @@ fn render_engine_failure(detail: &SharedString, cx: &App) -> AnyElement {
         )
         .child(
             div()
-                .text_lg()
-                .font_semibold()
+                .text_title()
                 .child(strings::startup::engine_failed(language)),
         )
         .child(
@@ -155,7 +155,7 @@ fn render_engine_failure(detail: &SharedString, cx: &App) -> AnyElement {
                 .test_support()
                 .aria_label(detail.clone())
                 .max_w_128()
-                .text_sm()
+                .text_body()
                 .text_color(cx.theme().muted_foreground)
                 .child(detail.clone()),
         )

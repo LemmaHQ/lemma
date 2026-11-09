@@ -11,7 +11,7 @@ export function generateDesktopTheme(
         themes: (["light", "dark"] as const).map((mode) => ({
             name: `Lemma ${mode === "light" ? "Light" : "Dark"}`,
             mode,
-            "font.size": 14,
+            "font.size": 16,
             radius,
             "radius.lg": radiusLg,
             colors: themeColors(requiredTheme(themes, mode)),

@@ -1,7 +1,7 @@
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants};
 use gpui_kit::component::input::Textarea;
-use gpui_kit::component::{ActiveTheme, Disableable, h_flex, v_flex};
+use gpui_kit::component::{ActiveTheme, Disableable, StyledExt, h_flex, v_flex};
 use gpui_kit::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, TestSupportExt, div, rems,
@@ -10,8 +10,8 @@ use lemma_client::OpenSession;
 
 use super::messages::ChatView;
 use crate::interface_language::InterfaceLanguage;
-use crate::reading_text::ReadingText;
 use crate::strings::{agent, session};
+use crate::text_role::TextRole;
 
 impl ChatView {
     pub(super) fn render_composer(&self, cx: &mut Context<Self>) -> AnyElement {
@@ -57,7 +57,8 @@ impl ChatView {
                             .id("model")
                             .test_support()
                             .aria_label(model_label.clone())
-                            .text_sm()
+                            .text_small()
+                            .font_medium()
                             .text_color(cx.theme().muted_foreground)
                             .child(model_label),
                     )

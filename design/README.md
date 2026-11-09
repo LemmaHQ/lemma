@@ -35,7 +35,7 @@ All generated files are ignored by Git:
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color` | `theme/LemmaColorScheme.kt` maps it onto the app's color roles |
 | Desktop Cargo output | A gpui-kit `ThemeSet` containing Lemma's light and dark `ThemeConfig` values | `crates/desktop/lemma-desktop/src/lemma_theme.rs` includes and applies it |
 
-The desktop renderer maps Lemma roles to gpui-kit colors, including sidebar title bars, explicit hover and active colors, status colors, selection, borders, and component surfaces. It sets the base font to 14 px, leaves font families at the system defaults, and uses `radius.md` for the general radius and `radius.lg` for large elements. Its build script runs `node design/gen-desktop.ts <output>` before Rust compiles.
+The desktop renderer maps Lemma roles to gpui-kit colors, including sidebar title bars, explicit hover and active colors, status colors, selection, borders, and component surfaces. It sets the base font to 16 px, the root size the web client's rem units use, so gpui-kit's rem-based text sizes resolve to the same pixels as Tailwind's; it leaves font families at the system defaults and uses `radius.md` for the general radius and `radius.lg` for large elements. Its build script runs `node design/gen-desktop.ts <output>` before Rust compiles.
 
 The Android app reads only the palette. The web and desktop themes read radius tokens; only the web theme reads motion tokens. Each existing consumer runs `gen-tokens.ts` before reading its output:
 
