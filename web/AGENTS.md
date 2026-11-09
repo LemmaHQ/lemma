@@ -25,7 +25,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - `src/app/` holds the route table in `router.tsx`, the paths in `route-paths.ts`, and one directory per layout route: `auth/`, `session/`, and `settings/`, each with the pages that only arrange feature components. `shell/` holds `SignedInLayout`, which guards the signed-in routes and owns the sidebar state, and `ShellFrame`, which both signed-in layouts fill with their sidebar, toolbar actions, and title. Features take paths as props instead of naming routes. `account-data.ts` empties the feature stores that hold account data whenever the signed-in user changes; a store added to that set is cleared there.
 - oxlint enforces the boundaries: in `src/app/` and `src/features/`, an import past a feature's `index.ts`, an import of `src/rpc/` other than `errors.ts` outside a `store.ts`, and any import of the libraries beneath `@lemma/ui` fail `just web-lint-check`.
 - Shared shadcn controls and AI Elements chat components live in `@lemma/ui`; feature code imports them, the icons, and `AnimateIcon`, `cn`, and `toast` from `@lemma/ui` alone ([component README](../packages/ui/README.md)).
-- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; [i18n/README.md](../i18n/README.md) defines the source entries, whose generated `src/i18n/locales/en.json` and `zh.json` carry the same keys, checked by `src/i18n/locales.test.ts`.
+- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; [i18n/README.md](../i18n/README.md) defines the source entries, and its generator requires both languages for every entry, so the generated `src/i18n/locales/en.json` and `zh.json` carry the same keys.
 
 ## Styling
 
