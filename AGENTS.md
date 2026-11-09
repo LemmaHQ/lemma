@@ -21,6 +21,7 @@ mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.
 assets/       brand assets
 design/       design tokens for all clients (tokens.json) and their generator
 i18n/         platform-neutral UI strings (i18n/README.md) and their generator
+vendor/       patched third-party crates, brought in by [patch.crates-io] in the root Cargo.toml (crates/AGENTS.md)
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
 scripts/      documentation checks: translation pairing, brief generator, repository references

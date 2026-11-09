@@ -25,6 +25,7 @@
 
 - `shared/` 中的 crate 为所有运行时构建，包括 Android；`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host`；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主；`test/` 中的 crate 只作为 dev-dependency 使用。
 - `lemma-desktop` 是 GPUI Kit 应用。它的构建脚本用 Node 运行 `i18n/` 与 `design/` 的生成器，因此构建前需要 Node 和 `npm ci`；在 Linux 上还需要[桌面构建 action](../.github/actions/setup-desktop-build/action.yml) 安装的 GPUI 系统库。它的视图通过 `EngineRuntime::spawn` 在引擎的 tokio 运行时上执行客户端调用，测试用 `#[gpui_kit::test]` 以无窗口方式打开真实窗口。
+- `vendor/gpui-pre-windows/` 是 GPUI Kit 的 Windows 平台 crate 在 `Cargo.lock` 所记版本的副本，经 `[patch.crates-io]` 引入；唯一的改动让 `direct_write.rs` 的 `rendering_mode` 对所有字号都不做 hinting（`NATURAL_SYMMETRIC`，关闭网格对齐）。升级 GPUI Kit 后若 cargo 提示补丁未被使用，复制新版本的源码并重新应用这处改动。
 - crate 命名为 `lemma-<concept>`。
 - `lemma-auth`、`lemma-session` 与 `lemma-provider` 在各自的 `src/migration/` 中拥有自己的表及其 SeaORM migration；`lemma-host` 按名称顺序运行它们。新增时用 `sea-orm-cli migrate init -d <tmp>` 与 `migrate generate <name> -d <tmp>` 在临时目录中生成骨架，再把文件移进来。
 

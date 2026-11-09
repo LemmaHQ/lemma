@@ -21,6 +21,7 @@ mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENT
 assets/       品牌素材
 design/       各客户端的设计 token（tokens.json）及其生成器
 i18n/         平台中立的界面文案（i18n/README.md）及其生成器
+vendor/       打了补丁的第三方 crate，由根 Cargo.toml 的 [patch.crates-io] 引入（crates/AGENTS.md）
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
 scripts/      文档检查：双语配对、翻译简报生成器、仓库引用

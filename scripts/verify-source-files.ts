@@ -8,6 +8,7 @@ const SCRIPT = /\.(?:[cm]?[jt]s|[jt]sx)$/u;
 const UNCHECKED = [
     /^\.agents\//u,
     /^packages\/ui\/src\/(?:components|hooks)\//u,
+    /^vendor\//u,
 ];
 const TEST = [
     /(?:^|\/)tests\//u,

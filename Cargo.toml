@@ -90,6 +90,9 @@ tower-http = { version = "0.7.1", features = ["cors"] }
 uniffi = { version = "0.32.2", features = ["tokio"] }
 uuid = { version = "1.25.0", features = ["v4", "serde"] }
 
+[patch.crates-io]
+gpui-pre-windows = { path = "vendor/gpui-pre-windows" }
+
 [workspace.lints.clippy]
 absolute_paths = "deny"
 doc_markdown = "deny"
