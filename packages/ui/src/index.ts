@@ -58,7 +58,6 @@ export { EyeIcon } from "./components/icons/eye";
 export { GithubIcon } from "./components/icons/github";
 export { GlobeIcon } from "./components/icons/globe";
 export { InfoIcon } from "./components/icons/info";
-export { LemmaLogo } from "./components/icons/lemma-logo";
 export { LoaderCircleIcon } from "./components/icons/loader-circle";
 export { LockIcon } from "./components/icons/lock";
 export { LogOutIcon } from "./components/icons/log-out";

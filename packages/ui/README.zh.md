@@ -6,7 +6,7 @@
 
 `@lemma/ui` 以 TypeScript 源码导出 Lemma 的共享 shadcn/ui 控件与 AI Elements 会话组件。包有两个入口：`@lemma/ui` 导出全部组件、图标、hook 与辅助函数，包自己的 `cn`，以及底层库的 `AnimateIcon` 与 `toast`；`@lemma/ui/styles.css` 加载主题与全部组件样式。功能代码不从包里导入其他路径，也不直接导入这些底层库。该包拥有语义主题以及 Streamdown 样式与插件；它不含界面文字，组件显示或播报的每段文字都由使用方应用翻译后通过属性传入。
 
-`src/components/` 下有三个目录：`primitives/` 存放与业务领域无关的 shadcn 控件与布局部件，`ai/` 存放会话场景的视觉组件，`icons/` 存放 Animate UI 的 Lucide 图标集与品牌标志，其中包括 Lemma 的标志 `LemmaLogo`。Animate UI 未提供的图标使用 `lucide-react` 中同名的静态图标。
+`src/components/` 下有三个目录：`primitives/` 存放与业务领域无关的 shadcn 控件与布局部件，`ai/` 存放会话场景的视觉组件，`icons/` 存放 Animate UI 的 Lucide 图标集与品牌标志。Animate UI 未提供的图标使用 `lucide-react` 中同名的静态图标。
 
 <a id="component-catalog"></a>
 

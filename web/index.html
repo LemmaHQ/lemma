@@ -9,38 +9,30 @@
     <body>
         <div id="root">
             <div style="display: grid; min-height: 100dvh; place-items: center">
-                <div style="display: flex; align-items: center; gap: 0.75rem">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="136 95 300 300"
+                <span
+                    style="
+                        font:
+                            400 1.5rem / 2rem ui-serif,
+                            Georgia,
+                            Cambria,
+                            &quot;Times New Roman&quot;,
+                            Times,
+                            serif;
+                    "
+                    >Lemma<span
                         aria-hidden="true"
-                        style="width: 2.5rem; height: 2.5rem; flex-shrink: 0"
-                    >
-                        <path
-                            fill="currentColor"
-                            transform="translate(148.05 384) scale(3.7622)"
-                            d="M53.997509-25.205479H52.204234C51.407223-15.342466 50.11208-2.590286 33.075965-2.590286H23.81071C19.825654-2.590286 19.626401-3.088418 19.626401-6.475716V-60.871731C19.626401-64.458281 19.825654-65.454545 27.39726-65.454545H29.589041V-68.044832C25.504359-67.845579 20.722291-67.845579 16.637609-67.845579C13.549191-67.845579 7.970112-67.845579 5.080946-68.044832V-65.454545C11.955168-65.454545 13.051059-65.454545 13.051059-60.971357V-7.073474C13.051059-2.590286 11.955168-2.590286 5.080946-2.590286V0H51.606476L53.997509-25.205479Z"
-                        />
-                        <circle
-                            cx="388"
-                            cy="124"
-                            r="22"
-                            style="fill: var(--brand, #1783ff)"
-                        />
-                    </svg>
-                    <span
                         style="
-                            font:
-                                400 1.5rem / 2rem ui-serif,
-                                Georgia,
-                                Cambria,
-                                &quot;Times New Roman&quot;,
-                                Times,
-                                serif;
+                            position: relative;
+                            bottom: 0.75rem;
+                            display: inline-block;
+                            width: 0.375rem;
+                            height: 0.375rem;
+                            margin-left: 0.125rem;
+                            border-radius: 9999px;
+                            background: var(--brand, #1783ff);
                         "
-                        >Lemma</span
-                    >
-                </div>
+                    ></span
+                ></span>
             </div>
         </div>
         <script type="module" src="/src/main.tsx"></script>

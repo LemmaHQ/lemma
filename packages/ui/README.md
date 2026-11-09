@@ -6,7 +6,7 @@ English | [中文](README.zh.md)
 
 `@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements session components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set and the brand logos, among them `LemmaLogo`, Lemma's mark. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
+`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set and the brand logos. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
 
 <a id="component-catalog"></a>
 
