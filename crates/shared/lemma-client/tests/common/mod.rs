@@ -8,17 +8,18 @@ use std::env;
 use std::error::Error;
 use std::fs;
 use std::io;
+use std::mem;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use axum::Router;
-use axum::body::Body;
+use axum::body::{Body, BodyDataStream, Bytes};
 use axum::extract::Request;
 use axum::http::StatusCode;
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
-use futures::{StreamExt, stream};
+use futures::{Stream, StreamExt, stream};
 use lemma_client::{Client, Connection, TokenPair, TokenStore};
 use lemma_host::LocalEngine;
 use lemma_proto::lemma::v1::{CreateProviderRequest, ProviderKind};
@@ -207,7 +208,7 @@ fn finish(reason: &str) -> Value {
     json!({ "choices": [{ "delta": {}, "finish_reason": reason }] })
 }
 
-/// Wraps `router` so responses of the RPC whose path ends with `path` break after their first `keep` body chunks.
+/// Wraps `router` so responses of the RPC whose path ends with `path` break after their first `keep` messages.
 pub fn breaking(router: Router, path: &'static str, keep: usize) -> Router {
     router.layer(middleware::from_fn(
         move |request: Request, next: Next| async move {
@@ -217,15 +218,39 @@ pub fn breaking(router: Router, path: &'static str, keep: usize) -> Router {
                 return response;
             }
             let (parts, body) = response.into_parts();
-            let cut = body
-                .into_data_stream()
+            let cut = envelopes(body.into_data_stream())
                 .take(keep)
+                .map(Ok)
                 .chain(stream::once(async {
                     Err(axum::Error::new(io::Error::other("cut")))
                 }));
             Response::from_parts(parts, Body::from_stream(cut))
         },
     ))
+}
+
+/// Splits a Connect streaming body into its envelopes, each a flag byte, a big-endian length, and that many bytes.
+fn envelopes(body: BodyDataStream) -> impl Stream<Item = Bytes> {
+    stream::unfold((body, Vec::new()), |(mut body, mut buffer)| async move {
+        loop {
+            let end = buffer
+                .get(1..5)
+                .and_then(|length| <[u8; 4]>::try_from(length).ok())
+                .and_then(|length| usize::try_from(u32::from_be_bytes(length)).ok())
+                .map(|length| 5 + length);
+            if let Some(end) = end
+                && buffer.len() >= end
+            {
+                let rest = buffer.split_off(end);
+                let envelope = Bytes::from(mem::replace(&mut buffer, rest));
+                return Some((envelope, (body, buffer)));
+            }
+            match body.next().await {
+                Some(Ok(chunk)) => buffer.extend_from_slice(&chunk),
+                Some(Err(_)) | None => return None,
+            }
+        }
+    })
 }
 
 /// Wraps `router` so the RPC whose path ends with `path` fails with HTTP 503 before reaching the host.
