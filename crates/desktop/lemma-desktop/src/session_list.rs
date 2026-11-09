@@ -4,8 +4,8 @@ use gpui_kit::component::button::{Button, ButtonVariants};
 use gpui_kit::component::{ActiveTheme, Selectable, StyledExt, v_flex};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{
-    AnyElement, Context, EventEmitter, InteractiveElement, IntoElement, ParentElement, Render,
-    SharedString, StatefulInteractiveElement, Styled, Task, Window, WindowControlArea, div,
+    AnyElement, Context, ElementId, EventEmitter, InteractiveElement, IntoElement, ParentElement,
+    Render, SharedString, StatefulInteractiveElement, Styled, Task, Window, WindowControlArea, div,
 };
 use lemma_client::{SessionPeriod, group_sessions};
 use lemma_proto::lemma::v1::Session;
@@ -113,11 +113,7 @@ impl SessionList {
                 let title = session_title(listed, language);
                 let id = listed.id.clone();
                 rows = rows.child(
-                    Button::new(SharedString::from(format!("session-{id}")))
-                        .ghost()
-                        .w_full()
-                        .justify_start()
-                        .label(title.clone())
+                    sidebar_row(format!("session-{id}"), title.clone())
                         .selected(self.selected.as_deref() == Some(id.as_str()))
                         .on_click(cx.listener(move |list, _, _, cx| {
                             list.open(&id, title.clone(), cx);
@@ -157,12 +153,9 @@ impl Render for SessionList {
                     .pb_2()
                     .gap_2()
                     .child(
-                        sidebar_button(
-                            "new-session",
-                            IconName::SquarePen,
-                            sidebar::new_session(language),
-                        )
-                        .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
+                        sidebar_row("new-session", sidebar::new_session(language))
+                            .icon(IconName::SquarePen)
+                            .on_click(cx.listener(|list, _, _, cx| list.start_new(cx))),
                     )
                     .child(
                         div()
@@ -182,7 +175,8 @@ impl Render for SessionList {
                             }),
                     )
                     .child(
-                        sidebar_button("sign-out", IconName::LogOut, sidebar::sign_out(language))
+                        sidebar_row("sign-out", sidebar::sign_out(language))
+                            .icon(IconName::LogOut)
                             .on_click(cx.listener(|list, _, _, cx| list.sign_out(cx))),
                     ),
             )
@@ -198,12 +192,11 @@ pub(crate) fn session_title(session: &Session, language: Language) -> SharedStri
     }
 }
 
-/// A full-width sidebar action with its icon and label at the start.
-fn sidebar_button(id: &'static str, icon: IconName, label: &'static str) -> Button {
+/// A full-width sidebar row whose icon and label sit at the start.
+fn sidebar_row(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Button {
     Button::new(id)
         .ghost()
         .w_full()
-        .icon(icon)
         .label(label)
         .child(div().flex_1())
 }
