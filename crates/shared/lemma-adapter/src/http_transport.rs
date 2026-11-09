@@ -16,7 +16,7 @@ const GET_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Pluggable HTTP layer for provider calls.
 ///
-/// Hosts inject their own networking stack (reqwest on server/desktop,
+/// Hosts inject their own networking stack (reqwest on the server,
 /// platform networking on mobile); adapters rely exclusively on injected
 /// client implementations. Clones share one underlying client.
 pub trait HttpTransport: Clone + Send + Sync + 'static {

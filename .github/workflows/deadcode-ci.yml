@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - "web/**"
-      - "desktop/**"
       - "packages/**"
       - "scripts/**"
       - "design/**"
@@ -21,7 +20,6 @@ on:
   pull_request:
     paths:
       - "web/**"
-      - "desktop/**"
       - "packages/**"
       - "scripts/**"
       - "design/**"

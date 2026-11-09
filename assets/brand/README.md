@@ -3,7 +3,7 @@
 English | [中文](README.zh.md)
 
 This directory is the single source of truth for the Lemma brand across the entire repository.
-Web, Desktop, and Mobile must derive their brand assets from the masters stored here.
+Web and Mobile must derive their brand assets from the masters stored here.
 
 ## Directory Layout
 
@@ -57,7 +57,7 @@ assets/brand/
 ## Usage Conventions
 
 - Always reference the `svg/` masters for vector contexts; use PNGs only for raster-only pipelines (e.g. `.ico` generation, mipmap intermediates).
-- Platform-local copies (e.g. `web/public/favicon.svg`, `desktop/assets/icon.*`, mipmap PNGs) must be derived from these masters: generate copies exclusively from masters, refreshing them upon any master update.
+- Platform-local copies (e.g. `web/public/favicon.svg`, mipmap PNGs) must be derived from these masters: generate copies exclusively from masters, refreshing them upon any master update.
 - Dark and light variants are swapped in pairs on theme change: deploy paired theme-specific assets directly.
 
 ## Regeneration

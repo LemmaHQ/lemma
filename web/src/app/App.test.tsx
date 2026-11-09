@@ -1,6 +1,5 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import type { DesktopBridge } from "@lemma/desktop-contract";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Window as HappyWindow } from "happy-dom";
@@ -49,14 +48,6 @@ const session = (id: string, title: string) =>
         updatedAt: timestampFromDate(new Date()),
     });
 
-const desktopBridge = () => ({
-    appVersion: "2.1.0",
-    titlebarHeight: 40,
-    setTitleBar: vi.fn<DesktopBridge["setTitleBar"]>(),
-    toggleMaximize: vi.fn<DesktopBridge["toggleMaximize"]>(),
-    connectEngine: vi.fn<DesktopBridge["connectEngine"]>(),
-});
-
 const start = async (path: string) => {
     window.history.replaceState(null, "", path);
     vi.resetModules();
@@ -73,14 +64,6 @@ const signIn = () => {
 };
 
 const pageTitle = () => document.querySelector("main header")?.textContent;
-
-const titleBar = () => {
-    const element = document.querySelector(".app-titlebar");
-    if (element === null) {
-        throw new TypeError("no title bar");
-    }
-    return element;
-};
 
 const sidebar = () => {
     const element = document.querySelector("[data-slot=sidebar]");
@@ -142,7 +125,6 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
-    delete window.lemmaDesktop;
     setViewportWidth(1024);
 });
 
@@ -361,40 +343,5 @@ it("opens the sidebar as a sheet on a narrow window", async () => {
 
     await waitFor(() => {
         expect(screen.queryByRole("dialog")).toBeNull();
-    });
-});
-
-it("paints the desktop title bar for the route and theme", async () => {
-    const user = userEvent.setup();
-    const bridge = desktopBridge();
-    window.lemmaDesktop = bridge;
-    localStorage.setItem("lemma.theme", "dark");
-    await start("/signin");
-
-    await screen.findByRole("heading", { name: "Sign in to Lemma" });
-    await waitFor(() => {
-        expect(bridge.setTitleBar).toHaveBeenLastCalledWith({
-            theme: "dark",
-            surface: "background",
-        });
-    });
-
-    await user.dblClick(titleBar());
-    expect(bridge.toggleMaximize).toHaveBeenCalledOnce();
-});
-
-it("paints the desktop title bar as the sidebar once signed in", async () => {
-    const bridge = desktopBridge();
-    window.lemmaDesktop = bridge;
-    localStorage.setItem("lemma.access_token", "access");
-    signIn();
-    await start("/");
-
-    await sessionRows();
-    await waitFor(() => {
-        expect(bridge.setTitleBar).toHaveBeenLastCalledWith({
-            theme: "light",
-            surface: "sidebar",
-        });
     });
 });

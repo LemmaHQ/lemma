@@ -139,7 +139,7 @@ function Sidebar({
                     data-sidebar="sidebar"
                     data-slot="sidebar"
                     data-mobile="true"
-                    className="top-(--sidebar-inset-top) h-auto w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground"
+                    className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground"
                     style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE }}
                     side="left"
                 >
@@ -169,7 +169,7 @@ function Sidebar({
                 data-slot="sidebar-container"
                 data-side="left"
                 className={cn(
-                    "fixed top-(--sidebar-inset-top) bottom-0 left-0 z-10 hidden w-(--sidebar-width) p-2 [transition:var(--sidebar-show)] group-data-[collapsible=offcanvas]:invisible group-data-[collapsible=offcanvas]:-translate-x-4 group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:[transition:var(--sidebar-hide)] group-data-resizing/sidebar-wrapper:transition-none motion-reduce:transition-none md:flex",
+                    "fixed inset-y-0 left-0 z-10 hidden w-(--sidebar-width) p-2 [transition:var(--sidebar-show)] group-data-[collapsible=offcanvas]:invisible group-data-[collapsible=offcanvas]:-translate-x-4 group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:[transition:var(--sidebar-hide)] group-data-resizing/sidebar-wrapper:transition-none motion-reduce:transition-none md:flex",
                     className,
                 )}
                 {...props}

@@ -19,25 +19,14 @@ function resolveCookieMode(baseUrl: string): boolean {
     }
 }
 
-function ignoreWindowCommand(): void {}
-
 export class BrowserAdapter implements PlatformAdapter {
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch = (input, init) =>
         globalThis.fetch(input, init);
 
-    readonly clientVersion = null;
-
-    readonly window = {
-        setTitleBar: ignoreWindowCommand,
-        toggleMaximize: ignoreWindowCommand,
-    };
-
     readonly auth = {
         cookieMode: false,
     };
-
-    readonly titlebarHeight = 0;
 
     constructor() {
         this.baseUrl = resolveBaseUrl();

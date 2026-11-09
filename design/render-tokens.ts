@@ -1,4 +1,3 @@
-import { THEMES, WINDOW_ROLES } from "./read-tokens.ts";
 import type { Color, Motion, Theme, ThemeName } from "./read-tokens.ts";
 
 const NOTICE =
@@ -35,21 +34,6 @@ export function generateWebCss(
 ${cssBlock(":root", motionVariables)}
 ${cssBlock(":root", themes.light)}
 ${cssBlock(".dark", themes.dark)}`;
-}
-
-export function generateDesktopTs(themes: Record<ThemeName, Theme>): string {
-    const entry = (themeName: ThemeName): string => {
-        const colors = WINDOW_ROLES.map(
-            (role) => `${role}: "${themes[themeName].get(role)}"`,
-        );
-        return `    ${themeName}: { ${colors.join(", ")} },`;
-    };
-    return `// ${NOTICE}
-
-export const themeColors = {
-${THEMES.map(entry).join("\n")}
-} as const;
-`;
 }
 
 function kotlinName(parts: string[]): string {

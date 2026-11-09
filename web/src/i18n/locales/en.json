@@ -196,7 +196,6 @@
         "toggle": "Toggle theme"
     },
     "version": {
-        "client": "Client v{{version}}",
         "server": "Server v{{version}}"
     }
 }

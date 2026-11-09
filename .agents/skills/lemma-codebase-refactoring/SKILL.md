@@ -23,7 +23,7 @@ No tool here finds dead Kotlin code in `mobile/`; search it by hand or leave it 
 npx --no-install jscpd --health --reporters ai --no-tips
 ```
 
-Read only the duplication and complexity sub-scores. The dead-code sub-score is unreliable in Lemma: jscpd infers entry points from `package.json`, so it reports the Electron entries, the scripts run by `node`, and every file they import as unused. knip has the configured entries; use it for that dimension.
+Read only the duplication and complexity sub-scores. The dead-code sub-score is unreliable in Lemma: jscpd infers entry points from `package.json`, so it reports the scripts run by `node` and every file they import as unused. knip has the configured entries; use it for that dimension.
 
 The lowest trustworthy dimension goes first. Otherwise the default order is duplication, then dead code, then complexity: merging clones first moves the call sites dead-code tracing would follow, and removing dead code first keeps the complexity ranking on files worth simplifying.
 
@@ -46,7 +46,7 @@ A finding of one kind met during another pass waits for its own pass, so each ch
 - Behavior stays identical. A pass that would change observable behavior stops and becomes a question for the user.
 - Shared code lands where [lemma-code-style](../lemma-code-style/SKILL.md#source-files) places it, never in a new catch-all `utils` module; every source file stays within 300 lines, and `just source-check` enforces the machine-checkable part.
 - Update every call site, not only the pair a tool reported, and remove the imports and helpers the change orphans.
-- Tests follow [testing.md](../../../docs/testing.md): an extracted function is covered through the callers' existing tests unless its edge cases need their own; web, desktop, and packages still require 100% coverage.
+- Tests follow [testing.md](../../../docs/testing.md): an extracted function is covered through the callers' existing tests unless its edge cases need their own; web and packages still require 100% coverage.
 - Update affected READMEs and doc comments in the same change, and select checks through [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md).
 
 ## Review each pass

@@ -5,7 +5,7 @@ description: Use when adding, reviewing, or removing `useEffect`, `useLayoutEffe
 
 # React effects in Lemma
 
-An effect synchronizes a component with a system outside React: the DOM, a browser API, the desktop bridge, a timer, a subscription, or the server. Derived values, state seeded from data, and responses to user events belong in render, in a component boundary, or in an event handler. This skill holds the decision rules and the audit workflow for `web/src`; it is guidance, not a script.
+An effect synchronizes a component with a system outside React: the DOM, a browser API, a timer, a subscription, or the server. Derived values, state seeded from data, and responses to user events belong in render, in a component boundary, or in an event handler. This skill holds the decision rules and the audit workflow for `web/src`; it is guidance, not a script.
 
 Before adding or keeping an effect, answer all four:
 
@@ -31,7 +31,7 @@ Apply these in order:
 3. **Mount after the data is ready.** When a form or panel cannot initialize without store data, the parent checks `loaded`, renders a `Skeleton` from `@lemma/ui` shaped like the final layout until then, and mounts the child with complete initial values for `useState`. Replacing a half-ready form with a skeleton is an intended behavior change.
 4. **Make reset semantics explicit.** A `key` remounts the child for a new entity only when discarding the old draft is intended. When a draft must survive a refetch, keep it, compute dirty state from the draft and the saved value, and reset only from a user action.
 5. **Run actions from events.** Submits, RPC calls, navigation, toasts, and multi-step async workflows run in event handlers that call the feature's store actions. A store action is a plain async function on the zustand store: it calls no hooks, and code outside React reaches it through `getState()`, as `refreshSessions` does.
-6. **Keep real integration effects.** DOM writes, browser event listeners, observers, timers, subscriptions, and desktop bridge calls may need an effect. Setup and cleanup are symmetric, each effect has one concern, and it lives in the component or hook that owns the integration. A subscription that produces a rendered value uses `useSyncExternalStore`. Never add a wrapper hook only to hide `useEffect`.
+6. **Keep real integration effects.** DOM writes, browser event listeners, observers, timers, and subscriptions may need an effect. Setup and cleanup are symmetric, each effect has one concern, and it lives in the component or hook that owns the integration. A subscription that produces a rendered value uses `useSyncExternalStore`. Never add a wrapper hook only to hide `useEffect`.
 
 `useMemo` and `useCallback` are not defaults. Add one only for a measured performance problem or when referential stability is a correctness requirement: the value is a dependency of a retained effect, or it is a callback ref whose rerun has a side effect. Fix render cost by splitting components or moving state down; hoist a function that closes over nothing to module scope instead of memoizing it.
 
@@ -99,7 +99,7 @@ Adding or changing oxlint rules or checks for effects is separate work, done onl
 ### 5. Verify
 
 - Select checks through [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md); its `web/` row includes `just web-build`, which type-checks with `tsc -b`.
-- Review user-visible flows in a real browser: `just web-dev` proxies RPC to the server that `just rust-dev` runs. Effects that touch the title bar or `platform` also need `just desktop-dev`. Both server and desktop recipes compile the Rust workspace, which needs the user's consent; without it, hand the steps to the user.
+- Review user-visible flows in a real browser: `just web-dev` proxies RPC to the server that `just rust-dev` runs. The server recipe compiles the Rust workspace, which needs the user's consent; without it, hand the steps to the user.
 - Run the inventory again to show the target directory is clean.
 
 Report the exact summary line of each command and every retained effect with its external system.

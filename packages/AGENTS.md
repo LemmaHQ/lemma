@@ -6,9 +6,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions); th
 
 ## Packages
 
-- **Each directory is one npm workspace package named `@lemma/<directory>`**, private, consumed by the web and desktop clients. The applications stay in `web/` and `desktop/`.
+- **Each directory is one npm workspace package named `@lemma/<directory>`**, private, consumed by the web client. The application stays in `web/`.
 - **A package exports its TypeScript source** through `exports` in its `package.json`, with no build step; consumers compile it as part of their own build.
-- **`desktop-contract/` holds the types of the contract between the desktop shell and the web client:** the API the desktop preload exposes as `window.lemmaDesktop`, and the messages on the engine port. `desktop/src/preload.ts` implements the API, `desktop/src/main.ts` answers its IPC calls, `desktop/src/serve-engine-port.ts` serves the engine port, and `web/src/platform/` consumes both; a change to the contract updates every side in the same change.
 - **`ui/` holds the shared shadcn controls, AI Elements chat components (Base UI, Tailwind v4), and their theme.** `src/styles/index.css`, exported as `@lemma/ui/styles.css`, is the package's only CSS entry: `tokens.css` maps the [design tokens](../design/README.md) into Tailwind and holds the tokens only the web uses, `motion.css` holds the shared motion utilities, including the view transition classes, and `components/` holds the styles that target one component's internal parts. The components hold no interface text; the consuming app passes every string as a prop. See the [component catalog](ui/README.md#component-catalog).
 
 ## Commands

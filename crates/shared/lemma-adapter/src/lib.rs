@@ -5,8 +5,8 @@
 //! vendor payloads and vendor streams back into `StreamEvent`s.
 //! [`HttpConnector`] implements `lemma_model::Connector`, binding endpoints
 //! to adapters and listing their models. HTTP goes through the injectable
-//! [`HttpTransport`] so hosts (server, desktop engine, mobile) can supply
-//! their own networking stack.
+//! [`HttpTransport`] so hosts (server, mobile) can supply their own
+//! networking stack.
 
 mod anthropic_messages;
 mod connection;

@@ -1,7 +1,4 @@
-export const THEMES = ["light", "dark"] as const;
-export const WINDOW_ROLES = ["background", "sidebar", "foreground"] as const;
-
-export type ThemeName = (typeof THEMES)[number];
+export type ThemeName = "light" | "dark";
 export type Theme = Map<string, string>;
 
 export interface Color {
@@ -92,11 +89,6 @@ export function checkThemesMatch(light: Theme, dark: Theme): void {
         throw new Error(
             `light and dark must define the same roles; mismatched: ${missing.join(", ")}`,
         );
-    }
-    for (const role of WINDOW_ROLES) {
-        if (!light.has(role)) {
-            throw new Error(`light and dark must define ${role}`);
-        }
     }
 }
 

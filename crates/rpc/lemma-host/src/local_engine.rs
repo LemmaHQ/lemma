@@ -9,7 +9,7 @@ use crate::local_engine_error::LocalEngineError;
 use crate::secrets::Secrets;
 use crate::{database, router};
 
-/// The desktop engine: the Connect services over one SQLite database, with
+/// The local engine: the Connect services over one SQLite database, with
 /// the secrets, the database, and the workspaces under one data directory.
 #[derive(Debug)]
 pub struct LocalEngine {

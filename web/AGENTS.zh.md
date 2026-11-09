@@ -2,7 +2,7 @@
 
 [English](AGENTS.md) | 中文
 
-这些规则是对仓库级[约定](../AGENTS.zh.md#约定)的补充。TypeScript 规则同样适用于 [desktop/](../desktop/AGENTS.zh.md) 与 [packages/](../packages/AGENTS.zh.md)。
+这些规则是对仓库级[约定](../AGENTS.zh.md#约定)的补充。TypeScript 规则同样适用于 [packages/](../packages/AGENTS.zh.md)。
 
 ## TypeScript
 
@@ -14,12 +14,12 @@
 - **未知输入标注为 `unknown`**，再收窄为具体类型。
 - **JSDoc** 是导出公共接口上的紧凑契约，不写 JSDoc 类型注解。传入多个同类型实参的调用可以内联标注参数名：`/* paramName= */`。
 - **所有 TypeScript 项目共用的编译选项放在根目录 `tsconfig.base.json`；** 各项目的 `tsconfig` 继承它，只补充运行环境需要的设置：DOM、JSX、模块解析、`types`、路径别名。`scripts/` 与 `design/` 中的仓库脚本是由 Node 直接运行的 `.ts` 文件，由 `just scripts-type-check` 做类型检查。
-- **lint 工具是 oxlint，开启类型感知规则。** 根目录 `.oxlintrc.json` 存放所有 TypeScript 项目共用的规则，`just scripts-lint-check` 用它检查 `scripts/` 与 `design/`。`web/.oxlintrc.json`、`desktop/.oxlintrc.json` 与每个包的 `.oxlintrc.json` 继承它，再加上各自运行环境的插件。抑制只针对一条规则并写明原因：`// oxlint-disable-next-line <rule> -- <reason>`。
+- **lint 工具是 oxlint，开启类型感知规则。** 根目录 `.oxlintrc.json` 存放所有 TypeScript 项目共用的规则，`just scripts-lint-check` 用它检查 `scripts/` 与 `design/`。`web/.oxlintrc.json` 与每个包的 `.oxlintrc.json` 继承它，再加上各自运行环境的插件。抑制只针对一条规则并写明原因：`// oxlint-disable-next-line <rule> -- <reason>`。
 
 ## 布局
 
 - 依赖只朝一个方向：`src/platform/` → `src/rpc/` → `src/features/` → `src/app/`。`src/i18n/` 存放语言文件与 `error-text.ts`，后者把失败的请求转成本地化文字。
-- `src/platform/` 导出浏览器或桌面引擎的 `platform` 适配器；它之外的代码只通过该适配器使用桌面能力。
+- `src/platform/` 导出 `getPlatform()`，它返回浏览器适配器，提供 `baseUrl`（服务端 base URL）、`fetch` 与 `auth.cookieMode`。
 - `src/rpc/` 存放传输层、ConnectRPC 客户端、已保存的凭据，以及读取失败原因 `ErrorReason` 的 `errors.ts`。
 - `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
 - `src/app/` 在 `router.tsx` 中存放路由表，在 `route-paths.ts` 中存放路径，并为每个布局路由设一个目录：`auth/`、`session/` 与 `settings/`，各自包含只负责编排功能组件的页面。`shell/` 存放 `SignedInLayout` 与 `ShellFrame`：前者守卫登录后的路由并持有侧边栏状态，后者由两个登录后布局填入各自的侧边栏、工具栏操作与标题。功能组件以属性接收路径，不直接引用路由。登录用户一变化，`account-data.ts` 就清空持有账号数据的功能 store；新增这类 store 时也在这里清空。

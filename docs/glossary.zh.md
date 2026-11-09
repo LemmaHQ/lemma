@@ -42,9 +42,8 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 ## 运行时与账号
 
 - **服务端模式（server mode）** — `lemma-server` 可执行文件：由环境变量或 `.env` 配置，监听 1025 端口，不挂工具。
-- **本地模式（local mode）** — 数据留在设备上的运行时：桌面端的本地引擎与 Android 的进程内引擎。
-- **本地引擎（local engine）** — `lemma-desktop` addon 在 Electron 引擎进程中、基于 `userData` 目录打开的引擎；Web 客户端经 `MessagePort` 访问它。
-- **引擎端口（engine port）** — 网页与桌面引擎进程之间的 `MessagePort`。请求、响应数据块与取消都经它传递；它不传递会话消息。
+- **本地模式（local mode）** — Android 的进程内引擎，数据留在设备上。
+- **本地引擎（local engine）** — `lemma-host` 中的 `LocalEngine`：它在一个数据目录上打开，加载或创建 `secrets.json`，打开并迁移 `lemma.db`，并把会话工具限定在 `workspaces/` 中；Android 的进程内引擎会打开一个本地引擎。
 - **进程内引擎（in-process engine）** — `lemma-mobile` 中的 `LemmaEngine`，在 Android 应用内提供 Connect 路由；应用通过 UniFFI 绑定访问它。
 - **访问令牌（access token）** — 用 JWT 密钥签名、有效期 15 分钟的 JWT，`sub` 中携带用户 id。
 - **刷新令牌（refresh token）** — 有效期 30 天的随机令牌；存储中只保留其 SHA-256 哈希，每次刷新都会吊销它并签发新的一对令牌。

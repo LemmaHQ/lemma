@@ -27,7 +27,7 @@ npm ci
 cp .env.example .env
 ```
 
-`npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)). In `.env`, set one database password in both `LEMMA_DB_PASSWORD` and `DATABASE_URL`, and replace both secrets.
+`npm ci` installs the `web` and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)). In `.env`, set one database password in both `LEMMA_DB_PASSWORD` and `DATABASE_URL`, and replace both secrets.
 
 ### Run the server and the web client
 
@@ -46,10 +46,6 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 ### Run the Rust tests on PostgreSQL
 
 `just rust-test` runs the database tests on in-memory SQLite, and CI runs only that. To run them on PostgreSQL as well, start the database with `docker compose up -d`, set `LEMMA_TEST_POSTGRES_URL` in the shell to the `DATABASE_URL` from `.env`, and run `just rust-test`. Each test creates its own database on that server and drops it afterwards, so the data in `lemma-db` stays untouched.
-
-### Run the desktop app
-
-`just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database and secrets in Electron's `userData` directory and needs no `.env`. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
 
 ### Run the Android app
 
@@ -72,8 +68,6 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_SECRET_KEY`                               | `lemma-server`, server mode         | derives the key that seals provider API keys; changing it makes stored keys unreadable                              |
 | `LEMMA_DB`, `LEMMA_DB_USER`, `LEMMA_DB_PASSWORD` | `docker-compose.yml`                | database name, user, and password of the PostgreSQL container; the password is required                             |
 | `LEMMA_TEST_POSTGRES_URL`                        | Rust tests, through `lemma-test-db` | PostgreSQL server the database tests run on in addition to SQLite; its role creates and drops one database per test |
-| `LEMMA_ENGINE_PROFILE`                           | `desktop/`                          | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug`                                     |
-| `LEMMA_DEBUG_PORT`                               | `desktop/`                          | Chromium remote-debugging port                                                                                      |
 | `ANDROID_HOME`                                   | `mobile/shared` Gradle build        | Android SDK location; `local.properties` is the alternative                                                         |
 
 `lemma-server` loads `.env` from its working directory or the nearest parent that has one; variables already set in the environment take precedence.
@@ -82,7 +76,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Every workflow also runs on demand regardless of paths, for example `gh workflow run rust-ci.yml --ref main`. Workflow steps call `just` recipes. Mobile CI, the Android coverage job, and the CodeQL Kotlin scan install their tools through [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml).
 
-Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, the desktop build and tests, and the Android host tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only.
+Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, and the Android tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only.
 
 Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily.
 

@@ -5,7 +5,6 @@
     "type": "module",
     "workspaces": [
         "web",
-        "desktop",
         "packages/*"
     ],
     "author": {
@@ -23,7 +22,6 @@
         "typescript": "^7.0.2"
     },
     "allowScripts": {
-        "electron-winstaller@5.4.4": true,
         "esbuild@0.25.12": true
     }
 }

@@ -3,17 +3,17 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing README.md
 /lemma:
-  en: b1198bca799f1c23
-  zh: 0c137f2b36b63cf6
+  en: bdd46cd24ae6f113
+  zh: 1c16ed5eb4f381f4
 /lemma/features:
-  en: 9c66b3dc8d097225
-  zh: 4bc53f311eef966b
+  en: c11a1fb54df08fe0
+  zh: 6ce78af76afafb8a
 /lemma/quick-start:
-  en: 5c3d8807be9d3f61
-  zh: 961b62c56fe21349
+  en: b19c9e84e6d9b131
+  zh: ec18efb26b57502e
 /lemma/repository:
-  en: 1c4a4ebccc9a7037
-  zh: 650e826dd7b44ebb
+  en: 31803b14b39b51b6
+  zh: 9bc2e9eb8f83a0b9
 /lemma/documentation:
   en: c6a4b8864543e9b5
   zh: 63df27c3d28200b1

@@ -13,7 +13,7 @@ Read the root `AGENTS.md`, [architecture.md](../../../docs/architecture.md) befo
 
 Treat the designs [architecture.md](../../../docs/architecture.md) maps as intentional unless the user overrides them: the runtimes, the storage backends behind shared store traits, the provider adapters, and the wire contract shared by remote clients. Unused members inside an intentional design remain candidates when removing them preserves its purpose.
 
-For a broad request, split independent domains among subagents (agent loop and session tree; providers and adapters; auth and crypto; RPC crates and proto; web client; desktop shell; Android; scripts, CI, and docs), and require consumer evidence and the strongest retention argument from each.
+For a broad request, split independent domains among subagents (agent loop and session tree; providers and adapters; auth and crypto; RPC crates and proto; web client; Android; scripts, CI, and docs), and require consumer evidence and the strongest retention argument from each.
 
 ## Search for removable obligations
 
@@ -41,7 +41,7 @@ For copies and clones, name the value's origin, next owner, and trust boundary; 
 
 ## Replace infrastructure only for a net reduction
 
-Search existing workspace dependencies, the standard library, and Node built-ins before adding a dependency. Identify the code and tests the replacement deletes, its transitive and maintenance cost, and every behavior the glue must preserve: cancellation, bounds, streaming, platform packaging for Android and Electron.
+Search existing workspace dependencies, the standard library, and Node built-ins before adding a dependency. Identify the code and tests the replacement deletes, its transitive and maintenance cost, and every behavior the glue must preserve: cancellation, bounds, streaming, platform packaging for Android.
 
 ## Record and validate
 

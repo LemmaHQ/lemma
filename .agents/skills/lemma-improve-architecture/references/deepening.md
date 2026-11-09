@@ -20,4 +20,4 @@ Classify each candidate's dependencies; the category decides how the deepened mo
 
 - Tests at the deepened module's interface replace the tests on the shallow modules it absorbs; delete the old ones.
 - Tests assert observable outcomes through the interface, not internal state, and survive internal refactors. A test that must change with the implementation is testing past the interface.
-- Coverage gates in testing.md still apply: web, desktop, and packages require 100%.
+- Coverage gates in testing.md still apply: web and packages require 100%.

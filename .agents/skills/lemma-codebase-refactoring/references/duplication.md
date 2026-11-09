@@ -27,7 +27,7 @@ npx --no-install jscpd --reporters ai --no-tips --max-gap-lines 1 --similarity 0
 4. **Triage before touching.** Skip the pair, and record why, when any of these holds:
     - the sides do different things despite the same shape, such as a `match` over different enums;
     - the sameness is intended: proto-to-domain mappings, SeaORM entities and migrations, provider adapters that each speak one vendor dialect, the per-feature store shape in `web/src/features/*/store.ts`, route or RPC registration;
-    - the code is generated: `web/src/gen`, `desktop/src/gen`, proto and UniFFI bindings, `LemmaPalette`;
+    - the code is generated: `web/src/gen`, proto and UniFFI bindings, `LemmaPalette`;
     - the shared abstraction would need a vague name like `processData`;
     - the pair is under about 10 lines.
 5. Design the refactoring from the clone kind (below), apply it to every usage, and remove what it orphans.

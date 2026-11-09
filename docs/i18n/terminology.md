@@ -57,7 +57,6 @@
 | cookie mode | cookie 模式 | | |
 | elevation | 层级 | 海拔、高度 | |
 | endpoint | 端点 | | `Endpoint` |
-| engine port | 引擎端口 | | |
 | error reason | 错误原因 | | `ErrorReason` 的取值 |
 | execution environment | 执行环境 | | `ExecEnv` |
 | hairline | 细线 | 发丝线 | |

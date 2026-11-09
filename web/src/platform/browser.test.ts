@@ -12,8 +12,6 @@ it("talks to its own origin in cookie mode by default", () => {
 
     expect(adapter.baseUrl).toBe("/");
     expect(adapter.auth.cookieMode).toBe(true);
-    expect(adapter.clientVersion).toBeNull();
-    expect(adapter.titlebarHeight).toBe(0);
 });
 
 it("uses bearer tokens for a configured server on another origin", () => {

@@ -21,12 +21,6 @@ dist-ssr
 # Generated code and design tokens
 web/src/gen
 packages/ui/src/styles/tokens.gen.css
-desktop/src/gen/
-
-# Desktop (Electron Forge)
-desktop/out/
-desktop/.vite/
-desktop/web-dist/
 
 # Environment variables and secrets
 .env
@@ -62,8 +56,6 @@ Thumbs.db
 lcov.info
 web/coverage/
 web/junit.xml
-desktop/coverage/
-desktop/junit.xml
 packages/ui/coverage/
 packages/ui/junit.xml
 

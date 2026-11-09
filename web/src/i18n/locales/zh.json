@@ -196,7 +196,6 @@
         "toggle": "切换主题"
     },
     "version": {
-        "client": "客户端 v{{version}}",
         "server": "服务端 v{{version}}"
     }
 }

@@ -14,9 +14,6 @@ flags:
   web:
     paths:
       - "web/"
-  desktop:
-    paths:
-      - "desktop/"
   packages:
     paths:
       - "packages/"

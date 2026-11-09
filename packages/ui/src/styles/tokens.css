@@ -124,7 +124,6 @@
 
 :root {
     --radius: 0.625rem;
-    --sidebar-inset-top: 0px;
     --sidebar-width-default: 272px;
     --sidebar-width-min: 220;
     --sidebar-width-max: 380;
