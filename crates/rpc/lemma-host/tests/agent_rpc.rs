@@ -75,7 +75,7 @@ async fn completions(axum::Json(request): axum::Json<Value>) -> Response {
                 0,
                 "c1",
                 "write_file",
-                &json!({ "path": "notes.txt", "content": "hi" }),
+                &json!({ "content": "hi", "path": "notes.txt" }),
             ),
             tool_call(1, "c2", "read_file", &json!({ "path": "missing.txt" })),
             tool_call(2, "c3", "fly", &json!({})),
