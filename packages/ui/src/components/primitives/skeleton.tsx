@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 
 const skeletonVariants = cva("motion-safe:animate-pulse", {
     variants: {
@@ -9,7 +9,7 @@ const skeletonVariants = cva("motion-safe:animate-pulse", {
         },
         surface: {
             default: "bg-muted",
-            sidebar: "bg-sidebar-selected",
+            sidebar: "bg-selected",
         },
     },
     defaultVariants: {

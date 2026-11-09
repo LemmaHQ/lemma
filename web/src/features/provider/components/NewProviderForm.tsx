@@ -1,6 +1,7 @@
 import {
     Avatar,
     AvatarFallback,
+    BotIcon,
     Field,
     FieldContent,
     FieldDescription,
@@ -81,14 +82,18 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     };
 
     return (
-        <div className="max-w-3xl px-8 py-6">
+        <div className="max-w-3xl px-4 py-6 md:px-6">
             <header className="flex items-center gap-3 border-b pb-4">
                 <Avatar>
                     <AvatarFallback>
-                        {title === "" ? "?" : title.charAt(0).toUpperCase()}
+                        {title === "" ? (
+                            <BotIcon className="size-4" />
+                        ) : (
+                            title.charAt(0).toUpperCase()
+                        )}
                     </AvatarFallback>
                 </Avatar>
-                <h2 className="truncate text-base font-medium">
+                <h2 className="truncate text-title">
                     {title === "" ? t("provider.newProvider") : title}
                 </h2>
             </header>

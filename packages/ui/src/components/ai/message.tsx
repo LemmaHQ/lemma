@@ -1,6 +1,6 @@
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { type ComponentProps, memo, useState } from "react";
 import { Streamdown } from "streamdown";
 
@@ -13,7 +13,7 @@ import { RefreshCwIcon } from "#icons/refresh-cw";
 const PLUGINS = { code, cjk };
 const RESPONSE_ANIMATION = {
     animation: "answerBlurIn",
-    duration: 420,
+    duration: 400,
     easing: "var(--motion-easing-enter)",
 } as const;
 
@@ -26,7 +26,7 @@ export function Message({ className, from, ...props }: MessageProps) {
     return (
         <div
             className={cn(
-                "group/message flex w-full max-w-[95%] flex-col gap-2 data-[from=user]:ml-auto data-[from=user]:justify-end",
+                "group/message flex w-full max-w-full flex-col gap-2 data-[from=user]:ml-auto data-[from=user]:justify-end",
                 from === "assistant" && "animate-card-in",
                 className,
             )}
@@ -40,8 +40,8 @@ export function MessageContent({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm text-foreground",
-                "group-data-[from=user]/message:ml-auto group-data-[from=user]/message:rounded-lg group-data-[from=user]/message:bg-secondary group-data-[from=user]/message:px-4 group-data-[from=user]/message:py-3",
+                "flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-reading text-foreground",
+                "group-data-[from=user]/message:ml-auto group-data-[from=user]/message:max-w-[80%] group-data-[from=user]/message:rounded-lg group-data-[from=user]/message:bg-muted group-data-[from=user]/message:px-4 group-data-[from=user]/message:py-2.5",
                 className,
             )}
             {...props}
@@ -54,7 +54,7 @@ export function MessageActions({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "stagger-children flex items-center gap-1 opacity-60 transition-opacity duration-medium ease-enter group-focus-within/message:opacity-100 group-hover/message:opacity-100 pointer-coarse:opacity-100 motion-reduce:opacity-100 motion-reduce:transition-none",
+                "stagger-children flex items-center gap-1 text-caption text-subtle-foreground opacity-60 transition-opacity duration-medium ease-enter group-focus-within/message:opacity-100 group-hover/message:opacity-100 pointer-coarse:opacity-100 motion-reduce:opacity-100 motion-reduce:transition-none",
                 className,
             )}
             {...props}

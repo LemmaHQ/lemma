@@ -4,9 +4,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements session components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, together with `AnimateIcon`, `cn`, and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
+`@lemma/ui` exports Lemma's shared shadcn/ui controls and AI Elements session components as TypeScript source. The package has two entries: `@lemma/ui` exports every component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set and the brand logos. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
+`src/components/` holds three directories: `primitives/` for the domain-free shadcn controls and layout parts, `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set and the brand logos, among them `LemmaLogo`, Lemma's mark. An icon that the Animate UI set does not provide uses the static icon of the same name from `lucide-react`.
 
 <a id="component-catalog"></a>
 
@@ -28,12 +28,30 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `ai/tool`            | Tool-call groups, status, arguments, and output             |
 | `primitives/reveal`  | Height and opacity transition for content toggled by `open` |
 
-`button`, `separator`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
+`button`, `separator`, `tooltip`, the inline message `alert`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
 Two pairs are easy to confuse:
 
 - **`AlertDialog` against a toast.** `AlertDialog` asks before an action and blocks until the user answers. A toast reports the outcome of an action after it ran and blocks nothing.
 - **`Tooltip` against `title`.** `Tooltip` shows on keyboard focus and follows the theme; the `title` attribute does neither. Icon-only buttons use `Tooltip` plus an `aria-label`.
+
+## Styling
+
+Components and feature code style through the theme's utilities. The color roles and radii come from [design/tokens.json](../../design/README.md); `src/styles/tokens.css` adds the type roles and shadows and maps everything into Tailwind. Lint rejects Tailwind's type sizes, radii from `rounded-xl` up, and arbitrary radii, so every element draws from the scales below.
+
+| Type role      | Size / line height     | Use                                                              |
+| -------------- | ---------------------- | ---------------------------------------------------------------- |
+| `text-caption` | 12 / 16 px             | Timestamps, group labels, code-block labels                      |
+| `text-small`   | 13 / 20 px             | List rows, sidebar items, tool rows, descriptions, alerts        |
+| `text-body`    | 14 / 20 px             | Default interface text, buttons, menu items, inputs from `md` up |
+| `text-reading` | 16 / 26 px             | Message text, the composer, inputs below `md`                    |
+| `text-title`   | 16 / 24 px, weight 600 | Page, section, and dialog titles                                 |
+| `text-display` | 24 / 32 px, weight 600 | Home and sign-in headings                                        |
+
+- **Radius:** `rounded-sm` (6px) for badges, checkboxes, and controls inside inputs; `rounded-md` (8px) for buttons, inputs, list rows, menu items, code blocks, and alerts; `rounded-lg` (12px) for cards, popovers, dialogs, the composer, and the main panel; `rounded-full` for avatars, switches, and pills.
+- **Sizes:** controls are `h-7`, `h-8` (the default), or `h-9`, and `h-6` only inside inputs; one row uses one height. List rows are `h-8` with `text-small`; `Button variant="row"` draws one and marks the current row through `data-active`.
+- **Hover and selection:** `bg-accent` is the hover color of every row, menu item, and ghost or outline button; `bg-selected` marks the current row and a pressed toggle. Text on these tints uses `text-foreground` or `text-muted-foreground`.
+- **Surfaces:** content containers take a border and no shadow. Floating surfaces (menus, select popups, the model picker, toasts) are an opaque `bg-popover` with a border and `shadow-overlay`; dialogs and sheets use `shadow-modal` over `bg-scrim`. `shadow-raised` is reserved for the composer and the floating toolbar. The base layer in `src/styles/index.css` colors text selection and the caret from `primary` and scrollbars from `input`.
 
 ## Motion utilities
 
@@ -74,15 +92,15 @@ View transition classes, which the app passes to a React `<ViewTransition>` as i
 | `ui-from-end`   | Fades the new snapshot in from slightly right                            |
 | `ui-morph`      | Moves and resizes the group to the new box and fades the new snapshot in |
 
-The motion tokens also provide `duration-reveal`, `ease-morph`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
+The motion tokens provide five durations, `duration-fast` (100 ms), `duration-base` (150 ms), `duration-medium` (200 ms), `duration-slow` (300 ms), and `duration-reveal` (400 ms), and four easings, `ease-enter`, `ease-exit`, `ease-move`, and `ease-spring`. Every animation and motion class has a reduced-motion fallback that stops movement and looping while preserving the final state.
 
 ## Conventions
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
-- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases. Public consumers import from `@lemma/ui`.
+- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases. Public consumers import from `@lemma/ui`. Components import `cn` from `#lib/cn`, whose configuration counts the type roles as font sizes, so merging `text-small` with `text-muted-foreground` keeps both.
 - Components hold no text: every visible string and accessible name arrives through a required prop, such as `closeLabel`, `label`, or a typed `labels` object, and text that embeds a value the component computes arrives as a function, such as `thoughtFor(duration)`. Colors come from theme roles, never the Tailwind palette.
 - The `src/components/**` override in [`.oxlintrc.json`](.oxlintrc.json) lets components restyle composed controls, use arbitrary values for geometry, build classes with `cva`, and set ARIA roles directly.
 
 ## Adding a component
 
-Run `npx shadcn add <name>` from `packages/ui/`; the CLI writes into `src/components/primitives/`. Bring the new file under the rules above: import `cn` from `cn`, drop `"use client"`, delete the parts Lemma does not use, turn its strings into props, and replace palette colors with theme roles. Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory and move the generated file into `src/components/icons/`. Color and motion values shared with Android belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`; tokens only the web uses belong in `src/styles/tokens.css`. Then export the module from `src/index.ts` and add it to the catalog above. Existing components change by editing them; the CLI never overwrites them.
+Run `npx shadcn add <name>` from `packages/ui/`; the CLI writes into `src/components/primitives/`. Bring the new file under the rules above: import `cn` from `#lib/cn`, drop `"use client"`, delete the parts Lemma does not use, turn its strings into props, replace palette colors with theme roles, and move its type sizes and radii onto the scales in [Styling](#styling). Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory and move the generated file into `src/components/icons/`. Color, radius, and motion values shared with Android belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`; tokens only the web uses belong in `src/styles/tokens.css`. Then export the module from `src/index.ts` and add it to the catalog above. Existing components change by editing them; the CLI never overwrites them.

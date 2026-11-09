@@ -2,7 +2,7 @@ import * as React from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 
 import { Separator } from "#primitives/separator";
 
@@ -35,13 +35,13 @@ function ItemSeparator({
 }
 
 const itemVariants = cva(
-    "group/item flex w-full flex-wrap items-center rounded-lg border text-sm transition-colors duration-fast outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-muted",
+    "group/item flex w-full flex-wrap items-center rounded-md border text-body transition-colors duration-fast outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent",
     {
         variants: {
             variant: {
                 default: "border-transparent",
                 outline: "border-border",
-                muted: "border-transparent bg-muted/50",
+                muted: "border-transparent bg-muted",
             },
             size: {
                 default: "gap-2.5 px-3 py-2.5",
@@ -98,7 +98,7 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
         <div
             data-slot="item-title"
             className={cn(
-                "flex w-fit items-center gap-2 overflow-hidden text-sm leading-snug font-medium underline-offset-4",
+                "flex w-fit items-center gap-2 overflow-hidden text-body font-medium underline-offset-4",
                 className,
             )}
             {...props}
@@ -111,7 +111,7 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
         <p
             data-slot="item-description"
             className={cn(
-                "line-clamp-2 text-left text-sm leading-normal font-normal text-muted-foreground group-data-[size=xs]/item:text-xs [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
+                "line-clamp-2 text-left text-small font-normal text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
                 className,
             )}
             {...props}

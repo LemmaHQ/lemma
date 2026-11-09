@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { CornerDownLeftIcon, SquareIcon } from "lucide-react";
 import {
     Children,
@@ -28,14 +28,19 @@ export function PromptInput({
 }: PromptInputProps) {
     return (
         <form
-            className={cn("w-full", className)}
+            className={cn(
+                "w-full rounded-lg border border-input bg-background shadow-raised",
+                className,
+            )}
             onSubmit={(event) => {
                 event.preventDefault();
                 onSubmit();
             }}
             {...props}
         >
-            <InputGroup className="overflow-hidden">{children}</InputGroup>
+            <InputGroup className="overflow-hidden rounded-lg border-0 bg-transparent">
+                {children}
+            </InputGroup>
         </form>
     );
 }
@@ -109,7 +114,7 @@ export function PromptInputTextarea({
         <InputGroupTextarea
             ref={setTextareaRef}
             className={cn(
-                "box-border h-(--prompt-input-height,auto) max-h-48 min-h-16 overflow-y-auto transition-[height] duration-slow ease-morph motion-reduce:transition-none",
+                "box-border h-(--prompt-input-height,auto) max-h-48 min-h-16 overflow-y-auto text-reading transition-[height] duration-slow ease-enter motion-reduce:transition-none",
                 className,
             )}
             name="message"
@@ -180,7 +185,7 @@ type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
 export function PromptInputSubmit({
     className,
     variant = "default",
-    size = "icon-sm",
+    size = "icon",
     status = "ready",
     children,
     ...props
@@ -188,7 +193,7 @@ export function PromptInputSubmit({
     return (
         <InputGroupButton
             className={cn(
-                "press-scale active:translate-y-0 [--press-scale:0.94]",
+                "press-scale active:translate-y-0 disabled:bg-muted disabled:text-subtle-foreground disabled:opacity-100 [--press-scale:0.94]",
                 className,
             )}
             size={size}

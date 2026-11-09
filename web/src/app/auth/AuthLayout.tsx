@@ -1,4 +1,10 @@
-import { AnimateIcon, Button, GithubIcon, Separator } from "@lemma/ui";
+import {
+    AnimateIcon,
+    Button,
+    GithubIcon,
+    LemmaLogo,
+    Separator,
+} from "@lemma/ui";
 import { Navigate, Outlet } from "react-router";
 
 import { useAuth } from "@/features/auth";
@@ -19,8 +25,9 @@ export function AuthLayout() {
 
     return (
         <div className="flex min-h-dvh flex-col bg-background">
-            <header className="px-6 py-4">
-                <span className="font-serif text-xl font-semibold">Lemma</span>
+            <header className="flex items-center gap-2 px-6 py-4">
+                <LemmaLogo className="size-5" />
+                <span className="text-body font-semibold">Lemma</span>
             </header>
             <main className="flex flex-1 items-center justify-center px-4 py-8">
                 <div className="w-full max-w-sm animate-in duration-slow ease-enter fade-in-0 slide-in-from-bottom-2">
@@ -29,12 +36,12 @@ export function AuthLayout() {
             </main>
             <footer className="flex items-center justify-between gap-4 px-4 pb-4">
                 <div className="flex items-center gap-1">
-                    <LanguageToggle />
+                    <ThemeToggle />
                     <Separator
                         orientation="vertical"
                         className="h-4 data-vertical:self-center"
                     />
-                    <ThemeToggle />
+                    <LanguageToggle />
                 </div>
                 <div className="flex items-center gap-2">
                     <VersionTags />

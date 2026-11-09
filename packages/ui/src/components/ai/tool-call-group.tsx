@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import {
     Children,
     type ReactNode,
@@ -69,7 +69,7 @@ export function ToolCallGroup({
             </span>
             <button
                 type="button"
-                className="flex min-h-9 max-w-full cursor-pointer items-center justify-self-start gap-2 rounded-lg px-2 py-1 text-sm text-muted-foreground transition-colors duration-base hover:bg-muted/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                className="flex h-8 max-w-full cursor-pointer items-center justify-self-start gap-2 rounded-md px-2 text-small text-muted-foreground transition-colors duration-base hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 aria-expanded={open}
                 aria-controls={`${id}-list`}
                 onClick={() => setOpen(!open)}

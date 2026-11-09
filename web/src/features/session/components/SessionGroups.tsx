@@ -170,7 +170,7 @@ export function SessionGroups({
                 className="flex flex-col p-2 pt-10"
             >
                 {SKELETON_ROW_WIDTHS.map((width) => (
-                    <div key={width} className="flex h-7.5 items-center px-1.5">
+                    <div key={width} className="flex h-8 items-center px-2">
                         <div className={width}>
                             <Skeleton surface="sidebar" className="h-3.5" />
                         </div>

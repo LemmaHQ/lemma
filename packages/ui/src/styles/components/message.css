@@ -1,3 +1,95 @@
+.streaming-caret {
+    font-size: var(--text-reading);
+    line-height: var(--text-reading--line-height);
+
+    & [data-streamdown="heading-1"] {
+        font-size: var(--text-display);
+        font-weight: 600;
+        line-height: var(--text-display--line-height);
+    }
+
+    & [data-streamdown="heading-2"] {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.75rem;
+    }
+
+    & [data-streamdown="heading-3"] {
+        font-size: var(--text-title);
+        font-weight: 600;
+        line-height: var(--text-title--line-height);
+    }
+
+    & [data-streamdown="inline-code"] {
+        border-radius: var(--radius-sm);
+        background: var(--muted);
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+    }
+
+    & [data-streamdown="code-block"] {
+        gap: 0;
+        border-color: var(--border);
+        border-radius: var(--radius-md);
+        background: var(--muted);
+        padding: 0;
+    }
+
+    & [data-streamdown="code-block-header"] {
+        padding-inline: 0.75rem;
+        color: var(--subtle-foreground);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    & [data-streamdown="code-block-body"] {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        padding: 0 0.75rem 0.75rem;
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+    }
+
+    &
+        [data-streamdown="code-block"]
+        > div:has(> [data-streamdown="code-block-actions"]) {
+        top: 0;
+        right: 0.25rem;
+        height: 2rem;
+    }
+
+    & [data-streamdown="code-block-actions"] {
+        border-color: transparent;
+        background: var(--muted);
+        padding-block: 0;
+        backdrop-filter: none;
+    }
+
+    & [data-streamdown="table-wrapper"] {
+        border: 0;
+        background: transparent;
+        padding: 0;
+    }
+
+    & [data-streamdown="table-wrapper"] > div:has(> table) {
+        border-radius: var(--radius-md);
+    }
+
+    & [data-streamdown="table"] {
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+    }
+
+    & [data-streamdown="table-header"] {
+        background: var(--muted);
+    }
+
+    & [data-streamdown="link"] {
+        color: var(--primary);
+    }
+}
+
 .streaming-caret[style*="--streamdown-caret"]
     > *:last-child:not([data-sd-caret-hidden])::after {
     display: inline-block;

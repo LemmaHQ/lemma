@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import type { ComponentProps } from "react";
 
 import { Button } from "#primitives/button";
@@ -19,9 +19,12 @@ export function Suggestion({
 }: SuggestionProps) {
     return (
         <Button
-            className={cn("cursor-pointer rounded-full px-4", className)}
+            className={cn(
+                "h-8 cursor-pointer rounded-full px-3 text-small",
+                className,
+            )}
             onClick={() => onClick(suggestion)}
-            size="sm"
+            size="default"
             type="button"
             variant="outline"
             {...props}

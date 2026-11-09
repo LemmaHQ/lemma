@@ -125,7 +125,7 @@ export function SignInForm({
                                 <InputGroupAddon>
                                     <UserIcon />
                                 </InputGroupAddon>
-                                <span className="min-w-0 flex-1 truncate pl-1.5 text-base font-medium md:text-sm">
+                                <span className="min-w-0 flex-1 truncate pl-1.5 text-reading font-medium md:text-body">
                                     {identifier.trim()}
                                 </span>
                                 <InputGroupAddon align="inline-end">

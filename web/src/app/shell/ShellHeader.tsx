@@ -19,7 +19,7 @@ export function ShellHeader({
             data-revealed={revealed ? "" : undefined}
             data-titled={title === undefined ? undefined : ""}
             className={cn(
-                "group/shell-header relative flex h-12 shrink-0 items-center gap-2 px-3 transition-all duration-sidebar ease-enter data-titled:border-b motion-reduce:transition-none",
+                "group/shell-header relative flex h-12 shrink-0 items-center gap-2 px-3 transition-all duration-reveal ease-enter data-titled:border-b motion-reduce:transition-none",
                 toolbarActions === undefined
                     ? "data-revealed:pl-12"
                     : "data-revealed:pl-20",
@@ -29,7 +29,7 @@ export function ShellHeader({
                 <ShellToolbar actions={toolbarActions} />
             </div>
             <ViewTransition name="shell-title" share="ui-fade" default="none">
-                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                <div className="min-w-0 flex-1 truncate text-title text-foreground">
                     {title}
                 </div>
             </ViewTransition>

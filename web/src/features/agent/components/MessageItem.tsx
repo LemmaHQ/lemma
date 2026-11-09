@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 
 import {
+    Alert,
+    AlertDescription,
+    AlertTitle,
     Message,
     MessageActions,
     MessageContent,
@@ -60,18 +63,18 @@ export function MessageItem({
                     <ToolCallList calls={message.toolCalls} />
                 )}
                 {message.status === "error" && (
-                    <p className="text-destructive">
-                        {t("errors.agentFailed")}
+                    <Alert variant="destructive">
+                        <AlertTitle>{t("errors.agentFailed")}</AlertTitle>
                         {message.error !== undefined &&
                             message.error !== "" && (
-                                <span className="block text-xs text-muted-foreground">
+                                <AlertDescription>
                                     {message.error}
-                                </span>
+                                </AlertDescription>
                             )}
-                    </p>
+                    </Alert>
                 )}
                 {message.status === "aborted" && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-caption text-subtle-foreground">
                         {t("agent.abortedNotice")}
                     </p>
                 )}
@@ -90,7 +93,7 @@ export function MessageItem({
                         />
                     )}
                     {source !== undefined && source !== "" && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-caption text-subtle-foreground">
                             {source}
                         </span>
                     )}

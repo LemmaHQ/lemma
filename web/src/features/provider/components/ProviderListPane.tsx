@@ -52,14 +52,18 @@ function ProviderGroup({
         <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger
                 render={
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        className="w-full justify-start"
+                    <button
+                        type="button"
+                        aria-label={label}
+                        className="flex h-7 w-full items-center gap-1 rounded-md px-2 text-left text-caption text-subtle-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
                     />
                 }
             >
-                {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                {open ? (
+                    <ChevronDownIcon className="size-3.5" />
+                ) : (
+                    <ChevronRightIcon className="size-3.5" />
+                )}
                 {label}
                 <span className="ml-auto">{providers.length}</span>
             </CollapsibleTrigger>
@@ -67,10 +71,10 @@ function ProviderGroup({
                 {providers.map((provider) => (
                     <Button
                         key={provider.id}
-                        variant={
-                            provider.id === selectedId ? "secondary" : "ghost"
+                        variant="row"
+                        data-active={
+                            provider.id === selectedId ? "" : undefined
                         }
-                        className="w-full justify-start"
                         onClick={() => onSelect(provider.id)}
                         aria-pressed={provider.id === selectedId}
                     >
@@ -114,7 +118,7 @@ export function ProviderListPane({
     const disabledProviders = filtered.filter((p) => !p.enabled);
 
     return (
-        <section className="flex w-65 shrink-0 flex-col border-r">
+        <section className="flex w-64 shrink-0 flex-col border-r">
             <div className="flex items-center gap-2 p-3">
                 <InputGroup className="flex-1">
                     <InputGroupAddon>
@@ -169,7 +173,7 @@ export function ProviderListPane({
                         {SKELETON_ROW_WIDTHS.map((width) => (
                             <div
                                 key={width}
-                                className="flex h-8 items-center gap-1.5 px-2.5"
+                                className="flex h-8 items-center gap-1.5 px-2"
                             >
                                 <Skeleton shape="circle" className="size-6" />
                                 <div className={width}>

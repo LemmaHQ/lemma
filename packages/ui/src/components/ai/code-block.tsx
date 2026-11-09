@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import {
     type CSSProperties,
     type ComponentProps,
@@ -14,6 +14,7 @@ import {
 } from "shiki";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
+import { Button } from "#primitives/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 import { useCopyText } from "#hooks/use-copy-text";
 import { CheckIcon } from "#icons/check";
@@ -66,13 +67,13 @@ export function CodeBlock({
     return (
         <div
             className={cn(
-                "relative w-full overflow-hidden rounded-md border bg-background text-foreground",
+                "relative w-full overflow-hidden rounded-md border bg-muted text-foreground",
                 className,
             )}
             {...props}
         >
             <div
-                className="overflow-auto [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:bg-background! [&>pre]:p-4 [&>pre]:text-sm [&>pre]:text-foreground!"
+                className="overflow-auto [&_code]:font-mono [&_code]:text-small [&>pre]:m-0 [&>pre]:bg-muted! [&>pre]:p-4 [&>pre]:text-small [&>pre]:text-foreground!"
                 dangerouslySetInnerHTML={{ __html: html }}
             />
         </div>
@@ -126,7 +127,7 @@ export function CodeBlockSection({
     return (
         <div className="grid min-w-0 gap-1.5">
             <div className="flex min-h-6 items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-caption font-medium text-subtle-foreground">
                     {label}
                 </span>
                 <CopyButton
@@ -138,22 +139,24 @@ export function CodeBlockSection({
             <div
                 id={id}
                 ref={measureCode}
-                className="relative max-h-(--tool-call-code-height) overflow-hidden rounded-md transition-[max-height] duration-reveal ease-enter after:pointer-events-none after:absolute after:inset-x-px after:bottom-px after:h-14 after:rounded-b-sm after:bg-linear-to-b after:from-transparent after:to-background after:opacity-0 after:transition-opacity after:duration-medium after:ease-enter after:content-[''] data-[capped=true]:after:opacity-100 motion-reduce:transition-none motion-reduce:after:transition-none"
+                className="relative max-h-(--tool-call-code-height) overflow-hidden rounded-md transition-[max-height] duration-reveal ease-enter after:pointer-events-none after:absolute after:inset-x-px after:bottom-px after:h-14 after:rounded-b-md after:bg-linear-to-b after:from-transparent after:to-muted after:opacity-0 after:transition-opacity after:duration-medium after:ease-enter after:content-[''] data-[capped=true]:after:opacity-100 motion-reduce:transition-none motion-reduce:after:transition-none"
                 data-capped={capped && !full}
                 style={style}
             >
                 <CodeBlock code={text} language="json" />
             </div>
             {capped && (
-                <button
+                <Button
                     type="button"
-                    className="cursor-pointer justify-self-start rounded-sm text-xs font-medium text-muted-foreground transition-colors duration-base hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className="justify-self-start"
+                    size="xs"
+                    variant="ghost"
                     aria-controls={id}
                     aria-expanded={full}
                     onClick={() => setFull(!full)}
                 >
                     {full ? labels.showLess : labels.showAll}
-                </button>
+                </Button>
             )}
         </div>
     );
@@ -175,23 +178,26 @@ function CopyButton({
         <Tooltip>
             <TooltipTrigger
                 render={
-                    <button
+                    <Button
                         type="button"
-                        className="relative grid size-6 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-base hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                        size="xs"
+                        variant="ghost"
                         aria-label={tooltip}
                         onClick={() => copy(text)}
-                    />
+                    >
+                        <span className="grid size-3.5" aria-hidden="true">
+                            <CopyIcon
+                                className="swap-layer [grid-area:1/1]"
+                                data-on={!copied}
+                            />
+                            <CheckIcon
+                                className="swap-layer [grid-area:1/1]"
+                                data-on={copied}
+                            />
+                        </span>
+                    </Button>
                 }
-            >
-                <CopyIcon
-                    className="swap-layer absolute size-3.5"
-                    data-on={!copied}
-                />
-                <CheckIcon
-                    className="swap-layer absolute size-3.5"
-                    data-on={copied}
-                />
-            </TooltipTrigger>
+            />
             <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
     );

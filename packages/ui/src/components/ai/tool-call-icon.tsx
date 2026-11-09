@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { WrenchIcon } from "lucide-react";
 
 import { CircleAlertIcon } from "#icons/circle-alert";
@@ -14,7 +14,7 @@ export function ToolIcon({
         <span
             className={cn(
                 "grid flex-none place-items-center rounded-lg border bg-muted text-foreground [&_svg]:size-3.5",
-                small ? "size-6 [&_svg]:size-3" : "size-6.5",
+                small ? "size-6" : "size-7",
                 className,
             )}
             aria-hidden="true"

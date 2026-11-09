@@ -33,15 +33,13 @@ export function AccountMenu({ settingsPath }: { settingsPath: string }) {
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
-                    <DropdownMenuTrigger
-                        render={<SidebarMenuButton size="lg" />}
-                    >
+                    <DropdownMenuTrigger render={<SidebarMenuButton />}>
                         <Avatar size="sm">
                             <AvatarFallback>
                                 {username.charAt(0)}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="min-w-0 flex-1 truncate">
+                        <span className="min-w-0 flex-1 truncate text-small">
                             {username}
                         </span>
                         <ChevronDownIcon />

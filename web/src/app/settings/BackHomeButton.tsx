@@ -20,7 +20,6 @@ export function BackHomeButton() {
             <SidebarMenuItem>
                 <AnimateIcon animateOnHover asChild>
                     <SidebarMenuButton
-                        variant="strong"
                         render={<NavLink to={paths.home} end />}
                         onClick={() => setOpenMobile(false)}
                     >

@@ -81,16 +81,14 @@ export function ProviderDetail({
     };
 
     return (
-        <div className="max-w-3xl px-8 py-6">
+        <div className="max-w-3xl px-4 py-6 md:px-6">
             <header className="flex items-center gap-3 border-b pb-4">
                 <Avatar>
                     <AvatarFallback>
                         {provider.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
-                <h2 className="truncate text-base font-medium">
-                    {provider.name}
-                </h2>
+                <h2 className="truncate text-title">{provider.name}</h2>
                 <div className="ml-auto flex items-center gap-1">
                     <ProviderSettingsDialog
                         provider={provider}

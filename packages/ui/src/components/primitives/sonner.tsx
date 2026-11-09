@@ -22,11 +22,11 @@ function Toaster(props: ToasterProps) {
                 "--normal-bg": "var(--popover)",
                 "--normal-text": "var(--popover-foreground)",
                 "--normal-border": "var(--border)",
-                "--border-radius": "var(--radius)",
+                "--border-radius": "var(--radius-lg)",
             }}
             toastOptions={{
                 classNames: {
-                    toast: "inset-x-0! mx-auto! w-fit! max-w-full! justify-center py-2.5! text-center font-sans text-base!",
+                    toast: "inset-x-0! mx-auto! w-fit! max-w-full! justify-center rounded-lg! border! bg-popover! p-1! text-center font-sans text-body! text-popover-foreground! shadow-overlay!",
                     content: "flex-none!",
                 },
             }}

@@ -171,11 +171,12 @@
 }
 
 @utility animate-spin-once {
-    animation: ui-spin 640ms var(--motion-easing-morph);
+    animation: ui-spin 640ms var(--motion-easing-enter);
 }
 
 @utility animate-card-in {
-    animation: ui-card-in 460ms var(--motion-easing-enter) both;
+    animation: ui-card-in var(--motion-duration-reveal)
+        var(--motion-easing-enter) both;
 }
 
 @utility animate-ray {
@@ -191,8 +192,8 @@
 }
 
 @utility animate-morph-in {
-    animation: ui-morph-in var(--motion-duration-model)
-        var(--motion-easing-model) both;
+    animation: ui-morph-in var(--motion-duration-reveal)
+        var(--motion-easing-enter) both;
 }
 
 @utility text-sweep {
@@ -284,7 +285,7 @@
 
 .press-scale {
     transition:
-        transform var(--motion-duration-press) var(--motion-easing-enter),
+        transform var(--motion-duration-base) var(--motion-easing-enter),
         background-color var(--motion-duration-base) var(--motion-easing-move),
         color var(--motion-duration-base) var(--motion-easing-move),
         opacity var(--motion-duration-base) ease-out;
@@ -321,7 +322,8 @@
 }
 
 .stagger-children > * {
-    animation: ui-lift-in 320ms var(--motion-easing-enter) both;
+    animation: ui-lift-in var(--motion-duration-slow) var(--motion-easing-enter)
+        both;
 
     &:nth-child(2) {
         animation-delay: 40ms;

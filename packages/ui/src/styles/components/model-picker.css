@@ -1,7 +1,7 @@
 .menu-morph {
-    clip-path: inset(0 0 0 0 round var(--radius-xl));
+    clip-path: inset(0 0 0 0 round var(--radius-lg));
     transition: clip-path var(--motion-duration-reveal)
-        var(--motion-easing-morph);
+        var(--motion-easing-enter);
 
     &[data-starting-style],
     &[data-closed] {
@@ -26,14 +26,14 @@
     }
 
     & [data-part="group"] {
-        transition: opacity var(--motion-duration-option-fade) ease-out 110ms;
+        transition: opacity var(--motion-duration-medium) ease-out 110ms;
     }
 
     & [data-part="option"] {
         transition:
-            opacity var(--motion-duration-option-fade) ease-out 110ms,
-            transform var(--motion-duration-option-slide)
-                var(--motion-easing-enter) 60ms;
+            opacity var(--motion-duration-medium) ease-out 110ms,
+            transform var(--motion-duration-reveal) var(--motion-easing-enter)
+                60ms;
     }
 
     &[data-starting-style] [data-part="group"],
@@ -55,7 +55,8 @@
 
     &[data-closed] [data-part="group"],
     &[data-closed] [data-part="option"] {
-        transition: opacity 120ms ease-in;
+        transition: opacity var(--motion-duration-fast)
+            var(--motion-easing-exit);
     }
 
     & [data-part="fill"] {
@@ -63,9 +64,9 @@
         opacity: 0;
         transform: translate3d(0, var(--pill-y, 0px), 0);
         transition:
-            transform var(--motion-duration-glide) var(--motion-easing-glide),
-            height var(--motion-duration-glide) var(--motion-easing-glide),
-            opacity var(--motion-duration-press) ease-out;
+            transform var(--motion-duration-medium) var(--motion-easing-enter),
+            height var(--motion-duration-medium) var(--motion-easing-enter),
+            opacity var(--motion-duration-base) ease-out;
     }
 
     & [data-part="fill"][data-visible="true"] {
@@ -73,7 +74,7 @@
     }
 
     & [data-part="fill"][data-glide="false"] {
-        transition: opacity var(--motion-duration-press) ease-out;
+        transition: opacity var(--motion-duration-base) ease-out;
     }
 
     &[data-closed] [data-part="fill"] {
@@ -84,8 +85,8 @@
         opacity: 0;
         transform: scale(0.6);
         transition:
-            opacity var(--motion-duration-press) ease-out,
-            transform var(--motion-duration-check) var(--motion-easing-spring);
+            opacity var(--motion-duration-base) ease-out,
+            transform var(--motion-duration-slow) var(--motion-easing-spring);
     }
 
     & [data-checked] [data-part="check"] {

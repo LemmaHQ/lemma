@@ -118,8 +118,10 @@ export function ModelPicker({
                 render={
                     <PromptInputButton
                         aria-label={label}
-                        className="group/model-trigger max-w-48 gap-1 overflow-clip"
+                        className="group/model-trigger max-w-48 gap-1 overflow-clip text-small"
                         disabled={options.length === 0}
+                        size="sm"
+                        variant="ghost"
                     />
                 }
             >
@@ -131,7 +133,7 @@ export function ModelPicker({
                         {selection?.model ?? placeholder}
                     </span>
                 </span>
-                <ChevronDownIcon className="size-3.5 flex-none transition-transform duration-option-fade ease-enter group-aria-expanded/model-trigger:rotate-180 motion-reduce:transition-none" />
+                <ChevronDownIcon className="size-3.5 flex-none transition-transform duration-medium ease-enter group-aria-expanded/model-trigger:rotate-180 motion-reduce:transition-none" />
             </Menu.Trigger>
             <Menu.Portal keepMounted>
                 <Menu.Positioner
@@ -144,11 +146,11 @@ export function ModelPicker({
                     <Menu.Popup
                         ref={popupRef}
                         aria-label={label}
-                        className="menu-morph relative max-h-[min(20rem,var(--available-height))] w-64 max-w-(--available-width) overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-modal outline-none [scrollbar-color:var(--border)_transparent] scrollbar-thin"
+                        className="menu-morph relative max-h-[min(20rem,var(--available-height))] w-64 max-w-(--available-width) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-overlay outline-none [scrollbar-color:var(--border)_transparent] scrollbar-thin"
                     >
                         <span
                             aria-hidden="true"
-                            className="pointer-events-none absolute top-0 rounded-md bg-muted inset-x-1"
+                            className="pointer-events-none absolute inset-x-1 top-0 rounded-md bg-accent"
                             data-part="fill"
                             data-glide={pill.glide}
                             data-visible={pill.visible}
@@ -163,7 +165,7 @@ export function ModelPicker({
                                     key={providerName}
                                     data-part="group"
                                 >
-                                    <Menu.GroupLabel className="px-2.5 pt-2 pb-1 text-xs font-medium text-muted-foreground">
+                                    <Menu.GroupLabel className="px-2 pt-2 pb-1 text-caption font-medium text-subtle-foreground">
                                         {providerName}
                                     </Menu.GroupLabel>
                                     {models.map((option) => (
@@ -177,7 +179,7 @@ export function ModelPicker({
                                                     model: option.model,
                                                 });
                                             }}
-                                            className="relative flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 py-2 text-sm outline-none select-none"
+                                            className="relative flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-body outline-none select-none"
                                             data-part="option"
                                             label={option.model}
                                             value={modelKey(option)}

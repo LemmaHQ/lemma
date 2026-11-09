@@ -85,7 +85,7 @@ export function MessageComposer({
                     />
                 </PromptInputFooter>
             </PromptInput>
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-caption text-muted-foreground">
                 {model === null ? (
                     <>
                         {t("session.noModelHint")}{" "}

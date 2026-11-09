@@ -25,9 +25,9 @@ const THEME_ICONS = {
 } satisfies Record<ThemePreference, unknown>;
 
 const THEME_PREFERENCES: readonly ThemePreference[] = [
-    "system",
     "light",
     "dark",
+    "system",
 ];
 
 /** Icon button opening the theme menu; the icon shows the chosen theme. */

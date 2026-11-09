@@ -37,7 +37,6 @@ it("titles the page by name, then by ID, then as a new provider", async () => {
     renderForm();
 
     expect(heading()).toBe("New provider");
-    expect(screen.getByText("?")).toBeDefined();
     await fill(user, { "Provider ID": "corp" });
     expect(heading()).toBe("corp");
     await fill(user, { "Provider name": "Corp AI" });

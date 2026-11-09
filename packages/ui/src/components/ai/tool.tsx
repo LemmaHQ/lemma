@@ -1,8 +1,9 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { useId, useState } from "react";
 
 import { CodeBlockSection } from "#ai/code-block";
 import { ToolCallStatusIcon, ToolIcon } from "#ai/tool-call-icon";
+import { Alert, AlertDescription } from "#primitives/alert";
 import { useStopwatch } from "#hooks/use-stopwatch";
 import { ChevronDownIcon } from "#icons/chevron-down";
 import { CircleAlertIcon } from "#icons/circle-alert";
@@ -83,7 +84,7 @@ export function ToolCallCard({
 
     return (
         <div
-            className="group/tool min-w-0 rounded-xl border bg-card text-sm text-muted-foreground"
+            className="group/tool min-w-0 rounded-lg border bg-card text-small text-muted-foreground"
             data-open={open}
             data-status={status}
         >
@@ -92,21 +93,21 @@ export function ToolCallCard({
             </span>
             <button
                 type="button"
-                className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl p-2 text-left transition-colors duration-base hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left transition-colors duration-base hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                 aria-expanded={open}
                 aria-controls={`${id}-body`}
                 onClick={toggleOpen}
             >
                 <ToolIcon />
                 <span className="flex min-w-0 flex-1 items-baseline gap-2">
-                    <code className="max-w-[55%] truncate font-mono text-xs font-medium text-foreground">
+                    <code className="max-w-[55%] truncate font-mono text-caption font-medium text-foreground">
                         {name}
                     </code>
                 </span>
                 <span
                     key={status}
                     className={cn(
-                        "flex flex-none animate-blur-in items-center gap-1.5 text-xs tabular-nums",
+                        "flex flex-none animate-blur-in items-center gap-1.5 text-caption tabular-nums",
                         status === "error" && "text-destructive",
                     )}
                 >
@@ -124,12 +125,10 @@ export function ToolCallCard({
                 <div>
                     <div className="grid gap-3 border-t p-3">
                         {status === "error" && (
-                            <div className="flex items-start gap-2 rounded-lg border border-destructive-border bg-destructive-subtle p-2.5 text-destructive">
-                                <CircleAlertIcon className="mt-0.5 size-3.5 flex-none" />
-                                <p className="min-w-0 flex-1 text-xs wrap-break-word">
-                                    {error}
-                                </p>
-                            </div>
+                            <Alert variant="destructive">
+                                <CircleAlertIcon />
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
                         )}
                         {args !== undefined && (
                             <CodeBlockSection
@@ -145,10 +144,10 @@ export function ToolCallCard({
                         {result === undefined ? (
                             status === "running" ? (
                                 <div className="grid gap-1.5">
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="text-caption font-medium text-subtle-foreground">
                                         {labels.output}
                                     </span>
-                                    <p className="m-0 text-xs text-muted-foreground">
+                                    <p className="m-0 text-caption text-subtle-foreground">
                                         {labels.waiting}
                                     </p>
                                 </div>

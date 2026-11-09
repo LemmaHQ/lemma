@@ -14,7 +14,9 @@ import {
     DialogTrigger,
 } from "./dialog";
 
-const dialog = (props: { closeLabel?: string } = {}) => (
+const dialog = (
+    props: { closeLabel?: string; size?: "default" | "lg" } = {},
+) => (
     <Dialog>
         <DialogTrigger render={<Button />}>Rename</DialogTrigger>
         <DialogContent {...props}>
@@ -52,6 +54,15 @@ it("opens a titled, described dialog that its footer button closes", async () =>
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await closed();
+});
+
+it("exposes the large width variant", async () => {
+    const user = userEvent.setup();
+    render(dialog({ size: "lg" }));
+
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+
+    expect((await screen.findByRole("dialog")).dataset.size).toBe("lg");
 });
 
 it("closes from its labeled close button", async () => {

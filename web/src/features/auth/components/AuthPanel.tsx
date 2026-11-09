@@ -21,13 +21,13 @@ export function AuthPanel({
         <ViewTransition name="auth-panel" share="ui-morph" default="none">
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-1.5 text-center">
-                    <h1 className="text-xl font-semibold">{title}</h1>
-                    <p className="text-sm text-muted-foreground">
+                    <h1 className="text-display">{title}</h1>
+                    <p className="text-body text-muted-foreground">
                         {description}
                     </p>
                 </div>
                 {children}
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-body text-muted-foreground">
                     {switchPrompt}{" "}
                     <Link
                         to={switchTo}

@@ -1,3 +1,4 @@
+import { LemmaLogo } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 export function SplashScreen() {
@@ -7,9 +8,10 @@ export function SplashScreen() {
             aria-label={t("common.loading")}
             className="grid min-h-dvh place-items-center"
         >
-            <span className="font-serif text-xl font-semibold text-muted-foreground motion-safe:animate-pulse">
-                Lemma
-            </span>
+            <div className="flex items-center gap-3 motion-safe:animate-pulse">
+                <LemmaLogo className="size-10" />
+                <span className="text-body font-semibold">Lemma</span>
+            </div>
         </output>
     );
 }

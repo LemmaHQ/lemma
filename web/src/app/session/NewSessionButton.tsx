@@ -1,8 +1,8 @@
 import {
     AnimateIcon,
+    Button,
     MessageCirclePlusIcon,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
 } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
@@ -18,15 +18,15 @@ export function NewSessionButton() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <AnimateIcon animateOnHover asChild>
-                    <SidebarMenuButton
+                    <Button
+                        type="button"
                         variant="outline"
-                        size="lg"
-                        className="justify-center"
+                        className="w-full justify-start"
                         onClick={start}
                     >
                         <MessageCirclePlusIcon />
                         <span>{t("sidebar.startSession")}</span>
-                    </SidebarMenuButton>
+                    </Button>
                 </AnimateIcon>
             </SidebarMenuItem>
         </SidebarMenu>

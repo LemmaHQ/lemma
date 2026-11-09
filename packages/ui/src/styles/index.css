@@ -18,10 +18,18 @@
     * {
         @apply border-border outline-ring/50;
     }
+    ::selection {
+        background-color: color-mix(in oklab, var(--primary) 25%, transparent);
+    }
+    input::-ms-reveal {
+        display: none;
+    }
     body {
         @apply bg-background text-foreground;
     }
     html {
         @apply font-sans;
+        caret-color: var(--primary);
+        scrollbar-color: var(--input) transparent;
     }
 }

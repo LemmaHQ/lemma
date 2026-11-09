@@ -1,5 +1,5 @@
 // Adapted from the github-icon of itshover (https://itshover.com), Apache License 2.0.
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { motion, type Variants } from "motion/react";
 
 import {

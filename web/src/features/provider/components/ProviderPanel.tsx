@@ -1,6 +1,12 @@
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    ScrollArea,
+    toast,
+} from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollArea, toast } from "@lemma/ui";
 
 import { errorText } from "@/i18n/error-text";
 
@@ -68,9 +74,13 @@ export function ProviderPanel() {
                     />
                 ) : selected === null ? (
                     store.loaded && (
-                        <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                            {t("provider.emptyList")}
-                        </div>
+                        <Empty className="h-full">
+                            <EmptyHeader>
+                                <EmptyDescription>
+                                    {t("provider.emptyList")}
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
                     )
                 ) : (
                     <ProviderDetail

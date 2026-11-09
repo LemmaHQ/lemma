@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { useReducedMotion } from "motion/react";
 import { type ComponentProps, useCallback, useEffect, useRef } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
@@ -40,7 +40,7 @@ export function SessionContent({
             <div
                 ref={contentRef}
                 className={cn(
-                    "mx-auto w-full max-w-3xl space-y-8 px-6 pt-4 pb-6",
+                    "mx-auto w-full max-w-3xl space-y-8 px-4 pt-4 pb-6 md:px-6",
                     className,
                 )}
                 {...props}
@@ -93,13 +93,13 @@ export function SessionScrollButton({
                     <Button
                         aria-label={label}
                         className={cn(
-                            "absolute bottom-4 left-1/2 -translate-x-1/2 animate-in rounded-full bg-popover shadow-overlay duration-base ease-enter fade-in-0 zoom-in-95 hover:bg-accent",
+                            "absolute bottom-4 left-1/2 size-8 -translate-x-1/2 animate-in rounded-full border bg-popover shadow-overlay duration-base ease-enter fade-in-0 zoom-in-95 hover:bg-accent",
                             className,
                         )}
                         onClick={() => {
                             void scrollToEnd();
                         }}
-                        size="icon-sm"
+                        size="icon"
                         type="button"
                         variant="outline"
                     />

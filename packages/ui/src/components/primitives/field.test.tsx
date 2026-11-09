@@ -61,7 +61,7 @@ it("toggles labeled checkboxes and switches", async () => {
             </Field>
             <Field orientation="horizontal">
                 <FieldLabel htmlFor="enabled">Enabled</FieldLabel>
-                <Switch id="enabled" size="sm" />
+                <Switch id="enabled" />
             </Field>
         </>,
     );

@@ -39,10 +39,7 @@ export function FetchModelsDialog({
                 onClose();
             }}
         >
-            <DialogContent
-                className="sm:max-w-md"
-                closeLabel={t("common.close")}
-            >
+            <DialogContent size="lg" closeLabel={t("common.close")}>
                 <DialogHeader>
                     <DialogTitle>{t("provider.pickModelsTitle")}</DialogTitle>
                     <DialogDescription>
@@ -140,7 +137,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                         return (
                             <label
                                 key={model}
-                                className="flex items-center gap-2 rounded-md px-3 py-1.5 hover:bg-control-hover has-disabled:hover:bg-transparent"
+                                className="flex h-8 items-center gap-2 rounded-md px-2 text-small hover:bg-accent has-disabled:hover:bg-transparent"
                             >
                                 <Checkbox
                                     checked={isAdded || picked.has(model)}
@@ -151,7 +148,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                                     {model}
                                 </span>
                                 {isAdded && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-caption text-subtle-foreground">
                                         {t("provider.modelAdded")}
                                     </span>
                                 )}

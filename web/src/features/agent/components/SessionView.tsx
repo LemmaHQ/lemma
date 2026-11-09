@@ -100,7 +100,7 @@ export function SessionView({
                 onPickSuggestion={handlePickSuggestion}
                 onRegenerate={handleRegenerate}
             />
-            <div className="mx-auto w-full max-w-3xl px-6 pb-6">
+            <div className="mx-auto w-full max-w-3xl px-4 pb-6 md:px-6">
                 <MessageComposer
                     value={draft}
                     onChange={setDraft}

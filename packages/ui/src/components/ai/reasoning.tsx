@@ -1,4 +1,4 @@
-import { cn } from "cn";
+import { cn } from "#lib/cn";
 import { BrainIcon } from "lucide-react";
 import {
     type ComponentProps,
@@ -118,7 +118,7 @@ export function ReasoningTrigger({
     return (
         <CollapsibleTrigger
             className={cn(
-                "flex w-full items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+                "flex h-8 w-full items-center gap-2 rounded-md px-2 text-small text-subtle-foreground transition-colors duration-base hover:bg-accent",
                 className,
             )}
             {...props}
@@ -170,7 +170,7 @@ export const ReasoningContent = memo(function ReasoningContent({
     return (
         <CollapsibleContent
             className={cn(
-                "grid-collapse text-sm text-muted-foreground outline-none",
+                "grid-collapse text-small text-muted-foreground outline-none",
                 className,
             )}
             data-open={isOpen}
@@ -178,7 +178,7 @@ export const ReasoningContent = memo(function ReasoningContent({
             {...props}
         >
             <div>
-                <div className="relative mt-3 animate-blur-in pl-5 before:absolute before:inset-y-1.5 before:left-[0.1875rem] before:w-px before:animate-grow-y before:bg-border before:content-[''] after:absolute after:top-1.5 after:left-0 after:size-[0.4375rem] after:rounded-full after:bg-muted-foreground after:content-['']">
+                <div className="mt-3 animate-blur-in border-l pl-3">
                     <Streamdown>{children}</Streamdown>
                 </div>
             </div>

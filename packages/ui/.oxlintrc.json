@@ -57,11 +57,19 @@
                     },
                     {
                         "pattern": "(^|:)duration-\\d+$",
-                        "message": "use a motion duration: duration-fast, duration-base, duration-medium, or duration-slow"
+                        "message": "use a motion duration: duration-fast, duration-base, duration-medium, duration-slow, or duration-reveal"
                     },
                     {
                         "pattern": "(^|:)ease-(in|out|in-out|linear)$",
-                        "message": "use a motion easing: ease-enter, ease-exit, or ease-move"
+                        "message": "use a motion easing: ease-enter, ease-exit, ease-move, or ease-spring"
+                    },
+                    {
+                        "pattern": "(^|:)text-(xs|sm|base|lg|xl|[2-9]xl)(/|$)",
+                        "message": "use a type role: text-caption, text-small, text-body, text-reading, text-title, or text-display"
+                    },
+                    {
+                        "pattern": "(^|:)rounded(-(t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?-(xs|xl|2xl|3xl|4xl|\\[(?!inherit\\]).*\\])$",
+                        "message": "use a corner radius: rounded-sm, rounded-md, rounded-lg, or rounded-full"
                     },
                     {
                         "pattern": "(^|:)shadow-(2xs|xs|sm|md|lg|xl|2xl)$",

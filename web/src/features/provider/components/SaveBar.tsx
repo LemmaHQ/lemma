@@ -20,7 +20,7 @@ export function SaveBar({
     const { t } = useTranslation();
 
     return (
-        <div className="flex animate-in items-center justify-between gap-3 rounded-lg border bg-muted py-2 pr-2 pl-4 text-sm text-muted-foreground duration-base ease-enter fade-in slide-in-from-top-1">
+        <div className="flex animate-in items-center justify-between gap-3 rounded-lg border bg-muted py-2 pr-2 pl-4 text-small text-muted-foreground duration-base ease-enter fade-in slide-in-from-top-1">
             <span>{message}</span>
             <div className="flex gap-2">
                 <Button

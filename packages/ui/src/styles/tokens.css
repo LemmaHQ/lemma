@@ -2,7 +2,6 @@
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sidebar-brand: var(--font-serif);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -11,49 +10,30 @@
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
-    --color-sidebar-text: color-mix(
-        in oklab,
-        var(--sidebar-foreground) 80%,
-        var(--sidebar)
-    );
-    --color-sidebar-muted: color-mix(
-        in oklab,
-        var(--sidebar-foreground) 55%,
-        var(--sidebar)
-    );
-    --color-sidebar-faint: color-mix(
-        in oklab,
-        var(--sidebar-foreground) 40%,
-        var(--sidebar)
-    );
-    --color-sidebar-hover: color-mix(
-        in oklab,
-        var(--sidebar-foreground) 4%,
-        transparent
-    );
-    --color-sidebar-selected: color-mix(
-        in oklab,
-        var(--sidebar-foreground) 6%,
-        transparent
-    );
     --color-sidebar-edge: color-mix(
         in oklab,
         var(--sidebar-foreground) 30%,
         var(--sidebar)
     );
+    --color-brand: var(--brand);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-success: var(--success);
+    --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
+    --color-selected: var(--selected);
     --color-muted-foreground: var(--muted-foreground);
+    --color-subtle-foreground: var(--subtle-foreground);
     --color-muted: var(--muted);
     --color-secondary-foreground: var(--secondary-foreground);
     --color-secondary: var(--secondary);
+    --color-secondary-hover: var(--secondary-hover);
     --color-primary-foreground: var(--primary-foreground);
     --color-primary: var(--primary);
+    --color-primary-hover: var(--primary-hover);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
@@ -61,82 +41,72 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
     --color-control: var(--control);
-    --color-control-hover: var(--control-hover);
-    --color-control-disabled: var(--control-disabled);
-    --color-secondary-hover: var(--secondary-hover);
     --color-track: var(--track);
     --color-thumb: var(--thumb);
-    --color-selected: var(--selected);
-    --color-selected-border: var(--selected-border);
     --color-destructive-border: var(--destructive-border);
     --color-destructive-ring: var(--destructive-ring);
     --color-destructive-subtle: var(--destructive-subtle);
     --color-destructive-subtle-hover: var(--destructive-subtle-hover);
     --color-scrim: var(--scrim);
-    --text-sidebar-item: 13.5px;
-    --text-sidebar-item--line-height: 19px;
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-    --radius-sidebar-inset: 12px;
+    --text-caption: 0.75rem;
+    --text-caption--line-height: 1rem;
+    --text-small: 0.8125rem;
+    --text-small--line-height: 1.25rem;
+    --text-body: 0.875rem;
+    --text-body--line-height: 1.25rem;
+    --text-reading: 1rem;
+    --text-reading--line-height: 1.625rem;
+    --text-title: 1rem;
+    --text-title--line-height: 1.5rem;
+    --text-title--font-weight: 600;
+    --text-display: 1.5rem;
+    --text-display--line-height: 2rem;
+    --text-display--font-weight: 600;
     --duration-fast: var(--motion-duration-fast);
     --duration-base: var(--motion-duration-base);
     --duration-medium: var(--motion-duration-medium);
     --duration-slow: var(--motion-duration-slow);
     --duration-reveal: var(--motion-duration-reveal);
-    --duration-press: var(--motion-duration-press);
-    --duration-glide: var(--motion-duration-glide);
-    --duration-option-fade: var(--motion-duration-option-fade);
-    --duration-check: var(--motion-duration-check);
-    --duration-option-slide: var(--motion-duration-option-slide);
-    --duration-model: var(--motion-duration-model);
-    --duration-sidebar: 420ms;
     --ease-enter: var(--motion-easing-enter);
     --ease-exit: var(--motion-easing-exit);
     --ease-move: var(--motion-easing-move);
-    --ease-morph: var(--motion-easing-morph);
     --ease-spring: var(--motion-easing-spring);
-    --ease-glide: var(--motion-easing-glide);
-    --ease-model: var(--motion-easing-model);
     --default-transition-duration: var(--motion-duration-base);
     --default-transition-timing-function: var(--motion-easing-move);
     --shadow-raised:
-        0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        0 1px 2px color-mix(in oklab, var(--shadow) 50%, transparent),
+        0 2px 8px color-mix(in oklab, var(--shadow) 40%, transparent);
     --shadow-overlay:
-        0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        0 2px 4px color-mix(in oklab, var(--shadow) 40%, transparent),
+        0 8px 24px color-mix(in oklab, var(--shadow) 70%, transparent);
     --shadow-modal:
-        0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-sidebar-card:
-        0 0 0 1px var(--sidebar-border), 0 1px 2px rgb(0 0 0 / 0.05);
-    --shadow-sidebar-card-hover:
-        0 0 0 1px
-            color-mix(
-                in oklab,
-                var(--sidebar-border),
-                var(--sidebar-foreground) 10%
-            ),
-        0 1px 2px rgb(0 0 0 / 0.05);
+        0 4px 8px color-mix(in oklab, var(--shadow) 40%, transparent),
+        0 20px 48px var(--shadow);
 }
 
 :root {
-    --radius: 0.625rem;
     --sidebar-width-default: 272px;
     --sidebar-width-min: 220;
     --sidebar-width-max: 380;
-    --sidebar-reveal-show: opacity 260ms ease 160ms, visibility 0s;
-    --sidebar-reveal-hide: opacity 200ms ease, visibility 0s 200ms;
+    --sidebar-reveal-show:
+        opacity var(--motion-duration-slow) var(--motion-easing-move)
+            var(--motion-duration-base),
+        visibility 0s;
+    --sidebar-reveal-hide:
+        opacity var(--motion-duration-medium) var(--motion-easing-move),
+        visibility 0s var(--motion-duration-medium);
     --sidebar-show:
-        opacity 260ms ease, translate 420ms var(--motion-easing-enter),
+        opacity var(--motion-duration-slow) var(--motion-easing-move),
+        translate var(--motion-duration-reveal) var(--motion-easing-enter),
         visibility 0s;
     --sidebar-hide:
-        opacity 200ms ease, translate 420ms var(--motion-easing-enter),
-        visibility 0s 420ms;
-    --sidebar-rail-show: opacity 180ms ease 100ms;
-    --sidebar-rail-hide: opacity 180ms ease;
+        opacity var(--motion-duration-medium) var(--motion-easing-move),
+        translate var(--motion-duration-reveal) var(--motion-easing-enter),
+        visibility 0s var(--motion-duration-reveal);
+    --sidebar-rail-show: opacity var(--motion-duration-medium)
+        var(--motion-easing-move) var(--motion-duration-fast);
+    --sidebar-rail-hide: opacity var(--motion-duration-medium)
+        var(--motion-easing-move);
 }
 
 @utility bg-sidebar-rail {

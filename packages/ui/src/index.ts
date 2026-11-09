@@ -1,6 +1,7 @@
 export { AnimateIcon } from "@animate-ui/react/icons";
-export { cn } from "cn";
+export { cn } from "./lib/cn";
 export { toast } from "sonner";
+export * from "./components/primitives/alert";
 export * from "./components/primitives/alert-dialog";
 export * from "./components/primitives/avatar";
 export * from "./components/primitives/button";
@@ -57,6 +58,7 @@ export { EyeIcon } from "./components/icons/eye";
 export { GithubIcon } from "./components/icons/github";
 export { GlobeIcon } from "./components/icons/globe";
 export { InfoIcon } from "./components/icons/info";
+export { LemmaLogo } from "./components/icons/lemma-logo";
 export { LoaderCircleIcon } from "./components/icons/loader-circle";
 export { LockIcon } from "./components/icons/lock";
 export { LogOutIcon } from "./components/icons/log-out";

@@ -76,9 +76,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     return (
         <section className="flex flex-col gap-3 pt-6">
             <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium">
-                    {t("provider.modelList")}
-                </h3>
+                <h3 className="text-title">{t("provider.modelList")}</h3>
                 <div className="ml-auto flex items-center gap-2">
                     <InputGroup className="w-48">
                         <InputGroupAddon>

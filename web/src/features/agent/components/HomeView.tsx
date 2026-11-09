@@ -24,9 +24,9 @@ export function HomeView({
     const [value, setValue] = useState("");
 
     return (
-        <div className="grid flex-1 place-items-center px-6">
-            <div className="w-full max-w-2xl">
-                <h1 className="mb-8 text-center text-3xl font-semibold">
+        <div className="grid flex-1 place-items-center px-4 md:px-6">
+            <div className="w-full max-w-3xl">
+                <h1 className="mb-8 text-center text-display">
                     {t("common.appName")}
                 </h1>
                 <MessageComposer

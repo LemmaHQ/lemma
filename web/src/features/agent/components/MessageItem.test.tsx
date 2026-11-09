@@ -90,7 +90,7 @@ it.each([
 ])("explains a failed reply %s", (_case, error, extra) => {
     renderItem({ message: assistant({ status: "error", error }) });
 
-    const notice = screen.getByText("The model request failed");
+    const notice = screen.getByRole("alert");
     expect(notice.textContent).toBe(
         ["The model request failed", ...extra].join(""),
     );

@@ -1,7 +1,7 @@
 .status-swap {
     & > svg {
         transition:
-            opacity 240ms ease-out,
+            opacity var(--motion-duration-medium) ease-out,
             transform var(--motion-duration-reveal) var(--motion-easing-enter);
     }
 

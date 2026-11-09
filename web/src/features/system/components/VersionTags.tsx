@@ -5,7 +5,7 @@ import { loadServerVersion } from "../store";
 
 function VersionTag({ children }: { children: string }) {
     return (
-        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+        <span className="rounded-md bg-muted px-2 py-0.5 text-caption text-muted-foreground">
             {children}
         </span>
     );

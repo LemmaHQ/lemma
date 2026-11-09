@@ -5,9 +5,9 @@ import {
     ItemContent,
     ItemDescription,
     ItemGroup,
-    ItemSeparator,
     ItemTitle,
     MoonIcon,
+    Separator,
     SunIcon,
     SunMoonIcon,
     ToggleGroup,
@@ -23,11 +23,8 @@ export function AppearancePanel() {
     const { theme, setTheme } = useTheme();
 
     return (
-        <div className="max-w-3xl px-8 py-6">
-            <h2 className="text-base font-semibold">
-                {t("settings.appearance")}
-            </h2>
-            <ItemGroup className="mt-2">
+        <div className="max-w-3xl px-4 py-6 md:px-6">
+            <ItemGroup>
                 <Item>
                     <ItemContent>
                         <ItemTitle>{t("settings.themeLabel")}</ItemTitle>
@@ -76,7 +73,7 @@ export function AppearancePanel() {
                         </ToggleGroup>
                     </ItemActions>
                 </Item>
-                <ItemSeparator />
+                <Separator />
                 <Item>
                     <ItemContent>
                         <ItemTitle>{t("settings.languageLabel")}</ItemTitle>
