@@ -73,6 +73,14 @@ export function checkPair(pair: Pair): string[] {
     if (recordText === null) {
         return [`${pair.en} has no ${pair.record}`];
     }
+    return recordProblems(pair, entries, recordText);
+}
+
+function recordProblems(
+    pair: Pair,
+    entries: Entry[],
+    recordText: string,
+): string[] {
     if (recordText === formatRecord(pair, entries)) {
         return [];
     }
@@ -85,11 +93,12 @@ export function checkPair(pair: Pair): string[] {
         if (entry === undefined) {
             return [`${key} (new)`];
         }
-        const sides = [entry.en !== en && "en", entry.zh !== zh && "zh"].filter(
-            Boolean,
+        const values = { en, zh };
+        const changed = (["en", "zh"] as const).filter(
+            (side) => entry[side] !== values[side],
         );
-        return sides.length > 0
-            ? [`${key} (${sides.join(" and ")} changed)`]
+        return changed.length > 0
+            ? [`${key} (${changed.join(" and ")} changed)`]
             : [];
     });
     const removed = [...recorded.keys()]
