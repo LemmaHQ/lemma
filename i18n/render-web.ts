@@ -1,5 +1,5 @@
 import { toWebText } from "./message-text.ts";
-import type { Language, MessageEntry } from "./read-i18n.ts";
+import type { Language, MessageEntry } from "./message-entry.ts";
 
 export interface WebMessages {
     [key: string]: string | WebMessages;
