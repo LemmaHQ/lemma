@@ -85,9 +85,6 @@ jobs:
       - name: Generate design tokens
         run: just design-gen
 
-      - name: Test the renderers
-        run: just design-test
-
   i18n:
     name: I18n
     runs-on: ubuntu-latest

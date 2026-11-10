@@ -12,7 +12,7 @@ sidebar:
     en: "Expand sidebar"
     zh: "展开侧边栏"
   newSession:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "New session"
     zh: "新会话"
   resize:
@@ -20,7 +20,7 @@ sidebar:
     en: "Resize sidebar"
     zh: "调整侧边栏宽度"
   signOut:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Sign out"
     zh: "退出登录"
   startSession:

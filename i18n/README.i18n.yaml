@@ -3,8 +3,8 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing i18n/README.md
 /interface-strings:
-  en: a08bb135a8d22bcc
-  zh: 2a556f10b17b1b2e
+  en: 5f480afab84126ce
+  zh: 58d53c6a82d98f02
 /interface-strings/source-files:
   en: 7df5a1fa1e6b0ed7
   zh: c8c4566824e37246
@@ -12,8 +12,8 @@
   en: 547d07a35a8c03a8
   zh: 47e1b7598bf66b2e
 /interface-strings/adding-a-string:
-  en: 3bf654f2d080ea13
-  zh: babf39400b87709f
+  en: 02ede2e00901cf6d
+  zh: 157654f60cf95c42
 /interface-strings/outputs:
-  en: 050b3db0762d2e06
-  zh: ca53e5a2856f7377
+  en: 32eb7413dc366690
+  zh: 5bc3758c066a3f82

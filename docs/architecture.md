@@ -17,11 +17,10 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | RPC       | `crates/rpc/*`, including `lemma-host`                          | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`                                                         |
 | Hosts     | `lemma-server`, `lemma-mobile`                                  | The server binary; the UniFFI facade for Android                                                                                                                                                                                                                                                       |
 | Client    | `lemma-client`                                                  | Native clients' calls to a host: the local engine's router in process, or a server over HTTP or HTTPS once it reports the client's version; each connection's tokens and their refresh; turn streams that resume after a break; an open session's messages folded from message pages and stream events |
-| App       | `lemma-desktop`                                                 | The GPUI Kit desktop app: the local engine in the same process, sign-in, the session list, and streaming conversations through `lemma-client`                                                                                                                                                          |
 
 `lemma-auth`, `lemma-session`, and `lemma-provider` define their tables and migrations with SeaORM and run on SQLite and PostgreSQL alike through one `DatabaseConnection`; the engine and agent layers reach the data only through their services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host; crates under `crates/test/` serve only tests ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/` and `crates/mobile/` build only into their host; crates under `crates/test/` serve only tests ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 
@@ -31,15 +30,12 @@ The same domain services and turn loop run in two hosts. Clients choose a host; 
 | ----------- | --------------------------------------------- | ---------------------------------------------------- | --------------------- | ----------------------------------- |
 | Server mode | `lemma-server`, port 1025                     | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none                  | sealed with `LEMMA_SECRET_KEY`      |
 | In-process  | `lemma-mobile` in the Android app process     | SQLite at `<filesDir>/lemma.db`                      | per-session workspace | sealed with an engine-generated key |
-| In-process  | `lemma-desktop`                               | SQLite at `<data dir>/Lemma/lemma.db`                | per-session workspace | sealed with an engine-generated key |
 
 **Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the migrations at startup, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
 
 **The local engine** is `LocalEngine` in `lemma-host`. Over one data directory, it loads or creates `secrets.json`, which stores the JWT and sealing secrets, opens and migrates `lemma.db`, and enables workspace tools under `workspaces/`. Its Connect router serves requests in-process through `InProcessTransport`, without a network listener.
 
 **In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; it opens the local engine over the app's `filesDir`. The app talks to its Connect router with the same Connect Kotlin clients as to a server in remote mode: an OkHttp interceptor hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)). Users register their own accounts; there is no default account.
-
-The desktop app opens the same local engine over `Lemma/` in the platform data directory (`%APPDATA%` on Windows, `~/Library/Application Support` on macOS) on a tokio runtime in its own process, and calls it through `lemma-client`. It keeps its tokens in memory, so each start signs in again.
 
 The web client fetches sessions and messages from the host on each view. The Android client keeps a SQLDelight cache of the messages it has shown, each stored whole; it drops a session's messages when the session is deleted and empties the cache whenever the client signs out; the cache belongs to the client, and the host's store remains the record. The Android client stores its access and refresh tokens encrypted with an Android Keystore key, in a file that device backups exclude. Backups keep the engine's `lemma.db` and `secrets.json` together, because the database's sealed keys open only with the key in `secrets.json`.
 

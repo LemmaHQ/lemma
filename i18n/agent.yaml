@@ -1,18 +1,18 @@
 agent:
   abortedNotice:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Generation stopped."
     zh: "生成已停止。"
   stop:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Stop generating"
     zh: "停止生成"
   thinking:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Thought"
     zh: "已思考"
   thinkingInProgress:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Thinking…"
     zh: "正在思考…"
   thinkingPending:
@@ -27,17 +27,17 @@ agent:
   toolCall:
     announce:
       error:
-        platforms: [web, desktop]
+        platforms: [web]
         params: { name: string, error: string }
         en: "{name} failed: {error}"
         zh: "{name} 失败：{error}"
       running:
-        platforms: [web, desktop]
+        platforms: [web]
         params: { name: string }
         en: "{name} running"
         zh: "{name} 正在运行"
       success:
-        platforms: [web, desktop]
+        platforms: [web]
         params: { name: string }
         en: "{name} finished"
         zh: "{name} 已完成"

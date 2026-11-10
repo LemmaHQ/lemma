@@ -1,73 +1,73 @@
 auth:
   changeAccount:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Change"
     zh: "更换"
   confirmPassword:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Confirm password"
     zh: "确认密码"
   continue:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Continue"
     zh: "继续"
   email:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Email"
     zh: "邮箱"
   haveAccount:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Already have an account?"
     zh: "已有账号？"
   identifier:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Email or username"
     zh: "邮箱或用户名"
   noAccount:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "No account yet?"
     zh: "还没有账号？"
   password:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Password"
     zh: "密码"
   passwordDescription:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Enter the password for this account to continue."
     zh: "输入该账号的密码以继续。"
   passwordMismatch:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Passwords do not match"
     zh: "两次输入的密码不一致"
   passwordTitle:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Enter your password"
     zh: "输入密码"
   signIn:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Sign in"
     zh: "登录"
   signInDescription:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Enter your email or username to continue."
     zh: "输入邮箱或用户名以继续。"
   signInTitle:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Sign in to Lemma"
     zh: "登录 Lemma"
   signUp:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Sign up"
     zh: "注册"
   signUpDescription:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Create an account to start using Lemma."
     zh: "创建账号，开始使用 Lemma。"
   signUpTitle:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Create your Lemma account"
     zh: "注册 Lemma 账号"
   username:
-    platforms: [web, desktop]
+    platforms: [web]
     en: "Username"
     zh: "用户名"

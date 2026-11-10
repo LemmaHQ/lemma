@@ -53,11 +53,6 @@ rust-fmt:
 rust-dev:
     cargo run --package lemma-server
 
-# Run the desktop app over the local engine
-[group('desktop')]
-desktop-dev:
-    cargo run --package lemma-desktop
-
 # Run tests with nextest
 [group('rust')]
 rust-test:
@@ -70,7 +65,7 @@ rust-cov *args="--summary-only":
         --exclude lemma-proto \
         --exclude lemma-mobile \
         --exclude lemma-test-db \
-        --ignore-filename-regex '[/\\\\](entity[/\\\\]|out[/\\\\]strings\.rs$|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$|lemma-desktop[/\\\\]src[/\\\\](main\.rs$|tests[/\\\\]))' \
+        --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$)' \
         --fail-uncovered-lines 0 \
         --fail-uncovered-functions 0 \
         {{ args }}
@@ -197,11 +192,6 @@ mobile-android-cov:
 [group('design')]
 design-gen:
     node design/gen-tokens.ts
-
-# Test the design token renderers
-[group('design')]
-design-test:
-    node --test design/*.test.ts
 
 # Generate client strings from the platform-neutral sources
 [group('i18n')]

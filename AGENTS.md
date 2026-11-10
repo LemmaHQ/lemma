@@ -2,16 +2,15 @@
 
 English | [中文](AGENTS.zh.md)
 
-Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. Read [docs/architecture.md](docs/architecture.md) before changing `crates/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
+Lemma runs LLM agents for web and Android clients from one Rust core. Read [docs/architecture.md](docs/architecture.md) before changing `crates/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
 ## Repository layout
 
 ```text
 crates/       Rust workspace (crates/AGENTS.md)
-  shared/     crates linked by the server, the desktop app, and Android
+  shared/     crates linked by the server and Android
   rpc/        one ConnectRPC service crate per proto service, and lemma-host assembling them
   server/     lemma-server, the server binary
-  desktop/    lemma-desktop, the GPUI Kit desktop app
   mobile/     lemma-mobile, the UniFFI facade for Android
   test/       crates only tests use, as dev-dependencies
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
@@ -21,7 +20,6 @@ mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.
 assets/       brand assets
 design/       design tokens for all clients (tokens.json) and their generator
 i18n/         platform-neutral UI strings (i18n/README.md) and their generator
-vendor/       patched third-party crates, brought in by [patch.crates-io] in the root Cargo.toml (crates/AGENTS.md)
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
 scripts/      documentation checks: translation pairing, brief generator, repository references
@@ -33,8 +31,6 @@ scripts/      documentation checks: translation pairing, brief generator, reposi
 just rust-dev            # run lemma-server with .env
 just web-dev             # Vite dev server
 just design-gen          # regenerate the web theme and Android palette from design tokens
-just design-test         # test the design token renderers
-just desktop-dev         # run the desktop app
 just i18n-gen            # regenerate client strings from the platform-neutral sources
 just i18n-test           # test i18n source validation and client rendering
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown

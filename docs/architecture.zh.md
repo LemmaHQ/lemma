@@ -17,11 +17,10 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | RPC    | `crates/rpc/*`，包括 `lemma-host`                               | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
 | 宿主   | `lemma-server`、`lemma-mobile`                                  | 服务端可执行文件；面向 Android 的 UniFFI 门面                                                                                                                                                                           |
 | 客户端 | `lemma-client`                                                  | 原生客户端对宿主的调用：在进程内调用本地引擎的路由，或在服务器报告与客户端相同的版本后通过 HTTP、HTTPS 调用它；每个连接的令牌及其刷新；断开后能续传的 turn 流；由消息分页与流事件归并出的已打开会话的消息               |
-| 应用   | `lemma-desktop`                                                 | GPUI Kit 桌面应用：在同一进程中运行本地引擎，通过 `lemma-client` 实现登录、会话列表与流式对话                                                                                                                           |
 
 `lemma-auth`、`lemma-session` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 同样运行在 SQLite 与 PostgreSQL 上；引擎层与 agent 层只通过它们的服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
-`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
 ## 运行时
 
@@ -31,15 +30,12 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | ---------- | ---------------------------------------- | --------------------------------------------------- | ------------------ | -------------------------- |
 | 服务端模式 | `lemma-server`，端口 1025                | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                 | 用 `LEMMA_SECRET_KEY` 加密 |
 | 进程内     | Android 应用进程中的 `lemma-mobile`      | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
-| 进程内     | `lemma-desktop`                          | `<数据目录>/Lemma/lemma.db` 中的 SQLite             | 每个会话一个工作区 | 用引擎生成的密钥加密       |
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
 **本地引擎**是 `lemma-host` 中的 `LocalEngine`。它在一个数据目录上加载或创建保存 JWT 密钥与主密钥的 `secrets.json`，打开并迁移 `lemma.db`，并启用 `workspaces/` 下的工作区工具。它的 Connect 路由通过 `InProcessTransport` 在进程内处理请求，不监听网络端口。
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它在应用的 `filesDir` 上打开本地引擎。应用访问它的 Connect 路由时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
-
-桌面应用在自己进程的 tokio 运行时上，以平台数据目录（Windows 为 `%APPDATA%`，macOS 为 `~/Library/Application Support`）下的 `Lemma/` 打开同一个本地引擎，并通过 `lemma-client` 调用它。令牌只保存在内存中，因此每次启动都要重新登录。
 
 Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息完整缓存在 SQLDelight 中；删除会话时删去该会话的消息，客户端每次退出登录时清空整个缓存；缓存归客户端所有，宿主的存储才是记录本身。Android 客户端用 Android Keystore 中的密钥加密保存访问令牌和刷新令牌，所在文件不进入设备备份。备份会把引擎的 `lemma.db` 和 `secrets.json` 一起保留，因为数据库中的加密 key 只有用 `secrets.json` 里的密钥才能解开。
 
