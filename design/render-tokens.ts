@@ -1,5 +1,6 @@
-import { THEMES, WINDOW_ROLES } from "./read-tokens.ts";
-import type { Color, Motion, Theme, ThemeName } from "./read-tokens.ts";
+import type { Motion } from "./read-motion.ts";
+import { THEMES, WINDOW_ROLES } from "./read-theme.ts";
+import type { Color, Theme, ThemeName } from "./read-theme.ts";
 
 const NOTICE =
     "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";

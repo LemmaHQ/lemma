@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
-import { readThemes, readTokenFile } from "../design/read-tokens.ts";
+import { readThemes } from "../design/read-theme.ts";
+import { readTokenFile } from "../design/token-tree.ts";
 import {
     DEFAULT_THEME,
     THEME_STORAGE_KEY,

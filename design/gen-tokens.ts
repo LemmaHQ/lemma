@@ -1,11 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-    readMotion,
-    readRadii,
-    readThemes,
-    readTokenFile,
-} from "./read-tokens.ts";
+import { readMotion, readRadii } from "./read-motion.ts";
+import { readThemes } from "./read-theme.ts";
+import { readTokenFile } from "./token-tree.ts";
 import {
     generateAndroidKt,
     generateDesktopTs,
