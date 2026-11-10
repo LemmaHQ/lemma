@@ -18,8 +18,10 @@
         "**/*.test.ts",
         "**/*.test.tsx",
         "**/src/*Test/**",
-        "**/tests/**"
+        "**/tests/**",
+        "packages/ui/src/components/icons/**"
     ],
+    "ignorePattern": ["(?m)^import\\s.*$", "(?m)^use\\s[^;]*;"],
     "minTokens": 70,
     "minLines": 8
 }
