@@ -1,22 +1,14 @@
-import type { TitleBarState } from "@lemma/desktop-contract";
-import {
-    app,
-    BrowserWindow,
-    ipcMain,
-    Menu,
-    nativeTheme,
-    net,
-    protocol,
-    shell,
-    type WebContents,
-} from "electron";
+import { app, BrowserWindow, ipcMain, Menu, type WebContents } from "electron";
 import started from "electron-squirrel-startup";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { appVersionArg } from "./app-version";
+import { registerAppScheme, serveApp } from "./app-protocol";
 import * as engine from "./engine";
-import { themeColors } from "./gen/theme-colors";
-import { TITLEBAR_HEIGHT } from "./titlebar";
+import {
+    createWindow,
+    isTitleBarState,
+    loadApp,
+    loadFatalPage,
+    titleBarOverlay,
+} from "./main-window";
 
 if (started) {
     app.quit();
@@ -27,126 +19,10 @@ if (debugPort !== undefined && debugPort !== "") {
     app.commandLine.appendSwitch("remote-debugging-port", debugPort);
 }
 
-const APP_ORIGIN = "app://lemma";
-const isAppUrl = (url: string) => {
-    const target = new URL(url);
-    return target.protocol === "app:" && target.host === "lemma";
-};
-const WEB_ROOT = path.join(__dirname, "../../web-dist");
-
-protocol.registerSchemesAsPrivileged([
-    { scheme: "app", privileges: { standard: true, secure: true } },
-]);
-
-const serveWebFile = (request: Request): Promise<Response> => {
-    const file = path.join(
-        WEB_ROOT,
-        decodeURIComponent(new URL(request.url).pathname),
-    );
-    if (path.relative(WEB_ROOT, file).startsWith("..")) {
-        return Promise.resolve(new Response(null, { status: 404 }));
-    }
-    const target =
-        path.extname(file) === "" ? path.join(WEB_ROOT, "index.html") : file;
-    return net.fetch(pathToFileURL(target).href);
-};
-
-const openExternalLink = (url: string) => {
-    if (new URL(url).protocol === "https:") {
-        void shell.openExternal(url);
-    }
-};
+registerAppScheme();
 
 let mainWindow: BrowserWindow | null = null;
 let engineStopping = false;
-
-const loadFatalPage = (detail: string) => {
-    if (mainWindow === null) {
-        return;
-    }
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lemma</title></head>
-<body style="margin:0;font-family:system-ui;background:#151615;color:#e6e6e4">
-<main style="display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;height:100vh">
-<h1 style="font-size:18px;margin:0">Cannot start the local engine</h1>
-<p style="opacity:0.7;margin:0">${detail}</p>
-</main></body></html>`;
-    mainWindow
-        .loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-        .catch((err: unknown) => {
-            console.error("fatal page failed to load:", err);
-        });
-};
-
-const loadApp = () => {
-    if (mainWindow === null) {
-        return;
-    }
-    mainWindow.loadURL(`${APP_ORIGIN}/`).catch((err: unknown) => {
-        console.error("app page failed to load:", err);
-    });
-};
-
-const titleBarOverlay = (state: TitleBarState) => ({
-    color: themeColors[state.theme][state.surface],
-    symbolColor: themeColors[state.theme].foreground,
-    height: TITLEBAR_HEIGHT,
-});
-
-const initialTitleBarState = (): TitleBarState => ({
-    theme: nativeTheme.shouldUseDarkColors ? "dark" : "light",
-    surface: "background",
-});
-
-const isTitleBarState = (value: unknown): value is TitleBarState =>
-    typeof value === "object" &&
-    value !== null &&
-    "theme" in value &&
-    (value.theme === "light" || value.theme === "dark") &&
-    "surface" in value &&
-    (value.surface === "sidebar" || value.surface === "background");
-const createWindow = () => {
-    const initialState = initialTitleBarState();
-    const window = new BrowserWindow({
-        width: 1280,
-        height: 800,
-        backgroundColor: themeColors[initialState.theme].background,
-        titleBarStyle: "hidden",
-        titleBarOverlay: titleBarOverlay(initialState),
-        webPreferences: {
-            preload: path.join(__dirname, "preload.cjs"),
-            additionalArguments: [appVersionArg(app.getVersion())],
-        },
-    });
-    mainWindow = window;
-    window.on("closed", () => {
-        mainWindow = null;
-    });
-
-    window.webContents.setWindowOpenHandler(({ url }) => {
-        openExternalLink(url);
-        return { action: "deny" };
-    });
-    window.webContents.on("will-navigate", (event, url) => {
-        if (!isAppUrl(url)) {
-            event.preventDefault();
-            openExternalLink(url);
-        }
-    });
-
-    window.webContents.on("before-input-event", (_event, input) => {
-        if (input.type !== "keyDown") {
-            return;
-        }
-        const devtoolsKey =
-            input.key === "F12" ||
-            ((input.control || input.meta) &&
-                input.shift &&
-                input.key.toLowerCase() === "i");
-        if (devtoolsKey) {
-            window.webContents.toggleDevTools();
-        }
-    });
-};
 
 ipcMain.on("set-titlebar", (_event, state: unknown) => {
     if (!isTitleBarState(state)) {
@@ -185,11 +61,15 @@ let fatalDetail: string | null = null;
 let engineStart: Promise<void> = Promise.resolve();
 
 const openWindow = () => {
-    createWindow();
+    const window = createWindow();
+    mainWindow = window;
+    window.on("closed", () => {
+        mainWindow = null;
+    });
     if (fatalDetail === null) {
-        loadApp();
+        loadApp(window);
     } else {
-        loadFatalPage(fatalDetail);
+        loadFatalPage(window, fatalDetail);
     }
 };
 
@@ -198,12 +78,12 @@ const startEngine = async (): Promise<void> => {
         await engine.start();
     } catch (err) {
         fatalDetail = err instanceof Error ? err.message : String(err);
-        loadFatalPage(fatalDetail);
+        loadFatalPage(mainWindow, fatalDetail);
     }
 };
 
 const boot = () => {
-    protocol.handle("app", serveWebFile);
+    serveApp();
     engineStart = startEngine();
     openWindow();
     app.on("activate", () => {

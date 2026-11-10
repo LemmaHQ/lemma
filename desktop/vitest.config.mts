@@ -11,6 +11,7 @@ export default defineConfig({
             exclude: [
                 "src/gen/**",
                 "src/main.ts",
+                "src/main-window.ts",
                 "src/preload.ts",
                 "src/engine-host.ts",
                 "src/titlebar.ts",

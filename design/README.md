@@ -29,11 +29,11 @@ Every text role, `primary`, and the status roles reach a 4.5:1 contrast ratio on
 
 The generator writes three files, all ignored by Git:
 
-| File                                                            | Content                                                                                                                                                                | Consumer                                                       |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `packages/ui/src/styles/tokens.gen.css`                         | A Tailwind `@theme` block with one `--radius-*` variable per radius token, one CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `packages/ui/src/styles/tokens.css` imports it                 |
-| `desktop/src/gen/theme-colors.ts`                               | The background, sidebar, and foreground of each theme                                                                                                                  | `desktop/src/main.ts` colors the titlebar and window from it   |
-| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                                                                                                | `theme/LemmaColorScheme.kt` maps it onto the app's color roles |
+| File                                                            | Content                                                                                                                                                                | Consumer                                                            |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `packages/ui/src/styles/tokens.gen.css`                         | A Tailwind `@theme` block with one `--radius-*` variable per radius token, one CSS variable per motion token in `:root`, and one per color role in `:root` and `.dark` | `packages/ui/src/styles/tokens.css` imports it                      |
+| `desktop/src/gen/theme-colors.ts`                               | The background, sidebar, and foreground of each theme                                                                                                                  | `desktop/src/main-window.ts` colors the titlebar and window from it |
+| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                                                                                                | `theme/LemmaColorScheme.kt` maps it onto the app's color roles      |
 
 The Android app reads only the palette, and only the web theme reads the radius and motion tokens. Each consumer runs the generator before reading the output:
 
