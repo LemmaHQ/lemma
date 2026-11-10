@@ -1,21 +1,11 @@
 package dev.lemmahq.lemma.ui.provider
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import dev.lemmahq.lemma.theme.LemmaTheme
-import dev.lemmahq.lemma.ui.components.LemmaButton
-import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
+import dev.lemmahq.lemma.ui.components.LemmaDialog
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import lemma.mobile.shared.generated.resources.Res
@@ -40,52 +30,32 @@ internal fun ProviderSettingsDialog(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier =
-                Modifier.clip(LemmaTheme.shapes.large)
-                    .background(LemmaTheme.colors.backgroundGroup)
-                    .padding(20.dp)
+    LemmaDialog(
+        title = stringResource(Res.string.provider_settings_title),
+        dismissLabel = stringResource(Res.string.common_cancel),
+        confirmLabel = stringResource(Res.string.common_save),
+        onConfirm = onSave,
+        onDismiss = onDismiss,
+        confirmEnabled = saveEnabled,
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        LemmaField(
+            label = stringResource(Res.string.provider_identifier),
+            description = stringResource(Res.string.provider_identifier_hint),
         ) {
-            Text(
-                text = stringResource(Res.string.provider_settings_title),
-                style = LemmaTheme.typography.titleMedium,
-                color = LemmaTheme.colors.textPrimary,
+            LemmaTextField(value = identifier, onValueChange = {}, enabled = false)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        LemmaField(
+            label = stringResource(Res.string.provider_name),
+            description = stringResource(Res.string.provider_name_description),
+            error = error,
+        ) {
+            LemmaTextField(
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = stringResource(Res.string.provider_name_placeholder),
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            LemmaField(
-                label = stringResource(Res.string.provider_identifier),
-                description = stringResource(Res.string.provider_identifier_hint),
-            ) {
-                LemmaTextField(value = identifier, onValueChange = {}, enabled = false)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            LemmaField(
-                label = stringResource(Res.string.provider_name),
-                description = stringResource(Res.string.provider_name_description),
-                error = error,
-            ) {
-                LemmaTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    placeholder = stringResource(Res.string.provider_name_placeholder),
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LemmaButton(
-                    text = stringResource(Res.string.common_cancel),
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    variant = LemmaButtonVariant.Secondary,
-                )
-                LemmaButton(
-                    text = stringResource(Res.string.common_save),
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f),
-                    enabled = saveEnabled,
-                )
-            }
         }
     }
 }

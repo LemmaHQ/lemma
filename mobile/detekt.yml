@@ -90,6 +90,7 @@ Compose:
     active: true
   ModifierMissing:
     active: true
+    contentEmittersDenylist: LemmaDialog
   ModifierNaming:
     active: true
   ModifierNotUsedAtRoot:
