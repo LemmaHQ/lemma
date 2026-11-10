@@ -9,5 +9,3 @@ ignores:
   - .agents/skills/security-audit/**
   - .agents/skills/frontend-design/**
   - .agents/skills/impeccable/**
-  - .agents/skills/gpui-kit/**
-  - .agents/skills/gpui-kit-design-guides/**

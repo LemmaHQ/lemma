@@ -7,20 +7,6 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
     },
-    "gpui-kit": {
-      "source": "longbridge/gpui-kit",
-      "sourceType": "github",
-      "skillPath": "skills/gpui-kit/SKILL.md",
-      "computedHash": "e401812a1269fd2caa07d307867f25c38c974f706f34bd52a8da8465b85ddd75",
-      "installMode": "copy"
-    },
-    "gpui-kit-design-guides": {
-      "source": "longbridge/gpui-kit",
-      "sourceType": "github",
-      "skillPath": "skills/gpui-kit-design-guides/SKILL.md",
-      "computedHash": "cc144ee0cc35978c387e6a13e8bc2cd25bfac45363ad25235d5b9cf09f8fa017",
-      "installMode": "copy"
-    },
     "impeccable": {
       "source": "pbakaus/impeccable",
       "sourceType": "github",
