@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 import {
+    createTranslator,
     extractFencedCode,
     restoreFencedCode,
     spanProblems,
@@ -67,5 +68,44 @@ void test("reports inline code and URLs that differ between source and translati
             "translation added `运行()`",
             "translation added https://example.com/a",
         ],
+    );
+});
+
+const modelReply = (content: string): Response =>
+    Response.json({
+        choices: [{ message: { content }, finish_reason: "stop" }],
+    });
+
+function translatorReplying(context: TestContext, translations: string[]) {
+    const remaining = [...translations];
+    context.mock.method(
+        globalThis,
+        "fetch",
+        (_url: string, init: RequestInit) => {
+            const request = typeof init.body === "string" ? init.body : "";
+            if (request.includes("Name the language")) {
+                const han = /\p{Script=Han}/u.test(request);
+                return Promise.resolve(modelReply(han ? "zh" : "en"));
+            }
+            return Promise.resolve(modelReply(remaining.shift() ?? ""));
+        },
+    );
+    return createTranslator({
+        baseUrl: "https://model.test",
+        model: "model",
+        apiKey: "key",
+    });
+}
+
+void test("retries an English translation that comes back in Chinese", async (context) => {
+    const translator = translatorReplying(context, ["测试", "Test"]);
+    assert.equal(await translator.translate("测试", "en"), "Test");
+});
+
+void test("rejects an English translation that stays Chinese after a retry", async (context) => {
+    const translator = translatorReplying(context, ["测试", "测试"]);
+    await assert.rejects(
+        translator.translate("测试", "en"),
+        /came back in Chinese/u,
     );
 });
