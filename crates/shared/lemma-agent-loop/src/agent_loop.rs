@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::cancel_token::CancelToken;
 use crate::loop_error::LoopError;
 use crate::persist;
-use crate::stream::{self, StepEnd};
+use crate::stream::{self, StepEnd, StepOutcome};
 use crate::tool_runtime::ToolRuntime;
 use crate::turn_event::TurnEvent;
 
@@ -161,42 +161,64 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 return Ok(());
             };
 
-            leaf_id = assistant_id;
-            outcome.finish_thinking(Utc::now());
-            let mut results = Vec::new();
-            for block in &mut outcome.blocks {
-                let ContentBlock::ToolCall(call) = block else {
-                    continue;
-                };
-                let started_at = Utc::now();
-                call.started_at = Some(started_at);
-                observer(TurnEvent::ToolStarted {
-                    id: call.id.clone(),
-                    name: call.name.clone(),
-                    arguments: serde_json::to_string(&call.arguments).unwrap_or_default(),
-                    at: started_at,
-                });
-                let tool_outcome = runtime.run(call).await;
-                let finished_at = Utc::now();
-                call.finished_at = Some(finished_at);
-                observer(TurnEvent::ToolFinished {
-                    id: call.id.clone(),
-                    content: tool_outcome.text.clone(),
-                    is_error: tool_outcome.is_error,
-                    at: finished_at,
-                });
-                results.push(persist::tool_result(call, tool_outcome));
-            }
-            self.sessions
-                .update_message(assistant_id, persist::settle(&outcome))
+            leaf_id = self
+                .run_tools(
+                    runtime,
+                    user_id,
+                    session_id,
+                    assistant_id,
+                    &mut outcome,
+                    observer,
+                )
                 .await?;
-            for result in results {
-                let result_id = Uuid::new_v4();
-                let result = persist::settled(result_id, session_id, Some(leaf_id), result);
-                self.append(user_id, result).await?;
-                leaf_id = result_id;
-            }
         }
+    }
+
+    async fn run_tools<O: Fn(TurnEvent) + Sync>(
+        &self,
+        runtime: &ToolRuntime<E>,
+        user_id: Uuid,
+        session_id: Uuid,
+        assistant_id: Uuid,
+        outcome: &mut StepOutcome,
+        observer: &O,
+    ) -> Result<Uuid, LoopError> {
+        outcome.finish_thinking(Utc::now());
+        let mut results = Vec::new();
+        for block in &mut outcome.blocks {
+            let ContentBlock::ToolCall(call) = block else {
+                continue;
+            };
+            let started_at = Utc::now();
+            call.started_at = Some(started_at);
+            observer(TurnEvent::ToolStarted {
+                id: call.id.clone(),
+                name: call.name.clone(),
+                arguments: serde_json::to_string(&call.arguments).unwrap_or_default(),
+                at: started_at,
+            });
+            let tool_outcome = runtime.run(call).await;
+            let finished_at = Utc::now();
+            call.finished_at = Some(finished_at);
+            observer(TurnEvent::ToolFinished {
+                id: call.id.clone(),
+                content: tool_outcome.text.clone(),
+                is_error: tool_outcome.is_error,
+                at: finished_at,
+            });
+            results.push(persist::tool_result(call, tool_outcome));
+        }
+        self.sessions
+            .update_message(assistant_id, persist::settle(outcome))
+            .await?;
+        let mut leaf_id = assistant_id;
+        for result in results {
+            let result_id = Uuid::new_v4();
+            let result = persist::settled(result_id, session_id, Some(leaf_id), result);
+            self.append(user_id, result).await?;
+            leaf_id = result_id;
+        }
+        Ok(leaf_id)
     }
 
     async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
