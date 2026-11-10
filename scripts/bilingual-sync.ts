@@ -27,7 +27,7 @@ export interface StoredBody {
 const EMPTY_PAIR: TextPair = { en: "", zh: "" };
 
 const STORED_BODY =
-    /^(?:(?<en>[\s\S]*?)\n\n)?<details>\n<summary>中文(?:：(?<zhTitle>.*))?<\/summary>\n\n(?:(?<zh>[\s\S]*?)\n\n)?<\/details>\n\n<!-- lemma-translation title=(?<titleEn>[0-9a-f]{16}):(?<titleZh>[0-9a-f]{16}) body=(?<bodyEn>[0-9a-f]{16}):(?<bodyZh>[0-9a-f]{16}) -->$/u;
+    /^(?:(?<en>[\s\S]*?)\n\n(?:---\n\n)?)?<details>\n<summary>(?:🌐 <b>中文<\/b>|中文)(?:：(?<zhTitle>.*))?<\/summary>\n\n(?:(?<zh>[\s\S]*?)\n\n)?<\/details>\n\n<!-- lemma-translation title=(?<titleEn>[0-9a-f]{16}):(?<titleZh>[0-9a-f]{16}) body=(?<bodyEn>[0-9a-f]{16}):(?<bodyZh>[0-9a-f]{16}) -->$/u;
 
 export async function syncItem(
     item: ItemText,
@@ -88,9 +88,9 @@ export function formatBody(
         (pair) => `${fingerprint(pair.en)}:${fingerprint(pair.zh)}`,
     );
     return [
-        ...(en === "" ? [] : [en, ""]),
+        ...(en === "" ? [] : [en, "", "---", ""]),
         "<details>",
-        `<summary>${zhTitle === "" ? "中文" : `中文：${zhTitle}`}</summary>`,
+        `<summary>🌐 <b>中文</b>${zhTitle === "" ? "" : `：${zhTitle}`}</summary>`,
         "",
         ...(zh === "" ? [] : [zh, ""]),
         "</details>",

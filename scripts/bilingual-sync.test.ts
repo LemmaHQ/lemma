@@ -143,7 +143,9 @@ void test("keeps angle brackets and ampersands of the Chinese title", () => {
         { en: "Text", zh: "文本" },
     );
     assert.ok(
-        body.includes("<summary>中文：使用 Vec&lt;T&gt; &amp; 其他</summary>"),
+        body.includes(
+            "<summary>🌐 <b>中文</b>：使用 Vec&lt;T&gt; &amp; 其他</summary>",
+        ),
         "the summary line is escaped",
     );
     assert.equal(parseBody(body)?.zhTitle, "使用 Vec<T> & 其他");
