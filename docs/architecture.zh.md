@@ -2,7 +2,7 @@
 
 [English](architecture.md) | 中文
 
-修改 `crates/` 下的任何内容之前先读本文。本文梳理 crate 分层、承载它们的两种运行时、一次 turn 的完整链路，以及新行为的接入点。术语以[术语表](glossary.zh.md)为准；类型定义放在 [subsystems/](subsystems/README.zh.md) 列出的子系统页面上。
+修改 `crates/` 下的任何内容之前先读本文。本文梳理 crate 分层、承载它们的三种运行时、一次 turn 的完整链路，以及新行为的接入点。术语以[术语表](glossary.zh.md)为准；类型定义放在 [subsystems/](subsystems/README.zh.md) 列出的子系统页面上。
 
 ## Crate 分层
 
@@ -15,26 +15,27 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 引擎  | `lemma-adapter`、`lemma-tool`、`lemma-agent-loop`               | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
 | Agent | `lemma-agent`                                                   | 根据请求组装一个 turn（provider 端点、适配器、会话、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                       |
 | RPC   | `crates/rpc/*`，包括 `lemma-host`                               | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
-| 宿主  | `lemma-server`、`lemma-mobile`                                  | 服务端可执行文件；面向 Android 的 UniFFI 门面                                                                                                                                                                           |
+| 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                 | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
 
 `lemma-auth`、`lemma-session` 与 `lemma-provider` 用 SeaORM 定义自己的表与迁移，通过同一个 `DatabaseConnection` 同样运行在 SQLite 与 PostgreSQL 上；引擎层与 agent 层只通过它们的服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
-`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/rpc/` 存放 Connect 服务；`crates/server/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主；`crates/test/` 下的 crate 只供测试使用（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
 ## 运行时
 
-同一套领域服务与 turn 循环运行在两种宿主中。客户端选择宿主；核心不感知调用方是哪个客户端。
+同一套领域服务与 turn 循环运行在三种宿主中。客户端选择宿主；核心不感知调用方是哪个客户端。
 
-| 运行时     | 宿主                                     | 存储                                                | 工具               | 已存储的 API key           |
-| ---------- | ---------------------------------------- | --------------------------------------------------- | ------------------ | -------------------------- |
-| 服务端模式 | `lemma-server`，端口 1025                | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                 | 用 `LEMMA_SECRET_KEY` 加密 |
-| 进程内     | Android 应用进程中的 `lemma-mobile`      | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
+| 运行时     | 宿主                                                         | 存储                                                | 工具               | 已存储的 API key           |
+| ---------- | ------------------------------------------------------------ | --------------------------------------------------- | ------------------ | -------------------------- |
+| 服务端模式 | `lemma-server`，端口 1025                                    | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                 | 用 `LEMMA_SECRET_KEY` 加密 |
+| 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
+| 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
-**本地引擎**是 `lemma-host` 中的 `LocalEngine`。它在一个数据目录上加载或创建保存 JWT 密钥与主密钥的 `secrets.json`，打开并迁移 `lemma.db`，并启用 `workspaces/` 下的工作区工具。它的 Connect 路由通过 `InProcessTransport` 在进程内处理请求，不监听网络端口。
+**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开引擎，引擎把 JWT 密钥与主密钥保存在其中的 `secrets.json` 里。用户自行注册账号；桌面端没有默认账号。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
-**进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它在应用的 `filesDir` 上打开本地引擎。应用访问它的 Connect 路由时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
+**进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它与桌面 addon 一样，在数据目录（应用的 `filesDir`）上打开引擎，并在进程内提供 Connect 路由。应用访问它时使用与远程模式访问服务端相同的 Connect Kotlin 客户端：一个 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。用户自行注册账号；没有默认账号。
 
 Web 客户端在每次查看时从宿主获取会话与消息。Android 客户端把显示过的消息完整缓存在 SQLDelight 中；删除会话时删去该会话的消息，客户端每次退出登录时清空整个缓存；缓存归客户端所有，宿主的存储才是记录本身。Android 客户端用 Android Keystore 中的密钥加密保存访问令牌和刷新令牌，所在文件不进入设备备份。备份会把引擎的 `lemma.db` 和 `secrets.json` 一起保留，因为数据库中的加密 key 只有用 `secrets.json` 里的密钥才能解开。
 
@@ -77,7 +78,7 @@ AgentService.SendMessage(session, provider, model, content)
 
 适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：Android 打开的本地引擎在数据目录下的 `workspaces/<session id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<session id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
 
 `AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
@@ -108,3 +109,4 @@ AgentService.SendMessage(session, provider, model, content)
 | 新增面向用户的错误             | 新增 `ErrorReason`，在 `lemma-proto/src/error.rs` 中映射，并在 `web/src/i18n/error-text.ts` 与两个语言文件中加入对应的 locale key |
 | 修改 schema                    | 在所属 crate 的 `src/migration/` 中新增一个 SeaORM 迁移，并列入该 crate 的 `migrations()`；由 `lemma-host` 运行                   |
 | 新增数据库后端                 | 在连接它的宿主中启用对应的 `sea-orm` 驱动 feature                                                                                 |
+| 让 Web 客户端使用桌面能力      | 扩展 preload 桥与 `web/src/platform/` 中的适配器（[web/AGENTS.zh.md](../web/AGENTS.zh.md#布局)）                                  |

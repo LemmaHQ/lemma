@@ -4,7 +4,7 @@ Remove code nothing reaches. The tools traverse from entry points rather than co
 
 ## Detect
 
-- **TypeScript** (web, packages, scripts, design): `just deadcode-check`. knip reads the entries in `knip.json` and each workspace's configuration. Do not use `jscpd --dead-code` here: it misses the script entries and reports their files as unused.
+- **TypeScript** (web, desktop, packages, scripts, design): `just deadcode-check`. knip reads the entries in `knip.json` and each workspace's configuration. Do not use `jscpd --dead-code` here: it misses the Electron and script entries and reports their files as unused.
 - **Rust**: with the user's consent to compile,
 
     ```sh
@@ -26,7 +26,7 @@ Remove code nothing reaches. The tools traverse from entry points rather than co
 
 ## Workflow
 
-1. Confirm each finding by hand before deleting: search the symbol across the whole repository, including `justfile`, `.github/workflows/`, `scripts/`, proto files, string-based lookups, and generated bindings. A Rust item may be reached through UniFFI from `mobile/`; a TypeScript export may be reached from `index.html`.
+1. Confirm each finding by hand before deleting: search the symbol across the whole repository, including `justfile`, `.github/workflows/`, `scripts/`, proto files, string-based lookups, and generated bindings. A Rust item may be reached through UniFFI from `mobile/` or through the Node-API addon from `desktop/`; a TypeScript export may be reached from `index.html` or the Electron Forge configuration.
 2. A finding that is a declared capability with no consumer, such as an RPC field or a configuration key, is a behavior decision; hand it to [lemma-find-simplifications](../../lemma-find-simplifications/SKILL.md) instead of deleting it here.
 3. Delete in small batches and run the matching checks after each batch; a tool proves nothing reaches the code, not that its removal leaves every build step intact.
 4. Re-run the tool after each batch and continue until a clean pass, since a file whose only importer you deleted is now dead too.

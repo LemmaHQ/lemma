@@ -1,11 +1,12 @@
-import { TooltipProvider } from "@lemma/ui";
 import { ThemeProvider } from "next-themes";
 import { RouterProvider } from "react-router/dom";
 
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from "@/features/preferences";
 
 import { AppToaster } from "./AppToaster";
+import { AppTooltipProvider } from "./AppTooltipProvider";
 import { router } from "./router";
+import { TitleBar } from "./TitleBar";
 
 export function App() {
     return (
@@ -16,10 +17,11 @@ export function App() {
             disableTransitionOnChange
             scriptProps={{ type: "application/json" }}
         >
-            <TooltipProvider>
+            <TitleBar />
+            <AppTooltipProvider>
                 <RouterProvider router={router} />
                 <AppToaster />
-            </TooltipProvider>
+            </AppTooltipProvider>
         </ThemeProvider>
     );
 }

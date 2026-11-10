@@ -5,7 +5,7 @@ description: Use when writing or reviewing Rust, TypeScript, or Kotlin code in L
 
 # Lemma Code Style
 
-Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language rules live in [crates/AGENTS.md](../../../crates/AGENTS.md) (Rust), [web/AGENTS.md](../../../web/AGENTS.md) (TypeScript), and [mobile/AGENTS.md](../../../mobile/AGENTS.md) (Kotlin). This skill holds the source file rules, the upstream style guides behind the per-language rules, and the order in which they apply.
+Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language rules live in [crates/AGENTS.md](../../../crates/AGENTS.md) (Rust), [web/AGENTS.md](../../../web/AGENTS.md) (TypeScript, also for `desktop/`), and [mobile/AGENTS.md](../../../mobile/AGENTS.md) (Kotlin). This skill holds the source file rules, the upstream style guides behind the per-language rules, and the order in which they apply.
 
 ## Precedence
 

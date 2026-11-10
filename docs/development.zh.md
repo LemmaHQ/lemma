@@ -27,7 +27,7 @@ npm ci
 cp .env.example .env
 ```
 
-`npm ci` 安装 `web` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。在 `.env` 中，让 `LEMMA_DB_PASSWORD` 与 `DATABASE_URL` 使用同一个数据库密码，并替换两个密钥。
+`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。在 `.env` 中，让 `LEMMA_DB_PASSWORD` 与 `DATABASE_URL` 使用同一个数据库密码，并替换两个密钥。
 
 ### 运行服务端与 Web 客户端
 
@@ -46,6 +46,10 @@ just rust-dev
 ### 在 PostgreSQL 上运行 Rust 测试
 
 `just rust-test` 在内存 SQLite 上运行数据库测试，CI 只跑这一种。要在 PostgreSQL 上也跑一遍：用 `docker compose up -d` 启动数据库，在 shell 中把 `LEMMA_TEST_POSTGRES_URL` 设为 `.env` 里的 `DATABASE_URL`，再运行 `just rust-test`。每个测试在该服务器上创建自己的数据库，结束后删除，`lemma-db` 中的数据保持不变。
+
+### 运行桌面应用
+
+`just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库与密钥保存在 Electron 的 `userData` 目录中，不需要 `.env`。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
 
 ### 运行 Android 应用
 
@@ -68,6 +72,8 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 | `LEMMA_SECRET_KEY`                               | `lemma-server`，服务端模式      | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取                          |
 | `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml`            | PostgreSQL 容器的数据库名、用户与密码；密码必填                                            |
 | `LEMMA_TEST_POSTGRES_URL`                        | Rust 测试，经由 `lemma-test-db` | 数据库测试在 SQLite 之外额外运行的 PostgreSQL 服务器；其角色为每个测试创建并删除一个数据库 |
+| `LEMMA_ENGINE_PROFILE`                           | `desktop/`                      | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`                          |
+| `LEMMA_DEBUG_PORT`                               | `desktop/`                      | Chromium 远程调试端口                                                                      |
 | `ANDROID_HOME`                                   | `mobile/shared` 的 Gradle 构建  | Android SDK 位置；也可用 `local.properties`                                                |
 
 `lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
@@ -76,7 +82,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 [.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
-结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试，以及 Android 测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
+结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
 Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。
 

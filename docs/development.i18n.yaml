@@ -15,14 +15,17 @@
   en: 99e7e724136db905
   zh: 032d8fe103cbf4e5
 /development/setup-tutorial/first-time-setup:
-  en: c7058e887d5e26aa
-  zh: f33af63c4c605129
+  en: feea15689bedea8d
+  zh: 088ea86b7a92959b
 /development/setup-tutorial/run-the-server-and-the-web-client:
   en: 4d90c7da7c546009
   zh: 3a71a96076b58011
 /development/setup-tutorial/run-the-rust-tests-on-postgresql:
   en: a213eee38d8238c6
   zh: 3836d5057a4532e5
+/development/setup-tutorial/run-the-desktop-app:
+  en: 7db995f161b7048a
+  zh: 5199baae5476f655
 /development/setup-tutorial/run-the-android-app:
   en: d641cbde46327c9f
   zh: 07d07bd37f0c8d6f
@@ -30,11 +33,11 @@
   en: e8d198429c35fa10
   zh: fa9493dbf6a94867
 /development/reference/environment-variables:
-  en: 6609afa42ded36c9
-  zh: 22415c54cf645951
+  en: c3181d88b5198a43
+  zh: ca9183edd255b219
 /development/reference/ci-workflows:
-  en: 06fcdf64759afcce
-  zh: 43951e5ab0f7f0ef
+  en: 91460cb82294b6e8
+  zh: cad0e6e35f9ca4e5
 /development/reference/daily-commands:
   en: beaf5dfb8765b16c
   zh: 7ae2b8e60e080694

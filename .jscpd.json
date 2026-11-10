@@ -2,6 +2,7 @@
     "path": [
         "crates",
         "web/src",
+        "desktop/src",
         "packages",
         "mobile",
         "scripts",

@@ -4,7 +4,7 @@
 
 ## 概要
 
-`design/` 存放 Web 与 Android 客户端的颜色、圆角与动效取值及其生成器。[`tokens.json`](tokens.json) 列出色板、亮色与暗色两套主题的颜色角色、圆角，以及动效的时长与缓动，[`gen-tokens.ts`](gen-tokens.ts) 把它们写入 Web 主题与 Android 色板。
+`design/` 存放三端客户端的颜色、圆角与动效取值及其生成器。[`tokens.json`](tokens.json) 列出色板、亮色与暗色两套主题的颜色角色、圆角，以及动效的时长与缓动，[`gen-tokens.ts`](gen-tokens.ts) 把它们写入 Web 主题、桌面端窗口颜色与 Android 色板。
 
 ## Token 文件
 
@@ -27,16 +27,18 @@
 
 ## 输出
 
-生成器写出两个文件，均被 Git 忽略：
+生成器写出三个文件，均被 Git 忽略：
 
 | 文件                                                            | 内容                                                                                                                                                     | 使用方                                               |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `packages/ui/src/styles/tokens.gen.css`                         | 一个 Tailwind `@theme` 块，每个圆角 token 一个 `--radius-*` 变量；`:root` 中每个动效 token 一个 CSS 变量，`:root` 与 `.dark` 中每个颜色角色一个 CSS 变量 | `packages/ui/src/styles/tokens.css` 导入它           |
+| `desktop/src/gen/theme-colors.ts`                               | 每套主题的背景、侧边栏与前景色                                                                                                                           | `desktop/src/main.ts` 据此设置标题栏与窗口颜色       |
 | `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | 以 Compose `Color` 表示的每个色板条目                                                                                                                    | `theme/LemmaColorScheme.kt` 把它映射到应用的颜色角色 |
 
 Android 应用只读取色板，只有 Web 主题读取圆角与动效 token。每个使用方在读取输出前运行生成器：
 
-- Web 的 npm 脚本在 `dev`、`build`、`lint`、`test`、`test:cov`、`format` 与 `format:check` 之前运行它；`@lemma/ui` 的 npm 脚本在 `lint` 之前运行它。
+- Web 的 npm 脚本在 `dev`、`build`、`build:desktop`、`lint`、`test`、`test:cov`、`format` 与 `format:check` 之前运行它；`@lemma/ui` 的 npm 脚本在 `lint` 之前运行它。
+- 桌面端的 npm 脚本在 `lint`、`test` 与 `test:cov` 之前运行它；桌面端的 `build` 先运行 Web 的 `build:desktop`。
 - Gradle 任务 `generateDesignTokens` 在 Kotlin 编译前运行它。
 
 `just design-gen` 用于手动运行。`web/vite.config.ts` 也通过同一个读取模块读取 `tokens.json`，用 `background` 与 `foreground` 角色为 Web 客户端的首次绘制着色。
@@ -48,8 +50,8 @@ Android 应用只读取色板，只有 Web 主题读取圆角与动效 token。�
 - `tokens.json` 缺少 `palette`、`light`、`dark`、`radius` 或 `motion` 分组，或 `motion` 缺少 `duration` 或 `easing`；
 - 某个色板条目既不是分组，也不是 `#rrggbb` 或 `#rrggbbaa` 颜色；
 - 某个主题角色没有引用已存在的色板条目；
-- `light` 与 `dark` 定义的角色不同；
+- `light` 与 `dark` 定义的角色不同，或缺少 `background`、`sidebar` 或 `foreground`；
 - 某个圆角不是非负的像素数；
 - 某个时长不是非负的毫秒数，或某个缓动不是四个数字，或其 `x1`、`x2` 不在 0 到 1 之间。
 
-`design/` 下的任何修改都会触发 Spec CI 运行它，Web CI 工作流也会随之运行。
+`design/` 下的任何修改都会触发 Spec CI 运行它，Web 与桌面端的 CI 工作流也会随之运行。

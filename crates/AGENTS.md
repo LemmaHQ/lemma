@@ -23,7 +23,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
+- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
 - Crates are named `lemma-<concept>`.
 - `lemma-auth`, `lemma-session`, and `lemma-provider` own their tables and SeaORM migrations in `src/migration/`; `lemma-host` runs them in name order. Scaffold one with `sea-orm-cli migrate init -d <tmp>` and `migrate generate <name> -d <tmp>`, then move it in.
 

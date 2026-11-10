@@ -3,14 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing AGENTS.md
 /agentsmd:
-  en: 8d1b02f9b70157e2
-  zh: 0b63a76b36a047ff
+  en: 5fa562cc8ce73cb8
+  zh: 024a4becb0d08858
 /agentsmd/repository-layout:
-  en: 573b80cbfeb13b31
-  zh: ae192abd6688e28b
+  en: afb77843734a2259
+  zh: 339675b927cc2ce6
 /agentsmd/commands:
-  en: 6929b4dc76e93d28
-  zh: dd02019c82fb50be
+  en: 5f30f57c3c9e9fed
+  zh: c491deeed3859c89
 /agentsmd/secrets--env:
   en: 629d32fa5fbaca8c
   zh: 7ff66c8a1bdce907

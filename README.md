@@ -7,14 +7,14 @@ English | [中文](README.zh.md)
     <img alt="Lemma" src="assets/brand/svg/lockup_workspace_light.svg" width="440">
 </picture>
 
-Lemma runs LLM agents for web and Android clients from one Rust core. You configure your own model providers, and the agent reads files, writes files, and runs shell commands in a workspace per session.
+Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. You configure your own model providers, and the agent reads files, writes files, and runs shell commands in a workspace per session.
 
 ## Features
 
 - **Three provider kinds.** OpenAI chat completions and compatible APIs, Anthropic, and Gemini, each with your own base URL and API key.
 - **Sessions as message trees.** Each message records its parent; a model request carries the path from the root to the active leaf.
-- **Agent tools.** `read_file`, `write_file`, and `bash` run in a workspace directory per session, in the Android app.
-- **Two runtimes.** A server for the browser and an in-process engine for Android run the same Rust core ([architecture](docs/architecture.md#runtimes)).
+- **Agent tools.** `read_file`, `write_file`, and `bash` run in a workspace directory per session, in the desktop app and the Android app.
+- **Three runtimes.** A server for the browser, a local engine for the desktop app, and an in-process engine for Android run the same Rust core ([architecture](docs/architecture.md#runtimes)).
 
 ## Quick start
 
@@ -29,7 +29,7 @@ just web-build
 just rust-dev
 ```
 
-Set the database password and both secrets in `.env` before `docker compose up -d`. The server then serves the web client at <http://localhost:1025>. [Development](docs/development.md) covers the Android app, Windows, and every environment variable.
+Set the database password and both secrets in `.env` before `docker compose up -d`. The server then serves the web client at <http://localhost:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and every environment variable.
 
 ## Repository
 
@@ -37,7 +37,8 @@ Set the database password and both secrets in `.env` before `docker compose up -
 | --- | --- |
 | `crates/` | Rust workspace: the core shared by every runtime, and the server |
 | `proto/` | Protobuf contracts, package `lemma.v1` |
-| `web/` | React web client |
+| `web/` | React web client, also the desktop renderer |
+| `desktop/` | Electron shell running the server as a local engine |
 | `mobile/` | Android app and Kotlin Multiplatform shared module |
 | `assets/` | Brand assets |
 | `docs/` | Documentation |

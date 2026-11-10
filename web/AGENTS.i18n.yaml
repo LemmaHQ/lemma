@@ -3,14 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing web/AGENTS.md
 /agentsmd--web-client:
-  en: 3048eecfc558abac
-  zh: a9dca2d84ff8d583
+  en: 001b19fc4a45b87d
+  zh: 6d895fdfc1c01e27
 /agentsmd--web-client/typescript:
-  en: a3a40d4a5fa4e041
-  zh: 8f6f0394b0e65f3c
+  en: a5406c0ee759bc3f
+  zh: 0ffbaff916d491b7
 /agentsmd--web-client/layout:
-  en: 12930954aeb6daff
-  zh: 1a8897e77f555f33
+  en: fb646d1ff864c3b8
+  zh: 7544126a05bccaad
 /agentsmd--web-client/styling:
   en: 98c62d8e87d8e30e
   zh: 3451effaf6590ef0

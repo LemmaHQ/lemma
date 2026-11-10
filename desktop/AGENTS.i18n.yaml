@@ -1,0 +1,13 @@
+# Translation-pairing record for AGENTS.md (docs/i18n/README.md): one
+# entry per heading section, holding a hash of its English and Chinese text.
+# After bringing both sides to the same meaning, re-record with:
+#   just docs-pairing desktop/AGENTS.md
+/agentsmd--desktop-shell:
+  en: f96e31de309fca63
+  zh: b69c6b2757a69bb2
+/agentsmd--desktop-shell/engine-and-renderer:
+  en: dc0425bf6c31776b
+  zh: 0cc38ba41c7699ee
+/agentsmd--desktop-shell/commands:
+  en: e8df0d16be105e5e
+  zh: 54966cac6508cfe4

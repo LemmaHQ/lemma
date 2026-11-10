@@ -23,7 +23,7 @@
 
 ## 布局
 
-- `shared/` 中的 crate 为所有运行时构建，包括 Android；`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host`；宿主目录（`server/`、`mobile/`）下的 crate 只编入该宿主；`test/` 中的 crate 只作为 dev-dependency 使用。
+- `shared/` 中的 crate 为所有运行时构建，包括 Android；`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host`；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主；`test/` 中的 crate 只作为 dev-dependency 使用。
 - crate 命名为 `lemma-<concept>`。
 - `lemma-auth`、`lemma-session` 与 `lemma-provider` 在各自的 `src/migration/` 中拥有自己的表及其 SeaORM migration；`lemma-host` 按名称顺序运行它们。新增时用 `sea-orm-cli migrate init -d <tmp>` 与 `migrate generate <name> -d <tmp>` 在临时目录中生成骨架，再把文件移进来。
 

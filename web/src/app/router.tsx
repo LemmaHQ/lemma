@@ -18,6 +18,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 Component: AuthLayout,
+                handle: { titleBar: "background" } satisfies RouteHandle,
                 children: [
                     {
                         path: paths.signIn,
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
             },
             {
                 Component: SignedInLayout,
+                handle: { titleBar: "sidebar" } satisfies RouteHandle,
                 loader: requireSignedIn,
                 shouldRevalidate: () => false,
                 children: [

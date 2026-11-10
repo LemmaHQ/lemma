@@ -8,6 +8,7 @@ on:
     paths:
       - "crates/**"
       - "web/src/**"
+      - "desktop/src/**"
       - "packages/**"
       - "mobile/**"
       - "scripts/**"
@@ -23,6 +24,7 @@ on:
     paths:
       - "crates/**"
       - "web/src/**"
+      - "desktop/src/**"
       - "packages/**"
       - "mobile/**"
       - "scripts/**"

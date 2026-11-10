@@ -162,7 +162,21 @@ When local state belongs to one entity, choose one behavior:
 
 ## Keep only external-system synchronization
 
-An effect fits when the component must connect to something React does not control. Integrations that fit: browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
+An effect fits when the component must connect to something React does not control. From `TitleBar.tsx`, which writes a root class and CSS variable and removes both on cleanup:
+
+```tsx
+useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("custom-titlebar", titlebarHeight > 0);
+    root.style.setProperty("--titlebar-height", `${titlebarHeight}px`);
+    return () => {
+        root.classList.remove("custom-titlebar");
+        root.style.removeProperty("--titlebar-height");
+    };
+}, [titlebarHeight]);
+```
+
+Other integrations that fit: the effect in `app/shell/TitleBar.tsx` sending the resolved theme and surface to the desktop title bar through `platform`, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
 
 ## Prefer conditional mounting for integrations
 

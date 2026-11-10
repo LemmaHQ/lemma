@@ -63,6 +63,7 @@ rust-test:
 rust-cov *args="--summary-only":
     cargo llvm-cov nextest --workspace \
         --exclude lemma-proto \
+        --exclude lemma-desktop \
         --exclude lemma-mobile \
         --exclude lemma-test-db \
         --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$)' \
@@ -117,6 +118,62 @@ web-test:
 [working-directory('web')]
 web-cov *args:
     npm run test:cov -- {{ args }}
+
+# Run oxlint
+[group('desktop')]
+[working-directory('desktop')]
+desktop-lint-check:
+    npm run lint
+
+# Apply oxlint fixes
+[group('desktop')]
+[working-directory('desktop')]
+desktop-lint:
+    npm run lint -- --fix
+
+# Check formatting
+[group('desktop')]
+[working-directory('desktop')]
+desktop-fmt-check:
+    npm run format:check
+
+# Format code
+[group('desktop')]
+[working-directory('desktop')]
+desktop-fmt:
+    npm run format
+
+# Build desktop web assets
+[group('desktop')]
+[working-directory('desktop')]
+desktop-build:
+    npm run build
+
+# Build the engine addon, then run the dev shell
+[group('desktop')]
+desktop-dev:
+    cargo build -p lemma-desktop
+    npm --workspace=@lemma/desktop run start
+
+# Run tests
+[group('desktop')]
+[working-directory('desktop')]
+desktop-test:
+    npm test
+
+# Coverage report; args go to vitest
+[group('desktop')]
+[working-directory('desktop')]
+desktop-cov *args:
+    npm run test:cov -- {{ args }}
+
+# Build the release engine addon and the renderer, then package the app
+[group('desktop')]
+[working-directory('desktop')]
+desktop-package:
+    cargo build --release -p lemma-desktop
+    just desktop-build
+    npm run package
 
 # Type-check the shared packages in packages/
 [group('packages')]
@@ -188,7 +245,7 @@ mobile-android-test *args:
 mobile-android-cov:
     ./gradlew :mobile:androidApp:koverHtmlReport :mobile:androidApp:verifyCoverage
 
-# Generate the web theme and Android palette from design tokens
+# Generate the web theme, desktop window colors, and Android palette from design tokens
 [group('design')]
 design-gen:
     node design/gen-tokens.ts

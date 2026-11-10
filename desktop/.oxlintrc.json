@@ -1,0 +1,11 @@
+{
+    "$schema": "../node_modules/oxlint/configuration_schema.json",
+    "extends": ["../.oxlintrc.json"],
+    "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "node"],
+    "env": {
+        "builtin": true,
+        "node": true,
+        "browser": true
+    },
+    "ignorePatterns": [".vite/**", "out/**", "web-dist/**"]
+}

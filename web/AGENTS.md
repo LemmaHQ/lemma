@@ -2,7 +2,7 @@
 
 English | [中文](AGENTS.zh.md)
 
-These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). The TypeScript rules also govern [packages/](../packages/AGENTS.md).
+These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). The TypeScript rules also govern [desktop/](../desktop/AGENTS.md) and [packages/](../packages/AGENTS.md).
 
 ## TypeScript
 
@@ -14,12 +14,12 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
 - **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/`, `design/`, and `i18n/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
-- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`, `design/`, and `i18n/`. `web/.oxlintrc.json` and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
+- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`, `design/`, and `i18n/`. `web/.oxlintrc.json`, `desktop/.oxlintrc.json`, and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
 
 ## Layout
 
 - Dependencies point one way: `src/platform/` → `src/rpc/` → `src/features/` → `src/app/`. `src/i18n/` holds the locale files and `error-text.ts`, which turns a failed request into localized text.
-- `src/platform/` exports `getPlatform()`, which returns the browser adapter with `baseUrl` (the server base URL), `fetch`, and `auth.cookieMode`.
+- `src/platform/` exports the `platform` adapter for the browser or the desktop engine; code outside it reaches desktop capabilities only through that adapter.
 - `src/rpc/` holds the transport, the ConnectRPC clients, the stored credentials, and `errors.ts`, which reads the `ErrorReason` of a failure.
 - `src/features/<domain>/` follows one layout: `index.ts` exports the feature's public components and hooks, `store.ts` is the only module that calls RPC and turns proto messages into view types, logic modules and their tests sit beside it, and every component lives in `components/`. Code outside a feature imports it through `@/features/<domain>`.
 - `src/app/` holds the route table in `router.tsx`, the paths in `route-paths.ts`, and one directory per layout route: `auth/`, `session/`, and `settings/`, each with the pages that only arrange feature components. `shell/` holds `SignedInLayout`, which guards the signed-in routes and owns the sidebar state, and `ShellFrame`, which both signed-in layouts fill with their sidebar, toolbar actions, and title. Features take paths as props instead of naming routes. `account-data.ts` empties the feature stores that hold account data whenever the signed-in user changes; a store added to that set is cleared there.

@@ -42,8 +42,9 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 ## Runtimes and accounts
 
 - **server mode** — the `lemma-server` binary: configured by environment variables or `.env`, listening on port 1025, without tools.
-- **local mode** — the Android in-process engine, which keeps data on the device.
-- **local engine** — `LocalEngine` in `lemma-host`: it opens over one data directory, loads or creates `secrets.json`, opens and migrates `lemma.db`, and roots session tools in `workspaces/`; the Android in-process engine opens one.
+- **local mode** — the runtimes that keep data on the device: the desktop local engine and the Android in-process engine.
+- **local engine** — the engine the `lemma-desktop` addon opens in Electron's engine process over the `userData` directory; the web client reaches it over a `MessagePort`.
+- **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no session messages.
 - **in-process engine** — `LemmaEngine` from `lemma-mobile`, which serves the Connect router inside the Android app; the app reaches it through UniFFI bindings.
 - **access token** — a JWT signed with the JWT secret, valid for 15 minutes, carrying the user id in `sub`.
 - **refresh token** — a random token valid for 30 days; the store keeps only its SHA-256 hash, and each refresh revokes it and issues a new pair.

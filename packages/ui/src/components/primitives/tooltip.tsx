@@ -1,16 +1,27 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { cn } from "#lib/cn";
+import * as React from "react";
 
+type CollisionPadding = NonNullable<
+    TooltipPrimitive.Positioner.Props["collisionPadding"]
+>;
+
+const CollisionPaddingContext = React.createContext<CollisionPadding>(5);
+
+/** `collisionPadding` sets the viewport inset every tooltip below keeps, such as room for a titlebar. */
 function TooltipProvider({
     delay = 0,
+    collisionPadding = 5,
     ...props
-}: TooltipPrimitive.Provider.Props) {
+}: TooltipPrimitive.Provider.Props & { collisionPadding?: CollisionPadding }) {
     return (
-        <TooltipPrimitive.Provider
-            data-slot="tooltip-provider"
-            delay={delay}
-            {...props}
-        />
+        <CollisionPaddingContext value={collisionPadding}>
+            <TooltipPrimitive.Provider
+                data-slot="tooltip-provider"
+                delay={delay}
+                {...props}
+            />
+        </CollisionPaddingContext>
     );
 }
 
@@ -28,13 +39,15 @@ function TooltipContent({
     sideOffset = 4,
     align = "center",
     alignOffset = 0,
+    collisionPadding,
     children,
     ...props
 }: TooltipPrimitive.Popup.Props &
     Pick<
         TooltipPrimitive.Positioner.Props,
-        "align" | "alignOffset" | "side" | "sideOffset"
+        "align" | "alignOffset" | "collisionPadding" | "side" | "sideOffset"
     >) {
+    const providerPadding = React.use(CollisionPaddingContext);
     return (
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Positioner
@@ -42,6 +55,7 @@ function TooltipContent({
                 alignOffset={alignOffset}
                 side={side}
                 sideOffset={sideOffset}
+                collisionPadding={collisionPadding ?? providerPadding}
                 className="isolate z-50"
             >
                 <TooltipPrimitive.Popup

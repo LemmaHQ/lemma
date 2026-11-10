@@ -1,4 +1,9 @@
 version:
+  client:
+    platforms: [web]
+    params: { version: string }
+    en: "Client v{version}"
+    zh: "客户端 v{version}"
   server:
     platforms: [web]
     params: { version: string }
