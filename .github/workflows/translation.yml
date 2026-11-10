@@ -1,0 +1,44 @@
+name: Translation
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request:
+    types: [opened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: translation-${{ github.event.comment.id && format('comment-{0}', github.event.comment.id) || github.event.issue.number || github.event.pull_request.number || 'open-items' }}
+  cancel-in-progress: true
+
+jobs:
+  translate:
+    name: Translate
+    # A pull request from a fork gets no secrets and a read-only token.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      # The script always comes from the default branch, never from the pull request under translation.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node
+
+      - name: Translate
+        run: node scripts/translate-github-item.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TRANSLATE_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
+          TRANSLATE_BASE_URL: ${{ vars.TRANSLATE_BASE_URL }}
+          TRANSLATE_MODEL: ${{ vars.TRANSLATE_MODEL }}

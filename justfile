@@ -307,6 +307,11 @@ scripts-lint-check:
 scripts-lint:
     npx --no-install oxlint --fix scripts design i18n
 
+# Test the repository scripts in scripts/
+[group('scripts')]
+scripts-test:
+    node --test scripts/*.test.ts
+
 # Report copy-pasted code
 [group('dup')]
 dup-check:

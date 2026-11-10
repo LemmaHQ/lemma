@@ -24,7 +24,7 @@ design/       各客户端的设计 token（tokens.json）及其生成器
 i18n/         平台中立的界面文案（i18n/README.md）及其生成器
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
-scripts/      文档检查：双语配对、翻译简报生成器、仓库引用
+scripts/      文档检查（双语配对、翻译简报生成器、仓库引用）与 issue 翻译脚本
 ```
 
 ## 命令

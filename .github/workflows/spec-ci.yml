@@ -134,6 +134,9 @@ jobs:
       - name: Lint scripts
         run: just scripts-lint-check
 
+      - name: Test scripts
+        run: just scripts-test
+
   check:
     name: check
     runs-on: ubuntu-latest

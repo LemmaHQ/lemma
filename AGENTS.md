@@ -24,7 +24,7 @@ design/       design tokens for all clients (tokens.json) and their generator
 i18n/         platform-neutral UI strings (i18n/README.md) and their generator
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
-scripts/      documentation checks: translation pairing, brief generator, repository references
+scripts/      documentation checks (translation pairing, brief generator, repository references) and the issue translator
 ```
 
 ## Commands
