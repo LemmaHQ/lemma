@@ -156,3 +156,18 @@ void test("reads a body without the marker as not rewritten", () => {
     assert.equal(parseBody(body.slice(0, body.lastIndexOf("<!--"))), undefined);
     assert.equal(parseBody("Plain text"), undefined);
 });
+
+const QUOTED_LAYOUT = (zhTitle: string, zh: string): string =>
+    `---\n\n<details>\n<summary>🌐 <b>中文</b>：${zhTitle}</summary>\n\n${zh}\n\n</details>`;
+
+void test("reads a body whose text quotes the block layout", () => {
+    const en = `The layout:\n\n${QUOTED_LAYOUT("标题", "正文")}\n\nEnd.`;
+    const zh = `布局：\n\n${QUOTED_LAYOUT("标题", "正文")}\n\n结束。`;
+    const body = formatBody({ en: "Title", zh: "标题" }, { en, zh });
+    assert.deepEqual([parseBody(body)?.en, parseBody(body)?.zh], [en, zh]);
+    const edited = body.replace("End.", "End!");
+    assert.deepEqual(
+        [parseBody(edited)?.en, parseBody(edited)?.zh],
+        [en.replace("End.", "End!"), zh],
+    );
+});

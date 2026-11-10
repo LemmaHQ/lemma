@@ -26,8 +26,12 @@ export interface StoredBody {
 
 const EMPTY_PAIR: TextPair = { en: "", zh: "" };
 
-const STORED_BODY =
-    /^(?:(?<en>[\s\S]*?)\n\n---\n\n)?<details>\n<summary>🌐 <b>中文<\/b>(?:：(?<zhTitle>.*))?<\/summary>\n\n(?:(?<zh>[\s\S]*?)\n\n)?<\/details>\n\n<!-- lemma-translation title=(?<titleEn>[0-9a-f]{16}):(?<titleZh>[0-9a-f]{16}) body=(?<bodyEn>[0-9a-f]{16}):(?<bodyZh>[0-9a-f]{16}) -->$/u;
+const BLOCK_START = /(?<=^|\n\n---\n\n)<details>\n<summary>🌐 <b>中文<\/b>/gu;
+
+const BLOCK =
+    /^<details>\n<summary>🌐 <b>中文<\/b>(?:：(?<zhTitle>.*))?<\/summary>\n\n(?:(?<zh>[\s\S]*?)\n\n)?<\/details>\n\n<!-- lemma-translation title=(?<titleEn>[0-9a-f]{16}):(?<titleZh>[0-9a-f]{16}) body=(?<bodyEn>[0-9a-f]{16}):(?<bodyZh>[0-9a-f]{16}) -->$/u;
+
+const SEPARATOR = "\n\n---\n\n";
 
 export async function syncItem(
     item: ItemText,
@@ -58,20 +62,38 @@ export async function syncItem(
 }
 
 export function parseBody(body: string): StoredBody | undefined {
-    const groups = STORED_BODY.exec(normalizeText(body))?.groups;
-    if (groups === undefined) return undefined;
-    return {
-        en: groups["en"] ?? "",
-        zhTitle: (groups["zhTitle"] ?? "")
-            .replaceAll("&lt;", "<")
-            .replaceAll("&gt;", ">")
-            .replaceAll("&amp;", "&"),
-        zh: groups["zh"] ?? "",
-        recorded: {
-            title: { en: groups["titleEn"] ?? "", zh: groups["titleZh"] ?? "" },
-            body: { en: groups["bodyEn"] ?? "", zh: groups["bodyZh"] ?? "" },
-        },
-    };
+    const text = normalizeText(body);
+    const candidates = [...text.matchAll(BLOCK_START)].flatMap(({ index }) => {
+        const groups = BLOCK.exec(text.slice(index))?.groups;
+        if (groups === undefined) return [];
+        return [
+            {
+                en: index === 0 ? "" : text.slice(0, index - SEPARATOR.length),
+                zhTitle: (groups["zhTitle"] ?? "")
+                    .replaceAll("&lt;", "<")
+                    .replaceAll("&gt;", ">")
+                    .replaceAll("&amp;", "&"),
+                zh: groups["zh"] ?? "",
+                recorded: {
+                    title: {
+                        en: groups["titleEn"] ?? "",
+                        zh: groups["titleZh"] ?? "",
+                    },
+                    body: {
+                        en: groups["bodyEn"] ?? "",
+                        zh: groups["bodyZh"] ?? "",
+                    },
+                },
+            },
+        ];
+    });
+    return (
+        candidates.find(
+            ({ en, zh, recorded }) =>
+                fingerprint(en) === recorded.body.en ||
+                fingerprint(zh) === recorded.body.zh,
+        ) ?? candidates[0]
+    );
 }
 
 export function formatBody(
