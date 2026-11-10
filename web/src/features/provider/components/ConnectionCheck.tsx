@@ -13,7 +13,7 @@ import {
     SelectValue,
     XIcon,
 } from "@lemma/ui";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -23,6 +23,8 @@ type CheckResult =
     | { status: "passed" }
     | { status: "failed"; message: string };
 
+type CheckStatus = CheckResult["status"] | "idle";
+
 interface ConnectionCheckProps {
     models: string[];
     /** Identifies the connection being checked; a result stays visible only while it matches. */
@@ -31,6 +33,19 @@ interface ConnectionCheckProps {
     /** Resolves to the upstream failure message, empty when the model answered. */
     onCheck: (model: string) => Promise<string>;
 }
+
+const STATUS_TONES: Record<CheckStatus, "default" | "success" | "destructive"> =
+    {
+        idle: "default",
+        checking: "default",
+        passed: "success",
+        failed: "destructive",
+    };
+
+const STATUS_ICONS: Partial<Record<CheckStatus, ReactNode>> = {
+    passed: <CheckIcon animate />,
+    failed: <XIcon animate />,
+};
 
 /** Settings row that sends a test request for one model through the connection. */
 export function ConnectionCheck({
@@ -48,6 +63,8 @@ export function ConnectionCheck({
         picked !== null && models.includes(picked) ? picked : models.at(0);
     const key = `${target}\n${model ?? ""}`;
     const current = result?.key === key ? result : null;
+    const status = current?.status ?? "idle";
+    const runnable = model !== undefined && !disabled;
 
     const check = async (checked: string) => {
         setResult({ key, status: "checking" });
@@ -65,10 +82,7 @@ export function ConnectionCheck({
     };
 
     return (
-        <Field
-            orientation="responsive"
-            data-invalid={current?.status === "failed"}
-        >
+        <Field orientation="responsive" data-invalid={status === "failed"}>
             <FieldContent>
                 <FieldLabel htmlFor="provider-check-model">
                     {t("provider.check")}
@@ -77,7 +91,7 @@ export function ConnectionCheck({
                     <FieldError>{current.message}</FieldError>
                 ) : (
                     <FieldDescription>
-                        {current?.status === "passed"
+                        {status === "passed"
                             ? t("provider.checkPassed")
                             : t("provider.checkDesc")}
                     </FieldDescription>
@@ -108,23 +122,12 @@ export function ConnectionCheck({
                 <Button
                     type="button"
                     variant="outline"
-                    tone={
-                        current?.status === "passed"
-                            ? "success"
-                            : current?.status === "failed"
-                              ? "destructive"
-                              : "default"
-                    }
-                    loading={current?.status === "checking"}
-                    disabled={disabled || model === undefined}
-                    onClick={
-                        model === undefined
-                            ? undefined
-                            : () => void check(model)
-                    }
+                    tone={STATUS_TONES[status]}
+                    loading={status === "checking"}
+                    disabled={!runnable}
+                    onClick={runnable ? () => void check(model) : undefined}
                 >
-                    {current?.status === "passed" && <CheckIcon animate />}
-                    {current?.status === "failed" && <XIcon animate />}
+                    {STATUS_ICONS[status]}
                     {t("provider.checkAction")}
                 </Button>
             </div>
