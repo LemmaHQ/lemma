@@ -29,6 +29,25 @@ export interface AgentItem {
     error?: string | undefined;
 }
 
+/** True when an assistant reply has produced no reasoning, text, or tool call. */
+export function isBlankReply(item: AgentItem): boolean {
+    return (
+        item.content === "" &&
+        item.thinking === "" &&
+        item.toolCalls.length === 0
+    );
+}
+
+/** How an assistant reply reads while it streams. */
+export function replyView(
+    item: AgentItem,
+): "pending" | "streaming" | "settled" {
+    if (item.status !== "streaming") {
+        return "settled";
+    }
+    return isBlankReply(item) ? "pending" : "streaming";
+}
+
 /** Maps a stored message to its display item. */
 export function protoToItem(m: Message): AgentItem {
     return {

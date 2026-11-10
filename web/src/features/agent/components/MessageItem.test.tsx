@@ -109,7 +109,6 @@ it("offers regenerate on the last reply and names its source", async () => {
     renderItem({
         message: assistant({ content: "answer" }),
         source: "Acme · m1",
-        canRegenerate: true,
         onRegenerate,
     });
 
@@ -120,18 +119,8 @@ it("offers regenerate on the last reply and names its source", async () => {
     expect(screen.getByRole("button", { name: "Copy" })).toBeDefined();
 });
 
-it.each([
-    [
-        "it cannot regenerate",
-        { canRegenerate: false, onRegenerate: vi.fn<(id: string) => void>() },
-    ],
-    ["no handler is given", { canRegenerate: true }],
-])("hides regenerate when %s", (_case, props) => {
-    renderItem({
-        message: assistant({ content: "answer" }),
-        source: "",
-        ...props,
-    });
+it("hides regenerate without a handler", () => {
+    renderItem({ message: assistant({ content: "answer" }) });
 
     expect(screen.queryByRole("button", { name: "Regenerate" })).toBeNull();
     expect(screen.queryByText("·", { exact: false })).toBeNull();

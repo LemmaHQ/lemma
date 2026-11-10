@@ -112,8 +112,9 @@ export function MessageList({
                         key={m.id}
                         message={m}
                         source={sourceOf(m)}
-                        canRegenerate={m.id === lastAssistantId}
-                        onRegenerate={onRegenerate}
+                        onRegenerate={
+                            m.id === lastAssistantId ? onRegenerate : undefined
+                        }
                     />
                 ))}
             </SessionContent>

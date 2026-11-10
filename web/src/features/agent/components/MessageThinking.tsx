@@ -6,7 +6,7 @@ import {
 } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
-import type { AgentItem } from "../agent-item";
+import { type AgentItem, isBlankReply } from "../agent-item";
 
 interface MessageThinkingProps {
     message: AgentItem;
@@ -15,11 +15,7 @@ interface MessageThinkingProps {
 
 export function MessageThinking({ message, streaming }: MessageThinkingProps) {
     const { t } = useTranslation();
-    const pending =
-        streaming &&
-        message.thinking === "" &&
-        message.content === "" &&
-        message.toolCalls.length === 0;
+    const pending = streaming && isBlankReply(message);
     if (pending) {
         return <ThinkingLoader label={t("agent.thinkingPending")} />;
     }

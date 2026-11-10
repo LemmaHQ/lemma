@@ -11,7 +11,7 @@ import {
     MessageRegenerateAction,
     MessageResponse,
 } from "@lemma/ui";
-import type { AgentItem } from "../agent-item";
+import { type AgentItem, replyView } from "../agent-item";
 
 import { MessageThinking } from "./MessageThinking";
 import { ToolCallList } from "./ToolCallList";
@@ -19,24 +19,17 @@ import { ToolCallList } from "./ToolCallList";
 interface MessageItemProps {
     message: AgentItem;
     source?: string | undefined;
-    canRegenerate?: boolean;
-    onRegenerate?: (id: string) => void;
+    onRegenerate?: ((id: string) => void) | undefined;
 }
 
 export function MessageItem({
     message,
     source,
-    canRegenerate,
     onRegenerate,
 }: MessageItemProps) {
     const { t } = useTranslation();
 
-    const streaming = message.status === "streaming";
-    const pendingThinking =
-        streaming &&
-        message.thinking === "" &&
-        message.content === "" &&
-        message.toolCalls.length === 0;
+    const view = replyView(message);
 
     if (message.role === "tool") {
         return null;
@@ -55,8 +48,11 @@ export function MessageItem({
     return (
         <Message from="assistant">
             <MessageContent>
-                <MessageThinking message={message} streaming={streaming} />
-                <MessageResponse isAnimating={streaming && !pendingThinking}>
+                <MessageThinking
+                    message={message}
+                    streaming={view !== "settled"}
+                />
+                <MessageResponse isAnimating={view === "streaming"}>
                     {message.content}
                 </MessageResponse>
                 {message.toolCalls.length > 0 && (
@@ -65,12 +61,9 @@ export function MessageItem({
                 {message.status === "error" && (
                     <Alert variant="destructive">
                         <AlertTitle>{t("errors.agentFailed")}</AlertTitle>
-                        {message.error !== undefined &&
-                            message.error !== "" && (
-                                <AlertDescription>
-                                    {message.error}
-                                </AlertDescription>
-                            )}
+                        {message.error !== undefined && (
+                            <AlertDescription>{message.error}</AlertDescription>
+                        )}
                     </Alert>
                 )}
                 {message.status === "aborted" && (
@@ -79,7 +72,7 @@ export function MessageItem({
                     </p>
                 )}
             </MessageContent>
-            {!streaming && (
+            {view === "settled" && (
                 <MessageActions>
                     {message.content !== "" && (
                         <MessageCopyAction
@@ -88,13 +81,13 @@ export function MessageItem({
                             copiedLabel={t("common.copied")}
                         />
                     )}
-                    {canRegenerate === true && onRegenerate !== undefined && (
+                    {onRegenerate !== undefined && (
                         <MessageRegenerateAction
                             label={t("session.regenerate")}
                             onRegenerate={() => onRegenerate(message.id)}
                         />
                     )}
-                    {source !== undefined && source !== "" && (
+                    {source !== undefined && (
                         <span className="text-caption text-subtle-foreground">
                             {source}
                         </span>
