@@ -18,12 +18,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
+/**
+ * An input on the fill surface; [trailingContent] takes the place of the end and vertical padding.
+ */
 @Composable
 fun LemmaTextField(
     value: String,
@@ -33,7 +36,9 @@ fun LemmaTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     leadingIcon: DrawableResource? = null,
-    keyboardType: KeyboardType = KeyboardType.Text,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier =
@@ -42,7 +47,8 @@ fun LemmaTextField(
                 .heightIn(min = 52.dp)
                 .clip(LemmaTheme.shapes.medium)
                 .background(LemmaTheme.colors.fill2)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(start = 16.dp, end = if (trailingContent == null) 16.dp else 4.dp)
+                .padding(vertical = if (trailingContent == null) 14.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (leadingIcon != null) {
@@ -68,7 +74,8 @@ fun LemmaTextField(
                 onValueChange = onValueChange,
                 enabled = enabled,
                 singleLine = singleLine,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                visualTransformation = visualTransformation,
+                keyboardOptions = keyboardOptions,
                 textStyle =
                     LemmaTheme.typography.bodyLarge.copy(
                         color =
@@ -79,5 +86,6 @@ fun LemmaTextField(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        trailingContent?.invoke()
     }
 }

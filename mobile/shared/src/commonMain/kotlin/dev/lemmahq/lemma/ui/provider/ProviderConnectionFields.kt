@@ -2,6 +2,7 @@ package dev.lemmahq.lemma.ui.provider
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,7 +60,7 @@ internal fun ProviderConnectionFields(
                 value = baseUrl,
                 onValueChange = onBaseUrlChange,
                 placeholder = placeholders.baseUrl,
-                keyboardType = KeyboardType.Uri,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             )
         }
         LemmaField(
@@ -74,7 +75,7 @@ internal fun ProviderConnectionFields(
                 value = apiPath,
                 onValueChange = onApiPathChange,
                 placeholder = placeholders.apiPath,
-                keyboardType = KeyboardType.Uri,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             )
         }
     }

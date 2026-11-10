@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,7 +83,7 @@ internal fun AuthFields(
                     placeholder = stringResource(Res.string.auth_email),
                     enabled = enabled,
                     leadingIcon = Res.drawable.icon_mail,
-                    keyboardType = KeyboardType.Email,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 )
                 PasswordField(password, onPasswordChange, enabled)
                 LemmaPasswordField(
