@@ -147,6 +147,13 @@ it("finishes thinking on done and leaves legacy events untimed", () => {
     expect(legacy.items()[0]?.thinkingStartedAt).toBeUndefined();
 });
 
+it("normalizes an empty error message", () => {
+    const { reducer, items } = harness();
+    reducer.applyEvent(at({ case: "error", value: { message: "" } }, 2000));
+
+    expect(items()[0]).toMatchObject({ status: "error", error: undefined });
+});
+
 type Kind = NonNullable<MessageInitShape<typeof AgentEventSchema>["kind"]>;
 
 const thinkingDelta: Kind = {

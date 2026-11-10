@@ -2,7 +2,7 @@ import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
-import type { AgentItem } from "./agent-item";
+import { type AgentItem, isBlankReply } from "./agent-item";
 
 /** The slice of active session state the reducer reads and patches. */
 export interface StreamSlice {
@@ -42,15 +42,26 @@ export function createStreamReducer(
         patchCurrent((it) => ({ ...it, ...patch }));
     };
 
+    const finishReply = (
+        at: number | undefined,
+        status: AgentItem["status"],
+        patch: Partial<AgentItem> = {},
+    ) => {
+        patchCurrent((it) => ({
+            ...it,
+            status,
+            ...patch,
+            thinkingFinishedAt: closedThinkingAt(it, at),
+        }));
+    };
+
     const startTurn = (messageId: string) => {
         const current = get().items.find((it) => it.id === currentId);
-        const empty =
+        if (
             current !== undefined &&
             current.role === "assistant" &&
-            current.content === "" &&
-            current.thinking === "" &&
-            current.toolCalls.length === 0;
-        if (empty) {
+            isBlankReply(current)
+        ) {
             updateCurrent({ id: messageId });
             currentId = messageId;
             return;
@@ -96,10 +107,7 @@ export function createStreamReducer(
                     patchCurrent((it) => ({
                         ...it,
                         content: it.content + part.value.content,
-                        thinkingFinishedAt:
-                            it.thinkingStartedAt === undefined
-                                ? undefined
-                                : (it.thinkingFinishedAt ?? at),
+                        thinkingFinishedAt: closedThinkingAt(it, at),
                     }));
                 } else if (part.case === "thinking") {
                     patchCurrent((it) => ({
@@ -113,10 +121,7 @@ export function createStreamReducer(
             case "toolCallStarted":
                 patchCurrent((it) => ({
                     ...it,
-                    thinkingFinishedAt:
-                        it.thinkingStartedAt === undefined
-                            ? undefined
-                            : (it.thinkingFinishedAt ?? at),
+                    thinkingFinishedAt: closedThinkingAt(it, at),
                     toolCalls: [
                         ...it.toolCalls,
                         {
@@ -150,35 +155,18 @@ export function createStreamReducer(
                 break;
             }
             case "done":
-                patchCurrent((it) => ({
-                    ...it,
-                    status: "done",
-                    thinkingFinishedAt:
-                        it.thinkingStartedAt === undefined
-                            ? undefined
-                            : (it.thinkingFinishedAt ?? at),
-                }));
+                finishReply(at, "done");
                 break;
             case "aborted":
-                patchCurrent((it) => ({
-                    ...it,
-                    status: "aborted",
-                    thinkingFinishedAt:
-                        it.thinkingStartedAt === undefined
-                            ? undefined
-                            : (it.thinkingFinishedAt ?? at),
-                }));
+                finishReply(at, "aborted");
                 break;
             case "error":
-                patchCurrent((it) => ({
-                    ...it,
-                    status: "error",
-                    error: kind.value.message,
-                    thinkingFinishedAt:
-                        it.thinkingStartedAt === undefined
+                finishReply(at, "error", {
+                    error:
+                        kind.value.message === ""
                             ? undefined
-                            : (it.thinkingFinishedAt ?? at),
-                }));
+                            : kind.value.message,
+                });
                 break;
             case undefined:
                 break;
@@ -186,4 +174,13 @@ export function createStreamReducer(
     };
 
     return { applyEvent, updateCurrent };
+}
+
+function closedThinkingAt(
+    item: AgentItem,
+    at: number | undefined,
+): number | undefined {
+    return item.thinkingStartedAt === undefined
+        ? undefined
+        : (item.thinkingFinishedAt ?? at);
 }
