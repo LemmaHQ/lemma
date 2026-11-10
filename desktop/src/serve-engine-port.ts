@@ -33,14 +33,16 @@ const isHeader = (value: unknown): value is EngineHeader =>
     typeof value[0] === "string" &&
     typeof value[1] === "string";
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
+
+const isString = (value: unknown): value is string => typeof value === "string";
+
+const isHeaders = (value: unknown): value is EngineHeader[] =>
+    Array.isArray(value) && value.every(isHeader);
+
 const isEngineRequest = (value: unknown): value is EngineRequest => {
-    if (
-        typeof value !== "object" ||
-        value === null ||
-        !("type" in value) ||
-        !("id" in value) ||
-        typeof value.id !== "number"
-    ) {
+    if (!isRecord(value) || typeof value.id !== "number") {
         return false;
     }
     if (value.type === "cancel") {
@@ -48,14 +50,9 @@ const isEngineRequest = (value: unknown): value is EngineRequest => {
     }
     return (
         value.type === "request" &&
-        "method" in value &&
-        typeof value.method === "string" &&
-        "path" in value &&
-        typeof value.path === "string" &&
-        "headers" in value &&
-        Array.isArray(value.headers) &&
-        value.headers.every(isHeader) &&
-        "body" in value &&
+        isString(value.method) &&
+        isString(value.path) &&
+        isHeaders(value.headers) &&
         value.body instanceof Uint8Array
     );
 };
