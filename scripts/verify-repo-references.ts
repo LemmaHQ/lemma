@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { reportProblems } from "./report-problems.ts";
 import { ROOT_DIR, git, readText } from "./translation-pairing.ts";
 
 const EXCLUDED =
@@ -140,9 +141,4 @@ for (const { where, target } of pathRefs) {
         problems.push(`${where}: missing path \`${target}\``);
 }
 
-problems.sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
-for (const problem of problems) {
-    console.error(problem);
-}
-console.log(`${files.length} files checked, ${problems.length} problems`);
-process.exit(problems.length > 0 ? 1 : 0);
+reportProblems(problems, `${files.length} files`);
