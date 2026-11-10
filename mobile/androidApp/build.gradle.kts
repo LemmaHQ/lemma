@@ -35,6 +35,18 @@ detekt {
     config.setFrom(rootProject.file("mobile/detekt.yml"))
 }
 
+afterEvaluate {
+    for (variant in listOf("Debug", "Release")) {
+        tasks.named<dev.detekt.gradle.Detekt>("detekt$variant") {
+            classpath.from(
+                tasks.named<JavaCompile>("compile${variant}JavaWithJavac").flatMap {
+                    it.destinationDirectory
+                }
+            )
+        }
+    }
+}
+
 kover {
     currentProject {
         instrumentation {
