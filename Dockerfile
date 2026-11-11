@@ -11,6 +11,7 @@ RUN BUF_VERSION=$(sed -nE 's/^[ "]*(buf)[ "]*= *"([^"]+)".*/\2/p' mise.toml) \
     && npm install -g "@bufbuild/buf@$BUF_VERSION"
 COPY proto ./proto
 COPY design ./design
+COPY i18n ./i18n
 COPY scripts ./scripts
 COPY tsconfig.base.json ./
 COPY web ./web
