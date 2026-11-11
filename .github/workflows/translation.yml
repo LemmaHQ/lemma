@@ -36,7 +36,7 @@ jobs:
           install_args: node
 
       - name: Translate
-        run: node scripts/translate-github-item.ts
+        run: node scripts/github-translation/translate-github-item.ts
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TRANSLATE_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}

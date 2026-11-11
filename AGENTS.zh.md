@@ -20,11 +20,11 @@ desktop/      Electron 外壳，在 utility process 中运行引擎（desktop/AG
 packages/     @lemma 命名空间下的共享 npm 包（packages/AGENTS.md）
 mobile/       Android 应用与 Kotlin Multiplatform 共享模块（mobile/AGENTS.md）
 assets/       品牌素材
-design/       各客户端的设计 token（tokens.json）及其生成器
-i18n/         平台中立的界面文案（i18n/README.md）及其生成器
+design/       各客户端的设计 token（tokens.json）
+i18n/         平台中立的界面文案（i18n/README.md）
 .agents/      skill
 docs/         文档（docs/AGENTS.md）
-scripts/      文档检查（双语配对、翻译简报生成器、仓库引用）与 issue 翻译脚本
+scripts/      由 Node 直接运行的仓库脚本：设计 token 与 i18n 生成器、文档检查、issue 翻译脚本、源码检查
 ```
 
 ## 命令
@@ -35,7 +35,7 @@ just web-dev             # Vite 开发服务器
 just desktop-dev         # 构建引擎 addon，再启动 Electron
 just design-gen          # 根据设计 token 重新生成 Web 主题、桌面端窗口颜色与 Android 色板
 just i18n-gen            # 根据平台中立的源文件重新生成客户端文案
-just i18n-test           # 测试 i18n 源文件验证与客户端渲染
+just scripts-test        # 测试 scripts/ 中的仓库脚本
 just docs-lint-check     # 对已跟踪的 Markdown 运行 markdownlint 与 autocorrect
 just docs-pairing-check  # 检查双语配对；docs-pairing <file> 记录一对
 just docs-refs-check     # 检查 Markdown 中引用的 recipe 名与仓库路径

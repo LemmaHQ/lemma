@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT_DIR } from "./translation-pairing.ts";
+import { ROOT_DIR } from "../shared/repository.ts";
 
 const MAX_LINES = 300;
 const SCRIPT = /\.(?:[cm]?[jt]s|[jt]sx)$/u;

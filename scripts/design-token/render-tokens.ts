@@ -3,7 +3,7 @@ import { THEMES, WINDOW_ROLES } from "./read-theme.ts";
 import type { Color, Theme, ThemeName } from "./read-theme.ts";
 
 const NOTICE =
-    "Generated from design/tokens.json by design/gen-tokens.ts. Direct changes are overwritten by the generator.";
+    "Generated from design/tokens.json by scripts/design-token/gen-tokens.ts. Direct changes are overwritten by the generator.";
 
 function cssBlock(
     selector: string,

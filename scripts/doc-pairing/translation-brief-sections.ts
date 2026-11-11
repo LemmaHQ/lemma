@@ -1,4 +1,4 @@
-import { git } from "./translation-pairing.ts";
+import { git } from "../shared/repository.ts";
 import type { Pair } from "./translation-pairing.ts";
 import { sectionKeys, splitSections } from "./translation-sections.ts";
 import type { Entry } from "./translation-sections.ts";

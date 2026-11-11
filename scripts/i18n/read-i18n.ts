@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parse } from "yaml";
+import { isRecord } from "../shared/type-guards.ts";
 import { fail, readEntry } from "./message-entry.ts";
 import type { MessageEntry } from "./message-entry.ts";
-import { isRecord } from "./type-guards.ts";
 
 export function readI18nSources(directory: string): MessageEntry[] {
     const files = fs

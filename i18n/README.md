@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-`i18n/` holds the English and Chinese text of Lemma's clients in platform-neutral YAML sources. The generator validates those sources and writes the web client's i18next locales. Edit the YAML sources, not the generated JSON.
+`i18n/` holds the English and Chinese text of Lemma's clients in platform-neutral YAML sources. The generator [`gen-i18n.ts`](../scripts/i18n/gen-i18n.ts) validates those sources and writes the web client's i18next locales. Edit the YAML sources, not the generated JSON.
 
 ## Source files
 
@@ -47,7 +47,7 @@ The web output contains the literal text `{model}`.
 1. Choose its namespace file and nested key, then add an entry with both languages.
 2. Declare every parameter and add `platforms` when the string does not apply to every client.
 3. For a plural, set `plural` and supply the required forms.
-4. Run `just i18n-gen`, then `just i18n-test` and `just web-test`.
+4. Run `just i18n-gen`, then `just scripts-test` and `just web-test`.
 
 Generation rejects unknown entry keys, invalid platforms or parameter types, missing languages or plural forms, undeclared placeholders, and unused parameters. An error names the source file and key path, and generation writes no output.
 

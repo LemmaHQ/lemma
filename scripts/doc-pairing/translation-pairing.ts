@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ROOT_DIR, git } from "../shared/repository.ts";
 
 export interface Pair {
     en: string;
@@ -8,29 +8,13 @@ export interface Pair {
     record: string;
 }
 
-export const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const EXCLUDED = [
     /^\.agents\/skills\/[^/]+\//u,
     /^docs\/i18n\/terminology\.md$/u,
 ];
 
-export function git(args: string[]): string {
-    return execFileSync("git", args, {
-        cwd: ROOT_DIR,
-        encoding: "utf8",
-        maxBuffer: 64 * 1024 * 1024,
-    });
-}
-
 export const isExcluded = (file: string): boolean =>
     EXCLUDED.some((pattern) => pattern.test(file));
-
-export function readText(file: string): string | null {
-    const absolute = path.join(ROOT_DIR, file);
-    return fs.existsSync(absolute)
-        ? fs.readFileSync(absolute, "utf8").replaceAll("\r\n", "\n")
-        : null;
-}
 
 export function pairOf(arg: string): Pair {
     const file = path

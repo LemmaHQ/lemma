@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { ROOT_DIR } from "../shared/repository.ts";
 import { readMotion, readRadii } from "./read-motion.ts";
 import { readThemes } from "./read-theme.ts";
 import { readTokenFile } from "./token-tree.ts";
@@ -9,7 +10,6 @@ import {
     generateWebCss,
 } from "./render-tokens.ts";
 
-const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const TOKENS_PATH = path.join(ROOT_DIR, "design/tokens.json");
 const UI_CSS_PATH = path.join(
     ROOT_DIR,

@@ -11,8 +11,8 @@
     ],
     "scripts": {
         "gen": "npm run gen:tokens && npm run gen:i18n && npm run gen:proto",
-        "gen:tokens": "node ../design/gen-tokens.ts",
-        "gen:i18n": "node ../i18n/gen-i18n.ts",
+        "gen:tokens": "node ../scripts/design-token/gen-tokens.ts",
+        "gen:i18n": "node ../scripts/i18n/gen-i18n.ts",
         "gen:proto": "cd ../proto && buf generate",
         "predev": "npm run gen",
         "dev": "vite",

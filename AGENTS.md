@@ -20,11 +20,11 @@ desktop/      Electron shell running the engine in a utility process (desktop/AG
 packages/     shared npm packages under the @lemma scope (packages/AGENTS.md)
 mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.md)
 assets/       brand assets
-design/       design tokens for all clients (tokens.json) and their generator
-i18n/         platform-neutral UI strings (i18n/README.md) and their generator
+design/       design tokens for all clients (tokens.json)
+i18n/         platform-neutral UI strings (i18n/README.md)
 .agents/      skills
 docs/         documentation (docs/AGENTS.md)
-scripts/      documentation checks (translation pairing, brief generator, repository references) and the issue translator
+scripts/      repository scripts run by Node: design token and i18n generators, documentation checks, the issue translator, source checks
 ```
 
 ## Commands
@@ -35,7 +35,7 @@ just web-dev             # Vite dev server
 just desktop-dev         # build the engine addon, then launch Electron
 just design-gen          # regenerate the web theme, desktop window colors, and Android palette from design tokens
 just i18n-gen            # regenerate client strings from the platform-neutral sources
-just i18n-test           # test i18n source validation and client rendering
+just scripts-test        # test the repository scripts in scripts/
 just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
 just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
 just docs-refs-check     # check recipe names and repository paths cited in Markdown

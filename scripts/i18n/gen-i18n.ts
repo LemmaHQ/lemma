@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
+import { ROOT_DIR } from "../shared/repository.ts";
 import { readI18nSources } from "./read-i18n.ts";
 import { renderWeb } from "./render-web.ts";
 
-const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const SOURCE_DIR = path.join(ROOT_DIR, "i18n");
 const LOCALE_DIR = path.join(ROOT_DIR, "web/src/i18n/locales");
 

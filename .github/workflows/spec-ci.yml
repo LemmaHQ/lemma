@@ -102,9 +102,6 @@ jobs:
       - name: Generate client strings
         run: just i18n-gen
 
-      - name: Test source validation and rendering
-        run: just i18n-test
-
   docs-lint:
     name: Docs Lint
     runs-on: ubuntu-latest

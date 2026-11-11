@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`design/` holds the colors, corner radii, and motion values of the three clients and their generator. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, and the motion durations and easings, and [`gen-tokens.ts`](gen-tokens.ts) writes them into the web theme, the desktop window colors, and the Android palette.
+`design/` holds the colors, corner radii, and motion values of the three clients. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, and the motion durations and easings, and the generator [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) writes them into the web theme, the desktop window colors, and the Android palette.
 
 ## Token file
 
@@ -54,4 +54,4 @@ The generator exits with an error, writing nothing, when:
 - a radius is not a non-negative number of pixels;
 - a duration is not a non-negative number of milliseconds, or an easing is not four numbers with `x1` and `x2` between 0 and 1.
 
-Spec CI runs it on every change under `design/`, and the Web and Desktop CI workflows run on those changes too.
+Spec CI runs it on every change under `design/` or `scripts/design-token/`, and the Web and Desktop CI workflows run on those changes too.

@@ -12,7 +12,7 @@
         "package": "electron-forge package",
         "make": "electron-forge make",
         "publish": "electron-forge publish",
-        "gen:tokens": "node ../design/gen-tokens.ts",
+        "gen:tokens": "node ../scripts/design-token/gen-tokens.ts",
         "prelint": "npm run gen:tokens",
         "lint": "oxlint",
         "pretest": "npm run gen:tokens",

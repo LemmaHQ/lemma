@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { ROOT_DIR, git } from "../shared/repository.ts";
 import { reportProblems } from "./report-problems.ts";
 import { checkSourceFile, matches } from "./source-file-rules.ts";
-import { ROOT_DIR, git } from "./translation-pairing.ts";
 
 const SOURCE = /\.(?:rs|py|proto|kt|kts|[cm]?[jt]s|[jt]sx)$/u;
 const UNCHECKED = [

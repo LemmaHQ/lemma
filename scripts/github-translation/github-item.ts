@@ -1,4 +1,4 @@
-import { isRecord } from "../i18n/type-guards.ts";
+import { isRecord } from "../shared/type-guards.ts";
 import type { ItemText } from "./bilingual-sync.ts";
 
 export interface Item extends ItemText {

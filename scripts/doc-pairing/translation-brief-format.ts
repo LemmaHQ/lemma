@@ -1,4 +1,4 @@
-import { readText } from "./translation-pairing.ts";
+import { readText } from "../shared/repository.ts";
 import type { Pair } from "./translation-pairing.ts";
 import { splitSections } from "./translation-sections.ts";
 import type { Section } from "./translation-sections.ts";
@@ -87,14 +87,14 @@ export const wholeDocumentBrief = (
     sourceSide: Side,
     extra: string[] = [],
 ): string[] => [
-    `# Translation brief: ${pair.en}`,
-    "",
-    `**${label}.** ${task}`,
-    ...extra,
-    "",
-    "## Terminology",
-    "",
-    terminologyRows(termsText, sourceSide),
-    "",
-    ...rules(pair),
-];
+        `# Translation brief: ${pair.en}`,
+        "",
+        `**${label}.** ${task}`,
+        ...extra,
+        "",
+        "## Terminology",
+        "",
+        terminologyRows(termsText, sourceSide),
+        "",
+        ...rules(pair),
+    ];

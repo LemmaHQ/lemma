@@ -4,7 +4,7 @@
 
 ## 概要
 
-`design/` 存放三端客户端的颜色、圆角与动效取值及其生成器。[`tokens.json`](tokens.json) 列出色板、亮色与暗色两套主题的颜色角色、圆角，以及动效的时长与缓动，[`gen-tokens.ts`](gen-tokens.ts) 把它们写入 Web 主题、桌面端窗口颜色与 Android 色板。
+`design/` 存放三端客户端的颜色、圆角与动效取值。[`tokens.json`](tokens.json) 列出色板、亮色与暗色两套主题的颜色角色、圆角，以及动效的时长与缓动，生成器 [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) 把它们写入 Web 主题、桌面端窗口颜色与 Android 色板。
 
 ## Token 文件
 
@@ -54,4 +54,4 @@ Android 应用只读取色板，只有 Web 主题读取圆角与动效 token。�
 - 某个圆角不是非负的像素数；
 - 某个时长不是非负的毫秒数，或某个缓动不是四个数字，或其 `x1`、`x2` 不在 0 到 1 之间。
 
-`design/` 下的任何修改都会触发 Spec CI 运行它，Web 与桌面端的 CI 工作流也会随之运行。
+`design/` 或 `scripts/design-token/` 下的任何修改都会触发 Spec CI 运行它，Web 与桌面端的 CI 工作流也会随之运行。

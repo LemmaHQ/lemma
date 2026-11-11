@@ -1,5 +1,5 @@
+import { isRecord } from "../shared/type-guards.ts";
 import { placeholders } from "./message-text.ts";
-import { isRecord } from "./type-guards.ts";
 
 const ALL_PLATFORMS = ["web", "android", "desktop"] as const;
 const ENTRY_KEYS: Record<string, true> = {

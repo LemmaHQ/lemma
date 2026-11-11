@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-`i18n/` 以平台中立的 YAML 源文件保存 Lemma 客户端的英文与中文文案。生成器验证这些源文件，并生成 Web 客户端的 i18next 语言文件。修改 YAML 源文件，不修改生成的 JSON。
+`i18n/` 以平台中立的 YAML 源文件保存 Lemma 客户端的英文与中文文案。生成器 [`gen-i18n.ts`](../scripts/i18n/gen-i18n.ts) 验证这些源文件，并生成 Web 客户端的 i18next 语言文件。修改 YAML 源文件，不修改生成的 JSON。
 
 ## 源文件
 
@@ -47,7 +47,7 @@ Web 输出包含字面量文本 `{model}`。
 1. 选择命名空间文件与嵌套键，添加同时包含两种语言的条目。
 2. 声明每个参数；文案不适用于所有客户端时，添加 `platforms`。
 3. 复数文案设置 `plural`，并提供必需的形式。
-4. 运行 `just i18n-gen`，然后运行 `just i18n-test` 与 `just web-test`。
+4. 运行 `just i18n-gen`，然后运行 `just scripts-test` 与 `just web-test`。
 
 生成器拒绝未知条目键、无效平台或参数类型、缺失的语言或复数形式、未声明的参数以及未使用的参数。错误信息包含源文件与键路径；验证失败时不写入输出。
 

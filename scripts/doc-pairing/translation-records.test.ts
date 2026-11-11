@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import type { TestContext } from "node:test";
-import { ROOT_DIR } from "./translation-pairing.ts";
+import { ROOT_DIR } from "../shared/repository.ts";
 import type { Pair } from "./translation-pairing.ts";
 import { checkPair, writeRecord } from "./translation-records.ts";
 

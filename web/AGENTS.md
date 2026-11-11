@@ -13,8 +13,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Modules use ES named exports;** types move through `import type` and `export type`.
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
-- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/`, `design/`, and `i18n/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
-- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`, `design/`, and `i18n/`. `web/.oxlintrc.json`, `desktop/.oxlintrc.json`, and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
+- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
+- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`. `web/.oxlintrc.json`, `desktop/.oxlintrc.json`, and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
 
 ## Layout
 

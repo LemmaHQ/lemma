@@ -248,17 +248,12 @@ mobile-android-cov:
 # Generate the web theme, desktop window colors, and Android palette from design tokens
 [group('design')]
 design-gen:
-    node design/gen-tokens.ts
+    node scripts/design-token/gen-tokens.ts
 
 # Generate client strings from the platform-neutral sources
 [group('i18n')]
 i18n-gen:
-    node i18n/gen-i18n.ts
-
-# Test source validation and client rendering
-[group('i18n')]
-i18n-test:
-    node --test i18n/*.test.ts
+    node scripts/i18n/gen-i18n.ts
 
 # Lint Markdown (markdownlint + autocorrect)
 [group('docs')]
@@ -275,42 +270,42 @@ docs-lint:
 # Check bilingual pairs against their records
 [group('docs')]
 docs-pairing-check *files:
-    node scripts/verify-translation-pairing.ts {{ files }}
+    node scripts/doc-pairing/verify-translation-pairing.ts {{ files }}
 
 # Record bilingual pairs; takes files or --all
 [group('docs')]
 docs-pairing *files:
-    node scripts/verify-translation-pairing.ts --write {{ files }}
+    node scripts/doc-pairing/verify-translation-pairing.ts --write {{ files }}
 
 # Print translation briefs for out-of-sync pairs
 [group('docs')]
 docs-brief *files:
-    node scripts/gen-translation-brief.ts {{ files }}
+    node scripts/doc-pairing/gen-translation-brief.ts {{ files }}
 
 # Check recipe names and repository paths cited in Markdown
 [group('docs')]
 docs-refs-check:
-    node scripts/verify-repo-references.ts
+    node scripts/repo-check/verify-repo-references.ts
 
-# Type-check the repository scripts in scripts/, design/, and i18n/
+# Type-check the repository scripts
 [group('scripts')]
 scripts-type-check:
     npx --no-install tsc -p .
 
-# Lint the repository scripts in scripts/, design/, and i18n/
+# Lint the repository scripts
 [group('scripts')]
 scripts-lint-check:
-    npx --no-install oxlint scripts design i18n
+    npx --no-install oxlint scripts
 
 # Apply oxlint fixes to the repository scripts
 [group('scripts')]
 scripts-lint:
-    npx --no-install oxlint --fix scripts design i18n
+    npx --no-install oxlint --fix scripts
 
-# Test the repository scripts in scripts/
+# Test the repository scripts
 [group('scripts')]
 scripts-test:
-    node --test scripts/*.test.ts
+    node --test "scripts/**/*.test.ts"
 
 # Report copy-pasted code
 [group('dup')]
@@ -326,4 +321,4 @@ deadcode-check:
 # Check source file length, names, re-export modules, and test placement
 [group('source')]
 source-check:
-    node scripts/verify-source-files.ts
+    node scripts/repo-check/verify-source-files.ts

@@ -5,9 +5,7 @@
         "desktop/src",
         "packages",
         "mobile",
-        "scripts",
-        "design",
-        "i18n"
+        "scripts"
     ],
     "ignore": [
         "**/*.json",
@@ -23,5 +21,12 @@
     ],
     "ignorePattern": ["(?m)^import\\s.*$", "(?m)^use\\s[^;]*;"],
     "minTokens": 70,
-    "minLines": 8
+    "minLines": 8,
+    "deadCode": {
+        "entry": [
+            "**/{verify,gen,translate}-*.ts",
+            "**/engine-host.ts",
+            "**/preload.ts"
+        ]
+    }
 }

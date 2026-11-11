@@ -20,7 +20,7 @@
     },
     "scripts": {
         "type-check": "tsc",
-        "prelint": "node ../../design/gen-tokens.ts",
+        "prelint": "node ../../scripts/design-token/gen-tokens.ts",
         "lint": "oxlint",
         "test": "vitest run",
         "test:cov": "vitest run --coverage",

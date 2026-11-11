@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ROOT_DIR, git, readText } from "../shared/repository.ts";
 import { reportProblems } from "./report-problems.ts";
-import { ROOT_DIR, git, readText } from "./translation-pairing.ts";
 
 const EXCLUDED =
     /^\.agents\/skills\/(lemma-code-style\/references|impeccable)\//u;

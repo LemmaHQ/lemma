@@ -23,7 +23,7 @@ No tool here finds dead Kotlin code in `mobile/`; search it by hand or leave it 
 npx --no-install jscpd --health --reporters ai --no-tips
 ```
 
-Read only the duplication and complexity sub-scores. The dead-code sub-score is unreliable in Lemma: jscpd infers entry points from `package.json`, so it reports the Electron entries, the scripts run by `node`, and every file they import as unused. knip has the configured entries; use it for that dimension.
+jscpd infers entry points from `package.json`; `deadCode.entry` in `.jscpd.json` adds the Electron entries and the scripts `node` runs directly. An entry outside those patterns needs a line there and in `knip.json`; otherwise jscpd reports it, and every file it imports, as unused.
 
 The lowest trustworthy dimension goes first. Otherwise the default order is duplication, then dead code, then complexity: merging clones first moves the call sites dead-code tracing would follow, and removing dead code first keeps the complexity ranking on files worth simplifying.
 
