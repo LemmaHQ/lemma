@@ -14,7 +14,7 @@ struct WriteFileArgs {
     content: String,
 }
 
-/// Tool for creating or overwriting files in workspace sandbox.
+/// Tool for creating or overwriting a file in the session directory.
 #[derive(Debug)]
 pub struct WriteFileTool;
 
@@ -29,7 +29,7 @@ impl<E: ExecEnv> Tool<E> for WriteFileTool {
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Workspace-relative file path."
+                        "description": "File path, relative to the session directory or absolute inside it."
                     },
                     "content": {
                         "type": "string",

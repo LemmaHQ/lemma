@@ -2279,6 +2279,7 @@ dependencies = [
  "lemma-session",
  "lemma-test-db",
  "lemma-tool",
+ "sea-orm",
  "sea-orm-migration",
  "serde_json",
  "thiserror",
@@ -2397,6 +2398,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "connectrpc",
+ "dunce",
  "futures",
  "hex",
  "jsonwebtoken",
@@ -2506,6 +2508,7 @@ name = "lemma-session"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dunce",
  "lemma-adapter",
  "lemma-auth",
  "lemma-core",
@@ -2558,8 +2561,10 @@ dependencies = [
 name = "lemma-tool"
 version = "0.1.0"
 dependencies = [
+ "dunce",
  "futures",
  "lemma-core",
+ "libc",
  "serde",
  "serde_json",
  "thiserror",

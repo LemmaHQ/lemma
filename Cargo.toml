@@ -40,6 +40,7 @@ connectrpc = { version = "0.9.0", features = ["server", "axum"] }
 connectrpc-build = "0.9.0"
 dashmap = "6.2.1"
 dotenvy = "0.15.7"
+dunce = "1.0.5"
 futures = "0.3.34"
 hex = "0.4.3"
 http = "1.5.0"
@@ -62,6 +63,7 @@ lemma-test-db = { path = "crates/test/lemma-test-db" }
 lemma-tool = { path = "crates/shared/lemma-tool" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }
+libc = "0.2.189"
 napi = { version = "3.15.0", features = ["async"] }
 napi-build = "2.6.0"
 napi-derive = "3.6.13"

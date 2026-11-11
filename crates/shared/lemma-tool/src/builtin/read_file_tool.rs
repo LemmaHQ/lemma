@@ -13,7 +13,7 @@ struct ReadFileArgs {
     path: String,
 }
 
-/// Tool for reading file contents from workspace sandbox.
+/// Tool for reading a file in the session directory.
 #[derive(Debug)]
 pub struct ReadFileTool;
 
@@ -27,7 +27,7 @@ impl<E: ExecEnv> Tool<E> for ReadFileTool {
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Workspace-relative file path."
+                        "description": "File path, relative to the session directory or absolute inside it."
                     }
                 },
                 "required": ["path"]
