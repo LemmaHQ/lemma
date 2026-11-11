@@ -6,25 +6,25 @@ import { AppearancePanel } from "@/features/preferences";
 
 import type { SettingsSegment } from "../route-paths";
 
-/** One settings page: its path segment, its navigation icon and title, and the page component it loads. */
-export interface SettingsSection {
+/** One settings page in the routes and the navigation: its path segment, its navigation icon and title, and the page component it loads. */
+export interface SettingsPageRoute {
     segment: SettingsSegment;
     icon: ComponentType;
     titleKey: ParseKeys;
     loadPage: () => Promise<ComponentType>;
 }
 
-/** A labeled group of settings sections in the navigation. */
+/** A labeled group of settings pages in the navigation. */
 export interface SettingsGroup {
     labelKey: ParseKeys;
-    sections: readonly SettingsSection[];
+    pages: readonly SettingsPageRoute[];
 }
 
-/** Every settings section in navigation order; it drives the settings routes and the navigation. */
+/** Every settings page in navigation order; it drives the settings routes and the navigation. */
 export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
     {
         labelKey: "settings.groupGeneral",
-        sections: [
+        pages: [
             {
                 segment: "appearance",
                 icon: PaletteIcon,
@@ -35,7 +35,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
     },
     {
         labelKey: "settings.groupAgent",
-        sections: [
+        pages: [
             {
                 segment: "providers",
                 icon: BotIcon,
@@ -47,6 +47,6 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
     },
 ];
 
-/** Every settings section in navigation order, without the groups. */
-export const SETTINGS_SECTIONS: readonly SettingsSection[] =
-    SETTINGS_GROUPS.flatMap((group) => group.sections);
+/** Every settings page in navigation order, without the groups. */
+export const SETTINGS_PAGES: readonly SettingsPageRoute[] =
+    SETTINGS_GROUPS.flatMap((group) => group.pages);

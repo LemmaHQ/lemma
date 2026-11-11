@@ -13,9 +13,9 @@ import { useTranslation } from "react-i18next";
 import { NavLink, useMatch } from "react-router";
 
 import { paths } from "../route-paths";
-import { SETTINGS_GROUPS } from "./settings-sections";
+import { SETTINGS_GROUPS } from "./settings-pages";
 
-/** Settings sections in the sidebar, grouped as `SETTINGS_GROUPS` lists them. */
+/** Settings pages in the sidebar, grouped as `SETTINGS_GROUPS` lists them. */
 export function SettingsNav() {
     const { t } = useTranslation();
     return SETTINGS_GROUPS.map((group) => (
@@ -23,12 +23,12 @@ export function SettingsNav() {
             <SidebarGroupLabel>{t(group.labelKey)}</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
-                    {group.sections.map((section) => (
+                    {group.pages.map((page) => (
                         <NavItem
-                            key={section.segment}
-                            icon={section.icon}
-                            label={t(section.titleKey)}
-                            to={paths.settingsSection(section.segment)}
+                            key={page.segment}
+                            icon={page.icon}
+                            label={t(page.titleKey)}
+                            to={paths.settingsPage(page.segment)}
                         />
                     ))}
                 </SidebarMenu>

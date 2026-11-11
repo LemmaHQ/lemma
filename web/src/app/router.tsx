@@ -6,7 +6,7 @@ import { refreshSessions } from "@/features/session";
 import { AuthLayout } from "./auth/AuthLayout";
 import type { RouteHandle } from "./route-handle";
 import { paths } from "./route-paths";
-import { SETTINGS_SECTIONS } from "./settings/settings-sections";
+import { SETTINGS_PAGES } from "./settings/settings-pages";
 import { SignedInLayout } from "./shell/SignedInLayout";
 import { SplashScreen } from "./SplashScreen";
 
@@ -69,15 +69,15 @@ export const router = createBrowserRouter([
                                 loader: toDefaultSettings,
                                 element: null,
                             },
-                            ...SETTINGS_SECTIONS.map((section) => ({
-                                path: section.segment,
+                            ...SETTINGS_PAGES.map((page) => ({
+                                path: page.segment,
                                 caseSensitive: true,
                                 lazy: async () => ({
-                                    Component: await section.loadPage(),
+                                    Component: await page.loadPage(),
                                 }),
                             })),
                             {
-                                path: ":section",
+                                path: ":segment",
                                 loader: toDefaultSettings,
                                 element: null,
                             },
@@ -111,5 +111,5 @@ async function sessionPage() {
 }
 
 function toDefaultSettings() {
-    return replace(paths.settingsSection("appearance"));
+    return replace(paths.settingsPage("appearance"));
 }

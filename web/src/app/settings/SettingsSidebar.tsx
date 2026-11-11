@@ -4,7 +4,7 @@ import { ViewTransition } from "react";
 import { BackHomeButton } from "./BackHomeButton";
 import { SettingsNav } from "./SettingsNav";
 
-/** The settings sidebar: the way back home above the settings sections. */
+/** The settings sidebar: the way back home above the settings pages. */
 export function SettingsSidebar() {
     return (
         <>

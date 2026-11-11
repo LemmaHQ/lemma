@@ -18,7 +18,7 @@ export function SessionPage() {
             sessionDirectory={directory}
             modelOptions={options}
             providerNames={providerNames}
-            providersPath={paths.settingsSection("providers")}
+            providersPath={paths.settingsPage("providers")}
             onCreateSession={async (newDirectory) => {
                 const id = await createSession(newDirectory);
                 void navigate(paths.session(id));
