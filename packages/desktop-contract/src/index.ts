@@ -18,6 +18,8 @@ export interface DesktopBridge {
      * engine is not running. Each call opens a new port.
      */
     connectEngine(): void;
+    /** Shows the native directory picker; resolves the chosen absolute path, or `null` when canceled. */
+    pickDirectory(): Promise<string | null>;
 }
 
 /** Window message carrying the engine port in `event.ports[0]`. */

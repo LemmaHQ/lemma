@@ -3,6 +3,14 @@ session:
     platforms: [web]
     en: "More actions"
     zh: "更多操作"
+  chooseFolder:
+    platforms: [web]
+    en: "Choose folder"
+    zh: "选择文件夹"
+  clearFolder:
+    platforms: [web]
+    en: "Clear folder"
+    zh: "取消选择文件夹"
   delete:
     platforms: [web]
     en: "Delete permanently"
@@ -15,6 +23,10 @@ session:
     platforms: [web]
     en: "Permanently delete this session?"
     zh: "彻底删除该会话？"
+  directoryLabel:
+    platforms: [web]
+    en: "Session folder"
+    zh: "会话文件夹"
   disclaimer:
     platforms: [web]
     en: "AI can make mistakes. Verify important information."

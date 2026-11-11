@@ -9,6 +9,7 @@ import {
     loadFatalPage,
     titleBarOverlay,
 } from "./main-window";
+import { pickDirectory } from "./pick-directory";
 
 if (started) {
     app.quit();
@@ -56,6 +57,9 @@ ipcMain.on("toggle-maximize", () => {
         mainWindow.maximize();
     }
 });
+ipcMain.handle("pick-directory", () =>
+    mainWindow === null ? Promise.resolve(null) : pickDirectory(mainWindow),
+);
 
 let fatalDetail: string | null = null;
 let engineStart: Promise<void> = Promise.resolve();

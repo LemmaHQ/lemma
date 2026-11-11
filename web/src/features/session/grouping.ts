@@ -2,6 +2,7 @@ export interface SessionSummary {
     id: string;
     title: string;
     updatedAtMs: number;
+    directory?: string;
 }
 
 export type GroupKey = "today" | "yesterday" | "last7Days" | "earlier";

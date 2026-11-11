@@ -10,7 +10,7 @@ interface SessionState {
     list: SessionSummary[];
     loaded: boolean;
     refresh: () => Promise<void>;
-    create: () => Promise<string>;
+    create: (directory?: string) => Promise<string>;
     rename: (id: string, title: string) => Promise<void>;
     delete: (id: string) => Promise<void>;
 }
@@ -24,8 +24,10 @@ export const useSessionStore = create<SessionState>()((set) => ({
         set({ list: res.sessions.map(toSummary), loaded: true });
     },
 
-    create: async () => {
-        const res = await sessionClient.createSession({});
+    create: async (directory) => {
+        const res = await sessionClient.createSession(
+            directory === undefined ? {} : { directory },
+        );
         if (res.session === undefined) {
             throw new Error("no session in response");
         }
@@ -62,5 +64,6 @@ function toSummary(c: Session): SessionSummary {
             c.updatedAt === undefined
                 ? 0
                 : timestampDate(c.updatedAt).getTime(),
+        ...(c.directory === undefined ? {} : { directory: c.directory }),
     };
 }

@@ -14,9 +14,12 @@ import {
 import type { ModelOption, ModelSelection } from "../useModelSelection";
 
 import { ModelSwitcher } from "./ModelSwitcher";
+import { SessionDirectory } from "./SessionDirectory";
 
 interface MessageComposerProps {
     value: string;
+    directory: string | null;
+    onDirectoryChange?: (directory: string | null) => void;
     onChange: (value: string) => void;
     onSend: () => void;
     onStop?: () => void;
@@ -30,6 +33,8 @@ interface MessageComposerProps {
 
 export function MessageComposer({
     value,
+    directory,
+    onDirectoryChange,
     onChange,
     onSend,
     onStop,
@@ -45,6 +50,12 @@ export function MessageComposer({
 
     return (
         <div className="flex flex-col gap-2">
+            <SessionDirectory
+                value={directory}
+                {...(onDirectoryChange === undefined
+                    ? {}
+                    : { onChange: onDirectoryChange })}
+            />
             <PromptInput
                 onSubmit={() => {
                     if (canSend) {

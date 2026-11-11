@@ -55,6 +55,7 @@ const desktopBridge = () => ({
     setTitleBar: vi.fn<DesktopBridge["setTitleBar"]>(),
     toggleMaximize: vi.fn<DesktopBridge["toggleMaximize"]>(),
     connectEngine: vi.fn<DesktopBridge["connectEngine"]>(),
+    pickDirectory: vi.fn<DesktopBridge["pickDirectory"]>(),
 });
 
 const start = async (path: string) => {
@@ -246,6 +247,7 @@ it("creates a session for the first message and opens it", async () => {
     await waitFor(() => {
         expect(window.location.pathname).toBe("/sessions/c9");
     });
+    expect(rpc.createSession).toHaveBeenCalledWith({});
     expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
         sessionId: "c9",
         content: "hello",

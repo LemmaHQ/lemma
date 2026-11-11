@@ -27,6 +27,7 @@ export class BrowserAdapter implements PlatformAdapter {
         globalThis.fetch(input, init);
 
     readonly clientVersion = null;
+    readonly directoryPicker = null;
 
     readonly window = {
         setTitleBar: ignoreWindowCommand,

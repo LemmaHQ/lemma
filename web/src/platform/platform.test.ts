@@ -16,6 +16,7 @@ it("runs as the browser client without a desktop bridge", async () => {
     const platform = getPlatform();
 
     expect(platform.clientVersion).toBeNull();
+    expect(platform.directoryPicker).toBeNull();
     expect(platform.titlebarHeight).toBe(0);
     expect(getPlatform()).toBe(platform);
 });
@@ -28,6 +29,7 @@ it("runs on the desktop engine when the preload exposes its bridge", async () =>
         setTitleBar: () => {},
         toggleMaximize: () => {},
         connectEngine: connect,
+        pickDirectory: () => Promise.resolve("C:\\work\\project"),
     };
     const { getPlatform } = await loadPlatform();
 
@@ -37,5 +39,8 @@ it("runs on the desktop engine when the preload exposes its bridge", async () =>
     expect(platform.titlebarHeight).toBe(40);
     expect(platform.baseUrl).toBe("http://engine.lemma.invalid");
     expect(platform.auth.cookieMode).toBe(false);
+    await expect(platform.directoryPicker?.pick()).resolves.toBe(
+        "C:\\work\\project",
+    );
     expect(connect).toHaveBeenCalledOnce();
 });

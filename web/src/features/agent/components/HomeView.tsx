@@ -7,6 +7,8 @@ import { MessageComposer } from "./MessageComposer";
 
 interface HomeViewProps {
     onSubmit: (text: string) => void;
+    directory: string | null;
+    onDirectoryChange: (directory: string | null) => void;
     model: ModelSelection | null;
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
@@ -15,6 +17,8 @@ interface HomeViewProps {
 
 export function HomeView({
     onSubmit,
+    directory,
+    onDirectoryChange,
     model,
     modelOptions,
     onModelChange,
@@ -31,6 +35,8 @@ export function HomeView({
                 </h1>
                 <MessageComposer
                     value={value}
+                    directory={directory}
+                    onDirectoryChange={onDirectoryChange}
                     onChange={setValue}
                     onSend={() => onSubmit(value.trim())}
                     model={model}

@@ -13,20 +13,23 @@ import { MessageList } from "./MessageList";
 /** Active session or new-session composer; the page supplies the models, creates sessions, and names the path of the provider settings. */
 export function SessionView({
     sessionId,
+    sessionDirectory,
     modelOptions,
     providerNames,
     providersPath,
     onCreateSession,
 }: {
     sessionId: string | null;
+    sessionDirectory?: string | undefined;
     modelOptions: ModelOption[];
     providerNames: Map<string, string>;
     providersPath: string;
-    onCreateSession: () => Promise<string>;
+    onCreateSession: (directory?: string) => Promise<string>;
 }) {
     const { t } = useTranslation();
     const session = useActiveSession();
     const [draft, setDraft] = useState("");
+    const [directory, setDirectory] = useState<string | null>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const { model, selectModel } = useModelSelection(modelOptions);
 
@@ -44,7 +47,7 @@ export function SessionView({
         try {
             let cid = sessionId;
             if (cid === null) {
-                cid = await onCreateSession();
+                cid = await onCreateSession(directory ?? undefined);
                 await session.open(cid);
             }
             await session.send(model.providerId, model.model, text);
@@ -84,6 +87,8 @@ export function SessionView({
     return sessionId === null ? (
         <HomeView
             onSubmit={(text) => void sendText(text)}
+            directory={directory}
+            onDirectoryChange={setDirectory}
             model={model}
             modelOptions={modelOptions}
             onModelChange={selectModel}
@@ -103,6 +108,7 @@ export function SessionView({
             <div className="mx-auto w-full max-w-3xl px-4 pb-6 md:px-6">
                 <MessageComposer
                     value={draft}
+                    directory={sessionDirectory ?? null}
                     onChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}

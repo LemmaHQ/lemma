@@ -5,7 +5,7 @@ import {
     createEngineFetch,
     ENGINE_BASE_URL,
 } from "./engine-fetch";
-import type { PlatformAdapter } from "./types";
+import type { DirectoryPicker, PlatformAdapter } from "./types";
 
 declare global {
     interface Window {
@@ -18,6 +18,7 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly fetch: typeof globalThis.fetch;
     readonly window: PlatformAdapter["window"];
     readonly auth: PlatformAdapter["auth"];
+    readonly directoryPicker: DirectoryPicker;
     readonly titlebarHeight: number;
     readonly clientVersion: string;
 
@@ -35,6 +36,9 @@ export class DesktopAdapter implements PlatformAdapter {
         };
         this.auth = {
             cookieMode: false,
+        };
+        this.directoryPicker = {
+            pick: () => bridge.pickDirectory(),
         };
     }
 }

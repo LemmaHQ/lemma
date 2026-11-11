@@ -37,6 +37,15 @@ vi.mock("@/rpc/clients", () => ({
     sessionClient: { listMessages: rpc.listMessages },
 }));
 
+const platform = vi.hoisted(() => {
+    const state: {
+        directoryPicker: { pick: () => Promise<string | null> } | null;
+    } = { directoryPicker: null };
+    return state;
+});
+
+vi.mock("@/platform/platform", () => ({ getPlatform: () => platform }));
+
 const options: ModelOption[] = [
     { providerId: "p1", model: "m1", providerName: "Acme" },
 ];
@@ -75,6 +84,7 @@ const composer = () =>
 
 beforeEach(() => {
     clearActiveSession();
+    platform.directoryPicker = null;
     localStorage.clear();
     vi.resetAllMocks();
     rpc.listMessages.mockResolvedValue(history([]));
@@ -130,7 +140,7 @@ it("fills the composer with a picked suggestion", async () => {
 
 it("creates a session from the home composer before sending", async () => {
     const user = userEvent.setup();
-    const onCreateSession = vi.fn<() => Promise<string>>(() =>
+    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
         Promise.resolve("new"),
     );
     renderView({ sessionId: null, onCreateSession });
@@ -146,6 +156,104 @@ it("creates a session from the home composer before sending", async () => {
         sessionId: "new",
         content: "start here",
     });
+});
+
+it("creates the first session with the picked folder", async () => {
+    const user = userEvent.setup();
+    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
+        Promise.resolve("new"),
+    );
+    platform.directoryPicker = {
+        pick: vi.fn<() => Promise<string | null>>(() =>
+            Promise.resolve("C:\\work\\project"),
+        ),
+    };
+    renderView({ sessionId: null, onCreateSession });
+
+    await user.click(screen.getByRole("button", { name: "Choose folder" }));
+    expect(await screen.findByText("C:\\work\\project")).toBeDefined();
+    await user.type(composer(), "inspect this repository");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    await vi.waitFor(() => {
+        expect(rpc.sendMessage).toHaveBeenCalled();
+    });
+    expect(onCreateSession).toHaveBeenCalledWith("C:\\work\\project");
+});
+
+it("creates without a folder after the selection is cleared", async () => {
+    const user = userEvent.setup();
+    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
+        Promise.resolve("new"),
+    );
+    platform.directoryPicker = {
+        pick: vi.fn<() => Promise<string | null>>(() =>
+            Promise.resolve("C:\\work\\project"),
+        ),
+    };
+    renderView({ sessionId: null, onCreateSession });
+
+    await user.click(screen.getByRole("button", { name: "Choose folder" }));
+    await user.click(
+        await screen.findByRole("button", { name: "Clear folder" }),
+    );
+    await user.type(composer(), "start here");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    await vi.waitFor(() => {
+        expect(onCreateSession).toHaveBeenCalledWith(undefined);
+    });
+});
+
+it("keeps the chosen folder when the picker is canceled", async () => {
+    const user = userEvent.setup();
+    const pick = vi
+        .fn<() => Promise<string | null>>()
+        .mockResolvedValueOnce("C:\\work\\project")
+        .mockResolvedValueOnce(null);
+    platform.directoryPicker = { pick };
+    renderView({ sessionId: null });
+
+    await user.click(screen.getByRole("button", { name: "Choose folder" }));
+    await user.click(
+        await screen.findByRole("button", { name: "C:\\work\\project" }),
+    );
+
+    await vi.waitFor(() => {
+        expect(pick).toHaveBeenCalledTimes(2);
+    });
+    expect(
+        await screen.findByRole("button", { name: "C:\\work\\project" }),
+    ).toBeDefined();
+});
+
+it("shows a toast when the folder picker fails", async () => {
+    const user = userEvent.setup();
+    platform.directoryPicker = {
+        pick: () => Promise.reject(new Error("dialog failed")),
+    };
+    renderView({ sessionId: null });
+
+    await user.click(screen.getByRole("button", { name: "Choose folder" }));
+
+    expect(
+        await screen.findByText("Something went wrong, please try again"),
+    ).toBeDefined();
+    expect(screen.getByRole("button", { name: "Choose folder" })).toBeDefined();
+});
+
+it("shows no folder picker in the browser", () => {
+    renderView({ sessionId: null });
+
+    expect(screen.queryByRole("button", { name: "Choose folder" })).toBeNull();
+});
+
+it("shows an existing session folder without editing controls", async () => {
+    renderView({ sessionDirectory: "C:\\work\\project" });
+
+    expect(await screen.findByText("C:\\work\\project")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Choose folder" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Clear folder" })).toBeNull();
 });
 
 it("shows a toast when the session cannot be created", async () => {
@@ -169,7 +277,7 @@ it("shows a toast when the session cannot be created", async () => {
 
 it("holds a home send while an earlier reply still streams", async () => {
     const user = userEvent.setup();
-    const onCreateSession = vi.fn<() => Promise<string>>(() =>
+    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
         Promise.resolve("new"),
     );
     useActiveSession.setState({ streaming: true });

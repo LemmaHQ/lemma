@@ -6,9 +6,9 @@ export function refreshSessions(): Promise<void> {
     return useSessionStore.getState().refresh();
 }
 
-/** Creates an empty session and returns its id. */
-export function createSession(): Promise<string> {
-    return useSessionStore.getState().create();
+/** Creates an empty session, optionally bound to `directory`, and returns its id. */
+export function createSession(directory?: string): Promise<string> {
+    return useSessionStore.getState().create(directory);
 }
 
 /** Drops the loaded session list; the next `useSessions` mount or `refreshSessions` call loads it again. */

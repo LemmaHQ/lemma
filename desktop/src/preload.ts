@@ -32,5 +32,9 @@ const bridge: DesktopBridge = {
     connectEngine: (): void => {
         ipcRenderer.send("engine-connect");
     },
+    pickDirectory: async (): Promise<string | null> => {
+        const path: unknown = await ipcRenderer.invoke("pick-directory");
+        return typeof path === "string" ? path : null;
+    },
 };
 contextBridge.exposeInMainWorld("lemmaDesktop", bridge);

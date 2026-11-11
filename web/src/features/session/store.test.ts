@@ -19,13 +19,19 @@ const rpc = vi.hoisted(() => ({
 
 vi.mock("@/rpc/clients", () => ({ sessionClient: rpc }));
 
-const session = (id: string, title: string, updatedMs?: number) =>
+const session = (
+    id: string,
+    title: string,
+    updatedMs?: number,
+    directory?: string,
+) =>
     create(SessionSchema, {
         id,
         title,
         ...(updatedMs === undefined
             ? {}
             : { updatedAt: timestampFromDate(new Date(updatedMs)) }),
+        ...(directory === undefined ? {} : { directory }),
     });
 
 const list = () => useSessionStore.getState().list;
@@ -34,7 +40,10 @@ beforeEach(async () => {
     vi.resetAllMocks();
     clearSessions();
     rpc.listSessions.mockResolvedValue({
-        sessions: [session("c1", "First", 5000), session("c2", "")],
+        sessions: [
+            session("c1", "First", 5000, "C:\\work\\first"),
+            session("c2", ""),
+        ],
     });
     await refreshSessions();
 });
@@ -42,24 +51,34 @@ beforeEach(async () => {
 it("loads the list with update times, zero when unknown", () => {
     expect(useSessionStore.getState().loaded).toBe(true);
     expect(list()).toEqual([
-        { id: "c1", title: "First", updatedAtMs: 5000 },
+        {
+            id: "c1",
+            title: "First",
+            updatedAtMs: 5000,
+            directory: "C:\\work\\first",
+        },
         { id: "c2", title: "", updatedAtMs: 0 },
     ]);
 });
 
 it("puts a created session first", async () => {
     rpc.createSession.mockResolvedValue({
-        session: session("c3", "", 9000),
+        session: session("c3", "", 9000, "C:\\work\\new"),
     });
 
-    await expect(createSession()).resolves.toBe("c3");
+    await expect(createSession("C:\\work\\new")).resolves.toBe("c3");
+    expect(rpc.createSession).toHaveBeenCalledWith({
+        directory: "C:\\work\\new",
+    });
     expect(list().map((c) => c.id)).toEqual(["c3", "c1", "c2"]);
+    expect(list()[0]?.directory).toBe("C:\\work\\new");
 });
 
 it("fails a create the server answers without a session", async () => {
     rpc.createSession.mockResolvedValue({});
 
     await expect(createSession()).rejects.toThrow("no session in response");
+    expect(rpc.createSession).toHaveBeenCalledWith({});
     expect(list()).toHaveLength(2);
 });
 

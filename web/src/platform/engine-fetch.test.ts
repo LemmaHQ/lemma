@@ -203,6 +203,7 @@ const bridge = (
     setTitleBar: () => {},
     toggleMaximize: () => {},
     connectEngine: connect,
+    pickDirectory: () => Promise.resolve(null),
 });
 
 const announce = (
