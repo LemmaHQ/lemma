@@ -8,12 +8,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime};
+use lemma_agent_loop::{AgentLoop, ToolRuntime};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
-use lemma_tool::{LocalExecEnv, ToolRegistry};
+use lemma_tool::{CancelToken, LocalExecEnv, ToolRegistry};
 use serde_json::json;
 
 use crate::common::{Migrator, input, new_session};
@@ -76,7 +76,8 @@ async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
             steps: AtomicUsize::new(0),
             second_context: Arc::clone(&second_context),
         };
-        let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
+        let env = LocalExecEnv::open(&env::temp_dir(), CancelToken::new()).await?;
+        let runtime = ToolRuntime::new(ToolRegistry::new(), env);
         let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
 
         agent_loop

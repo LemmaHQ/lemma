@@ -13,7 +13,7 @@ use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
-use common::{Engine, Frame, Frames, assert_reason, assert_stream_reason, serve};
+use common::{DataDir, Engine, Frame, Frames, assert_reason, assert_stream_reason, serve};
 use futures::{StreamExt, stream};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
@@ -481,7 +481,7 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
 }
 
 #[tokio::test]
-async fn a_turn_in_a_session_the_user_lacks_reports_an_error_event() -> Result<(), Box<dyn Error>> {
+async fn a_turn_in_a_session_the_user_lacks_fails_before_it_starts() -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
     let bob = setup.engine.token("bob").await?;
     let bobs = setup
@@ -505,16 +505,75 @@ async fn a_turn_in_a_session_the_user_lacks_reports_an_error_event() -> Result<(
         .await?;
     let (events, end) = setup.engine.finish(&mut frames).await?;
 
-    assert_eq!(
-        labels(&events),
-        [format!(
-            "error:not found: session {} not found",
-            bobs_id.as_str().unwrap_or_default()
-        )],
-        "events"
-    );
-    assert_eq!(end, json!({}), "clean end of stream");
+    assert!(events.is_empty(), "{events:?}");
+    assert_stream_reason(&end, ErrorReason::SessionNotFound);
     setup.engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_turn_fails_before_it_starts_once_the_bound_directory_is_gone()
+-> Result<(), Box<dyn Error>> {
+    let mut setup = setup().await?;
+    let dir = DataDir::new();
+    fs::create_dir_all(&dir.0)?;
+    let session = setup
+        .engine
+        .call_as(&setup.token, CREATE_SESSION, &json!({ "directory": dir.0 }))
+        .await?;
+    drop(dir);
+
+    let mut frames = setup
+        .engine
+        .stream_as(
+            &setup.token,
+            SEND,
+            &json!({
+                "sessionId": session.body["session"]["id"],
+                "providerId": setup.provider_id,
+                "model": "answer",
+                "content": "hi",
+            }),
+        )
+        .await?;
+    let (events, end) = setup.engine.finish(&mut frames).await?;
+
+    assert!(events.is_empty(), "{events:?}");
+    assert_stream_reason(&end, ErrorReason::DirectoryNotFound);
+    setup.engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_database_failure_during_a_turn_ends_it_with_an_error_event() -> Result<(), Box<dyn Error>>
+{
+    let mut setup = setup().await?;
+    let mut frames = setup.send("wait").await?;
+    loop {
+        match setup.engine.next_frame(&mut frames).await? {
+            Some(Frame::Message(event)) if event["event"].get("toolCallStarted").is_some() => {
+                break;
+            }
+            Some(Frame::Message(_)) => {}
+            other => return Err(format!("turn ended before the tool ran: {other:?}").into()),
+        }
+    }
+
+    setup.engine.close().await?;
+    fs::write(
+        setup
+            .engine
+            .data_dir()
+            .join("workspaces")
+            .join(&setup.session_id)
+            .join("go"),
+        "",
+    )?;
+    let (rest, end) = setup.engine.finish(&mut frames).await?;
+
+    let last = rest.last().map(label).unwrap_or_default();
+    assert!(last.starts_with("error:store error: "), "{rest:?}");
+    assert_eq!(end, json!({}), "clean end of stream");
     Ok(())
 }
 

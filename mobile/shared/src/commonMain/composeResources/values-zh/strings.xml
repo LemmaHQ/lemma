@@ -192,6 +192,8 @@
     <string name="error_id_invalid">无效的 ID</string>
     <string name="error_title_required">标题不能为空</string>
     <string name="error_session_not_found">会话不存在</string>
+    <string name="error_directory_not_found">该文件夹不存在</string>
+    <string name="error_directory_unsupported">此服务器无法打开其所在机器上的文件夹</string>
     <string name="error_content_required">消息内容不能为空</string>
     <string name="error_model_required">请先选择模型</string>
     <string name="error_turn_not_running">该回复已结束</string>

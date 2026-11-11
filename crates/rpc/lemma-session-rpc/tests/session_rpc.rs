@@ -9,6 +9,7 @@ fn debug_output_never_reveals_the_signing_secret() {
     let rpc = SessionRpc::new(
         SessionService::new(DatabaseConnection::default()),
         "jwt-secret".to_owned(),
+        true,
     );
 
     let debug = format!("{rpc:?}");

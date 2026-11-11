@@ -42,6 +42,8 @@ private fun ErrorReason.toFailure(): ServiceFailure? =
         ErrorReason.ERROR_REASON_ID_INVALID -> ServiceFailure.IdInvalid
         ErrorReason.ERROR_REASON_TITLE_REQUIRED -> ServiceFailure.TitleRequired
         ErrorReason.ERROR_REASON_SESSION_NOT_FOUND -> ServiceFailure.SessionNotFound
+        ErrorReason.ERROR_REASON_DIRECTORY_NOT_FOUND -> ServiceFailure.DirectoryNotFound
+        ErrorReason.ERROR_REASON_DIRECTORY_UNSUPPORTED -> ServiceFailure.DirectoryUnsupported
         ErrorReason.ERROR_REASON_CONTENT_REQUIRED -> ServiceFailure.ContentRequired
         ErrorReason.ERROR_REASON_MODEL_REQUIRED -> ServiceFailure.ModelRequired
         ErrorReason.ERROR_REASON_TURN_NOT_RUNNING -> ServiceFailure.TurnNotRunning

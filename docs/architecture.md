@@ -13,7 +13,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                      | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
 | Domains   | `lemma-auth`, `lemma-session`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; sessions, the message tree, and the `sessions` and `messages` tables; provider configuration, model lists, and the `providers` table; the migrations of these tables; API-key sealing                      |
 | Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`               | Vendor wire formats and model lists; the tool registry and execution environment; the turn loop and its cancellation                                                                                                                              |
-| Agent     | `lemma-agent`                                                   | Assembling one turn from a request (provider endpoint, adapter, sessions, workspace tools), running it, and aborting running turns                                                                                                                |
+| Agent     | `lemma-agent`                                                   | Assembling one turn from a request (provider endpoint, adapter, session, tools in the session directory), running it, and aborting running turns                                                                                                  |
 | RPC       | `crates/rpc/*`, including `lemma-host`                          | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`    |
 | Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`                 | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                       |
 
@@ -25,11 +25,11 @@ Crates under `crates/shared/` build for every runtime, including Android; `crate
 
 The same domain services and turn loop run in three hosts. Clients choose a host; the core does not know which client is calling.
 
-| Runtime      | Host                                                                         | Storage                                              | Tools                 | Stored API keys                     |
-| ------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------- | ----------------------------------- |
-| Server mode  | `lemma-server`, port 1025                                                    | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none                  | sealed with `LEMMA_SECRET_KEY`      |
-| Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`                      | per-session workspace | sealed with an engine-generated key |
-| In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`                      | per-session workspace | sealed with an engine-generated key |
+| Runtime      | Host                                                                         | Storage                                              | Tools                                    | Stored API keys                     |
+| ------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------- | ----------------------------------- |
+| Server mode  | `lemma-server`, port 1025                                                    | PostgreSQL, or SQLite for a `sqlite:` `DATABASE_URL` | none                                     | sealed with `LEMMA_SECRET_KEY`      |
+| Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`                      | bound directory or per-session workspace | sealed with an engine-generated key |
+| In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`                      | per-session workspace                    | sealed with an engine-generated key |
 
 **Server mode** reads `DATABASE_URL`, `LEMMA_JWT_SECRET`, and `LEMMA_SECRET_KEY` from the environment, runs the migrations at startup, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP; when the API shares the page's origin, the browser authenticates with the `lemma_access` and `lemma_refresh` cookies instead of bearer tokens.
 
@@ -55,6 +55,7 @@ A **turn** starts from one user message and ends when the model stops without re
 AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
+  Agent::prepare reads the user's session and opens its session directory
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the session
   step:
@@ -67,7 +68,7 @@ AgentService.SendMessage(session, provider, model, content)
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
-      Tool::execute in the workspace                                      -> tool_call_finished
+      Tool::execute in the session directory                              -> tool_call_finished
       append the tool result message; move the leaf
     next step
 ```
@@ -78,9 +79,9 @@ Every `AgentEvent` carries the server's `occurred_at` instant, preserved by repl
 
 The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
-Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted at `workspaces/<session id>` under the data directory; server mode attaches no tools. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
+Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted in the session directory, which is the directory the session was created with or else `workspaces/<session id>` under the data directory, and tell the model that directory, the operating system, and the shell in a system prompt. Server mode attaches no tools and refuses to create a session with a directory. [Tools](subsystems/agent.md#tools) defines path confinement and command limits. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
 
-`AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running tool call completes and the turn stops before its next step; the stream ends with `aborted`.
+`AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running `bash` command stops with its process tree, any other running tool call completes, and the turn stops before its next step; the stream ends with `aborted`.
 
 A turn runs to its end whether or not a client reads its stream. `lemma-agent-rpc` records each running turn's `AgentEvent`s; `SendMessage` and `ResumeStream` both read that record, so a slow client misses no event. A client that loses its stream calls `ResumeStream` with the user message id and the number of events it already received, and gets the rest followed by the live events. Once the turn ends, `ResumeStream` fails with `ERROR_REASON_TURN_NOT_RUNNING`, and the client reads the settled messages instead.
 

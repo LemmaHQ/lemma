@@ -29,7 +29,9 @@ pub struct AppState {
 
 impl AppState {
     /// Wires the services over the database. With `workspaces_dir` set,
-    /// turns run workspace tools under it.
+    /// turns run tools, in the session's directory or in a workspace
+    /// under `workspaces_dir`, and sessions may be created with a
+    /// directory.
     #[must_use]
     pub fn new(db: DatabaseConnection, secrets: Secrets, workspaces_dir: Option<PathBuf>) -> Self {
         let connector = HttpConnector::new(ReqwestTransport::new());
@@ -39,6 +41,7 @@ impl AppState {
             connector,
         ));
         let session_service = SessionService::new(db.clone());
+        let binds_directories = workspaces_dir.is_some();
         let agent = Agent::new(
             session_service.clone(),
             Arc::clone(&provider_service),
@@ -47,7 +50,11 @@ impl AppState {
         Self {
             auth: AuthRpc::new(db, secrets.jwt_secret.clone()),
             providers: ProviderRpc::new(provider_service, secrets.jwt_secret.clone()),
-            sessions: SessionRpc::new(session_service, secrets.jwt_secret.clone()),
+            sessions: SessionRpc::new(
+                session_service,
+                secrets.jwt_secret.clone(),
+                binds_directories,
+            ),
             agent: AgentRpc::new(agent, secrets.jwt_secret),
             system: SystemRpc,
         }

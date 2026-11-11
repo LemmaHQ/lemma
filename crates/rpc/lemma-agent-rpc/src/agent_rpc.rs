@@ -64,6 +64,12 @@ fn prepare_error(e: TurnError) -> ConnectError {
         TurnError::ProviderNotFound => {
             lemma_proto::app_error(ErrorReason::ERROR_REASON_PROVIDER_NOT_FOUND)
         }
+        TurnError::SessionNotFound => {
+            lemma_proto::app_error(ErrorReason::ERROR_REASON_SESSION_NOT_FOUND)
+        }
+        TurnError::DirectoryNotFound(_) => {
+            lemma_proto::app_error(ErrorReason::ERROR_REASON_DIRECTORY_NOT_FOUND)
+        }
         other => ConnectError::internal(other.to_string()),
     }
 }

@@ -6,12 +6,12 @@ use std::error::Error;
 use std::sync::Mutex;
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, LoopError, TurnEvent};
+use lemma_agent_loop::{AgentLoop, LoopError, TurnEvent};
 use lemma_core::{ContentBlock, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
-use lemma_tool::LocalExecEnv;
+use lemma_tool::{CancelToken, LocalExecEnv};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -134,6 +134,31 @@ async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(
         assert!(
             matches!(&result, Err(e @ LoopError::Model(_)) if e.to_string().contains("HTTP 429: rate limited")),
             "{result:?}"
+        );
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_turn_on_a_session_the_user_does_not_own_writes_nothing() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let (sessions, user_id, session_id) = new_session(&db).await?;
+        let agent_loop: AgentLoop<_, LocalExecEnv> =
+            AgentLoop::new(sessions.clone(), Refuses, None);
+
+        let result = agent_loop
+            .run_turn(
+                input(Uuid::new_v4(), session_id),
+                &|_| {},
+                &CancelToken::new(),
+            )
+            .await;
+
+        assert!(matches!(result, Err(LoopError::NotFound(_))), "{result:?}");
+        assert!(
+            sessions.all_messages(session_id).await?.is_empty(),
+            "nothing is written for {user_id}"
         );
         Ok(())
     })

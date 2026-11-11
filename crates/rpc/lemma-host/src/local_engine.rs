@@ -19,8 +19,8 @@ pub struct LocalEngine {
 
 impl LocalEngine {
     /// Opens the engine over `data_dir`: loads `secrets.json`, generating it
-    /// on first run, and opens and migrates `lemma.db`. Turns run workspace
-    /// tools under `workspaces/`.
+    /// on first run, and opens and migrates `lemma.db`. Turns run tools in
+    /// the session's directory, or else in its workspace under `workspaces/`.
     ///
     /// # Errors
     ///

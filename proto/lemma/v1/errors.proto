@@ -26,6 +26,8 @@ enum ErrorReason {
   ERROR_REASON_ID_INVALID = 20; // Shared invalid UUID identifier error
   ERROR_REASON_TITLE_REQUIRED = 21;
   ERROR_REASON_SESSION_NOT_FOUND = 22;
+  ERROR_REASON_DIRECTORY_NOT_FOUND = 23; // The session directory is not an absolute path to an existing directory
+  ERROR_REASON_DIRECTORY_UNSUPPORTED = 24; // This host does not bind sessions to directories
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
 

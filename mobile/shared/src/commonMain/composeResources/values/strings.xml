@@ -196,6 +196,8 @@
     <string name="error_id_invalid">Invalid ID</string>
     <string name="error_title_required">Title is required</string>
     <string name="error_session_not_found">Session not found</string>
+    <string name="error_directory_not_found">This folder doesn't exist</string>
+    <string name="error_directory_unsupported">This server can't open folders on its machine</string>
     <string name="error_content_required">Message content is required</string>
     <string name="error_model_required">Please select a model</string>
     <string name="error_turn_not_running">This reply has already finished</string>

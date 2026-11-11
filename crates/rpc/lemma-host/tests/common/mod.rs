@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use axum::Router;
-use lemma_host::{InProcessTransport, LocalEngine};
+use lemma_host::{AppState, InProcessTransport, LocalEngine, Secrets};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -76,6 +76,30 @@ impl Engine {
         let transport = InProcessTransport::new(local.router());
         Ok(Self {
             local: Some(local),
+            transport,
+            dir,
+        })
+    }
+
+    /// Server mode: the services over SQLite in a temporary directory,
+    /// with no workspaces directory.
+    pub(crate) async fn open_server() -> Result<Self, Box<dyn Error>> {
+        let dir = DataDir::new();
+        fs::create_dir_all(&dir.0)?;
+        let db = lemma_host::connect(&format!(
+            "sqlite:{}",
+            dir.0.join("lemma.db").to_string_lossy()
+        ))
+        .await?;
+        lemma_host::migrate(&db).await?;
+        let secrets = Secrets {
+            jwt_secret: "test-jwt-secret".to_owned(),
+            secret_key: "test-secret-key".to_owned(),
+        };
+        let transport =
+            InProcessTransport::new(lemma_host::router(AppState::new(db, secrets, None)));
+        Ok(Self {
+            local: None,
             transport,
             dir,
         })

@@ -33,7 +33,7 @@ pub(crate) async fn new_session(
         .user
         .id;
     let sessions = SessionService::new(db.clone());
-    let session_id = sessions.create(user_id).await?.id;
+    let session_id = sessions.create(user_id, None).await?.id;
     Ok((sessions, user_id, session_id))
 }
 
@@ -51,5 +51,6 @@ pub(crate) fn input(user_id: Uuid, session_id: Uuid) -> TurnInput {
             provider_id: Uuid::new_v4(),
             model: "m".into(),
         },
+        system_prompt: None,
     }
 }

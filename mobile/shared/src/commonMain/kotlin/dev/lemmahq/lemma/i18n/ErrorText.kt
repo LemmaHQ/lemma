@@ -4,6 +4,8 @@ import dev.lemmahq.lemma.client.ServiceFailure
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.error_content_required
 import lemma.mobile.shared.generated.resources.error_credentials_invalid
+import lemma.mobile.shared.generated.resources.error_directory_not_found
+import lemma.mobile.shared.generated.resources.error_directory_unsupported
 import lemma.mobile.shared.generated.resources.error_email_taken
 import lemma.mobile.shared.generated.resources.error_id_invalid
 import lemma.mobile.shared.generated.resources.error_model_required
@@ -41,6 +43,8 @@ fun errorText(failure: ServiceFailure): UiText =
             ServiceFailure.IdInvalid -> Res.string.error_id_invalid
             ServiceFailure.TitleRequired -> Res.string.error_title_required
             ServiceFailure.SessionNotFound -> Res.string.error_session_not_found
+            ServiceFailure.DirectoryNotFound -> Res.string.error_directory_not_found
+            ServiceFailure.DirectoryUnsupported -> Res.string.error_directory_unsupported
             ServiceFailure.ContentRequired -> Res.string.error_content_required
             ServiceFailure.ModelRequired -> Res.string.error_model_required
             ServiceFailure.TurnNotRunning -> Res.string.error_turn_not_running

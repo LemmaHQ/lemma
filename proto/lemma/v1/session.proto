@@ -17,6 +17,8 @@ message Session {
   string id = 1;
   string title = 2;
   google.protobuf.Timestamp updated_at = 7;
+  // Absolute directory the session's tools run in; absent for a session that runs in a generated workspace.
+  optional string directory = 8;
 }
 
 // Tool call block within an assistant message.
@@ -67,7 +69,10 @@ message ListSessionsResponse {
   repeated Session sessions = 1;
 }
 
-message CreateSessionRequest {}
+message CreateSessionRequest {
+  // Absolute path of an existing directory to bind; absent runs the session in a generated workspace.
+  optional string directory = 1;
+}
 
 message CreateSessionResponse {
   Session session = 1;

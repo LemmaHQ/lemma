@@ -13,7 +13,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                      | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
 | 领域  | `lemma-auth`、`lemma-session`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `sessions` 与 `messages` 表；provider 配置、模型列表，以及 provider 相关的表；这些表的迁移；API key 加密                                                               |
 | 引擎  | `lemma-adapter`、`lemma-tool`、`lemma-agent-loop`               | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
-| Agent | `lemma-agent`                                                   | 根据请求组装一个 turn（provider 端点、适配器、会话、工作区工具）并运行它，以及中止正在运行的 turn                                                                                                                       |
+| Agent | `lemma-agent`                                                   | 根据请求组装一个 turn（provider 端点、适配器、会话、会话目录中的工具）并运行它，以及中止正在运行的 turn                                                                                                                 |
 | RPC   | `crates/rpc/*`，包括 `lemma-host`                               | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
 | 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                 | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
 
@@ -25,11 +25,11 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 同一套领域服务与 turn 循环运行在三种宿主中。客户端选择宿主；核心不感知调用方是哪个客户端。
 
-| 运行时     | 宿主                                                         | 存储                                                | 工具               | 已存储的 API key           |
-| ---------- | ------------------------------------------------------------ | --------------------------------------------------- | ------------------ | -------------------------- |
-| 服务端模式 | `lemma-server`，端口 1025                                    | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                 | 用 `LEMMA_SECRET_KEY` 加密 |
-| 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
-| 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区 | 用引擎生成的密钥加密       |
+| 运行时     | 宿主                                                         | 存储                                                | 工具                           | 已存储的 API key           |
+| ---------- | ------------------------------------------------------------ | --------------------------------------------------- | ------------------------------ | -------------------------- |
+| 服务端模式 | `lemma-server`，端口 1025                                    | PostgreSQL；`DATABASE_URL` 为 `sqlite:` 时用 SQLite | 无                             | 用 `LEMMA_SECRET_KEY` 加密 |
+| 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite                   | 绑定的目录或每个会话一个工作区 | 用引擎生成的密钥加密       |
+| 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite                   | 每个会话一个工作区             | 用引擎生成的密钥加密       |
 
 **服务端模式**从环境变量读取 `DATABASE_URL`、`LEMMA_JWT_SECRET` 与 `LEMMA_SECRET_KEY`，启动时运行迁移，对外提供 ConnectRPC 服务，以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它；当 API 与页面同源时，浏览器用 `lemma_access` 与 `lemma_refresh` cookie 认证，而不是 bearer 令牌。
 
@@ -55,6 +55,7 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
   ProviderService::adapter opens the provider's API key and binds the adapter for its kind
+  Agent::prepare reads the user's session and opens its session directory
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the session
   step:
@@ -67,7 +68,7 @@ AgentService.SendMessage(session, provider, model, content)
     stream failed -> end the turn                                         -> error
     no tools, stop reason not tool_use, or no tool calls -> end the turn  -> done
     for each tool call:                                                   -> tool_call_started
-      Tool::execute in the workspace                                      -> tool_call_finished
+      Tool::execute in the session directory                              -> tool_call_finished
       append the tool result message; move the leaf
     next step
 ```
@@ -78,9 +79,9 @@ AgentService.SendMessage(session, provider, model, content)
 
 适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎在数据目录下的 `workspaces/<session id>` 中，以 `LocalExecEnv` 为根注册 `read_file`、`write_file` 与 `bash`；服务端模式不挂工具。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎以会话目录为根，基于 `LocalExecEnv` 注册 `read_file`、`write_file` 与 `bash`，会话目录是创建会话时指定的目录，没有指定时是数据目录下的 `workspaces/<session id>`；同时用系统提示词告诉模型这个目录、操作系统与 shell。服务端模式不挂工具，并拒绝创建带目录的会话。路径限制与命令限制见[工具](subsystems/agent.zh.md#工具)。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
 
-`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
+`AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的 `bash` 命令连同进程树一起停止，其他正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
 无论客户端是否读取它的流，turn 都会运行到结束。`lemma-agent-rpc` 记录每个正在运行的 turn 的 `AgentEvent`；`SendMessage` 与 `ResumeStream` 都读取这份记录，因此读取较慢的客户端不会漏掉事件。丢失流的客户端用用户消息 id 和已收到的事件数调用 `ResumeStream`，先收到其余事件，再接着收到实时事件。turn 结束后，`ResumeStream` 以 `ERROR_REASON_TURN_NOT_RUNNING` 失败，客户端改为读取已定稿的消息。
 

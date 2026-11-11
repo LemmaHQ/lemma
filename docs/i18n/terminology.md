@@ -84,8 +84,10 @@
 | semantic alias | 语义别名 | | |
 | server mode | 服务端模式 | | |
 | session | 会话 | 对话 | 属于某个用户的一棵消息树 |
+| session directory | 会话目录 | | 会话的工具运行所在的目录：创建时指定的目录或其工作区 |
 | stop reason | 停止原因 | | |
 | stream event | 流事件 | | `StreamEvent` |
+| system prompt | 系统提示词 | | 每次模型请求置于历史之前的指令 |
 | theme | 主题 | | |
 | toast | 提示消息 | 吐司 | `sonner` 的 `toast` |
 | token family | 令牌族 | 令牌家族 | 一次登录及其后续轮换签发的全部刷新令牌，共享 `family_id` |

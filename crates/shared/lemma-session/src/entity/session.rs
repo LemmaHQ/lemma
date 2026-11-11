@@ -27,6 +27,9 @@ pub struct Model {
     pub leaf_id: Option<Uuid>,
     /// Model last used in this session; `None` before the first turn.
     pub last_model: Option<LastModel>,
+    /// Canonical absolute directory the session's tools run in; `None`
+    /// for a session that runs in a generated workspace.
+    pub directory: Option<String>,
     /// Creation time.
     pub created_at: DateTimeUtc,
     /// Last update time.

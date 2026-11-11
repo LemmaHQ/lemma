@@ -1,11 +1,10 @@
 use chrono::Utc;
 use lemma_core::{ContentBlock, Message, StopReason};
 use lemma_model::{Adapter, ModelRequest};
-use lemma_session::{LastModel, Message as StoredMessage, SessionService};
-use lemma_tool::ExecEnv;
+use lemma_session::{LastModel, Message as StoredMessage, Session, SessionService};
+use lemma_tool::{CancelToken, ExecEnv};
 use uuid::Uuid;
 
-use crate::cancel_token::CancelToken;
 use crate::loop_error::LoopError;
 use crate::persist;
 use crate::stream::{self, StepEnd, StepOutcome};
@@ -25,6 +24,8 @@ pub struct TurnInput {
     pub user_message: Message,
     /// Model selection, also recorded as the session's last model.
     pub model: LastModel,
+    /// Instructions sent ahead of the history on every step.
+    pub system_prompt: Option<String>,
 }
 
 /// Runs turns: assembles each step's context from the message tree, streams
@@ -51,7 +52,8 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     /// Appends the user message under the active leaf and runs steps until
     /// one requests no tools, a stream fails, or `cancel` fires. Cancelling
     /// interrupts a model stream and stops before the next step; a running
-    /// tool call completes first.
+    /// tool call completes first, and an environment holding the same token,
+    /// such as `LocalExecEnv`, stops its running command.
     ///
     /// # Errors
     ///
@@ -70,12 +72,9 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             user_message_id,
             user_message,
             model,
+            system_prompt,
         } = input;
-        let Some(meta) = self.sessions.find(user_id, session_id).await? else {
-            return Err(LoopError::NotFound(format!(
-                "session {session_id} not found"
-            )));
-        };
+        let meta = owned_session(&self.sessions, user_id, session_id).await?;
 
         let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
         self.append(user_id, user_entry).await?;
@@ -115,6 +114,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
 
             let req = ModelRequest {
                 model: model.model.clone(),
+                system_prompt: system_prompt.clone(),
                 messages,
                 tools: tool_specs.clone(),
             };
@@ -227,4 +227,18 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         self.sessions.update_leaf(user_id, session_id, id).await?;
         Ok(())
     }
+}
+
+/// The session `session_id` the user owns.
+async fn owned_session(
+    sessions: &SessionService,
+    user_id: Uuid,
+    session_id: Uuid,
+) -> Result<Session, LoopError> {
+    let Some(session) = sessions.find(user_id, session_id).await? else {
+        return Err(LoopError::NotFound(format!(
+            "session {session_id} not found"
+        )));
+    };
+    Ok(session)
 }

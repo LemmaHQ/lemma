@@ -1,7 +1,10 @@
+use std::path::Path;
+
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
 };
+use tokio::fs;
 use uuid::Uuid;
 
 use crate::Session;
@@ -39,12 +42,23 @@ impl SessionService {
             .await?)
     }
 
-    /// Creates an empty session for the user.
+    /// Creates an empty session for the user, bound to `directory` when
+    /// given; the session stores the directory's canonical path.
     ///
     /// # Errors
     ///
+    /// [`SessionError::DirectoryNotFound`] when `directory` is not an
+    /// absolute path to an existing directory, and
     /// [`SessionError::Store`] when the database fails.
-    pub async fn create(&self, user_id: Uuid) -> Result<Session, SessionError> {
+    pub async fn create(
+        &self,
+        user_id: Uuid,
+        directory: Option<&Path>,
+    ) -> Result<Session, SessionError> {
+        let directory = match directory {
+            Some(path) => Some(canonical_directory(path).await?),
+            None => None,
+        };
         let now = Utc::now();
         Ok(session::ActiveModel {
             id: Set(Uuid::new_v4()),
@@ -52,6 +66,7 @@ impl SessionService {
             title: Set(String::new()),
             leaf_id: Set(None),
             last_model: Set(None),
+            directory: Set(directory),
             created_at: Set(now),
             updated_at: Set(now),
         }
@@ -185,4 +200,24 @@ impl SessionService {
             .await?;
         Ok(())
     }
+}
+
+/// The canonical form of an absolute path naming an existing directory,
+/// without the `\\?\` prefix Windows adds.
+async fn canonical_directory(path: &Path) -> Result<String, SessionError> {
+    let not_found = || SessionError::DirectoryNotFound(path.display().to_string());
+    if !path.is_absolute() {
+        return Err(not_found());
+    }
+    let canonical = fs::canonicalize(path).await.map_err(|_| not_found())?;
+    let is_dir = fs::metadata(&canonical)
+        .await
+        .is_ok_and(|metadata| metadata.is_dir());
+    if !is_dir {
+        return Err(not_found());
+    }
+    dunce::simplified(&canonical)
+        .to_str()
+        .map(str::to_owned)
+        .ok_or_else(not_found)
 }

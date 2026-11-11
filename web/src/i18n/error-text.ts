@@ -20,6 +20,8 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.ID_INVALID]: "errors.idInvalid",
     [ErrorReason.TITLE_REQUIRED]: "errors.titleRequired",
     [ErrorReason.SESSION_NOT_FOUND]: "errors.sessionNotFound",
+    [ErrorReason.DIRECTORY_NOT_FOUND]: "errors.directoryNotFound",
+    [ErrorReason.DIRECTORY_UNSUPPORTED]: "errors.directoryUnsupported",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
     [ErrorReason.TURN_NOT_RUNNING]: "errors.turnNotRunning",

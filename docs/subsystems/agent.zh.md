@@ -13,11 +13,23 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | 去除首尾空白后内容为空 | `AgentError::ContentRequired` |
 | 去除首尾空白后模型 id 为空 | `AgentError::ModelRequired` |
 | provider 不属于该用户 | `AgentError::ProviderNotFound` |
+| 会话不属于该用户 | `AgentError::SessionNotFound` |
+| 会话绑定的目录已不存在 | `AgentError::DirectoryNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
-有工作区目录时，turn 获得以 `<workspaces_dir>/<session id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
-
 `Turn::run(observer)` 把 turn 运行到结束，成功时返回 `()`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
+
+## 工具
+
+有工作区目录时，turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话目录为根的 `LocalExecEnv`：会话目录是创建会话时指定的目录，没有指定时是会话的工作区 `<workspaces_dir>/<session id>`，`prepare` 在找到会话之后才创建它。该 turn 的每次模型请求都带有一段系统提示词，写明这个目录、操作系统与 shell。没有工作区目录时，调用模型不带工具，也不带系统提示词。
+
+`LocalExecEnv` 把 `read_file` 与 `write_file` 限定在根目录内：
+
+- 相对路径相对根目录解析；绝对路径位于根目录内时接受；含 `..` 组件的路径被拒绝。
+- 路径解析会跟随符号链接：先把最近的已存在祖先规范化，再拼回缺失的组件。结果必须位于规范化后的根目录之下，因此指向根外的链接与悬空链接都会被拒绝。在 Windows 上，规范路径同时统一了字母大小写、junction 与 8.3 短名。
+- 写入的目标是解析后的路径。
+
+`bash` 在 Windows 上用 `cmd /C`、在其他平台用 `sh -c` 运行命令，从根目录启动，除此之外不受限制。调用的 `timeout` 取 1 到 3600 秒，默认 300。命令超时或所在 turn 被中止时，连同整棵进程树一起停止：在 Unix 上，它的进程组先收到 `SIGTERM`，2 秒后收到 `SIGKILL`；在 Windows 上由 `taskkill /T /F` 结束。每个输出流保留开头和末尾各 16 KB，中间标明省略的字节数。结果包含 `exit_code`、`stdout` 与 `stderr`；命令被停止时还带有 `stopped`（`timed out after N s` 或 `aborted`）。
 
 ## Turn 事件
 
@@ -37,7 +49,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## 中止
 
-每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_id, user_message_id)` 只在该用户拥有这个 turn 时取消令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 调用 `Agent::abort`。
+每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_id, user_message_id)` 只在该用户拥有这个 turn 时取消令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的 `bash` 命令按[工具](#工具)一节所述停止，其他正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 调用 `Agent::abort`。
 
 ## 流与恢复
 
@@ -51,4 +63,4 @@ Web 客户端统计它已应用的事件数，流中断后用这个数恢复，�
 
 ## 错误
 
-`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED` 与 `PROVIDER_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。
+`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED`、`PROVIDER_NOT_FOUND`、`SESSION_NOT_FOUND` 与 `DIRECTORY_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。

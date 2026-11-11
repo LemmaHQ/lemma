@@ -13,6 +13,9 @@ pub enum SessionError {
     /// Target session is absent for this user.
     #[error("session not found")]
     NotFound,
+    /// The directory is not an absolute path to an existing directory.
+    #[error("directory not found: {0}")]
+    DirectoryNotFound(String),
     /// Target session or message node is absent from the message tree.
     #[error("not found: {0}")]
     Missing(String),

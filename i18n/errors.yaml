@@ -7,6 +7,14 @@ errors:
     platforms: [web]
     en: "Message content is required"
     zh: "消息内容不能为空"
+  directoryNotFound:
+    platforms: [web]
+    en: "This folder doesn't exist"
+    zh: "该文件夹不存在"
+  directoryUnsupported:
+    platforms: [web]
+    en: "This server can't open folders on its machine"
+    zh: "此服务器无法打开其所在机器上的文件夹"
   sessionNotFound:
     platforms: [web]
     en: "Session not found"

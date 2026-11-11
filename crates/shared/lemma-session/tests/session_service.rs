@@ -1,6 +1,9 @@
 //! Session flows against a migrated database.
 
+use std::env;
 use std::error::Error;
+use std::fs;
+use std::path::Path;
 
 use chrono::{DateTime, Utc};
 use lemma_adapter::{HttpConnector, ReqwestTransport};
@@ -90,12 +93,69 @@ async fn append_chain(
 }
 
 #[tokio::test]
+async fn a_session_stores_the_canonical_path_of_its_directory() -> Result<(), Box<dyn Error>> {
+    let dir = env::temp_dir().join(format!("lemma-session-dir-{}", Uuid::new_v4()));
+    fs::create_dir_all(&dir)?;
+    let canonical = dunce::canonicalize(&dir)?;
+    let spelled = dir.join(".");
+    let result = on_each_database::<Migrator, _, _>(|db| {
+        let (spelled, canonical) = (spelled.clone(), canonical.clone());
+        async move {
+            let ada = sign_up(&db, "ada").await?;
+            let sessions = SessionService::new(db);
+
+            let bound = sessions.create(ada, Some(&spelled)).await?;
+            let unbound = sessions.create(ada, None).await?;
+
+            assert_eq!(
+                bound.directory.as_deref().map(Path::new),
+                Some(canonical.as_path()),
+                "canonical directory"
+            );
+            assert_eq!(unbound.directory, None, "no directory");
+            Ok(())
+        }
+    })
+    .await;
+    fs::remove_dir_all(&dir)?;
+    result
+}
+
+#[tokio::test]
+async fn a_directory_must_be_an_absolute_path_to_an_existing_directory()
+-> Result<(), Box<dyn Error>> {
+    let file = env::temp_dir().join(format!("lemma-session-file-{}", Uuid::new_v4()));
+    fs::write(&file, "x")?;
+    let missing = env::temp_dir().join(format!("lemma-session-missing-{}", Uuid::new_v4()));
+    let result = on_each_database::<Migrator, _, _>(|db| {
+        let (file, missing) = (file.clone(), missing.clone());
+        async move {
+            let ada = sign_up(&db, "ada").await?;
+            let sessions = SessionService::new(db);
+
+            for path in [Path::new("relative"), missing.as_path(), file.as_path()] {
+                let created = sessions.create(ada, Some(path)).await;
+                assert!(
+                    matches!(created, Err(SessionError::DirectoryNotFound(_))),
+                    "{path:?}: {created:?}"
+                );
+            }
+            assert!(sessions.list_sessions(ada).await?.is_empty(), "no session");
+            Ok(())
+        }
+    })
+    .await;
+    fs::remove_file(&file)?;
+    result
+}
+
+#[tokio::test]
 async fn a_user_cannot_see_or_change_another_users_session() -> Result<(), Box<dyn Error>> {
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let bob = sign_up(&db, "bob").await?;
         let sessions = SessionService::new(db);
-        let created = sessions.create(ada).await?;
+        let created = sessions.create(ada, None).await?;
         let ids = append_chain(&sessions, created.id, 1).await?;
         let model = LastModel {
             provider_id: Uuid::new_v4(),
@@ -146,8 +206,8 @@ async fn deleting_a_session_deletes_only_its_messages() -> Result<(), Box<dyn Er
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let doomed = sessions.create(ada).await?;
-        let kept = sessions.create(ada).await?;
+        let doomed = sessions.create(ada, None).await?;
+        let kept = sessions.create(ada, None).await?;
         append_chain(&sessions, doomed.id, 3).await?;
         append_chain(&sessions, kept.id, 2).await?;
 
@@ -182,8 +242,8 @@ async fn messages_page_newest_first_across_the_boundaries() -> Result<(), Box<dy
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let session = sessions.create(ada).await?;
-        let other = sessions.create(ada).await?;
+        let session = sessions.create(ada, None).await?;
+        let other = sessions.create(ada, None).await?;
         let ids = append_chain(&sessions, session.id, 5).await?;
         let foreign = append_chain(&sessions, other.id, 1).await?;
 
@@ -237,7 +297,7 @@ async fn messages_sharing_a_timestamp_page_without_gaps_or_repeats() -> Result<(
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let session = sessions.create(ada).await?;
+        let session = sessions.create(ada, None).await?;
         let mut expected = Vec::new();
         for n in 0..4 {
             let message = entry(session.id, None, &format!("m{n}"), at(0));
@@ -270,7 +330,7 @@ async fn an_omitted_limit_returns_fifty_messages() -> Result<(), Box<dyn Error>>
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let session = sessions.create(ada).await?;
+        let session = sessions.create(ada, None).await?;
         append_chain(&sessions, session.id, 60).await?;
 
         let mut pages = Vec::new();
@@ -295,7 +355,7 @@ async fn finalizing_a_placeholder_replaces_only_its_body_status_and_error()
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let session = sessions.create(ada).await?;
+        let session = sessions.create(ada, None).await?;
         let provider_id = Uuid::new_v4();
         let parent = entry(session.id, None, "question", at(0));
         let mut placeholder = entry(session.id, Some(parent.id), "", at(1));
@@ -353,8 +413,8 @@ async fn leaf_and_last_model_follow_the_turn_and_recent_sessions_come_first()
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let older = sessions.create(ada).await?;
-        let newer = sessions.create(ada).await?;
+        let older = sessions.create(ada, None).await?;
+        let newer = sessions.create(ada, None).await?;
         let leaf_id = Uuid::new_v4();
         let first_model = LastModel {
             provider_id: Uuid::new_v4(),
@@ -421,7 +481,7 @@ async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
                 },
             )
             .await?;
-        let session = sessions.create(ada).await?;
+        let session = sessions.create(ada, None).await?;
         let mut answer = entry(session.id, None, "", at(0));
         answer.body = MessageBody(CoreMessage::Assistant {
             content: vec![ContentBlock::Text(TextContent {
@@ -467,7 +527,7 @@ async fn the_context_path_runs_from_the_root_to_the_leaf() -> Result<(), Box<dyn
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db);
-        let session_id = sessions.create(ada).await?.id;
+        let session_id = sessions.create(ada, None).await?.id;
         let ids = append_chain(&sessions, session_id, 3).await?;
         let stored = sessions.all_messages(session_id).await?;
         let Some(&leaf) = ids.last() else {
@@ -493,7 +553,7 @@ async fn the_session_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>
     on_each_database::<Migrator, _, _>(|db| async move {
         let ada = sign_up(&db, "ada").await?;
         let sessions = SessionService::new(db.clone());
-        let id = sessions.create(ada).await?.id;
+        let id = sessions.create(ada, None).await?.id;
         let last_model = LastModel {
             provider_id: Uuid::new_v4(),
             model: "model-a".to_owned(),
@@ -503,7 +563,7 @@ async fn the_session_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>
         let listed = sessions.list_sessions(ada).await;
         let found = sessions.find(ada, id).await;
         let renamed = sessions.rename(ada, id, "Plans").await;
-        let created = sessions.create(ada).await;
+        let created = sessions.create(ada, None).await;
         let deleted = sessions.delete(ada, id).await;
         let page = sessions.list_messages(ada, id, None, 2).await;
         let appended = sessions
@@ -547,7 +607,7 @@ async fn the_session_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>
             sessions.list_sessions(ada).await?.is_empty(),
             "rolled back rows are gone"
         );
-        let id = sessions.create(ada).await?.id;
+        let id = sessions.create(ada, None).await?.id;
         db.execute_unprepared("DROP TABLE messages").await?;
         let first_page = sessions.list_messages(ada, id, None, 2).await;
         let cursor_page = sessions

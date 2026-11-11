@@ -7,12 +7,12 @@ use std::error::Error;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, LoopError, ToolRuntime, TurnEvent};
+use lemma_agent_loop::{AgentLoop, LoopError, ToolRuntime, TurnEvent};
 use lemma_core::{StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
 use lemma_test_db::on_each_database;
-use lemma_tool::{LocalExecEnv, ToolRegistry};
+use lemma_tool::{CancelToken, LocalExecEnv, ToolRegistry};
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend};
 use serde_json::json;
 use tokio::runtime::Handle;
@@ -206,7 +206,8 @@ async fn persistence_failures_end_the_turn_at_the_failed_statement() -> Result<(
                 tools: failure.uses_tools(),
                 step: AtomicUsize::new(0),
             };
-            let runtime = ToolRuntime::new(ToolRegistry::new(), LocalExecEnv::new(env::temp_dir()));
+            let env = LocalExecEnv::open(&env::temp_dir(), CancelToken::new()).await?;
+            let runtime = ToolRuntime::new(ToolRegistry::new(), env);
             let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
             let turn_input = input(user_id, session_id);
             let user_message_id = turn_input.user_message_id;

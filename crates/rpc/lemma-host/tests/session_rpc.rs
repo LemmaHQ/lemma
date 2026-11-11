@@ -4,8 +4,9 @@
 mod common;
 
 use std::error::Error;
+use std::fs;
 
-use common::{Engine, Reply, assert_internal, assert_reason};
+use common::{DataDir, Engine, Reply, assert_internal, assert_reason};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 
@@ -160,5 +161,59 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
 
     assert_internal(&list, "db: ");
     assert_internal(&create, "db: ");
+    Ok(())
+}
+
+#[tokio::test]
+async fn the_local_engine_binds_a_session_to_an_existing_directory() -> Result<(), Box<dyn Error>> {
+    let mut engine = Engine::open().await?;
+    let token = engine.token("ada").await?;
+    let dir = DataDir::new();
+    fs::create_dir_all(&dir.0)?;
+    let canonical = dunce::canonicalize(&dir.0)?;
+    let missing = DataDir::new();
+
+    let created = engine
+        .call_as(&token, CREATE, &json!({ "directory": dir.0 }))
+        .await?;
+    let listed = engine.call_as(&token, LIST, &json!({})).await?;
+    let rejected = engine
+        .call_as(&token, CREATE, &json!({ "directory": missing.0 }))
+        .await?;
+
+    let expected = Value::from(canonical.to_string_lossy().into_owned());
+    assert_eq!(
+        created.body["session"]["directory"], expected,
+        "{created:?}"
+    );
+    assert_eq!(
+        listed.body["sessions"][0]["directory"], expected,
+        "{listed:?}"
+    );
+    assert_reason(&rejected, ErrorReason::DirectoryNotFound);
+    engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn the_server_creates_sessions_without_a_directory_only() -> Result<(), Box<dyn Error>> {
+    let mut engine = Engine::open_server().await?;
+    let token = engine.token("ada").await?;
+    let dir = DataDir::new();
+    fs::create_dir_all(&dir.0)?;
+
+    let rejected = engine
+        .call_as(&token, CREATE, &json!({ "directory": dir.0 }))
+        .await?;
+    let created = engine.call_as(&token, CREATE, &json!({})).await?;
+
+    assert_reason(&rejected, ErrorReason::DirectoryUnsupported);
+    assert_eq!(created.status, 200, "{created:?}");
+    assert_eq!(
+        created.body["session"].get("directory"),
+        None,
+        "no directory"
+    );
+    engine.close().await?;
     Ok(())
 }

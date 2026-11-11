@@ -17,7 +17,9 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         ErrorReason::UserNotFound
         | ErrorReason::ProviderNotFound
         | ErrorReason::SessionNotFound
+        | ErrorReason::DirectoryNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
+        ErrorReason::DirectoryUnsupported => ErrorCode::Unimplemented,
         _ => ErrorCode::InvalidArgument,
     }
 }
@@ -40,6 +42,8 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::IdInvalid => "invalid id",
         ErrorReason::TitleRequired => "title required",
         ErrorReason::SessionNotFound => "session not found",
+        ErrorReason::DirectoryNotFound => "directory not found",
+        ErrorReason::DirectoryUnsupported => "this host does not bind sessions to directories",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
         ErrorReason::TurnNotRunning => "turn not running",

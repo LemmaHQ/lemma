@@ -1,13 +1,15 @@
+use std::env;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEvent, TurnInput};
+use lemma_agent_loop::{AgentLoop, ToolRuntime, TurnEvent, TurnInput};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
 use lemma_provider::ProviderService;
-use lemma_session::{LastModel, SessionService};
-use lemma_tool::{BashTool, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
+use lemma_session::{LastModel, Session, SessionService};
+use lemma_tool::{BashTool, CancelToken, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::fs;
 use uuid::Uuid;
 
@@ -40,9 +42,11 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 
 /// Assembles and runs turns, and aborts the ones still running.
 ///
-/// With `workspaces_dir` set, each session's tools (`read_file`,
-/// `write_file`, `bash`) run in `<workspaces_dir>/<session id>`;
-/// without it, turns call the model without tools.
+/// With `workspaces_dir` set, a session's tools (`read_file`, `write_file`,
+/// `bash`) run in the directory the session is bound to, or else in
+/// `<workspaces_dir>/<session id>`, and the model is told the directory,
+/// the operating system, and the shell; without it, turns call the model
+/// without tools.
 #[derive(Debug)]
 pub struct Agent<C> {
     sessions: SessionService,
@@ -67,7 +71,7 @@ impl<C: Connector> Agent<C> {
     }
 
     /// Validates the request and assembles its turn: opens the provider's
-    /// adapter and prepares the workspace.
+    /// adapter, reads the session, and opens its directory.
     /// The turn is abortable from here until it is dropped.
     ///
     /// # Errors
@@ -75,7 +79,10 @@ impl<C: Connector> Agent<C> {
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
     /// blank content or model, [`AgentError::ProviderNotFound`] when the user
     /// owns no such provider, [`AgentError::Provider`] when opening it
-    /// fails, and [`AgentError::Workspace`] when the workspace cannot be
+    /// fails, [`AgentError::SessionNotFound`] when the user owns no such
+    /// session, [`AgentError::Store`] when the session database fails,
+    /// [`AgentError::DirectoryNotFound`] when the session's directory is
+    /// gone, and [`AgentError::Workspace`] when the workspace cannot be
     /// created.
     pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<C::Adapter>, AgentError> {
         if req.content.trim().is_empty() {
@@ -85,12 +92,18 @@ impl<C: Connector> Agent<C> {
             return Err(AgentError::ModelRequired);
         }
         let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
+        let Some(session) = self.sessions.find(req.user_id, req.session_id).await? else {
+            return Err(AgentError::SessionNotFound);
+        };
 
-        let tools = workspace_tools(self.workspaces_dir.as_deref(), req.session_id).await?;
+        let cancel = CancelToken::new();
+        let tools = session_tools(self.workspaces_dir.as_deref(), &session, &cancel).await?;
+        let system_prompt = tools
+            .as_ref()
+            .map(|runtime| system_prompt(runtime.env.root()));
         let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, tools);
 
         let user_message_id = Uuid::new_v4();
-        let cancel = CancelToken::new();
         self.running.insert(
             user_message_id,
             RunningTurn {
@@ -111,6 +124,7 @@ impl<C: Connector> Agent<C> {
                     provider_id: req.provider_id,
                     model: req.model,
                 },
+                system_prompt,
             },
             cancel,
             _registration: Registration {
@@ -174,25 +188,45 @@ impl Drop for Registration {
     }
 }
 
-/// Prepares `<workspaces_dir>/<session_id>` and the tools that run in
-/// it; `None` without a workspaces directory.
-async fn workspace_tools(
+/// The tools of `session`, rooted in the directory it is bound to or in
+/// its workspace under `workspaces_dir`; `None` without a workspaces
+/// directory. A running command stops when `cancel` fires.
+async fn session_tools(
     workspaces_dir: Option<&Path>,
-    session_id: Uuid,
+    session: &Session,
+    cancel: &CancelToken,
 ) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
-    let Some(dir) = workspaces_dir else {
+    let Some(workspaces_dir) = workspaces_dir else {
         return Ok(None);
     };
-    let workspace = dir.join(session_id.to_string());
-    fs::create_dir_all(&workspace)
-        .await
-        .map_err(|e| AgentError::Workspace(e.to_string()))?;
+    let env = match &session.directory {
+        Some(directory) => LocalExecEnv::open(Path::new(directory), cancel.clone())
+            .await
+            .map_err(|_| AgentError::DirectoryNotFound(directory.clone()))?,
+        None => open_workspace(&workspaces_dir.join(session.id.to_string()), cancel)
+            .await
+            .map_err(|e| AgentError::Workspace(e.to_string()))?,
+    };
     let mut registry = ToolRegistry::new();
     registry.register(ReadFileTool);
     registry.register(WriteFileTool);
     registry.register(BashTool);
-    Ok(Some(ToolRuntime::new(
-        registry,
-        LocalExecEnv::new(workspace),
-    )))
+    Ok(Some(ToolRuntime::new(registry, env)))
+}
+
+/// Creates `workspace` when missing and opens an environment over it.
+async fn open_workspace(workspace: &Path, cancel: &CancelToken) -> io::Result<LocalExecEnv> {
+    fs::create_dir_all(workspace).await?;
+    LocalExecEnv::open(workspace, cancel.clone()).await
+}
+
+/// Tells the model where its tools run.
+fn system_prompt(directory: &Path) -> String {
+    format!(
+        "Your working directory is {}. The operating system is {}. The bash tool runs \
+         commands in {}, starting in the working directory.",
+        directory.display(),
+        env::consts::OS,
+        LocalExecEnv::SHELL,
+    )
 }

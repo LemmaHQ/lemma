@@ -20,6 +20,8 @@ enum class ServiceFailure {
     IdInvalid,
     TitleRequired,
     SessionNotFound,
+    DirectoryNotFound,
+    DirectoryUnsupported,
     ContentRequired,
     ModelRequired,
     TurnNotRunning,

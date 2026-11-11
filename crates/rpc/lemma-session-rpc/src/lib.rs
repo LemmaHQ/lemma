@@ -2,6 +2,7 @@
 //! and proto mapping. All behavior lives in `lemma-session`.
 
 use std::fmt::{self, Debug};
+use std::path::Path;
 
 use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
@@ -24,22 +25,29 @@ use uuid::Uuid;
 pub struct SessionRpc {
     domain: SessionService,
     jwt_secret: String,
+    binds_directories: bool,
 }
 
 impl Debug for SessionRpc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SessionRpc")
             .field("domain", &self.domain)
+            .field("binds_directories", &self.binds_directories)
             .finish_non_exhaustive()
     }
 }
 
 impl SessionRpc {
     /// Creates the handler over the session domain service, which the
-    /// agent shares.
+    /// agent shares. Without `binds_directories`, creating a session with
+    /// a directory fails with `DIRECTORY_UNSUPPORTED`.
     #[must_use]
-    pub fn new(domain: SessionService, jwt_secret: String) -> Self {
-        Self { domain, jwt_secret }
+    pub fn new(domain: SessionService, jwt_secret: String, binds_directories: bool) -> Self {
+        Self {
+            domain,
+            jwt_secret,
+            binds_directories,
+        }
     }
 }
 
@@ -48,6 +56,7 @@ fn session_to_proto(c: &DomainSession) -> Session {
         id: c.id.to_string(),
         title: c.title.clone(),
         updated_at: Timestamp::from(c.updated_at).into(),
+        directory: c.directory.clone(),
         ..Default::default()
     }
 }
@@ -130,6 +139,9 @@ fn map_domain(e: SessionError) -> ConnectError {
     match e {
         SessionError::TitleRequired => lemma_proto::app_error(ErrorReason::TitleRequired),
         SessionError::NotFound => lemma_proto::app_error(ErrorReason::SessionNotFound),
+        SessionError::DirectoryNotFound(_) => {
+            lemma_proto::app_error(ErrorReason::DirectoryNotFound)
+        }
         e @ (SessionError::Missing(_) | SessionError::Store(_)) => {
             ConnectError::internal(e.to_string())
         }
@@ -158,10 +170,18 @@ impl v1::SessionService for SessionRpc {
     async fn create_session(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, CreateSessionRequest>,
+        request: ServiceRequest<'_, CreateSessionRequest>,
     ) -> ServiceResult<CreateSessionResponse> {
         let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
-        let c = self.domain.create(user_id).await.map_err(map_domain)?;
+        let directory = request.directory.map(Path::new);
+        if directory.is_some() && !self.binds_directories {
+            return Err(lemma_proto::app_error(ErrorReason::DirectoryUnsupported));
+        }
+        let c = self
+            .domain
+            .create(user_id, directory)
+            .await
+            .map_err(map_domain)?;
         Response::ok(CreateSessionResponse {
             session: session_to_proto(&c).into(),
             ..Default::default()

@@ -13,11 +13,23 @@ The agent subsystem turns one user request into a running turn and reports its p
 | content is empty after trimming | `AgentError::ContentRequired` |
 | model id is empty after trimming | `AgentError::ModelRequired` |
 | the provider does not belong to the user | `AgentError::ProviderNotFound` |
+| the session does not belong to the user | `AgentError::SessionNotFound` |
+| the session's bound directory no longer exists | `AgentError::DirectoryNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
-With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<session id>`; without one, the model is called without tools.
-
 `Turn::run(observer)` runs the turn to its end and returns `()` on success; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
+
+## Tools
+
+With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecEnv` rooted in the session directory: the directory the session was created with, or else its workspace `<workspaces_dir>/<session id>`, which `prepare` creates after it has found the session. Every model request of the turn carries a system prompt naming that directory, the operating system, and the shell. Without a workspaces directory, the model is called without tools or a system prompt.
+
+`LocalExecEnv` confines `read_file` and `write_file` to the root:
+
+- A relative path resolves against the root; an absolute path is accepted when it lies inside the root; a path with a `..` component is refused.
+- The path resolves through symlinks: the nearest existing ancestor is canonicalized and the missing components are appended. The result must lie under the canonical root, so a link out of the root and a dangling link are both refused. Canonical paths also settle letter case, junctions, and 8.3 names on Windows.
+- The write goes to the resolved path.
+
+`bash` runs the command in `cmd /C` on Windows and `sh -c` elsewhere, starting in the root and otherwise unconfined. The call's `timeout` is 1 to 3600 seconds, 300 by default. A command that runs past it, or whose turn is aborted, stops with its whole process tree: on Unix its process group receives `SIGTERM` and, 2 seconds later, `SIGKILL`; on Windows `taskkill /T /F` ends it. Each output stream keeps its first and last 16 KB with the omitted byte count between them. The result carries `exit_code`, `stdout`, and `stderr`, plus `stopped` (`timed out after N s` or `aborted`) when the command was stopped.
 
 ## Turn events
 
@@ -37,7 +49,7 @@ Every `AgentEvent` carries the server's `occurred_at` instant. The first thinkin
 
 ## Abort
 
-Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_id, user_message_id)` cancels the token only when that user owns the turn; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running tool call completes, and the turn stops before the next step. `AbortMessage` calls `Agent::abort`.
+Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_id, user_message_id)` cancels the token only when that user owns the turn; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running `bash` command stops as described under [Tools](#tools), any other running tool call completes, and the turn stops before the next step. `AbortMessage` calls `Agent::abort`.
 
 ## Streams and resume
 
@@ -51,4 +63,4 @@ The web client counts the events it applies, resumes with that count after a bro
 
 ## Errors
 
-`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, and `PROVIDER_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.
+`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, `PROVIDER_NOT_FOUND`, `SESSION_NOT_FOUND`, and `DIRECTORY_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.
