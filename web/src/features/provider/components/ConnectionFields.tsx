@@ -1,12 +1,4 @@
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldLabel,
-    Input,
-    PasswordInput,
-} from "@lemma/ui";
+import { Input, PasswordInput, SettingsField } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -22,7 +14,7 @@ interface ConnectionFieldsProps {
     onChange: (values: ConnectionValues) => void;
 }
 
-/** API key, base URL, and request path rows of a provider page. */
+/** API key, base URL, and request path fields of a provider's connection section. */
 export function ConnectionFields({
     kind,
     values,
@@ -35,43 +27,32 @@ export function ConnectionFields({
 
     return (
         <>
-            <Field orientation="responsive">
-                <FieldContent>
-                    <FieldLabel htmlFor="provider-api-key">
-                        {t("provider.apiKey")}
-                    </FieldLabel>
-                    <FieldDescription>
-                        {t("provider.apiKeyDesc")}
-                    </FieldDescription>
-                </FieldContent>
+            <SettingsField
+                label={t("provider.apiKey")}
+                htmlFor="provider-api-key"
+                description={t("provider.apiKeyDesc")}
+            >
                 <PasswordInput
                     showLabel={t("passwordInput.show")}
                     hideLabel={t("passwordInput.hide")}
                     id="provider-api-key"
-                    className="@md/field-group:shrink-0 @md/field-group:basis-80"
                     value={values.apiKey}
                     onChange={(e) =>
                         onChange({ ...values, apiKey: e.target.value })
                     }
                     placeholder={t("provider.apiKeyPlaceholder")}
                 />
-            </Field>
-            <Field orientation="responsive" data-invalid={baseUrlInvalid}>
-                <FieldContent>
-                    <FieldLabel htmlFor="provider-base-url">
-                        {t("provider.baseUrl")}
-                    </FieldLabel>
-                    {baseUrlInvalid ? (
-                        <FieldError>{t("provider.baseUrlInvalid")}</FieldError>
-                    ) : (
-                        <FieldDescription>
-                            {t("provider.baseUrlDesc")}
-                        </FieldDescription>
-                    )}
-                </FieldContent>
+            </SettingsField>
+            <SettingsField
+                label={t("provider.baseUrl")}
+                htmlFor="provider-base-url"
+                description={t("provider.baseUrlDesc")}
+                error={
+                    baseUrlInvalid ? t("provider.baseUrlInvalid") : undefined
+                }
+            >
                 <Input
                     id="provider-base-url"
-                    className="@md/field-group:shrink-0 @md/field-group:basis-80"
                     value={values.baseUrl}
                     onChange={(e) =>
                         onChange({ ...values, baseUrl: e.target.value })
@@ -79,28 +60,25 @@ export function ConnectionFields({
                     placeholder={placeholders.baseUrl}
                     aria-invalid={baseUrlInvalid}
                 />
-            </Field>
-            <Field orientation="responsive">
-                <FieldContent>
-                    <FieldLabel htmlFor="provider-api-path">
-                        {t("provider.apiPath")}
-                    </FieldLabel>
-                    <FieldDescription>
-                        {kind === "gemini"
-                            ? t("provider.apiPathDescGemini")
-                            : t("provider.apiPathDesc")}
-                    </FieldDescription>
-                </FieldContent>
+            </SettingsField>
+            <SettingsField
+                label={t("provider.apiPath")}
+                htmlFor="provider-api-path"
+                description={
+                    kind === "gemini"
+                        ? t("provider.apiPathDescGemini")
+                        : t("provider.apiPathDesc")
+                }
+            >
                 <Input
                     id="provider-api-path"
-                    className="@md/field-group:shrink-0 @md/field-group:basis-80"
                     value={values.apiPath}
                     onChange={(e) =>
                         onChange({ ...values, apiPath: e.target.value })
                     }
                     placeholder={placeholders.apiPath}
                 />
-            </Field>
+            </SettingsField>
         </>
     );
 }

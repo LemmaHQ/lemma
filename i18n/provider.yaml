@@ -48,6 +48,10 @@ provider:
     platforms: [web]
     en: "Must start with http:// or https://."
     zh: "必须以 http:// 或 https:// 开头"
+  basics:
+    platforms: [web]
+    en: "Basics"
+    zh: "基本信息"
   check:
     platforms: [web]
     en: "Connectivity check"
@@ -68,6 +72,10 @@ provider:
     platforms: [web]
     en: "The provider answered."
     zh: "服务商响应正常。"
+  connection:
+    platforms: [web]
+    en: "Connection"
+    zh: "连接"
   deleteDescription:
     platforms: [web]
     en: "Its API key and model list are removed. This cannot be undone."

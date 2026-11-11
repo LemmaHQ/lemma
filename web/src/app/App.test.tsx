@@ -277,7 +277,7 @@ it("remembers a collapsed sidebar and starts from the toolbar", async () => {
     expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
 });
 
-it("navigates the settings sections from the account menu", async () => {
+it("navigates the settings pages from the account menu", async () => {
     const user = userEvent.setup();
     signIn();
     await start("/");
@@ -287,15 +287,15 @@ it("navigates the settings sections from the account menu", async () => {
         await screen.findByRole("menuitem", { name: "App settings" }),
     );
     await atPath("/settings/appearance");
-    await waitFor(() => {
-        expect(pageTitle()).toBe("Appearance");
-    });
+    expect(
+        await screen.findByRole("heading", { level: 1, name: "Appearance" }),
+    ).toBeDefined();
 
     await user.click(screen.getByRole("link", { name: "AI Providers" }));
     await atPath("/settings/providers");
-    await waitFor(() => {
-        expect(pageTitle()).toBe("AI Providers");
-    });
+    expect(
+        await screen.findByRole("region", { name: "AI Providers" }),
+    ).toBeDefined();
 
     await user.click(screen.getByRole("link", { name: "Back to home" }));
     await sessionRows();

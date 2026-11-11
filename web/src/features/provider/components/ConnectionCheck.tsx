@@ -1,16 +1,12 @@
 import {
     Button,
     CheckIcon,
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldLabel,
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SettingsField,
     XIcon,
 } from "@lemma/ui";
 import { useState, type ReactNode } from "react";
@@ -82,55 +78,46 @@ export function ConnectionCheck({
     };
 
     return (
-        <Field orientation="responsive" data-invalid={status === "failed"}>
-            <FieldContent>
-                <FieldLabel htmlFor="provider-check-model">
-                    {t("provider.check")}
-                </FieldLabel>
-                {current?.status === "failed" ? (
-                    <FieldError>{current.message}</FieldError>
-                ) : (
-                    <FieldDescription>
-                        {status === "passed"
-                            ? t("provider.checkPassed")
-                            : t("provider.checkDesc")}
-                    </FieldDescription>
-                )}
-            </FieldContent>
-            <div className="flex gap-2 @md/field-group:shrink-0 @md/field-group:basis-80">
-                <Select
-                    value={model ?? null}
-                    onValueChange={(value) => setPicked(value)}
-                    disabled={models.length === 0}
+        <SettingsField
+            label={t("provider.check")}
+            htmlFor="provider-check-model"
+            description={
+                status === "passed"
+                    ? t("provider.checkPassed")
+                    : t("provider.checkDesc")
+            }
+            error={current?.status === "failed" ? current.message : undefined}
+        >
+            <Select
+                value={model ?? null}
+                onValueChange={(value) => setPicked(value)}
+                disabled={models.length === 0}
+            >
+                <SelectTrigger
+                    id="provider-check-model"
+                    className="min-w-0 flex-1"
                 >
-                    <SelectTrigger
-                        id="provider-check-model"
-                        className="min-w-0 flex-1"
-                    >
-                        <SelectValue
-                            placeholder={t("provider.checkNoModels")}
-                        />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {models.map((m) => (
-                            <SelectItem key={m} value={m}>
-                                {m}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Button
-                    type="button"
-                    variant="outline"
-                    tone={STATUS_TONES[status]}
-                    loading={status === "checking"}
-                    disabled={!runnable}
-                    onClick={runnable ? () => void check(model) : undefined}
-                >
-                    {STATUS_ICONS[status]}
-                    {t("provider.checkAction")}
-                </Button>
-            </div>
-        </Field>
+                    <SelectValue placeholder={t("provider.checkNoModels")} />
+                </SelectTrigger>
+                <SelectContent>
+                    {models.map((m) => (
+                        <SelectItem key={m} value={m}>
+                            {m}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Button
+                type="button"
+                variant="outline"
+                tone={STATUS_TONES[status]}
+                loading={status === "checking"}
+                disabled={!runnable}
+                onClick={runnable ? () => void check(model) : undefined}
+            >
+                {STATUS_ICONS[status]}
+                {t("provider.checkAction")}
+            </Button>
+        </SettingsField>
     );
 }

@@ -32,6 +32,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Feature code uses only the semantic utilities of the shadcn theme,** with no hex color, no arbitrary value, and no `dark:` variant; the theme's roles and scales are listed in the [styling rules](../packages/ui/README.md#styling).
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes, and across `src/` also `dark:` variants, Tailwind's type sizes, radii from `rounded-xl` up, arbitrary radii, numeric durations, default easings, shadow scale, and black and white colors; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
 - **Controls reuse `@lemma/ui`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
+- **Settings pages compose `SettingsPage`, `SettingsSection`, `SettingsField`, and `SettingsRow`** and add no layout around them; the [settings rules](../packages/ui/README.md#settings-pages) fix the geometry and the control for each kind of choice.
 
 ## Generated files
 

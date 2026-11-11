@@ -2,18 +2,15 @@ import {
     Avatar,
     AvatarFallback,
     BotIcon,
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
     Input,
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SettingsField,
+    SettingsPage,
+    SettingsSection,
 } from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -82,8 +79,9 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     };
 
     return (
-        <div className="max-w-3xl px-4 py-6 md:px-6">
-            <header className="flex items-center gap-3 border-b pb-4">
+        <SettingsPage
+            title={title === "" ? t("provider.newProvider") : title}
+            media={
                 <Avatar>
                     <AvatarFallback>
                         {title === "" ? (
@@ -93,21 +91,14 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         )}
                     </AvatarFallback>
                 </Avatar>
-                <h2 className="truncate text-title">
-                    {title === "" ? t("provider.newProvider") : title}
-                </h2>
-            </header>
-
-            <FieldGroup className="mt-6">
-                <Field orientation="responsive">
-                    <FieldContent>
-                        <FieldLabel htmlFor="provider-kind">
-                            {t("provider.type")}
-                        </FieldLabel>
-                        <FieldDescription>
-                            {t("provider.typeDesc")}
-                        </FieldDescription>
-                    </FieldContent>
+            }
+        >
+            <SettingsSection title={t("provider.basics")}>
+                <SettingsField
+                    label={t("provider.type")}
+                    htmlFor="provider-kind"
+                    description={t("provider.typeDesc")}
+                >
                     <Select
                         value={kind}
                         onValueChange={(value) => {
@@ -118,10 +109,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                             }
                         }}
                     >
-                        <SelectTrigger
-                            id="provider-kind"
-                            className="@md/field-group:shrink-0 @md/field-group:basis-80"
-                        >
+                        <SelectTrigger id="provider-kind" className="w-full">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -132,59 +120,55 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                             ))}
                         </SelectContent>
                     </Select>
-                </Field>
-                <Field orientation="responsive">
-                    <FieldContent>
-                        <FieldLabel htmlFor="provider-identifier">
-                            {t("provider.identifier")}
-                        </FieldLabel>
-                        <FieldDescription>
-                            {t("provider.identifierHint")}
-                        </FieldDescription>
-                    </FieldContent>
+                </SettingsField>
+                <SettingsField
+                    label={t("provider.identifier")}
+                    htmlFor="provider-identifier"
+                    description={t("provider.identifierHint")}
+                >
                     <Input
                         id="provider-identifier"
-                        className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         placeholder={t("provider.identifierPlaceholder")}
                         required
                     />
-                </Field>
-                <Field orientation="responsive">
-                    <FieldContent>
-                        <FieldLabel htmlFor="provider-name">
-                            {t("provider.name")}
-                        </FieldLabel>
-                        <FieldDescription>
-                            {t("provider.nameDesc")}
-                        </FieldDescription>
-                    </FieldContent>
+                </SettingsField>
+                <SettingsField
+                    label={t("provider.name")}
+                    htmlFor="provider-name"
+                    description={t("provider.nameDesc")}
+                >
                     <Input
                         id="provider-name"
-                        className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={t("provider.namePlaceholder")}
                     />
-                </Field>
+                </SettingsField>
+            </SettingsSection>
+            <SettingsSection
+                title={t("provider.connection")}
+                error={failed}
+                footer={
+                    <SaveBar
+                        message={t("provider.newProviderHint")}
+                        busy={busy}
+                        saveDisabled={
+                            connection.baseUrl.trim() !== "" &&
+                            !isBaseUrlValid(connection.baseUrl)
+                        }
+                        onSave={() => void handleSave()}
+                        onCancel={onCancel}
+                    />
+                }
+            >
                 <ConnectionFields
                     kind={kind}
                     values={connection}
                     onChange={setConnection}
                 />
-                {failed !== null && <FieldError>{failed}</FieldError>}
-                <SaveBar
-                    message={t("provider.newProviderHint")}
-                    busy={busy}
-                    saveDisabled={
-                        connection.baseUrl.trim() !== "" &&
-                        !isBaseUrlValid(connection.baseUrl)
-                    }
-                    onSave={() => void handleSave()}
-                    onCancel={onCancel}
-                />
-            </FieldGroup>
-        </div>
+            </SettingsSection>
+        </SettingsPage>
     );
 }

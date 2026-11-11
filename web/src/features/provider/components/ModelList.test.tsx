@@ -25,7 +25,9 @@ const renderList = (
 const listed = () =>
     screen
         .queryAllByRole("button", { name: "Remove model" })
-        .map((button) => button.closest("[data-slot=item]")?.textContent);
+        .map(
+            (button) => button.closest("[data-slot=settings-row]")?.textContent,
+        );
 
 const addButton = (index: 0 | 1) => {
     const button = screen.getAllByRole("button", { name: "Add model" })[index];

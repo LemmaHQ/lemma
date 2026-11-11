@@ -1,8 +1,8 @@
 import {
     Avatar,
     AvatarFallback,
-    FieldError,
-    FieldGroup,
+    SettingsPage,
+    SettingsSection,
     Switch,
 } from "@lemma/ui";
 import { useState } from "react";
@@ -81,15 +81,17 @@ export function ProviderDetail({
     };
 
     return (
-        <div className="max-w-3xl px-4 py-6 md:px-6">
-            <header className="flex items-center gap-3 border-b pb-4">
+        <SettingsPage
+            title={provider.name}
+            media={
                 <Avatar>
                     <AvatarFallback>
                         {provider.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
-                <h2 className="truncate text-title">{provider.name}</h2>
-                <div className="ml-auto flex items-center gap-1">
+            }
+            actions={
+                <>
                     <ProviderSettingsDialog
                         provider={provider}
                         onSaveName={(name) => onSave({ name })}
@@ -103,10 +105,27 @@ export function ProviderDetail({
                         onCheckedChange={onToggleEnabled}
                         aria-label={t("provider.enableProvider")}
                     />
-                </div>
-            </header>
-
-            <FieldGroup className="mt-6">
+                </>
+            }
+        >
+            <SettingsSection
+                title={t("provider.connection")}
+                error={error}
+                footer={
+                    dirty && (
+                        <SaveBar
+                            message={t("provider.unsavedChanges")}
+                            busy={busy}
+                            saveDisabled={!isBaseUrlValid(values.baseUrl)}
+                            onSave={() => void save()}
+                            onCancel={() => {
+                                setValues(saved);
+                                setError(null);
+                            }}
+                        />
+                    )
+                }
+            >
                 <ConnectionFields
                     kind={provider.kind}
                     values={values}
@@ -124,26 +143,12 @@ export function ProviderDetail({
                         )
                     }
                 />
-                {error !== null && <FieldError>{error}</FieldError>}
-                {dirty && (
-                    <SaveBar
-                        message={t("provider.unsavedChanges")}
-                        busy={busy}
-                        saveDisabled={!isBaseUrlValid(values.baseUrl)}
-                        onSave={() => void save()}
-                        onCancel={() => {
-                            setValues(saved);
-                            setError(null);
-                        }}
-                    />
-                )}
-            </FieldGroup>
-
+            </SettingsSection>
             <ModelList
                 models={provider.models}
                 onChange={onModelsChange}
                 onFetch={onFetchModels}
             />
-        </div>
+        </SettingsPage>
     );
 }

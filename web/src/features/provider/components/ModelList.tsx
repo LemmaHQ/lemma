@@ -4,23 +4,19 @@ import {
     Empty,
     EmptyDescription,
     EmptyHeader,
-    FieldError,
     InputGroup,
     InputGroupAddon,
     InputGroupButton,
     InputGroupInput,
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemGroup,
-    ItemSeparator,
-    ItemTitle,
     PlusIcon,
     RefreshCwIcon,
     SearchIcon,
+    SettingsField,
+    SettingsRow,
+    SettingsSection,
     XIcon,
 } from "@lemma/ui";
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -74,43 +70,116 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
     const remove = (id: string) => onChange(models.filter((m) => m !== id));
 
     return (
-        <section className="flex flex-col gap-3 pt-6">
-            <div className="flex items-center gap-2">
-                <h3 className="text-title">{t("provider.modelList")}</h3>
-                <div className="ml-auto flex items-center gap-2">
-                    <InputGroup className="w-48">
-                        <InputGroupAddon>
-                            <SearchIcon />
-                        </InputGroupAddon>
-                        <InputGroupInput
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t("provider.modelSearchPlaceholder")}
-                        />
-                    </InputGroup>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => void fetchRemote()}
-                        loading={fetching}
+        <>
+            <SettingsSection
+                title={t("provider.modelList")}
+                error={fetchError}
+                actions={
+                    <>
+                        <InputGroup className="w-48">
+                            <InputGroupAddon>
+                                <SearchIcon />
+                            </InputGroupAddon>
+                            <InputGroupInput
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={t(
+                                    "provider.modelSearchPlaceholder",
+                                )}
+                            />
+                        </InputGroup>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void fetchRemote()}
+                            loading={fetching}
+                        >
+                            {!fetching && <RefreshCwIcon />}
+                            {t("provider.fetchModelList")}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            aria-label={t("provider.addModel")}
+                            onClick={() => setAdding((v) => !v)}
+                        >
+                            <PlusIcon />
+                        </Button>
+                    </>
+                }
+            >
+                {adding && (
+                    <SettingsField
+                        label={t("provider.addModel")}
+                        htmlFor="provider-new-model"
                     >
-                        {!fetching && <RefreshCwIcon />}
-                        {t("provider.fetchModelList")}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        aria-label={t("provider.addModel")}
-                        onClick={() => setAdding((v) => !v)}
-                    >
-                        <PlusIcon />
-                    </Button>
-                </div>
-            </div>
-
-            {fetchError !== null && <FieldError>{fetchError}</FieldError>}
-
+                        <InputGroup>
+                            <InputGroupInput
+                                id="provider-new-model"
+                                value={newModel}
+                                onChange={(e) => setNewModel(e.target.value)}
+                                placeholder={t("provider.modelPlaceholder")}
+                                onKeyDown={(e) => {
+                                    if (e.nativeEvent.isComposing) {
+                                        return;
+                                    }
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        confirmAdd();
+                                    } else if (e.key === "Escape") {
+                                        setNewModel("");
+                                        setAdding(false);
+                                    }
+                                }}
+                            />
+                            <InputGroupAddon align="inline-end">
+                                <InputGroupButton
+                                    size="icon-xs"
+                                    aria-label={t("provider.addModel")}
+                                    onClick={confirmAdd}
+                                    disabled={newModel.trim() === ""}
+                                >
+                                    <CheckIcon />
+                                </InputGroupButton>
+                                <InputGroupButton
+                                    size="icon-xs"
+                                    aria-label={t("common.cancel")}
+                                    onClick={() => {
+                                        setNewModel("");
+                                        setAdding(false);
+                                    }}
+                                >
+                                    <XIcon />
+                                </InputGroupButton>
+                            </InputGroupAddon>
+                        </InputGroup>
+                    </SettingsField>
+                )}
+                {visible.length > 0 ? (
+                    visible.map((model) => (
+                        <SettingsRow key={model} label={model}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={t("provider.removeModel")}
+                                onClick={() => remove(model)}
+                            >
+                                <XIcon />
+                            </Button>
+                        </SettingsRow>
+                    ))
+                ) : (
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyDescription>
+                                {t("provider.noModels")}
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                )}
+            </SettingsSection>
             <FetchModelsDialog
                 remote={remote}
                 existing={models}
@@ -120,82 +189,6 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                     setRemote(null);
                 }}
             />
-
-            {adding && (
-                <InputGroup>
-                    <InputGroupInput
-                        value={newModel}
-                        onChange={(e) => setNewModel(e.target.value)}
-                        placeholder={t("provider.modelPlaceholder")}
-                        onKeyDown={(e) => {
-                            if (e.nativeEvent.isComposing) {
-                                return;
-                            }
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                confirmAdd();
-                            } else if (e.key === "Escape") {
-                                setNewModel("");
-                                setAdding(false);
-                            }
-                        }}
-                    />
-                    <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                            size="icon-xs"
-                            aria-label={t("provider.addModel")}
-                            onClick={confirmAdd}
-                            disabled={newModel.trim() === ""}
-                        >
-                            <CheckIcon />
-                        </InputGroupButton>
-                        <InputGroupButton
-                            size="icon-xs"
-                            aria-label={t("common.cancel")}
-                            onClick={() => {
-                                setNewModel("");
-                                setAdding(false);
-                            }}
-                        >
-                            <XIcon />
-                        </InputGroupButton>
-                    </InputGroupAddon>
-                </InputGroup>
-            )}
-
-            {visible.length > 0 ? (
-                <ItemGroup>
-                    {visible.map((model, index) => (
-                        <Fragment key={model}>
-                            {index > 0 && <ItemSeparator />}
-                            <Item size="xs">
-                                <ItemContent>
-                                    <ItemTitle>{model}</ItemTitle>
-                                </ItemContent>
-                                <ItemActions>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label={t("provider.removeModel")}
-                                        onClick={() => remove(model)}
-                                    >
-                                        <XIcon />
-                                    </Button>
-                                </ItemActions>
-                            </Item>
-                        </Fragment>
-                    ))}
-                </ItemGroup>
-            ) : (
-                <Empty>
-                    <EmptyHeader>
-                        <EmptyDescription>
-                            {t("provider.noModels")}
-                        </EmptyDescription>
-                    </EmptyHeader>
-                </Empty>
-            )}
-        </section>
+        </>
     );
 }

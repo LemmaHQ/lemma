@@ -2,9 +2,11 @@ import { BotIcon, PaletteIcon } from "@lemma/ui";
 import type { ParseKeys } from "i18next";
 import type { ComponentType } from "react";
 
+import { AppearancePanel } from "@/features/preferences";
+
 import type { SettingsSegment } from "../route-paths";
 
-/** One settings page: its path segment, navigation icon, title, and the page component it loads. */
+/** One settings page: its path segment, its navigation icon and title, and the page component it loads. */
 export interface SettingsSection {
     segment: SettingsSegment;
     icon: ComponentType;
@@ -18,7 +20,7 @@ export interface SettingsGroup {
     sections: readonly SettingsSection[];
 }
 
-/** Every settings section in navigation order; it drives the settings routes, the navigation, and the header title. */
+/** Every settings section in navigation order; it drives the settings routes and the navigation. */
 export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
     {
         labelKey: "settings.groupGeneral",
@@ -27,9 +29,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
                 segment: "appearance",
                 icon: PaletteIcon,
                 titleKey: "settings.appearance",
-                loadPage: async () =>
-                    (await import("./AppearanceSettingsPage"))
-                        .AppearanceSettingsPage,
+                loadPage: () => Promise.resolve(AppearancePanel),
             },
         ],
     },

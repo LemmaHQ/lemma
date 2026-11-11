@@ -1,10 +1,4 @@
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    ScrollArea,
-    toast,
-} from "@lemma/ui";
+import { Empty, EmptyDescription, EmptyHeader, toast } from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -66,41 +60,37 @@ export function ProviderPanel() {
                 }}
                 onCreate={() => setCreating(true)}
             />
-            <ScrollArea className="min-w-0 flex-1">
-                {creating ? (
-                    <NewProviderForm
-                        onSave={handleSaveNew}
-                        onCancel={() => setCreating(false)}
-                    />
-                ) : selected === null ? (
-                    store.loaded && (
-                        <Empty className="h-full">
-                            <EmptyHeader>
-                                <EmptyDescription>
-                                    {t("provider.emptyList")}
-                                </EmptyDescription>
-                            </EmptyHeader>
-                        </Empty>
-                    )
-                ) : (
-                    <ProviderDetail
-                        key={selected.id}
-                        provider={selected}
-                        onSave={(patch) => store.update(selected.id, patch)}
-                        onToggleEnabled={(enabled) =>
-                            void applyPatch(selected.id, { enabled })
-                        }
-                        onModelsChange={(models) =>
-                            void applyPatch(selected.id, { models })
-                        }
-                        onFetchModels={() =>
-                            store.fetchModels({ id: selected.id })
-                        }
-                        onCheck={(req) => store.checkProvider(req)}
-                        onDelete={() => handleDelete(selected.id)}
-                    />
-                )}
-            </ScrollArea>
+            {creating ? (
+                <NewProviderForm
+                    onSave={handleSaveNew}
+                    onCancel={() => setCreating(false)}
+                />
+            ) : selected === null ? (
+                store.loaded && (
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyDescription>
+                                {t("provider.emptyList")}
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                )
+            ) : (
+                <ProviderDetail
+                    key={selected.id}
+                    provider={selected}
+                    onSave={(patch) => store.update(selected.id, patch)}
+                    onToggleEnabled={(enabled) =>
+                        void applyPatch(selected.id, { enabled })
+                    }
+                    onModelsChange={(models) =>
+                        void applyPatch(selected.id, { models })
+                    }
+                    onFetchModels={() => store.fetchModels({ id: selected.id })}
+                    onCheck={(req) => store.checkProvider(req)}
+                    onDelete={() => handleDelete(selected.id)}
+                />
+            )}
         </div>
     );
 }

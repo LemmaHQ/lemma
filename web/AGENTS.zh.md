@@ -32,6 +32,7 @@
 - **功能代码只使用 shadcn 主题的语义工具类，**不写十六进制颜色、任意值或 `dark:` 变体；主题的角色与刻度见[样式规则](../packages/ui/README.zh.md#样式)。
 - **工具负责执行类名规则：** Prettier 对 Tailwind 类名排序；oxlint-tailwindcss 拒绝冲突、矛盾、重复与已弃用的类名，并在整个 `src/` 中拒绝 `dark:` 变体、Tailwind 的字号刻度、`rounded-xl` 及以上的圆角、任意值圆角、数字时长、默认缓动、阴影刻度以及黑白颜色；`@shadcn/lint` 拒绝未知类名、原始颜色、任意值、内联样式与动态类名字符串，也拒绝改写 shadcn 组件的颜色、间距、字体排印或形状。宽度、flex、外边距等布局类仍可用在组件上。
 - **控件复用 `@lemma/ui`；** 先查阅[组件目录](../packages/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
+- **设置页由 `SettingsPage`、`SettingsSection`、`SettingsField` 与 `SettingsRow` 组合而成，**不在其外另加布局；[设置页规则](../packages/ui/README.zh.md#设置页)固定几何尺寸，并规定每类选择所用的控件。
 
 ## 生成文件
 

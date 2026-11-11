@@ -15,7 +15,7 @@ const renderForm = (
     return { onSave, onCancel };
 };
 
-const heading = () => screen.getByRole("heading").textContent;
+const heading = () => screen.getByRole("heading", { level: 1 }).textContent;
 
 const fill = (
     user: UserEvent,

@@ -20,7 +20,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@lemma/ui";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Provider } from "../store";
@@ -104,6 +104,7 @@ export function ProviderListPane({
     onCreate,
 }: ProviderListPaneProps) {
     const { t } = useTranslation();
+    const titleId = useId();
     const [query, setQuery] = useState("");
 
     const filtered = useMemo(() => {
@@ -118,18 +119,17 @@ export function ProviderListPane({
     const disabledProviders = filtered.filter((p) => !p.enabled);
 
     return (
-        <section className="flex w-64 shrink-0 flex-col border-r">
-            <div className="flex items-center gap-2 p-3">
-                <InputGroup className="flex-1">
-                    <InputGroupAddon>
-                        <SearchIcon />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("provider.searchPlaceholder")}
-                    />
-                </InputGroup>
+        <section
+            aria-labelledby={titleId}
+            className="flex w-64 shrink-0 flex-col border-r pt-2"
+        >
+            <div className="flex h-9 items-center gap-2 pr-3 pl-4">
+                <div
+                    id={titleId}
+                    className="min-w-0 flex-1 truncate text-title"
+                >
+                    {t("settings.aiProviders")}
+                </div>
                 <Tooltip>
                     <AnimateIcon animateOnHover asChild>
                         <TooltipTrigger
@@ -148,6 +148,18 @@ export function ProviderListPane({
                     </AnimateIcon>
                     <TooltipContent>{t("provider.newProvider")}</TooltipContent>
                 </Tooltip>
+            </div>
+            <div className="p-3">
+                <InputGroup>
+                    <InputGroupAddon>
+                        <SearchIcon />
+                    </InputGroupAddon>
+                    <InputGroupInput
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={t("provider.searchPlaceholder")}
+                    />
+                </InputGroup>
             </div>
             <ScrollArea className="min-h-0 flex-1">
                 {loaded ? (
