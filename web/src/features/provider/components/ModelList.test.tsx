@@ -1,5 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import { expect, it, vi } from "vitest";
@@ -53,6 +53,19 @@ it("adds a typed model to the top and ignores blanks and duplicates", async () =
 
     expect(listed()).toEqual(["o3", "gpt-4o"]);
     expect(addField()).toBeNull();
+});
+
+it("keeps the add field open while an input method composes", async () => {
+    const user = userEvent.setup();
+    renderList([]);
+
+    await typeNewModel(user, "gpt");
+    const field = screen.getByPlaceholderText("e.g. gpt-4o");
+    fireEvent.keyDown(field, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(field, { key: "Escape", isComposing: true });
+
+    expect(listed()).toEqual([]);
+    expect(addField()).not.toBeNull();
 });
 
 it("closes the add field with Escape, cancel, or the toggle", async () => {

@@ -128,6 +128,9 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         onChange={(e) => setNewModel(e.target.value)}
                         placeholder={t("provider.modelPlaceholder")}
                         onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) {
+                                return;
+                            }
                             if (e.key === "Enter") {
                                 e.preventDefault();
                                 confirmAdd();

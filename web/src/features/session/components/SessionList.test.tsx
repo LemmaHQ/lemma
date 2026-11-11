@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { SidebarProvider, Toaster, TooltipProvider } from "@lemma/ui";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
@@ -158,6 +158,19 @@ it.each([
     await user.type(input, keys);
 
     expect(await screen.findByText("Budget")).toBeDefined();
+    expect(rpc.renameSession).not.toHaveBeenCalled();
+});
+
+it("keeps renaming while an input method composes", async () => {
+    const user = userEvent.setup();
+    renderList();
+
+    const input = await startRename(user, "Budget");
+    await user.type(input, "!");
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(input, { key: "Escape", isComposing: true });
+
+    expect(input.isConnected).toBe(true);
     expect(rpc.renameSession).not.toHaveBeenCalled();
 });
 
