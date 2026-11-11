@@ -5,12 +5,12 @@ mod common;
 use std::error::Error;
 
 use futures::stream;
-use lemma_agent_loop::{AgentLoop, CancelToken, LoopError};
+use lemma_agent_loop::{AgentLoop, LoopError};
 use lemma_core::{ContentBlock, StopReason, StreamEvent, TextContent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::{Message as StoredMessage, MessageStatus};
 use lemma_test_db::on_each_database;
-use lemma_tool::LocalExecEnv;
+use lemma_tool::{CancelToken, LocalExecEnv};
 use sea_orm::DatabaseConnection;
 use serde_json::json;
 

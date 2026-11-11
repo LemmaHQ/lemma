@@ -1,8 +1,8 @@
 use chrono::Utc;
 use lemma_core::StopReason;
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
+use lemma_tool::CancelToken;
 
-use crate::cancel_token::CancelToken;
 use crate::turn_event::TurnEvent;
 
 use super::accumulator::Accumulator;

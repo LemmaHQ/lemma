@@ -5,12 +5,12 @@ mod common;
 use std::error::Error;
 
 use futures::{FutureExt, stream};
-use lemma_agent_loop::{AgentLoop, CancelToken, TurnEvent};
+use lemma_agent_loop::{AgentLoop, TurnEvent};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::{MessageBody, MessageStatus};
 use lemma_test_db::on_each_database;
-use lemma_tool::LocalExecEnv;
+use lemma_tool::{CancelToken, LocalExecEnv};
 use tokio::sync::mpsc;
 
 use crate::common::{Migrator, input, new_session};
