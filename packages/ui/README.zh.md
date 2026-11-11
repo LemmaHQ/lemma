@@ -14,21 +14,22 @@
 
 在功能代码中编写控件之前先查看此列表，复用合适的控件。
 
-| 模块                 | 用途                                   |
-| -------------------- | -------------------------------------- |
-| `ai/code-block`      | 语法高亮代码                           |
-| `ai/session`         | 跟随滚动的消息记录与滚动到最新控件     |
-| `ai/message`         | 消息布局、Markdown 回复与消息操作      |
-| `ai/model-picker`    | 按 provider 分组的模型选择菜单         |
-| `ai/prompt-input`    | 消息输入表单、字段、工具与提交控件     |
-| `ai/reasoning`       | 可折叠的推理文本与流式状态标签         |
-| `ai/shimmer`         | 等待状态的扫光文字效果                 |
-| `ai/suggestion`      | 建议提示词按钮                         |
-| `ai/thinking-loader` | 首个回复 token 到达前的等待指示        |
-| `ai/tool`            | 工具调用分组、状态、参数与输出         |
-| `primitives/reveal`  | 随 `open` 切换的内容的高度与透明度过渡 |
+| 模块                  | 用途                                    |
+| --------------------- | --------------------------------------- |
+| `ai/code-block`       | 语法高亮代码                            |
+| `ai/session`          | 跟随滚动的消息记录与滚动到最新控件      |
+| `ai/message`          | 消息布局、Markdown 回复与消息操作       |
+| `ai/model-picker`     | 按 provider 分组的模型选择菜单          |
+| `ai/prompt-input`     | 消息输入表单、字段、工具与提交控件      |
+| `ai/reasoning`        | 可折叠的推理文本与流式状态标签          |
+| `ai/shimmer`          | 等待状态的扫光文字效果                  |
+| `ai/suggestion`       | 建议提示词按钮                          |
+| `ai/thinking-loader`  | 首个回复 token 到达前的等待指示         |
+| `ai/tool`             | 工具调用分组、状态、参数与输出          |
+| `primitives/reveal`   | 随 `open` 切换的内容的高度与透明度过渡  |
+| `primitives/settings` | [设置页](#设置页)的页面、分区、字段与行 |
 
-共享控件还包括 `primitives/` 下的 `button`、`separator`、`tooltip`、行内提示 `alert`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `avatar`、`collapsible`、`empty`、`item`、`scroll-area` 与 `skeleton`，以及表单控件 `checkbox`、`field`、`input`、`input-group`、`password-input`、`label`、`select`、`switch`、`textarea`、`toggle` 与 `toggle-group`。`useSidebar` 读取侧边栏状态。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。
+共享控件还包括 `primitives/` 下的 `button`、`separator`、`tooltip`、行内提示 `alert`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `avatar`、`collapsible`、`empty`、`scroll-area` 与 `skeleton`，以及表单控件 `checkbox`、`field`、`input`、`input-group`、`password-input`、`label`、`select`、`switch`、`textarea`、`toggle` 与 `toggle-group`。`useSidebar` 读取侧边栏状态。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。
 
 有两对组件容易混淆：
 
@@ -46,13 +47,31 @@
 | `text-body`    | 14 / 20 px           | 默认界面文字、按钮、菜单项、`md` 及以上宽度的输入框 |
 | `text-reading` | 16 / 26 px           | 消息正文、输入框面板、`md` 以下宽度的输入框         |
 | `text-title`   | 16 / 24 px，字重 600 | 页面、分区与对话框标题                              |
-| `text-display` | 24 / 32 px，字重 600 | 首页与登录页标题                                    |
+| `text-display` | 24 / 32 px，字重 600 | 首页、登录页与设置页标题                            |
 
 - **品牌字体：** `font-brand` 只为产品名称与首页标题设置系统衬线字体；其余文字都使用界面无衬线字体。
 - **圆角：** `rounded-sm`（6px）用于徽标、复选框与输入框内的控件；`rounded-md`（8px）用于按钮、输入框、列表行、菜单项、代码块与提示框；`rounded-lg`（12px）用于卡片、弹出层、对话框、输入框面板与主面板；`rounded-full` 用于头像、开关与药丸按钮。
 - **尺寸：** 控件高度为 `h-7`、`h-8`（默认）或 `h-9`，`h-6` 只用于输入框内部；同一行只用一种高度。列表行为 `h-8` 加 `text-small`；`Button variant="row"` 绘制列表行，并通过 `data-active` 标出当前行。
 - **悬停与选中：** `bg-accent` 是所有行、菜单项以及幽灵按钮与描边按钮的悬停颜色；`bg-selected` 标出当前行与按下的切换按钮。这两种色调上的文字使用 `text-foreground` 或 `text-muted-foreground`。
 - **表面：** 内容容器加描边、不加阴影。浮起的表面（菜单、选择框弹出层、模型选择器、提示消息）使用不透明的 `bg-popover`，加描边与 `shadow-overlay`；对话框与抽屉在 `bg-scrim` 之上使用 `shadow-modal`。`shadow-raised` 只用于输入框面板与浮动工具栏。`src/styles/index.css` 的 base 层用 `primary` 为文字选区与光标着色，用 `input` 为滚动条着色。
+
+## 设置页
+
+每个设置页都由 `primitives/settings` 的四个部件组合而成。部件固定页面的几何尺寸：功能代码只向它们传入文字与控件，不在其外另加间距、描边或宽度。
+
+| 部件              | 作用                                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `SettingsPage`    | 可滚动的页面：一条居中的列，最宽 768 px，位于 `text-display` 标题之下；标题前可放头像，行尾可放操作 |
+| `SettingsSection` | 一组设置：一张加描边的卡片，各行以细线分隔；卡片上方可有 `text-small` 的弱化标题，标题行尾可放操作  |
+| `SettingsField`   | 带宽控件的一项设置：标签与说明位于最宽 320 px 的控件列旁；卡片内容窄于 448 px 时上下堆叠            |
+| `SettingsRow`     | 单行条目：一个标签，行尾是紧凑的操作，例如列表中的一个模型及其移除按钮                              |
+
+- **对齐：** 页面标题、分区标题与每一行的文字共用一条左边线，位于卡片描边内侧 16 px 处。
+- **节奏：** 标题与第一个分区相距 24 px，分区之间相距 32 px，分区标题与其卡片相距 8 px。字段上下各留 12 px，单行条目上下各留 8 px。
+- **控件：** 不超过三个选项的选择用 `ToggleGroup`，更长的选择用 `Select`，开关类设置用 `Switch`。输入框与选择框填满控件列；其他控件保持自身宽度并靠列尾。
+- **反馈：** 字段的校验错误通过 `error` 属性替换其说明。分区的 `error` 与 `footer`（承载该分区未保存更改的操作条）跟在卡片之后，相距 12 px。
+- **窄宽度：** 分区标题与其操作排不进一行时，操作移到标题下方单独一行；页面标题先于其操作被截断。
+- **索引与详情：** 列出实体的页面（例如 provider）在所打开实体的 `SettingsPage` 之前放一个 256 px 宽、以 `text-title` 为标题的索引栏。
 
 ## 动效工具类
 

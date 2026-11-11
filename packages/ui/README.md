@@ -14,21 +14,22 @@ English | [中文](README.zh.md)
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module               | Use                                                         |
-| -------------------- | ----------------------------------------------------------- |
-| `ai/code-block`      | Syntax-highlighted code                                     |
-| `ai/session`         | Scroll-following transcript and scroll-to-latest control    |
-| `ai/message`         | Message layout, Markdown response, and message actions      |
-| `ai/model-picker`    | Provider-grouped model selection menu                       |
-| `ai/prompt-input`    | Message composer form, field, tools, and submit control     |
-| `ai/reasoning`       | Collapsible reasoning text and streaming label              |
-| `ai/shimmer`         | Sweeping text treatment for pending states                  |
-| `ai/suggestion`      | Suggested prompt button                                     |
-| `ai/thinking-loader` | Pending indicator before the first reply token              |
-| `ai/tool`            | Tool-call groups, status, arguments, and output             |
-| `primitives/reveal`  | Height and opacity transition for content toggled by `open` |
+| Module                | Use                                                                     |
+| --------------------- | ----------------------------------------------------------------------- |
+| `ai/code-block`       | Syntax-highlighted code                                                 |
+| `ai/session`          | Scroll-following transcript and scroll-to-latest control                |
+| `ai/message`          | Message layout, Markdown response, and message actions                  |
+| `ai/model-picker`     | Provider-grouped model selection menu                                   |
+| `ai/prompt-input`     | Message composer form, field, tools, and submit control                 |
+| `ai/reasoning`        | Collapsible reasoning text and streaming label                          |
+| `ai/shimmer`          | Sweeping text treatment for pending states                              |
+| `ai/suggestion`       | Suggested prompt button                                                 |
+| `ai/thinking-loader`  | Pending indicator before the first reply token                          |
+| `ai/tool`             | Tool-call groups, status, arguments, and output                         |
+| `primitives/reveal`   | Height and opacity transition for content toggled by `open`             |
+| `primitives/settings` | The page, section, field, and row of a [settings page](#settings-pages) |
 
-`button`, `separator`, `tooltip`, the inline message `alert`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `item`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
+`button`, `separator`, `tooltip`, the inline message `alert`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
 Two pairs are easy to confuse:
 
@@ -46,13 +47,31 @@ Components and feature code style through the theme's utilities. The color roles
 | `text-body`    | 14 / 20 px             | Default interface text, buttons, menu items, inputs from `md` up |
 | `text-reading` | 16 / 26 px             | Message text, the composer, inputs below `md`                    |
 | `text-title`   | 16 / 24 px, weight 600 | Page, section, and dialog titles                                 |
-| `text-display` | 24 / 32 px, weight 600 | Home and sign-in headings                                        |
+| `text-display` | 24 / 32 px, weight 600 | Home, sign-in, and settings page headings                        |
 
 - **Brand font:** `font-brand` sets the system serif for the product name and the home heading only; every other text uses the interface sans.
 - **Radius:** `rounded-sm` (6px) for badges, checkboxes, and controls inside inputs; `rounded-md` (8px) for buttons, inputs, list rows, menu items, code blocks, and alerts; `rounded-lg` (12px) for cards, popovers, dialogs, the composer, and the main panel; `rounded-full` for avatars, switches, and pills.
 - **Sizes:** controls are `h-7`, `h-8` (the default), or `h-9`, and `h-6` only inside inputs; one row uses one height. List rows are `h-8` with `text-small`; `Button variant="row"` draws one and marks the current row through `data-active`.
 - **Hover and selection:** `bg-accent` is the hover color of every row, menu item, and ghost or outline button; `bg-selected` marks the current row and a pressed toggle. Text on these tints uses `text-foreground` or `text-muted-foreground`.
 - **Surfaces:** content containers take a border and no shadow. Floating surfaces (menus, select popups, the model picker, toasts) are an opaque `bg-popover` with a border and `shadow-overlay`; dialogs and sheets use `shadow-modal` over `bg-scrim`. `shadow-raised` is reserved for the composer and the floating toolbar. The base layer in `src/styles/index.css` colors text selection and the caret from `primary` and scrollbars from `input`.
+
+## Settings pages
+
+Every settings page is composed from the four parts of `primitives/settings`. The parts fix the page's geometry: feature code passes them text and controls and adds no spacing, border, or width around them.
+
+| Part              | Role                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SettingsPage`    | The scrolling page: one centered column up to 768 px wide under a `text-display` heading, which an avatar may precede and actions may end                    |
+| `SettingsSection` | One group of settings: a bordered card whose rows are divided by hairlines, under an optional muted `text-small` title that actions may end                  |
+| `SettingsField`   | A setting with a wide control: its label and description beside a control column of at most 320 px, stacked while the card's content is narrower than 448 px |
+| `SettingsRow`     | A one-line entry: a label with compact actions at its end, such as a listed model and its remove button                                                      |
+
+- **Alignment:** the page heading, the section titles, and the text of every row share one left edge, 16 px inside the card border.
+- **Rhythm:** 24 px separate the heading from the first section, 32 px separate sections, and 8 px separate a section title from its card. A field is padded 12 px above and below, a one-line row 8 px.
+- **Controls:** a choice among up to three options is a `ToggleGroup`, a longer choice is a `Select`, and an on/off setting is a `Switch`. Inputs and selects fill the control column; other controls keep their width and sit at its end.
+- **Feedback:** a field's validation error replaces its description through the `error` prop. A section's `error` and its `footer`, the bar holding the section's pending changes, follow the card at 12 px.
+- **Narrow widths:** a section title's actions move to their own line under the title when the two do not fit on one, and a page title truncates before its actions.
+- **Index and detail:** a page that lists entities, such as the providers, puts a 256 px index pane titled in `text-title` before the `SettingsPage` of the open entity.
 
 ## Motion utilities
 
