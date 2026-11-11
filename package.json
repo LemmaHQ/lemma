@@ -15,10 +15,10 @@
     "devDependencies": {
         "@types/node": "^26.6.6",
         "autocorrect-node": "^2.14.0",
-        "jscpd": "^5.4.2",
-        "knip": "^6.44.1",
+        "jscpd": "^5.4.3",
+        "knip": "^6.44.2",
         "markdownlint-cli2": "^0.24.0",
-        "oxlint": "^1.91.0",
+        "oxlint": "^1.92.0",
         "oxlint-tsgolint": "^7.0.2006",
         "typescript": "^7.0.2",
         "yaml": "^2.9.1"
