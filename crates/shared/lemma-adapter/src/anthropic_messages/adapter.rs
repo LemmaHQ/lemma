@@ -42,6 +42,9 @@ impl<T: HttpTransport> Adapter for AnthropicMessages<T> {
             "messages": request::anthropic_messages(&req.messages),
             "stream": true,
         });
+        if let Some(prompt) = req.system_prompt {
+            body["system"] = prompt.into();
+        }
         if !req.tools.is_empty() {
             body["tools"] = req
                 .tools

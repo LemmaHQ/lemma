@@ -33,9 +33,16 @@ impl<T: HttpTransport> Adapter for OpenAiCompatible<T> {
             &endpoint.api_path
         };
         let url = format!("{}{}", connection::base_url(endpoint), path);
+        let mut messages = request::openai_messages(&req.messages);
+        if let Some(prompt) = req.system_prompt {
+            messages.insert(
+                0,
+                serde_json::json!({ "role": "system", "content": prompt }),
+            );
+        }
         let mut body = serde_json::json!({
             "model": req.model,
-            "messages": request::openai_messages(&req.messages),
+            "messages": messages,
             "stream": true,
             "stream_options": { "include_usage": true },
         });

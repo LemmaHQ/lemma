@@ -47,6 +47,7 @@ impl<C: Connector> ProviderService<C> {
     async fn check(&self, endpoint: Endpoint, model: &str) -> Result<(), ProviderError> {
         let request = ModelRequest {
             model: model.to_owned(),
+            system_prompt: None,
             messages: vec![Message::User {
                 content: vec![ContentBlock::Text(TextContent {
                     text: CHECK_PROMPT.to_owned(),

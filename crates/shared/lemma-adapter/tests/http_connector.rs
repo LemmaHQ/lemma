@@ -179,6 +179,7 @@ fn user(message: &str) -> Message {
 fn history() -> ModelRequest {
     ModelRequest {
         model: "m".to_owned(),
+        system_prompt: Some("Be brief.".to_owned()),
         messages: vec![
             user("Hi"),
             assistant(
@@ -212,6 +213,7 @@ fn history() -> ModelRequest {
 fn ask() -> ModelRequest {
     ModelRequest {
         model: "m".to_owned(),
+        system_prompt: None,
         messages: vec![user("Hi")],
         tools: Vec::new(),
     }
@@ -260,6 +262,7 @@ async fn openai_sends_history_tools_and_a_bearer_token() -> Result<(), Box<dyn E
             body: Some(json!({
                 "model": "m",
                 "messages": [
+                    { "role": "system", "content": "Be brief." },
                     { "role": "user", "content": "Hi" },
                     { "role": "assistant", "content": "Let me look.", "tool_calls": [call_1] },
                     { "role": "tool", "tool_call_id": "call-1", "content": r#"{"lines":2}"# },
@@ -300,6 +303,7 @@ async fn anthropic_replays_signed_thinking_and_tool_blocks() -> Result<(), Box<d
             body: Some(json!({
                 "model": "m",
                 "max_tokens": 8192,
+                "system": "Be brief.",
                 "messages": [
                     { "role": "user", "content": "Hi" },
                     { "role": "assistant", "content": [
@@ -346,6 +350,7 @@ async fn gemini_sends_function_calls_and_responses() -> Result<(), Box<dyn Error
                 .to_owned(),
             headers: vec![header("x-goog-api-key", "key")],
             body: Some(json!({
+                "systemInstruction": { "parts": [{ "text": "Be brief." }] },
                 "contents": [
                     { "role": "user", "parts": [{ "text": "Hi" }] },
                     { "role": "model", "parts": [

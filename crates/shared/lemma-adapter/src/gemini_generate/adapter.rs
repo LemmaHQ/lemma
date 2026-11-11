@@ -38,6 +38,9 @@ impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
         let mut body = serde_json::json!({
             "contents": request::gemini_contents(&req.messages),
         });
+        if let Some(prompt) = req.system_prompt {
+            body["systemInstruction"] = serde_json::json!({ "parts": [{ "text": prompt }] });
+        }
         if !req.tools.is_empty() {
             body["tools"] = serde_json::json!([{
                 "functionDeclarations": req.tools.iter().map(|t| serde_json::json!({
