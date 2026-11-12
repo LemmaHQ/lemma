@@ -22,8 +22,8 @@ import dev.lemmahq.lemma.ui.components.LemmaCopyButton
 import dev.lemmahq.lemma.ui.components.LemmaMarkdown
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.agent_aborted_notice
-import lemma.mobile.shared.generated.resources.agent_failed
 import lemma.mobile.shared.generated.resources.common_copy
+import lemma.mobile.shared.generated.resources.errors_agent_failed
 import lemma.mobile.shared.generated.resources.icon_refresh_cw
 import lemma.mobile.shared.generated.resources.session_regenerate
 import org.jetbrains.compose.resources.painterResource
@@ -72,7 +72,7 @@ internal fun AssistantMessage(
 private fun FailureNotice(message: UiMessage) {
     Column {
         Text(
-            text = stringResource(Res.string.agent_failed),
+            text = stringResource(Res.string.errors_agent_failed),
             style = LemmaTheme.typography.bodyMedium,
             color = LemmaTheme.colors.danger,
         )

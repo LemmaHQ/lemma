@@ -57,14 +57,15 @@ internal fun ModelPickerDialog(
                     .forEach { provider ->
                         item(key = "header_${provider.id}") {
                             Text(
-                                text = provider.name,
+                                text = provider.source.name,
                                 style = LemmaTheme.typography.labelSmall,
                                 color = LemmaTheme.colors.textTertiary,
                                 modifier = Modifier.padding(vertical = 4.dp),
                             )
                         }
-                        items(provider.models, key = { "${provider.id}/$it" }) { model ->
-                            val option = ModelSelection(provider.id, model)
+                        items(provider.source.models, key = { "${provider.id}/${it.id}" }) { model
+                            ->
+                            val option = ModelSelection(provider.id, model.id)
                             Box(
                                 modifier =
                                     Modifier.fillMaxWidth()
@@ -77,7 +78,7 @@ internal fun ModelPickerDialog(
                                         .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Text(
-                                    text = model,
+                                    text = model.id,
                                     style = LemmaTheme.typography.bodyMedium,
                                     color = LemmaTheme.colors.textPrimary,
                                 )

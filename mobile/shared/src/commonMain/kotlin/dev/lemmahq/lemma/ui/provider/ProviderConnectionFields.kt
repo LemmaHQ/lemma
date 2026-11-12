@@ -12,20 +12,20 @@ import dev.lemmahq.lemma.ui.components.LemmaPasswordField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
-import lemma.mobile.shared.generated.resources.provider_api_key_description
+import lemma.mobile.shared.generated.resources.provider_api_key_desc
 import lemma.mobile.shared.generated.resources.provider_api_key_placeholder
 import lemma.mobile.shared.generated.resources.provider_api_path
-import lemma.mobile.shared.generated.resources.provider_api_path_description
-import lemma.mobile.shared.generated.resources.provider_api_path_description_gemini
+import lemma.mobile.shared.generated.resources.provider_api_path_desc
+import lemma.mobile.shared.generated.resources.provider_api_path_desc_gemini
 import lemma.mobile.shared.generated.resources.provider_base_url
-import lemma.mobile.shared.generated.resources.provider_base_url_description
+import lemma.mobile.shared.generated.resources.provider_base_url_desc
 import lemma.mobile.shared.generated.resources.provider_base_url_invalid
 import org.jetbrains.compose.resources.stringResource
 
-/** The API key, base URL, and request path fields of a provider of [kind]. */
+/** The API key, base URL, and request path fields of a provider of [apiFormat]. */
 @Composable
 internal fun ProviderConnectionFields(
-    kind: String,
+    apiFormat: String,
     apiKey: String,
     onApiKeyChange: (String) -> Unit,
     baseUrl: String,
@@ -34,11 +34,11 @@ internal fun ProviderConnectionFields(
     onApiPathChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val placeholders = connectionPlaceholders(kind)
+    val placeholders = connectionPlaceholders(apiFormat)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         LemmaField(
             label = stringResource(Res.string.provider_api_key),
-            description = stringResource(Res.string.provider_api_key_description),
+            description = stringResource(Res.string.provider_api_key_desc),
         ) {
             LemmaPasswordField(
                 value = apiKey,
@@ -48,7 +48,7 @@ internal fun ProviderConnectionFields(
         }
         LemmaField(
             label = stringResource(Res.string.provider_base_url),
-            description = stringResource(Res.string.provider_base_url_description),
+            description = stringResource(Res.string.provider_base_url_desc),
             error =
                 if (baseUrl.isNotBlank() && !isBaseUrlValid(baseUrl)) {
                     stringResource(Res.string.provider_base_url_invalid)
@@ -67,8 +67,8 @@ internal fun ProviderConnectionFields(
             label = stringResource(Res.string.provider_api_path),
             description =
                 stringResource(
-                    if (kind == "gemini") Res.string.provider_api_path_description_gemini
-                    else Res.string.provider_api_path_description
+                    if (apiFormat == "gemini") Res.string.provider_api_path_desc_gemini
+                    else Res.string.provider_api_path_desc
                 ),
         ) {
             LemmaTextField(

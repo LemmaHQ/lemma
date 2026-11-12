@@ -6,7 +6,7 @@ import dev.lemmahq.lemma.data.ModelSelection
 
 /** Whether an enabled provider in [providers] offers this model. */
 internal fun ModelSelection.isOffered(providers: List<ClientProvider>): Boolean = providers.any {
-    it.id == providerId && it.enabled && model in it.models
+    it.id == providerId && it.enabled && it.source.models.any { offered -> offered.id == model }
 }
 
 /** [stored] when it is still offered, else the first model of the first enabled provider. */
@@ -16,8 +16,8 @@ internal fun defaultSelection(
 ): ModelSelection? =
     stored?.takeIf { it.isOffered(providers) }
         ?: providers
-            .firstOrNull { it.enabled && it.models.isNotEmpty() }
-            ?.let { ModelSelection(it.id, it.models.first()) }
+            .firstOrNull { it.enabled && it.source.models.isNotEmpty() }
+            ?.let { ModelSelection(it.id, it.source.models.first().id) }
 
 /** The model of the newest assistant message in [newestFirst], when it is still offered. */
 internal fun lastUsedSelection(

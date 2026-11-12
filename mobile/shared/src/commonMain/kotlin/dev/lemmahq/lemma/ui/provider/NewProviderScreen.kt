@@ -17,16 +17,16 @@ import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
 import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.provider_api_format
+import lemma.mobile.shared.generated.resources.provider_api_format_desc
 import lemma.mobile.shared.generated.resources.provider_identifier
 import lemma.mobile.shared.generated.resources.provider_identifier_hint
 import lemma.mobile.shared.generated.resources.provider_identifier_placeholder
 import lemma.mobile.shared.generated.resources.provider_name
-import lemma.mobile.shared.generated.resources.provider_name_description
+import lemma.mobile.shared.generated.resources.provider_name_desc
 import lemma.mobile.shared.generated.resources.provider_name_placeholder
-import lemma.mobile.shared.generated.resources.provider_new
-import lemma.mobile.shared.generated.resources.provider_new_hint
-import lemma.mobile.shared.generated.resources.provider_type
-import lemma.mobile.shared.generated.resources.provider_type_description
+import lemma.mobile.shared.generated.resources.provider_new_provider
+import lemma.mobile.shared.generated.resources.provider_new_provider_hint
 import org.jetbrains.compose.resources.stringResource
 
 /** The page creating a provider; [onOpenProvider] receives the ID of the stored provider. */
@@ -41,7 +41,7 @@ internal fun NewProviderScreen(
     SideEffect(created) { created?.let { onOpenProvider(it.id) } }
 
     Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
-        LemmaTopBar(title = stringResource(Res.string.provider_new), onBack = onBack)
+        LemmaTopBar(title = stringResource(Res.string.provider_new_provider), onBack = onBack)
         Column(
             modifier =
                 Modifier.weight(1f)
@@ -50,10 +50,14 @@ internal fun NewProviderScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             LemmaField(
-                label = stringResource(Res.string.provider_type),
-                description = stringResource(Res.string.provider_type_description),
+                label = stringResource(Res.string.provider_api_format),
+                description = stringResource(Res.string.provider_api_format_desc),
             ) {
-                ProviderKindPicker(kind = viewModel.kind, onSelect = { viewModel.kind = it })
+                ApiFormatPicker(
+                    apiFormat = viewModel.apiFormat,
+                    options = API_FORMATS,
+                    onSelect = { viewModel.apiFormat = it },
+                )
             }
             LemmaField(
                 label = stringResource(Res.string.provider_identifier),
@@ -67,7 +71,7 @@ internal fun NewProviderScreen(
             }
             LemmaField(
                 label = stringResource(Res.string.provider_name),
-                description = stringResource(Res.string.provider_name_description),
+                description = stringResource(Res.string.provider_name_desc),
             ) {
                 LemmaTextField(
                     value = viewModel.name,
@@ -76,7 +80,7 @@ internal fun NewProviderScreen(
                 )
             }
             ProviderConnectionFields(
-                kind = viewModel.kind,
+                apiFormat = viewModel.apiFormat,
                 apiKey = viewModel.apiKey,
                 onApiKeyChange = { viewModel.apiKey = it },
                 baseUrl = viewModel.baseUrl,
@@ -93,7 +97,7 @@ internal fun NewProviderScreen(
             }
         }
         SaveBar(
-            message = stringResource(Res.string.provider_new_hint),
+            message = stringResource(Res.string.provider_new_provider_hint),
             busy = viewModel.saving,
             saveEnabled = !viewModel.baseUrlInvalid,
             onSave = viewModel::save,

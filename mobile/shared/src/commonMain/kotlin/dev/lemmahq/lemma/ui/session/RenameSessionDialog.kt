@@ -15,7 +15,7 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_cancel
 import lemma.mobile.shared.generated.resources.common_save
 import lemma.mobile.shared.generated.resources.session_rename
-import lemma.mobile.shared.generated.resources.session_untitled
+import lemma.mobile.shared.generated.resources.sidebar_new_session
 import org.jetbrains.compose.resources.stringResource
 
 /** The dialog editing a session title, starting from [title]. */
@@ -38,7 +38,7 @@ internal fun RenameSessionDialog(
         LemmaTextField(
             value = value,
             onValueChange = { value = it },
-            placeholder = stringResource(Res.string.session_untitled),
+            placeholder = stringResource(Res.string.sidebar_new_session),
         )
     }
 }

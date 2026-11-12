@@ -30,17 +30,17 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.icon_message_circle_plus
 import lemma.mobile.shared.generated.resources.session_empty_subtitle
 import lemma.mobile.shared.generated.resources.session_empty_title
-import lemma.mobile.shared.generated.resources.session_suggestion_1
-import lemma.mobile.shared.generated.resources.session_suggestion_2
-import lemma.mobile.shared.generated.resources.session_suggestion_3
+import lemma.mobile.shared.generated.resources.session_suggestion1
+import lemma.mobile.shared.generated.resources.session_suggestion2
+import lemma.mobile.shared.generated.resources.session_suggestion3
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 private val SUGGESTIONS =
     listOf(
-        Res.string.session_suggestion_1,
-        Res.string.session_suggestion_2,
-        Res.string.session_suggestion_3,
+        Res.string.session_suggestion1,
+        Res.string.session_suggestion2,
+        Res.string.session_suggestion3,
     )
 
 /** A session without messages: what to ask, with suggestions that [onPickSuggestion] receives. */

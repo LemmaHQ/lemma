@@ -165,7 +165,7 @@ private fun ScrollToNewestButton(
 /** Who wrote [message]: the provider's name and the model, or the model alone. */
 internal fun messageSource(message: UiMessage, providers: List<ClientProvider>): String? {
     val model = message.model?.takeIf { it.isNotEmpty() } ?: return null
-    val name = providers.find { it.id == message.providerId }?.name
+    val name = providers.find { it.id == message.providerId }?.let { it.source.name }
     return if (name.isNullOrEmpty()) model else "$name · $model"
 }
 

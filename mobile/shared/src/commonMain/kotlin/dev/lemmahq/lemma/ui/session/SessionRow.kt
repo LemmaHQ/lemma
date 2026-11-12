@@ -29,7 +29,7 @@ import lemma.mobile.shared.generated.resources.icon_trash_2
 import lemma.mobile.shared.generated.resources.session_actions
 import lemma.mobile.shared.generated.resources.session_delete
 import lemma.mobile.shared.generated.resources.session_rename
-import lemma.mobile.shared.generated.resources.session_untitled
+import lemma.mobile.shared.generated.resources.sidebar_new_session
 import org.jetbrains.compose.resources.stringResource
 
 /** A drawer row opening [session]; its actions menu renames or deletes it. */
@@ -52,7 +52,7 @@ internal fun SessionRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = session.title.ifBlank { stringResource(Res.string.session_untitled) },
+            text = session.title.ifBlank { stringResource(Res.string.sidebar_new_session) },
             style = LemmaTheme.typography.bodyMedium,
             color =
                 if (selected) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textSecondary,

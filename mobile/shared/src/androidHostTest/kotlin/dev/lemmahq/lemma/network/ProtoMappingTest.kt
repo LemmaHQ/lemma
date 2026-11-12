@@ -1,8 +1,8 @@
 package dev.lemmahq.lemma.network
 
 import com.google.protobuf.Timestamp
+import dev.lemmahq.gen.lemma.v1.ApiFormat
 import dev.lemmahq.gen.lemma.v1.MessageStatus as ProtoMessageStatus
-import dev.lemmahq.gen.lemma.v1.ProviderKind
 import dev.lemmahq.gen.lemma.v1.agentAborted
 import dev.lemmahq.gen.lemma.v1.agentDelta
 import dev.lemmahq.gen.lemma.v1.agentDone
@@ -10,7 +10,10 @@ import dev.lemmahq.gen.lemma.v1.agentError
 import dev.lemmahq.gen.lemma.v1.agentEvent
 import dev.lemmahq.gen.lemma.v1.agentStarted
 import dev.lemmahq.gen.lemma.v1.agentTurnStarted
+import dev.lemmahq.gen.lemma.v1.customProvider
 import dev.lemmahq.gen.lemma.v1.message
+import dev.lemmahq.gen.lemma.v1.model
+import dev.lemmahq.gen.lemma.v1.predefinedProvider
 import dev.lemmahq.gen.lemma.v1.provider
 import dev.lemmahq.gen.lemma.v1.textDelta
 import dev.lemmahq.gen.lemma.v1.thinkingDelta
@@ -19,7 +22,10 @@ import dev.lemmahq.gen.lemma.v1.toolCallFinished
 import dev.lemmahq.gen.lemma.v1.toolCallStarted
 import dev.lemmahq.gen.lemma.v1.toolResultMeta
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
+import dev.lemmahq.lemma.client.ClientModel
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
 import dev.lemmahq.lemma.client.MessageStatus
@@ -33,15 +39,54 @@ private const val AT_MILLIS = 12_345L
 class ProtoMappingTest {
 
     @Test
-    fun providerKindsMapBothWaysAndUnknownKindsAreRejected() {
-        val kinds = listOf("openai", "anthropic", "gemini")
+    fun providerSourcesMapFormatsAndModelFeatures() {
+        val formats = listOf("openai", "anthropic", "gemini")
 
-        assertEquals(kinds, kinds.map { provider { kind = providerKind(it) }.toClient().kind })
-        assertFailsWith<IllegalArgumentException> { providerKind("cohere") }
+        assertEquals(
+            formats,
+            formats.map { format ->
+                val mapped = provider {
+                    custom = customProvider { apiFormat = apiFormat(format) }
+                }
+                    .toClient()
+                (mapped.source as ClientCustomProvider).apiFormat
+            },
+        )
+        val predefined =
+            provider {
+                predefined = predefinedProvider {
+                    identifier = "deepseek"
+                    name = "DeepSeek"
+                    apiFormats += ApiFormat.API_FORMAT_ANTHROPIC
+                    apiFormats += ApiFormat.API_FORMAT_OPENAI
+                    defaultApiFormat = ApiFormat.API_FORMAT_ANTHROPIC
+                    models += model {
+                        id = "deepseek-flash"
+                        toolCalling = true
+                    }
+                    models += model { id = "deepseek-v4-pro" }
+                }
+            }
+                .toClient()
+                .source as ClientPredefinedProvider
+        assertEquals(listOf("anthropic", "openai"), predefined.apiFormats)
+        assertEquals("anthropic", predefined.defaultApiFormat)
+        assertEquals(
+            listOf(ClientModel("deepseek-flash", true), ClientModel("deepseek-v4-pro", false)),
+            predefined.models,
+        )
+
+        assertFailsWith<IllegalArgumentException> { apiFormat("cohere") }
         assertFailsWith<IllegalArgumentException> {
-            provider { kind = ProviderKind.PROVIDER_KIND_UNSPECIFIED }.toClient()
+            provider {
+                custom = customProvider { apiFormat = ApiFormat.API_FORMAT_UNSPECIFIED }
+            }
+                .toClient()
         }
-        assertFailsWith<IllegalArgumentException> { provider { kindValue = 99 }.toClient() }
+        assertFailsWith<IllegalArgumentException> {
+            provider { custom = customProvider { apiFormatValue = 99 } }.toClient()
+        }
+        assertFailsWith<IllegalArgumentException> { provider {}.toClient() }
     }
 
     @Test

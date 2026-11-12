@@ -1,6 +1,7 @@
 package dev.lemmahq.lemma.ui.session
 
 import dev.lemmahq.lemma.client.sampleMessage
+import dev.lemmahq.lemma.client.samplePredefinedProvider
 import dev.lemmahq.lemma.client.sampleProvider
 import dev.lemmahq.lemma.data.ModelSelection
 import kotlin.test.Test
@@ -29,6 +30,30 @@ class ModelSelectionsTest {
             defaultSelection(listOf(disabled, empty, openai), stored),
         )
         assertNull(defaultSelection(listOf(disabled, empty), stored))
+    }
+
+    @Test
+    fun enabledPredefinedProvidersOfferTheirBuiltInModels() {
+        val deepseek =
+            samplePredefinedProvider(
+                "deepseek",
+                "deepseek-flash",
+                "deepseek-v4-pro",
+                enabled = true,
+                apiKey = "sk-1",
+            )
+
+        assertEquals(
+            ModelSelection("deepseek", "deepseek-flash"),
+            defaultSelection(listOf(deepseek, openai), stored = null),
+        )
+        assertEquals(
+            ModelSelection("deepseek", "deepseek-v4-pro"),
+            defaultSelection(
+                listOf(deepseek, openai),
+                ModelSelection("deepseek", "deepseek-v4-pro"),
+            ),
+        )
     }
 
     @Test

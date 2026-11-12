@@ -1,8 +1,10 @@
 package dev.lemmahq.lemma.ui.provider
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -10,6 +12,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.LemmaClient
 
 /**
@@ -33,25 +36,12 @@ internal fun NavGraphBuilder.providerGraph(
         }
         composable<ProviderDetailRoute> { entry ->
             val lemmaClient = client() ?: return@composable
-            val providers = sharedViewModel(navController, entry, lemmaClient)
-            val provider = providers.provider(entry.toRoute<ProviderDetailRoute>().id)
-            when {
-                provider != null ->
-                    ProviderDetailScreen(
-                        viewModel =
-                            viewModel {
-                                ProviderDetailViewModel(
-                                    lemmaClient,
-                                    provider,
-                                    providers::store,
-                                    providers::remove,
-                                )
-                            },
-                        onBack = { navController.navigateUp() },
-                    )
-                providers.loading -> ProviderLoadingScreen(onBack = { navController.navigateUp() })
-                else -> LaunchedEffect(Unit) { navController.navigateUp() }
-            }
+            ProviderDetailDestination(
+                id = entry.toRoute<ProviderDetailRoute>().id,
+                providers = sharedViewModel(navController, entry, lemmaClient),
+                client = lemmaClient,
+                onBack = { navController.navigateUp() },
+            )
         }
         composable<NewProviderRoute> { entry ->
             val lemmaClient = client() ?: return@composable
@@ -65,6 +55,44 @@ internal fun NavGraphBuilder.providerGraph(
                     }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun ProviderDetailDestination(
+    id: String,
+    providers: ProviderViewModel,
+    client: LemmaClient,
+    onBack: () -> Unit,
+) {
+    val provider = providers.provider(id)
+    when {
+        provider?.source is ClientPredefinedProvider ->
+            PredefinedProviderDetailScreen(
+                viewModel =
+                    viewModel {
+                        PredefinedProviderDetailViewModel(client, provider, providers::store)
+                    },
+                onBack = onBack,
+            )
+        provider != null ->
+            ProviderDetailScreen(
+                viewModel =
+                    viewModel {
+                        ProviderDetailViewModel(
+                            client,
+                            provider,
+                            providers::store,
+                            providers::remove,
+                        )
+                    },
+                onBack = onBack,
+            )
+        providers.loading -> ProviderLoadingScreen(onBack = onBack)
+        else -> {
+            val currentOnBack by rememberUpdatedState(onBack)
+            SideEffect(Unit) { currentOnBack() }
         }
     }
 }

@@ -214,7 +214,7 @@ class SessionScreenTest {
         showSession()
 
         compose
-            .onNodeWithText("Cannot reach the server, check your connection and try again")
+            .onNodeWithText("Can't reach the server, check your connection and try again")
             .assertIsDisplayed()
         compose.onNodeWithText("Retry").assertDoesNotExist()
     }
@@ -234,7 +234,7 @@ class SessionScreenTest {
 
         compose.onNodeWithText("Retry").assertDoesNotExist()
         compose
-            .onAllNodesWithText("Cannot reach the server, check your connection and try again")
+            .onAllNodesWithText("Can't reach the server, check your connection and try again")
             .assertCountEquals(2)
     }
 

@@ -27,13 +27,13 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaDropdownMenu
 import dev.lemmahq.lemma.ui.components.LemmaDropdownMenuItem
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.account_label
-import lemma.mobile.shared.generated.resources.account_menu
-import lemma.mobile.shared.generated.resources.account_sign_out
 import lemma.mobile.shared.generated.resources.icon_chevron_down
 import lemma.mobile.shared.generated.resources.icon_log_out
 import lemma.mobile.shared.generated.resources.icon_settings
-import lemma.mobile.shared.generated.resources.settings_app
+import lemma.mobile.shared.generated.resources.sidebar_account
+import lemma.mobile.shared.generated.resources.sidebar_account_menu
+import lemma.mobile.shared.generated.resources.sidebar_app_settings
+import lemma.mobile.shared.generated.resources.sidebar_sign_out
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -45,14 +45,14 @@ internal fun AccountMenu(
     onSignOut: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val accountName = username ?: stringResource(Res.string.account_label)
+    val accountName = username ?: stringResource(Res.string.sidebar_account)
     Box {
         Row(
             modifier =
                 Modifier.fillMaxWidth()
                     .heightIn(min = 56.dp)
                     .clip(LemmaTheme.shapes.medium)
-                    .clickable(onClickLabel = stringResource(Res.string.account_menu)) {
+                    .clickable(onClickLabel = stringResource(Res.string.sidebar_account_menu)) {
                         menuExpanded = true
                     }
                     .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -102,7 +102,7 @@ internal fun AccountMenu(
             )
             HorizontalDivider(color = LemmaTheme.colors.separator)
             LemmaDropdownMenuItem(
-                title = stringResource(Res.string.settings_app),
+                title = stringResource(Res.string.sidebar_app_settings),
                 icon = Res.drawable.icon_settings,
                 onClick = {
                     menuExpanded = false
@@ -110,7 +110,7 @@ internal fun AccountMenu(
                 },
             )
             LemmaDropdownMenuItem(
-                title = stringResource(Res.string.account_sign_out),
+                title = stringResource(Res.string.sidebar_sign_out),
                 icon = Res.drawable.icon_log_out,
                 onClick = {
                     menuExpanded = false

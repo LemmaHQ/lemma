@@ -33,11 +33,11 @@ import lemma.mobile.shared.generated.resources.session_delete
 import lemma.mobile.shared.generated.resources.session_delete_description
 import lemma.mobile.shared.generated.resources.session_delete_title
 import lemma.mobile.shared.generated.resources.session_earlier
-import lemma.mobile.shared.generated.resources.session_last_7_days
+import lemma.mobile.shared.generated.resources.session_last7_days
 import lemma.mobile.shared.generated.resources.session_list_title
-import lemma.mobile.shared.generated.resources.session_new
 import lemma.mobile.shared.generated.resources.session_today
 import lemma.mobile.shared.generated.resources.session_yesterday
+import lemma.mobile.shared.generated.resources.sidebar_start_session
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -75,7 +75,7 @@ internal fun SessionDrawer(
             )
             Spacer(modifier = Modifier.height(16.dp))
             LemmaButton(
-                text = stringResource(Res.string.session_new),
+                text = stringResource(Res.string.sidebar_start_session),
                 onClick = onNewSession,
                 modifier = Modifier.fillMaxWidth(),
                 variant = LemmaButtonVariant.Primary,
@@ -142,7 +142,7 @@ private fun SessionPeriod.label(): String =
         when (this) {
             SessionPeriod.Today -> Res.string.session_today
             SessionPeriod.Yesterday -> Res.string.session_yesterday
-            SessionPeriod.Last7Days -> Res.string.session_last_7_days
+            SessionPeriod.Last7Days -> Res.string.session_last7_days
             SessionPeriod.Earlier -> Res.string.session_earlier
         }
     )

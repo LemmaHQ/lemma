@@ -4,10 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 
-/**
- * A [LemmaClient] for tests. Each call is appended to [calls] and answered by the handler named
- * after it, which succeeds with an empty or sample result until the test replaces it.
- */
+/** A [LemmaClient] for tests that records calls and delegates answers to replaceable handlers. */
 class FakeLemmaClient : LemmaClient {
 
     /** One received call: the method name and its arguments in order. */
@@ -30,25 +27,32 @@ class FakeLemmaClient : LemmaClient {
     }
     var onDeleteSession: suspend (id: String) -> Unit = {}
     var onListProviders: suspend () -> List<ClientProvider> = { emptyList() }
-    var onCreateProvider: suspend (ClientProviderInput) -> ClientProvider = {
+    var onCreateCustomProvider: suspend (ClientCustomProviderInput) -> ClientProvider = {
         sampleProvider("provider-1")
     }
-    var onUpdateProvider: suspend (id: String, patch: ClientProviderPatch) -> ClientProvider =
+    var onUpdateCustomProvider:
+        suspend (id: String, patch: ClientCustomProviderPatch) -> ClientProvider =
         { id, _ ->
             sampleProvider(id)
         }
-    var onDeleteProvider: suspend (id: String) -> Unit = {}
+    var onUpdatePredefinedProvider:
+        suspend (id: String, patch: ClientPredefinedProviderPatch) -> ClientProvider =
+        { id, _ ->
+            samplePredefinedProvider(id)
+        }
+    var onDeleteCustomProvider: suspend (id: String) -> Unit = {}
     var onFetchProviderModels: suspend (id: String) -> List<String> = { emptyList() }
     var onFetchModels:
-        suspend (kind: String, baseUrl: String, apiKey: String, modelsPath: String) -> List<
+        suspend (apiFormat: String, baseUrl: String, apiKey: String, modelsPath: String) -> List<
                 String
             > =
         { _, _, _, _ ->
             emptyList()
         }
-    var onCheckProvider:
-        suspend (id: String?, connection: ClientProviderInput, model: String) -> String =
-        { _, _, _ ->
+    var onCheckProvider: suspend (id: String, model: String) -> String = { _, _ -> "" }
+    var onCheckCustomProvider:
+        suspend (connection: ClientCustomProviderInput, model: String) -> String =
+        { _, _ ->
             ""
         }
     var onCreateSession: suspend () -> ClientSession = {
@@ -120,19 +124,30 @@ class FakeLemmaClient : LemmaClient {
         return onListProviders()
     }
 
-    override suspend fun createProvider(input: ClientProviderInput): ClientProvider {
-        calls += Call("createProvider", input)
-        return onCreateProvider(input)
+    override suspend fun createCustomProvider(input: ClientCustomProviderInput): ClientProvider {
+        calls += Call("createCustomProvider", input)
+        return onCreateCustomProvider(input)
     }
 
-    override suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider {
-        calls += Call("updateProvider", id, patch)
-        return onUpdateProvider(id, patch)
+    override suspend fun updateCustomProvider(
+        id: String,
+        patch: ClientCustomProviderPatch,
+    ): ClientProvider {
+        calls += Call("updateCustomProvider", id, patch)
+        return onUpdateCustomProvider(id, patch)
     }
 
-    override suspend fun deleteProvider(id: String) {
-        calls += Call("deleteProvider", id)
-        onDeleteProvider(id)
+    override suspend fun updatePredefinedProvider(
+        id: String,
+        patch: ClientPredefinedProviderPatch,
+    ): ClientProvider {
+        calls += Call("updatePredefinedProvider", id, patch)
+        return onUpdatePredefinedProvider(id, patch)
+    }
+
+    override suspend fun deleteCustomProvider(id: String) {
+        calls += Call("deleteCustomProvider", id)
+        onDeleteCustomProvider(id)
     }
 
     override suspend fun fetchProviderModels(id: String): List<String> {
@@ -141,22 +156,26 @@ class FakeLemmaClient : LemmaClient {
     }
 
     override suspend fun fetchModels(
-        kind: String,
+        apiFormat: String,
         baseUrl: String,
         apiKey: String,
         modelsPath: String,
     ): List<String> {
-        calls += Call("fetchModels", kind, baseUrl, apiKey, modelsPath)
-        return onFetchModels(kind, baseUrl, apiKey, modelsPath)
+        calls += Call("fetchModels", apiFormat, baseUrl, apiKey, modelsPath)
+        return onFetchModels(apiFormat, baseUrl, apiKey, modelsPath)
     }
 
-    override suspend fun checkProvider(
-        id: String?,
-        connection: ClientProviderInput,
+    override suspend fun checkProvider(id: String, model: String): String {
+        calls += Call("checkProvider", id, model)
+        return onCheckProvider(id, model)
+    }
+
+    override suspend fun checkCustomProvider(
+        connection: ClientCustomProviderInput,
         model: String,
     ): String {
-        calls += Call("checkProvider", id, connection, model)
-        return onCheckProvider(id, connection, model)
+        calls += Call("checkCustomProvider", connection, model)
+        return onCheckCustomProvider(connection, model)
     }
 
     override suspend fun createSession(): ClientSession {

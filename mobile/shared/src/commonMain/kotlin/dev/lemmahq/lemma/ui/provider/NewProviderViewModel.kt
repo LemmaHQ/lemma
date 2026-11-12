@@ -5,15 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderInput
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
 import kotlinx.coroutines.launch
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.error_provider_fields_required
+import lemma.mobile.shared.generated.resources.errors_provider_fields_required
 import lemma.mobile.shared.generated.resources.provider_identifier_invalid
 
 private val IDENTIFIER_PATTERN = Regex("^[\\u0020-\\u007E]+$")
@@ -27,7 +27,7 @@ internal class NewProviderViewModel(
     private val onCreate: (ClientProvider) -> Unit,
 ) : ViewModel() {
 
-    var kind by mutableStateOf(PROVIDER_KINDS.first())
+    var apiFormat by mutableStateOf(API_FORMATS.first())
     var identifier by mutableStateOf("")
     var name by mutableStateOf("")
     var apiKey by mutableStateOf("")
@@ -55,7 +55,7 @@ internal class NewProviderViewModel(
             when {
                 !IDENTIFIER_PATTERN.matches(id) ->
                     UiText.Resource(Res.string.provider_identifier_invalid)
-                baseUrl.isBlank() -> UiText.Resource(Res.string.error_provider_fields_required)
+                baseUrl.isBlank() -> UiText.Resource(Res.string.errors_provider_fields_required)
                 else -> null
             }
         if (error != null) return
@@ -63,9 +63,9 @@ internal class NewProviderViewModel(
         viewModelScope.launch {
             try {
                 val provider =
-                    client.createProvider(
-                        ClientProviderInput(
-                            kind = kind,
+                    client.createCustomProvider(
+                        ClientCustomProviderInput(
+                            apiFormat = apiFormat,
                             identifier = id,
                             name = name.trim().ifEmpty { id },
                             baseUrl = baseUrl.trim(),
