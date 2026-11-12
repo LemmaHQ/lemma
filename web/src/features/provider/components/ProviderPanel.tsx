@@ -10,9 +10,9 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
-import type { ProviderPatch } from "../store";
 import { useProviders } from "../useProviders";
 import { NewProviderForm, type NewProviderData } from "./NewProviderForm";
+import { PredefinedProviderDetail } from "./PredefinedProviderDetail";
 import { ProviderDetail } from "./ProviderDetail";
 import { ProviderListPane } from "./ProviderListPane";
 
@@ -29,7 +29,7 @@ export function ProviderPanel() {
 
     const handleSaveNew = async (data: NewProviderData) => {
         const provider = await store.create({
-            kind: data.kind,
+            apiFormat: data.apiFormat,
             identifier: data.identifier,
             name: data.name,
             baseUrl: data.baseUrl,
@@ -46,9 +46,9 @@ export function ProviderPanel() {
         setSelectedId(null);
     };
 
-    const applyPatch = async (id: string, patch: ProviderPatch) => {
+    const applyPatch = async (update: () => Promise<void>) => {
         try {
-            await store.update(id, patch);
+            await update();
         } catch (e) {
             toast.error(errorText(e, t));
         }
@@ -82,16 +82,45 @@ export function ProviderPanel() {
                             </EmptyHeader>
                         </Empty>
                     )
+                ) : selected.source === "predefined" ? (
+                    <PredefinedProviderDetail
+                        key={selected.id}
+                        provider={selected}
+                        onSave={(patch) =>
+                            store.updatePredefined(selected.id, patch)
+                        }
+                        onToggleEnabled={(enabled) =>
+                            void applyPatch(() =>
+                                store.updatePredefined(selected.id, {
+                                    enabled,
+                                }),
+                            )
+                        }
+                        onDefaultApiFormatChange={(defaultApiFormat) =>
+                            void applyPatch(() =>
+                                store.updatePredefined(selected.id, {
+                                    defaultApiFormat,
+                                }),
+                            )
+                        }
+                        onCheck={(req) => store.checkProvider(req)}
+                    />
                 ) : (
                     <ProviderDetail
                         key={selected.id}
                         provider={selected}
-                        onSave={(patch) => store.update(selected.id, patch)}
+                        onSave={(patch) =>
+                            store.updateCustom(selected.id, patch)
+                        }
                         onToggleEnabled={(enabled) =>
-                            void applyPatch(selected.id, { enabled })
+                            void applyPatch(() =>
+                                store.updateCustom(selected.id, { enabled }),
+                            )
                         }
                         onModelsChange={(models) =>
-                            void applyPatch(selected.id, { models })
+                            void applyPatch(() =>
+                                store.updateCustom(selected.id, { models }),
+                            )
                         }
                         onFetchModels={() =>
                             store.fetchModels({ id: selected.id })

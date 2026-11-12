@@ -6,8 +6,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import {
+    ApiFormat,
+    CustomProviderSchema,
+    PredefinedProviderSchema,
     type Provider,
-    ProviderKind,
     ProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
@@ -15,6 +17,7 @@ import { clearProviders } from "../useProviders";
 import { ProviderPanel } from "./ProviderPanel";
 
 type Reply = { provider?: Provider | undefined };
+type ModelRecord = { id: string; toolCalling: boolean };
 type UpdateRequest = {
     id: string;
     name?: string | undefined;
@@ -22,14 +25,32 @@ type UpdateRequest = {
     baseUrl?: string | undefined;
     apiPath?: string | undefined;
     enabled?: boolean | undefined;
-    models?: { models: string[] } | undefined;
+    models?: { models: ModelRecord[] } | undefined;
+};
+type PredefinedUpdateRequest = {
+    id: string;
+    apiKey?: string | undefined;
+    enabled?: boolean | undefined;
+    defaultApiFormat?: ApiFormat | undefined;
+};
+type ProviderFixture = {
+    enabled?: boolean;
+    apiKey?: string;
+    identifier?: string;
+    apiFormat?: ApiFormat;
+    baseUrl?: string;
+    apiPath?: string;
+    modelsPath?: string;
+    models?: ModelRecord[];
 };
 
 const rpc = vi.hoisted(() => ({
     listProviders: vi.fn<(req: object) => Promise<{ providers: Provider[] }>>(),
-    createProvider: vi.fn<(req: object) => Promise<Reply>>(),
-    updateProvider: vi.fn<(req: UpdateRequest) => Promise<Reply>>(),
-    deleteProvider: vi.fn<(req: { id: string }) => Promise<object>>(),
+    createCustomProvider: vi.fn<(req: object) => Promise<Reply>>(),
+    updateCustomProvider: vi.fn<(req: UpdateRequest) => Promise<Reply>>(),
+    updatePredefinedProvider:
+        vi.fn<(req: PredefinedUpdateRequest) => Promise<Reply>>(),
+    deleteCustomProvider: vi.fn<(req: { id: string }) => Promise<object>>(),
     fetchModels:
         vi.fn<(req: { id: string }) => Promise<{ models: string[] }>>(),
     checkProvider: vi.fn<(req: object) => Promise<{ error: string }>>(),
@@ -37,16 +58,55 @@ const rpc = vi.hoisted(() => ({
 
 vi.mock("@/rpc/clients", () => ({ providerClient: rpc }));
 
-const provider = (id: string, name: string, patch = {}) =>
+const provider = (
+    id: string,
+    name: string,
+    { enabled = true, apiKey = "", ...patch }: ProviderFixture = {},
+) =>
     create(ProviderSchema, {
         id,
-        kind: ProviderKind.OPENAI,
-        identifier: id,
-        name,
-        baseUrl: "https://api.example.com",
-        models: ["m1"],
-        enabled: true,
-        ...patch,
+        enabled,
+        apiKey,
+        source: {
+            case: "custom",
+            value: create(CustomProviderSchema, {
+                apiFormat: ApiFormat.OPENAI,
+                identifier: id,
+                name,
+                baseUrl: "https://api.example.com",
+                models: [{ id: "m1", toolCalling: true }],
+                ...patch,
+            }),
+        },
+    });
+
+const predefinedProvider = ({
+    enabled = false,
+    apiKey = "",
+    ...patch
+}: {
+    enabled?: boolean;
+    apiKey?: string;
+    defaultApiFormat?: ApiFormat;
+} = {}) =>
+    create(ProviderSchema, {
+        id: "deepseek-id",
+        enabled,
+        apiKey,
+        source: {
+            case: "predefined",
+            value: create(PredefinedProviderSchema, {
+                identifier: "deepseek",
+                name: "DeepSeek",
+                apiFormats: [ApiFormat.ANTHROPIC, ApiFormat.OPENAI],
+                defaultApiFormat: ApiFormat.ANTHROPIC,
+                models: [
+                    { id: "deepseek-flash", toolCalling: true },
+                    { id: "deepseek-v4-pro", toolCalling: false },
+                ],
+                ...patch,
+            }),
+        },
     });
 
 const renderPanel = () =>
@@ -58,6 +118,8 @@ const renderPanel = () =>
     );
 
 const offline = () => new ConnectError("down", Code.Unavailable);
+
+const check = () => screen.getByRole("button", { name: "Check" });
 
 const OFFLINE_TEXT =
     "Can't reach the server, check your connection and try again";
@@ -71,7 +133,7 @@ beforeEach(() => {
             provider("beta", "Beta", { enabled: false }),
         ],
     });
-    rpc.updateProvider.mockImplementation(({ id, models, ...fields }) =>
+    rpc.updateCustomProvider.mockImplementation(({ id, models, ...fields }) =>
         Promise.resolve({
             provider: provider(id, id === "acme" ? "Acme" : "Beta", {
                 ...Object.fromEntries(
@@ -83,6 +145,22 @@ beforeEach(() => {
             }),
         }),
     );
+    let predefinedState: Parameters<typeof predefinedProvider>[0] = {};
+    rpc.updatePredefinedProvider.mockImplementation(
+        ({ id: _id, ...fields }) => {
+            predefinedState = {
+                ...predefinedState,
+                ...Object.fromEntries(
+                    Object.entries(fields).filter(
+                        ([, value]) => value !== undefined,
+                    ),
+                ),
+            };
+            return Promise.resolve({
+                provider: predefinedProvider(predefinedState),
+            });
+        },
+    );
 });
 
 it("loads the providers and opens the first one", async () => {
@@ -90,6 +168,14 @@ it("loads the providers and opens the first one", async () => {
 
     expect(screen.getByRole("status", { name: "Loading…" })).toBeDefined();
     expect(await screen.findByRole("heading", { name: "Acme" })).toBeDefined();
+    expect(screen.getByLabelText("API format")).toHaveProperty(
+        "value",
+        "OpenAI",
+    );
+    expect(screen.getByLabelText("API format")).toHaveProperty(
+        "readOnly",
+        true,
+    );
     expect(
         screen
             .getByRole("button", { name: /Acme$/u })
@@ -106,7 +192,7 @@ it("shows an empty page without providers", async () => {
 
 it("creates a provider and opens it", async () => {
     const user = userEvent.setup();
-    rpc.createProvider.mockResolvedValue({
+    rpc.createCustomProvider.mockResolvedValue({
         provider: provider("corp", "", { models: [] }),
     });
     renderPanel();
@@ -126,7 +212,7 @@ it("creates a provider and opens it", async () => {
     expect(
         screen.getByRole("button", { name: "?" }).getAttribute("aria-pressed"),
     ).toBe("true");
-    expect(rpc.createProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.createCustomProvider.mock.lastCall?.[0]).toMatchObject({
         identifier: "corp",
         name: "corp",
         models: [],
@@ -155,9 +241,9 @@ it("searches, collapses groups, and switches providers", async () => {
     await user.type(screen.getByPlaceholderText("Search providers…"), " BE ");
     expect(screen.queryByRole("button", { name: /Acme$/u })).toBeNull();
     await user.clear(screen.getByPlaceholderText("Search providers…"));
-    await user.click(screen.getByRole("button", { name: /Enabled/u }));
+    await user.click(screen.getByRole("button", { name: /Custom/u }));
     expect(screen.queryByRole("button", { name: /Acme$/u })).toBeNull();
-    await user.click(screen.getByRole("button", { name: /Enabled/u }));
+    await user.click(screen.getByRole("button", { name: /Custom/u }));
     await user.click(screen.getByRole("button", { name: /Beta$/u }));
 
     expect(await screen.findByRole("heading", { name: "Beta" })).toBeDefined();
@@ -174,11 +260,11 @@ it("enables a provider and reports a failed toggle", async () => {
     await user.click(await screen.findByRole("button", { name: /Beta$/u }));
 
     await user.click(screen.getByRole("switch", { name: "Enable provider" }));
-    expect(rpc.updateProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "beta",
         enabled: true,
     });
-    rpc.updateProvider.mockRejectedValueOnce(offline());
+    rpc.updateCustomProvider.mockRejectedValueOnce(offline());
     await user.click(screen.getByRole("switch", { name: "Enable provider" }));
 
     expect(await screen.findByText(OFFLINE_TEXT)).toBeDefined();
@@ -192,9 +278,25 @@ it("saves model list changes for the open provider", async () => {
     await user.click(screen.getByRole("button", { name: "Add model" }));
     await user.type(screen.getByPlaceholderText("e.g. gpt-4o"), "m2{Enter}");
 
-    expect(rpc.updateProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "acme",
-        models: { models: ["m2", "m1"] },
+        models: {
+            models: [
+                { id: "m2", toolCalling: true },
+                { id: "m1", toolCalling: true },
+            ],
+        },
+    });
+    await user.click(screen.getByRole("switch", { name: "m1 Tool calling" }));
+
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "acme",
+        models: {
+            models: [
+                { id: "m2", toolCalling: true },
+                { id: "m1", toolCalling: false },
+            ],
+        },
     });
 });
 
@@ -244,12 +346,14 @@ it("saves edited connection settings, or discards them", async () => {
     expect(
         screen.getByText("Must start with http:// or https://."),
     ).toBeDefined();
+    expect(baseUrl.getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
         "disabled",
         true,
     );
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(baseUrl).toHaveProperty("value", "https://api.example.com");
+    expect(baseUrl.getAttribute("aria-invalid")).toBe("false");
     expect(screen.queryByText("You have unsaved changes.")).toBeNull();
 
     await user.type(screen.getByLabelText("Request path"), " /v2/chat ");
@@ -258,7 +362,7 @@ it("saves edited connection settings, or discards them", async () => {
     await vi.waitFor(() => {
         expect(screen.queryByText("You have unsaved changes.")).toBeNull();
     });
-    expect(rpc.updateProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "acme",
         apiPath: "/v2/chat",
     });
@@ -270,7 +374,7 @@ it("saves edited connection settings, or discards them", async () => {
 
 it("keeps edits and shows the error when saving fails", async () => {
     const user = userEvent.setup();
-    rpc.updateProvider.mockRejectedValue(offline());
+    rpc.updateCustomProvider.mockRejectedValue(offline());
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
@@ -303,7 +407,7 @@ it("renames the provider, falling back to its ID for a blank name", async () => 
     await vi.waitFor(() => {
         expect(screen.queryByRole("dialog")).toBeNull();
     });
-    expect(rpc.updateProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "acme",
         name: "acme",
     });
@@ -311,7 +415,7 @@ it("renames the provider, falling back to its ID for a blank name", async () => 
 
 it("shows a rename failure and resets the dialog when reopened", async () => {
     const user = userEvent.setup();
-    rpc.updateProvider.mockRejectedValue(offline());
+    rpc.updateCustomProvider.mockRejectedValue(offline());
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
@@ -333,7 +437,7 @@ it("shows a rename failure and resets the dialog when reopened", async () => {
 
 it("deletes the provider after confirmation and opens the next one", async () => {
     const user = userEvent.setup();
-    rpc.deleteProvider.mockResolvedValue({});
+    rpc.deleteCustomProvider.mockResolvedValue({});
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
@@ -341,12 +445,12 @@ it("deletes the provider after confirmation and opens the next one", async () =>
     await user.click(await screen.findByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("heading", { name: "Beta" })).toBeDefined();
-    expect(rpc.deleteProvider).toHaveBeenCalledWith({ id: "acme" });
+    expect(rpc.deleteCustomProvider).toHaveBeenCalledWith({ id: "acme" });
 });
 
 it("shows a failed delete on the provider page", async () => {
     const user = userEvent.setup();
-    rpc.deleteProvider.mockRejectedValue(offline());
+    rpc.deleteCustomProvider.mockRejectedValue(offline());
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
@@ -355,4 +459,106 @@ it("shows a failed delete on the provider page", async () => {
 
     expect((await screen.findByRole("alert")).textContent).toBe(OFFLINE_TEXT);
     expect(screen.getByRole("heading", { name: "Acme" })).toBeDefined();
+});
+
+it("shows predefined formats and read-only models, and requires a key to enable", async () => {
+    const user = userEvent.setup();
+    rpc.listProviders.mockResolvedValue({
+        providers: [predefinedProvider(), provider("acme", "Acme")],
+    });
+    renderPanel();
+
+    expect(
+        await screen.findByRole("heading", { name: "DeepSeek" }),
+    ).toBeDefined();
+    expect(screen.getByRole("button", { name: /Predefined/u })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Custom/u })).toBeDefined();
+    expect(
+        screen
+            .getByRole("switch", { name: "Enable provider" })
+            .getAttribute("aria-disabled"),
+    ).toBe("true");
+    expect(
+        screen.getByText("Save an API key before enabling this provider."),
+    ).toBeDefined();
+    expect(
+        screen.getByText("Models and their features ship with Lemma."),
+    ).toBeDefined();
+    expect(
+        screen
+            .getByRole("switch", { name: "deepseek-flash Tool calling" })
+            .getAttribute("aria-disabled"),
+    ).toBe("true");
+    expect(
+        screen
+            .getByRole("switch", { name: "deepseek-flash Tool calling" })
+            .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(
+        screen
+            .getByRole("switch", { name: "deepseek-v4-pro Tool calling" })
+            .getAttribute("aria-checked"),
+    ).toBe("false");
+    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
+    expect(
+        screen.queryByRole("button", { name: "Delete provider" }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add model" })).toBeNull();
+    expect(
+        screen.queryByRole("button", { name: "Fetch model list" }),
+    ).toBeNull();
+
+    await user.click(screen.getByLabelText("Default API format"));
+    expect(screen.queryByRole("option", { name: "Gemini" })).toBeNull();
+    await user.click(await screen.findByRole("option", { name: "OpenAI" }));
+
+    expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "deepseek-id",
+        defaultApiFormat: ApiFormat.OPENAI,
+    });
+});
+
+it("saves a predefined key, enables the provider, and checks its models", async () => {
+    const user = userEvent.setup();
+    rpc.listProviders.mockResolvedValue({ providers: [predefinedProvider()] });
+    rpc.checkProvider.mockResolvedValue({ error: "" });
+    renderPanel();
+    await screen.findByRole("heading", { name: "DeepSeek" });
+    expect(check()).toHaveProperty("disabled", true);
+
+    await user.type(screen.getByLabelText("API key"), "sk-discarded");
+    expect(check()).toHaveProperty("disabled", true);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
+    expect(rpc.updatePredefinedProvider).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText("API key"), " sk-new ");
+    rpc.updatePredefinedProvider.mockRejectedValueOnce(offline());
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(OFFLINE_TEXT);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => {
+        expect(screen.queryByText("You have unsaved changes.")).toBeNull();
+    });
+    expect(check()).toHaveProperty("disabled", false);
+    expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "deepseek-id",
+        apiKey: "sk-new",
+    });
+    expect(
+        screen.queryByText("Save an API key before enabling this provider."),
+    ).toBeNull();
+
+    const enabled = screen.getByRole("switch", { name: "Enable provider" });
+    expect(enabled.getAttribute("aria-disabled")).not.toBe("true");
+    await user.click(enabled);
+    expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "deepseek-id",
+        enabled: true,
+    });
+    await user.click(screen.getByRole("button", { name: "Check" }));
+    expect(rpc.checkProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "deepseek-id",
+        model: "deepseek-flash",
+    });
 });

@@ -1,4 +1,5 @@
-import type { ProviderKind, ProviderPatch } from "./store";
+import type { ApiFormat } from "./api-format";
+import type { CustomProviderPatch } from "./store";
 
 /** The editable connection settings of a provider. */
 export interface ConnectionValues {
@@ -7,9 +8,9 @@ export interface ConnectionValues {
     apiPath: string;
 }
 
-/** Example base URL and default request path of each provider kind. */
+/** Example base URL and default request path of each API format. */
 export const CONNECTION_PLACEHOLDERS: Record<
-    ProviderKind,
+    ApiFormat,
     { baseUrl: string; apiPath: string }
 > = {
     openai: {
@@ -35,8 +36,8 @@ export function isBaseUrlValid(baseUrl: string): boolean {
 export function connectionPatch(
     values: ConnectionValues,
     saved: ConnectionValues,
-): ProviderPatch {
-    const patch: ProviderPatch = {};
+): CustomProviderPatch {
+    const patch: CustomProviderPatch = {};
     if (values.apiKey.trim() !== saved.apiKey) {
         patch.apiKey = values.apiKey.trim();
     }

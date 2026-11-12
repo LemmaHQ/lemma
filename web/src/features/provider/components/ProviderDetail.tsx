@@ -1,39 +1,48 @@
 import {
-    Avatar,
-    AvatarFallback,
+    Field,
+    FieldContent,
+    FieldDescription,
     FieldError,
     FieldGroup,
-    Switch,
+    FieldLabel,
+    Input,
 } from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import { API_FORMAT_I18N_KEYS } from "../api-format";
 import {
     connectionPatch,
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { CheckRequest, Provider, ProviderPatch } from "../store";
+import type {
+    CheckRequest,
+    CustomProvider,
+    CustomProviderPatch,
+    Model,
+} from "../store";
 import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
 import { DeleteProviderButton } from "./DeleteProviderButton";
 import { ModelList } from "./ModelList";
+import { ProviderHeader } from "./ProviderHeader";
 import { ProviderSettingsDialog } from "./ProviderSettingsDialog";
 import { SaveBar } from "./SaveBar";
 
 interface ProviderDetailProps {
-    provider: Provider;
-    onSave: (patch: ProviderPatch) => Promise<void>;
+    provider: CustomProvider;
+    onSave: (patch: CustomProviderPatch) => Promise<void>;
     onToggleEnabled: (enabled: boolean) => void;
-    onModelsChange: (models: string[]) => void;
+    onModelsChange: (models: Model[]) => void;
     onFetchModels: () => Promise<string[]>;
     onCheck: (req: CheckRequest) => Promise<string>;
     onDelete: () => Promise<void>;
 }
 
-/** Settings page of one provider: connection fields and model list. */
+/** Settings page of one custom provider: connection fields and model list. */
 export function ProviderDetail({
     provider,
     onSave,
@@ -82,44 +91,60 @@ export function ProviderDetail({
 
     return (
         <div className="max-w-3xl px-4 py-6 md:px-6">
-            <header className="flex items-center gap-3 border-b pb-4">
-                <Avatar>
-                    <AvatarFallback>
-                        {provider.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-                <h2 className="truncate text-title">{provider.name}</h2>
-                <div className="ml-auto flex items-center gap-1">
-                    <ProviderSettingsDialog
-                        provider={provider}
-                        onSaveName={(name) => onSave({ name })}
-                    />
-                    <DeleteProviderButton
-                        onDelete={() => void handleDelete()}
-                    />
-                    <Switch
-                        className="ml-2"
-                        checked={provider.enabled}
-                        onCheckedChange={onToggleEnabled}
-                        aria-label={t("provider.enableProvider")}
-                    />
-                </div>
-            </header>
+            <div className="border-b pb-4">
+                <ProviderHeader
+                    name={provider.name}
+                    enabled={provider.enabled}
+                    toggleDisabled={false}
+                    onToggleEnabled={onToggleEnabled}
+                    actions={
+                        <>
+                            <ProviderSettingsDialog
+                                provider={provider}
+                                onSaveName={(name) => onSave({ name })}
+                            />
+                            <DeleteProviderButton
+                                onDelete={() => void handleDelete()}
+                            />
+                        </>
+                    }
+                />
+            </div>
 
             <FieldGroup className="mt-6">
+                <Field orientation="responsive">
+                    <FieldContent>
+                        <FieldLabel htmlFor="custom-provider-api-format">
+                            {t("provider.apiFormat")}
+                        </FieldLabel>
+                        <FieldDescription>
+                            {t("provider.apiFormatDesc")}
+                        </FieldDescription>
+                    </FieldContent>
+                    <Input
+                        id="custom-provider-api-format"
+                        className="@md/field-group:shrink-0 @md/field-group:basis-80"
+                        value={t(API_FORMAT_I18N_KEYS[provider.apiFormat])}
+                        readOnly
+                    />
+                </Field>
                 <ConnectionFields
-                    kind={provider.kind}
+                    apiFormat={provider.apiFormat}
                     values={values}
                     onChange={setValues}
                 />
                 <ConnectionCheck
-                    models={provider.models}
+                    models={provider.models.map((model) => model.id)}
                     target={`${values.apiKey}\n${values.baseUrl}\n${values.apiPath}`}
                     disabled={!isBaseUrlValid(values.baseUrl)}
                     onCheck={(model) =>
                         onCheck(
                             dirty
-                                ? { kind: provider.kind, ...values, model }
+                                ? {
+                                      apiFormat: provider.apiFormat,
+                                      ...values,
+                                      model,
+                                  }
                                 : { id: provider.id, model },
                         )
                     }

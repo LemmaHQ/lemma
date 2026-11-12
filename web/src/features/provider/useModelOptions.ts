@@ -23,7 +23,7 @@ export function useModelOptions(): {
                     p.models.map((model) => ({
                         providerId: p.id,
                         providerName: p.name,
-                        model,
+                        model: model.id,
                     })),
                 ),
             providerNames: new Map(providers.list.map((p) => [p.id, p.name])),

@@ -114,8 +114,10 @@ export function ProviderListPane({
         return providers.filter((p) => p.name.toLowerCase().includes(q));
     }, [providers, query]);
 
-    const enabledProviders = filtered.filter((p) => p.enabled);
-    const disabledProviders = filtered.filter((p) => !p.enabled);
+    const predefinedProviders = filtered.filter(
+        (p) => p.source === "predefined",
+    );
+    const customProviders = filtered.filter((p) => p.source === "custom");
 
     return (
         <section className="flex w-64 shrink-0 flex-col border-r">
@@ -153,14 +155,14 @@ export function ProviderListPane({
                 {loaded ? (
                     <div className="px-2 pb-3">
                         <ProviderGroup
-                            label={t("provider.enabledGroup")}
-                            providers={enabledProviders}
+                            label={t("provider.predefinedGroup")}
+                            providers={predefinedProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}
                         />
                         <ProviderGroup
-                            label={t("provider.disabledGroup")}
-                            providers={disabledProviders}
+                            label={t("provider.customGroup")}
+                            providers={customProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}
                         />

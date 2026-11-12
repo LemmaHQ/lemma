@@ -20,13 +20,17 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import {
+    API_FORMAT_I18N_KEYS,
+    API_FORMATS,
+    type ApiFormat,
+} from "../api-format";
 import { isBaseUrlValid, type ConnectionValues } from "../connection";
-import type { ProviderKind } from "../store";
 import { ConnectionFields } from "./ConnectionFields";
 import { SaveBar } from "./SaveBar";
 
 export interface NewProviderData extends ConnectionValues {
-    kind: ProviderKind;
+    apiFormat: ApiFormat;
     identifier: string;
     name: string;
 }
@@ -36,12 +40,10 @@ interface NewProviderFormProps {
     onCancel: () => void;
 }
 
-const KIND_OPTIONS: readonly ProviderKind[] = ["openai", "anthropic", "gemini"];
-
-/** Blank provider page; saving creates the provider. */
+/** Blank custom provider page; saving creates the provider. */
 export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
     const { t } = useTranslation();
-    const [kind, setKind] = useState<ProviderKind>("openai");
+    const [apiFormat, setApiFormat] = useState<ApiFormat>("openai");
     const [identifier, setIdentifier] = useState("");
     const [name, setName] = useState("");
     const [connection, setConnection] = useState<ConnectionValues>({
@@ -67,7 +69,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
         setFailed(null);
         try {
             await onSave({
-                kind,
+                apiFormat,
                 identifier: trimmedIdentifier,
                 name: name.trim() === "" ? trimmedIdentifier : name.trim(),
                 apiKey: connection.apiKey.trim(),
@@ -101,33 +103,33 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
             <FieldGroup className="mt-6">
                 <Field orientation="responsive">
                     <FieldContent>
-                        <FieldLabel htmlFor="provider-kind">
-                            {t("provider.type")}
+                        <FieldLabel htmlFor="provider-api-format">
+                            {t("provider.apiFormat")}
                         </FieldLabel>
                         <FieldDescription>
-                            {t("provider.typeDesc")}
+                            {t("provider.apiFormatDesc")}
                         </FieldDescription>
                     </FieldContent>
                     <Select
-                        value={kind}
+                        value={apiFormat}
                         onValueChange={(value) => {
-                            for (const option of KIND_OPTIONS.filter(
-                                (o) => o === value,
+                            for (const option of API_FORMATS.filter(
+                                (format) => format === value,
                             )) {
-                                setKind(option);
+                                setApiFormat(option);
                             }
                         }}
                     >
                         <SelectTrigger
-                            id="provider-kind"
+                            id="provider-api-format"
                             className="@md/field-group:shrink-0 @md/field-group:basis-80"
                         >
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            {KIND_OPTIONS.map((o) => (
-                                <SelectItem key={o} value={o}>
-                                    {o}
+                            {API_FORMATS.map((format) => (
+                                <SelectItem key={format} value={format}>
+                                    {t(API_FORMAT_I18N_KEYS[format])}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -169,7 +171,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                     />
                 </Field>
                 <ConnectionFields
-                    kind={kind}
+                    apiFormat={apiFormat}
                     values={connection}
                     onChange={setConnection}
                 />

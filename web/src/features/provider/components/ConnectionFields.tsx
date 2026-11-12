@@ -5,7 +5,6 @@ import {
     FieldError,
     FieldLabel,
     Input,
-    PasswordInput,
 } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
@@ -14,48 +13,32 @@ import {
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { ProviderKind } from "../store";
+import type { ApiFormat } from "../api-format";
+import { ApiKeyField } from "./ApiKeyField";
 
 interface ConnectionFieldsProps {
-    kind: ProviderKind;
+    apiFormat: ApiFormat;
     values: ConnectionValues;
     onChange: (values: ConnectionValues) => void;
 }
 
-/** API key, base URL, and request path rows of a provider page. */
+/** API key, base URL, and request path rows of a custom provider page. */
 export function ConnectionFields({
-    kind,
+    apiFormat,
     values,
     onChange,
 }: ConnectionFieldsProps) {
     const { t } = useTranslation();
-    const placeholders = CONNECTION_PLACEHOLDERS[kind];
+    const placeholders = CONNECTION_PLACEHOLDERS[apiFormat];
     const baseUrlInvalid =
         values.baseUrl.trim() !== "" && !isBaseUrlValid(values.baseUrl);
 
     return (
         <>
-            <Field orientation="responsive">
-                <FieldContent>
-                    <FieldLabel htmlFor="provider-api-key">
-                        {t("provider.apiKey")}
-                    </FieldLabel>
-                    <FieldDescription>
-                        {t("provider.apiKeyDesc")}
-                    </FieldDescription>
-                </FieldContent>
-                <PasswordInput
-                    showLabel={t("passwordInput.show")}
-                    hideLabel={t("passwordInput.hide")}
-                    id="provider-api-key"
-                    className="@md/field-group:shrink-0 @md/field-group:basis-80"
-                    value={values.apiKey}
-                    onChange={(e) =>
-                        onChange({ ...values, apiKey: e.target.value })
-                    }
-                    placeholder={t("provider.apiKeyPlaceholder")}
-                />
-            </Field>
+            <ApiKeyField
+                value={values.apiKey}
+                onChange={(apiKey) => onChange({ ...values, apiKey })}
+            />
             <Field orientation="responsive" data-invalid={baseUrlInvalid}>
                 <FieldContent>
                     <FieldLabel htmlFor="provider-base-url">
@@ -86,7 +69,7 @@ export function ConnectionFields({
                         {t("provider.apiPath")}
                     </FieldLabel>
                     <FieldDescription>
-                        {kind === "gemini"
+                        {apiFormat === "gemini"
                             ? t("provider.apiPathDescGemini")
                             : t("provider.apiPathDesc")}
                     </FieldDescription>

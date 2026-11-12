@@ -54,7 +54,7 @@ it("creates an OpenAI provider named after its ID by default", async () => {
     await save(user);
 
     expect(onSave).toHaveBeenCalledWith({
-        kind: "openai",
+        apiFormat: "openai",
         identifier: "corp",
         name: "corp",
         apiKey: "",
@@ -68,7 +68,7 @@ it("creates a Gemini provider with its own name and path", async () => {
     const { onSave } = renderForm();
 
     await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: "gemini" }));
+    await user.click(await screen.findByRole("option", { name: "Gemini" }));
     expect(
         screen.getByText(/\{model\} is replaced by the model ID/u),
     ).toBeDefined();
@@ -82,7 +82,7 @@ it("creates a Gemini provider with its own name and path", async () => {
     await save(user);
 
     expect(onSave).toHaveBeenCalledWith({
-        kind: "gemini",
+        apiFormat: "gemini",
         identifier: "g",
         name: "Google",
         apiKey: "key",

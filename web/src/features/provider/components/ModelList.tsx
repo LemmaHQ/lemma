@@ -4,6 +4,7 @@ import {
     Empty,
     EmptyDescription,
     EmptyHeader,
+    FieldDescription,
     FieldError,
     InputGroup,
     InputGroupAddon,
@@ -18,6 +19,7 @@ import {
     PlusIcon,
     RefreshCwIcon,
     SearchIcon,
+    Switch,
     XIcon,
 } from "@lemma/ui";
 import { Fragment, useMemo, useState } from "react";
@@ -25,11 +27,12 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import type { Model } from "../store";
 import { FetchModelsDialog } from "./FetchModelsDialog";
 
 interface ModelListProps {
-    models: string[];
-    onChange: (models: string[]) => void;
+    models: Model[];
+    onChange: (models: Model[]) => void;
     onFetch: () => Promise<string[]>;
 }
 
@@ -46,7 +49,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         const q = query.trim().toLowerCase();
         return q === ""
             ? models
-            : models.filter((m) => m.toLowerCase().includes(q));
+            : models.filter((m) => m.id.toLowerCase().includes(q));
     }, [models, query]);
 
     const fetchRemote = async () => {
@@ -65,13 +68,21 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
         const id = newModel.trim();
         setNewModel("");
         setAdding(false);
-        if (id === "" || models.includes(id)) {
+        if (id === "" || models.some((model) => model.id === id)) {
             return;
         }
-        onChange([id, ...models]);
+        onChange([{ id, toolCalling: true }, ...models]);
     };
 
-    const remove = (id: string) => onChange(models.filter((m) => m !== id));
+    const remove = (id: string) =>
+        onChange(models.filter((model) => model.id !== id));
+
+    const setToolCalling = (id: string, toolCalling: boolean) =>
+        onChange(
+            models.map((model) =>
+                model.id === id ? { ...model, toolCalling } : model,
+            ),
+        );
 
     return (
         <section className="flex flex-col gap-3 pt-6">
@@ -108,15 +119,19 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                     </Button>
                 </div>
             </div>
+            <FieldDescription>{t("provider.toolCallingDesc")}</FieldDescription>
 
             {fetchError !== null && <FieldError>{fetchError}</FieldError>}
 
             <FetchModelsDialog
                 remote={remote}
-                existing={models}
+                existing={models.map((model) => model.id)}
                 onClose={() => setRemote(null)}
                 onAdd={(picked) => {
-                    onChange([...models, ...picked]);
+                    onChange([
+                        ...models,
+                        ...picked.map((id) => ({ id, toolCalling: true })),
+                    ]);
                     setRemote(null);
                 }}
             />
@@ -163,19 +178,29 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
             {visible.length > 0 ? (
                 <ItemGroup>
                     {visible.map((model, index) => (
-                        <Fragment key={model}>
+                        <Fragment key={model.id}>
                             {index > 0 && <ItemSeparator />}
                             <Item size="xs">
                                 <ItemContent>
-                                    <ItemTitle>{model}</ItemTitle>
+                                    <ItemTitle>{model.id}</ItemTitle>
                                 </ItemContent>
                                 <ItemActions>
+                                    <span className="text-small text-muted-foreground">
+                                        {t("provider.toolCalling")}
+                                    </span>
+                                    <Switch
+                                        checked={model.toolCalling}
+                                        onCheckedChange={(checked) =>
+                                            setToolCalling(model.id, checked)
+                                        }
+                                        aria-label={`${model.id} ${t("provider.toolCalling")}`}
+                                    />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon-sm"
                                         aria-label={t("provider.removeModel")}
-                                        onClick={() => remove(model)}
+                                        onClick={() => remove(model.id)}
                                     >
                                         <XIcon />
                                     </Button>

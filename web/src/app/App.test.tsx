@@ -14,8 +14,8 @@ import {
     ListMessagesResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
 import {
+    ApiFormat,
     type Provider,
-    ProviderKind,
     ProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
@@ -224,10 +224,15 @@ it("creates a session for the first message and opens it", async () => {
         providers: [
             create(ProviderSchema, {
                 id: "p1",
-                kind: ProviderKind.OPENAI,
-                name: "Acme",
-                models: ["m1"],
                 enabled: true,
+                source: {
+                    case: "custom",
+                    value: {
+                        apiFormat: ApiFormat.OPENAI,
+                        name: "Acme",
+                        models: [{ id: "m1", toolCalling: true }],
+                    },
+                },
             }),
         ],
     });
