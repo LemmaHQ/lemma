@@ -1,18 +1,18 @@
 session:
   actions:
-    platforms: [web]
+    platforms: [web, android]
     en: "More actions"
     zh: "更多操作"
   delete:
-    platforms: [web]
+    platforms: [web, android]
     en: "Delete permanently"
     zh: "彻底删除"
   deleteDescription:
-    platforms: [web]
+    platforms: [web, android]
     en: "This cannot be undone."
     zh: "此操作不可恢复。"
   deleteTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Permanently delete this session?"
     zh: "彻底删除该会话？"
   disclaimer:
@@ -20,25 +20,33 @@ session:
     en: "AI can make mistakes. Verify important information."
     zh: "AI 可能出错，请核实重要信息。"
   earlier:
-    platforms: [web]
+    platforms: [web, android]
     en: "Earlier"
     zh: "更早"
   emptySubtitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Ask anything, or pick a suggestion below."
     zh: "随便问，或从下面的建议开始。"
   emptyTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "How can I help you today?"
     zh: "今天想聊点什么？"
   inputPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Message the assistant…"
     zh: "给助手发消息…"
   last7Days:
-    platforms: [web]
+    platforms: [web, android]
     en: "Last 7 days"
     zh: "近 7 天"
+  listTitle:
+    platforms: [android]
+    en: "Sessions"
+    zh: "会话"
+  manageProviders:
+    platforms: [android]
+    en: "Manage providers"
+    zh: "管理服务商"
   noModelAction:
     platforms: [web]
     en: "Open settings"
@@ -56,42 +64,46 @@ session:
     en: "No provider"
     zh: "暂无服务商"
   regenerate:
-    platforms: [web]
+    platforms: [web, android]
     en: "Regenerate"
     zh: "重新生成"
   rename:
-    platforms: [web]
+    platforms: [web, android]
     en: "Rename"
     zh: "重命名"
   scrollToBottom:
-    platforms: [web]
+    platforms: [web, android]
     en: "Scroll to latest"
     zh: "滚动到最新"
   selectModel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Select model"
     zh: "选择模型"
   send:
-    platforms: [web]
+    platforms: [web, android]
     en: "Send"
     zh: "发送"
+  showList:
+    platforms: [android]
+    en: "Show sessions"
+    zh: "显示会话列表"
   suggestion1:
-    platforms: [web]
+    platforms: [web, android]
     en: "Explain a concept step by step"
     zh: "逐步解释一个概念"
   suggestion2:
-    platforms: [web]
+    platforms: [web, android]
     en: "Help me debug an issue"
     zh: "帮我排查一个问题"
   suggestion3:
-    platforms: [web]
+    platforms: [web, android]
     en: "Draft and refine some text"
     zh: "起草并润色一段文字"
   today:
-    platforms: [web]
+    platforms: [web, android]
     en: "Today"
     zh: "今天"
   yesterday:
-    platforms: [web]
+    platforms: [web, android]
     en: "Yesterday"
     zh: "昨天"

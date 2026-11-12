@@ -1,10 +1,10 @@
 settings:
   aiProviders:
-    platforms: [web]
+    platforms: [web, android]
     en: "AI Providers"
     zh: "AI 服务商"
   appearance:
-    platforms: [web]
+    platforms: [web, android]
     en: "Appearance"
     zh: "外观"
   backToHome:
@@ -12,26 +12,26 @@ settings:
     en: "Back to home"
     zh: "回到首页"
   groupAgent:
-    platforms: [web]
+    platforms: [web, android]
     en: "Agent"
     zh: "智能体"
   groupGeneral:
-    platforms: [web]
+    platforms: [web, android]
     en: "General"
     zh: "通用"
   languageDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Choose the interface language."
     zh: "选择界面语言。"
   languageLabel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Language"
     zh: "语言"
   themeDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Choose light, dark, or follow the system."
     zh: "选择浅色、深色或跟随系统。"
   themeLabel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Theme"
     zh: "主题"

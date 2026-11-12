@@ -1,0 +1,30 @@
+setup:
+  connect:
+    platforms: [android]
+    en: "Connect"
+    zh: "连接"
+  description:
+    platforms: [android]
+    en: "Enter the address of your Lemma server."
+    zh: "输入你的 Lemma 服务器地址。"
+  localFailed:
+    platforms: [android]
+    en: "The local engine could not start."
+    zh: "本地引擎无法启动。"
+  unreachable:
+    platforms: [android]
+    params: { address: string }
+    en: "Could not reach a Lemma server at {address}."
+    zh: "无法连接到 {address} 上的 Lemma 服务器。"
+  urlInvalid:
+    platforms: [android]
+    en: "Enter a full address starting with http:// or https://."
+    zh: "请输入以 http:// 或 https:// 开头的完整地址。"
+  urlPlaceholder:
+    platforms: [android]
+    en: "http://192.168.1.100:1025"
+    zh: "http://192.168.1.100:1025"
+  useLocal:
+    platforms: [android]
+    en: "Run locally on this device"
+    zh: "在本机运行"

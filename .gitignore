@@ -21,6 +21,8 @@ dist-ssr
 # Generated code, design tokens, and locales
 web/src/gen
 web/src/i18n/locales
+mobile/shared/src/commonMain/composeResources/values/strings.xml
+mobile/shared/src/commonMain/composeResources/values-zh/strings.xml
 packages/ui/src/styles/tokens.gen.css
 desktop/src/gen/
 
