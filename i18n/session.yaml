@@ -27,10 +27,6 @@ session:
     platforms: [web]
     en: "Session folder"
     zh: "会话文件夹"
-  disclaimer:
-    platforms: [web]
-    en: "AI can make mistakes. Verify important information."
-    zh: "AI 可能出错，请核实重要信息。"
   earlier:
     platforms: [web]
     en: "Earlier"

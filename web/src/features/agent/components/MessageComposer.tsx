@@ -1,4 +1,3 @@
-import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
@@ -28,7 +27,6 @@ interface MessageComposerProps {
     modelOptions: ModelOption[];
     onModelChange: (selection: ModelSelection) => void;
     providersPath: string;
-    inputRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 export function MessageComposer({
@@ -43,7 +41,6 @@ export function MessageComposer({
     modelOptions,
     onModelChange,
     providersPath,
-    inputRef,
 }: MessageComposerProps) {
     const { t } = useTranslation();
     const canSend = model !== null && value.trim() !== "" && !streaming;
@@ -65,7 +62,6 @@ export function MessageComposer({
             >
                 <PromptInputBody>
                     <PromptInputTextarea
-                        ref={inputRef}
                         value={value}
                         onChange={(e) => onChange(e.currentTarget.value)}
                         disabled={model === null}
@@ -96,23 +92,19 @@ export function MessageComposer({
                     />
                 </PromptInputFooter>
             </PromptInput>
-            <p className="text-center text-caption text-muted-foreground">
-                {model === null ? (
-                    <>
-                        {t("session.noModelHint")}{" "}
-                        <Button
-                            variant="link"
-                            size="xs"
-                            nativeButton={false}
-                            render={<Link to={providersPath} />}
-                        >
-                            {t("session.noModelAction")}
-                        </Button>
-                    </>
-                ) : (
-                    t("session.disclaimer")
-                )}
-            </p>
+            {model === null && (
+                <p className="text-center text-caption text-muted-foreground">
+                    {t("session.noModelHint")}{" "}
+                    <Button
+                        variant="link"
+                        size="xs"
+                        nativeButton={false}
+                        render={<Link to={providersPath} />}
+                    >
+                        {t("session.noModelAction")}
+                    </Button>
+                </p>
+            )}
         </div>
     );
 }
