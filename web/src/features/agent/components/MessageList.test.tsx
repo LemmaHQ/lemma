@@ -25,7 +25,6 @@ const baseProps: Props = {
     hasMore: true,
     providerNameById: new Map(),
     onLoadMore: () => Promise.resolve(),
-    onPickSuggestion: () => {},
     onRegenerate: () => {},
 };
 

@@ -23,7 +23,6 @@
 | `ai/prompt-input`     | 消息输入表单、字段、工具与提交控件      |
 | `ai/reasoning`        | 可折叠的推理文本与流式状态标签          |
 | `ai/shimmer`          | 等待状态的扫光文字效果                  |
-| `ai/suggestion`       | 建议提示词按钮                          |
 | `ai/thinking-loader`  | 首个回复 token 到达前的等待指示         |
 | `ai/tool`             | 工具调用分组、状态、参数与输出          |
 | `primitives/reveal`   | 随 `open` 切换的内容的高度与透明度过渡  |

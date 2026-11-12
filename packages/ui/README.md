@@ -23,7 +23,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `ai/prompt-input`     | Message composer form, field, tools, and submit control                 |
 | `ai/reasoning`        | Collapsible reasoning text and streaming label                          |
 | `ai/shimmer`          | Sweeping text treatment for pending states                              |
-| `ai/suggestion`       | Suggested prompt button                                                 |
 | `ai/thinking-loader`  | Pending indicator before the first reply token                          |
 | `ai/tool`             | Tool-call groups, status, arguments, and output                         |
 | `primitives/reveal`   | Height and opacity transition for content toggled by `open`             |

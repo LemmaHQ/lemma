@@ -74,10 +74,6 @@
     <string name="session_select_model">选择模型</string>
     <string name="session_manage_providers">管理服务商</string>
     <string name="session_empty_title">今天想聊点什么？</string>
-    <string name="session_empty_subtitle">随便问，或从下面的建议开始。</string>
-    <string name="session_suggestion_1">逐步解释一个概念</string>
-    <string name="session_suggestion_2">帮我排查一个问题</string>
-    <string name="session_suggestion_3">起草并润色一段文字</string>
     <string name="session_regenerate">重新生成</string>
     <string name="session_scroll_to_bottom">滚动到最新</string>
     <string name="session_input_placeholder">给助手发消息…</string>

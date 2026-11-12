@@ -36,7 +36,6 @@ export * from "./components/ai/model-picker";
 export * from "./components/ai/prompt-input";
 export * from "./components/ai/reasoning";
 export * from "./components/ai/shimmer";
-export * from "./components/ai/suggestion";
 export * from "./components/ai/thinking-loader";
 export * from "./components/ai/tool-call-group";
 export * from "./components/ai/tool-call-icon";

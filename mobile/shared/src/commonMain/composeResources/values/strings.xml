@@ -74,10 +74,6 @@
     <string name="session_select_model">Select model</string>
     <string name="session_manage_providers">Manage providers</string>
     <string name="session_empty_title">How can I help you today?</string>
-    <string name="session_empty_subtitle">Ask anything, or pick a suggestion below.</string>
-    <string name="session_suggestion_1">Explain a concept step by step</string>
-    <string name="session_suggestion_2">Help me debug an issue</string>
-    <string name="session_suggestion_3">Draft and refine some text</string>
     <string name="session_regenerate">Regenerate</string>
     <string name="session_scroll_to_bottom">Scroll to latest</string>
     <string name="session_input_placeholder">Message the assistant…</string>

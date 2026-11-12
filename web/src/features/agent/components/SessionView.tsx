@@ -1,5 +1,5 @@
 import { toast } from "@lemma/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -30,7 +30,6 @@ export function SessionView({
     const session = useActiveSession();
     const [draft, setDraft] = useState("");
     const [directory, setDirectory] = useState<string | null>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
     const { model, selectModel } = useModelSelection(modelOptions);
 
     const openSession = useActiveSession((s) => s.open);
@@ -79,11 +78,6 @@ export function SessionView({
         }
     };
 
-    const handlePickSuggestion = (text: string) => {
-        setDraft(text);
-        inputRef.current?.focus();
-    };
-
     return sessionId === null ? (
         <HomeView
             onSubmit={(text) => void sendText(text)}
@@ -102,7 +96,6 @@ export function SessionView({
                 hasMore={session.hasMore}
                 providerNameById={providerNames}
                 onLoadMore={session.loadMore}
-                onPickSuggestion={handlePickSuggestion}
                 onRegenerate={handleRegenerate}
             />
             <div className="mx-auto w-full max-w-3xl px-4 pb-6 md:px-6">
@@ -117,7 +110,6 @@ export function SessionView({
                     modelOptions={modelOptions}
                     onModelChange={selectModel}
                     providersPath={providersPath}
-                    inputRef={inputRef}
                 />
             </div>
         </>

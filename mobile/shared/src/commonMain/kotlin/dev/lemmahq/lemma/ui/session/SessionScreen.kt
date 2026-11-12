@@ -114,10 +114,6 @@ internal fun SessionScreen(
                     providers = viewModel.providers,
                     canRegenerate = !viewModel.turnRunning,
                     onRegenerate = viewModel::regenerate,
-                    onPickSuggestion = { text ->
-                        viewModel.changeInput(text)
-                        composerFocus.requestFocus()
-                    },
                     onReachOldest = viewModel::loadOlderMessages,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )

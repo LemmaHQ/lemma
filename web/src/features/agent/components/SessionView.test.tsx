@@ -124,20 +124,6 @@ it("keeps the draft when Enter is pressed while a reply streams", async () => {
     expect(composer()).toHaveProperty("value", "follow-up");
 });
 
-it("fills the composer with a picked suggestion", async () => {
-    const user = userEvent.setup();
-    renderView();
-
-    await user.click(
-        await screen.findByRole("button", {
-            name: "Help me debug an issue",
-        }),
-    );
-
-    expect(composer()).toHaveProperty("value", "Help me debug an issue");
-    expect(document.activeElement).toBe(composer());
-});
-
 it("creates a session from the home composer before sending", async () => {
     const user = userEvent.setup();
     const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>

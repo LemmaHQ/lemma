@@ -31,10 +31,6 @@ session:
     platforms: [web]
     en: "Earlier"
     zh: "更早"
-  emptySubtitle:
-    platforms: [web]
-    en: "Ask anything, or pick a suggestion below."
-    zh: "随便问，或从下面的建议开始。"
   emptyTitle:
     platforms: [web]
     en: "How can I help you today?"
@@ -83,18 +79,6 @@ session:
     platforms: [web]
     en: "Send"
     zh: "发送"
-  suggestion1:
-    platforms: [web]
-    en: "Explain a concept step by step"
-    zh: "逐步解释一个概念"
-  suggestion2:
-    platforms: [web]
-    en: "Help me debug an issue"
-    zh: "帮我排查一个问题"
-  suggestion3:
-    platforms: [web]
-    en: "Draft and refine some text"
-    zh: "起草并润色一段文字"
   today:
     platforms: [web]
     en: "Today"

@@ -19,7 +19,6 @@ interface MessageListProps {
     hasMore: boolean;
     providerNameById: Map<string, string>;
     onLoadMore: () => Promise<void>;
-    onPickSuggestion: (text: string) => void;
     onRegenerate: (messageId: string) => void;
 }
 
@@ -29,7 +28,6 @@ export function MessageList({
     hasMore,
     providerNameById,
     onLoadMore,
-    onPickSuggestion,
     onRegenerate,
 }: MessageListProps) {
     const { t } = useTranslation();
@@ -99,7 +97,7 @@ export function MessageList({
     if (items.length === 0) {
         return (
             <ScrollArea className="min-h-0 flex-1">
-                <EmptyState onPickSuggestion={onPickSuggestion} />
+                <EmptyState />
             </ScrollArea>
         );
     }

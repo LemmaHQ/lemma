@@ -49,8 +49,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The shown [messages], oldest first, kept at the newest while the reader stays there: user
- * messages as bubbles, replies with their steps. Scrolling to the oldest calls [onReachOldest]; a
- * session without messages offers suggestions instead.
+ * messages as bubbles, replies with their steps. Scrolling to the oldest calls [onReachOldest].
  */
 @Composable
 internal fun MessageList(
@@ -58,12 +57,11 @@ internal fun MessageList(
     providers: List<ClientProvider>,
     canRegenerate: Boolean,
     onRegenerate: (String) -> Unit,
-    onPickSuggestion: (String) -> Unit,
     onReachOldest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (messages.isEmpty()) {
-        EmptyState(onPickSuggestion = onPickSuggestion, modifier = modifier.fillMaxSize())
+        EmptyState(modifier = modifier.fillMaxSize())
         return
     }
     val listState = rememberLazyListState()
