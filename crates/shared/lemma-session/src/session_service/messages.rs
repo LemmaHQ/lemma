@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use chrono::Utc;
+use lemma_model::ApiFormat;
 use sea_orm::sea_query::{Expr, ExprTrait};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use uuid::Uuid;
@@ -63,6 +66,41 @@ impl SessionService {
             .order_by_asc(message::Column::Id)
             .all(&self.db)
             .await?)
+    }
+
+    /// Returns the API format of the latest assistant message on the active
+    /// context path, or `None` when no assistant message or format exists.
+    ///
+    /// # Errors
+    ///
+    /// [`SessionError::NotFound`] when the user owns no such session,
+    /// [`SessionError::Missing`] when a context-path node is absent, and
+    /// [`SessionError::Store`] when the database fails.
+    pub async fn previous_assistant_api_format(
+        &self,
+        user_id: Uuid,
+        session_id: Uuid,
+    ) -> Result<Option<ApiFormat>, SessionError> {
+        let session = self
+            .find(user_id, session_id)
+            .await?
+            .ok_or(SessionError::NotFound)?;
+        let Some(leaf_id) = session.leaf_id else {
+            return Ok(None);
+        };
+        let entries = self.all_messages(session_id).await?;
+        let by_id: HashMap<_, _> = entries.iter().map(|entry| (entry.id, entry)).collect();
+        let mut current = Some(leaf_id);
+        while let Some(id) = current {
+            let entry = by_id
+                .get(&id)
+                .ok_or_else(|| SessionError::Missing(format!("node {id} missing in tree")))?;
+            if matches!(&entry.body.0, lemma_core::Message::Assistant { .. }) {
+                return Ok(entry.api_format);
+            }
+            current = entry.parent_id;
+        }
+        Ok(None)
     }
 
     /// Lists a session's messages newest-first with keyset

@@ -1,5 +1,6 @@
 use chrono::Utc;
 use lemma_core::{ContentBlock, Message, StopReason, TextContent, ToolCall};
+use lemma_model::ApiFormat;
 use lemma_session::{Message as StoredMessage, MessageBody, MessageStatus, MessageUpdate};
 use uuid::Uuid;
 
@@ -24,6 +25,7 @@ pub(crate) fn settled(
         error: None,
         model: None,
         provider_id: None,
+        api_format: None,
         created_at: now,
         updated_at: now,
     }
@@ -37,6 +39,7 @@ pub(crate) fn placeholder(
     parent_id: Uuid,
     model: &str,
     provider_id: Uuid,
+    api_format: ApiFormat,
 ) -> StoredMessage {
     let now = Utc::now();
     StoredMessage {
@@ -54,6 +57,7 @@ pub(crate) fn placeholder(
         error: None,
         model: Some(model.to_string()),
         provider_id: Some(provider_id),
+        api_format: Some(api_format),
         created_at: now,
         updated_at: now,
     }

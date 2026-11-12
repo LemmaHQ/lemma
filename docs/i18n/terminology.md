@@ -48,6 +48,7 @@
 | access token | 访问令牌 | | |
 | adapter | 适配器 | | |
 | alert dialog | 确认对话框 | 警告框 | `AlertDialog` 组件 |
+| API format | API 格式 | 方言、协议 | `ApiFormat`：一次模型请求使用的线上格式 |
 | branch | 分支 | | 消息树中的分支 |
 | canvas | 画布 | | |
 | composer | 输入框面板 | 编辑器 | 会话页底部的消息输入区 |
@@ -55,6 +56,7 @@
 | context path | 上下文路径 | | 从根到叶子的消息 |
 | control | 控件 | | |
 | cookie mode | cookie 模式 | | |
+| custom provider | 自定义 provider | | |
 | elevation | 层级 | 海拔、高度 | |
 | endpoint | 端点 | | `Endpoint` |
 | engine port | 引擎端口 | | |
@@ -69,14 +71,15 @@
 | local mode | 本地模式 | | |
 | message | 消息 | | |
 | message status | 消息状态 | | |
+| model feature | 模型特性 | 模型能力、模型功能 | |
 | model list | 模型列表 | | |
 | overlay | 浮层 | 覆盖层 | |
 | pair | 配对 | | 一组中英文对照文件 |
 | palette | 色板 | 调色板 | |
 | placeholder | 占位消息 | | 生成中的助手消息 |
+| predefined provider | 预定义 provider | 内置 provider | |
 | primitive | 原语 | | Radix 原语 |
 | provider identifier | provider 标识符 | | |
-| provider kind | provider 类型 | | |
 | reference | 参考 | | 文档类型 |
 | refresh token | 刷新令牌 | refresh 令牌 | |
 | sealed key | 加密 key | | 已加密的 provider API key |
@@ -90,6 +93,7 @@
 | toast | 提示消息 | 吐司 | `sonner` 的 `toast` |
 | token family | 令牌族 | 令牌家族 | 一次登录及其后续轮换签发的全部刷新令牌，共享 `family_id` |
 | tool | 工具 | | |
+| tool calling | 工具调用 | 函数调用 | |
 | tool runtime | 工具运行时 | | `ToolRuntime` |
 | tooltip | 工具提示 | 提示、气泡提示 | `Tooltip` 组件 |
 | turn event | turn 事件 | | `TurnEvent` |

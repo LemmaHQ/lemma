@@ -1,6 +1,6 @@
 //! Model adapters: the only crate that knows vendor wire formats.
 //!
-//! Each adapter implements `lemma_model::Adapter` for one provider kind,
+//! Each adapter implements `lemma_model::Adapter` for one API format,
 //! translating [`ModelRequest`](lemma_model::ModelRequest) values into
 //! vendor payloads and vendor streams back into `StreamEvent`s.
 //! [`HttpConnector`] implements `lemma_model::Connector`, binding endpoints

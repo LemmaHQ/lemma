@@ -13,9 +13,10 @@ use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 
 const LIST: &str = "/lemma.v1.ProviderService/ListProviders";
-const CREATE: &str = "/lemma.v1.ProviderService/CreateProvider";
-const UPDATE: &str = "/lemma.v1.ProviderService/UpdateProvider";
-const DELETE: &str = "/lemma.v1.ProviderService/DeleteProvider";
+const CREATE: &str = "/lemma.v1.ProviderService/CreateCustomProvider";
+const UPDATE: &str = "/lemma.v1.ProviderService/UpdateCustomProvider";
+const UPDATE_PREDEFINED: &str = "/lemma.v1.ProviderService/UpdatePredefinedProvider";
+const DELETE: &str = "/lemma.v1.ProviderService/DeleteCustomProvider";
 const FETCH: &str = "/lemma.v1.ProviderService/FetchModels";
 const CHECK: &str = "/lemma.v1.ProviderService/CheckProvider";
 
@@ -54,12 +55,12 @@ async fn vendor() -> Result<String, Box<dyn Error>> {
 
 fn provider(base_url: &str) -> Value {
     json!({
-        "kind": "PROVIDER_KIND_OPENAI",
+        "apiFormat": "API_FORMAT_OPENAI",
         "identifier": "main",
         "name": "Main",
         "baseUrl": base_url,
         "apiKey": "sk-1",
-        "models": ["m1"],
+        "models": [{ "id": "m1", "toolCalling": true }],
         "apiPath": "/chat/completions",
         "modelsPath": "/models",
     })
@@ -98,7 +99,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
                 "apiPath": " /v2/chat ",
                 "modelsPath": " /v2/models ",
                 "enabled": false,
-                "models": { "models": ["m2"] },
+                "models": { "models": [{ "id": "m2", "toolCalling": true }] },
             }),
         )
         .await?;
@@ -109,66 +110,130 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         created.body["provider"],
         json!({
             "id": id,
-            "kind": "PROVIDER_KIND_OPENAI",
-            "identifier": "main",
-            "name": "Main",
-            "baseUrl": "https://api.example.com/v1",
             "apiKey": "sk-1",
-            "models": ["m1"],
             "enabled": true,
-            "apiPath": "/chat/completions",
-            "modelsPath": "/models",
+            "custom": {
+                "apiFormat": "API_FORMAT_OPENAI",
+                "identifier": "main",
+                "name": "Main",
+                "baseUrl": "https://api.example.com/v1",
+                "models": [{ "id": "m1", "toolCalling": true }],
+                "apiPath": "/chat/completions",
+                "modelsPath": "/models",
+            },
         }),
         "created provider"
     );
     assert_eq!(
-        listed.body["providers"],
-        json!([created.body["provider"]]),
-        "listed"
+        listed.body["providers"][1],
+        json!(created.body["provider"]),
+        "custom provider follows predefined DeepSeek"
     );
     assert_eq!(
         updated.body["provider"],
         json!({
             "id": id,
-            "kind": "PROVIDER_KIND_OPENAI",
-            "identifier": "main",
-            "name": "Backup",
-            "baseUrl": "https://proxy.example.com/v1",
             "apiKey": "sk-1",
-            "models": ["m2"],
-            "apiPath": "/v2/chat",
-            "modelsPath": "/v2/models",
+            "custom": {
+                "apiFormat": "API_FORMAT_OPENAI",
+                "identifier": "main",
+                "name": "Backup",
+                "baseUrl": "https://proxy.example.com/v1",
+                "models": [{ "id": "m2", "toolCalling": true }],
+                "apiPath": "/v2/chat",
+                "modelsPath": "/v2/models",
+            },
         }),
         "updated provider, disabled, its key unchanged"
     );
     assert_eq!(deleted.status, 200, "{deleted:?}");
+    assert_eq!(after.body["providers"].as_array().map(Vec::len), Some(1));
     assert_eq!(
-        after.body.get("providers"),
-        None,
-        "no providers left: {after:?}"
+        after.body["providers"][0]["predefined"]["identifier"], "deepseek",
+        "predefined provider remains: {after:?}"
     );
     engine.close().await?;
     Ok(())
 }
 
 #[tokio::test]
-async fn each_kind_maps_to_its_proto_value() -> Result<(), Box<dyn Error>> {
+async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<dyn Error>> {
+    let mut engine = Engine::open().await?;
+    let token = engine.token("ada").await?;
+    let listed = engine.call_as(&token, LIST, &json!({})).await?;
+    let id = listed.body["providers"][0]["id"]
+        .as_str()
+        .unwrap_or_default()
+        .to_owned();
+
+    let without_key = engine
+        .call_as(
+            &token,
+            UPDATE_PREDEFINED,
+            &json!({ "id": id, "enabled": true }),
+        )
+        .await?;
+    let updated = engine
+        .call_as(
+            &token,
+            UPDATE_PREDEFINED,
+            &json!({
+                "id": id,
+                "apiKey": "sk-deepseek",
+                "enabled": true,
+                "defaultApiFormat": "API_FORMAT_OPENAI",
+            }),
+        )
+        .await?;
+    let invalid = engine
+        .call_as(
+            &token,
+            UPDATE_PREDEFINED,
+            &json!({ "id": id, "defaultApiFormat": "API_FORMAT_GEMINI" }),
+        )
+        .await?;
+    let fetched = engine.call_as(&token, FETCH, &json!({ "id": id })).await?;
+    let deleted = engine.call_as(&token, DELETE, &json!({ "id": id })).await?;
+
+    assert_reason(&without_key, ErrorReason::ProviderKeyRequired);
+    assert!(
+        updated.body["provider"]["enabled"]
+            .as_bool()
+            .unwrap_or_default()
+    );
+    assert_eq!(updated.body["provider"]["apiKey"], "sk-deepseek");
+    assert_eq!(
+        updated.body["provider"]["predefined"]["defaultApiFormat"],
+        "API_FORMAT_OPENAI"
+    );
+    assert_reason(&invalid, ErrorReason::ApiFormatInvalid);
+    assert_reason(&fetched, ErrorReason::ProviderNotFound);
+    assert_reason(&deleted, ErrorReason::ProviderNotFound);
+    engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn each_api_format_maps_to_its_proto_value() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     let token = engine.token("ada").await?;
 
     for (index, kind) in [
-        "PROVIDER_KIND_OPENAI",
-        "PROVIDER_KIND_ANTHROPIC",
-        "PROVIDER_KIND_GEMINI",
+        "API_FORMAT_OPENAI",
+        "API_FORMAT_ANTHROPIC",
+        "API_FORMAT_GEMINI",
     ]
     .into_iter()
     .enumerate()
     {
         let mut body = provider("https://api.example.com");
-        body["kind"] = json!(kind);
+        body["apiFormat"] = json!(kind);
         body["identifier"] = json!(format!("p{index}"));
         let reply = engine.call_as(&token, CREATE, &body).await?;
-        assert_eq!(reply.body["provider"]["kind"], kind, "{reply:?}");
+        assert_eq!(
+            reply.body["provider"]["custom"]["apiFormat"], kind,
+            "{reply:?}"
+        );
     }
     engine.close().await?;
     Ok(())
@@ -181,7 +246,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let bob = engine.token("bob").await?;
     let id = create(&engine, &ada, &provider("https://api.example.com")).await?;
     let mut no_kind = provider("https://api.example.com");
-    no_kind["kind"] = json!("PROVIDER_KIND_UNSPECIFIED");
+    no_kind["apiFormat"] = json!("API_FORMAT_UNSPECIFIED");
     let mut blank_identifier = provider("https://api.example.com");
     blank_identifier["identifier"] = json!(" ");
     let blank_base_url = provider(" ");
@@ -219,7 +284,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
         ),
         (
             engine.call_as(&ada, CREATE, &no_kind).await?,
-            ErrorReason::ProviderKindInvalid,
+            ErrorReason::ApiFormatInvalid,
         ),
         (
             engine.call_as(&ada, CREATE, &blank_identifier).await?,
@@ -263,7 +328,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
                     &json!({ "baseUrl": "https://api.example.com" }),
                 )
                 .await?,
-            ErrorReason::ProviderKindInvalid,
+            ErrorReason::ApiFormatInvalid,
         ),
         (
             engine.call_as(&ada, FETCH, &json!({ "id": "x" })).await?,
@@ -283,7 +348,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             engine
                 .call_as(&ada, CHECK, &json!({ "model": "m1" }))
                 .await?,
-            ErrorReason::ProviderKindInvalid,
+            ErrorReason::ApiFormatInvalid,
         ),
         (
             engine
@@ -318,14 +383,14 @@ async fn models_are_fetched_with_the_stored_or_given_key() -> Result<(), Box<dyn
         .call_as(
             &token,
             FETCH,
-            &json!({ "kind": "PROVIDER_KIND_OPENAI", "baseUrl": base_url, "apiKey": "sk-1" }),
+            &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-1" }),
         )
         .await?;
     let wrong_key = engine
         .call_as(
             &token,
             FETCH,
-            &json!({ "kind": "PROVIDER_KIND_OPENAI", "baseUrl": base_url, "apiKey": "sk-2" }),
+            &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-2" }),
         )
         .await?;
 
@@ -352,7 +417,7 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
     let id = create(&engine, &token, &provider(&base_url)).await?;
     let adhoc = |model: &str| {
         json!({
-            "kind": "PROVIDER_KIND_OPENAI",
+            "apiFormat": "API_FORMAT_OPENAI",
             "baseUrl": format!("{base_url}/"),
             "apiKey": "sk-1",
             "model": model,

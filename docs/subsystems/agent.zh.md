@@ -12,10 +12,11 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | --- | --- |
 | 去除首尾空白后内容为空 | `AgentError::ContentRequired` |
 | 去除首尾空白后模型 id 为空 | `AgentError::ModelRequired` |
+| 会话不属于该用户 | `AgentError::Session` |
 | provider 不属于该用户 | `AgentError::ProviderNotFound` |
-| 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
+| 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Session` 或 `Workspace` |
 
-有工作区目录时，turn 获得以 `<workspaces_dir>/<session id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。
+`ProviderService::bind` 返回适配器、该 turn 使用的 API 格式以及模型的工具调用标志；格式的选取方式见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)。有工作区目录时，turn 获得以 `<workspaces_dir>/<session id>` 为根的 `read_file`、`write_file` 与 `bash` 工具；没有时，调用模型不带工具。关闭工具调用的模型不获得工具，它的请求也不包含之前的工具调用与工具结果。
 
 `Turn::run(observer)` 把 turn 运行到结束，成功时返回 `()`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
 
@@ -51,4 +52,4 @@ Web 客户端统计它已应用的事件数，流中断后用这个数恢复，�
 
 ## 错误
 
-`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED` 与 `PROVIDER_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。
+`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED`、`SESSION_NOT_FOUND` 与 `PROVIDER_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。

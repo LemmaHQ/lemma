@@ -9,7 +9,7 @@ use futures::stream;
 use lemma_agent_loop::{AgentLoop, CancelToken, LoopError, TurnEvent};
 use lemma_core::{ContentBlock, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
-use lemma_session::MessageStatus;
+use lemma_session::{MessageStatus, SessionService};
 use lemma_test_db::on_each_database;
 use lemma_tool::LocalExecEnv;
 use serde_json::json;
@@ -190,6 +190,31 @@ async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(),
         );
         let messages = sessions.all_messages(session_id).await?;
         assert_eq!(messages.len(), 1, "only the user message: {messages:?}");
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn an_unknown_session_ends_before_any_message_is_written() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let (_sessions, user_id, _session_id) = new_session(&db).await?;
+        let missing = Uuid::new_v4();
+        let agent_loop: AgentLoop<_, LocalExecEnv> =
+            AgentLoop::new(SessionService::new(db), AsksForTool, None);
+
+        let result = agent_loop
+            .run_turn(
+                input(user_id, missing),
+                &|_| {},
+                &CancelToken::new(),
+            )
+            .await;
+
+        assert!(
+            matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
+            "{result:?}"
+        );
         Ok(())
     })
     .await

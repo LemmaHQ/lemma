@@ -25,12 +25,15 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Providers and adapters
 
-- **provider** — a user-configured model endpoint stored by `lemma-provider`: kind, identifier, display name, base URL, API key, path overrides, cached model ids, and an enabled flag.
-- **provider kind** — the API dialect of a provider: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-model` defines the one `ProviderKind` enum.
-- **provider identifier** — a provider's machine name: non-empty ASCII, unique per user, immutable after creation.
-- **endpoint** — an `Endpoint`: a provider's kind, base URL, path overrides, and plaintext API key, as `ProviderService::adapter` opens them before binding the adapter.
-- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its kind and returns it as a `ModelAdapter` variant.
-- **model list** — the model ids a provider's endpoint reports, fetched live by `Connector::list_models`. A provider row stores its own list of model ids.
+- **provider** — a model service of one user, stored by `lemma-provider` with its API key and an enabled flag. A provider is predefined or custom.
+- **predefined provider** — a provider that `lemma-provider` defines in code: its name, the API formats it serves with the base URL of each, and its models with their features. Each user has one record per predefined provider; the record stores the API key, the enabled flag, and the default API format. DeepSeek is the predefined provider.
+- **custom provider** — a provider the user configures: identifier, display name, one API format, base URL, API key, path overrides, and model records.
+- **API format** — the wire format of a model request: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-model` defines the one `ApiFormat` enum.
+- **provider identifier** — a provider's machine name: non-empty ASCII, immutable after creation, and unique per user among custom providers. A predefined provider's identifier names its definition, such as `deepseek`.
+- **model feature** — a property of a model that changes the requests sent to it. Tool calling is the only feature: a model with tool calling off receives no tool definitions and no earlier tool calls or tool results.
+- **endpoint** — an `Endpoint`: one API format with its base URL, path overrides, and plaintext API key, as `ProviderService::bind` opens them before binding the adapter.
+- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its API format and returns it as a `ModelAdapter` variant.
+- **model list** — the model ids a custom provider's endpoint reports, fetched live by `Connector::list_models`. A custom provider row stores its own model records: each model id with its features.
 
 ## Tools
 

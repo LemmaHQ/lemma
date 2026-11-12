@@ -4,7 +4,7 @@ use futures::executor::block_on;
 use futures::stream;
 use lemma_core::{StopReason, StreamEvent};
 use lemma_model::{
-    Adapter, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest, ProviderKind,
+    Adapter, ApiFormat, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest,
 };
 use lemma_provider::{ProviderError, ProviderService};
 use sea_orm::DatabaseConnection;
@@ -53,7 +53,7 @@ fn check(model: &str) -> Result<(), ProviderError> {
         ScriptedConnector,
     );
     let endpoint = Endpoint {
-        kind: ProviderKind::OpenAiCompatible,
+        api_format: ApiFormat::OpenAiCompatible,
         base_url: "https://api.example.com/v1".to_owned(),
         api_path: String::new(),
         models_path: String::new(),

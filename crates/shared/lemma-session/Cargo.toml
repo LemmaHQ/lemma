@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 chrono.workspace = true
 lemma-core.workspace = true
+lemma-model.workspace = true
 sea-orm.workspace = true
 sea-orm-migration.workspace = true
 serde.workspace = true

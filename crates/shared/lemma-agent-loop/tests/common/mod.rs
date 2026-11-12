@@ -6,6 +6,7 @@ use std::error::Error;
 use lemma_agent_loop::TurnInput;
 use lemma_auth::AuthService;
 use lemma_core::{ContentBlock, Message, TextContent};
+use lemma_model::ApiFormat;
 use lemma_session::{LastModel, SessionService};
 use sea_orm::DatabaseConnection;
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
@@ -51,5 +52,7 @@ pub(crate) fn input(user_id: Uuid, session_id: Uuid) -> TurnInput {
             provider_id: Uuid::new_v4(),
             model: "m".into(),
         },
+        api_format: ApiFormat::OpenAiCompatible,
+        tool_calling: true,
     }
 }

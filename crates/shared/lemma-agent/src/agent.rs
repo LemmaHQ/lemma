@@ -75,6 +75,7 @@ impl<C: Connector> Agent<C> {
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
     /// blank content or model, [`AgentError::ProviderNotFound`] when the user
     /// owns no such provider, [`AgentError::Provider`] when opening it
+    /// fails, [`AgentError::Session`] when reading the previous reply format
     /// fails, and [`AgentError::Workspace`] when the workspace cannot be
     /// created.
     pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<C::Adapter>, AgentError> {
@@ -84,7 +85,23 @@ impl<C: Connector> Agent<C> {
         if req.model.trim().is_empty() {
             return Err(AgentError::ModelRequired);
         }
-        let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
+        let previous_api_format = self
+            .sessions
+            .previous_assistant_api_format(req.user_id, req.session_id)
+            .await?;
+        let lemma_provider::ProviderBinding {
+            adapter,
+            api_format,
+            tool_calling,
+        } = self
+            .providers
+            .bind(
+                req.user_id,
+                req.provider_id,
+                &req.model,
+                previous_api_format,
+            )
+            .await?;
 
         let tools = workspace_tools(self.workspaces_dir.as_deref(), req.session_id).await?;
         let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, tools);
@@ -111,6 +128,8 @@ impl<C: Connector> Agent<C> {
                     provider_id: req.provider_id,
                     model: req.model,
                 },
+                api_format,
+                tool_calling,
             },
             cancel,
             _registration: Registration {

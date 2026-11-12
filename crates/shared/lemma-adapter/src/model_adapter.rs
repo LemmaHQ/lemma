@@ -6,7 +6,7 @@ use crate::http_transport::HttpTransport;
 use crate::open_ai_compatible::OpenAiCompatible;
 
 /// The adapter [`HttpConnector`](crate::HttpConnector) binds an endpoint
-/// to, one variant per provider kind.
+/// to, one variant per API format.
 #[derive(Debug)]
 pub enum ModelAdapter<T> {
     /// An OpenAI-compatible endpoint.

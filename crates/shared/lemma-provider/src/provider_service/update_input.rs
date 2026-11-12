@@ -1,7 +1,9 @@
-/// Input for updating a provider. A `None` field keeps its current value;
-/// `Some` replaces it, and an empty `api_key` clears the key.
+use lemma_model::ApiFormat;
+
+/// Input for updating a custom provider. A `None` field keeps its current
+/// value; `Some` replaces it, and an empty `api_key` clears the key.
 #[derive(Debug, Default)]
-pub struct UpdateInput {
+pub struct UpdateCustomInput {
     /// Display name.
     pub name: Option<String>,
     /// API base URL.
@@ -14,6 +16,17 @@ pub struct UpdateInput {
     pub models_path: Option<String>,
     /// Enabled flag.
     pub enabled: Option<bool>,
-    /// Model ids to cache.
-    pub models: Option<Vec<String>>,
+    /// Models and their features.
+    pub models: Option<Vec<super::ProviderModel>>,
+}
+
+/// Input for updating a predefined provider's user-controlled fields.
+#[derive(Debug, Default)]
+pub struct UpdatePredefinedInput {
+    /// Plaintext replacement API key; empty clears the key.
+    pub api_key: Option<String>,
+    /// Enabled flag.
+    pub enabled: Option<bool>,
+    /// Default API format for turns without a usable previous reply format.
+    pub default_api_format: Option<ApiFormat>,
 }

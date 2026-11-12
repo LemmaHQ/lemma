@@ -12,10 +12,11 @@ The agent subsystem turns one user request into a running turn and reports its p
 | --- | --- |
 | content is empty after trimming | `AgentError::ContentRequired` |
 | model id is empty after trimming | `AgentError::ModelRequired` |
+| the session does not belong to the user | `AgentError::Session` |
 | the provider does not belong to the user | `AgentError::ProviderNotFound` |
-| the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
+| the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Session`, or `Workspace` |
 
-With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<session id>`; without one, the model is called without tools.
+`ProviderService::bind` returns the adapter with the API format the turn uses and the model's tool-calling flag; [architecture.md](../architecture.md#the-path-of-one-turn) states how it picks the format. With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<session id>`; without one, the model is called without tools. A model with tool calling off gets no tools, and its requests leave out earlier tool calls and tool results.
 
 `Turn::run(observer)` runs the turn to its end and returns `()` on success; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
 
@@ -51,4 +52,4 @@ The web client counts the events it applies, resumes with that count after a bro
 
 ## Errors
 
-`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, and `PROVIDER_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.
+`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, `SESSION_NOT_FOUND`, and `PROVIDER_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.

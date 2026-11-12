@@ -2,7 +2,7 @@
 
 [English](adapter.md) | 中文
 
-适配器子系统把一次模型请求转换为与厂商无关的流事件序列。`lemma-model` 定义 agent 循环和 provider 领域所依赖的接口；`lemma-adapter` 基于 HTTP 为三种 API 方言实现该接口。循环看不到任何厂商的线上格式，适配器也接触不到存储、用户或加密的密钥。
+适配器子系统把一次模型请求转换为与厂商无关的流事件序列。`lemma-model` 定义 agent 循环和 provider 领域所依赖的接口；`lemma-adapter` 基于 HTTP 为三种 API 格式实现该接口。循环看不到任何厂商的线上格式，适配器也接触不到存储、用户或加密的密钥。
 
 ## 接口：`lemma-model`
 
@@ -10,20 +10,20 @@
 
 | 类型 | 职责 |
 | --- | --- |
-| `ProviderKind` | API 方言：`OpenAiCompatible`、`Anthropic` 或 `Gemini`，存储形式为 `openai`、`anthropic` 或 `gemini`。 |
-| `Endpoint` | 一个 provider 的类型、base URL、生成路径覆盖、模型列表路径覆盖与明文 API 密钥。 |
+| `ApiFormat` | 模型请求的线上格式：`OpenAiCompatible`、`Anthropic` 或 `Gemini`，存储形式为 `openai`、`anthropic` 或 `gemini`。 |
+| `Endpoint` | 一种 API 格式，及其 base URL、生成路径覆盖、模型列表路径覆盖与明文 API 密钥。 |
 | `ModelRequest` | 一次流式调用：模型 id、规范消息与工具定义。 |
 | `Adapter` | `stream(ModelRequest)` 发起上游调用，产出 `Result<StreamEvent, ModelError>` 条目。 |
 | `Connector` | `connect(Endpoint)` 返回绑定到该 endpoint 的 connector 自身的 `Adapter` 类型；`list_models(Endpoint)` 获取该 endpoint 报告的模型 id。 |
 | `ModelError` | 任何失败，都归结为一条消息。 |
 
-`lemma-provider` 中的 `ProviderService::adapter` 从已存储的 provider 构造 `Endpoint`、解密其密钥，并通过 `Connector::connect` 绑定适配器；provider 服务也调用 `Connector::list_models`。base URL 或路径为空时使用厂商默认值；API 密钥为空时不发送凭据。
+`lemma-provider` 中的 `ProviderService::bind` 从已存储的 provider 构造 `Endpoint`、解密其密钥，并通过 `Connector::connect` 绑定适配器；provider 服务也调用 `Connector::list_models`。自定义 provider 提供自己的 base URL 与路径覆盖；预定义 provider 提供其定义中所选 API 格式对应的 base URL，不带路径覆盖。base URL 或路径为空时使用厂商默认值；API 密钥为空时不发送凭据。
 
 ## 实现：`lemma-adapter`
 
-`HttpConnector` 按类型把 endpoint 绑定到一个适配器，并以 `ModelAdapter` 变体的形式返回。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
+`HttpConnector` 按 API 格式把 endpoint 绑定到一个适配器，并以 `ModelAdapter` 变体的形式返回。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
 
-| 类型 | 适配器 | 默认请求 | 凭据 |
+| API 格式 | 适配器 | 默认请求 | 凭据 |
 | --- | --- | --- | --- |
 | `openai` | `OpenAiCompatible` | `POST https://api.openai.com/v1/chat/completions` | `authorization: Bearer <key>` |
 | `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`，附带 `anthropic-version: 2023-06-01` |

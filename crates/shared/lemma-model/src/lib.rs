@@ -8,6 +8,6 @@ mod model_error;
 mod model_request;
 
 pub use adapter::{Adapter, BoxEventStream, Connector};
-pub use endpoint::{Endpoint, ProviderKind};
+pub use endpoint::{ApiFormat, Endpoint};
 pub use model_error::ModelError;
 pub use model_request::ModelRequest;

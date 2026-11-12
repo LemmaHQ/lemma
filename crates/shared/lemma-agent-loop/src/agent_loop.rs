@@ -1,6 +1,6 @@
 use chrono::Utc;
 use lemma_core::{ContentBlock, Message, StopReason};
-use lemma_model::{Adapter, ModelRequest};
+use lemma_model::{Adapter, ApiFormat, ModelRequest};
 use lemma_session::{LastModel, Message as StoredMessage, SessionService};
 use lemma_tool::ExecEnv;
 use uuid::Uuid;
@@ -25,6 +25,10 @@ pub struct TurnInput {
     pub user_message: Message,
     /// Model selection, also recorded as the session's last model.
     pub model: LastModel,
+    /// API format that produces this turn's assistant messages.
+    pub api_format: ApiFormat,
+    /// Whether this model receives tools and earlier tool calls.
+    pub tool_calling: bool,
 }
 
 /// Runs turns: assembles each step's context from the message tree, streams
@@ -70,12 +74,14 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             user_message_id,
             user_message,
             model,
+            api_format,
+            tool_calling,
         } = input;
-        let Some(meta) = self.sessions.find(user_id, session_id).await? else {
-            return Err(LoopError::NotFound(format!(
-                "session {session_id} not found"
-            )));
-        };
+        let meta = self
+            .sessions
+            .find(user_id, session_id)
+            .await?
+            .ok_or_else(|| LoopError::NotFound(format!("session {session_id} not found")))?;
 
         let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
         self.append(user_id, user_entry).await?;
@@ -87,11 +93,14 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             .update_last_model(user_id, session_id, &model)
             .await?;
 
-        let tool_specs = self
-            .tools
-            .as_ref()
-            .map(|runtime| runtime.registry.specs())
-            .unwrap_or_default();
+        let tool_specs = if tool_calling {
+            self.tools
+                .as_ref()
+                .map(|runtime| runtime.registry.specs())
+                .unwrap_or_default()
+        } else {
+            Vec::new()
+        };
 
         let mut leaf_id = user_message_id;
         loop {
@@ -101,6 +110,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             }
             let entries = self.sessions.all_messages(session_id).await?;
             let messages = lemma_session::build_context_path(&entries, leaf_id)?;
+            let messages = history_for_model(messages, tool_calling);
 
             let assistant_id = Uuid::new_v4();
             let placeholder = persist::placeholder(
@@ -109,6 +119,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 leaf_id,
                 &model.model,
                 model.provider_id,
+                api_format,
             );
             self.append(user_id, placeholder).await?;
             observer(TurnEvent::AssistantStarted { id: assistant_id });
@@ -119,7 +130,8 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 tools: tool_specs.clone(),
             };
             let mut outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
-            let calls_tools = outcome.stop_reason == StopReason::ToolUse
+            let calls_tools = tool_calling
+                && outcome.stop_reason == StopReason::ToolUse
                 && outcome
                     .blocks
                     .iter()
@@ -227,4 +239,35 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         self.sessions.update_leaf(user_id, session_id, id).await?;
         Ok(())
     }
+}
+
+fn history_for_model(messages: Vec<Message>, tool_calling: bool) -> Vec<Message> {
+    if tool_calling {
+        return messages;
+    }
+    messages
+        .into_iter()
+        .filter_map(|message| match message {
+            Message::Assistant {
+                content,
+                stop_reason,
+                usage,
+            } => {
+                let content: Vec<_> = content
+                    .into_iter()
+                    .filter(|block| !matches!(block, ContentBlock::ToolCall(_)))
+                    .collect();
+                let has_text = content
+                    .iter()
+                    .any(|block| matches!(block, ContentBlock::Text(_)));
+                has_text.then_some(Message::Assistant {
+                    content,
+                    stop_reason,
+                    usage,
+                })
+            }
+            Message::ToolResult { .. } => None,
+            user @ Message::User { .. } => Some(user),
+        })
+        .collect()
 }

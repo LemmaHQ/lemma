@@ -17,6 +17,9 @@ pub enum AgentError {
     /// The provider domain failed, e.g. opening the API key.
     #[error("provider: {0}")]
     Provider(ProviderError),
+    /// The session domain failed while reading the previous reply format.
+    #[error("session: {0}")]
+    Session(lemma_session::SessionError),
     /// The session's tool workspace could not be created.
     #[error("create workspace: {0}")]
     Workspace(String),
@@ -31,6 +34,12 @@ impl From<ProviderError> for AgentError {
             ProviderError::NotFound => Self::ProviderNotFound,
             other => Self::Provider(other),
         }
+    }
+}
+
+impl From<lemma_session::SessionError> for AgentError {
+    fn from(err: lemma_session::SessionError) -> Self {
+        Self::Session(err)
     }
 }
 

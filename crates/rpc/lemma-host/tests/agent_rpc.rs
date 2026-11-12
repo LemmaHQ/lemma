@@ -21,9 +21,11 @@ use serde_json::{Value, json};
 const SEND: &str = "/lemma.v1.AgentService/SendMessage";
 const ABORT: &str = "/lemma.v1.AgentService/AbortMessage";
 const RESUME: &str = "/lemma.v1.AgentService/ResumeStream";
-const CREATE_PROVIDER: &str = "/lemma.v1.ProviderService/CreateProvider";
+const CREATE_PROVIDER: &str = "/lemma.v1.ProviderService/CreateCustomProvider";
 const CREATE_SESSION: &str = "/lemma.v1.SessionService/CreateSession";
 const MESSAGES: &str = "/lemma.v1.SessionService/ListMessages";
+const DELETE_SESSION: &str = "/lemma.v1.SessionService/DeleteSession";
+const UPDATE_PROVIDER: &str = "/lemma.v1.ProviderService/UpdateCustomProvider";
 #[cfg(windows)]
 const WAIT_FOR_GO: &str = "for /L %i in (1,1,60) do @if not exist go ping -n 2 127.0.0.1 >nul";
 #[cfg(not(windows))]
@@ -87,6 +89,16 @@ async fn completions(axum::Json(request): axum::Json<Value>) -> Response {
             finish("tool_calls"),
         ])
         .into_response(),
+        "plain" => {
+            let offered_tools = request.get("tools").is_some();
+            let tool_history = request["messages"].as_array().is_some_and(|messages| {
+                messages
+                    .iter()
+                    .any(|m| m["role"] == "tool" || m.get("tool_calls").is_some())
+            });
+            let seen = format!("tools:{offered_tools} history:{tool_history}");
+            sse(&[delta(&json!({ "content": seen })), finish("stop")]).into_response()
+        }
         "hang" => {
             let first = Ok::<_, io::Error>(format!(
                 "data: {}\n\n",
@@ -114,7 +126,7 @@ async fn setup() -> Result<Setup, Box<dyn Error>> {
             &token,
             CREATE_PROVIDER,
             &json!({
-                "kind": "PROVIDER_KIND_OPENAI",
+                "apiFormat": "API_FORMAT_OPENAI",
                 "identifier": "vendor",
                 "baseUrl": format!("{base_url}/v1"),
                 "apiKey": "sk-1",
@@ -165,6 +177,31 @@ impl Setup {
             .as_array()
             .cloned()
             .unwrap_or_default())
+    }
+
+    async fn until_tool_started(&self, frames: &mut Frames) -> Result<Vec<Value>, Box<dyn Error>> {
+        let mut seen: Vec<Value> = Vec::new();
+        while !seen
+            .last()
+            .is_some_and(|event| event["event"].get("toolCallStarted").is_some())
+        {
+            match self.engine.next_frame(frames).await? {
+                Some(Frame::Message(event)) => seen.push(event),
+                other => return Err(format!("turn ended before the tool ran: {other:?}").into()),
+            }
+        }
+        Ok(seen)
+    }
+
+    fn release_tool(&self) -> io::Result<()> {
+        fs::write(
+            self.engine
+                .data_dir()
+                .join("workspaces")
+                .join(&self.session_id)
+                .join("go"),
+            "",
+        )
     }
 }
 
@@ -427,31 +464,14 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
 -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
     let mut frames = setup.send("wait").await?;
-    let mut seen: Vec<Value> = Vec::new();
-    while !seen
-        .last()
-        .is_some_and(|event| event["event"].get("toolCallStarted").is_some())
-    {
-        match setup.engine.next_frame(&mut frames).await? {
-            Some(Frame::Message(event)) => seen.push(event),
-            other => return Err(format!("turn ended before the tool ran: {other:?}").into()),
-        }
-    }
+    let seen = setup.until_tool_started(&mut frames).await?;
     let message_id = seen[0]["event"]["started"]["messageId"].clone();
 
     let aborted = setup
         .engine
         .call_as(&setup.token, ABORT, &json!({ "messageId": message_id }))
         .await?;
-    fs::write(
-        setup
-            .engine
-            .data_dir()
-            .join("workspaces")
-            .join(&setup.session_id)
-            .join("go"),
-        "",
-    )?;
+    setup.release_tool()?;
     let (rest, end) = setup.engine.finish(&mut frames).await?;
     let messages = setup.messages().await?;
 
@@ -481,7 +501,69 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
 }
 
 #[tokio::test]
-async fn a_turn_in_a_session_the_user_lacks_reports_an_error_event() -> Result<(), Box<dyn Error>> {
+async fn deleting_the_session_while_a_tool_runs_ends_the_turn_with_an_error_event()
+-> Result<(), Box<dyn Error>> {
+    let mut setup = setup().await?;
+    let mut frames = setup.send("wait").await?;
+    setup.until_tool_started(&mut frames).await?;
+
+    let deleted = setup
+        .engine
+        .call_as(
+            &setup.token,
+            DELETE_SESSION,
+            &json!({ "id": setup.session_id }),
+        )
+        .await?;
+    setup.release_tool()?;
+    let (rest, end) = setup.engine.finish(&mut frames).await?;
+
+    assert_eq!(deleted.status, 200, "{deleted:?}");
+    assert!(
+        rest.last()
+            .is_some_and(|event| label(event).starts_with("error:")),
+        "the turn ends with an error event: {:?}",
+        labels(&rest)
+    );
+    assert_eq!(end, json!({}), "clean end of stream");
+    setup.engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_model_without_tool_calling_sees_no_tools_and_no_earlier_tool_calls()
+-> Result<(), Box<dyn Error>> {
+    let mut setup = setup().await?;
+    let mut with_tools = setup.send("tools").await?;
+    setup.engine.finish(&mut with_tools).await?;
+    let updated = setup
+        .engine
+        .call_as(
+            &setup.token,
+            UPDATE_PROVIDER,
+            &json!({
+                "id": setup.provider_id,
+                "models": { "models": [{ "id": "plain", "toolCalling": false }] },
+            }),
+        )
+        .await?;
+
+    let mut plain = setup.send("plain").await?;
+    let (events, _) = setup.engine.finish(&mut plain).await?;
+
+    assert_eq!(updated.status, 200, "{updated:?}");
+    assert!(
+        labels(&events).contains(&"text:tools:false history:false".to_owned()),
+        "the request carries neither tools nor tool history: {:?}",
+        labels(&events)
+    );
+    setup.engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn a_turn_in_a_session_the_user_lacks_is_rejected_before_streaming()
+-> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
     let bob = setup.engine.token("bob").await?;
     let bobs = setup
@@ -505,15 +587,8 @@ async fn a_turn_in_a_session_the_user_lacks_reports_an_error_event() -> Result<(
         .await?;
     let (events, end) = setup.engine.finish(&mut frames).await?;
 
-    assert_eq!(
-        labels(&events),
-        [format!(
-            "error:not found: session {} not found",
-            bobs_id.as_str().unwrap_or_default()
-        )],
-        "events"
-    );
-    assert_eq!(end, json!({}), "clean end of stream");
+    assert!(events.is_empty(), "no turn events: {events:?}");
+    assert_stream_reason(&end, ErrorReason::SessionNotFound);
     setup.engine.close().await?;
     Ok(())
 }
@@ -561,6 +636,12 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             SEND,
             send(&session, &provider, " ", "hi"),
             ErrorReason::ModelRequired,
+        ),
+        (
+            &setup.token,
+            SEND,
+            send(unknown, &provider, "m", "hi"),
+            ErrorReason::SessionNotFound,
         ),
         (
             &setup.token,

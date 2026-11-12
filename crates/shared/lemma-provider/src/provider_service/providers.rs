@@ -1,20 +1,21 @@
 use std::fmt::{self, Debug};
 
 use chrono::Utc;
-use lemma_model::{Connector, ProviderKind};
+use lemma_model::Connector;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     QueryOrder, Set, SqlErr,
 };
 use uuid::Uuid;
 
-use crate::entity::provider;
-use crate::entity::provider::Models;
+use crate::entity::provider::{self, Models, ProviderSource};
+use crate::preset;
 use crate::provider_error::ProviderError;
 
-use super::create_input::CreateInput;
-use super::provider_view::ProviderView;
-use super::update_input::UpdateInput;
+use super::ProviderModel;
+use super::create_input::CreateCustomInput;
+use super::provider_view::{CustomProviderView, PredefinedProviderView, ProviderView};
+use super::update_input::UpdateCustomInput;
 
 /// Provider domain service over a database holding the providers table.
 ///
@@ -45,7 +46,7 @@ impl<C: Connector> ProviderService<C> {
         }
     }
 
-    fn seal_key(&self, plain: &str) -> Result<String, ProviderError> {
+    pub(super) fn seal_key(&self, plain: &str) -> Result<String, ProviderError> {
         if plain.is_empty() {
             return Ok(String::new());
         }
@@ -61,51 +62,93 @@ impl<C: Connector> ProviderService<C> {
             .map_err(ProviderError::Crypto)
     }
 
-    fn view(&self, r: &provider::Model) -> ProviderView {
-        let api_key = self.open_key(&r.api_key).unwrap_or_default();
-        ProviderView {
-            id: r.id,
-            kind: kind_of(r),
-            identifier: r.identifier.clone(),
-            name: r.name.clone(),
-            base_url: r.base_url.clone(),
-            api_key,
-            models: r.models.0.clone(),
-            enabled: r.enabled,
-            api_path: r.api_path.clone(),
-            models_path: r.models_path.clone(),
+    pub(super) fn view(&self, row: &provider::Model) -> Option<ProviderView> {
+        match row.source {
+            ProviderSource::Custom => Some(ProviderView::Custom(self.custom_view(row))),
+            ProviderSource::Predefined => {
+                let preset = preset::find(&row.identifier)?;
+                Some(ProviderView::Predefined(self.predefined_view(row, preset)))
+            }
         }
     }
 
-    /// Lists the user's providers in creation order.
+    pub(super) fn predefined_view(
+        &self,
+        row: &provider::Model,
+        preset: &preset::PredefinedProvider,
+    ) -> PredefinedProviderView {
+        PredefinedProviderView {
+            id: row.id,
+            identifier: preset.identifier.to_owned(),
+            name: preset.name.to_owned(),
+            api_formats: preset
+                .formats
+                .iter()
+                .map(|format| format.api_format)
+                .collect(),
+            default_api_format: row.api_format,
+            models: preset
+                .models
+                .iter()
+                .map(|model| ProviderModel {
+                    id: model.id.to_owned(),
+                    tool_calling: model.tool_calling,
+                })
+                .collect(),
+            api_key: self.open_key(&row.api_key).unwrap_or_default(),
+            enabled: row.enabled,
+        }
+    }
+
+    fn custom_view(&self, row: &provider::Model) -> CustomProviderView {
+        CustomProviderView {
+            id: row.id,
+            identifier: row.identifier.clone(),
+            name: row.name.clone(),
+            api_format: row.api_format,
+            base_url: row.base_url.clone(),
+            api_key: self.open_key(&row.api_key).unwrap_or_default(),
+            models: row.models.0.clone(),
+            enabled: row.enabled,
+            api_path: row.api_path.clone(),
+            models_path: row.models_path.clone(),
+        }
+    }
+
+    /// Lists predefined providers first, then custom providers in creation order.
     ///
     /// # Errors
     ///
     /// [`ProviderError::Store`] when the database fails.
     pub async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderView>, ProviderError> {
+        self.insert_missing_predefined(user_id).await?;
         let rows = provider::Entity::find()
             .filter(provider::Column::UserId.eq(user_id))
             .order_by_asc(provider::Column::CreatedAt)
             .all(&self.db)
             .await?;
-        Ok(rows.iter().map(|r| self.view(r)).collect())
+        let mut views: Vec<_> = rows.iter().filter_map(|row| self.view(row)).collect();
+        views.sort_by_key(|view| match view {
+            ProviderView::Predefined(_) => 0,
+            ProviderView::Custom(_) => 1,
+        });
+        Ok(views)
     }
 
-    /// Validates and stores a new provider.
+    /// Validates and stores a new custom provider.
     ///
     /// # Errors
     ///
-    /// [`ProviderError::IdentifierInvalid`] for an empty or non-ASCII
-    /// identifier, [`ProviderError::FieldsRequired`] for an empty base URL,
-    /// [`ProviderError::IdentifierTaken`] when the user already has a
-    /// provider with the identifier, [`ProviderError::Crypto`] when sealing
-    /// the key fails, and [`ProviderError::Store`] when the database fails.
-    pub async fn create(
+    /// [`ProviderError::IdentifierInvalid`] for an empty or non-ASCII identifier,
+    /// [`ProviderError::FieldsRequired`] for an empty base URL,
+    /// [`ProviderError::IdentifierTaken`] when the custom identifier is taken,
+    /// [`ProviderError::Crypto`] when sealing fails, and [`ProviderError::Store`]
+    /// when the database fails.
+    pub async fn create_custom(
         &self,
         user_id: Uuid,
-        input: CreateInput,
-    ) -> Result<ProviderView, ProviderError> {
-        let kind = input.kind.as_str();
+        input: CreateCustomInput,
+    ) -> Result<CustomProviderView, ProviderError> {
         let identifier = input.identifier.trim();
         let name = input.name.trim();
         let name = if name.is_empty() { identifier } else { name };
@@ -117,11 +160,11 @@ impl<C: Connector> ProviderService<C> {
             return Err(ProviderError::FieldsRequired);
         }
         let sealed = self.seal_key(&input.api_key)?;
-        let now = Utc::now();
         let row = provider::ActiveModel {
             id: Set(Uuid::new_v4()),
             user_id: Set(user_id),
-            kind: Set(kind.to_owned()),
+            api_format: Set(input.api_format),
+            source: Set(ProviderSource::Custom),
             identifier: Set(identifier.to_owned()),
             name: Set(name.to_owned()),
             base_url: Set(base_url.to_owned()),
@@ -130,7 +173,7 @@ impl<C: Connector> ProviderService<C> {
             models_path: Set(input.models_path.trim().to_owned()),
             models: Set(Models(input.models)),
             enabled: Set(true),
-            created_at: Set(now),
+            created_at: Set(Utc::now()),
         }
         .insert(&self.db)
         .await
@@ -138,24 +181,24 @@ impl<C: Connector> ProviderService<C> {
             Some(SqlErr::UniqueConstraintViolation(_)) => ProviderError::IdentifierTaken,
             _ => e.into(),
         })?;
-        Ok(self.view(&row))
+        Ok(self.custom_view(&row))
     }
 
-    /// Applies an update to a provider owned by the user.
+    /// Applies an update to a custom provider owned by the user.
     ///
     /// # Errors
     ///
-    /// [`ProviderError::NotFound`] when the user owns no such provider,
-    /// [`ProviderError::Crypto`] when sealing the key fails, and
-    /// [`ProviderError::Store`] when the database fails.
-    pub async fn update(
+    /// [`ProviderError::NotFound`] when no such custom provider exists,
+    /// [`ProviderError::Crypto`] when sealing fails, and [`ProviderError::Store`]
+    /// when the database fails.
+    pub async fn update_custom(
         &self,
         user_id: Uuid,
         id: Uuid,
-        input: UpdateInput,
-    ) -> Result<ProviderView, ProviderError> {
+        input: UpdateCustomInput,
+    ) -> Result<CustomProviderView, ProviderError> {
         let api_key = match input.api_key {
-            Some(k) => Set(self.seal_key(&k)?),
+            Some(key) => Set(self.seal_key(&key)?),
             None => NotSet,
         };
         let changes = provider::ActiveModel {
@@ -168,39 +211,37 @@ impl<C: Connector> ProviderService<C> {
             models_path: input
                 .models_path
                 .map_or(NotSet, |s| Set(s.trim().to_owned())),
-            models: input.models.map_or(NotSet, |m| Set(Models(m))),
+            models: input.models.map_or(NotSet, |models| Set(Models(models))),
             enabled: input.enabled.map_or(NotSet, Set),
             ..Default::default()
         };
         if !changes.is_changed() {
-            let row = provider::Entity::find_by_id(id)
-                .filter(provider::Column::UserId.eq(user_id))
-                .one(&self.db)
-                .await?
-                .ok_or(ProviderError::NotFound)?;
-            return Ok(self.view(&row));
+            let row = self.find_custom(user_id, id).await?;
+            return Ok(self.custom_view(&row));
         }
         provider::Entity::update_many()
             .set(changes)
             .filter(provider::Column::Id.eq(id))
             .filter(provider::Column::UserId.eq(user_id))
+            .filter(provider::Column::Source.eq(ProviderSource::Custom))
             .exec_with_returning(&self.db)
             .await?
             .pop()
-            .map(|row| self.view(&row))
+            .map(|row| self.custom_view(&row))
             .ok_or(ProviderError::NotFound)
     }
 
-    /// Deletes a provider owned by the user.
+    /// Deletes a custom provider owned by the user.
     ///
     /// # Errors
     ///
-    /// [`ProviderError::NotFound`] when the user owns no such provider and
+    /// [`ProviderError::NotFound`] when no such custom provider exists and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
+    pub async fn delete_custom(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
         let deleted = provider::Entity::delete_many()
             .filter(provider::Column::Id.eq(id))
             .filter(provider::Column::UserId.eq(user_id))
+            .filter(provider::Column::Source.eq(ProviderSource::Custom))
             .exec(&self.db)
             .await?;
         if deleted.rows_affected == 0 {
@@ -208,10 +249,17 @@ impl<C: Connector> ProviderService<C> {
         }
         Ok(())
     }
-}
 
-pub(super) fn kind_of(row: &provider::Model) -> ProviderKind {
-    use std::str::FromStr;
-
-    ProviderKind::from_str(&row.kind).unwrap_or(ProviderKind::OpenAiCompatible)
+    pub(super) async fn find_custom(
+        &self,
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<provider::Model, ProviderError> {
+        provider::Entity::find_by_id(id)
+            .filter(provider::Column::UserId.eq(user_id))
+            .filter(provider::Column::Source.eq(ProviderSource::Custom))
+            .one(&self.db)
+            .await?
+            .ok_or(ProviderError::NotFound)
+    }
 }

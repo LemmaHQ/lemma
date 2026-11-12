@@ -2,7 +2,7 @@
 
 English | [中文](adapter.zh.md)
 
-The adapter subsystem turns one model request into a stream of vendor-independent stream events. `lemma-model` defines the interface that the agent loop and the provider domain depend on; `lemma-adapter` implements it over HTTP for three API dialects. The loop never sees a vendor wire format, and the adapters never see stores, users, or encrypted keys.
+The adapter subsystem turns one model request into a stream of vendor-independent stream events. `lemma-model` defines the interface that the agent loop and the provider domain depend on; `lemma-adapter` implements it over HTTP for three API formats. The loop never sees a vendor wire format, and the adapters never see stores, users, or encrypted keys.
 
 ## Interface: `lemma-model`
 
@@ -10,20 +10,20 @@ The adapter subsystem turns one model request into a stream of vendor-independen
 
 | Type | Role |
 | --- | --- |
-| `ProviderKind` | The API dialect: `OpenAiCompatible`, `Anthropic`, or `Gemini`, stored as `openai`, `anthropic`, or `gemini`. |
-| `Endpoint` | One provider's kind, base URL, generation path override, model-list path override, and plaintext API key. |
+| `ApiFormat` | The wire format of a model request: `OpenAiCompatible`, `Anthropic`, or `Gemini`, stored as `openai`, `anthropic`, or `gemini`. |
+| `Endpoint` | One API format with its base URL, generation path override, model-list path override, and plaintext API key. |
 | `ModelRequest` | One streaming call: model id, canonical messages, and tool definitions. |
 | `Adapter` | `stream(ModelRequest)` opens the upstream call and yields `Result<StreamEvent, ModelError>` items. |
 | `Connector` | `connect(Endpoint)` returns the connector's `Adapter` type bound to the endpoint; `list_models(Endpoint)` fetches the model ids the endpoint reports. |
 | `ModelError` | Any failure, reduced to a message. |
 
-`ProviderService::adapter` in `lemma-provider` builds an `Endpoint` from a stored provider, decrypts its key, and binds it through `Connector::connect`; the provider service also calls `Connector::list_models`. An empty base URL or path selects the vendor default; an empty API key sends no credentials.
+`ProviderService::bind` in `lemma-provider` builds an `Endpoint` from a stored provider, decrypts its key, and binds it through `Connector::connect`; the provider service also calls `Connector::list_models`. A custom provider supplies its own base URL and path overrides; a predefined provider supplies the base URL its definition gives for the selected API format and no path overrides. An empty base URL or path selects the vendor default; an empty API key sends no credentials.
 
 ## Implementation: `lemma-adapter`
 
-`HttpConnector` binds an endpoint to one adapter by kind and returns it as a `ModelAdapter` variant. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
+`HttpConnector` binds an endpoint to one adapter by API format and returns it as a `ModelAdapter` variant. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
 
-| Kind | Adapter | Default request | Credentials |
+| API format | Adapter | Default request | Credentials |
 | --- | --- | --- | --- |
 | `openai` | `OpenAiCompatible` | `POST https://api.openai.com/v1/chat/completions` | `authorization: Bearer <key>` |
 | `anthropic` | `AnthropicMessages` | `POST https://api.anthropic.com/v1/messages` | `x-api-key`, with `anthropic-version: 2023-06-01` |
