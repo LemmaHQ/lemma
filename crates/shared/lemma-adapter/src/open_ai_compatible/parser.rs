@@ -60,6 +60,10 @@ impl Parser {
         }
     }
 
+    fn has_started_tools(&self) -> bool {
+        self.tools.iter().any(|acc| acc.started)
+    }
+
     fn tool_events(&mut self, calls: Vec<RawToolCall>, events: &mut Vec<StreamEvent>) {
         for call in calls {
             let index = call.index.unwrap_or(0);
@@ -102,6 +106,9 @@ impl SseParser for Parser {
     fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
         if data == "[DONE]" {
             let mut events = Vec::new();
+            if self.stop == StopReason::Stop && self.has_started_tools() {
+                self.stop = StopReason::ToolUse;
+            }
             self.close_thinking(&mut events);
             self.end_pending_tools(&mut events);
             events.push(StreamEvent::Done {
@@ -112,11 +119,10 @@ impl SseParser for Parser {
         }
         let chunk: StreamChunk =
             serde_json::from_str(data).map_err(|e| error::protocol(format!("bad chunk: {e}")))?;
+        let mut events = Vec::new();
         if let Some(usage) = chunk.usage {
             self.usage = Some(usage);
-            return Ok(Vec::new());
         }
-        let mut events = Vec::new();
         let choice = chunk.choices.into_iter().next();
         if let Some(reason) = choice.as_ref().and_then(|c| c.finish_reason.as_deref()) {
             self.stop = stream_chunk::map_finish_reason(reason);
@@ -149,6 +155,14 @@ impl SseParser for Parser {
 
     fn on_eof(&mut self) -> Option<Usage> {
         self.usage()
+    }
+
+    fn on_stop_reason(&self) -> StopReason {
+        if self.stop == StopReason::Stop && self.has_started_tools() {
+            StopReason::ToolUse
+        } else {
+            self.stop
+        }
     }
 
     fn flush(&mut self) -> Vec<StreamEvent> {
