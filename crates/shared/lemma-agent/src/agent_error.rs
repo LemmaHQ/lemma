@@ -12,13 +12,13 @@ pub enum AgentError {
     /// The model id is empty after trimming.
     #[error("model required")]
     ModelRequired,
-    /// The provider is absent for this user.
+    /// The provider is absent.
     #[error("provider not found")]
     ProviderNotFound,
     /// The provider domain failed, e.g. opening the API key.
     #[error("provider: {0}")]
     Provider(ProviderError),
-    /// The session is absent for this user.
+    /// The session is absent.
     #[error("session not found")]
     SessionNotFound,
     /// The session database failed.

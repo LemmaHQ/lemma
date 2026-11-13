@@ -1,36 +1,29 @@
-//! Server mode: PostgreSQL or SQLite by `DATABASE_URL`, fixed port 1025.
+//! Server mode: local engine over `LEMMA_DATA_DIR`, listening on
+//! `127.0.0.1:LEMMA_PORT`.
 
 use std::error::Error;
 use std::io;
 
-use lemma_host::{AppState, Secrets};
-use sea_orm::DatabaseConnection;
+use lemma_host::LocalEngine;
 use tokio::net::TcpListener;
 use tokio::signal;
 
 use crate::config::Config;
 
-/// Runs the server until Ctrl-C or SIGTERM, then closes the database.
+/// Runs the server until Ctrl-C or SIGTERM, then closes the engine.
 pub async fn run() -> Result<(), Box<dyn Error>> {
     let config = Config::from_env()?;
-    let db = lemma_host::connect(&config.database_url).await?;
-    lemma_host::migrate(&db).await?;
-    serve(db.clone(), config.secrets).await?;
-    db.close().await?;
-    Ok(())
-}
-
-async fn serve(db: DatabaseConnection, secrets: Secrets) -> Result<(), Box<dyn Error>> {
-    let state = AppState::new(db, secrets, None);
-    let listener = TcpListener::bind("0.0.0.0:1025").await?;
+    let engine = LocalEngine::open(&config.data_dir).await?;
+    let listener = TcpListener::bind(("127.0.0.1", config.port)).await?;
     println!("listening on {}", listener.local_addr()?);
-    lemma_server::serve(listener, lemma_host::router(state), async {
+    lemma_server::serve(listener, engine.router(), async {
         match shutdown_signal().await {
             Ok(()) => println!("shutting down"),
             Err(e) => eprintln!("shutdown signal error: {e}"),
         }
     })
     .await?;
+    engine.close().await;
     Ok(())
 }
 

@@ -21,8 +21,6 @@ use crate::web_tools;
 /// What a user asks one turn to do.
 #[derive(Debug)]
 pub struct TurnRequest {
-    /// Authenticated caller.
-    pub user_id: Uuid,
     /// Session the turn continues from its active leaf.
     pub session_id: Uuid,
     /// Provider the turn is dispatched to.
@@ -33,28 +31,19 @@ pub struct TurnRequest {
     pub content: String,
 }
 
-/// A running turn: the user that owns it and its cancel token.
-#[derive(Debug)]
-struct RunningTurn {
-    user_id: Uuid,
-    cancel: CancelToken,
-}
-
 /// Running turns by user message id.
-type RunningTurns = DashMap<Uuid, RunningTurn>;
+type RunningTurns = DashMap<Uuid, CancelToken>;
 
 /// Assembles and runs turns, and aborts the ones still running.
 ///
-/// With `workspaces_dir` set, a session's tools (`read_file`, `write_file`,
-/// `bash`) run in the directory the session is bound to, or else in
-/// `<workspaces_dir>/<session id>`, and the model is told the directory,
-/// the operating system, and the shell; without it, turns call the model
-/// without tools.
+/// A session's tools (`read_file`, `write_file`, `bash`) run in the directory
+/// the session is bound to, or else in `<workspaces_dir>/<session id>`, and
+/// the model is told the directory, the operating system, and the shell.
 #[derive(Debug)]
 pub struct Agent<C, T = ReqwestTransport> {
     sessions: SessionService,
     providers: Arc<ProviderService<C>>,
-    workspaces_dir: Option<PathBuf>,
+    workspaces_dir: PathBuf,
     web_http: Option<T>,
     running: Arc<RunningTurns>,
 }
@@ -64,7 +53,7 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     pub fn new(
         sessions: SessionService,
         providers: Arc<ProviderService<C>>,
-        workspaces_dir: Option<PathBuf>,
+        workspaces_dir: PathBuf,
         web_http: Option<T>,
     ) -> Self {
         Self {
@@ -83,10 +72,10 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// # Errors
     ///
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
-    /// blank content or model, [`AgentError::ProviderNotFound`] when the user
-    /// owns no such provider, [`AgentError::Provider`] when opening it
-    /// fails, [`AgentError::SessionNotFound`] when the user owns no such
-    /// session, [`AgentError::Store`] when the session database fails,
+    /// blank content or model, [`AgentError::ProviderNotFound`] when the
+    /// provider is absent, [`AgentError::Provider`] when opening it fails,
+    /// [`AgentError::SessionNotFound`] when the session is absent,
+    /// [`AgentError::Store`] when the session database fails,
     /// [`AgentError::DirectoryNotFound`] when the session's directory is
     /// gone, and [`AgentError::Workspace`] when the workspace cannot be
     /// created.
@@ -97,12 +86,12 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         if req.model.trim().is_empty() {
             return Err(AgentError::ModelRequired);
         }
-        let Some(session) = self.sessions.find(req.user_id, req.session_id).await? else {
+        let Some(session) = self.sessions.find(req.session_id).await? else {
             return Err(AgentError::SessionNotFound);
         };
         let previous_api_format = self
             .sessions
-            .previous_assistant_api_format(req.user_id, req.session_id)
+            .previous_assistant_api_format(req.session_id)
             .await?;
         let lemma_provider::ProviderBinding {
             adapter,
@@ -110,41 +99,26 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
             tool_calling,
         } = self
             .providers
-            .bind(
-                req.user_id,
-                req.provider_id,
-                &req.model,
-                previous_api_format,
-            )
+            .bind(req.provider_id, &req.model, previous_api_format)
             .await?;
 
         let cancel = CancelToken::new();
         let tools = session_tools(
-            self.workspaces_dir.as_deref(),
+            &self.workspaces_dir,
             &session,
             &cancel,
             &self.providers,
             self.web_http.as_ref(),
-            req.user_id,
         )
         .await?;
-        let system_prompt = tools
-            .as_ref()
-            .map(|runtime| system_prompt(runtime.env.root()));
-        let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, tools);
+        let system_prompt = Some(system_prompt(tools.env.root()));
+        let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, Some(tools));
 
         let user_message_id = Uuid::new_v4();
-        self.running.insert(
-            user_message_id,
-            RunningTurn {
-                user_id: req.user_id,
-                cancel: cancel.clone(),
-            },
-        );
+        self.running.insert(user_message_id, cancel.clone());
         Ok(Turn {
             agent_loop,
             input: TurnInput {
-                user_id: req.user_id,
                 session_id: req.session_id,
                 user_message_id,
                 user_message: Message::User {
@@ -166,14 +140,15 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         })
     }
 
-    /// Aborts the user's running turn started by `user_message_id`; other
-    /// ids are ignored.
-    pub fn abort(&self, user_id: Uuid, user_message_id: Uuid) {
-        if let Some(turn) = self.running.get(&user_message_id)
-            && turn.user_id == user_id
-        {
-            turn.cancel.cancel();
-        }
+    /// Aborts the running turn started by `message_id`, returning `true` when
+    /// a running turn matched; other ids are ignored.
+    #[must_use]
+    pub fn abort(&self, message_id: Uuid) -> bool {
+        let Some(cancel) = self.running.get(&message_id) else {
+            return false;
+        };
+        cancel.cancel();
+        true
     }
 }
 
@@ -221,19 +196,15 @@ impl Drop for Registration {
 }
 
 /// The tools of `session`, rooted in the directory it is bound to or in
-/// its workspace under `workspaces_dir`; `None` without a workspaces
-/// directory. A running command stops when `cancel` fires.
+/// its workspace under `workspaces_dir`. A running command stops when
+/// `cancel` fires.
 async fn session_tools<C: Connector, T: HttpTransport + Debug>(
-    workspaces_dir: Option<&Path>,
+    workspaces_dir: &Path,
     session: &Session,
     cancel: &CancelToken,
     providers: &ProviderService<C>,
     web_http: Option<&T>,
-    user_id: Uuid,
-) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
-    let Some(workspaces_dir) = workspaces_dir else {
-        return Ok(None);
-    };
+) -> Result<ToolRuntime<LocalExecEnv>, AgentError> {
     let env = match &session.directory {
         Some(directory) => LocalExecEnv::open(Path::new(directory), cancel.clone())
             .await
@@ -247,11 +218,10 @@ async fn session_tools<C: Connector, T: HttpTransport + Debug>(
     registry.register(WriteFileTool);
     registry.register(BashTool);
     if let Some(transport) = web_http {
-        web_tools::register_web_tools(&mut registry, providers, transport, user_id).await?;
+        web_tools::register_web_tools(&mut registry, providers, transport).await?;
     }
-    Ok(Some(ToolRuntime::new(registry, env)))
+    Ok(ToolRuntime::new(registry, env))
 }
-
 /// Creates `workspace` when missing and opens an environment over it.
 async fn open_workspace(workspace: &Path, cancel: &CancelToken) -> io::Result<LocalExecEnv> {
     fs::create_dir_all(workspace).await?;

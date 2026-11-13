@@ -4,18 +4,14 @@ use lemma_adapter::{DeepSeekWebBackend, ExaWebBackend, HttpTransport, NativeWebB
 use lemma_model::Connector;
 use lemma_provider::{ProviderError, ProviderService, WebBackend, WebFunction, WebProviderKind};
 use lemma_tool::{LocalExecEnv, ToolRegistry, WebFetchBackend, WebSearchBackend};
-use uuid::Uuid;
 
 pub(crate) async fn register_web_tools<C: Connector, T: HttpTransport + Debug>(
     registry: &mut ToolRegistry<LocalExecEnv>,
     providers: &ProviderService<C>,
     transport: &T,
-    user_id: Uuid,
 ) -> Result<(), ProviderError> {
-    let (search_backends, fetch_backends) = tokio::try_join!(
-        providers.web_backends(user_id, WebFunction::Search),
-        providers.web_backends(user_id, WebFunction::Fetch),
-    )?;
+    let search_backends = providers.web_backends(WebFunction::Search).await?;
+    let fetch_backends = providers.web_backends(WebFunction::Fetch).await?;
     let search = search_backends
         .into_iter()
         .filter_map(|backend| search_backend(backend, transport))

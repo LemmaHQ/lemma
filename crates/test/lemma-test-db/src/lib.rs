@@ -1,66 +1,23 @@
-//! Test databases: in-memory SQLite always, and PostgreSQL when
-//! `LEMMA_TEST_POSTGRES_URL` names a reachable server.
+//! In-memory SQLite databases migrated to the workspace schema for tests.
 
-use std::env;
-use std::error::Error;
+use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbErr};
-use sea_orm_migration::MigratorTrait;
-use uuid::Uuid;
-
-/// Runs `test` against a freshly migrated in-memory SQLite database and,
-/// when `LEMMA_TEST_POSTGRES_URL` is set, against a freshly migrated
-/// PostgreSQL database that is dropped afterwards.
+/// Opens a freshly migrated in-memory SQLite pool with foreign keys enabled.
 ///
 /// # Errors
 ///
-/// The error of the first failing test run, or of creating, migrating, or
-/// dropping a database. The PostgreSQL database is dropped whenever it was
-/// created, including when migrating it or the test fails.
-pub async fn on_each_database<M, F, Fut>(test: F) -> Result<(), Box<dyn Error>>
-where
-    M: MigratorTrait,
-    F: Fn(DatabaseConnection) -> Fut,
-    Fut: Future<Output = Result<(), Box<dyn Error>>>,
-{
-    let mut options = ConnectOptions::new("sqlite::memory:");
-    options.max_connections(1);
-    test(connect::<M>(options).await?).await?;
-
-    let Ok(url) = env::var("LEMMA_TEST_POSTGRES_URL") else {
-        return Ok(());
-    };
-    let admin = Database::connect(ConnectOptions::new(&url)).await?;
-    let name = format!("lemma_test_{}", Uuid::new_v4().simple());
-    admin
-        .execute_unprepared(&format!("CREATE DATABASE {name}"))
+/// [`sqlx::Error`] when opening or migrating the database fails.
+pub async fn database() -> Result<SqlitePool, sqlx::Error> {
+    let options = SqliteConnectOptions::new()
+        .in_memory(true)
+        .foreign_keys(true);
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(options)
         .await?;
-    let mut options = ConnectOptions::new(&url);
-    let database = name.clone();
-    options.map_sqlx_postgres_opts(move |opts| opts.database(&database));
-    let outcome = run::<M, _, _>(options, &test).await;
-    let dropped = admin
-        .execute_unprepared(&format!("DROP DATABASE {name} WITH (FORCE)"))
-        .await;
-    outcome?;
-    dropped?;
-    Ok(())
-}
-
-async fn run<M, F, Fut>(options: ConnectOptions, test: &F) -> Result<(), Box<dyn Error>>
-where
-    M: MigratorTrait,
-    F: Fn(DatabaseConnection) -> Fut,
-    Fut: Future<Output = Result<(), Box<dyn Error>>>,
-{
-    let db = connect::<M>(options).await?;
-    let result = test(db.clone()).await;
-    db.close().await?;
-    result
-}
-
-async fn connect<M: MigratorTrait>(options: ConnectOptions) -> Result<DatabaseConnection, DbErr> {
-    let db = Database::connect(options).await?;
-    M::up(&db, None).await?;
-    Ok(db)
+    sqlx::migrate!("../../rpc/lemma-host/migrations")
+        .run(&pool)
+        .await?;
+    Ok(pool)
 }

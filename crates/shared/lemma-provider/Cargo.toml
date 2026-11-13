@@ -9,15 +9,13 @@ futures.workspace = true
 lemma-core.workspace = true
 lemma-crypto.workspace = true
 lemma-model.workspace = true
-sea-orm.workspace = true
-sea-orm-migration.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sqlx.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-lemma-auth.workspace = true
 lemma-test-db.workspace = true
 tokio.workspace = true
 

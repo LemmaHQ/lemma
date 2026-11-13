@@ -95,19 +95,10 @@ async fn a_missing_file_is_not_found() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn api_routes_answer_before_the_web_build_for_any_origin() -> Result<(), Box<dyn Error>> {
-    let response = send(
-        Request::post(API)
-            .header(header::ORIGIN, "https://app.example.com")
-            .body(Body::empty())?,
-    )
-    .await?;
+async fn api_routes_answer_before_the_web_build() -> Result<(), Box<dyn Error>> {
+    let response = send(Request::post(API).body(Body::empty())?).await?;
 
-    assert_eq!(
-        header_of(&response, header::ACCESS_CONTROL_ALLOW_ORIGIN),
-        Some("*"),
-        "allow-origin"
-    );
+    assert_eq!(response.status(), StatusCode::OK, "status");
     assert_eq!(
         to_bytes(response.into_body(), usize::MAX).await?,
         "api",

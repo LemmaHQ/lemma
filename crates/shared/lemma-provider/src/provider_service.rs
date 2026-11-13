@@ -18,5 +18,4 @@ pub use self::provider_view::{CustomProviderView, PredefinedProviderView, Provid
 pub use self::providers::ProviderService;
 pub use self::update_input::{UpdateCustomInput, UpdatePredefinedInput};
 pub use self::web_provider::{UpdateWebInput, WebBackend, WebFunction, WebProviderView};
-pub use crate::entity::provider::ProviderModel;
-pub use crate::entity::web_provider::WebProviderKind;
+pub use crate::provider_model::ProviderModel;

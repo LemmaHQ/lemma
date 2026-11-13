@@ -2,26 +2,34 @@
 
 use std::env;
 use std::error::Error;
+use std::path::PathBuf;
 
-use lemma_host::Secrets;
-
-/// All variables are required; `main()` loads `.env` first.
+/// Optional variables read after `main()` loads `.env`.
+#[derive(Debug)]
 pub struct Config {
-    /// Connection string: `postgres://…`/`postgresql://…` for PostgreSQL,
-    /// `sqlite:…` (or `sqlite://…`) for an embedded SQLite file.
-    pub database_url: String,
-    /// `LEMMA_JWT_SECRET` and `LEMMA_SECRET_KEY`.
-    pub secrets: Secrets,
+    /// Data directory (`LEMMA_DATA_DIR`, defaults to `./data`).
+    pub data_dir: PathBuf,
+    /// Loopback port (`LEMMA_PORT`, defaults to `1025`).
+    pub port: u16,
 }
 
 impl Config {
+    /// Loads configuration from `LEMMA_DATA_DIR` and `LEMMA_PORT`.
+    ///
+    /// # Errors
+    ///
+    /// Non-Unicode environment values or an unparsable `LEMMA_PORT`.
     pub fn from_env() -> Result<Self, Box<dyn Error>> {
-        Ok(Self {
-            database_url: env::var("DATABASE_URL")?,
-            secrets: Secrets {
-                jwt_secret: env::var("LEMMA_JWT_SECRET")?,
-                secret_key: env::var("LEMMA_SECRET_KEY")?,
-            },
-        })
+        let data_dir = match env::var("LEMMA_DATA_DIR") {
+            Ok(raw) => PathBuf::from(raw),
+            Err(env::VarError::NotPresent) => PathBuf::from("./data"),
+            Err(e) => return Err(e.into()),
+        };
+        let port = match env::var("LEMMA_PORT") {
+            Ok(raw) => raw.parse()?,
+            Err(env::VarError::NotPresent) => 1025,
+            Err(e) => return Err(e.into()),
+        };
+        Ok(Self { data_dir, port })
     }
 }

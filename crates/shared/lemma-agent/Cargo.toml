@@ -18,11 +18,9 @@ uuid.workspace = true
 
 [dev-dependencies]
 futures.workspace = true
-lemma-auth.workspace = true
 lemma-test-db.workspace = true
-sea-orm.workspace = true
-sea-orm-migration.workspace = true
 serde_json.workspace = true
+sqlx.workspace = true
 
 [lints]
 workspace = true

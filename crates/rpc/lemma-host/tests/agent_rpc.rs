@@ -112,18 +112,15 @@ async fn completions(axum::Json(request): axum::Json<Value>) -> Response {
 
 struct Setup {
     engine: Engine,
-    token: String,
     provider_id: String,
     session_id: String,
 }
 
 async fn setup() -> Result<Setup, Box<dyn Error>> {
     let engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
     let base_url = serve(Router::new().route("/v1/chat/completions", post(completions))).await?;
     let provider = engine
-        .call_as(
-            &token,
+        .call(
             CREATE_PROVIDER,
             &json!({
                 "apiFormat": "API_FORMAT_OPENAI",
@@ -133,7 +130,7 @@ async fn setup() -> Result<Setup, Box<dyn Error>> {
             }),
         )
         .await?;
-    let session = engine.call_as(&token, CREATE_SESSION, &json!({})).await?;
+    let session = engine.call(CREATE_SESSION, &json!({})).await?;
     let id = |reply: &Value, field: &str| {
         reply[field]["id"]
             .as_str()
@@ -144,15 +141,13 @@ async fn setup() -> Result<Setup, Box<dyn Error>> {
         provider_id: id(&provider.body, "provider")?,
         session_id: id(&session.body, "session")?,
         engine,
-        token,
     })
 }
 
 impl Setup {
     async fn send(&self, model: &str) -> Result<Frames, Box<dyn Error>> {
         self.engine
-            .stream_as(
-                &self.token,
+            .stream(
                 SEND,
                 &json!({
                     "sessionId": self.session_id,
@@ -167,11 +162,7 @@ impl Setup {
     async fn messages(&self) -> Result<Vec<Value>, Box<dyn Error>> {
         let reply = self
             .engine
-            .call_as(
-                &self.token,
-                MESSAGES,
-                &json!({ "sessionId": self.session_id }),
-            )
+            .call(MESSAGES, &json!({ "sessionId": self.session_id }))
             .await?;
         Ok(reply.body["messages"]
             .as_array()
@@ -292,7 +283,7 @@ async fn a_turn_streams_thinking_and_text_and_persists_the_answer() -> Result<()
         "hi",
         "user message"
     );
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -356,7 +347,7 @@ async fn tool_calls_run_in_the_session_workspace() -> Result<(), Box<dyn Error>>
         calls[0]["arguments"], r#"{"content":"hi","path":"notes.txt"}"#,
         "arguments"
     );
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -379,15 +370,13 @@ async fn a_failing_model_ends_the_turn_with_its_error() -> Result<(), Box<dyn Er
         (&json!("MESSAGE_STATUS_ERROR"), &json!("upstream 500: boom")),
         "settled placeholder"
     );
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
-async fn a_running_turn_resumes_from_an_offset_and_aborts_for_its_owner_only()
--> Result<(), Box<dyn Error>> {
+async fn a_running_turn_resumes_from_an_offset_and_aborts() -> Result<(), Box<dyn Error>> {
     let mut setup = setup().await?;
-    let bob = setup.engine.token("bob").await?;
     let mut frames = setup.send("hang").await?;
     let mut seen = Vec::new();
     while seen.len() < 3 {
@@ -401,34 +390,20 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts_for_its_owner_only()
     let streaming = setup.messages().await?;
     let mut resumed = setup
         .engine
-        .stream_as(
-            &setup.token,
-            RESUME,
-            &json!({ "messageId": message_id, "offset": 1 }),
-        )
-        .await?;
-    let mut by_bob = setup
-        .engine
-        .stream_as(&bob, RESUME, &json!({ "messageId": message_id }))
-        .await?;
-    let (_, bob_end) = setup.engine.finish(&mut by_bob).await?;
-    setup
-        .engine
-        .call_as(&bob, ABORT, &json!({ "messageId": message_id }))
+        .stream(RESUME, &json!({ "messageId": message_id, "offset": 1 }))
         .await?;
     let aborted = setup
         .engine
-        .call_as(&setup.token, ABORT, &json!({ "messageId": message_id }))
+        .call(ABORT, &json!({ "messageId": message_id }))
         .await?;
     let (rest, end) = setup.engine.finish(&mut frames).await?;
     let (replayed, resumed_end) = setup.engine.finish(&mut resumed).await?;
     let after = setup.messages().await?;
     let mut ended = setup
         .engine
-        .stream_as(&setup.token, RESUME, &json!({ "messageId": message_id }))
+        .stream(RESUME, &json!({ "messageId": message_id }))
         .await?;
     let (_, ended_end) = setup.engine.finish(&mut ended).await?;
-
     assert_eq!(
         labels(&seen),
         ["started", "turnStarted", "text:partial"],
@@ -439,7 +414,6 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts_for_its_owner_only()
         "MESSAGE_STATUS_STREAMING",
         "placeholder while streaming"
     );
-    assert_stream_reason(&bob_end, ErrorReason::TurnNotRunning);
     assert_eq!(aborted.status, 200, "{aborted:?}");
     assert_eq!(labels(&rest), ["aborted"], "events after the abort");
     assert_eq!(end, json!({}), "clean end of stream");
@@ -455,7 +429,7 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts_for_its_owner_only()
         "settled placeholder"
     );
     assert_stream_reason(&ended_end, ErrorReason::TurnNotRunning);
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -469,7 +443,7 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
 
     let aborted = setup
         .engine
-        .call_as(&setup.token, ABORT, &json!({ "messageId": message_id }))
+        .call(ABORT, &json!({ "messageId": message_id }))
         .await?;
     setup.release_tool()?;
     let (rest, end) = setup.engine.finish(&mut frames).await?;
@@ -496,7 +470,7 @@ async fn aborting_while_a_tool_runs_keeps_its_result_and_calls_the_model_no_more
         [&json!("w1")],
         "the tool call keeps its result: {messages:?}"
     );
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -509,11 +483,7 @@ async fn deleting_the_session_while_a_tool_runs_ends_the_turn_with_an_error_even
 
     let deleted = setup
         .engine
-        .call_as(
-            &setup.token,
-            DELETE_SESSION,
-            &json!({ "id": setup.session_id }),
-        )
+        .call(DELETE_SESSION, &json!({ "id": setup.session_id }))
         .await?;
     setup.release_tool()?;
     let (rest, end) = setup.engine.finish(&mut frames).await?;
@@ -526,7 +496,7 @@ async fn deleting_the_session_while_a_tool_runs_ends_the_turn_with_an_error_even
         labels(&rest)
     );
     assert_eq!(end, json!({}), "clean end of stream");
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -538,8 +508,7 @@ async fn a_model_without_tool_calling_sees_no_tools_and_no_earlier_tool_calls()
     setup.engine.finish(&mut with_tools).await?;
     let updated = setup
         .engine
-        .call_as(
-            &setup.token,
+        .call(
             UPDATE_PROVIDER,
             &json!({
                 "id": setup.provider_id,
@@ -557,41 +526,9 @@ async fn a_model_without_tool_calling_sees_no_tools_and_no_earlier_tool_calls()
         "the request carries neither tools nor tool history: {:?}",
         labels(&events)
     );
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
-
-#[tokio::test]
-async fn a_turn_in_a_session_the_user_lacks_fails_before_it_starts() -> Result<(), Box<dyn Error>> {
-    let mut setup = setup().await?;
-    let bob = setup.engine.token("bob").await?;
-    let bobs = setup
-        .engine
-        .call_as(&bob, CREATE_SESSION, &json!({}))
-        .await?;
-    let bobs_id = bobs.body["session"]["id"].clone();
-
-    let mut frames = setup
-        .engine
-        .stream_as(
-            &setup.token,
-            SEND,
-            &json!({
-                "sessionId": bobs_id,
-                "providerId": setup.provider_id,
-                "model": "answer",
-                "content": "hi",
-            }),
-        )
-        .await?;
-    let (events, end) = setup.engine.finish(&mut frames).await?;
-
-    assert!(events.is_empty(), "{events:?}");
-    assert_stream_reason(&end, ErrorReason::SessionNotFound);
-    setup.engine.close().await?;
-    Ok(())
-}
-
 #[tokio::test]
 async fn a_turn_fails_before_it_starts_once_the_bound_directory_is_gone()
 -> Result<(), Box<dyn Error>> {
@@ -600,14 +537,13 @@ async fn a_turn_fails_before_it_starts_once_the_bound_directory_is_gone()
     fs::create_dir_all(&dir.0)?;
     let session = setup
         .engine
-        .call_as(&setup.token, CREATE_SESSION, &json!({ "directory": dir.0 }))
+        .call(CREATE_SESSION, &json!({ "directory": dir.0 }))
         .await?;
     drop(dir);
 
     let mut frames = setup
         .engine
-        .stream_as(
-            &setup.token,
+        .stream(
             SEND,
             &json!({
                 "sessionId": session.body["session"]["id"],
@@ -621,7 +557,7 @@ async fn a_turn_fails_before_it_starts_once_the_bound_directory_is_gone()
 
     assert!(events.is_empty(), "{events:?}");
     assert_stream_reason(&end, ErrorReason::DirectoryNotFound);
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -640,7 +576,7 @@ async fn a_database_failure_during_a_turn_ends_it_with_an_error_event() -> Resul
         }
     }
 
-    setup.engine.close().await?;
+    setup.engine.close().await;
     fs::write(
         setup
             .engine
@@ -673,80 +609,48 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let (session, provider) = (setup.session_id.clone(), setup.provider_id.clone());
     let cases = [
         (
-            "",
-            SEND,
-            send(&session, &provider, "m", "hi"),
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            &setup.token,
             SEND,
             send("x", &provider, "m", "hi"),
             ErrorReason::IdInvalid,
         ),
+        (SEND, send(&session, "x", "m", "hi"), ErrorReason::IdInvalid),
         (
-            &setup.token,
-            SEND,
-            send(&session, "x", "m", "hi"),
-            ErrorReason::IdInvalid,
-        ),
-        (
-            &setup.token,
             SEND,
             send(&session, &provider, "m", " "),
             ErrorReason::ContentRequired,
         ),
         (
-            &setup.token,
             SEND,
             send(&session, &provider, " ", "hi"),
             ErrorReason::ModelRequired,
         ),
         (
-            &setup.token,
             SEND,
             send(unknown, &provider, "m", "hi"),
             ErrorReason::SessionNotFound,
         ),
         (
-            &setup.token,
             SEND,
             send(&session, unknown, "m", "hi"),
             ErrorReason::ProviderNotFound,
         ),
+        (RESUME, json!({ "messageId": "x" }), ErrorReason::IdInvalid),
         (
-            "",
-            RESUME,
-            json!({ "messageId": unknown }),
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            &setup.token,
-            RESUME,
-            json!({ "messageId": "x" }),
-            ErrorReason::IdInvalid,
-        ),
-        (
-            &setup.token,
             RESUME,
             json!({ "messageId": unknown }),
             ErrorReason::TurnNotRunning,
         ),
     ];
 
-    for (token, path, body, reason) in cases {
-        let mut frames = setup.engine.stream_as(token, path, &body).await?;
+    for (path, body, reason) in cases {
+        let mut frames = setup.engine.stream(path, &body).await?;
         let (events, end) = setup.engine.finish(&mut frames).await?;
         assert!(events.is_empty(), "{path} {body}: {events:?}");
         assert_stream_reason(&end, reason);
     }
     let mut negative = setup
         .engine
-        .stream_as(
-            &setup.token,
-            RESUME,
-            &json!({ "messageId": unknown, "offset": -1 }),
-        )
+        .stream(RESUME, &json!({ "messageId": unknown, "offset": -1 }))
         .await?;
     let (_, negative_end) = setup.engine.finish(&mut negative).await?;
     assert_eq!(
@@ -756,18 +660,16 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     assert_reason(
         &setup
             .engine
-            .call_as(&setup.token, ABORT, &json!({ "messageId": "x" }))
+            .call(ABORT, &json!({ "messageId": "x" }))
             .await?,
         ErrorReason::IdInvalid,
     );
-    assert_reason(
-        &setup
-            .engine
-            .call(ABORT, &json!({ "messageId": unknown }))
-            .await?,
-        ErrorReason::TokenInvalid,
-    );
-    setup.engine.close().await?;
+    let unknown_abort = setup
+        .engine
+        .call(ABORT, &json!({ "messageId": unknown }))
+        .await?;
+    assert_eq!(unknown_abort.status, 200, "{unknown_abort:?}");
+    setup.engine.close().await;
     Ok(())
 }
 
@@ -798,6 +700,6 @@ async fn turns_that_cannot_be_prepared_fail_as_internal_errors() -> Result<(), B
             "{case}: {end}"
         );
     }
-    setup.engine.close().await?;
+    setup.engine.close().await;
     Ok(())
 }

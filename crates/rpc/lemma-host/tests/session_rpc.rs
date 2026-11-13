@@ -1,6 +1,5 @@
-//! `SessionService` over Connect on a local engine: session
-//! lifecycle, ownership, and the error reasons clients receive.
-
+//! `SessionService` over Connect on a local engine: session lifecycle and
+//! the error reasons clients receive.
 mod common;
 
 use std::error::Error;
@@ -26,19 +25,22 @@ fn session_id(reply: &Reply) -> Result<String, Box<dyn Error>> {
 #[tokio::test]
 async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
 
-    let created = engine.call_as(&token, CREATE, &json!({})).await?;
+    let created = engine.call(CREATE, &json!({})).await?;
     let id = session_id(&created)?;
     let renamed = engine
-        .call_as(&token, RENAME, &json!({ "id": id, "title": " Plans " }))
+        .call(RENAME, &json!({ "id": id, "title": " Plans " }))
         .await?;
-    let listed = engine.call_as(&token, LIST, &json!({})).await?;
-    let messages = engine
-        .call_as(&token, MESSAGES, &json!({ "sessionId": id }))
+    let listed = engine.call(LIST, &json!({})).await?;
+    let messages = engine.call(MESSAGES, &json!({ "sessionId": id })).await?;
+    let paged = engine
+        .call(
+            MESSAGES,
+            &json!({ "sessionId": id, "beforeId": "00000000-0000-4000-8000-000000000000" }),
+        )
         .await?;
-    let deleted = engine.call_as(&token, DELETE, &json!({ "id": id })).await?;
-    let after = engine.call_as(&token, LIST, &json!({})).await?;
+    let deleted = engine.call(DELETE, &json!({ "id": id })).await?;
+    let after = engine.call(LIST, &json!({})).await?;
 
     assert_eq!(created.status, 200, "{created:?}");
     assert!(
@@ -59,105 +61,82 @@ async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn
         "listed sessions"
     );
     assert_eq!(messages.body, json!({}), "an empty session has no messages");
+    assert_eq!(
+        paged.body,
+        json!({}),
+        "a valid beforeId returns no messages"
+    );
     assert_eq!(deleted.status, 200, "{deleted:?}");
     assert_eq!(after.body, json!({}), "no sessions left");
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let ada = engine.token("ada").await?;
-    let bob = engine.token("bob").await?;
-    let id = session_id(&engine.call_as(&ada, CREATE, &json!({})).await?)?;
-    let calls: [(&str, &str, Value, ErrorReason); 13] = [
-        ("", LIST, json!({}), ErrorReason::TokenInvalid),
-        ("", CREATE, json!({}), ErrorReason::TokenInvalid),
+    let id = session_id(&engine.call(CREATE, &json!({})).await?)?;
+    let unknown = "00000000-0000-4000-8000-000000000000";
+    let calls: [(&str, Value, ErrorReason); 8] = [
         (
-            &ada,
             RENAME,
             json!({ "id": id, "title": " " }),
             ErrorReason::TitleRequired,
         ),
         (
-            &ada,
             RENAME,
             json!({ "id": "x", "title": "t" }),
             ErrorReason::IdInvalid,
         ),
         (
-            &bob,
             RENAME,
-            json!({ "id": id, "title": "t" }),
+            json!({ "id": unknown, "title": "t" }),
             ErrorReason::SessionNotFound,
         ),
         (
-            &ada,
             MESSAGES,
             json!({ "sessionId": "x" }),
             ErrorReason::IdInvalid,
         ),
         (
-            &ada,
             MESSAGES,
             json!({ "sessionId": id, "beforeId": "x" }),
             ErrorReason::IdInvalid,
         ),
         (
-            &bob,
             MESSAGES,
-            json!({ "sessionId": id }),
+            json!({ "sessionId": unknown }),
             ErrorReason::SessionNotFound,
         ),
-        (&ada, DELETE, json!({ "id": "x" }), ErrorReason::IdInvalid),
+        (DELETE, json!({ "id": "x" }), ErrorReason::IdInvalid),
         (
-            &bob,
             DELETE,
-            json!({ "id": id }),
+            json!({ "id": unknown }),
             ErrorReason::SessionNotFound,
-        ),
-        ("", DELETE, json!({ "id": id }), ErrorReason::TokenInvalid),
-        (
-            "",
-            RENAME,
-            json!({ "id": id, "title": "t" }),
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            "",
-            MESSAGES,
-            json!({ "sessionId": id }),
-            ErrorReason::TokenInvalid,
         ),
     ];
 
-    for (token, path, body, reason) in calls {
-        let reply = if token.is_empty() {
-            engine.call(path, &body).await?
-        } else {
-            engine.call_as(token, path, &body).await?
-        };
+    for (path, body, reason) in calls {
+        let reply = engine.call(path, &body).await?;
         assert_reason(&reply, reason);
     }
-    let still_there = engine.call_as(&ada, LIST, &json!({})).await?;
+    let still_there = engine.call(LIST, &json!({})).await?;
     assert_eq!(
         still_there.body["sessions"][0]["id"],
         json!(id),
         "rejected calls change nothing"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
-    engine.close().await?;
+    engine.close().await;
 
-    let list = engine.call_as(&token, LIST, &json!({})).await?;
-    let create = engine.call_as(&token, CREATE, &json!({})).await?;
+    let list = engine.call(LIST, &json!({})).await?;
+    let create = engine.call(CREATE, &json!({})).await?;
 
     assert_internal(&list, "db: ");
     assert_internal(&create, "db: ");
@@ -167,18 +146,15 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
 #[tokio::test]
 async fn the_local_engine_binds_a_session_to_an_existing_directory() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
     let dir = DataDir::new();
     fs::create_dir_all(&dir.0)?;
     let canonical = dunce::canonicalize(&dir.0)?;
     let missing = DataDir::new();
 
-    let created = engine
-        .call_as(&token, CREATE, &json!({ "directory": dir.0 }))
-        .await?;
-    let listed = engine.call_as(&token, LIST, &json!({})).await?;
+    let created = engine.call(CREATE, &json!({ "directory": dir.0 })).await?;
+    let listed = engine.call(LIST, &json!({})).await?;
     let rejected = engine
-        .call_as(&token, CREATE, &json!({ "directory": missing.0 }))
+        .call(CREATE, &json!({ "directory": missing.0 }))
         .await?;
 
     let expected = Value::from(canonical.to_string_lossy().into_owned());
@@ -191,29 +167,6 @@ async fn the_local_engine_binds_a_session_to_an_existing_directory() -> Result<(
         "{listed:?}"
     );
     assert_reason(&rejected, ErrorReason::DirectoryNotFound);
-    engine.close().await?;
-    Ok(())
-}
-
-#[tokio::test]
-async fn the_server_creates_sessions_without_a_directory_only() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open_server().await?;
-    let token = engine.token("ada").await?;
-    let dir = DataDir::new();
-    fs::create_dir_all(&dir.0)?;
-
-    let rejected = engine
-        .call_as(&token, CREATE, &json!({ "directory": dir.0 }))
-        .await?;
-    let created = engine.call_as(&token, CREATE, &json!({})).await?;
-
-    assert_reason(&rejected, ErrorReason::DirectoryUnsupported);
-    assert_eq!(created.status, 200, "{created:?}");
-    assert_eq!(
-        created.body["session"].get("directory"),
-        None,
-        "no directory"
-    );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }

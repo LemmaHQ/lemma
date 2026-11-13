@@ -1,46 +1,23 @@
-//! Fixtures the turn tests share: a migrated database holding one user's
+//! Fixtures the turn tests share: a migrated SQLite database holding one
 //! session, and the turn input that continues it.
 
 use std::error::Error;
 
 use lemma_agent_loop::TurnInput;
-use lemma_auth::AuthService;
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::ApiFormat;
 use lemma_session::{LastModel, SessionService};
-use sea_orm::DatabaseConnection;
-use sea_orm_migration::{MigrationTrait, MigratorTrait};
+use sqlx::SqlitePool;
 use uuid::Uuid;
 
-pub(crate) struct Migrator;
-
-impl MigratorTrait for Migrator {
-    fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        let mut all: Vec<_> = [lemma_auth::migrations(), lemma_session::migrations()]
-            .into_iter()
-            .flatten()
-            .collect();
-        all.sort_by(|a, b| a.name().cmp(b.name()));
-        all
-    }
-}
-
-pub(crate) async fn new_session(
-    db: &DatabaseConnection,
-) -> Result<(SessionService, Uuid, Uuid), Box<dyn Error>> {
-    let user_id = AuthService::new(db.clone(), "test-jwt-secret".to_owned())
-        .sign_up("ada", "ada@example.com", "correct-horse")
-        .await?
-        .user
-        .id;
+pub(crate) async fn new_session(db: &SqlitePool) -> Result<(SessionService, Uuid), Box<dyn Error>> {
     let sessions = SessionService::new(db.clone());
-    let session_id = sessions.create(user_id, None).await?.id;
-    Ok((sessions, user_id, session_id))
+    let session_id = sessions.create(None).await?.id;
+    Ok((sessions, session_id))
 }
 
-pub(crate) fn input(user_id: Uuid, session_id: Uuid) -> TurnInput {
+pub(crate) fn input(session_id: Uuid) -> TurnInput {
     TurnInput {
-        user_id,
         session_id,
         user_message_id: Uuid::new_v4(),
         user_message: Message::User {

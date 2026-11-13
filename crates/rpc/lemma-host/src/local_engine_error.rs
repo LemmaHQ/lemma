@@ -1,5 +1,6 @@
-use sea_orm::DbErr;
 use serde_json::Error as JsonError;
+use sqlx::Error as SqlxError;
+use sqlx::migrate::MigrateError;
 use thiserror::Error;
 
 /// Failures of [`LocalEngine::open`](crate::LocalEngine::open), by startup
@@ -14,8 +15,8 @@ pub enum LocalEngineError {
     SecretsJson(JsonError),
     /// `lemma.db` could not be opened or created.
     #[error("open lemma.db: {0}")]
-    Database(DbErr),
+    Database(SqlxError),
     /// A migration of `lemma.db` failed.
     #[error("migrate lemma.db: {0}")]
-    Migration(DbErr),
+    Migration(MigrateError),
 }

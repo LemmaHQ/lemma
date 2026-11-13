@@ -1,4 +1,3 @@
-use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
@@ -25,26 +24,17 @@ use crate::provider_mapping::{
 
 /// Connect handler implementing the `ProviderService` RPCs.
 ///
-/// `jwt_secret` authenticates requests; `domain` seals API keys at rest
-/// and fetches model lists.
+/// `domain` seals API keys at rest and fetches model lists.
+#[derive(Debug)]
 pub struct ProviderRpc<C> {
     domain: Arc<ProviderService<C>>,
-    jwt_secret: String,
-}
-
-impl<C: Debug> Debug for ProviderRpc<C> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ProviderRpc")
-            .field("domain", &self.domain)
-            .finish_non_exhaustive()
-    }
 }
 
 impl<C: Connector> ProviderRpc<C> {
     /// Creates the handler over the provider domain service, which the
     /// agent shares.
-    pub fn new(domain: Arc<ProviderService<C>>, jwt_secret: String) -> Self {
-        Self { domain, jwt_secret }
+    pub fn new(domain: Arc<ProviderService<C>>) -> Self {
+        Self { domain }
     }
 }
 
@@ -52,11 +42,10 @@ impl<C: Connector> ProviderRpc<C> {
 impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
     async fn list_providers(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         _request: ServiceRequest<'_, ListProvidersRequest>,
     ) -> ServiceResult<ListProvidersResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
-        let providers = self.domain.list(user_id).await.map_err(map_domain)?;
+        let providers = self.domain.list().await.map_err(map_domain)?;
         Response::ok(ListProvidersResponse {
             providers: providers.into_iter().map(to_proto).collect(),
             ..Default::default()
@@ -65,10 +54,9 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn create_custom_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, CreateCustomProviderRequest>,
     ) -> ServiceResult<CreateCustomProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let input = CreateCustomInput {
             api_format: adhoc_format(request.api_format.as_known())?,
             identifier: request.identifier.to_string(),
@@ -79,11 +67,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
             models_path: request.models_path.to_string(),
             models: models_from_proto(request.models.iter()),
         };
-        let provider = self
-            .domain
-            .create_custom(user_id, input)
-            .await
-            .map_err(map_domain)?;
+        let provider = self.domain.create_custom(input).await.map_err(map_domain)?;
         Response::ok(CreateCustomProviderResponse {
             provider: to_proto(ProviderView::Custom(provider)).into(),
             ..Default::default()
@@ -92,10 +76,9 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn update_custom_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, UpdateCustomProviderRequest>,
     ) -> ServiceResult<UpdateCustomProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let input = UpdateCustomInput {
             name: request.name.map(ToString::to_string),
             base_url: request.base_url.map(ToString::to_string),
@@ -110,7 +93,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         };
         let provider = self
             .domain
-            .update_custom(user_id, parse_id(request.id)?, input)
+            .update_custom(parse_id(request.id)?, input)
             .await
             .map_err(map_domain)?;
         Response::ok(UpdateCustomProviderResponse {
@@ -121,10 +104,9 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn update_predefined_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, UpdatePredefinedProviderRequest>,
     ) -> ServiceResult<UpdatePredefinedProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let default_api_format = request
             .default_api_format
             .map(|format| adhoc_format(format.as_known()))
@@ -136,7 +118,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         };
         let provider = self
             .domain
-            .update_predefined(user_id, parse_id(request.id)?, input)
+            .update_predefined(parse_id(request.id)?, input)
             .await
             .map_err(map_domain)?;
         Response::ok(UpdatePredefinedProviderResponse {
@@ -147,12 +129,11 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn delete_custom_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, DeleteCustomProviderRequest>,
     ) -> ServiceResult<DeleteCustomProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         self.domain
-            .delete_custom(user_id, parse_id(request.id)?)
+            .delete_custom(parse_id(request.id)?)
             .await
             .map_err(map_domain)?;
         Response::ok(DeleteCustomProviderResponse::default())
@@ -160,10 +141,9 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn fetch_models(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, FetchModelsRequest>,
     ) -> ServiceResult<FetchModelsResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let models = if request.id.is_empty() {
             let format = adhoc_format(request.api_format.as_known())?;
             self.domain
@@ -175,9 +155,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
                 )
                 .await
         } else {
-            self.domain
-                .fetch_models_for(user_id, parse_id(request.id)?)
-                .await
+            self.domain.fetch_models_for(parse_id(request.id)?).await
         }
         .map_err(map_domain)?;
         Response::ok(FetchModelsResponse {
@@ -188,10 +166,9 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn check_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, CheckProviderRequest>,
     ) -> ServiceResult<CheckProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         if request.model.trim().is_empty() {
             return Err(lemma_proto::app_error(ErrorReason::ModelRequired));
         }
@@ -207,9 +184,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
             };
             self.domain.check_adhoc(endpoint, model).await
         } else {
-            self.domain
-                .check_for(user_id, parse_id(request.id)?, model)
-                .await
+            self.domain.check_for(parse_id(request.id)?, model).await
         };
         let error = match checked {
             Ok(()) => String::new(),
@@ -224,11 +199,10 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn list_web_providers(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         _request: ServiceRequest<'_, ListWebProvidersRequest>,
     ) -> ServiceResult<ListWebProvidersResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
-        let providers = self.domain.list_web(user_id).await.map_err(map_domain)?;
+        let providers = self.domain.list_web().await.map_err(map_domain)?;
         Response::ok(ListWebProvidersResponse {
             providers: providers.into_iter().map(web_to_proto).collect(),
             ..Default::default()
@@ -237,17 +211,16 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn update_web_provider(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, UpdateWebProviderRequest>,
     ) -> ServiceResult<UpdateWebProviderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let input = UpdateWebInput {
             api_key: request.api_key.map(ToString::to_string),
             enabled: request.enabled,
         };
         let provider = self
             .domain
-            .update_web(user_id, parse_id(request.id)?, input)
+            .update_web(parse_id(request.id)?, input)
             .await
             .map_err(map_domain)?;
         Response::ok(UpdateWebProviderResponse {
@@ -258,19 +231,18 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
 
     async fn set_web_provider_order(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, SetWebProviderOrderRequest>,
     ) -> ServiceResult<SetWebProviderOrderResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let function = web_function_from_proto(request.function.as_known())?;
-        let ids = request
+        let ids: Vec<_> = request
             .ids
             .iter()
             .map(|id| parse_id(id))
             .collect::<Result<_, _>>()?;
         let providers = self
             .domain
-            .set_web_order(user_id, function, ids)
+            .set_web_order(function, &ids)
             .await
             .map_err(map_domain)?;
         Response::ok(SetWebProviderOrderResponse {

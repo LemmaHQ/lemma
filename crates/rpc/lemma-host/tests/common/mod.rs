@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use axum::Router;
-use lemma_host::{AppState, InProcessTransport, LocalEngine, Secrets};
+use lemma_host::{InProcessTransport, LocalEngine};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -39,18 +39,7 @@ impl Drop for DataDir {
 #[derive(Debug)]
 pub(crate) struct Reply {
     pub(crate) status: u16,
-    pub(crate) headers: Vec<(String, String)>,
     pub(crate) body: Value,
-}
-
-impl Reply {
-    pub(crate) fn header_values(&self, name: &str) -> Vec<&str> {
-        self.headers
-            .iter()
-            .filter(|(header, _)| header == name)
-            .map(|(_, value)| value.as_str())
-            .collect()
-    }
 }
 
 pub(crate) struct Engine {
@@ -61,17 +50,7 @@ pub(crate) struct Engine {
 
 impl Engine {
     pub(crate) async fn open() -> Result<Self, Box<dyn Error>> {
-        Self::open_in(DataDir::new()).await
-    }
-
-    pub(crate) async fn open_with_secrets_of(other: &Self) -> Result<Self, Box<dyn Error>> {
         let dir = DataDir::new();
-        fs::create_dir_all(&dir.0)?;
-        fs::copy(other.dir.0.join("secrets.json"), dir.0.join("secrets.json"))?;
-        Self::open_in(dir).await
-    }
-
-    async fn open_in(dir: DataDir) -> Result<Self, Box<dyn Error>> {
         let local = LocalEngine::open(&dir.0).await?;
         let transport = InProcessTransport::new(local.router());
         Ok(Self {
@@ -81,48 +60,14 @@ impl Engine {
         })
     }
 
-    /// Server mode: the services over SQLite in a temporary directory,
-    /// with no workspaces directory.
-    pub(crate) async fn open_server() -> Result<Self, Box<dyn Error>> {
-        let dir = DataDir::new();
-        fs::create_dir_all(&dir.0)?;
-        let db = lemma_host::connect(&format!(
-            "sqlite:{}",
-            dir.0.join("lemma.db").to_string_lossy()
-        ))
-        .await?;
-        lemma_host::migrate(&db).await?;
-        let secrets = Secrets {
-            jwt_secret: "test-jwt-secret".to_owned(),
-            secret_key: "test-secret-key".to_owned(),
-        };
-        let transport =
-            InProcessTransport::new(lemma_host::router(AppState::new(db, secrets, None)));
-        Ok(Self {
-            local: None,
-            transport,
-            dir,
-        })
-    }
-
-    pub(crate) async fn close(&mut self) -> Result<(), Box<dyn Error>> {
+    pub(crate) async fn close(&mut self) {
         if let Some(local) = self.local.take() {
-            local.close().await?;
+            local.close().await;
         }
-        Ok(())
-    }
-
-    pub(crate) fn jwt_secret(&self) -> Result<String, Box<dyn Error>> {
-        let secrets: Value =
-            serde_json::from_str(&fs::read_to_string(self.dir.0.join("secrets.json"))?)?;
-        secrets["jwt_secret"]
-            .as_str()
-            .map(str::to_owned)
-            .ok_or_else(|| "no jwt_secret in secrets.json".into())
     }
 
     pub(crate) async fn reopen_with_secret_key(&mut self, key: &str) -> Result<(), Box<dyn Error>> {
-        self.close().await?;
+        self.close().await;
         let path = self.dir.0.join("secrets.json");
         let mut secrets: Value = serde_json::from_str(&fs::read_to_string(&path)?)?;
         secrets["secret_key"] = json!(key);
@@ -137,23 +82,15 @@ impl Engine {
         &self.dir.0
     }
 
-    pub(crate) async fn stream_as(
-        &self,
-        token: &str,
-        path: &str,
-        body: &Value,
-    ) -> Result<Frames, Box<dyn Error>> {
+    pub(crate) async fn stream(&self, path: &str, body: &Value) -> Result<Frames, Box<dyn Error>> {
         let json = serde_json::to_vec(body)?;
         let mut envelope = vec![0];
         envelope.extend_from_slice(&u32::try_from(json.len())?.to_be_bytes());
         envelope.extend_from_slice(&json);
-        let headers = [
-            (
-                "content-type".to_owned(),
-                "application/connect+json".to_owned(),
-            ),
-            ("authorization".to_owned(), format!("Bearer {token}")),
-        ];
+        let headers = [(
+            "content-type".to_owned(),
+            "application/connect+json".to_owned(),
+        )];
         let head = self
             .transport
             .request("POST", path, &headers, envelope)
@@ -206,21 +143,11 @@ impl Engine {
         Err(format!("stream ended without an end frame after {messages:?}").into())
     }
 
-    pub(crate) async fn call_with(
-        &self,
-        path: &str,
-        headers: &[(&str, &str)],
-        body: &Value,
-    ) -> Result<Reply, Box<dyn Error>> {
-        let mut all = vec![("content-type".to_owned(), "application/json".to_owned())];
-        all.extend(
-            headers
-                .iter()
-                .map(|(name, value)| ((*name).to_owned(), (*value).to_owned())),
-        );
+    pub(crate) async fn call(&self, path: &str, body: &Value) -> Result<Reply, Box<dyn Error>> {
+        let headers = [("content-type".to_owned(), "application/json".to_owned())];
         let head = self
             .transport
-            .request("POST", path, &all, serde_json::to_vec(body)?)
+            .request("POST", path, &headers, serde_json::to_vec(body)?)
             .await?;
         let mut bytes = Vec::new();
         while let Some(chunk) = self.transport.read(head.body).await? {
@@ -233,49 +160,8 @@ impl Engine {
         };
         Ok(Reply {
             status: head.status,
-            headers: head.headers,
             body,
         })
-    }
-
-    pub(crate) async fn call(&self, path: &str, body: &Value) -> Result<Reply, Box<dyn Error>> {
-        self.call_with(path, &[], body).await
-    }
-
-    pub(crate) async fn call_as(
-        &self,
-        token: &str,
-        path: &str,
-        body: &Value,
-    ) -> Result<Reply, Box<dyn Error>> {
-        let bearer = format!("Bearer {token}");
-        self.call_with(path, &[("authorization", &bearer)], body)
-            .await
-    }
-
-    pub(crate) async fn sign_up(&self, username: &str) -> Result<Value, Box<dyn Error>> {
-        let reply = self
-            .call(
-                "/lemma.v1.AuthService/SignUp",
-                &json!({
-                    "username": username,
-                    "email": format!("{username}@example.com"),
-                    "password": "correct-horse",
-                }),
-            )
-            .await?;
-        if reply.status != 200 {
-            return Err(format!("sign-up of {username}: {reply:?}").into());
-        }
-        Ok(reply.body)
-    }
-
-    pub(crate) async fn token(&self, username: &str) -> Result<String, Box<dyn Error>> {
-        let body = self.sign_up(username).await?;
-        body["tokens"]["accessToken"]
-            .as_str()
-            .map(str::to_owned)
-            .ok_or_else(|| format!("no access token in {body}").into())
     }
 }
 

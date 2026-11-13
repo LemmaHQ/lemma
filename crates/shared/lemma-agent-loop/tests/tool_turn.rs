@@ -12,11 +12,10 @@ use lemma_agent_loop::{AgentLoop, ToolRuntime};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::MessageStatus;
-use lemma_test_db::on_each_database;
 use lemma_tool::{CancelToken, LocalExecEnv, ToolRegistry};
 use serde_json::json;
 
-use crate::common::{Migrator, input, new_session};
+use crate::common::{input, new_session};
 
 /// Calls a tool on its first step and answers in text on the next, noting
 /// how many messages that second request carried.
@@ -69,99 +68,96 @@ impl Adapter for ToolThenText {
 #[tokio::test]
 async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
 -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let second_context = Arc::new(AtomicUsize::new(0));
-        let adapter = ToolThenText {
-            steps: AtomicUsize::new(0),
-            second_context: Arc::clone(&second_context),
-        };
-        let env = LocalExecEnv::open(&env::temp_dir(), CancelToken::new()).await?;
-        let runtime = ToolRuntime::new(ToolRegistry::new(), env);
-        let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
+    let db = lemma_test_db::database().await?;
+    let (sessions, session_id) = new_session(&db).await?;
+    let second_context = Arc::new(AtomicUsize::new(0));
+    let adapter = ToolThenText {
+        steps: AtomicUsize::new(0),
+        second_context: Arc::clone(&second_context),
+    };
+    let env = LocalExecEnv::open(&env::temp_dir(), CancelToken::new()).await?;
+    let runtime = ToolRuntime::new(ToolRegistry::new(), env);
+    let agent_loop = AgentLoop::new(sessions.clone(), adapter, Some(runtime));
 
-        agent_loop
-            .run_turn(input(user_id, session_id), &|_| {}, &CancelToken::new())
-            .await?;
+    agent_loop
+        .run_turn(input(session_id), &|_| {}, &CancelToken::new())
+        .await?;
 
-        let messages = sessions.all_messages(session_id).await?;
-        let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
-        assert_eq!(
-            roles,
-            ["user", "assistant", "tool", "assistant"],
-            "roles in order"
-        );
-        let parents: Vec<_> = messages.iter().map(|m| m.parent_id).collect();
-        assert_eq!(
-            parents,
-            [
-                None,
-                Some(messages[0].id),
-                Some(messages[1].id),
-                Some(messages[2].id)
-            ],
-            "each message continues the previous one"
-        );
-        assert!(
-            messages.iter().all(|m| m.status == MessageStatus::Done),
-            "statuses: {messages:?}"
-        );
-        let Some(call) = messages[1].body.0.tool_calls().next() else {
-            return Err("assistant message has no tool call".into());
+    let messages = sessions.all_messages(session_id).await?;
+    let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
+    assert_eq!(
+        roles,
+        ["user", "assistant", "tool", "assistant"],
+        "roles in order"
+    );
+    let parents: Vec<_> = messages.iter().map(|m| m.parent_id).collect();
+    assert_eq!(
+        parents,
+        [
+            None,
+            Some(messages[0].id),
+            Some(messages[1].id),
+            Some(messages[2].id)
+        ],
+        "each message continues the previous one"
+    );
+    assert!(
+        messages.iter().all(|m| m.status == MessageStatus::Done),
+        "statuses: {messages:?}"
+    );
+    let Some(call) = messages[1].body.0.tool_calls().next() else {
+        return Err("assistant message has no tool call".into());
+    };
+    let (Some(tool_started), Some(tool_finished)) = (call.started_at, call.finished_at) else {
+        return Err("tool call has no persisted timing".into());
+    };
+    assert!(
+        tool_started <= tool_finished,
+        "tool finish follows its start"
+    );
+    for index in [1, 3] {
+        let thinking = messages[index]
+            .body
+            .0
+            .content()
+            .iter()
+            .find_map(|block| match block {
+                ContentBlock::Thinking(thinking) => Some(thinking),
+                _ => None,
+            });
+        let Some(thinking) = thinking else {
+            return Err(format!("message {index} has no thinking block").into());
         };
-        let (Some(tool_started), Some(tool_finished)) = (call.started_at, call.finished_at) else {
-            return Err("tool call has no persisted timing".into());
+        let (Some(started), Some(finished)) = (thinking.started_at, thinking.finished_at) else {
+            return Err(format!("message {index} has no thinking timing").into());
         };
-        assert!(
-            tool_started <= tool_finished,
-            "tool finish follows its start"
-        );
-        for index in [1, 3] {
-            let thinking = messages[index]
-                .body
-                .0
-                .content()
-                .iter()
-                .find_map(|block| match block {
-                    ContentBlock::Thinking(thinking) => Some(thinking),
-                    _ => None,
-                });
-            let Some(thinking) = thinking else {
-                return Err(format!("message {index} has no thinking block").into());
-            };
-            let (Some(started), Some(finished)) = (thinking.started_at, thinking.finished_at)
-            else {
-                return Err(format!("message {index} has no thinking timing").into());
-            };
-            assert!(started <= finished, "thinking finish follows its start");
-        }
-        let Message::ToolResult {
-            tool_call_id,
-            is_error,
-            ..
-        } = &messages[2].body.0
-        else {
-            return Err(format!("not a tool result: {:?}", messages[2].body).into());
-        };
-        assert_eq!(tool_call_id, "call-1", "the result answers the call");
-        assert!(is_error, "an unknown tool reports an error");
-        assert_eq!(
-            messages[3].body.0.visible_text(),
-            "all done",
-            "final answer"
-        );
-        assert_eq!(
-            second_context.load(Ordering::SeqCst),
-            3,
-            "the second step sees the user message, the call, and its result"
-        );
-        let session = sessions.find(user_id, session_id).await?;
-        assert_eq!(
-            session.and_then(|c| c.leaf_id),
-            Some(messages[3].id),
-            "leaf"
-        );
-        Ok(())
-    })
-    .await
+        assert!(started <= finished, "thinking finish follows its start");
+    }
+    let Message::ToolResult {
+        tool_call_id,
+        is_error,
+        ..
+    } = &messages[2].body.0
+    else {
+        return Err(format!("not a tool result: {:?}", messages[2].body).into());
+    };
+    assert_eq!(tool_call_id, "call-1", "the result answers the call");
+    assert!(is_error, "an unknown tool reports an error");
+    assert_eq!(
+        messages[3].body.0.visible_text(),
+        "all done",
+        "final answer"
+    );
+    assert_eq!(
+        second_context.load(Ordering::SeqCst),
+        3,
+        "the second step sees the user message, the call, and its result"
+    );
+    let session = sessions.find(session_id).await?;
+    assert_eq!(
+        session.and_then(|c| c.leaf_id),
+        Some(messages[3].id),
+        "leaf"
+    );
+    Ok(())
 }

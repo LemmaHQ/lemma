@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::entity::web_provider::WebProviderKind;
+use crate::web_provider_kind::WebProviderKind;
 
 /// The web operation whose backend fallback order is being selected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,29 +48,4 @@ pub struct WebBackend {
     pub base_url: String,
     /// Plaintext API key; empty for native fetch.
     pub api_key: String,
-}
-
-impl WebProviderKind {
-    pub(super) fn name(self) -> &'static str {
-        match self {
-            Self::Native => "Native",
-            Self::Exa => "Exa",
-            Self::DeepSeek => "DeepSeek",
-        }
-    }
-
-    pub(super) fn base_url(self) -> &'static str {
-        match self {
-            Self::Native => "",
-            Self::Exa => "https://api.exa.ai",
-            Self::DeepSeek => "https://api.deepseek.com",
-        }
-    }
-
-    pub(super) fn supports(self, function: WebFunction) -> bool {
-        match function {
-            WebFunction::Search => self != Self::Native,
-            WebFunction::Fetch => true,
-        }
-    }
 }

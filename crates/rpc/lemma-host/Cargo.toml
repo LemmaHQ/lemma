@@ -11,16 +11,13 @@ hex.workspace = true
 lemma-adapter.workspace = true
 lemma-agent.workspace = true
 lemma-agent-rpc.workspace = true
-lemma-auth.workspace = true
-lemma-auth-rpc.workspace = true
 lemma-session.workspace = true
 lemma-session-rpc.workspace = true
 lemma-provider.workspace = true
 lemma-provider-rpc.workspace = true
 lemma-system-rpc.workspace = true
 rand.workspace = true
-sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-sqlite"] }
-sea-orm-migration.workspace = true
+sqlx.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -29,7 +26,6 @@ tower.workspace = true
 
 [dev-dependencies]
 dunce.workspace = true
-jsonwebtoken.workspace = true
 lemma-proto.workspace = true
 uuid.workspace = true
 

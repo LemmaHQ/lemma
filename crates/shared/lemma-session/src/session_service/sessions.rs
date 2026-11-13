@@ -1,209 +1,201 @@
 use std::path::Path;
 
-use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
-};
+use chrono::{DateTime, Utc};
+use sqlx::SqlitePool;
+use sqlx::types::Json;
 use tokio::fs;
 use uuid::Uuid;
 
-use crate::Session;
-use crate::entity::session::{self, LastModel};
+use crate::session::{LastModel, Session};
 use crate::session_error::SessionError;
 
-/// Session domain service over a database holding the sessions
-/// and messages tables. Clones share one connection pool.
+type SessionRow = (
+    Uuid,
+    String,
+    Option<Uuid>,
+    Option<Json<LastModel>>,
+    Option<String>,
+    DateTime<Utc>,
+    DateTime<Utc>,
+);
+
+/// Session domain service over a SQLite pool holding the `sessions`
+/// and `messages` tables. Clones share one connection pool.
 ///
-/// Deletion removes a session together with its messages. Every
-/// session-scoped operation takes the owning `user_id`; message
-/// operations address messages by id.
+/// Deletion removes a session together with its messages.
 #[derive(Debug, Clone)]
 pub struct SessionService {
-    pub(super) db: DatabaseConnection,
+    pub(super) db: SqlitePool,
 }
 
 impl SessionService {
-    /// Creates the service over a database.
+    /// Creates the service over a SQLite pool.
     #[must_use]
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(db: SqlitePool) -> Self {
         Self { db }
     }
 
-    /// Lists the user's sessions, most recently updated first.
+    /// Lists every session, most recently updated first.
     ///
     /// # Errors
     ///
     /// [`SessionError::Store`] when the database fails.
-    pub async fn list_sessions(&self, user_id: Uuid) -> Result<Vec<Session>, SessionError> {
-        Ok(session::Entity::find()
-            .filter(session::Column::UserId.eq(user_id))
-            .order_by_desc(session::Column::UpdatedAt)
-            .all(&self.db)
-            .await?)
+    pub async fn list_sessions(&self) -> Result<Vec<Session>, SessionError> {
+        let rows = sqlx::query_as::<_, SessionRow>(
+            "SELECT id, title, leaf_id, last_model, directory, created_at, updated_at
+             FROM sessions
+             ORDER BY updated_at DESC, id DESC",
+        )
+        .fetch_all(&self.db)
+        .await?;
+        Ok(rows.into_iter().map(session_from_row).collect())
     }
 
-    /// Creates an empty session for the user, bound to `directory` when
-    /// given; the session stores the directory's canonical path.
+    /// Creates an empty session, bound to `directory` when given; the
+    /// session stores the directory's canonical path.
     ///
     /// # Errors
     ///
     /// [`SessionError::DirectoryNotFound`] when `directory` is not an
     /// absolute path to an existing directory, and
     /// [`SessionError::Store`] when the database fails.
-    pub async fn create(
-        &self,
-        user_id: Uuid,
-        directory: Option<&Path>,
-    ) -> Result<Session, SessionError> {
+    pub async fn create(&self, directory: Option<&Path>) -> Result<Session, SessionError> {
         let directory = match directory {
             Some(path) => Some(canonical_directory(path).await?),
             None => None,
         };
+        let id = Uuid::new_v4();
         let now = Utc::now();
-        Ok(session::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            user_id: Set(user_id),
-            title: Set(String::new()),
-            leaf_id: Set(None),
-            last_model: Set(None),
-            directory: Set(directory),
-            created_at: Set(now),
-            updated_at: Set(now),
-        }
-        .insert(&self.db)
-        .await?)
+        sqlx::query(
+            "INSERT INTO sessions (id, title, leaf_id, last_model, directory, created_at, updated_at)
+             VALUES (?, '', NULL, NULL, ?, ?, ?)",
+        )
+        .bind(id)
+        .bind(&directory)
+        .bind(now)
+        .bind(now)
+        .execute(&self.db)
+        .await?;
+        Ok(Session {
+            id,
+            title: String::new(),
+            leaf_id: None,
+            last_model: None,
+            directory,
+            created_at: now,
+            updated_at: now,
+        })
     }
 
-    /// Finds a session owned by the user.
+    /// Finds a session by id.
     ///
     /// # Errors
     ///
     /// [`SessionError::Store`] when the database fails.
-    pub async fn find(&self, user_id: Uuid, id: Uuid) -> Result<Option<Session>, SessionError> {
-        Ok(session::Entity::find_by_id(id)
-            .filter(session::Column::UserId.eq(user_id))
-            .one(&self.db)
-            .await?)
+    pub async fn find(&self, id: Uuid) -> Result<Option<Session>, SessionError> {
+        let row = sqlx::query_as::<_, SessionRow>(
+            "SELECT id, title, leaf_id, last_model, directory, created_at, updated_at
+             FROM sessions
+             WHERE id = ?",
+        )
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?;
+        Ok(row.map(session_from_row))
     }
 
-    /// Renames a session owned by the user.
+    /// Renames a session.
     ///
     /// # Errors
     ///
     /// [`SessionError::TitleRequired`] for a blank title,
-    /// [`SessionError::NotFound`] when the user owns no such
-    /// session, and [`SessionError::Store`] when the database
-    /// fails.
-    pub async fn rename(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-        title: &str,
-    ) -> Result<Session, SessionError> {
+    /// [`SessionError::NotFound`] when no such session exists, and
+    /// [`SessionError::Store`] when the database fails.
+    pub async fn rename(&self, id: Uuid, title: &str) -> Result<Session, SessionError> {
         let title = title.trim();
         if title.is_empty() {
             return Err(SessionError::TitleRequired);
         }
-        session::Entity::update_many()
-            .set(session::ActiveModel {
-                title: Set(title.to_owned()),
-                updated_at: Set(Utc::now()),
-                ..Default::default()
-            })
-            .filter(session::Column::Id.eq(id))
-            .filter(session::Column::UserId.eq(user_id))
-            .exec_with_returning(&self.db)
-            .await?
-            .pop()
-            .ok_or(SessionError::NotFound)
+        let row = sqlx::query_as::<_, SessionRow>(
+            "UPDATE sessions
+             SET title = ?, updated_at = ?
+             WHERE id = ?
+             RETURNING id, title, leaf_id, last_model, directory, created_at, updated_at",
+        )
+        .bind(title)
+        .bind(Utc::now())
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?;
+        row.map(session_from_row).ok_or(SessionError::NotFound)
     }
 
-    /// Permanently deletes a session owned by the user together
-    /// with its messages.
+    /// Permanently deletes a session together with its messages.
     ///
     /// # Errors
     ///
-    /// [`SessionError::NotFound`] when the user owns no such
-    /// session and [`SessionError::Store`] when the database
-    /// fails.
-    pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), SessionError> {
-        let deleted = session::Entity::delete_many()
-            .filter(session::Column::Id.eq(id))
-            .filter(session::Column::UserId.eq(user_id))
-            .exec(&self.db)
+    /// [`SessionError::NotFound`] when no such session exists and
+    /// [`SessionError::Store`] when the database fails.
+    pub async fn delete(&self, id: Uuid) -> Result<(), SessionError> {
+        let result = sqlx::query("DELETE FROM sessions WHERE id = ?")
+            .bind(id)
+            .execute(&self.db)
             .await?;
-        if deleted.rows_affected == 0 {
+        if result.rows_affected() == 0 {
             return Err(SessionError::NotFound);
         }
         Ok(())
     }
 
-    /// Moves the active leaf of a session owned by the user.
+    /// Moves the active leaf of a session.
     ///
     /// # Errors
     ///
     /// [`SessionError::Store`] when the database fails.
-    pub async fn update_leaf(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-        leaf_id: Uuid,
-    ) -> Result<(), SessionError> {
-        self.update_owned(
-            user_id,
-            id,
-            session::ActiveModel {
-                leaf_id: Set(Some(leaf_id)),
-                ..Default::default()
-            },
-        )
-        .await
+    pub async fn update_leaf(&self, id: Uuid, leaf_id: Uuid) -> Result<(), SessionError> {
+        sqlx::query("UPDATE sessions SET leaf_id = ?, updated_at = ? WHERE id = ?")
+            .bind(leaf_id)
+            .bind(Utc::now())
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
     }
 
-    /// Records the model selection used by a turn on a session owned
-    /// by the user.
+    /// Records the model selection used by a turn on a session.
     ///
     /// # Errors
     ///
     /// [`SessionError::Store`] when the database fails.
     pub async fn update_last_model(
         &self,
-        user_id: Uuid,
         id: Uuid,
-        last_model: &LastModel,
+        last_model: LastModel,
     ) -> Result<(), SessionError> {
-        self.update_owned(
-            user_id,
-            id,
-            session::ActiveModel {
-                last_model: Set(Some(last_model.clone())),
-                ..Default::default()
-            },
-        )
-        .await
-    }
-
-    async fn update_owned(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-        changes: session::ActiveModel,
-    ) -> Result<(), SessionError> {
-        session::Entity::update_many()
-            .set(session::ActiveModel {
-                updated_at: Set(Utc::now()),
-                ..changes
-            })
-            .filter(session::Column::Id.eq(id))
-            .filter(session::Column::UserId.eq(user_id))
-            .exec(&self.db)
+        sqlx::query("UPDATE sessions SET last_model = ?, updated_at = ? WHERE id = ?")
+            .bind(Json(last_model))
+            .bind(Utc::now())
+            .bind(id)
+            .execute(&self.db)
             .await?;
         Ok(())
     }
 }
 
-/// The canonical form of an absolute path naming an existing directory,
-/// without the `\\?\` prefix Windows adds.
+fn session_from_row(
+    (id, title, leaf_id, last_model, directory, created_at, updated_at): SessionRow,
+) -> Session {
+    Session {
+        id,
+        title,
+        leaf_id,
+        last_model: last_model.map(|json| json.0),
+        directory,
+        created_at,
+        updated_at,
+    }
+}
+
 async fn canonical_directory(path: &Path) -> Result<String, SessionError> {
     let not_found = || SessionError::DirectoryNotFound(path.display().to_string());
     if !path.is_absolute() {

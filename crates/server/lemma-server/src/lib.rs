@@ -1,5 +1,5 @@
 //! The Lemma server's HTTP application: an API router with the embedded
-//! web build as fallback, behind an open CORS policy.
+//! web build as fallback.
 
 mod http_server;
 mod web;

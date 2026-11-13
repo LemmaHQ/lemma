@@ -1,52 +1,35 @@
 use chrono::Utc;
-use lemma_model::Connector;
-use sea_orm::sea_query::OnConflict;
-use sea_orm::{ColumnTrait, EntityTrait, NotSet, QueryFilter, Set};
 use uuid::Uuid;
 
-use crate::entity::provider::{self, Models, ProviderSource};
+use lemma_model::Connector;
+
 use crate::preset;
 use crate::provider_error::ProviderError;
+use crate::provider_row::{self, ProviderTuple};
 
 use super::provider_view::PredefinedProviderView;
 use super::providers::ProviderService;
 use super::update_input::UpdatePredefinedInput;
 
 impl<C: Connector> ProviderService<C> {
-    pub(super) async fn insert_missing_predefined(
-        &self,
-        user_id: Uuid,
-    ) -> Result<(), ProviderError> {
+    pub(super) async fn insert_missing_predefined(&self) -> Result<(), ProviderError> {
         let now = Utc::now();
-        let rows = preset::catalog()
-            .iter()
-            .map(|preset| provider::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                user_id: Set(user_id),
-                api_format: Set(preset.default_api_format),
-                source: Set(ProviderSource::Predefined),
-                identifier: Set(preset.identifier.to_owned()),
-                name: Set(String::new()),
-                base_url: Set(String::new()),
-                api_key: Set(String::new()),
-                api_path: Set(String::new()),
-                models_path: Set(String::new()),
-                models: Set(Models(Vec::new())),
-                enabled: Set(false),
-                created_at: Set(now),
-            });
-        provider::Entity::insert_many(rows)
-            .on_conflict(
-                OnConflict::columns([
-                    provider::Column::UserId,
-                    provider::Column::Source,
-                    provider::Column::Identifier,
-                ])
-                .do_nothing()
-                .to_owned(),
+        for preset in preset::catalog() {
+            sqlx::query(
+                "INSERT INTO providers (
+                     id, api_format, source, identifier, name, base_url,
+                     api_key, api_path, models_path, models, enabled, created_at
+                 )
+                 VALUES (?, ?, 'predefined', ?, '', '', '', '', '', '[]', 0, ?)
+                 ON CONFLICT (source, identifier) DO NOTHING",
             )
-            .exec_without_returning(&self.db)
+            .bind(Uuid::new_v4())
+            .bind(provider_row::api_format_str(preset.default_api_format))
+            .bind(preset.identifier)
+            .bind(now)
+            .execute(&self.db)
             .await?;
+        }
         Ok(())
     }
 
@@ -66,16 +49,21 @@ impl<C: Connector> ProviderService<C> {
     /// sealing fails, and [`ProviderError::Store`] when the database fails.
     pub async fn update_predefined(
         &self,
-        user_id: Uuid,
         id: Uuid,
         input: UpdatePredefinedInput,
     ) -> Result<PredefinedProviderView, ProviderError> {
-        let row = provider::Entity::find_by_id(id)
-            .filter(provider::Column::UserId.eq(user_id))
-            .filter(provider::Column::Source.eq(ProviderSource::Predefined))
-            .one(&self.db)
-            .await?
-            .ok_or(ProviderError::NotFound)?;
+        let row = sqlx::query_as::<_, ProviderTuple>(
+            "SELECT id, api_format, source, identifier, name, base_url,
+                    api_key, api_path, models_path, models, enabled
+             FROM providers
+             WHERE id = ? AND source = 'predefined'",
+        )
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?
+        .map(provider_row::from_tuple)
+        .transpose()?
+        .ok_or(ProviderError::NotFound)?;
         let preset = preset::find(&row.identifier).ok_or(ProviderError::NotFound)?;
         if input
             .default_api_format
@@ -96,39 +84,41 @@ impl<C: Connector> ProviderService<C> {
         }
         let clearing_key = input.api_key.as_deref() == Some("");
         let enabling_saved_key = input.enabled == Some(true) && input.api_key.is_none();
-        let api_key = match input.api_key {
-            Some(key) => Set(self.seal_key(&key)?),
-            None => NotSet,
-        };
+        let api_key = input
+            .api_key
+            .as_deref()
+            .map(|key| self.seal_key(key))
+            .transpose()?;
         let enabled = if clearing_key {
-            Set(false)
+            Some(false)
         } else {
-            input.enabled.map_or(NotSet, Set)
+            input.enabled
         };
-        let update = provider::Entity::update_many()
-            .set(provider::ActiveModel {
-                api_key,
-                enabled,
-                api_format: input.default_api_format.map_or(NotSet, Set),
-                ..Default::default()
-            })
-            .filter(provider::Column::Id.eq(id))
-            .filter(provider::Column::UserId.eq(user_id))
-            .filter(provider::Column::Source.eq(ProviderSource::Predefined));
-        if enabling_saved_key {
-            let updated = update
-                .filter(provider::Column::ApiKey.ne(""))
-                .exec_with_returning(&self.db)
-                .await?
-                .pop()
-                .ok_or(ProviderError::KeyRequired)?;
-            return Ok(self.predefined_view(&updated, preset));
-        }
-        let updated = update
-            .exec_with_returning(&self.db)
-            .await?
-            .pop()
-            .ok_or(ProviderError::NotFound)?;
+        let api_format = input.default_api_format.map(provider_row::api_format_str);
+        let missing_error = if enabling_saved_key {
+            ProviderError::KeyRequired
+        } else {
+            ProviderError::NotFound
+        };
+        let updated = sqlx::query_as::<_, ProviderTuple>(
+            "UPDATE providers
+             SET api_key = COALESCE(?, api_key),
+                 enabled = COALESCE(?, enabled),
+                 api_format = COALESCE(?, api_format)
+             WHERE id = ? AND source = 'predefined' AND (NOT ? OR api_key != '')
+             RETURNING id, api_format, source, identifier, name, base_url,
+                       api_key, api_path, models_path, models, enabled",
+        )
+        .bind(api_key)
+        .bind(enabled)
+        .bind(api_format)
+        .bind(id)
+        .bind(enabling_saved_key)
+        .fetch_optional(&self.db)
+        .await?
+        .map(provider_row::from_tuple)
+        .transpose()?
+        .ok_or(missing_error)?;
         Ok(self.predefined_view(&updated, preset))
     }
 }

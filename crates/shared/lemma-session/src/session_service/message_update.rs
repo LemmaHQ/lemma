@@ -1,4 +1,4 @@
-use crate::entity::message::{MessageBody, MessageStatus};
+use crate::message::{MessageBody, MessageStatus};
 
 /// Finalization payload applied to a placeholder message when its
 /// generation settles.

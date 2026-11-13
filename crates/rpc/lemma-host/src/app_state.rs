@@ -4,23 +4,21 @@ use std::sync::Arc;
 use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_agent::Agent;
 use lemma_agent_rpc::AgentRpc;
-use lemma_auth_rpc::AuthRpc;
 use lemma_provider::ProviderService;
 use lemma_provider_rpc::ProviderRpc;
 use lemma_session::SessionService;
 use lemma_session_rpc::SessionRpc;
 use lemma_system_rpc::SystemRpc;
-use sea_orm::DatabaseConnection;
+use sqlx::SqlitePool;
 
 use crate::secrets::Secrets;
 
 /// Connector every provider call goes through.
 type HostConnector = HttpConnector<ReqwestTransport>;
 
-/// The five Connect services over one database.
+/// The four Connect services over one database.
 #[derive(Debug)]
 pub struct AppState {
-    pub(crate) auth: AuthRpc,
     pub(crate) providers: ProviderRpc<HostConnector>,
     pub(crate) sessions: SessionRpc,
     pub(crate) agent: AgentRpc<HostConnector>,
@@ -28,12 +26,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Wires the services over the database. With `workspaces_dir` set,
-    /// turns run tools, in the session's directory or in a workspace
-    /// under `workspaces_dir`, and sessions may be created with a
-    /// directory.
+    /// Wires the services over `db` and `workspaces_dir`.
     #[must_use]
-    pub fn new(db: DatabaseConnection, secrets: Secrets, workspaces_dir: Option<PathBuf>) -> Self {
+    pub fn new(db: SqlitePool, secrets: Secrets, workspaces_dir: PathBuf) -> Self {
         let transport = ReqwestTransport::new();
         let connector = HttpConnector::new(transport.clone());
         let provider_service = Arc::new(ProviderService::new(
@@ -41,8 +36,7 @@ impl AppState {
             secrets.secret_key,
             connector,
         ));
-        let session_service = SessionService::new(db.clone());
-        let binds_directories = workspaces_dir.is_some();
+        let session_service = SessionService::new(db);
         let agent = Agent::new(
             session_service.clone(),
             Arc::clone(&provider_service),
@@ -50,14 +44,9 @@ impl AppState {
             Some(transport),
         );
         Self {
-            auth: AuthRpc::new(db, secrets.jwt_secret.clone()),
-            providers: ProviderRpc::new(provider_service, secrets.jwt_secret.clone()),
-            sessions: SessionRpc::new(
-                session_service,
-                secrets.jwt_secret.clone(),
-                binds_directories,
-            ),
-            agent: AgentRpc::new(agent, secrets.jwt_secret),
+            providers: ProviderRpc::new(provider_service),
+            sessions: SessionRpc::new(session_service),
+            agent: AgentRpc::new(agent),
             system: SystemRpc,
         }
     }

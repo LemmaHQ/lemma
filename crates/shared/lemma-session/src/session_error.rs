@@ -1,6 +1,5 @@
 //! Error type for the session domain.
 
-use sea_orm::DbErr;
 use thiserror::Error;
 
 /// Errors surfaced by the session domain. The RPC shell maps these
@@ -10,7 +9,7 @@ pub enum SessionError {
     /// The title was empty after trimming.
     #[error("title required")]
     TitleRequired,
-    /// Target session is absent for this user.
+    /// Target session is absent.
     #[error("session not found")]
     NotFound,
     /// The directory is not an absolute path to an existing directory.
@@ -24,8 +23,8 @@ pub enum SessionError {
     Store(String),
 }
 
-impl From<DbErr> for SessionError {
-    fn from(e: DbErr) -> Self {
+impl From<sqlx::Error> for SessionError {
+    fn from(e: sqlx::Error) -> Self {
         Self::Store(e.to_string())
     }
 }

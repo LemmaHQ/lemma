@@ -20,9 +20,6 @@ pub enum EngineError {
     /// while streaming.
     #[error("{0}")]
     Transport(String),
-    /// The database failed to close in [`LemmaEngine::shutdown`].
-    #[error("{0}")]
-    Shutdown(String),
 }
 
 /// One HTTP header.
@@ -124,17 +121,9 @@ impl LemmaEngine {
 
     /// Closes the engine's database; call it once no request is in flight.
     /// Requests after it fail, and a second call does nothing.
-    ///
-    /// # Errors
-    ///
-    /// [`EngineError::Shutdown`] when the database fails to close.
-    pub async fn shutdown(&self) -> Result<(), EngineError> {
-        let Some(local) = self.local.lock().await.take() else {
-            return Ok(());
-        };
-        local
-            .close()
-            .await
-            .map_err(|e| EngineError::Shutdown(e.to_string()))
+    pub async fn shutdown(&self) {
+        if let Some(local) = self.local.lock().await.take() {
+            local.close().await;
+        }
     }
 }

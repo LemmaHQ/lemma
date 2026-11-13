@@ -1,6 +1,5 @@
 //! Error type for the provider domain.
 
-use sea_orm::DbErr;
 use thiserror::Error;
 
 /// Errors surfaced by the provider domain. The RPC shell maps these to
@@ -13,7 +12,7 @@ pub enum ProviderError {
     /// The identifier contains characters outside the standard ASCII range or is empty.
     #[error("provider identifier invalid")]
     IdentifierInvalid,
-    /// The identifier is already used by another provider of this user.
+    /// The identifier is already used by another custom provider.
     #[error("provider identifier taken")]
     IdentifierTaken,
     /// The requested API format is unspecified or not served by the provider.
@@ -22,7 +21,7 @@ pub enum ProviderError {
     /// Enabling a key-authenticated provider requires a saved API key.
     #[error("provider key required")]
     KeyRequired,
-    /// Target provider is absent for this user.
+    /// Target provider is absent.
     #[error("provider not found")]
     NotFound,
     /// Sealing or opening a stored API key failed.
@@ -39,8 +38,8 @@ pub enum ProviderError {
     Check(String),
 }
 
-impl From<DbErr> for ProviderError {
-    fn from(e: DbErr) -> Self {
+impl From<sqlx::Error> for ProviderError {
+    fn from(e: sqlx::Error) -> Self {
         Self::Store(e.to_string())
     }
 }

@@ -1,17 +1,11 @@
-use sea_orm::entity::prelude::*;
-
 /// API format of a provider, selecting the adapter that speaks it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ApiFormat {
     /// OpenAI chat-completions and compatible APIs.
-    #[sea_orm(string_value = "openai")]
     OpenAiCompatible,
     /// Anthropic Messages API.
-    #[sea_orm(string_value = "anthropic")]
     Anthropic,
     /// Gemini generate-content API.
-    #[sea_orm(string_value = "gemini")]
     Gemini,
 }
 

@@ -2,25 +2,14 @@
 
 use std::error::Error;
 
-use lemma_auth::AuthService;
+use sqlx::SqlitePool;
+use uuid::Uuid;
+
 use lemma_model::{Adapter, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest};
 use lemma_provider::{
     ProviderError, ProviderService, UpdateWebInput, WebFunction, WebProviderKind, WebProviderView,
 };
-use lemma_test_db::on_each_database;
-use sea_orm::DatabaseConnection;
-use sea_orm_migration::{MigrationTrait, MigratorTrait};
-use uuid::Uuid;
-
-struct Migrator;
-
-impl MigratorTrait for Migrator {
-    fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        let mut migrations = lemma_auth::migrations();
-        migrations.extend(lemma_provider::migrations());
-        migrations
-    }
-}
+use lemma_test_db::database;
 
 #[derive(Debug)]
 struct NoAdapter;
@@ -46,19 +35,7 @@ impl Connector for NoConnector {
     }
 }
 
-async fn sign_up(db: &DatabaseConnection, username: &str) -> Result<Uuid, Box<dyn Error>> {
-    Ok(AuthService::new(db.clone(), "test-jwt-secret".to_owned())
-        .sign_up(
-            username,
-            &format!("{username}@example.com"),
-            "correct-horse",
-        )
-        .await?
-        .user
-        .id)
-}
-
-fn service(db: DatabaseConnection) -> ProviderService<NoConnector> {
+fn service(db: SqlitePool) -> ProviderService<NoConnector> {
     ProviderService::new(db, "test-secret-key".to_owned(), NoConnector)
 }
 
@@ -74,14 +51,12 @@ fn view(
 
 async fn enable(
     providers: &ProviderService<NoConnector>,
-    user_id: Uuid,
     kind: WebProviderKind,
     key: &str,
 ) -> Result<WebProviderView, Box<dyn Error>> {
-    let id = view(&providers.list_web(user_id).await?, kind)?.id;
+    let id = view(&providers.list_web().await?, kind)?.id;
     Ok(providers
         .update_web(
-            user_id,
             id,
             UpdateWebInput {
                 api_key: Some(key.to_owned()),
@@ -92,377 +67,377 @@ async fn enable(
 }
 
 #[tokio::test]
-async fn web_providers_are_seeded_once_per_user() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let ada = sign_up(&db, "ada").await?;
-        let bob = sign_up(&db, "bob").await?;
-        let providers = service(db);
+async fn web_providers_are_seeded_once() -> Result<(), Box<dyn Error>> {
+    let db = database().await?;
+    let providers = service(db);
 
-        let first = providers.list_web(ada).await?;
-        let second = providers.list_web(ada).await?;
-        let other = providers.list_web(bob).await?;
-        let search = providers.web_backends(ada, WebFunction::Search).await?;
-        let fetch = providers.web_backends(ada, WebFunction::Fetch).await?;
+    let first = providers.list_web().await?;
+    let second = providers.list_web().await?;
+    let search = providers.web_backends(WebFunction::Search).await?;
+    let fetch = providers.web_backends(WebFunction::Fetch).await?;
 
-        assert_eq!(second, first, "idempotent seed");
-        assert_eq!(
-            first.iter().map(|view| view.kind).collect::<Vec<_>>(),
-            [
-                WebProviderKind::Native,
-                WebProviderKind::Exa,
-                WebProviderKind::DeepSeek,
-            ]
-        );
-        assert!(first[0].enabled, "native fetch starts enabled");
-        assert!(
-            !first[1].enabled && !first[2].enabled,
-            "accounts start disabled"
-        );
-        assert!(first.iter().all(|view| !view.has_key), "no initial keys");
-        assert_eq!(first[0].name, "Native");
-        assert_eq!(first[1].name, "Exa");
-        assert_eq!(first[2].name, "DeepSeek");
-        for (index, view) in first.iter().enumerate() {
-            assert_eq!(view.search_rank, index as i32, "initial search rank");
-            assert_eq!(view.fetch_rank, index as i32, "initial fetch rank");
-            assert!(
-                other.iter().all(|other| other.id != view.id),
-                "user-scoped rows"
-            );
-        }
-        assert!(search.is_empty(), "native does not search");
-        assert_eq!(fetch.len(), 1, "only native fetch is configured");
-        assert_eq!(fetch[0].kind, WebProviderKind::Native);
-        assert_eq!(fetch[0].base_url, "");
-        assert_eq!(fetch[0].api_key, "");
-        Ok(())
-    })
-    .await
+    assert_eq!(second, first, "idempotent seed");
+    assert_eq!(
+        first.iter().map(|view| view.kind).collect::<Vec<_>>(),
+        [
+            WebProviderKind::Native,
+            WebProviderKind::Exa,
+            WebProviderKind::DeepSeek,
+        ],
+        "seeded kinds in order"
+    );
+    assert!(first[0].enabled, "native fetch starts enabled");
+    assert!(
+        !first[1].enabled && !first[2].enabled,
+        "accounts start disabled"
+    );
+    assert!(first.iter().all(|view| !view.has_key), "no initial keys");
+    assert_eq!(first[0].name, "Native", "native display name");
+    assert_eq!(first[1].name, "Exa", "exa display name");
+    assert_eq!(first[2].name, "DeepSeek", "deepseek display name");
+    for (index, view) in first.iter().enumerate() {
+        assert_eq!(view.search_rank, index as i32, "initial search rank");
+        assert_eq!(view.fetch_rank, index as i32, "initial fetch rank");
+    }
+    assert!(search.is_empty(), "native does not search");
+    assert_eq!(fetch.len(), 1, "only native fetch is configured");
+    assert_eq!(
+        fetch[0].kind,
+        WebProviderKind::Native,
+        "native backend kind"
+    );
+    assert_eq!(fetch[0].base_url, "", "native backend base URL");
+    assert_eq!(fetch[0].api_key, "", "native backend api key");
+    Ok(())
 }
 
 #[tokio::test]
 async fn web_updates_validate_keys_and_clear_atomically() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let ada = sign_up(&db, "ada").await?;
-        let bob = sign_up(&db, "bob").await?;
-        let providers = service(db);
-        let listed = providers.list_web(ada).await?;
-        let native = view(&listed, WebProviderKind::Native)?;
-        let exa = view(&listed, WebProviderKind::Exa)?;
+    let db = database().await?;
+    let providers = service(db);
+    let listed = providers.list_web().await?;
+    let native = view(&listed, WebProviderKind::Native)?;
+    let exa = view(&listed, WebProviderKind::Exa)?;
 
-        let unchanged = providers
-            .update_web(ada, exa.id, UpdateWebInput::default())
-            .await?;
-        let without_key = providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    enabled: Some(true),
-                    ..Default::default()
-                },
-            )
-            .await;
-        let disabled_native = providers
-            .update_web(
-                ada,
-                native.id,
-                UpdateWebInput {
-                    enabled: Some(false),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        let enabled_native = providers
-            .update_web(
-                ada,
-                native.id,
-                UpdateWebInput {
-                    enabled: Some(true),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        let enabled = providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    api_key: Some("sk-exa".to_owned()),
-                    enabled: Some(true),
-                },
-            )
-            .await?;
-        let cleared = providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    api_key: Some(String::new()),
-                    enabled: Some(true),
-                },
-            )
-            .await?;
-        let keyed = providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    api_key: Some("sk-next".to_owned()),
-                    enabled: None,
-                },
-            )
-            .await?;
-        let reenabled = providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    enabled: Some(true),
-                    api_key: None,
-                },
-            )
-            .await?;
-        let missing = providers
-            .update_web(ada, Uuid::new_v4(), UpdateWebInput::default())
-            .await;
-        let foreign = providers
-            .update_web(bob, exa.id, UpdateWebInput::default())
-            .await;
-
-        assert_eq!(&unchanged, exa, "empty patch");
-        assert!(matches!(without_key, Err(ProviderError::KeyRequired)));
-        assert!(!disabled_native.enabled, "native disabled");
-        assert!(
-            enabled_native.enabled && !enabled_native.has_key,
-            "native needs no key"
-        );
-        assert!(enabled.enabled && enabled.has_key, "key enables account");
-        assert!(
-            !cleared.enabled && !cleared.has_key,
-            "clear overrides enable"
-        );
-        assert!(
-            !keyed.enabled && keyed.has_key,
-            "key patch retains disabled state"
-        );
-        assert!(
-            reenabled.enabled && reenabled.has_key,
-            "saved key enables account"
-        );
-        assert!(matches!(missing, Err(ProviderError::NotFound)));
-        assert!(matches!(foreign, Err(ProviderError::NotFound)));
-        Ok(())
-    })
-    .await
-}
-
-#[tokio::test]
-async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let ada = sign_up(&db, "ada").await?;
-        let providers = service(db);
-        let exa = enable(&providers, ada, WebProviderKind::Exa, "sk-exa").await?;
-        let deepseek = enable(&providers, ada, WebProviderKind::DeepSeek, "sk-deepseek").await?;
-        let listed = providers.list_web(ada).await?;
-        let native = view(&listed, WebProviderKind::Native)?;
-
-        let initial_search = providers.web_backends(ada, WebFunction::Search).await?;
-        let initial_fetch = providers.web_backends(ada, WebFunction::Fetch).await?;
-        let search_order = providers
-            .set_web_order(ada, WebFunction::Search, vec![deepseek.id, exa.id])
-            .await?;
-        let fetch_order = providers
-            .set_web_order(
-                ada,
-                WebFunction::Fetch,
-                vec![deepseek.id, exa.id, native.id],
-            )
-            .await?;
-        let search = providers.web_backends(ada, WebFunction::Search).await?;
-        let fetch = providers.web_backends(ada, WebFunction::Fetch).await?;
-
-        assert_eq!(
-            initial_search
-                .iter()
-                .map(|backend| backend.kind)
-                .collect::<Vec<_>>(),
-            [WebProviderKind::Exa, WebProviderKind::DeepSeek]
-        );
-        assert_eq!(
-            initial_fetch
-                .iter()
-                .map(|backend| backend.kind)
-                .collect::<Vec<_>>(),
-            [
-                WebProviderKind::Native,
-                WebProviderKind::Exa,
-                WebProviderKind::DeepSeek,
-            ]
-        );
-        assert_eq!(
-            view(&search_order, WebProviderKind::DeepSeek)?.search_rank,
-            0
-        );
-        assert_eq!(view(&search_order, WebProviderKind::Exa)?.search_rank, 1);
-        assert_eq!(view(&fetch_order, WebProviderKind::DeepSeek)?.fetch_rank, 0);
-        assert_eq!(view(&fetch_order, WebProviderKind::Exa)?.fetch_rank, 1);
-        assert_eq!(view(&fetch_order, WebProviderKind::Native)?.fetch_rank, 2);
-        assert_eq!(
-            search
-                .iter()
-                .map(|backend| backend.kind)
-                .collect::<Vec<_>>(),
-            [WebProviderKind::DeepSeek, WebProviderKind::Exa]
-        );
-        assert_eq!(search[0].base_url, "https://api.deepseek.com");
-        assert_eq!(search[0].api_key, "sk-deepseek");
-        assert_eq!(search[1].base_url, "https://api.exa.ai");
-        assert_eq!(search[1].api_key, "sk-exa");
-        assert_eq!(
-            fetch.iter().map(|backend| backend.kind).collect::<Vec<_>>(),
-            [
-                WebProviderKind::DeepSeek,
-                WebProviderKind::Exa,
-                WebProviderKind::Native,
-            ]
-        );
-
-        for (function, ids) in [
-            (WebFunction::Search, Vec::new()),
-            (WebFunction::Search, vec![exa.id, exa.id]),
-            (WebFunction::Search, vec![exa.id, deepseek.id, native.id]),
-            (WebFunction::Fetch, vec![exa.id, deepseek.id]),
-            (
-                WebFunction::Fetch,
-                vec![exa.id, deepseek.id, Uuid::new_v4()],
-            ),
-        ] {
-            let result = providers.set_web_order(ada, function, ids).await;
-            assert!(
-                matches!(result, Err(ProviderError::NotFound)),
-                "invalid order"
-            );
-        }
-        let unchanged = providers.list_web(ada).await?;
-        assert_eq!(view(&unchanged, WebProviderKind::DeepSeek)?.search_rank, 0);
-        assert_eq!(view(&unchanged, WebProviderKind::Native)?.fetch_rank, 2);
-
-        providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    enabled: Some(false),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        providers
-            .update_web(
-                ada,
-                deepseek.id,
-                UpdateWebInput {
-                    api_key: Some(String::new()),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        providers
-            .update_web(
-                ada,
-                native.id,
-                UpdateWebInput {
-                    enabled: Some(false),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        assert!(
-            providers
-                .web_backends(ada, WebFunction::Search)
-                .await?
-                .is_empty()
-        );
-        assert!(
-            providers
-                .web_backends(ada, WebFunction::Fetch)
-                .await?
-                .is_empty()
-        );
-        Ok(())
-    })
-    .await
-}
-
-#[tokio::test]
-async fn web_key_races_and_open_failures_never_return_invalid_backends()
--> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let ada = sign_up(&db, "ada").await?;
-        let providers = service(db.clone());
-        let exa = enable(&providers, ada, WebProviderKind::Exa, "sk-exa").await?;
-        providers
-            .update_web(
-                ada,
-                exa.id,
-                UpdateWebInput {
-                    enabled: Some(false),
-                    ..Default::default()
-                },
-            )
-            .await?;
-
-        let enabling = providers.update_web(
-            ada,
+    let unchanged = providers
+        .update_web(exa.id, UpdateWebInput::default())
+        .await?;
+    let without_key = providers
+        .update_web(
             exa.id,
             UpdateWebInput {
                 enabled: Some(true),
                 ..Default::default()
             },
-        );
-        let clear = providers.update_web(
-            ada,
+        )
+        .await;
+    let disabled_native = providers
+        .update_web(
+            native.id,
+            UpdateWebInput {
+                enabled: Some(false),
+                ..Default::default()
+            },
+        )
+        .await?;
+    let enabled_native = providers
+        .update_web(
+            native.id,
+            UpdateWebInput {
+                enabled: Some(true),
+                ..Default::default()
+            },
+        )
+        .await?;
+    let enabled = providers
+        .update_web(
             exa.id,
+            UpdateWebInput {
+                api_key: Some("sk-exa".to_owned()),
+                enabled: Some(true),
+            },
+        )
+        .await?;
+    let cleared = providers
+        .update_web(
+            exa.id,
+            UpdateWebInput {
+                api_key: Some(String::new()),
+                enabled: Some(true),
+            },
+        )
+        .await?;
+    let keyed = providers
+        .update_web(
+            exa.id,
+            UpdateWebInput {
+                api_key: Some("sk-next".to_owned()),
+                enabled: None,
+            },
+        )
+        .await?;
+    let reenabled = providers
+        .update_web(
+            exa.id,
+            UpdateWebInput {
+                enabled: Some(true),
+                api_key: None,
+            },
+        )
+        .await?;
+    let missing = providers
+        .update_web(Uuid::new_v4(), UpdateWebInput::default())
+        .await;
+
+    assert_eq!(&unchanged, exa, "empty patch");
+    assert!(
+        matches!(without_key, Err(ProviderError::KeyRequired)),
+        "enable without key: {without_key:?}"
+    );
+    assert!(!disabled_native.enabled, "native disabled");
+    assert!(
+        enabled_native.enabled && !enabled_native.has_key,
+        "native needs no key"
+    );
+    assert!(enabled.enabled && enabled.has_key, "key enables account");
+    assert!(
+        !cleared.enabled && !cleared.has_key,
+        "clear overrides enable"
+    );
+    assert!(
+        !keyed.enabled && keyed.has_key,
+        "key patch retains disabled state"
+    );
+    assert!(
+        reenabled.enabled && reenabled.has_key,
+        "saved key enables account"
+    );
+    assert!(
+        matches!(missing, Err(ProviderError::NotFound)),
+        "missing web provider: {missing:?}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box<dyn Error>> {
+    let db = database().await?;
+    let providers = service(db);
+    let exa = enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
+    let deepseek = enable(&providers, WebProviderKind::DeepSeek, "sk-deepseek").await?;
+    let listed = providers.list_web().await?;
+    let native = view(&listed, WebProviderKind::Native)?;
+
+    let initial_search = providers.web_backends(WebFunction::Search).await?;
+    let initial_fetch = providers.web_backends(WebFunction::Fetch).await?;
+    let search_order = providers
+        .set_web_order(WebFunction::Search, &[deepseek.id, exa.id])
+        .await?;
+    let fetch_order = providers
+        .set_web_order(WebFunction::Fetch, &[deepseek.id, exa.id, native.id])
+        .await?;
+    let search = providers.web_backends(WebFunction::Search).await?;
+    let fetch = providers.web_backends(WebFunction::Fetch).await?;
+
+    assert_eq!(
+        initial_search
+            .iter()
+            .map(|backend| backend.kind)
+            .collect::<Vec<_>>(),
+        [WebProviderKind::Exa, WebProviderKind::DeepSeek],
+        "initial search backend order"
+    );
+    assert_eq!(
+        initial_fetch
+            .iter()
+            .map(|backend| backend.kind)
+            .collect::<Vec<_>>(),
+        [
+            WebProviderKind::Native,
+            WebProviderKind::Exa,
+            WebProviderKind::DeepSeek,
+        ],
+        "initial fetch backend order"
+    );
+    assert_eq!(
+        view(&search_order, WebProviderKind::DeepSeek)?.search_rank,
+        0,
+        "deepseek search rank"
+    );
+    assert_eq!(
+        view(&search_order, WebProviderKind::Exa)?.search_rank,
+        1,
+        "exa search rank"
+    );
+    assert_eq!(
+        view(&fetch_order, WebProviderKind::DeepSeek)?.fetch_rank,
+        0,
+        "deepseek fetch rank"
+    );
+    assert_eq!(
+        view(&fetch_order, WebProviderKind::Exa)?.fetch_rank,
+        1,
+        "exa fetch rank"
+    );
+    assert_eq!(
+        view(&fetch_order, WebProviderKind::Native)?.fetch_rank,
+        2,
+        "native fetch rank"
+    );
+    assert_eq!(
+        search
+            .iter()
+            .map(|backend| backend.kind)
+            .collect::<Vec<_>>(),
+        [WebProviderKind::DeepSeek, WebProviderKind::Exa],
+        "updated search backend order"
+    );
+    assert_eq!(
+        search[0].base_url, "https://api.deepseek.com",
+        "deepseek base URL"
+    );
+    assert_eq!(search[0].api_key, "sk-deepseek", "deepseek key");
+    assert_eq!(search[1].base_url, "https://api.exa.ai", "exa base URL");
+    assert_eq!(search[1].api_key, "sk-exa", "exa key");
+    assert_eq!(
+        fetch.iter().map(|backend| backend.kind).collect::<Vec<_>>(),
+        [
+            WebProviderKind::DeepSeek,
+            WebProviderKind::Exa,
+            WebProviderKind::Native,
+        ],
+        "updated fetch backend order"
+    );
+
+    for (function, ids) in [
+        (WebFunction::Search, Vec::new()),
+        (WebFunction::Search, vec![exa.id, exa.id]),
+        (WebFunction::Search, vec![exa.id, deepseek.id, native.id]),
+        (WebFunction::Fetch, vec![exa.id, deepseek.id]),
+        (
+            WebFunction::Fetch,
+            vec![exa.id, deepseek.id, Uuid::new_v4()],
+        ),
+    ] {
+        let result = providers.set_web_order(function, &ids).await;
+        assert!(
+            matches!(result, Err(ProviderError::NotFound)),
+            "invalid order: {result:?}"
+        );
+    }
+    let unchanged = providers.list_web().await?;
+    assert_eq!(
+        view(&unchanged, WebProviderKind::DeepSeek)?.search_rank,
+        0,
+        "search rank preserved after invalid update"
+    );
+    assert_eq!(
+        view(&unchanged, WebProviderKind::Native)?.fetch_rank,
+        2,
+        "fetch rank preserved after invalid update"
+    );
+
+    providers
+        .update_web(
+            exa.id,
+            UpdateWebInput {
+                enabled: Some(false),
+                ..Default::default()
+            },
+        )
+        .await?;
+    providers
+        .update_web(
+            deepseek.id,
             UpdateWebInput {
                 api_key: Some(String::new()),
                 ..Default::default()
             },
-        );
-        let (enabled, cleared) = tokio::join!(enabling, clear);
-        let listed = providers.list_web(ada).await?;
-        let after = view(&listed, WebProviderKind::Exa)?;
-        assert!(
-            !after.enabled || after.has_key,
-            "enabled={} has_key={} enable={enabled:?} clear={cleared:?}",
-            after.enabled,
-            after.has_key
-        );
+        )
+        .await?;
+    providers
+        .update_web(
+            native.id,
+            UpdateWebInput {
+                enabled: Some(false),
+                ..Default::default()
+            },
+        )
+        .await?;
+    assert!(
+        providers
+            .web_backends(WebFunction::Search)
+            .await?
+            .is_empty(),
+        "no enabled search backends"
+    );
+    assert!(
+        providers.web_backends(WebFunction::Fetch).await?.is_empty(),
+        "no enabled fetch backends"
+    );
+    Ok(())
+}
 
-        enable(&providers, ada, WebProviderKind::Exa, "sk-exa").await?;
-        let rotated = ProviderService::new(db, "rotated".to_owned(), NoConnector);
-        let opened = rotated.web_backends(ada, WebFunction::Search).await;
-        assert!(matches!(opened, Err(ProviderError::Crypto(_))));
-        Ok(())
-    })
-    .await
+#[tokio::test]
+async fn web_key_races_and_open_failures_never_return_invalid_backends()
+-> Result<(), Box<dyn Error>> {
+    let db = database().await?;
+    let providers = service(db.clone());
+    let exa = enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
+    providers
+        .update_web(
+            exa.id,
+            UpdateWebInput {
+                enabled: Some(false),
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    let enabling = providers.update_web(
+        exa.id,
+        UpdateWebInput {
+            enabled: Some(true),
+            ..Default::default()
+        },
+    );
+    let clear = providers.update_web(
+        exa.id,
+        UpdateWebInput {
+            api_key: Some(String::new()),
+            ..Default::default()
+        },
+    );
+    let (enabled, cleared) = tokio::join!(enabling, clear);
+    let listed = providers.list_web().await?;
+    let after = view(&listed, WebProviderKind::Exa)?;
+    assert!(
+        !after.enabled || after.has_key,
+        "enabled={} has_key={} enable={enabled:?} clear={cleared:?}",
+        after.enabled,
+        after.has_key
+    );
+
+    enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
+    let rotated = ProviderService::new(db, "rotated".to_owned(), NoConnector);
+    let opened = rotated.web_backends(WebFunction::Search).await;
+    assert!(
+        matches!(opened, Err(ProviderError::Crypto(_))),
+        "key open failure: {opened:?}"
+    );
+    Ok(())
 }
 
 #[tokio::test]
 async fn web_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
-    let db = sea_orm::Database::connect("sqlite::memory:").await?;
-    db.clone().close().await?;
+    let db = database().await?;
+    db.close().await;
     let providers = service(db);
     let id = Uuid::new_v4();
-    let user = Uuid::new_v4();
-    let listed = providers.list_web(user).await;
-    let updated = providers
-        .update_web(user, id, UpdateWebInput::default())
-        .await;
-    let ordered = providers
-        .set_web_order(user, WebFunction::Search, Vec::new())
-        .await;
-    let backends = providers.web_backends(user, WebFunction::Fetch).await;
+    let listed = providers.list_web().await;
+    let updated = providers.update_web(id, UpdateWebInput::default()).await;
+    let ordered = providers.set_web_order(WebFunction::Search, &[]).await;
+    let backends = providers.web_backends(WebFunction::Fetch).await;
 
     for result in [
         listed.err().map(|error| error.to_string()),

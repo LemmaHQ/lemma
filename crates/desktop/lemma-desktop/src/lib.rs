@@ -113,18 +113,10 @@ impl Engine {
     }
 
     /// Closes the engine's database; call it once no request is in flight.
-    ///
-    /// # Errors
-    ///
-    /// When the database fails to close.
     #[napi]
-    pub async fn close(&self) -> Result<()> {
+    pub async fn close(&self) {
         if let Some(local) = self.local.lock().await.take() {
-            local
-                .close()
-                .await
-                .map_err(|e| Error::from_reason(e.to_string()))?;
+            local.close().await;
         }
-        Ok(())
     }
 }

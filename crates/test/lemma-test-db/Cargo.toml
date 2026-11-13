@@ -4,9 +4,6 @@ edition.workspace = true
 version.workspace = true
 
 [dependencies]
-sea-orm = { workspace = true, features = ["runtime-tokio", "sqlx-postgres", "sqlx-sqlite"] }
-sea-orm-migration.workspace = true
-uuid.workspace = true
-
+sqlx.workspace = true
 [lints]
 workspace = true

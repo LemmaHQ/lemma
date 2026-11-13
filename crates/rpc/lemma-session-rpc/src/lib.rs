@@ -1,7 +1,6 @@
-//! Connect RPC shell for the `SessionService`: JWT authentication
-//! and proto mapping. All behavior lives in `lemma-session`.
+//! Connect RPC shell for the `SessionService`: proto mapping and error
+//! translation. All behavior lives in `lemma-session`.
 
-use std::fmt::{self, Debug};
 use std::path::Path;
 
 use buffa::MessageField;
@@ -22,32 +21,17 @@ use lemma_session::{
 use uuid::Uuid;
 
 /// Connect handler implementing the `SessionService` RPCs.
+#[derive(Debug)]
 pub struct SessionRpc {
     domain: SessionService,
-    jwt_secret: String,
-    binds_directories: bool,
-}
-
-impl Debug for SessionRpc {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SessionRpc")
-            .field("domain", &self.domain)
-            .field("binds_directories", &self.binds_directories)
-            .finish_non_exhaustive()
-    }
 }
 
 impl SessionRpc {
     /// Creates the handler over the session domain service, which the
-    /// agent shares. Without `binds_directories`, creating a session with
-    /// a directory fails with `DIRECTORY_UNSUPPORTED`.
+    /// agent shares.
     #[must_use]
-    pub fn new(domain: SessionService, jwt_secret: String, binds_directories: bool) -> Self {
-        Self {
-            domain,
-            jwt_secret,
-            binds_directories,
-        }
+    pub fn new(domain: SessionService) -> Self {
+        Self { domain }
     }
 }
 
@@ -152,15 +136,10 @@ fn map_domain(e: SessionError) -> ConnectError {
 impl v1::SessionService for SessionRpc {
     async fn list_sessions(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         _request: ServiceRequest<'_, ListSessionsRequest>,
     ) -> ServiceResult<ListSessionsResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
-        let list = self
-            .domain
-            .list_sessions(user_id)
-            .await
-            .map_err(map_domain)?;
+        let list = self.domain.list_sessions().await.map_err(map_domain)?;
         Response::ok(ListSessionsResponse {
             sessions: list.iter().map(session_to_proto).collect(),
             ..Default::default()
@@ -169,19 +148,11 @@ impl v1::SessionService for SessionRpc {
 
     async fn create_session(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, CreateSessionRequest>,
     ) -> ServiceResult<CreateSessionResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let directory = request.directory.map(Path::new);
-        if directory.is_some() && !self.binds_directories {
-            return Err(lemma_proto::app_error(ErrorReason::DirectoryUnsupported));
-        }
-        let c = self
-            .domain
-            .create(user_id, directory)
-            .await
-            .map_err(map_domain)?;
+        let c = self.domain.create(directory).await.map_err(map_domain)?;
         Response::ok(CreateSessionResponse {
             session: session_to_proto(&c).into(),
             ..Default::default()
@@ -190,14 +161,13 @@ impl v1::SessionService for SessionRpc {
 
     async fn rename_session(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, RenameSessionRequest>,
     ) -> ServiceResult<RenameSessionResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
         let c = self
             .domain
-            .rename(user_id, id, request.title)
+            .rename(id, request.title)
             .await
             .map_err(map_domain)?;
         Response::ok(RenameSessionResponse {
@@ -208,10 +178,9 @@ impl v1::SessionService for SessionRpc {
 
     async fn list_messages(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, ListMessagesRequest>,
     ) -> ServiceResult<ListMessagesResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let session_id = parse_id(request.session_id)?;
         let before_id = if request.before_id.is_empty() {
             None
@@ -220,7 +189,7 @@ impl v1::SessionService for SessionRpc {
         };
         let page = self
             .domain
-            .list_messages(user_id, session_id, before_id, request.limit)
+            .list_messages(session_id, before_id, request.limit)
             .await
             .map_err(map_domain)?;
         Response::ok(ListMessagesResponse {
@@ -232,12 +201,11 @@ impl v1::SessionService for SessionRpc {
 
     async fn delete_session(
         &self,
-        ctx: RequestContext,
+        _ctx: RequestContext,
         request: ServiceRequest<'_, DeleteSessionRequest>,
     ) -> ServiceResult<DeleteSessionResponse> {
-        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
         let id = parse_id(request.id)?;
-        self.domain.delete(user_id, id).await.map_err(map_domain)?;
+        self.domain.delete(id).await.map_err(map_domain)?;
         Response::ok(DeleteSessionResponse::default())
     }
 }

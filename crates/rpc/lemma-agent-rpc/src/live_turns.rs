@@ -6,16 +6,10 @@ use lemma_proto::lemma::v1::AgentEvent;
 use tokio::sync::watch;
 use uuid::Uuid;
 
-#[derive(Debug)]
-struct LiveTurn {
-    user_id: Uuid,
-    log: watch::Receiver<Vec<AgentEvent>>,
-}
-
 /// The event logs of running turns, by user message id; any number of
 /// streams read a log from any offset.
 #[derive(Debug, Default)]
-pub(crate) struct LiveTurns(DashMap<Uuid, LiveTurn>);
+pub(crate) struct LiveTurns(DashMap<Uuid, watch::Receiver<Vec<AgentEvent>>>);
 
 /// Appends a running turn's events. Dropping it ends the log and
 /// unregisters the turn; open streams finish reading the log.
@@ -26,21 +20,14 @@ pub(crate) struct LogWriter {
 }
 
 impl LiveTurns {
-    /// Registers the user's turn and returns its writer and a stream of its
-    /// events from the start.
+    /// Registers the turn and returns its writer and a stream of its events
+    /// from the start.
     pub(crate) fn start(
         self: &Arc<Self>,
-        user_id: Uuid,
         user_message_id: Uuid,
     ) -> (LogWriter, impl Stream<Item = AgentEvent> + use<>) {
         let (log, reader) = watch::channel(Vec::new());
-        self.0.insert(
-            user_message_id,
-            LiveTurn {
-                user_id,
-                log: reader.clone(),
-            },
-        );
+        self.0.insert(user_message_id, reader.clone());
         let writer = LogWriter {
             log,
             turns: Arc::clone(self),
@@ -49,16 +36,15 @@ impl LiveTurns {
         (writer, follow(reader, 0))
     }
 
-    /// Streams the user's running turn from `offset`; `None` when no such
-    /// turn is running.
+    /// Streams the running turn from `offset`; `None` when no such turn is
+    /// running.
     pub(crate) fn follow(
         &self,
-        user_id: Uuid,
         user_message_id: Uuid,
         offset: usize,
     ) -> Option<impl Stream<Item = AgentEvent> + use<>> {
-        let turn = self.0.get(&user_message_id)?;
-        (turn.user_id == user_id).then(|| follow(turn.log.clone(), offset))
+        let log = self.0.get(&user_message_id)?;
+        Some(follow(log.clone(), offset))
     }
 }
 

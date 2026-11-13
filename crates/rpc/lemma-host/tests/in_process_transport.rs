@@ -45,8 +45,8 @@ async fn read_to_end(
 }
 
 #[tokio::test]
-async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result<(), Box<dyn Error>>
-{
+async fn create_session_returns_the_response_and_closes_the_body_at_its_end()
+-> Result<(), Box<dyn Error>> {
     let dir = DataDir::new();
     let engine = LocalEngine::open(&dir.0).await?;
     let transport = InProcessTransport::new(engine.router());
@@ -54,15 +54,15 @@ async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result
     let head = transport
         .request(
             "POST",
-            "/lemma.v1.AuthService/SignUp",
+            "/lemma.v1.SessionService/CreateSession",
             &json_headers(),
-            br#"{"username":"ada","email":"ada@example.com","password":"correct-horse"}"#.to_vec(),
+            b"{}".to_vec(),
         )
         .await?;
     let body: serde_json::Value =
         serde_json::from_slice(&read_to_end(&transport, head.body).await?)?;
 
-    assert_eq!(head.status, 200, "sign-up status");
+    assert_eq!(head.status, 200, "create-session status");
     assert!(
         head.headers
             .iter()
@@ -70,7 +70,7 @@ async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result
         "content type in {:?}",
         head.headers
     );
-    assert_eq!(body["user"]["username"], "ada", "signed-up user");
+    assert!(body["session"]["id"].is_string(), "created session: {body}");
     let closed = transport.read(head.body).await;
     assert_eq!(
         closed,
@@ -81,7 +81,7 @@ async fn sign_up_returns_the_response_and_closes_the_body_at_its_end() -> Result
         closed.is_err_and(|e| e.to_string().contains(&head.body.to_string())),
         "the error names the body id"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
@@ -101,13 +101,13 @@ async fn cancel_closes_an_unread_body() -> Result<(), Box<dyn Error>> {
         .await?;
     transport.cancel(head.body);
 
-    assert_eq!(head.status, 401, "unauthenticated status");
+    assert_eq!(head.status, 200, "list providers status");
     assert_eq!(
         transport.read(head.body).await,
         Err(InProcessTransportError::UnknownBody(head.body)),
         "a cancelled body is closed"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
@@ -120,7 +120,7 @@ async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<
     let result = transport
         .request(
             "NOT A METHOD",
-            "/lemma.v1.AuthService/SignIn",
+            "/lemma.v1.SystemService/GetVersion",
             &[],
             Vec::new(),
         )
@@ -134,7 +134,7 @@ async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<
         matches!(&result, Err(e @ InProcessTransportError::InvalidRequest(_)) if e.to_string().contains(&method_error)),
         "{result:?}"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 

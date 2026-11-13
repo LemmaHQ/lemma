@@ -1,13 +1,13 @@
 //! Connectivity check outcomes against scripted upstream answers.
 
-use futures::executor::block_on;
 use futures::stream;
+use sqlx::SqlitePool;
+
 use lemma_core::{StopReason, StreamEvent};
 use lemma_model::{
     Adapter, ApiFormat, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest,
 };
 use lemma_provider::{ProviderError, ProviderService};
-use sea_orm::DatabaseConnection;
 
 struct ScriptedAdapter;
 
@@ -46,12 +46,9 @@ impl Connector for ScriptedConnector {
     }
 }
 
-fn check(model: &str) -> Result<(), ProviderError> {
-    let service = ProviderService::new(
-        DatabaseConnection::default(),
-        "test-secret-key".to_owned(),
-        ScriptedConnector,
-    );
+async fn check(model: &str) -> Result<(), ProviderError> {
+    let db = SqlitePool::connect_lazy("sqlite::memory:")?;
+    let service = ProviderService::new(db, "test-secret-key".to_owned(), ScriptedConnector);
     let endpoint = Endpoint {
         api_format: ApiFormat::OpenAiCompatible,
         base_url: "https://api.example.com/v1".to_owned(),
@@ -59,40 +56,55 @@ fn check(model: &str) -> Result<(), ProviderError> {
         models_path: String::new(),
         api_key: "sk-test".to_owned(),
     };
-    block_on(service.check_adhoc(endpoint, model))
+    service.check_adhoc(endpoint, model).await
 }
 
-fn check_failure(model: &str) -> String {
-    match check(model) {
+async fn check_failure(model: &str) -> String {
+    match check(model).await {
         Err(ProviderError::Check(message)) => message,
         other => panic!("expected a check failure for {model}, got {other:?}"),
     }
 }
 
-#[test]
-fn a_model_that_starts_answering_passes() {
-    assert!(check("answers").is_ok());
+#[tokio::test]
+async fn a_model_that_starts_answering_passes() {
+    assert!(
+        check("answers").await.is_ok(),
+        "answering model should pass"
+    );
 }
 
-#[test]
-fn a_model_that_finishes_without_text_passes() {
-    assert!(check("finishes-empty").is_ok());
+#[tokio::test]
+async fn a_model_that_finishes_without_text_passes() {
+    assert!(
+        check("finishes-empty").await.is_ok(),
+        "empty completion should pass"
+    );
 }
 
-#[test]
-fn a_rejected_request_fails_with_the_upstream_message() {
-    assert_eq!(check_failure("missing"), "HTTP 404: model not found");
-}
-
-#[test]
-fn a_stream_error_fails_with_its_message() {
-    assert_eq!(check_failure("errors-in-stream"), "model overloaded");
-}
-
-#[test]
-fn a_stream_that_closes_before_answering_fails() {
+#[tokio::test]
+async fn a_rejected_request_fails_with_the_upstream_message() {
     assert_eq!(
-        check_failure("closes-early"),
-        "stream ended without a response"
+        check_failure("missing").await,
+        "HTTP 404: model not found",
+        "rejected model error message"
+    );
+}
+
+#[tokio::test]
+async fn a_stream_error_fails_with_its_message() {
+    assert_eq!(
+        check_failure("errors-in-stream").await,
+        "model overloaded",
+        "stream error message"
+    );
+}
+
+#[tokio::test]
+async fn a_stream_that_closes_before_answering_fails() {
+    assert_eq!(
+        check_failure("closes-early").await,
+        "stream ended without a response",
+        "early stream close message"
     );
 }

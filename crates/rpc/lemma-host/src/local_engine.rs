@@ -2,19 +2,19 @@ use std::fs;
 use std::path::Path;
 
 use axum::Router;
-use sea_orm::{DatabaseConnection, DbErr};
+use sqlx::SqlitePool;
 
 use crate::app_state::AppState;
 use crate::local_engine_error::LocalEngineError;
 use crate::secrets::Secrets;
 use crate::{database, router};
 
-/// The desktop engine: the Connect services over one SQLite database, with
+/// The local engine: the Connect services over one SQLite database, with
 /// the secrets, the database, and the workspaces under one data directory.
 #[derive(Debug)]
 pub struct LocalEngine {
     router: Router,
-    db: DatabaseConnection,
+    db: SqlitePool,
 }
 
 impl LocalEngine {
@@ -27,20 +27,13 @@ impl LocalEngine {
     /// [`LocalEngineError`] naming the startup step that failed.
     pub async fn open(data_dir: &Path) -> Result<Self, LocalEngineError> {
         let secrets = load_or_create_secrets(data_dir)?;
-        let path = data_dir.join("lemma.db");
-        let url = format!(
-            "sqlite:{}",
-            path.to_string_lossy()
-                .replace('%', "%25")
-                .replace('?', "%3F")
-        );
-        let db = database::connect(&url)
+        let db = database::connect(&data_dir.join("lemma.db"))
             .await
             .map_err(LocalEngineError::Database)?;
         database::migrate(&db)
             .await
             .map_err(LocalEngineError::Migration)?;
-        let state = AppState::new(db.clone(), secrets, Some(data_dir.join("workspaces")));
+        let state = AppState::new(db.clone(), secrets, data_dir.join("workspaces"));
         Ok(Self {
             router: router::router(state),
             db,
@@ -52,13 +45,9 @@ impl LocalEngine {
         self.router.clone()
     }
 
-    /// Closes the database; call it after the host stops serving.
-    ///
-    /// # Errors
-    ///
-    /// The [`DbErr`] when the database fails to close.
-    pub async fn close(self) -> Result<(), DbErr> {
-        self.db.close().await
+    /// Closes the database pool; call it after the host stops serving.
+    pub async fn close(self) {
+        self.db.close().await;
     }
 }
 
@@ -72,7 +61,6 @@ fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> 
         Ok(raw) => serde_json::from_str(&raw).map_err(LocalEngineError::SecretsJson),
         Err(_) => {
             let secrets = Secrets {
-                jwt_secret: hex::encode(rand::rng().random::<[u8; 32]>()),
                 secret_key: hex::encode(rand::rng().random::<[u8; 32]>()),
             };
             fs::create_dir_all(data_dir).map_err(|e| {

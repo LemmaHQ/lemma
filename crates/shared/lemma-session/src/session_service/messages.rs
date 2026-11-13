@@ -1,20 +1,33 @@
 use std::collections::HashMap;
 
-use chrono::Utc;
-use lemma_model::ApiFormat;
-use sea_orm::sea_query::{Expr, ExprTrait};
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use chrono::{DateTime, Utc};
+use sqlx::types::Json;
 use uuid::Uuid;
 
-use crate::Message;
-use crate::entity::message;
+use lemma_model::ApiFormat;
+
+use crate::message::{self, Message, MessageBody, MessageStatus};
 use crate::session_error::SessionError;
 
 use super::message_page::MessagePage;
 use super::message_update::MessageUpdate;
 use super::sessions::SessionService;
 
-const DEFAULT_PAGE_LEN: usize = 50;
+const DEFAULT_PAGE_LEN: i32 = 50;
+
+type MessageRow = (
+    Uuid,
+    Uuid,
+    Option<Uuid>,
+    Json<MessageBody>,
+    String,
+    Option<String>,
+    Option<Uuid>,
+    Option<String>,
+    Option<String>,
+    DateTime<Utc>,
+    DateTime<Utc>,
+);
 
 impl SessionService {
     /// Appends a new message node into the tree.
@@ -24,9 +37,27 @@ impl SessionService {
     /// [`SessionError::Store`] when the database fails, including a
     /// session that does not exist.
     pub async fn append_message(&self, entry: Message) -> Result<(), SessionError> {
-        message::Entity::insert(message::ActiveModel::from(entry))
-            .exec_without_returning(&self.db)
-            .await?;
+        let api_format = entry.api_format.map(message::api_format_str);
+        sqlx::query(
+            "INSERT INTO messages (
+                 id, session_id, parent_id, body, status, error,
+                 provider_id, model, api_format, created_at, updated_at
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(entry.id)
+        .bind(entry.session_id)
+        .bind(entry.parent_id)
+        .bind(Json(entry.body))
+        .bind(entry.status.as_str())
+        .bind(entry.error)
+        .bind(entry.provider_id)
+        .bind(entry.model)
+        .bind(api_format)
+        .bind(entry.created_at)
+        .bind(entry.updated_at)
+        .execute(&self.db)
+        .await?;
         Ok(())
     }
 
@@ -40,17 +71,18 @@ impl SessionService {
         id: Uuid,
         update: MessageUpdate,
     ) -> Result<(), SessionError> {
-        message::Entity::update_many()
-            .set(message::ActiveModel {
-                body: Set(update.body),
-                status: Set(update.status),
-                error: Set(update.error),
-                updated_at: Set(Utc::now()),
-                ..Default::default()
-            })
-            .filter(message::Column::Id.eq(id))
-            .exec(&self.db)
-            .await?;
+        sqlx::query(
+            "UPDATE messages
+             SET body = ?, status = ?, error = ?, updated_at = ?
+             WHERE id = ?",
+        )
+        .bind(Json(update.body))
+        .bind(update.status.as_str())
+        .bind(update.error)
+        .bind(Utc::now())
+        .bind(id)
+        .execute(&self.db)
+        .await?;
         Ok(())
     }
 
@@ -60,12 +92,17 @@ impl SessionService {
     ///
     /// [`SessionError::Store`] when the database fails.
     pub async fn all_messages(&self, session_id: Uuid) -> Result<Vec<Message>, SessionError> {
-        Ok(message::Entity::find()
-            .filter(message::Column::SessionId.eq(session_id))
-            .order_by_asc(message::Column::CreatedAt)
-            .order_by_asc(message::Column::Id)
-            .all(&self.db)
-            .await?)
+        let rows = sqlx::query_as::<_, MessageRow>(
+            "SELECT id, session_id, parent_id, body, status, error,
+                    provider_id, model, api_format, created_at, updated_at
+             FROM messages
+             WHERE session_id = ?
+             ORDER BY created_at ASC, id ASC",
+        )
+        .bind(session_id)
+        .fetch_all(&self.db)
+        .await?;
+        rows.into_iter().map(message_from_row).collect()
     }
 
     /// Returns the API format of the latest assistant message on the active
@@ -73,18 +110,14 @@ impl SessionService {
     ///
     /// # Errors
     ///
-    /// [`SessionError::NotFound`] when the user owns no such session,
+    /// [`SessionError::NotFound`] when no such session exists,
     /// [`SessionError::Missing`] when a context-path node is absent, and
     /// [`SessionError::Store`] when the database fails.
     pub async fn previous_assistant_api_format(
         &self,
-        user_id: Uuid,
         session_id: Uuid,
     ) -> Result<Option<ApiFormat>, SessionError> {
-        let session = self
-            .find(user_id, session_id)
-            .await?
-            .ok_or(SessionError::NotFound)?;
+        let session = self.find(session_id).await?.ok_or(SessionError::NotFound)?;
         let Some(leaf_id) = session.leaf_id else {
             return Ok(None);
         };
@@ -110,32 +143,25 @@ impl SessionService {
     ///
     /// # Errors
     ///
-    /// [`SessionError::NotFound`] when the user owns no such
-    /// session and [`SessionError::Store`] when the database
-    /// fails.
+    /// [`SessionError::NotFound`] when no such session exists and
+    /// [`SessionError::Store`] when the database fails.
     pub async fn list_messages(
         &self,
-        user_id: Uuid,
         session_id: Uuid,
         before_id: Option<Uuid>,
         limit: i32,
     ) -> Result<MessagePage, SessionError> {
-        self.find(user_id, session_id)
-            .await?
-            .ok_or(SessionError::NotFound)?;
-        let page_len = match usize::try_from(limit) {
-            Ok(0) | Err(_) => DEFAULT_PAGE_LEN,
-            Ok(n) => n,
-        };
-        let mut query = message::Entity::find()
-            .filter(message::Column::SessionId.eq(session_id))
-            .order_by_desc(message::Column::CreatedAt)
-            .order_by_desc(message::Column::Id)
-            .limit(page_len as u64 + 1);
-        if let Some(before_id) = before_id {
-            let Some(before) = message::Entity::find_by_id(before_id)
-                .filter(message::Column::SessionId.eq(session_id))
-                .one(&self.db)
+        self.find(session_id).await?.ok_or(SessionError::NotFound)?;
+        let page_len = if limit > 0 { limit } else { DEFAULT_PAGE_LEN };
+        let fetch_limit = i64::from(page_len) + 1;
+        let rows = if let Some(before_id) = before_id {
+            let Some((before_created_at, before_row_id)) =
+                sqlx::query_as::<_, (DateTime<Utc>, Uuid)>(
+                    "SELECT created_at, id FROM messages WHERE id = ? AND session_id = ?",
+                )
+                .bind(before_id)
+                .bind(session_id)
+                .fetch_optional(&self.db)
                 .await?
             else {
                 return Ok(MessagePage {
@@ -143,20 +169,76 @@ impl SessionService {
                     has_more: false,
                 });
             };
-            query = query.filter(
-                Expr::tuple([
-                    Expr::col(message::Column::CreatedAt),
-                    Expr::col(message::Column::Id),
-                ])
-                .lt(Expr::tuple([
-                    Expr::value(before.created_at),
-                    Expr::value(before.id),
-                ])),
-            );
-        }
-        let mut messages = query.all(&self.db).await?;
+            sqlx::query_as::<_, MessageRow>(
+                "SELECT id, session_id, parent_id, body, status, error,
+                        provider_id, model, api_format, created_at, updated_at
+                 FROM messages
+                 WHERE session_id = ? AND (created_at, id) < (?, ?)
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT ?",
+            )
+            .bind(session_id)
+            .bind(before_created_at)
+            .bind(before_row_id)
+            .bind(fetch_limit)
+            .fetch_all(&self.db)
+            .await?
+        } else {
+            sqlx::query_as::<_, MessageRow>(
+                "SELECT id, session_id, parent_id, body, status, error,
+                        provider_id, model, api_format, created_at, updated_at
+                 FROM messages
+                 WHERE session_id = ?
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT ?",
+            )
+            .bind(session_id)
+            .bind(fetch_limit)
+            .fetch_all(&self.db)
+            .await?
+        };
+        let mut messages: Vec<Message> = rows
+            .into_iter()
+            .map(message_from_row)
+            .collect::<Result<_, _>>()?;
+        let page_len = page_len as usize;
         let has_more = messages.len() > page_len;
         messages.truncate(page_len);
         Ok(MessagePage { messages, has_more })
     }
+}
+
+fn message_from_row(
+    (
+        id,
+        session_id,
+        parent_id,
+        body,
+        status,
+        error,
+        provider_id,
+        model,
+        api_format,
+        created_at,
+        updated_at,
+    ): MessageRow,
+) -> Result<Message, SessionError> {
+    let status = MessageStatus::parse(&status)?;
+    let api_format = api_format
+        .as_deref()
+        .map(message::parse_api_format)
+        .transpose()?;
+    Ok(Message {
+        id,
+        session_id,
+        parent_id,
+        body: body.0,
+        status,
+        error,
+        provider_id,
+        model,
+        api_format,
+        created_at,
+        updated_at,
+    })
 }

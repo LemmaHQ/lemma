@@ -69,8 +69,8 @@ fn provider(base_url: &str) -> Value {
     })
 }
 
-async fn create(engine: &Engine, token: &str, body: &Value) -> Result<String, Box<dyn Error>> {
-    let reply = engine.call_as(token, CREATE, body).await?;
+async fn create(engine: &Engine, body: &Value) -> Result<String, Box<dyn Error>> {
+    let reply = engine.call(CREATE, body).await?;
     reply.body["provider"]["id"]
         .as_str()
         .map(str::to_owned)
@@ -90,19 +90,17 @@ fn web_id(body: &Value, kind: &str) -> Result<String, Box<dyn Error>> {
 async fn providers_round_trip_through_create_list_update_and_delete() -> Result<(), Box<dyn Error>>
 {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
 
     let created = engine
-        .call_as(&token, CREATE, &provider("https://api.example.com/v1/"))
+        .call(CREATE, &provider("https://api.example.com/v1/"))
         .await?;
     let id = created.body["provider"]["id"]
         .as_str()
         .unwrap_or_default()
         .to_owned();
-    let listed = engine.call_as(&token, LIST, &json!({})).await?;
+    let listed = engine.call(LIST, &json!({})).await?;
     let updated = engine
-        .call_as(
-            &token,
+        .call(
             UPDATE,
             &json!({
                 "id": id,
@@ -115,9 +113,8 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
             }),
         )
         .await?;
-    let deleted = engine.call_as(&token, DELETE, &json!({ "id": id })).await?;
-    let after = engine.call_as(&token, LIST, &json!({})).await?;
-
+    let deleted = engine.call(DELETE, &json!({ "id": id })).await?;
+    let after = engine.call(LIST, &json!({})).await?;
     assert_eq!(
         created.body["provider"],
         json!({
@@ -164,30 +161,24 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         after.body["providers"][0]["predefined"]["identifier"], "deepseek",
         "predefined provider remains: {after:?}"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
-    let listed = engine.call_as(&token, LIST, &json!({})).await?;
+    let listed = engine.call(LIST, &json!({})).await?;
     let id = listed.body["providers"][0]["id"]
         .as_str()
         .unwrap_or_default()
         .to_owned();
 
     let without_key = engine
-        .call_as(
-            &token,
-            UPDATE_PREDEFINED,
-            &json!({ "id": id, "enabled": true }),
-        )
+        .call(UPDATE_PREDEFINED, &json!({ "id": id, "enabled": true }))
         .await?;
     let updated = engine
-        .call_as(
-            &token,
+        .call(
             UPDATE_PREDEFINED,
             &json!({
                 "id": id,
@@ -198,15 +189,13 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
         )
         .await?;
     let invalid = engine
-        .call_as(
-            &token,
+        .call(
             UPDATE_PREDEFINED,
             &json!({ "id": id, "defaultApiFormat": "API_FORMAT_GEMINI" }),
         )
         .await?;
-    let fetched = engine.call_as(&token, FETCH, &json!({ "id": id })).await?;
-    let deleted = engine.call_as(&token, DELETE, &json!({ "id": id })).await?;
-
+    let fetched = engine.call(FETCH, &json!({ "id": id })).await?;
+    let deleted = engine.call(DELETE, &json!({ "id": id })).await?;
     assert_reason(&without_key, ErrorReason::ProviderKeyRequired);
     assert!(
         updated.body["provider"]["enabled"]
@@ -221,54 +210,48 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
     assert_reason(&invalid, ErrorReason::ApiFormatInvalid);
     assert_reason(&fetched, ErrorReason::ProviderNotFound);
     assert_reason(&deleted, ErrorReason::ProviderNotFound);
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
-    let listed = engine.call_as(&token, LIST_WEB, &json!({})).await?;
+    let listed = engine.call(LIST_WEB, &json!({})).await?;
     let native = web_id(&listed.body, "KIND_NATIVE")?;
     let exa = web_id(&listed.body, "KIND_EXA")?;
     let deepseek = web_id(&listed.body, "KIND_DEEPSEEK")?;
 
     let without_key = engine
-        .call_as(&token, UPDATE_WEB, &json!({ "id": exa, "enabled": true }))
+        .call(UPDATE_WEB, &json!({ "id": exa, "enabled": true }))
         .await?;
     let exa_enabled = engine
-        .call_as(
-            &token,
+        .call(
             UPDATE_WEB,
             &json!({ "id": exa, "apiKey": "sk-exa", "enabled": true }),
         )
         .await?;
     let deepseek_enabled = engine
-        .call_as(
-            &token,
+        .call(
             UPDATE_WEB,
             &json!({ "id": deepseek, "apiKey": "sk-deepseek", "enabled": true }),
         )
         .await?;
     let search_order = engine
-        .call_as(
-            &token,
+        .call(
             ORDER_WEB,
             &json!({ "function": "FUNCTION_SEARCH", "ids": [deepseek, exa] }),
         )
         .await?;
     let fetch_order = engine
-        .call_as(
-            &token,
+        .call(
             ORDER_WEB,
             &json!({ "function": "FUNCTION_FETCH", "ids": [deepseek, exa, native] }),
         )
         .await?;
     let cleared = engine
-        .call_as(&token, UPDATE_WEB, &json!({ "id": exa, "apiKey": "" }))
+        .call(UPDATE_WEB, &json!({ "id": exa, "apiKey": "" }))
         .await?;
-
     assert_reason(&without_key, ErrorReason::ProviderKeyRequired);
     assert_eq!(listed.body["providers"][0]["kind"], "KIND_NATIVE");
     assert_eq!(listed.body["providers"][0]["name"], "Native");
@@ -321,64 +304,41 @@ async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box
             .as_bool()
             .unwrap_or_default()
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let ada = engine.token("ada").await?;
-    let bob = engine.token("bob").await?;
-    let listed = engine.call_as(&ada, LIST_WEB, &json!({})).await?;
+    let listed = engine.call(LIST_WEB, &json!({})).await?;
     let native = web_id(&listed.body, "KIND_NATIVE")?;
     let exa = web_id(&listed.body, "KIND_EXA")?;
     let deepseek = web_id(&listed.body, "KIND_DEEPSEEK")?;
+    let unknown = "00000000-0000-4000-8000-000000000000";
 
     let cases = [
         (
-            engine.call(LIST_WEB, &json!({})).await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine.call(UPDATE_WEB, &json!({ "id": exa })).await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
             engine
-                .call(
-                    ORDER_WEB,
-                    &json!({ "function": "FUNCTION_FETCH", "ids": [native] }),
-                )
-                .await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine
-                .call_as(&ada, UPDATE_WEB, &json!({ "id": "x", "enabled": true }))
+                .call(UPDATE_WEB, &json!({ "id": "x", "enabled": true }))
                 .await?,
             ErrorReason::IdInvalid,
         ),
         (
             engine
-                .call_as(&bob, UPDATE_WEB, &json!({ "id": exa, "enabled": false }))
+                .call(UPDATE_WEB, &json!({ "id": unknown, "enabled": false }))
                 .await?,
             ErrorReason::ProviderNotFound,
         ),
         (
             engine
-                .call_as(
-                    &ada,
-                    ORDER_WEB,
-                    &json!({ "function": "FUNCTION_UNSPECIFIED" }),
-                )
+                .call(ORDER_WEB, &json!({ "function": "FUNCTION_UNSPECIFIED" }))
                 .await?,
             ErrorReason::ProviderFieldsRequired,
         ),
         (
             engine
-                .call_as(
-                    &ada,
+                .call(
                     ORDER_WEB,
                     &json!({ "function": "FUNCTION_SEARCH", "ids": ["x"] }),
                 )
@@ -387,8 +347,7 @@ async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>
         ),
         (
             engine
-                .call_as(
-                    &ada,
+                .call(
                     ORDER_WEB,
                     &json!({ "function": "FUNCTION_SEARCH", "ids": [] }),
                 )
@@ -397,8 +356,7 @@ async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>
         ),
         (
             engine
-                .call_as(
-                    &ada,
+                .call(
                     ORDER_WEB,
                     &json!({ "function": "FUNCTION_SEARCH", "ids": [exa, exa] }),
                 )
@@ -407,8 +365,7 @@ async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>
         ),
         (
             engine
-                .call_as(
-                    &ada,
+                .call(
                     ORDER_WEB,
                     &json!({ "function": "FUNCTION_SEARCH", "ids": [exa, deepseek, native] }),
                 )
@@ -420,14 +377,13 @@ async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>
     for (reply, reason) in &cases {
         assert_reason(reply, *reason);
     }
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn each_api_format_maps_to_its_proto_value() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
 
     for (index, kind) in [
         "API_FORMAT_OPENAI",
@@ -440,22 +396,21 @@ async fn each_api_format_maps_to_its_proto_value() -> Result<(), Box<dyn Error>>
         let mut body = provider("https://api.example.com");
         body["apiFormat"] = json!(kind);
         body["identifier"] = json!(format!("p{index}"));
-        let reply = engine.call_as(&token, CREATE, &body).await?;
+        let reply = engine.call(CREATE, &body).await?;
         assert_eq!(
             reply.body["provider"]["custom"]["apiFormat"], kind,
             "{reply:?}"
         );
     }
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let ada = engine.token("ada").await?;
-    let bob = engine.token("bob").await?;
-    let id = create(&engine, &ada, &provider("https://api.example.com")).await?;
+    let _id = create(&engine, &provider("https://api.example.com")).await?;
+    let unknown = "00000000-0000-4000-8000-000000000000";
     let mut no_kind = provider("https://api.example.com");
     no_kind["apiFormat"] = json!("API_FORMAT_UNSPECIFIED");
     let mut blank_identifier = provider("https://api.example.com");
@@ -464,112 +419,76 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
 
     let cases = [
         (
-            engine.call(LIST, &json!({})).await?,
-            ErrorReason::TokenInvalid,
+            engine.call(CREATE, &no_kind).await?,
+            ErrorReason::ApiFormatInvalid,
+        ),
+        (
+            engine.call(CREATE, &blank_identifier).await?,
+            ErrorReason::ProviderIdentifierInvalid,
+        ),
+        (
+            engine.call(CREATE, &blank_base_url).await?,
+            ErrorReason::ProviderFieldsRequired,
         ),
         (
             engine
                 .call(CREATE, &provider("https://api.example.com"))
                 .await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine
-                .call(UPDATE, &json!({ "id": id, "name": "n" }))
-                .await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine.call(DELETE, &json!({ "id": id })).await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine.call(FETCH, &json!({ "id": id })).await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine
-                .call(CHECK, &json!({ "id": id, "model": "m1" }))
-                .await?,
-            ErrorReason::TokenInvalid,
-        ),
-        (
-            engine.call_as(&ada, CREATE, &no_kind).await?,
-            ErrorReason::ApiFormatInvalid,
-        ),
-        (
-            engine.call_as(&ada, CREATE, &blank_identifier).await?,
-            ErrorReason::ProviderIdentifierInvalid,
-        ),
-        (
-            engine.call_as(&ada, CREATE, &blank_base_url).await?,
-            ErrorReason::ProviderFieldsRequired,
-        ),
-        (
-            engine
-                .call_as(&ada, CREATE, &provider("https://api.example.com"))
-                .await?,
             ErrorReason::ProviderIdentifierTaken,
         ),
         (
             engine
-                .call_as(&ada, UPDATE, &json!({ "id": "x", "name": "n" }))
+                .call(UPDATE, &json!({ "id": "x", "name": "n" }))
                 .await?,
             ErrorReason::IdInvalid,
         ),
         (
             engine
-                .call_as(&bob, UPDATE, &json!({ "id": id, "name": "n" }))
+                .call(UPDATE, &json!({ "id": unknown, "name": "n" }))
                 .await?,
             ErrorReason::ProviderNotFound,
         ),
         (
-            engine.call_as(&bob, DELETE, &json!({ "id": id })).await?,
+            engine.call(DELETE, &json!({ "id": unknown })).await?,
             ErrorReason::ProviderNotFound,
         ),
         (
-            engine.call_as(&ada, DELETE, &json!({ "id": "x" })).await?,
+            engine.call(DELETE, &json!({ "id": "x" })).await?,
             ErrorReason::IdInvalid,
         ),
         (
             engine
-                .call_as(
-                    &ada,
-                    FETCH,
-                    &json!({ "baseUrl": "https://api.example.com" }),
-                )
+                .call(FETCH, &json!({ "baseUrl": "https://api.example.com" }))
                 .await?,
             ErrorReason::ApiFormatInvalid,
         ),
         (
-            engine.call_as(&ada, FETCH, &json!({ "id": "x" })).await?,
+            engine.call(FETCH, &json!({ "id": "x" })).await?,
             ErrorReason::IdInvalid,
         ),
         (
-            engine.call_as(&bob, FETCH, &json!({ "id": id })).await?,
+            engine.call(FETCH, &json!({ "id": unknown })).await?,
             ErrorReason::ProviderNotFound,
         ),
         (
             engine
-                .call_as(&ada, CHECK, &json!({ "id": id, "model": " " }))
+                .call(CHECK, &json!({ "id": unknown, "model": " " }))
                 .await?,
             ErrorReason::ModelRequired,
         ),
         (
-            engine
-                .call_as(&ada, CHECK, &json!({ "model": "m1" }))
-                .await?,
+            engine.call(CHECK, &json!({ "model": "m1" })).await?,
             ErrorReason::ApiFormatInvalid,
         ),
         (
             engine
-                .call_as(&bob, CHECK, &json!({ "id": id, "model": "m1" }))
+                .call(CHECK, &json!({ "id": unknown, "model": "m1" }))
                 .await?,
             ErrorReason::ProviderNotFound,
         ),
         (
             engine
-                .call_as(&ada, CHECK, &json!({ "id": "x", "model": "m1" }))
+                .call(CHECK, &json!({ "id": "x", "model": "m1" }))
                 .await?,
             ErrorReason::IdInvalid,
         ),
@@ -578,28 +497,25 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     for (reply, reason) in &cases {
         assert_reason(reply, *reason);
     }
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn models_are_fetched_with_the_stored_or_given_key() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
     let base_url = vendor().await?;
-    let id = create(&engine, &token, &provider(&base_url)).await?;
+    let id = create(&engine, &provider(&base_url)).await?;
 
-    let stored = engine.call_as(&token, FETCH, &json!({ "id": id })).await?;
+    let stored = engine.call(FETCH, &json!({ "id": id })).await?;
     let adhoc = engine
-        .call_as(
-            &token,
+        .call(
             FETCH,
             &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-1" }),
         )
         .await?;
     let wrong_key = engine
-        .call_as(
-            &token,
+        .call(
             FETCH,
             &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-2" }),
         )
@@ -616,16 +532,15 @@ async fn models_are_fetched_with_the_stored_or_given_key() -> Result<(), Box<dyn
         "ad-hoc details"
     );
     assert_internal(&wrong_key, "fetch models: upstream 401: bad key");
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
     let base_url = vendor().await?;
-    let id = create(&engine, &token, &provider(&base_url)).await?;
+    let id = create(&engine, &provider(&base_url)).await?;
     let adhoc = |model: &str| {
         json!({
             "apiFormat": "API_FORMAT_OPENAI",
@@ -636,10 +551,10 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
     };
 
     let stored = engine
-        .call_as(&token, CHECK, &json!({ "id": id, "model": " m1 " }))
+        .call(CHECK, &json!({ "id": id, "model": " m1 " }))
         .await?;
-    let answering = engine.call_as(&token, CHECK, &adhoc("m1")).await?;
-    let missing = engine.call_as(&token, CHECK, &adhoc("missing")).await?;
+    let answering = engine.call(CHECK, &adhoc("m1")).await?;
+    let missing = engine.call(CHECK, &adhoc("missing")).await?;
 
     assert_eq!(
         (stored.status, &stored.body),
@@ -656,7 +571,7 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
         (200, &json!({ "error": "upstream 404: model not found" })),
         "missing model"
     );
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
@@ -664,24 +579,22 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
 async fn keys_sealed_under_a_rotated_secret_fail_as_internal_errors() -> Result<(), Box<dyn Error>>
 {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
-    let id = create(&engine, &token, &provider("https://api.example.com")).await?;
+    let id = create(&engine, &provider("https://api.example.com")).await?;
 
     engine.reopen_with_secret_key("rotated").await?;
-    let fetched = engine.call_as(&token, FETCH, &json!({ "id": id })).await?;
+    let fetched = engine.call(FETCH, &json!({ "id": id })).await?;
 
     assert_internal(&fetched, "crypto: decrypt failed");
-    engine.close().await?;
+    engine.close().await;
     Ok(())
 }
 
 #[tokio::test]
 async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
-    let token = engine.token("ada").await?;
-    engine.close().await?;
+    engine.close().await;
 
-    let reply = engine.call_as(&token, LIST, &json!({})).await?;
+    let reply = engine.call(LIST, &json!({})).await?;
 
     assert_internal(&reply, "db: ");
     Ok(())

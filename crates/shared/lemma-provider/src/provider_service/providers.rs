@@ -1,28 +1,28 @@
 use std::fmt::{self, Debug};
 
 use chrono::Utc;
-use lemma_model::Connector;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
-    QueryOrder, Set, SqlErr,
-};
+use sqlx::SqlitePool;
+use sqlx::types::Json;
 use uuid::Uuid;
 
-use crate::entity::provider::{self, Models, ProviderSource};
-use crate::preset;
-use crate::provider_error::ProviderError;
+use lemma_model::Connector;
 
-use super::ProviderModel;
+use crate::preset::{self, PredefinedProvider};
+use crate::provider_error::ProviderError;
+use crate::provider_model::ProviderModel;
+use crate::provider_row::{self, ProviderRow, ProviderSource, ProviderTuple};
+
 use super::create_input::CreateCustomInput;
 use super::provider_view::{CustomProviderView, PredefinedProviderView, ProviderView};
 use super::update_input::UpdateCustomInput;
 
-/// Provider domain service over a database holding the providers table.
+/// Provider domain service over a SQLite pool holding the `providers` and
+/// `web_providers` tables.
 ///
-/// `secret_key` seals API keys with lemma-crypto. `connector` binds
+/// `secret_key` seals API keys with `lemma-crypto`. `connector` binds
 /// providers to adapters and fetches live model lists.
 pub struct ProviderService<C> {
-    pub(super) db: DatabaseConnection,
+    pub(super) db: SqlitePool,
     pub(super) secret_key: String,
     pub(super) connector: C,
 }
@@ -37,8 +37,9 @@ impl<C: Debug> Debug for ProviderService<C> {
 }
 
 impl<C: Connector> ProviderService<C> {
-    /// Creates the service over a database.
-    pub fn new(db: DatabaseConnection, secret_key: String, connector: C) -> Self {
+    /// Creates the service over a SQLite pool.
+    #[must_use]
+    pub fn new(db: SqlitePool, secret_key: String, connector: C) -> Self {
         Self {
             db,
             secret_key,
@@ -62,7 +63,7 @@ impl<C: Connector> ProviderService<C> {
             .map_err(ProviderError::Crypto)
     }
 
-    pub(super) fn view(&self, row: &provider::Model) -> Option<ProviderView> {
+    pub(super) fn view(&self, row: &ProviderRow) -> Option<ProviderView> {
         match row.source {
             ProviderSource::Custom => Some(ProviderView::Custom(self.custom_view(row))),
             ProviderSource::Predefined => {
@@ -74,8 +75,8 @@ impl<C: Connector> ProviderService<C> {
 
     pub(super) fn predefined_view(
         &self,
-        row: &provider::Model,
-        preset: &preset::PredefinedProvider,
+        row: &ProviderRow,
+        preset: &PredefinedProvider,
     ) -> PredefinedProviderView {
         PredefinedProviderView {
             id: row.id,
@@ -100,7 +101,7 @@ impl<C: Connector> ProviderService<C> {
         }
     }
 
-    fn custom_view(&self, row: &provider::Model) -> CustomProviderView {
+    fn custom_view(&self, row: &ProviderRow) -> CustomProviderView {
         CustomProviderView {
             id: row.id,
             identifier: row.identifier.clone(),
@@ -108,7 +109,7 @@ impl<C: Connector> ProviderService<C> {
             api_format: row.api_format,
             base_url: row.base_url.clone(),
             api_key: self.open_key(&row.api_key).unwrap_or_default(),
-            models: row.models.0.clone(),
+            models: row.models.clone(),
             enabled: row.enabled,
             api_path: row.api_path.clone(),
             models_path: row.models_path.clone(),
@@ -120,13 +121,20 @@ impl<C: Connector> ProviderService<C> {
     /// # Errors
     ///
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn list(&self, user_id: Uuid) -> Result<Vec<ProviderView>, ProviderError> {
-        self.insert_missing_predefined(user_id).await?;
-        let rows = provider::Entity::find()
-            .filter(provider::Column::UserId.eq(user_id))
-            .order_by_asc(provider::Column::CreatedAt)
-            .all(&self.db)
-            .await?;
+    pub async fn list(&self) -> Result<Vec<ProviderView>, ProviderError> {
+        self.insert_missing_predefined().await?;
+        let tuples = sqlx::query_as::<_, ProviderTuple>(
+            "SELECT id, api_format, source, identifier, name, base_url,
+                    api_key, api_path, models_path, models, enabled
+             FROM providers
+             ORDER BY created_at ASC, id ASC",
+        )
+        .fetch_all(&self.db)
+        .await?;
+        let rows: Vec<ProviderRow> = tuples
+            .into_iter()
+            .map(provider_row::from_tuple)
+            .collect::<Result<_, _>>()?;
         let mut views: Vec<_> = rows.iter().filter_map(|row| self.view(row)).collect();
         views.sort_by_key(|view| match view {
             ProviderView::Predefined(_) => 0,
@@ -146,7 +154,6 @@ impl<C: Connector> ProviderService<C> {
     /// when the database fails.
     pub async fn create_custom(
         &self,
-        user_id: Uuid,
         input: CreateCustomInput,
     ) -> Result<CustomProviderView, ProviderError> {
         let identifier = input.identifier.trim();
@@ -160,31 +167,52 @@ impl<C: Connector> ProviderService<C> {
             return Err(ProviderError::FieldsRequired);
         }
         let sealed = self.seal_key(&input.api_key)?;
-        let row = provider::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            user_id: Set(user_id),
-            api_format: Set(input.api_format),
-            source: Set(ProviderSource::Custom),
-            identifier: Set(identifier.to_owned()),
-            name: Set(name.to_owned()),
-            base_url: Set(base_url.to_owned()),
-            api_key: Set(sealed),
-            api_path: Set(input.api_path.trim().to_owned()),
-            models_path: Set(input.models_path.trim().to_owned()),
-            models: Set(Models(input.models)),
-            enabled: Set(true),
-            created_at: Set(Utc::now()),
-        }
-        .insert(&self.db)
+        let id = Uuid::new_v4();
+        let api_path = input.api_path.trim().to_owned();
+        let models_path = input.models_path.trim().to_owned();
+        sqlx::query(
+            "INSERT INTO providers (
+                 id, api_format, source, identifier, name, base_url,
+                 api_key, api_path, models_path, models, enabled, created_at
+             )
+             VALUES (?, ?, 'custom', ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+        )
+        .bind(id)
+        .bind(provider_row::api_format_str(input.api_format))
+        .bind(identifier)
+        .bind(name)
+        .bind(base_url)
+        .bind(&sealed)
+        .bind(&api_path)
+        .bind(&models_path)
+        .bind(Json(&input.models))
+        .bind(Utc::now())
+        .execute(&self.db)
         .await
-        .map_err(|e| match e.sql_err() {
-            Some(SqlErr::UniqueConstraintViolation(_)) => ProviderError::IdentifierTaken,
-            _ => e.into(),
+        .map_err(|e| {
+            if e.as_database_error()
+                .is_some_and(|db_err| db_err.is_unique_violation())
+            {
+                ProviderError::IdentifierTaken
+            } else {
+                e.into()
+            }
         })?;
-        Ok(self.custom_view(&row))
+        Ok(CustomProviderView {
+            id,
+            identifier: identifier.to_owned(),
+            name: name.to_owned(),
+            api_format: input.api_format,
+            base_url: base_url.to_owned(),
+            api_key: input.api_key,
+            models: input.models,
+            enabled: true,
+            api_path,
+            models_path,
+        })
     }
 
-    /// Applies an update to a custom provider owned by the user.
+    /// Applies an update to a custom provider.
     ///
     /// # Errors
     ///
@@ -193,73 +221,79 @@ impl<C: Connector> ProviderService<C> {
     /// when the database fails.
     pub async fn update_custom(
         &self,
-        user_id: Uuid,
         id: Uuid,
         input: UpdateCustomInput,
     ) -> Result<CustomProviderView, ProviderError> {
-        let api_key = match input.api_key {
-            Some(key) => Set(self.seal_key(&key)?),
-            None => NotSet,
-        };
-        let changes = provider::ActiveModel {
-            name: input.name.map_or(NotSet, |s| Set(s.trim().to_owned())),
-            base_url: input
-                .base_url
-                .map_or(NotSet, |s| Set(s.trim().trim_end_matches('/').to_owned())),
-            api_key,
-            api_path: input.api_path.map_or(NotSet, |s| Set(s.trim().to_owned())),
-            models_path: input
-                .models_path
-                .map_or(NotSet, |s| Set(s.trim().to_owned())),
-            models: input.models.map_or(NotSet, |models| Set(Models(models))),
-            enabled: input.enabled.map_or(NotSet, Set),
-            ..Default::default()
-        };
-        if !changes.is_changed() {
-            let row = self.find_custom(user_id, id).await?;
-            return Ok(self.custom_view(&row));
-        }
-        provider::Entity::update_many()
-            .set(changes)
-            .filter(provider::Column::Id.eq(id))
-            .filter(provider::Column::UserId.eq(user_id))
-            .filter(provider::Column::Source.eq(ProviderSource::Custom))
-            .exec_with_returning(&self.db)
-            .await?
-            .pop()
-            .map(|row| self.custom_view(&row))
-            .ok_or(ProviderError::NotFound)
+        let name = input.name.map(|s| s.trim().to_owned());
+        let base_url = input
+            .base_url
+            .map(|s| s.trim().trim_end_matches('/').to_owned());
+        let api_key = input
+            .api_key
+            .as_deref()
+            .map(|key| self.seal_key(key))
+            .transpose()?;
+        let api_path = input.api_path.map(|s| s.trim().to_owned());
+        let models_path = input.models_path.map(|s| s.trim().to_owned());
+        let models = input.models.map(Json);
+        let row = sqlx::query_as::<_, ProviderTuple>(
+            "UPDATE providers
+             SET name = COALESCE(?, name),
+                 base_url = COALESCE(?, base_url),
+                 api_key = COALESCE(?, api_key),
+                 api_path = COALESCE(?, api_path),
+                 models_path = COALESCE(?, models_path),
+                 models = COALESCE(?, models),
+                 enabled = COALESCE(?, enabled)
+             WHERE id = ? AND source = 'custom'
+             RETURNING id, api_format, source, identifier, name, base_url,
+                       api_key, api_path, models_path, models, enabled",
+        )
+        .bind(name)
+        .bind(base_url)
+        .bind(api_key)
+        .bind(api_path)
+        .bind(models_path)
+        .bind(models)
+        .bind(input.enabled)
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?
+        .map(provider_row::from_tuple)
+        .transpose()?
+        .ok_or(ProviderError::NotFound)?;
+        Ok(self.custom_view(&row))
     }
 
-    /// Deletes a custom provider owned by the user.
+    /// Deletes a custom provider.
     ///
     /// # Errors
     ///
     /// [`ProviderError::NotFound`] when no such custom provider exists and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn delete_custom(&self, user_id: Uuid, id: Uuid) -> Result<(), ProviderError> {
-        let deleted = provider::Entity::delete_many()
-            .filter(provider::Column::Id.eq(id))
-            .filter(provider::Column::UserId.eq(user_id))
-            .filter(provider::Column::Source.eq(ProviderSource::Custom))
-            .exec(&self.db)
+    pub async fn delete_custom(&self, id: Uuid) -> Result<(), ProviderError> {
+        let deleted = sqlx::query("DELETE FROM providers WHERE id = ? AND source = 'custom'")
+            .bind(id)
+            .execute(&self.db)
             .await?;
-        if deleted.rows_affected == 0 {
+        if deleted.rows_affected() == 0 {
             return Err(ProviderError::NotFound);
         }
         Ok(())
     }
 
-    pub(super) async fn find_custom(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-    ) -> Result<provider::Model, ProviderError> {
-        provider::Entity::find_by_id(id)
-            .filter(provider::Column::UserId.eq(user_id))
-            .filter(provider::Column::Source.eq(ProviderSource::Custom))
-            .one(&self.db)
-            .await?
-            .ok_or(ProviderError::NotFound)
+    pub(super) async fn find_custom(&self, id: Uuid) -> Result<ProviderRow, ProviderError> {
+        sqlx::query_as::<_, ProviderTuple>(
+            "SELECT id, api_format, source, identifier, name, base_url,
+                    api_key, api_path, models_path, models, enabled
+             FROM providers
+             WHERE id = ? AND source = 'custom'",
+        )
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?
+        .map(provider_row::from_tuple)
+        .transpose()?
+        .ok_or(ProviderError::NotFound)
     }
 }

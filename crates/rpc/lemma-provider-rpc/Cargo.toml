@@ -5,14 +5,10 @@ edition.workspace = true
 
 [dependencies]
 connectrpc.workspace = true
-lemma-auth-rpc.workspace = true
 lemma-model.workspace = true
 lemma-proto.workspace = true
 lemma-provider.workspace = true
 uuid.workspace = true
-
-[dev-dependencies]
-sea-orm.workspace = true
 
 [lints]
 workspace = true

@@ -14,8 +14,6 @@ use crate::turn_event::TurnEvent;
 /// One user message and where it goes.
 #[derive(Debug)]
 pub struct TurnInput {
-    /// Authenticated caller session queries are scoped to.
-    pub user_id: Uuid,
     /// Session the turn continues from its active leaf.
     pub session_id: Uuid,
     /// Id the user message is stored under.
@@ -61,9 +59,9 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     ///
     /// # Errors
     ///
-    /// [`LoopError::NotFound`] when the user owns no such session or a
-    /// message on the context path is missing, [`LoopError::Model`] when a
-    /// model stream fails, and [`LoopError::Store`] when the database fails.
+    /// [`LoopError::NotFound`] when the session or a message on the context
+    /// path is missing, [`LoopError::Model`] when a model stream fails, and
+    /// [`LoopError::Store`] when the database fails.
     pub async fn run_turn<O: Fn(TurnEvent) + Sync>(
         &self,
         input: TurnInput,
@@ -71,7 +69,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         cancel: &CancelToken,
     ) -> Result<(), LoopError> {
         let TurnInput {
-            user_id,
             session_id,
             user_message_id,
             user_message,
@@ -80,18 +77,17 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             tool_calling,
             system_prompt,
         } = input;
-        let meta = owned_session(&self.sessions, user_id, session_id).await?;
+        let meta = find_session(&self.sessions, session_id).await?;
 
         let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
-        self.append(user_id, user_entry).await?;
+        self.append(user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
         });
 
         self.sessions
-            .update_last_model(user_id, session_id, &model)
+            .update_last_model(session_id, model.clone())
             .await?;
-
         let tool_specs = if tool_calling {
             self.tools
                 .as_ref()
@@ -120,7 +116,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 model.provider_id,
                 api_format,
             );
-            self.append(user_id, placeholder).await?;
+            self.append(placeholder).await?;
             observer(TurnEvent::AssistantStarted { id: assistant_id });
 
             let req = ModelRequest {
@@ -174,14 +170,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             };
 
             leaf_id = self
-                .run_tools(
-                    runtime,
-                    user_id,
-                    session_id,
-                    assistant_id,
-                    &mut outcome,
-                    observer,
-                )
+                .run_tools(runtime, session_id, assistant_id, &mut outcome, observer)
                 .await?;
         }
     }
@@ -189,7 +178,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     async fn run_tools<O: Fn(TurnEvent) + Sync>(
         &self,
         runtime: &ToolRuntime<E>,
-        user_id: Uuid,
         session_id: Uuid,
         assistant_id: Uuid,
         outcome: &mut StepOutcome,
@@ -227,27 +215,23 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         for result in results {
             let result_id = Uuid::new_v4();
             let result = persist::settled(result_id, session_id, Some(leaf_id), result);
-            self.append(user_id, result).await?;
+            self.append(result).await?;
             leaf_id = result_id;
         }
         Ok(leaf_id)
     }
 
-    async fn append(&self, user_id: Uuid, entry: StoredMessage) -> Result<(), LoopError> {
+    async fn append(&self, entry: StoredMessage) -> Result<(), LoopError> {
         let (session_id, id) = (entry.session_id, entry.id);
         self.sessions.append_message(entry).await?;
-        self.sessions.update_leaf(user_id, session_id, id).await?;
+        self.sessions.update_leaf(session_id, id).await?;
         Ok(())
     }
 }
 
-/// The session `session_id` the user owns.
-async fn owned_session(
-    sessions: &SessionService,
-    user_id: Uuid,
-    session_id: Uuid,
-) -> Result<Session, LoopError> {
-    let Some(session) = sessions.find(user_id, session_id).await? else {
+/// Loads `session_id` or fails with [`LoopError::NotFound`].
+async fn find_session(sessions: &SessionService, session_id: Uuid) -> Result<Session, LoopError> {
+    let Some(session) = sessions.find(session_id).await? else {
         return Err(LoopError::NotFound(format!(
             "session {session_id} not found"
         )));

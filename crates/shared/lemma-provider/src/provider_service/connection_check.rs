@@ -1,7 +1,8 @@
 use futures::StreamExt;
+use uuid::Uuid;
+
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector, Endpoint, ModelRequest};
-use uuid::Uuid;
 
 use crate::provider_error::ProviderError;
 
@@ -15,17 +16,12 @@ impl<C: Connector> ProviderService<C> {
     ///
     /// # Errors
     ///
-    /// [`ProviderError::NotFound`] when the user owns no such provider,
+    /// [`ProviderError::NotFound`] when no such provider exists,
     /// [`ProviderError::Crypto`] when opening the key fails,
     /// [`ProviderError::Check`] when the upstream call fails, and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn check_for(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-        model: &str,
-    ) -> Result<(), ProviderError> {
-        let endpoint = self.endpoint(user_id, id).await?;
+    pub async fn check_for(&self, id: Uuid, model: &str) -> Result<(), ProviderError> {
+        let endpoint = self.endpoint(id).await?;
         self.check(endpoint, model).await
     }
 

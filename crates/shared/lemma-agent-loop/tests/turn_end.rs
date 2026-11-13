@@ -10,12 +10,11 @@ use lemma_agent_loop::{AgentLoop, LoopError, TurnEvent};
 use lemma_core::{ContentBlock, StopReason, StreamEvent, ToolCall};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_session::{MessageStatus, SessionService};
-use lemma_test_db::on_each_database;
 use lemma_tool::{CancelToken, LocalExecEnv};
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::common::{Migrator, input, new_session};
+use crate::common::{input, new_session};
 
 /// Thinks, then stops for tool use with one tool call.
 struct AsksForTool;
@@ -54,193 +53,139 @@ impl Adapter for Refuses {
 
 #[tokio::test]
 async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(sessions.clone(), AsksForTool, None);
-        let events = Mutex::new(Vec::new());
+    let db = lemma_test_db::database().await?;
+    let (sessions, session_id) = new_session(&db).await?;
+    let agent_loop: AgentLoop<_, LocalExecEnv> =
+        AgentLoop::new(sessions.clone(), AsksForTool, None);
+    let events = Mutex::new(Vec::new());
 
-        agent_loop
-            .run_turn(
-                input(user_id, session_id),
-                &|event| events.lock().unwrap_or_else(|e| e.into_inner()).push(event),
-                &CancelToken::new(),
-            )
-            .await?;
+    agent_loop
+        .run_turn(
+            input(session_id),
+            &|event| events.lock().unwrap_or_else(|e| e.into_inner()).push(event),
+            &CancelToken::new(),
+        )
+        .await?;
 
-        let events = events.into_inner().unwrap_or_else(|e| e.into_inner());
-        assert!(
-            matches!(events.last(), Some(TurnEvent::AssistantDone { .. })),
-            "{events:?}"
-        );
-        assert!(
-            !events
-                .iter()
-                .any(|event| matches!(event, TurnEvent::ToolStarted { .. })),
-            "no tool runs: {events:?}"
-        );
-        let messages = sessions.all_messages(session_id).await?;
-        let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
-        assert_eq!(
-            roles,
-            ["user", "assistant"],
-            "the turn stops after one step"
-        );
-        let assistant = &messages[1];
-        assert_eq!(assistant.status, MessageStatus::Done, "{assistant:?}");
-        assert_eq!(
-            assistant
-                .body
-                .0
-                .tool_calls()
-                .map(|call| &call.id)
-                .collect::<Vec<_>>(),
-            ["call-1"],
-            "the unanswered call is kept"
-        );
-        let thinking = assistant
+    let events = events.into_inner().unwrap_or_else(|e| e.into_inner());
+    assert!(
+        matches!(events.last(), Some(TurnEvent::AssistantDone { .. })),
+        "{events:?}"
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, TurnEvent::ToolStarted { .. })),
+        "no tool runs: {events:?}"
+    );
+    let messages = sessions.all_messages(session_id).await?;
+    let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
+    assert_eq!(
+        roles,
+        ["user", "assistant"],
+        "the turn stops after one step"
+    );
+    let assistant = &messages[1];
+    assert_eq!(assistant.status, MessageStatus::Done, "{assistant:?}");
+    assert_eq!(
+        assistant
             .body
             .0
-            .content()
-            .iter()
-            .find_map(|block| match block {
-                ContentBlock::Thinking(thinking) => Some(thinking),
-                _ => None,
-            })
-            .ok_or("no thinking block")?;
-        assert!(
-            thinking.finished_at.is_some(),
-            "the thinking is settled: {thinking:?}"
-        );
-        Ok(())
-    })
-    .await
+            .tool_calls()
+            .map(|call| &call.id)
+            .collect::<Vec<_>>(),
+        ["call-1"],
+        "the unanswered call is kept"
+    );
+    let thinking = assistant
+        .body
+        .0
+        .content()
+        .iter()
+        .find_map(|block| match block {
+            ContentBlock::Thinking(thinking) => Some(thinking),
+            _ => None,
+        })
+        .ok_or("no thinking block")?;
+    assert!(
+        thinking.finished_at.is_some(),
+        "the thinking is settled: {thinking:?}"
+    );
+    Ok(())
 }
 
 #[tokio::test]
 async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, Refuses, None);
+    let db = lemma_test_db::database().await?;
+    let (sessions, session_id) = new_session(&db).await?;
+    let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, Refuses, None);
 
-        let result = agent_loop
-            .run_turn(
-                input(user_id, session_id),
-                &|_| {},
-                &CancelToken::new(),
-            )
-            .await;
+    let result = agent_loop
+        .run_turn(input(session_id), &|_| {}, &CancelToken::new())
+        .await;
 
-        assert!(
-            matches!(&result, Err(e @ LoopError::Model(_)) if e.to_string().contains("HTTP 429: rate limited")),
-            "{result:?}"
-        );
-        Ok(())
-    })
-    .await
-}
-
-#[tokio::test]
-async fn a_turn_on_a_session_the_user_does_not_own_writes_nothing() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(sessions.clone(), Refuses, None);
-
-        let result = agent_loop
-            .run_turn(
-                input(Uuid::new_v4(), session_id),
-                &|_| {},
-                &CancelToken::new(),
-            )
-            .await;
-
-        assert!(matches!(result, Err(LoopError::NotFound(_))), "{result:?}");
-        assert!(
-            sessions.all_messages(session_id).await?.is_empty(),
-            "nothing is written for {user_id}"
-        );
-        Ok(())
-    })
-    .await
+    assert!(
+        matches!(&result, Err(e @ LoopError::Model(_)) if e.to_string().contains("HTTP 429: rate limited")),
+        "{result:?}"
+    );
+    Ok(())
 }
 
 #[tokio::test]
 async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(sessions, AsksForTool, None);
-        db.close().await?;
+    let db = lemma_test_db::database().await?;
+    let (sessions, session_id) = new_session(&db).await?;
+    let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, AsksForTool, None);
+    db.close().await;
 
-        let result = agent_loop
-            .run_turn(
-                input(user_id, session_id),
-                &|_| {},
-                &CancelToken::new(),
-            )
-            .await;
+    let result = agent_loop
+        .run_turn(input(session_id), &|_| {}, &CancelToken::new())
+        .await;
 
-        assert!(
-            matches!(&result, Err(e @ LoopError::Store(cause)) if e.to_string().contains(cause.as_str())),
-            "{result:?}"
-        );
-        Ok(())
-    })
-    .await
+    assert!(
+        matches!(&result, Err(e @ LoopError::Store(cause)) if e.to_string().contains(cause.as_str())),
+        "{result:?}"
+    );
+    Ok(())
 }
 
 #[tokio::test]
 async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (sessions, user_id, session_id) = new_session(&db).await?;
-        let missing = Uuid::new_v4();
-        sessions
-            .update_leaf(user_id, session_id, missing)
-            .await?;
-        let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(sessions.clone(), AsksForTool, None);
+    let db = lemma_test_db::database().await?;
+    let (sessions, session_id) = new_session(&db).await?;
+    let missing = Uuid::new_v4();
+    sessions.update_leaf(session_id, missing).await?;
+    let agent_loop: AgentLoop<_, LocalExecEnv> =
+        AgentLoop::new(sessions.clone(), AsksForTool, None);
 
-        let result = agent_loop
-            .run_turn(
-                input(user_id, session_id),
-                &|_| {},
-                &CancelToken::new(),
-            )
-            .await;
+    let result = agent_loop
+        .run_turn(input(session_id), &|_| {}, &CancelToken::new())
+        .await;
 
-        assert!(
-            matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
-            "{result:?}"
-        );
-        let messages = sessions.all_messages(session_id).await?;
-        assert_eq!(messages.len(), 1, "only the user message: {messages:?}");
-        Ok(())
-    })
-    .await
+    assert!(
+        matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
+        "{result:?}"
+    );
+    let messages = sessions.all_messages(session_id).await?;
+    assert_eq!(messages.len(), 1, "only the user message: {messages:?}");
+    Ok(())
 }
 
 #[tokio::test]
 async fn an_unknown_session_ends_before_any_message_is_written() -> Result<(), Box<dyn Error>> {
-    on_each_database::<Migrator, _, _>(|db| async move {
-        let (_sessions, user_id, _session_id) = new_session(&db).await?;
-        let missing = Uuid::new_v4();
-        let agent_loop: AgentLoop<_, LocalExecEnv> =
-            AgentLoop::new(SessionService::new(db), AsksForTool, None);
+    let db = lemma_test_db::database().await?;
+    let (_sessions, _session_id) = new_session(&db).await?;
+    let missing = Uuid::new_v4();
+    let agent_loop: AgentLoop<_, LocalExecEnv> =
+        AgentLoop::new(SessionService::new(db), AsksForTool, None);
 
-        let result = agent_loop
-            .run_turn(
-                input(user_id, missing),
-                &|_| {},
-                &CancelToken::new(),
-            )
-            .await;
+    let result = agent_loop
+        .run_turn(input(missing), &|_| {}, &CancelToken::new())
+        .await;
 
-        assert!(
-            matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
-            "{result:?}"
-        );
-        Ok(())
-    })
-    .await
+    assert!(
+        matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
+        "{result:?}"
+    );
+    Ok(())
 }
