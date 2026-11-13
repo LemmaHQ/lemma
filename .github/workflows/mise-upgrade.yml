@@ -35,11 +35,6 @@ jobs:
       - name: Bump pinned versions
         run: mise upgrade --bump
 
-      - name: Sync Dockerfile node base image
-        run: |
-          NODE_VERSION=$(sed -nE 's/^[ "]*(node)[ "]*= *"([^"]+)".*/\2/p' mise.toml)
-          sed -i -E "s/^(ARG NODE_VERSION=).*/\1${NODE_VERSION}/" Dockerfile
-
       - name: Open update PR
         uses: peter-evans/create-pull-request@v8
         with:
@@ -51,5 +46,4 @@ jobs:
           body: |
             Bumps tool versions pinned in `mise.toml` to latest.
 
-            Local mise, CI mise-action, and the Dockerfile all read this single file.
-            The Dockerfile `ARG NODE_VERSION` default is synced automatically in this PR.
+            Local mise and CI mise-action both read this single file.

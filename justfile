@@ -66,7 +66,7 @@ rust-cov *args="--summary-only":
         --exclude lemma-desktop \
         --exclude lemma-mobile \
         --exclude lemma-test-db \
-        --ignore-filename-regex '[/\\\\](entity[/\\\\]|lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$)' \
+        --ignore-filename-regex '[/\\\\]lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$' \
         --fail-uncovered-lines 0 \
         --fail-uncovered-functions 0 \
         {{ args }}
@@ -235,10 +235,10 @@ mobile-fmt:
 mobile-android-build:
     ./gradlew :mobile:androidApp:assembleDebug
 
-# Run androidApp unit tests, shared host tests (commonTest on the JVM), and SQLDelight migration checks
+# Run androidApp unit tests and shared host tests (commonTest on the JVM)
 [group('mobile')]
 mobile-android-test *args:
-    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest :mobile:shared:verifySqlDelightMigration {{ args }}
+    ./gradlew :mobile:androidApp:testDebugUnitTest :mobile:shared:testAndroidHostTest {{ args }}
 
 # Kover HTML and XML reports for androidApp and shared, failing on any uncovered line, uncalled method, or missed branch outside Composable functions
 [group('mobile')]

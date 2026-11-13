@@ -9,8 +9,8 @@ query-filters:
   - exclude:
       id: actions/unpinned-tag
 
-# Rust integration tests and vitest files contain hard-coded fixtures
-# (password hashes, JWT secrets) that keep raising
+# Rust integration tests and vitest files contain hard-coded test fixtures
+# (such as dummy API keys) that keep raising
 # hard-coded-cryptographic-value; dismissals do not survive line moves.
 # Inline #[cfg(test)] modules in src files cannot be path-excluded and
 # still rely on dismissal.
