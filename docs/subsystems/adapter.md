@@ -2,7 +2,7 @@
 
 English | [中文](adapter.zh.md)
 
-The adapter subsystem turns one model request into a stream of vendor-independent stream events. `lemma-model` defines the interface that the agent loop and the provider domain depend on; `lemma-adapter` implements it over HTTP for three API formats. The loop never sees a vendor wire format, and the adapters never see stores, users, or encrypted keys.
+The adapter subsystem turns one model request into a stream of vendor-independent stream events. `lemma-model` defines the interface that the agent loop and the provider domain depend on; `lemma-adapter` implements it over HTTP for three API formats. The loop never sees a vendor wire format, and the adapters never see stores or encrypted keys.
 
 ## Interface: `lemma-model`
 

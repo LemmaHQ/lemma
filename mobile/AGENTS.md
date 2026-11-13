@@ -18,27 +18,26 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 `:mobile:shared` code lives under `dev.lemmahq.lemma`, one package per responsibility:
 
 - The root package holds the navigation host `App` and its `AppViewModel`.
-- `client/` holds the `LemmaClient` and `Connector` interfaces with their types; `network/` implements them over Connect; `data/` holds the repositories and the SQLDelight driver.
+- `client/` holds the `LemmaClient` and `Connector` interfaces with their types; `network/` implements them over Connect; `data/` holds `SettingsRepository` and the preference and model-selection types.
 - `ui/<feature>/` holds each feature's ViewModel, screen, and private Composables; `ui/components/` holds the shared `Lemma*` components; `theme/` holds colors, typography, and shapes.
 - `i18n/` holds `UiText` and `errorText`; user-facing text comes from the platform-neutral sources in [i18n/](../i18n/README.md), which generate the Git-ignored `composeResources/values/strings.xml` and `values-zh/strings.xml`.
-- `commonMain` uses no JVM-only library: Connect, OkHttp, the engine, and the SQLDelight driver live under `androidMain`, in the matching package or `engine/`.
+- `commonMain` uses no JVM-only library: Connect, OkHttp, and the engine live under `androidMain`, in the matching package or `engine/`.
 
 ## Modules and generated code
 
-- `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI, the SQLDelight database, and both generated binding sets.
+- `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI and both generated binding sets.
 - Gradle generates the Protobuf and Connect Kotlin code into `shared/build/generated/source/bufgen/` before compiling Kotlin, running `buf` with `protoc` and `protoc-gen-connect-kotlin` from Maven at the runtime libraries' versions; this needs `buf` and Java ([proto/AGENTS.md](../proto/AGENTS.md)).
 - Gradle builds `crates/mobile/lemma-mobile` for the host and generates its UniFFI Kotlin bindings into `shared/build/generated/source/uniffi/` before compiling Kotlin. Packaging the APK also cross-compiles its JNI libraries into `shared/src/androidMain/jniLibs/`, which needs `cargo-ndk` and an Android NDK. A public API change in `lemma-mobile` is a Kotlin API change.
-- Local mode uses the same Connect Kotlin clients as remote mode. `engine/LocalEngine.kt` opens `LemmaEngine` over a data directory and answers OkHttp requests through its `request`, `read`, and `cancel` calls; `network/AuthInterceptor.kt` attaches the access token and rotates the token pair in both modes.
+- `engine/LocalEngine.kt` opens `LemmaEngine` over the app's data directory (`filesDir`) and answers OkHttp requests through its `request`, `read`, and `cancel` calls; `network/AndroidConnector.kt` opens it once and returns `ConnectLemmaClient`.
 - Gradle runs `scripts/design-token/gen-tokens.ts` before compiling, which writes `LemmaPalette`, the static palette from [design/tokens.json](../design/tokens.json), into `shared/build/generated/source/tokens/`; this needs Node. `theme/LemmaColorScheme.kt` maps the palette onto the app's color roles.
 - Gradle's `generateStrings` task runs `scripts/i18n/gen-i18n.ts` before assembling Compose resources, writing the string resources from [i18n/](../i18n/README.md); this needs Node. Kotlin reads them through the generated `Res.string` and `Res.plurals` accessors.
-- A schema change in `LemmaDatabase.sq` adds the next `<N>.sqm` migration. Before editing, run `./gradlew :mobile:shared:generateCommonMainLemmaDatabaseSchema` to snapshot the current schema as `shared/src/commonMain/sqldelight/databases/<N>.db`, and commit the snapshot. `verifySqlDelightMigration` applies the migrations to each snapshot and fails when the result differs from `LemmaDatabase.sq`.
 - Generated code is never edited or committed.
 
 ## Commands
 
 ```sh
 just mobile-android-build       # assemble the debug APK
-just mobile-android-test        # androidApp unit tests, shared host tests, and SQLDelight migration checks
+just mobile-android-test        # androidApp unit tests and shared host tests
 just mobile-android-lint-check  # Android Lint on androidApp and shared, then Detekt with detekt.yml; mobile-android-lint applies Lint fixes
 just mobile-android-cov         # Kover reports for androidApp and shared; fails on an uncovered line, an uncalled method, or a missed branch outside Composable functions
 just mobile-fmt-check           # ktfmt in kotlinlang style through Spotless; mobile-fmt formats

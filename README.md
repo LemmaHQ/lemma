@@ -13,23 +13,21 @@ Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. 
 
 - **Predefined and custom providers.** DeepSeek is predefined and needs only your API key. A custom provider speaks one of three API formats (OpenAI chat completions and compatible APIs, Anthropic, or Gemini) with your own base URL and API key.
 - **Sessions as message trees.** Each message records its parent; a model request carries the path from the root to the active leaf.
-- **Agent tools.** `read_file`, `write_file`, and `bash` run in a workspace directory per session, in the desktop app and the Android app.
+- **Agent tools.** `read_file`, `write_file`, `bash`, `web_search`, and `web_fetch` run across all three runtimes; file and shell tools run in the session's bound directory or per-session workspace.
 - **Three runtimes.** A server for the browser, a local engine for the desktop app, and an in-process engine for Android run the same Rust core ([architecture](docs/architecture.md#runtimes)).
 
 ## Quick start
 
-With [mise](https://mise.jdx.dev/), Rust, and Docker installed:
+With [mise](https://mise.jdx.dev/) and Rust installed:
 
 ```sh
 mise install
 npm ci
-cp .env.example .env
-docker compose up -d
 just web-build
 just rust-dev
 ```
 
-Set the database password and both secrets in `.env` before `docker compose up -d`. The server then serves the web client at <http://localhost:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and every environment variable.
+`lemma-server` opens its data directory (`./data` by default) and serves the web client at <http://127.0.0.1:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and environment variables.
 
 ## Repository
 
@@ -38,7 +36,7 @@ Set the database password and both secrets in `.env` before `docker compose up -
 | `crates/` | Rust workspace: the core shared by every runtime, and the server |
 | `proto/` | Protobuf contracts, package `lemma.v1` |
 | `web/` | React web client, also the desktop renderer |
-| `desktop/` | Electron shell running the server as a local engine |
+| `desktop/` | Electron shell running the local engine in a utility process |
 | `mobile/` | Android app and Kotlin Multiplatform shared module |
 | `assets/` | Brand assets |
 | `docs/` | Documentation |

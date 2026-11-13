@@ -9,11 +9,11 @@
   en: db921ff927b5f24e
   zh: 3606eeb77854880d
 /agentsmd/commands:
-  en: 09eb7f59752c4bf9
-  zh: a3b44bf2d1c6a793
-/agentsmd/secrets--env:
-  en: 629d32fa5fbaca8c
-  zh: 7ff66c8a1bdce907
+  en: df2168511486a7d9
+  zh: 833469b63c204654
+/agentsmd/environment--env:
+  en: 05d1a31e7ed30302
+  zh: 04fc99c333d92928
 /agentsmd/conventions:
   en: 5b41d9574497ec97
   zh: 30085bbc5fe84599

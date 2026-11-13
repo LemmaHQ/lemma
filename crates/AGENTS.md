@@ -9,7 +9,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 - **Expression-driven flow:** keep computation chains short and direct; a chain that branches or mutates outside state becomes a `for` loop.
 - **Guards use `let-else`;** complex branching uses an exhaustive `match`.
 - **Imports:** `use` groups run standard library, external crates, then workspace crates, and each `use` imports from one module. Types and traits are imported and named unqualified; free functions are called through their module (`persist::settle()`); a trait used in one function is imported inside it; the only glob import is `use super::*` in a test module.
-- **Modules** use `foo.rs` beside a `foo/` directory. A module with submodules, crate roots included, holds only `mod` declarations, re-exports, and a binary's `fn main`; a leaf file is named after its primary item (`AuthService` lives in `auth_service.rs`). A type's methods split across files take one file per resource (`session_service/messages.rs`).
+- **Modules** use `foo.rs` beside a `foo/` directory. A module with submodules, crate roots included, holds only `mod` declarations, re-exports, and a binary's `fn main`; a leaf file is named after its primary item (`LocalEngine` lives in `local_engine.rs`). A type's methods split across files take one file per resource (`session_service/messages.rs`).
 - **Ownership:** pass data by borrow (`&str`, `&[T]`, `Option<&T>`) and avoid copies. `Arc` holds only values that spawned tasks or request handlers share. Parameters are generic instead of `dyn Trait` and take concrete types instead of `impl Into<T>`; `dyn` remains only for heterogeneous collections such as the tool registry and at the UniFFI boundary.
 - **Lifetimes** appear only where inference needs them and carry descriptive names (`'conn`, not `'a`).
 - **Workspace lints** live in the root `Cargo.toml`; every crate opts in with `[lints] workspace = true`.
@@ -25,7 +25,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 - `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
 - Crates are named `lemma-<concept>`.
-- `lemma-auth`, `lemma-session`, and `lemma-provider` own their tables and SeaORM migrations in `src/migration/`; `lemma-host` runs them in name order. Scaffold one with `sea-orm-cli migrate init -d <tmp>` and `migrate generate <name> -d <tmp>`, then move it in.
+- `lemma-host` owns the SQLite schema migrations in `crates/rpc/lemma-host/migrations/` and applies them on startup via `lemma_host::migrate`; `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`.
 
 ## Commands
 

@@ -2,7 +2,7 @@
 
 [English](adapter.md) | 中文
 
-适配器子系统把一次模型请求转换为与厂商无关的流事件序列。`lemma-model` 定义 agent 循环和 provider 领域所依赖的接口；`lemma-adapter` 基于 HTTP 为三种 API 格式实现该接口。循环看不到任何厂商的线上格式，适配器也接触不到存储、用户或加密的密钥。
+适配器子系统把一次模型请求转换为与厂商无关的流事件序列。`lemma-model` 定义 agent 循环和 provider 领域所依赖的接口；`lemma-adapter` 基于 HTTP 为三种 API 格式实现该接口。循环看不到任何厂商的线上格式，适配器也接触不到存储或加密的密钥。
 
 ## 接口：`lemma-model`
 

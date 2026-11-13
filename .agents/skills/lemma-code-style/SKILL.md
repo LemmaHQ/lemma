@@ -70,7 +70,7 @@ Higher-level code comes first, details below it.
 
 - **Singular:** names for one concept — crates, modules, packages, feature directories, proto files and messages, i18n namespaces — and a noun that modifies another noun: `lemma-provider`, `features/provider/`, `provider.proto`, `ProviderPanel`, `useProviderStore`.
 - **Plural:** names for a collection — a directory of entries of one kind, a value or field holding several items, a `repeated` field, a function returning several items, a database table, a URL segment naming a collection: `crates/`, `components/`, `messages: Vec<Message>`, `list_messages`, the `messages` table, `/sessions/:id`.
-- **Upstream form:** names a framework or tool fixes (`tests/`, SeaORM `entity/` and `migration/`, `.github/workflows/`, Android `res/values/`), vendor and RPC names (`AnthropicMessages`, `FetchModels`), and words used only in the plural (`settings`, `preferences`).
+- **Upstream form:** names a framework or tool fixes (`tests/`, sqlx `migrations/`, `.github/workflows/`, Android `res/values/`), vendor and RPC names (`AnthropicMessages`, `FetchModels`), and words used only in the plural (`settings`, `preferences`).
 
 ## References
 

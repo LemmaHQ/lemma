@@ -6,7 +6,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Session tree
 
-- **session** — a user-owned tree of messages with a title, an active leaf, and the last model selection. Deleting a session removes it with all its messages. `lemma-session` owns the lifecycle and the tree.
+- **session** — a tree of messages with a title, an active leaf, and the last model selection. Deleting a session removes it with all its messages. `lemma-session` owns the lifecycle and the tree.
 - **message** — one node of the tree: a canonical `lemma_core::Message` (`user`, `assistant`, or `tool_result`) plus its parent id, status, provider, and model. The stored form is `lemma_session::Message`.
 - **leaf** — the message `leaf_id` points at; the next user message is appended under it, and every append in a turn moves it.
 - **branch** — a message appended under an earlier parent instead of the leaf. Branches add nodes; they never rewrite existing ones.
@@ -25,12 +25,12 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Providers and adapters
 
-- **provider** — a model service of one user, stored by `lemma-provider` with its API key and an enabled flag. A provider is predefined or custom.
-- **predefined provider** — a provider that `lemma-provider` defines in code: its name, the API formats it serves with the base URL of each, and its models with their features. Each user has one record per predefined provider; the record stores the API key, the enabled flag, and the default API format. DeepSeek is the predefined provider.
-- **custom provider** — a provider the user configures: identifier, display name, one API format, base URL, API key, path overrides, and model records.
-- **web provider** — a web search or fetch account of one user, stored in `web_providers`: its kind (`native`, `exa`, or `deepseek`), sealed API key, enabled flag, and positions in the search and fetch orders. Native fetches over local HTTP without an account.
+- **provider** — a model service stored by `lemma-provider` with its API key and an enabled flag. A provider is predefined or custom.
+- **predefined provider** — a provider that `lemma-provider` defines in code: its name, the API formats it serves with the base URL of each, and its models with their features. Its row stores the API key, the enabled flag, and the default API format. DeepSeek is the predefined provider.
+- **custom provider** — a provider configured with its own identifier, display name, one API format, base URL, API key, path overrides, and model records.
+- **web provider** — a web search or fetch configuration stored in `web_providers`: its kind (`native`, `exa`, or `deepseek`), sealed API key, enabled flag, and positions in the search and fetch orders. Native fetches over local HTTP without an API key.
 - **API format** — the wire format of a model request: `openai` (OpenAI chat completions and compatible APIs), `anthropic`, or `gemini`. `lemma-model` defines the one `ApiFormat` enum.
-- **provider identifier** — a provider's machine name: non-empty ASCII, immutable after creation, and unique per user among custom providers. A predefined provider's identifier names its definition, such as `deepseek`.
+- **provider identifier** — a provider's machine name: non-empty ASCII, immutable after creation, and unique among custom providers. A predefined provider's identifier names its definition, such as `deepseek`.
 - **model feature** — a property of a model that changes the requests sent to it. Tool calling is the only feature: a model with tool calling off receives no tool definitions and no earlier tool calls or tool results.
 - **endpoint** — an `Endpoint`: one API format with its base URL, path overrides, and plaintext API key, as `ProviderService::bind` opens them before binding the adapter.
 - **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its API format and returns it as a `ModelAdapter` variant.
@@ -44,20 +44,16 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **workspace** — the directory `workspaces/<session id>` under the local data directory, generated for a session created without a directory.
 - **system prompt** — the instructions a `ModelRequest` sends ahead of the history. A turn with tools sends one naming the session directory, the operating system, and the shell.
 - **tool runtime** — a `ToolRuntime`: the registry and environment a host attaches to the loop. A loop without one sends no tool definitions.
-- **web backend** — the client of one web provider kind, implemented in `lemma-adapter`'s `web/` module over the injected `HttpTransport`. The web tools try the user's backend order and move to the next backend on any error.
+- **web backend** — the client of one web provider kind, implemented in `lemma-adapter`'s `web/` module over the injected `HttpTransport`. The web tools try enabled backends in configured order and move to the next backend on any error.
 
-## Runtimes and accounts
+## Runtimes
 
-- **server mode** — the `lemma-server` binary: configured by environment variables or `.env`, listening on port 1025, without tools.
-- **local mode** — the runtimes that keep data on the device: the desktop local engine and the Android in-process engine.
-- **local engine** — the engine the `lemma-desktop` addon opens in Electron's engine process over the `userData` directory; the web client reaches it over a `MessagePort`.
+- **server mode** — the `lemma-server` binary: opens `LocalEngine` over `LEMMA_DATA_DIR` (default `./data`), listens on `127.0.0.1:1025` by default (`LEMMA_PORT`), and serves the Connect router and the embedded web build.
+- **local mode** — the runtimes that keep data in the app's local directory: the desktop local engine and the Android in-process engine.
+- **local engine** — `LocalEngine` in `lemma-host`: the Connect services over one SQLite database (`lemma.db`), `secrets.json`, and per-session `workspaces/` under one data directory. `lemma-desktop` opens it in Electron's engine process over `userData`, `lemma-mobile` opens it over Android's `filesDir`, and `lemma-server` opens it over `LEMMA_DATA_DIR`.
 - **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no session messages.
 - **in-process engine** — `LemmaEngine` from `lemma-mobile`, which serves the Connect router inside the Android app; the app reaches it through UniFFI bindings.
-- **access token** — a JWT signed with the JWT secret, valid for 15 minutes, carrying the user id in `sub`.
-- **refresh token** — a random token valid for 30 days; the store keeps only its SHA-256 hash, and each refresh revokes it and issues a new pair.
-- **token family** — the refresh tokens a sign-in and its rotations issue, sharing one `family_id`. Presenting a rotated or revoked token again revokes the whole family.
-- **cookie mode** — the browser client's authentication when the API shares its origin: tokens travel in the `lemma_access` and `lemma_refresh` cookies instead of an `Authorization` header.
-- **sealed key** — a provider API key encrypted with AES-256-GCM by `lemma-crypto` under a key derived from the secret key. Changing the secret key makes every sealed key unreadable.
+- **sealed key** — a provider API key encrypted with AES-256-GCM by `lemma-crypto` under a key derived from `secret_key` in `secrets.json`. Changing the secret key makes every sealed key unreadable.
 
 ## Errors
 

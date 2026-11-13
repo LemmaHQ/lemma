@@ -51,7 +51,7 @@ Running every row above is the full local run; no single recipe aggregates them.
 
 ## Handle failures
 
-If a selected check fails, stop and fix it or report the blocker; do not push and hope CI differs. If a failure looks environment-specific (Windows paths, line endings, a missing NDK or PostgreSQL), record the exact command and mismatch, confirm the rest of the evidence, and tell the user before pushing.
+If a selected check fails, stop and fix it or report the blocker; do not push and hope CI differs. If a failure looks environment-specific (Windows paths, line endings, or a missing NDK), record the exact command and mismatch, confirm the rest of the evidence, and tell the user before pushing.
 
 ## Push
 

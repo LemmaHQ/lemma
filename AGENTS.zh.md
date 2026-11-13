@@ -30,7 +30,7 @@ scripts/      由 Node 直接运行的仓库脚本：设计 token 与 i18n 生�
 ## 命令
 
 ```sh
-just rust-dev            # 读取 .env 运行 lemma-server
+just rust-dev            # 运行 lemma-server
 just web-dev             # Vite 开发服务器
 just desktop-dev         # 构建引擎 addon，再启动 Electron
 just design-gen          # 根据设计 token 重新生成 Web 主题、桌面端窗口颜色与 Android 色板
@@ -46,9 +46,9 @@ just source-check        # 检查源码文件的行数、命名、纯转发模�
 
 Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后缀的同名 recipe 会应用修复。CI 步骤调用 recipe，不重复其中的命令，因此本地运行可以复现 CI 步骤。各子树的 `AGENTS.md` 列出各自的 recipe；`just --list` 列出全部。
 
-## 密钥 / .env
+## 环境变量 / .env
 
-`lemma-server` 读取根目录的 `.env`；变量见 [.env.example](.env.example)。绝不提交凭据。
+`lemma-server` 会在存在时读取 `.env`（`LEMMA_DATA_DIR` 与 `LEMMA_PORT`）。绝不提交 `.env` 或本地数据目录。
 
 ## 约定
 

@@ -8,9 +8,8 @@ How to set up a machine for Lemma and run each client. The [root AGENTS.md](../A
 
 ### Prerequisites
 
-- [mise](https://mise.jdx.dev/) installs the tools pinned in [mise.toml](../mise.toml): Node.js, Java, just, buf, protoc, and the cargo tools `cargo-binstall`, `sea-orm-cli`, `cargo-llvm-cov`, and `cargo-nextest`. Local shells, CI, and the Dockerfile read the same pins.
+- [mise](https://mise.jdx.dev/) installs the tools pinned in [mise.toml](../mise.toml): Node.js, Java, just, buf, protoc, and the cargo tools `cargo-binstall`, `cargo-llvm-cov`, and `cargo-nextest`. Local shells and CI read the same pins.
 - Rust stable through rustup; [rust-toolchain.toml](../rust-toolchain.toml) adds `rustfmt`, `clippy`, and `llvm-tools-preview`. The Rust build needs `protoc` on `PATH` to compile `proto/`.
-- Docker, for PostgreSQL and the full-stack image.
 - For Android only: the Android SDK, found through `ANDROID_HOME` or `sdk.dir` in `local.properties`, with an NDK under `<sdk>/ndk/`. Gradle uses the newest NDK there.
 
 ### Windows
@@ -24,32 +23,24 @@ From the repository root:
 ```sh
 mise install
 npm ci
-cp .env.example .env
 ```
 
-`npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)). In `.env`, set one database password in both `LEMMA_DB_PASSWORD` and `DATABASE_URL`, and replace both secrets.
+`npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 ### Run the server and the web client
 
 ```sh
-docker compose up -d
 just web-build
 just rust-dev
 ```
 
-`docker compose up -d` starts only the PostgreSQL container, on port 5432; the server container belongs to the `full` profile. `lemma-server` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then serves the API and that build on port 1025, running migrations at startup.
+`lemma-server` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `LocalEngine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
 
-For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025. A `sqlite:` `DATABASE_URL` runs the same server on SQLite without Docker.
-
-`docker compose --profile full up -d` starts the server container, building its image from the Dockerfile when none exists, together with the database; `docker compose --profile full down` stops them.
-
-### Run the Rust tests on PostgreSQL
-
-`just rust-test` runs the database tests on in-memory SQLite, and CI runs only that. To run them on PostgreSQL as well, start the database with `docker compose up -d`, set `LEMMA_TEST_POSTGRES_URL` in the shell to the `DATABASE_URL` from `.env`, and run `just rust-test`. Each test creates its own database on that server and drops it afterwards, so the data in `lemma-db` stays untouched.
+For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025.
 
 ### Run the desktop app
 
-`just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database and secrets in Electron's `userData` directory and needs no `.env`. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
+`just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database, secrets, and workspaces in Electron's `userData` directory. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
 
 ### Run the Android app
 
@@ -59,22 +50,19 @@ Android builds also need the Rust Android targets; mise installs `cargo-ndk`:
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 ```
 
-`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The APK runs in local mode with no server, or in remote mode against a server URL entered in the app ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process local engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 ## Reference
 
 ### Environment variables
 
-| Variable                                         | Read by                             | Meaning                                                                                                             |
-| ------------------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                   | `lemma-server`, server mode         | `postgres://` or `postgresql://` selects PostgreSQL; `sqlite:` selects SQLite at the given path                     |
-| `LEMMA_JWT_SECRET`                               | `lemma-server`, server mode         | signs and verifies access tokens                                                                                    |
-| `LEMMA_SECRET_KEY`                               | `lemma-server`, server mode         | derives the key that seals provider API keys; changing it makes stored keys unreadable                              |
-| `LEMMA_DB`, `LEMMA_DB_USER`, `LEMMA_DB_PASSWORD` | `docker-compose.yml`                | database name, user, and password of the PostgreSQL container; the password is required                             |
-| `LEMMA_TEST_POSTGRES_URL`                        | Rust tests, through `lemma-test-db` | PostgreSQL server the database tests run on in addition to SQLite; its role creates and drops one database per test |
-| `LEMMA_ENGINE_PROFILE`                           | `desktop/`                          | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug`                                     |
-| `LEMMA_DEBUG_PORT`                               | `desktop/`                          | Chromium remote-debugging port                                                                                      |
-| `ANDROID_HOME`                                   | `mobile/shared` Gradle build        | Android SDK location; `local.properties` is the alternative                                                         |
+| Variable               | Read by                      | Meaning                                                                             |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| `LEMMA_DATA_DIR`       | `lemma-server`, server mode  | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
+| `LEMMA_PORT`           | `lemma-server`, server mode  | TCP port `lemma-server` binds on `127.0.0.1`, default `1025`                        |
+| `LEMMA_ENGINE_PROFILE` | `desktop/`                   | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug`     |
+| `LEMMA_DEBUG_PORT`     | `desktop/`                   | Chromium remote-debugging port                                                      |
+| `ANDROID_HOME`         | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative                         |
 
 `lemma-server` loads `.env` from its working directory or the nearest parent that has one; variables already set in the environment take precedence.
 
@@ -84,7 +72,7 @@ Every workflow under [.github/workflows/](../.github/workflows/) except mise-upg
 
 Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, the desktop build and tests, and the Android host tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only.
 
-Dependabot checks Cargo, npm, Gradle, GitHub Actions, and Docker dependencies daily.
+Dependabot checks Cargo, npm, Gradle, and GitHub Actions dependencies daily.
 
 ### Daily commands
 

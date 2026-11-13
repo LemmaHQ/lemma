@@ -46,7 +46,7 @@ Components and feature code style through the theme's utilities. The color roles
 | `text-body`    | 14 / 20 px             | Default interface text, buttons, menu items, inputs from `md` up |
 | `text-reading` | 16 / 26 px             | Message text, the composer, inputs below `md`                    |
 | `text-title`   | 16 / 24 px, weight 600 | Page, section, and dialog titles                                 |
-| `text-display` | 24 / 32 px, weight 600 | Home, sign-in, and settings page headings                        |
+| `text-display` | 24 / 32 px, weight 600 | Home and settings page headings                                  |
 
 - **Brand font:** `font-brand` sets the system serif for the product name and the home heading only; every other text uses the interface sans.
 - **Radius:** `rounded-sm` (6px) for badges, checkboxes, and controls inside inputs; `rounded-md` (8px) for buttons, inputs, list rows, menu items, code blocks, and alerts; `rounded-lg` (12px) for cards, popovers, dialogs, the composer, and the main panel; `rounded-full` for avatars, switches, and pills.

@@ -30,7 +30,7 @@ scripts/      repository scripts run by Node: design token and i18n generators, 
 ## Commands
 
 ```sh
-just rust-dev            # run lemma-server with .env
+just rust-dev            # run lemma-server
 just web-dev             # Vite dev server
 just desktop-dev         # build the engine addon, then launch Electron
 just design-gen          # regenerate the web theme, desktop window colors, and Android palette from design tokens
@@ -46,9 +46,9 @@ just source-check        # check source file length, names, re-export modules, a
 
 Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
 
-## Secrets / .env
+## Environment / .env
 
-`lemma-server` reads the root `.env`; [.env.example](.env.example) lists the variables. Never commit credentials.
+`lemma-server` reads `.env` when present (`LEMMA_DATA_DIR` and `LEMMA_PORT`). Never commit `.env` or local data directories.
 
 ## Conventions
 

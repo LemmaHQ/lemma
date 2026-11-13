@@ -6,20 +6,20 @@
   en: 4f84290cf996a50e
   zh: 61647c42113c32ff
 /agent/turn-assembly:
-  en: 7cf8146f3da6c326
-  zh: 1113bf51a06ce8a8
+  en: 45419081550d5daa
+  zh: 803459016a6a795c
 /agent/tools:
-  en: ea2ca08fb3278532
-  zh: 8a7428e3cdcdb758
+  en: 738c75bba81f56c9
+  zh: daadd79f9ef09ab6
 /agent/turn-events:
   en: ece4b8596cd70256
   zh: 7923c06efb554555
 /agent/abort:
-  en: 055d35c1336ffb64
-  zh: 8501e0ce8bdd2ee7
+  en: 33bb5e929cadefcc
+  zh: 49403e2428b02a25
 /agent/streams-and-resume:
-  en: e1f0cc2d90dd6234
-  zh: 0c36ec2a9bec0dc2
+  en: d309351c51b643b5
+  zh: 8c4db60604fa191e
 /agent/errors:
   en: 30aa026d7d7573b6
   zh: 1f058a308feed72b

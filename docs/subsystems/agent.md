@@ -6,14 +6,14 @@ The agent subsystem turns one user request into a running turn and reports its p
 
 ## Turn assembly
 
-`Agent` holds the session service, the provider service, an optional workspaces directory, and an optional web `HttpTransport`. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
+`Agent` holds the session service, the provider service, a workspaces directory, and an optional web `HttpTransport`. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
 
 | Check | Failure |
 | --- | --- |
 | content is empty after trimming | `AgentError::ContentRequired` |
 | model id is empty after trimming | `AgentError::ModelRequired` |
-| the provider does not belong to the user | `AgentError::ProviderNotFound` |
-| the session does not belong to the user | `AgentError::SessionNotFound` |
+| the provider does not exist | `AgentError::ProviderNotFound` |
+| the session does not exist | `AgentError::SessionNotFound` |
 | the session's bound directory no longer exists | `AgentError::DirectoryNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
@@ -23,7 +23,7 @@ The agent subsystem turns one user request into a running turn and reports its p
 
 ## Tools
 
-With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecEnv` rooted in the session directory: the directory the session was created with, or else its workspace `<workspaces_dir>/<session id>`, which `prepare` creates after it has found the session, plus `web_search` and `web_fetch` when `Agent` has a web `HttpTransport` and the function's order has an enabled backend. Every model request of the turn carries a system prompt naming that directory, the operating system, and the shell. Without a workspaces directory, the model is called without tools or a system prompt.
+The turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecEnv` rooted in the session directory: the directory the session was created with, or else its workspace `<workspaces_dir>/<session id>`, which `prepare` creates after it has found the session, plus `web_search` and `web_fetch` when `Agent` has a web `HttpTransport` and the function's order has an enabled backend. Every model request of the turn carries a system prompt naming that directory, the operating system, and the shell.
 
 `LocalExecEnv` confines `read_file` and `write_file` to the root:
 
@@ -51,7 +51,7 @@ Every `AgentEvent` carries the server's `occurred_at` instant. The first thinkin
 
 ## Abort
 
-Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_id, user_message_id)` cancels the token only when that user owns the turn; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running `bash` command stops as described under [Tools](#tools), any other running tool call completes, and the turn stops before the next step. `AbortMessage` calls `Agent::abort`.
+Each prepared turn registers a `CancelToken` under its user message id until the `Turn` is dropped. `Agent::abort(user_message_id)` cancels that turn's token; any other id is ignored. Cancelling interrupts a model stream at once and settles its placeholder with status `aborted`; a running `bash` command stops as described under [Tools](#tools), any other running tool call completes, and the turn stops before the next step. `AbortMessage` calls `Agent::abort`.
 
 ## Streams and resume
 
@@ -59,7 +59,7 @@ Each prepared turn registers a `CancelToken` under its user message id until the
 
 - `SendMessage` reads the log from the start. The log is unbounded, so a slow reader receives every event.
 - `ResumeStream(message_id, offset)` reads the same log from event `offset`, then follows live events. `offset` is the number of events the client already received.
-- When the turn ends, the log closes and is removed. Open streams finish reading it; a later `ResumeStream`, or one from another user, fails with `ERROR_REASON_TURN_NOT_RUNNING`.
+- When the turn ends, the log closes and is removed. Open streams finish reading it; a later `ResumeStream` fails with `ERROR_REASON_TURN_NOT_RUNNING`.
 
 The web client counts the events it applies, resumes with that count after a broken stream, and reloads the session's messages on `ERROR_REASON_TURN_NOT_RUNNING`.
 

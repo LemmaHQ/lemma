@@ -3,8 +3,8 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/subsystems/adapter.md
 /adapter:
-  en: b1d95b5b6fbdb4e0
-  zh: fd4fbaea5f28db86
+  en: 0675ee87755a4632
+  zh: 77f1a4148212c49c
 /adapter/interface-lemma-model:
   en: 922752a8903832c4
   zh: baeeda411b8cdfdc

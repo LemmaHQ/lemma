@@ -11,9 +11,9 @@ Find changes that remove maintained obligations: APIs, proto fields, states, con
 
 Read the root `AGENTS.md`, [architecture.md](../../../docs/architecture.md) before judging crates, [testing.md](../../../docs/testing.md), and the subtree `AGENTS.md` for the area. Decisions and their rationale live in commit bodies: run `git log` on the files involved before calling something accidental.
 
-Treat the designs [architecture.md](../../../docs/architecture.md) maps as intentional unless the user overrides them: the runtimes, the storage backends behind shared store traits, the provider adapters, and the wire contract shared by remote clients. Unused members inside an intentional design remain candidates when removing them preserves its purpose.
+Treat the designs [architecture.md](../../../docs/architecture.md) maps as intentional unless the user overrides them: the host runtimes, the local engine and SQLite schema, the provider adapters, and the shared Connect contract. Unused members inside an intentional design remain candidates when removing them preserves its purpose.
 
-For a broad request, split independent domains among subagents (agent loop and session tree; providers and adapters; auth and crypto; RPC crates and proto; web client; desktop shell; Android; scripts, CI, and docs), and require consumer evidence and the strongest retention argument from each.
+For a broad request, split independent domains among subagents (agent loop and session tree; providers, adapters, and crypto; RPC crates and proto; web client; desktop shell; Android; scripts, CI, and docs), and require consumer evidence and the strongest retention argument from each.
 
 ## Search for removable obligations
 

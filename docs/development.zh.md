@@ -8,9 +8,8 @@
 
 ### 前置条件
 
-- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`sea-orm-cli`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell、CI 与 Dockerfile 读取同一份版本。
+- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell 与 CI 读取同一份版本。
 - 通过 rustup 安装 stable 版 Rust；[rust-toolchain.toml](../rust-toolchain.toml) 会加上 `rustfmt`、`clippy` 与 `llvm-tools-preview`。Rust 构建需要 `PATH` 上有 `protoc`，用来编译 `proto/`。
-- Docker，用于 PostgreSQL 与完整栈镜像。
 - 仅 Android 需要：Android SDK（通过 `ANDROID_HOME` 或 `local.properties` 中的 `sdk.dir` 找到），并在 `<sdk>/ndk/` 下安装 NDK。Gradle 使用其中最新的 NDK。
 
 ### Windows
@@ -24,32 +23,24 @@
 ```sh
 mise install
 npm ci
-cp .env.example .env
 ```
 
-`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。在 `.env` 中，让 `LEMMA_DB_PASSWORD` 与 `DATABASE_URL` 使用同一个数据库密码，并替换两个密钥。
+`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 ### 运行服务端与 Web 客户端
 
 ```sh
-docker compose up -d
 just web-build
 just rust-dev
 ```
 
-`docker compose up -d` 只启动 PostgreSQL 容器，端口 5432；服务端容器属于 `full` profile。`lemma-server` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 1025 端口提供 API 与这份构建产物，并在启动时运行迁移。
+`lemma-server` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `LocalEngine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
 
-开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。把 `DATABASE_URL` 设为 `sqlite:` 时，同一个服务端在 SQLite 上运行，无需 Docker。
-
-`docker compose --profile full up -d` 启动服务端容器（镜像不存在时先由 Dockerfile 构建）与数据库；`docker compose --profile full down` 停止它们。
-
-### 在 PostgreSQL 上运行 Rust 测试
-
-`just rust-test` 在内存 SQLite 上运行数据库测试，CI 只跑这一种。要在 PostgreSQL 上也跑一遍：用 `docker compose up -d` 启动数据库，在 shell 中把 `LEMMA_TEST_POSTGRES_URL` 设为 `.env` 里的 `DATABASE_URL`，再运行 `just rust-test`。每个测试在该服务器上创建自己的数据库，结束后删除，`lemma-db` 中的数据保持不变。
+开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。
 
 ### 运行桌面应用
 
-`just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库与密钥保存在 Electron 的 `userData` 目录中，不需要 `.env`。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
+`just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
 
 ### 运行 Android 应用
 
@@ -59,22 +50,19 @@ Android 构建还需要 Rust 的 Android target；`cargo-ndk` 由 mise 安装：
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 ```
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。APK 可以在本地模式下运行而无需服务端，也可以在远程模式下连接在应用中填写的服务端地址（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
 ## 参考
 
 ### 环境变量
 
-| 变量                                             | 读取方                          | 含义                                                                                       |
-| ------------------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`                                   | `lemma-server`，服务端模式      | `postgres://` 或 `postgresql://` 选择 PostgreSQL；`sqlite:` 选择指定路径上的 SQLite        |
-| `LEMMA_JWT_SECRET`                               | `lemma-server`，服务端模式      | 签名并校验访问令牌                                                                         |
-| `LEMMA_SECRET_KEY`                               | `lemma-server`，服务端模式      | 派生用于加密 provider API key 的密钥；更换后已存储的 key 无法读取                          |
-| `LEMMA_DB`、`LEMMA_DB_USER`、`LEMMA_DB_PASSWORD` | `docker-compose.yml`            | PostgreSQL 容器的数据库名、用户与密码；密码必填                                            |
-| `LEMMA_TEST_POSTGRES_URL`                        | Rust 测试，经由 `lemma-test-db` | 数据库测试在 SQLite 之外额外运行的 PostgreSQL 服务器；其角色为每个测试创建并删除一个数据库 |
-| `LEMMA_ENGINE_PROFILE`                           | `desktop/`                      | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`                          |
-| `LEMMA_DEBUG_PORT`                               | `desktop/`                      | Chromium 远程调试端口                                                                      |
-| `ANDROID_HOME`                                   | `mobile/shared` 的 Gradle 构建  | Android SDK 位置；也可用 `local.properties`                                                |
+| 变量                   | 读取方                         | 含义                                                                       |
+| ---------------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| `LEMMA_DATA_DIR`       | `lemma-server`，服务端模式     | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
+| `LEMMA_PORT`           | `lemma-server`，服务端模式     | `lemma-server` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
+| `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`          |
+| `LEMMA_DEBUG_PORT`     | `desktop/`                     | Chromium 远程调试端口                                                      |
+| `ANDROID_HOME`         | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties`                                |
 
 `lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
 
@@ -84,7 +72,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
-Dependabot 每天检查 Cargo、npm、Gradle、GitHub Actions 与 Docker 依赖。
+Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖。
 
 ### 日常命令
 

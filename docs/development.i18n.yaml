@@ -9,35 +9,32 @@
   en: 5207d17725c07a27
   zh: bbb030802b1260c5
 /development/setup-tutorial/prerequisites:
-  en: 71d6e5d6c78a73cb
-  zh: 5bd462a7ae368bdb
+  en: b173f718299d2959
+  zh: de51fc2a3bcc6f4f
 /development/setup-tutorial/windows:
   en: 99e7e724136db905
   zh: 032d8fe103cbf4e5
 /development/setup-tutorial/first-time-setup:
-  en: feea15689bedea8d
-  zh: 088ea86b7a92959b
+  en: 9dbbf4f0840bd8fd
+  zh: 4d0d0f7e65017b7d
 /development/setup-tutorial/run-the-server-and-the-web-client:
-  en: 4d90c7da7c546009
-  zh: 3a71a96076b58011
-/development/setup-tutorial/run-the-rust-tests-on-postgresql:
-  en: a213eee38d8238c6
-  zh: 3836d5057a4532e5
+  en: 317a89de2bd1864d
+  zh: 71a5f35d0bc3ffdd
 /development/setup-tutorial/run-the-desktop-app:
-  en: 7db995f161b7048a
-  zh: 5199baae5476f655
+  en: d08531256c0a7b2c
+  zh: 604eff0004e56ff6
 /development/setup-tutorial/run-the-android-app:
-  en: d641cbde46327c9f
-  zh: 07d07bd37f0c8d6f
+  en: 819db4d75cc63ba9
+  zh: 4957874ccdd86d52
 /development/reference:
   en: e8d198429c35fa10
   zh: fa9493dbf6a94867
 /development/reference/environment-variables:
-  en: c3181d88b5198a43
-  zh: ca9183edd255b219
+  en: c731d191241dc48b
+  zh: de7350032dc42a35
 /development/reference/ci-workflows:
-  en: 91460cb82294b6e8
-  zh: cad0e6e35f9ca4e5
+  en: e90e117f63f1f4f4
+  zh: eb1091fc30e5955c
 /development/reference/daily-commands:
   en: beaf5dfb8765b16c
   zh: 7ae2b8e60e080694

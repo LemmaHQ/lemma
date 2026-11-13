@@ -17,7 +17,6 @@
 | API | API | | |
 | CI | CI | | |
 | CSS | CSS | | |
-| JWT | JWT | | |
 | LLM | LLM | 大模型 | |
 | RPC | RPC | | |
 | UI | UI | | 组合词写作 `Web UI`、`UI 规则` |
@@ -36,7 +35,7 @@
 | recipe | recipe | 配方 | 指 `justfile` 中的命令 |
 | skill | skill | 技能 | |
 | step | step | 步骤 | agent 循环中的一次模型请求 |
-| token | token | 令牌、标记 | 指设计 token 与模型用量 token；认证用的 token 见"访问令牌"与"刷新令牌" |
+| token | token | 令牌、标记 | 指设计 token 与模型用量 token |
 | trait | trait | 特征、特质 | |
 | turn | turn | 轮次、回合 | 由一条用户消息启动的工作 |
 | workspace | workspace | | 指 Cargo 与 npm 的 workspace；`workspaces/<session id>` 工具目录写作"工作区" |
@@ -45,7 +44,6 @@
 
 | English | 中文 | 不要译作 | 备注 |
 | --- | --- | --- | --- |
-| access token | 访问令牌 | | |
 | adapter | 适配器 | | |
 | alert dialog | 确认对话框 | 警告框 | `AlertDialog` 组件 |
 | API format | API 格式 | 方言、协议 | `ApiFormat`：一次模型请求使用的线上格式 |
@@ -55,7 +53,6 @@
 | content block | 内容块 | | `ContentBlock` |
 | context path | 上下文路径 | | 从根到叶子的消息 |
 | control | 控件 | | |
-| cookie mode | cookie 模式 | | |
 | custom provider | 自定义 provider | | |
 | elevation | 层级 | 海拔、高度 | |
 | endpoint | 端点 | | `Endpoint` |
@@ -65,7 +62,6 @@
 | hairline | 细线 | 发丝线 | |
 | in-process engine | 进程内引擎 | | |
 | internal error | 内部错误 | | 不带错误原因的 Connect 错误 |
-| JWT secret | JWT 密钥 | | `LEMMA_JWT_SECRET` |
 | leaf | 叶子 | | |
 | local engine | 本地引擎 | | |
 | local mode | 本地模式 | | |
@@ -81,19 +77,17 @@
 | primitive | 原语 | | Radix 原语 |
 | provider identifier | provider 标识符 | | |
 | reference | 参考 | | 文档类型 |
-| refresh token | 刷新令牌 | refresh 令牌 | |
 | sealed key | 加密 key | | 已加密的 provider API key |
-| secret key | 主密钥 | 加密密钥 | `LEMMA_SECRET_KEY`，加密 key 所用密钥由它派生 |
+| secret key | 主密钥 | 加密密钥 | `secrets.json` 中的 `secret_key`，加密 key 所用密钥由它派生 |
 | semantic alias | 语义别名 | | |
 | server mode | 服务端模式 | | |
-| session | 会话 | 对话 | 属于某个用户的一棵消息树 |
+| session | 会话 | 对话 | 一棵带标题、当前叶子与模型选择的消息树 |
 | session directory | 会话目录 | | 会话的工具运行所在的目录：创建时指定的目录或其工作区 |
 | stop reason | 停止原因 | | |
 | stream event | 流事件 | | `StreamEvent` |
 | system prompt | 系统提示词 | | 每次模型请求置于历史之前的指令 |
 | theme | 主题 | | |
 | toast | 提示消息 | 吐司 | `sonner` 的 `toast` |
-| token family | 令牌族 | 令牌家族 | 一次登录及其后续轮换签发的全部刷新令牌，共享 `family_id` |
 | tool | 工具 | | |
 | tool calling | 工具调用 | 函数调用 | |
 | tool runtime | 工具运行时 | | `ToolRuntime` |

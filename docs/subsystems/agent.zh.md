@@ -6,14 +6,14 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## Turn 组装
 
-`Agent` 持有会话服务、provider 服务、可选的工作区目录，以及可选的 Web `HttpTransport`。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
+`Agent` 持有会话服务、provider 服务、工作区目录，以及可选的 Web `HttpTransport`。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
 
 | 检查 | 失败 |
 | --- | --- |
 | 去除首尾空白后内容为空 | `AgentError::ContentRequired` |
 | 去除首尾空白后模型 id 为空 | `AgentError::ModelRequired` |
-| provider 不属于该用户 | `AgentError::ProviderNotFound` |
-| 会话不属于该用户 | `AgentError::SessionNotFound` |
+| provider 不存在 | `AgentError::ProviderNotFound` |
+| 会话不存在 | `AgentError::SessionNotFound` |
 | 会话绑定的目录已不存在 | `AgentError::DirectoryNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
@@ -23,7 +23,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## 工具
 
-有工作区目录时，turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话目录为根的 `LocalExecEnv`：会话目录是创建会话时指定的目录，没有指定时是会话的工作区 `<workspaces_dir>/<session id>`，`prepare` 在找到会话之后才创建它，并在 `Agent` 带有 Web `HttpTransport` 且对应功能的顺序存在已启用后端时另外注册 `web_search` 与 `web_fetch`。该 turn 的每次模型请求都带有一段系统提示词，写明这个目录、操作系统与 shell。没有工作区目录时，调用模型不带工具，也不带系统提示词。
+turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话目录为根的 `LocalExecEnv`：会话目录是创建会话时指定的目录，没有指定时是会话的工作区 `<workspaces_dir>/<session id>`，`prepare` 在找到会话之后才创建它，并在 `Agent` 带有 Web `HttpTransport` 且对应功能的顺序存在已启用后端时另外注册 `web_search` 与 `web_fetch`。该 turn 的每次模型请求都带有一段系统提示词，写明这个目录、操作系统与 shell。
 
 `LocalExecEnv` 把 `read_file` 与 `write_file` 限定在根目录内：
 
@@ -51,7 +51,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## 中止
 
-每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_id, user_message_id)` 只在该用户拥有这个 turn 时取消令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的 `bash` 命令按[工具](#工具)一节所述停止，其他正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 调用 `Agent::abort`。
+每个已组装的 turn 在其 `Turn` 被丢弃之前，以用户消息 id 登记一个 `CancelToken`。`Agent::abort(user_message_id)` 取消该 turn 的令牌；其他 id 会被忽略。取消会立即中断模型流，并以 `aborted` 状态定稿其占位消息；正在运行的 `bash` 命令按[工具](#工具)一节所述停止，其他正在运行的工具调用会先执行完，turn 在下一个 step 之前停止。`AbortMessage` 调用 `Agent::abort`。
 
 ## 流与恢复
 
@@ -59,7 +59,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 - `SendMessage` 从头读取日志。日志不设上限，因此读取较慢的客户端也会收到全部事件。
 - `ResumeStream(message_id, offset)` 从第 `offset` 个事件开始读取同一份日志，随后跟随实时事件。`offset` 是客户端已收到的事件数。
-- turn 结束时，日志关闭并被移除。已打开的流会读完它；之后的 `ResumeStream`，或来自其他用户的 `ResumeStream`，以 `ERROR_REASON_TURN_NOT_RUNNING` 失败。
+- turn 结束时，日志关闭并被移除。已打开的流会读完它；之后的 `ResumeStream` 以 `ERROR_REASON_TURN_NOT_RUNNING` 失败。
 
 Web 客户端统计它已应用的事件数，流中断后用这个数恢复，并在收到 `ERROR_REASON_TURN_NOT_RUNNING` 时重新加载会话消息。
 
