@@ -1,4 +1,4 @@
-import type { TitleBarState } from "@lemma/desktop-contract";
+import type { TitleBarState } from "../../../desktop/src/desktop-bridge";
 
 export interface WindowCapabilities {
     setTitleBar(state: TitleBarState): void;
@@ -16,6 +16,4 @@ export interface PlatformAdapter {
     /** Native directory picker; `null` in the browser. */
     readonly directoryPicker: DirectoryPicker | null;
     readonly titlebarHeight: number;
-    /** Version of the native client app; `null` in the browser. */
-    readonly clientVersion: string | null;
 }

@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import type { DesktopBridge } from "@lemma/desktop-contract";
+import type { DesktopBridge } from "../../../desktop/src/desktop-bridge";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Window as HappyWindow } from "happy-dom";
@@ -27,7 +27,6 @@ const rpc = vi.hoisted(() => ({
     listWebProviders:
         vi.fn<(req: object) => Promise<{ providers: WebProvider[] }>>(),
     sendMessage: vi.fn<(req: object) => AsyncIterable<object>>(),
-    getVersion: vi.fn<(req: object) => Promise<{ version: string }>>(),
 }));
 
 vi.mock("@/rpc/clients", () => ({
@@ -41,7 +40,6 @@ vi.mock("@/rpc/clients", () => ({
         listWebProviders: rpc.listWebProviders,
     },
     agentClient: { sendMessage: rpc.sendMessage },
-    systemClient: { getVersion: rpc.getVersion },
 }));
 
 const session = (id: string, title: string) =>
@@ -52,7 +50,6 @@ const session = (id: string, title: string) =>
     });
 
 const desktopBridge = () => ({
-    appVersion: "2.1.0",
     titlebarHeight: 40,
     setTitleBar: vi.fn<DesktopBridge["setTitleBar"]>(),
     toggleMaximize: vi.fn<DesktopBridge["toggleMaximize"]>(),
@@ -132,7 +129,6 @@ beforeEach(() => {
     rpc.listMessages.mockResolvedValue(create(ListMessagesResponseSchema, {}));
     rpc.listProviders.mockResolvedValue({ providers: [] });
     rpc.listWebProviders.mockResolvedValue({ providers: [] });
-    rpc.getVersion.mockResolvedValue({ version: "1.0.0" });
 });
 
 afterEach(() => {
@@ -251,7 +247,6 @@ it("navigates the settings pages from the sidebar", async () => {
 
     await user.click(screen.getByRole("link", { name: "App settings" }));
     await atPath("/settings/appearance");
-    expect(await screen.findByText("Server v1.0.0")).toBeDefined();
     expect(
         await screen.findByRole("heading", { level: 1, name: "Appearance" }),
     ).toBeDefined();

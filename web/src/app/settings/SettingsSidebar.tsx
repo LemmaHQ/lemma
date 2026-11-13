@@ -1,12 +1,10 @@
-import { SidebarContent, SidebarFooter, SidebarHeader } from "@lemma/ui";
+import { SidebarContent, SidebarHeader } from "@lemma/ui";
 import { ViewTransition } from "react";
-
-import { VersionTags } from "@/features/system";
 
 import { BackHomeButton } from "./BackHomeButton";
 import { SettingsNav } from "./SettingsNav";
 
-/** The settings sidebar: the way back home above the settings pages, with version tags at the bottom. */
+/** The settings sidebar: the way back home above the settings pages. */
 export function SettingsSidebar() {
     return (
         <>
@@ -30,9 +28,6 @@ export function SettingsSidebar() {
                     </div>
                 </ViewTransition>
             </SidebarContent>
-            <SidebarFooter>
-                <VersionTags />
-            </SidebarFooter>
         </>
     );
 }

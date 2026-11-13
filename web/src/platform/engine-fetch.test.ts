@@ -2,7 +2,7 @@ import type {
     DesktopBridge,
     EngineRequest,
     EngineResponse,
-} from "@lemma/desktop-contract";
+} from "../../../desktop/src/desktop-bridge";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -49,7 +49,7 @@ const harness = (): Harness => {
 };
 
 const post = (fetch: typeof globalThis.fetch, init?: RequestInit) =>
-    fetch(`${ENGINE_BASE_URL}/lemma.v1.SystemService/GetVersion?x=1`, {
+    fetch(`${ENGINE_BASE_URL}/lemma.v1.SessionService/ListSessions?x=1`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: "{}",
@@ -68,7 +68,7 @@ describe("createEngineFetch", () => {
             type: "request",
             id: 1,
             method: "POST",
-            path: "/lemma.v1.SystemService/GetVersion?x=1",
+            path: "/lemma.v1.SessionService/ListSessions?x=1",
             headers: [["content-type", "application/json"]],
             body: bytes("{}"),
         });
@@ -198,7 +198,6 @@ describe("createEngineFetch", () => {
 const bridge = (
     connect: DesktopBridge["connectEngine"] = () => {},
 ): DesktopBridge => ({
-    appVersion: "1.0.0",
     titlebarHeight: 40,
     setTitleBar: () => {},
     toggleMaximize: () => {},

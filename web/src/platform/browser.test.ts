@@ -10,7 +10,6 @@ it("talks to its own origin without desktop capabilities", () => {
     const adapter = new BrowserAdapter();
 
     expect(adapter.baseUrl).toBe("/");
-    expect(adapter.clientVersion).toBeNull();
     expect(adapter.directoryPicker).toBeNull();
     expect(adapter.titlebarHeight).toBe(0);
     adapter.window.setTitleBar({ theme: "light", surface: "sidebar" });

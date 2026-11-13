@@ -1,4 +1,7 @@
-import type { DesktopBridge, TitleBarState } from "@lemma/desktop-contract";
+import type {
+    DesktopBridge,
+    TitleBarState,
+} from "../../../desktop/src/desktop-bridge";
 
 import {
     connectEngine,
@@ -19,10 +22,8 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly window: PlatformAdapter["window"];
     readonly directoryPicker: DirectoryPicker;
     readonly titlebarHeight: number;
-    readonly clientVersion: string;
 
     constructor(target: Window, bridge: DesktopBridge) {
-        this.clientVersion = bridge.appVersion;
         this.titlebarHeight = bridge.titlebarHeight;
         this.fetch = createEngineFetch(connectEngine(target, bridge));
         this.window = {
