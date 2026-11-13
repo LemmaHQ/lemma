@@ -27,6 +27,7 @@ internal fun ProviderEnabledRow(
     modifier: Modifier = Modifier,
     interactionEnabled: Boolean = true,
     hint: String? = null,
+    label: String? = null,
 ) {
     Column(
         modifier =
@@ -49,7 +50,7 @@ internal fun ProviderEnabledRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(Res.string.provider_enable_provider),
+                text = label ?: stringResource(Res.string.provider_enable_provider),
                 style = LemmaTheme.typography.bodyLarge,
                 color = LemmaTheme.colors.textPrimary,
                 modifier = Modifier.weight(1f),

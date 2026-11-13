@@ -47,6 +47,15 @@ interface LemmaClient {
         patch: ClientPredefinedProviderPatch,
     ): ClientProvider
 
+    suspend fun listWebProviders(): List<ClientWebProvider>
+
+    suspend fun updateWebProvider(id: String, patch: ClientWebProviderPatch): ClientWebProvider
+
+    suspend fun setWebProviderOrder(
+        function: ClientWebFunction,
+        ids: List<String>,
+    ): List<ClientWebProvider>
+
     suspend fun deleteCustomProvider(id: String)
 
     /** Fetches the live model list with a stored custom provider's credentials. */

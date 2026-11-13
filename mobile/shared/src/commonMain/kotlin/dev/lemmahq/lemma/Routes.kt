@@ -13,3 +13,5 @@ import kotlinx.serialization.Serializable
 @Serializable internal data object SettingsRoute
 
 @Serializable internal data object AppearanceRoute
+
+@Serializable internal data object WebProviderRoute

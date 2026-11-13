@@ -11,6 +11,9 @@ import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientToolResult
+import dev.lemmahq.lemma.client.ClientWebFunction
+import dev.lemmahq.lemma.client.ClientWebProviderKind
+import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
@@ -239,6 +242,60 @@ class ConnectLemmaClientTest {
                 )
             }
         assertEquals(ServiceFailure.ApiFormatInvalid, invalid.failure)
+    }
+
+    @Test
+    fun webProvidersToggleSaveKeysAndReorder() = runTest {
+        val client = signedUpClient()
+        val initial = client.listWebProviders()
+        val exa = initial.first { it.kind == ClientWebProviderKind.Exa }
+        val deepSeek = initial.first { it.kind == ClientWebProviderKind.DeepSeek }
+        val native = initial.first { it.kind == ClientWebProviderKind.Native }
+
+        assertTrue(native.enabled)
+        assertFalse(exa.enabled)
+
+        val rejected =
+            assertFailsWith<ServiceException> {
+                client.updateWebProvider(exa.id, ClientWebProviderPatch(enabled = true))
+            }
+        assertEquals(ServiceFailure.ProviderKeyRequired, rejected.failure)
+
+        val enabledExa =
+            client.updateWebProvider(
+                exa.id,
+                ClientWebProviderPatch(apiKey = "sk-exa", enabled = true),
+            )
+        assertTrue(enabledExa.enabled)
+        assertTrue(enabledExa.hasKey)
+        val keyedDeepSeek =
+            client.updateWebProvider(deepSeek.id, ClientWebProviderPatch(apiKey = "sk-deepseek"))
+        assertTrue(keyedDeepSeek.hasKey)
+        assertFalse(keyedDeepSeek.enabled)
+
+        val disabledNative =
+            client.updateWebProvider(native.id, ClientWebProviderPatch(enabled = false))
+        assertFalse(disabledNative.enabled)
+
+        val searchReordered =
+            client.setWebProviderOrder(ClientWebFunction.Search, listOf(deepSeek.id, exa.id))
+        assertEquals(
+            listOf(deepSeek.id, exa.id),
+            searchReordered
+                .filter { it.kind != ClientWebProviderKind.Native }
+                .sortedBy { it.searchRank }
+                .map { it.id },
+        )
+
+        val fetchReordered =
+            client.setWebProviderOrder(
+                ClientWebFunction.Fetch,
+                listOf(deepSeek.id, native.id, exa.id),
+            )
+        assertEquals(
+            listOf(deepSeek.id, native.id, exa.id),
+            fetchReordered.sortedBy { it.fetchRank }.map { it.id },
+        )
     }
 
     @Test

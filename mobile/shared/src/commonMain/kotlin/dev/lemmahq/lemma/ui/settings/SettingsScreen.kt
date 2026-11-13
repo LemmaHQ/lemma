@@ -19,16 +19,19 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_settings
 import lemma.mobile.shared.generated.resources.icon_bot
 import lemma.mobile.shared.generated.resources.icon_palette
+import lemma.mobile.shared.generated.resources.icon_search
 import lemma.mobile.shared.generated.resources.settings_ai_providers
 import lemma.mobile.shared.generated.resources.settings_appearance
 import lemma.mobile.shared.generated.resources.settings_group_agent
 import lemma.mobile.shared.generated.resources.settings_group_general
+import lemma.mobile.shared.generated.resources.settings_web
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun SettingsScreen(
     onAppearance: () -> Unit,
     onProviders: () -> Unit,
+    onWebProviders: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +56,11 @@ internal fun SettingsScreen(
                     icon = Res.drawable.icon_bot,
                     title = stringResource(Res.string.settings_ai_providers),
                     onClick = onProviders,
+                )
+                LemmaSettingsRow(
+                    icon = Res.drawable.icon_search,
+                    title = stringResource(Res.string.settings_web),
+                    onClick = onWebProviders,
                 )
             }
         }

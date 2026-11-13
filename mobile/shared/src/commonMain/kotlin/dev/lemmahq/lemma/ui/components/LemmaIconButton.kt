@@ -17,9 +17,10 @@ fun LemmaIconButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     tint: Color = LemmaTheme.colors.textPrimary,
 ) {
-    IconButton(onClick = onClick, modifier = modifier.size(48.dp)) {
+    IconButton(onClick = onClick, modifier = modifier.size(48.dp), enabled = enabled) {
         Icon(
             painter = painterResource(icon),
             contentDescription = contentDescription,

@@ -40,6 +40,17 @@ class FakeLemmaClient : LemmaClient {
         { id, _ ->
             samplePredefinedProvider(id)
         }
+    var onListWebProviders: suspend () -> List<ClientWebProvider> = { emptyList() }
+    var onUpdateWebProvider:
+        suspend (id: String, patch: ClientWebProviderPatch) -> ClientWebProvider =
+        { id, _ ->
+            ClientWebProvider(id, ClientWebProviderKind.Native, "Native", false, false, 0, 0)
+        }
+    var onSetWebProviderOrder:
+        suspend (function: ClientWebFunction, ids: List<String>) -> List<ClientWebProvider> =
+        { _, _ ->
+            emptyList()
+        }
     var onDeleteCustomProvider: suspend (id: String) -> Unit = {}
     var onFetchProviderModels: suspend (id: String) -> List<String> = { emptyList() }
     var onFetchModels:
@@ -143,6 +154,27 @@ class FakeLemmaClient : LemmaClient {
     ): ClientProvider {
         calls += Call("updatePredefinedProvider", id, patch)
         return onUpdatePredefinedProvider(id, patch)
+    }
+
+    override suspend fun listWebProviders(): List<ClientWebProvider> {
+        calls += Call("listWebProviders")
+        return onListWebProviders()
+    }
+
+    override suspend fun updateWebProvider(
+        id: String,
+        patch: ClientWebProviderPatch,
+    ): ClientWebProvider {
+        calls += Call("updateWebProvider", id, patch)
+        return onUpdateWebProvider(id, patch)
+    }
+
+    override suspend fun setWebProviderOrder(
+        function: ClientWebFunction,
+        ids: List<String>,
+    ): List<ClientWebProvider> {
+        calls += Call("setWebProviderOrder", function, ids)
+        return onSetWebProviderOrder(function, ids)
     }
 
     override suspend fun deleteCustomProvider(id: String) {

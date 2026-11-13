@@ -3,17 +3,23 @@ package dev.lemmahq.lemma.network
 import dev.lemmahq.gen.lemma.v1.CheckProviderRequest
 import dev.lemmahq.gen.lemma.v1.CreateCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.FetchModelsRequest
+import dev.lemmahq.gen.lemma.v1.SetWebProviderOrderRequest
 import dev.lemmahq.gen.lemma.v1.UpdateCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.UpdatePredefinedProviderRequest
+import dev.lemmahq.gen.lemma.v1.UpdateWebProviderRequest
 import dev.lemmahq.gen.lemma.v1.checkProviderRequest
 import dev.lemmahq.gen.lemma.v1.createCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.fetchModelsRequest
 import dev.lemmahq.gen.lemma.v1.providerModelsPatch
+import dev.lemmahq.gen.lemma.v1.setWebProviderOrderRequest
 import dev.lemmahq.gen.lemma.v1.updateCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.updatePredefinedProviderRequest
+import dev.lemmahq.gen.lemma.v1.updateWebProviderRequest
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
+import dev.lemmahq.lemma.client.ClientWebFunction
+import dev.lemmahq.lemma.client.ClientWebProviderPatch
 
 internal fun customProviderCreateRequest(
     input: ClientCustomProviderInput
@@ -52,6 +58,27 @@ internal fun predefinedProviderUpdateRequest(
     patch.apiKey?.let { apiKey = it }
     patch.enabled?.let { enabled = it }
     patch.defaultApiFormat?.let { defaultApiFormat = apiFormat(it) }
+}
+
+internal fun webProviderUpdateRequest(
+    id: String,
+    patch: ClientWebProviderPatch,
+): UpdateWebProviderRequest = updateWebProviderRequest {
+    this.id = id
+    patch.apiKey?.let { apiKey = it }
+    patch.enabled?.let { enabled = it }
+}
+
+internal fun webProviderOrderRequest(
+    function: ClientWebFunction,
+    providerIds: List<String>,
+): SetWebProviderOrderRequest = setWebProviderOrderRequest {
+    this.function =
+        when (function) {
+            ClientWebFunction.Search -> SetWebProviderOrderRequest.Function.FUNCTION_SEARCH
+            ClientWebFunction.Fetch -> SetWebProviderOrderRequest.Function.FUNCTION_FETCH
+        }
+    ids.addAll(providerIds)
 }
 
 internal fun modelsFetchRequest(

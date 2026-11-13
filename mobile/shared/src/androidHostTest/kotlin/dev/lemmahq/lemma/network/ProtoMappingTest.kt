@@ -3,6 +3,7 @@ package dev.lemmahq.lemma.network
 import com.google.protobuf.Timestamp
 import dev.lemmahq.gen.lemma.v1.ApiFormat
 import dev.lemmahq.gen.lemma.v1.MessageStatus as ProtoMessageStatus
+import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.gen.lemma.v1.agentAborted
 import dev.lemmahq.gen.lemma.v1.agentDelta
 import dev.lemmahq.gen.lemma.v1.agentDone
@@ -21,6 +22,7 @@ import dev.lemmahq.gen.lemma.v1.toolCall
 import dev.lemmahq.gen.lemma.v1.toolCallFinished
 import dev.lemmahq.gen.lemma.v1.toolCallStarted
 import dev.lemmahq.gen.lemma.v1.toolResultMeta
+import dev.lemmahq.gen.lemma.v1.webProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
@@ -28,6 +30,8 @@ import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
+import dev.lemmahq.lemma.client.ClientWebProvider
+import dev.lemmahq.lemma.client.ClientWebProviderKind
 import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -87,6 +91,54 @@ class ProtoMappingTest {
             provider { custom = customProvider { apiFormatValue = 99 } }.toClient()
         }
         assertFailsWith<IllegalArgumentException> { provider {}.toClient() }
+    }
+
+    @Test
+    fun webProvidersMapEachKindAndRejectUnknownValues() {
+        val mapped =
+            listOf(
+                    WebProvider.Kind.KIND_NATIVE,
+                    WebProvider.Kind.KIND_EXA,
+                    WebProvider.Kind.KIND_DEEPSEEK,
+                )
+                .mapIndexed { index, kind ->
+                    webProvider {
+                        id = "web-$index"
+                        this.kind = kind
+                        name = "Web $index"
+                        enabled = index == 0
+                        hasKey = index == 1
+                        searchRank = index
+                        fetchRank = 2 - index
+                    }
+                        .toClient()
+                }
+        assertEquals(
+            listOf(
+                ClientWebProvider(
+                    "web-0",
+                    ClientWebProviderKind.Native,
+                    "Web 0",
+                    true,
+                    false,
+                    0,
+                    2,
+                ),
+                ClientWebProvider("web-1", ClientWebProviderKind.Exa, "Web 1", false, true, 1, 1),
+                ClientWebProvider(
+                    "web-2",
+                    ClientWebProviderKind.DeepSeek,
+                    "Web 2",
+                    false,
+                    false,
+                    2,
+                    0,
+                ),
+            ),
+            mapped,
+        )
+        assertFailsWith<IllegalArgumentException> { webProvider {}.toClient() }
+        assertFailsWith<IllegalArgumentException> { webProvider { kindValue = 99 }.toClient() }
     }
 
     @Test

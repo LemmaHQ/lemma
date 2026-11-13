@@ -88,6 +88,9 @@ class AppTest {
         compose.onNodeWithText("AI Providers").performClick()
         compose.onNodeWithText("No providers yet.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Web Search & Fetch").performClick()
+        compose.onNodeWithText("Backends").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
 

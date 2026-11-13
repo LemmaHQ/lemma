@@ -11,6 +11,7 @@ import dev.lemmahq.gen.lemma.v1.Provider
 import dev.lemmahq.gen.lemma.v1.Session
 import dev.lemmahq.gen.lemma.v1.ToolCall
 import dev.lemmahq.gen.lemma.v1.User
+import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
@@ -21,6 +22,8 @@ import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
 import dev.lemmahq.lemma.client.ClientUser
+import dev.lemmahq.lemma.client.ClientWebProvider
+import dev.lemmahq.lemma.client.ClientWebProviderKind
 import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
@@ -54,6 +57,17 @@ internal fun Provider.toClient(): ClientProvider =
                     )
                 else -> throw IllegalArgumentException("Provider source is not set")
             },
+    )
+
+internal fun WebProvider.toClient(): ClientWebProvider =
+    ClientWebProvider(
+        id = id,
+        kind = kind.toClient(),
+        name = name,
+        enabled = enabled,
+        hasKey = hasKey,
+        searchRank = searchRank,
+        fetchRank = fetchRank,
     )
 
 internal fun apiFormat(format: String): ApiFormat =
@@ -130,6 +144,16 @@ private fun ApiFormat.toClientFormat(): String =
         ApiFormat.API_FORMAT_GEMINI -> "gemini"
         ApiFormat.API_FORMAT_UNSPECIFIED,
         ApiFormat.UNRECOGNIZED -> throw IllegalArgumentException("Unknown API format: $this")
+    }
+
+private fun WebProvider.Kind.toClient(): ClientWebProviderKind =
+    when (this) {
+        WebProvider.Kind.KIND_NATIVE -> ClientWebProviderKind.Native
+        WebProvider.Kind.KIND_EXA -> ClientWebProviderKind.Exa
+        WebProvider.Kind.KIND_DEEPSEEK -> ClientWebProviderKind.DeepSeek
+        WebProvider.Kind.KIND_UNSPECIFIED,
+        WebProvider.Kind.UNRECOGNIZED ->
+            throw IllegalArgumentException("Unknown web provider kind: $this")
     }
 
 private fun Model.toClient(): ClientModel = ClientModel(id = id, toolCalling = toolCalling)

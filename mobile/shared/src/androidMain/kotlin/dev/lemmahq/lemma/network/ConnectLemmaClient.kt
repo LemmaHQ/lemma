@@ -14,6 +14,7 @@ import dev.lemmahq.gen.lemma.v1.getVersionRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
 import dev.lemmahq.gen.lemma.v1.listProvidersRequest
 import dev.lemmahq.gen.lemma.v1.listSessionsRequest
+import dev.lemmahq.gen.lemma.v1.listWebProvidersRequest
 import dev.lemmahq.gen.lemma.v1.meRequest
 import dev.lemmahq.gen.lemma.v1.renameSessionRequest
 import dev.lemmahq.gen.lemma.v1.resumeStreamRequest
@@ -29,6 +30,9 @@ import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientUser
+import dev.lemmahq.lemma.client.ClientWebFunction
+import dev.lemmahq.lemma.client.ClientWebProvider
+import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -140,6 +144,30 @@ class ConnectLemmaClient(
         return call { rpc.provider.updatePredefinedProvider(request, emptyMap()) }
             .provider
             .toClient()
+    }
+
+    override suspend fun listWebProviders(): List<ClientWebProvider> = call {
+        rpc.provider.listWebProviders(listWebProvidersRequest {}, emptyMap())
+    }
+        .providersList
+        .map { it.toClient() }
+
+    override suspend fun updateWebProvider(
+        id: String,
+        patch: ClientWebProviderPatch,
+    ): ClientWebProvider {
+        val request = webProviderUpdateRequest(id, patch)
+        return call { rpc.provider.updateWebProvider(request, emptyMap()) }.provider.toClient()
+    }
+
+    override suspend fun setWebProviderOrder(
+        function: ClientWebFunction,
+        ids: List<String>,
+    ): List<ClientWebProvider> {
+        val request = webProviderOrderRequest(function, ids)
+        return call { rpc.provider.setWebProviderOrder(request, emptyMap()) }
+            .providersList
+            .map { it.toClient() }
     }
 
     override suspend fun deleteCustomProvider(id: String) {
