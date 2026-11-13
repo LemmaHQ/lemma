@@ -21,7 +21,8 @@ message Model {
 message Provider {
   string id = 1;
   bool enabled = 2;
-  string api_key = 3; // Decrypted plaintext in read responses
+  // Whether a nonempty key is stored; the key itself never leaves the host.
+  bool has_key = 3;
   oneof source {
     PredefinedProvider predefined = 4;
     CustomProvider custom = 5;
@@ -112,12 +113,7 @@ message DeleteCustomProviderRequest {
 message DeleteCustomProviderResponse {}
 
 message FetchModelsRequest {
-  // Accepts an existing custom provider id or inline configuration credentials
   string id = 1;
-  ApiFormat api_format = 2;
-  string base_url = 3;
-  string api_key = 4;
-  string models_path = 5;
 }
 
 message FetchModelsResponse {
@@ -125,13 +121,8 @@ message FetchModelsResponse {
 }
 
 message CheckProviderRequest {
-  // Checks an existing provider id or inline custom connection details
   string id = 1;
-  ApiFormat api_format = 2;
-  string base_url = 3;
-  string api_key = 4;
-  string api_path = 5;
-  string model = 6;
+  string model = 2;
 }
 
 message CheckProviderResponse {

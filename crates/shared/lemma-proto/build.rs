@@ -9,7 +9,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             "../../../proto/lemma/v1/provider.proto",
             "../../../proto/lemma/v1/session.proto",
             "../../../proto/lemma/v1/agent.proto",
-            "../../../proto/lemma/v1/system.proto",
         ])
         .includes(&["../../../proto"])
         .include_file("_connectrpc.rs")
