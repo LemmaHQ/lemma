@@ -8,15 +8,20 @@ use lemma_proto::lemma::v1::{
     CheckProviderRequest, CheckProviderResponse, CreateCustomProviderRequest,
     CreateCustomProviderResponse, DeleteCustomProviderRequest, DeleteCustomProviderResponse,
     ErrorReason, FetchModelsRequest, FetchModelsResponse, ListProvidersRequest,
-    ListProvidersResponse, UpdateCustomProviderRequest, UpdateCustomProviderResponse,
-    UpdatePredefinedProviderRequest, UpdatePredefinedProviderResponse,
+    ListProvidersResponse, ListWebProvidersRequest, ListWebProvidersResponse,
+    SetWebProviderOrderRequest, SetWebProviderOrderResponse, UpdateCustomProviderRequest,
+    UpdateCustomProviderResponse, UpdatePredefinedProviderRequest,
+    UpdatePredefinedProviderResponse, UpdateWebProviderRequest, UpdateWebProviderResponse,
 };
 use lemma_provider::{
     CreateCustomInput, ProviderError, ProviderService, ProviderView, UpdateCustomInput,
-    UpdatePredefinedInput,
+    UpdatePredefinedInput, UpdateWebInput,
 };
 
-use crate::provider_mapping::{adhoc_format, map_domain, models_from_proto, parse_id, to_proto};
+use crate::provider_mapping::{
+    adhoc_format, map_domain, models_from_proto, parse_id, to_proto, web_function_from_proto,
+    web_to_proto,
+};
 
 /// Connect handler implementing the `ProviderService` RPCs.
 ///
@@ -213,6 +218,63 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         };
         Response::ok(CheckProviderResponse {
             error,
+            ..Default::default()
+        })
+    }
+
+    async fn list_web_providers(
+        &self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, ListWebProvidersRequest>,
+    ) -> ServiceResult<ListWebProvidersResponse> {
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
+        let providers = self.domain.list_web(user_id).await.map_err(map_domain)?;
+        Response::ok(ListWebProvidersResponse {
+            providers: providers.into_iter().map(web_to_proto).collect(),
+            ..Default::default()
+        })
+    }
+
+    async fn update_web_provider(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, UpdateWebProviderRequest>,
+    ) -> ServiceResult<UpdateWebProviderResponse> {
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
+        let input = UpdateWebInput {
+            api_key: request.api_key.map(ToString::to_string),
+            enabled: request.enabled,
+        };
+        let provider = self
+            .domain
+            .update_web(user_id, parse_id(request.id)?, input)
+            .await
+            .map_err(map_domain)?;
+        Response::ok(UpdateWebProviderResponse {
+            provider: web_to_proto(provider).into(),
+            ..Default::default()
+        })
+    }
+
+    async fn set_web_provider_order(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, SetWebProviderOrderRequest>,
+    ) -> ServiceResult<SetWebProviderOrderResponse> {
+        let user_id = lemma_auth_rpc::require_user(&self.jwt_secret, &ctx)?;
+        let function = web_function_from_proto(request.function.as_known())?;
+        let ids = request
+            .ids
+            .iter()
+            .map(|id| parse_id(id))
+            .collect::<Result<_, _>>()?;
+        let providers = self
+            .domain
+            .set_web_order(user_id, function, ids)
+            .await
+            .map_err(map_domain)?;
+        Response::ok(SetWebProviderOrderResponse {
+            providers: providers.into_iter().map(web_to_proto).collect(),
             ..Default::default()
         })
     }

@@ -11,5 +11,6 @@ pub use migration::migrations;
 pub use provider_error::ProviderError;
 pub use provider_service::{
     CreateCustomInput, CustomProviderView, PredefinedProviderView, ProviderBinding, ProviderModel,
-    ProviderService, ProviderView, UpdateCustomInput, UpdatePredefinedInput,
+    ProviderService, ProviderView, UpdateCustomInput, UpdatePredefinedInput, UpdateWebInput,
+    WebBackend, WebFunction, WebProviderKind, WebProviderView,
 };

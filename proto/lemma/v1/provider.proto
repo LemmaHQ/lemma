@@ -139,6 +139,62 @@ message CheckProviderResponse {
   string error = 1;
 }
 
+// A web service account: a search or fetch backend with its own key.
+message WebProvider {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // Local HTTP fetch without any account.
+    KIND_NATIVE = 1;
+    KIND_EXA = 2;
+    KIND_DEEPSEEK = 3;
+  }
+
+  string id = 1;
+  Kind kind = 2;
+  string name = 3;
+  bool enabled = 4;
+  // Whether a nonempty key is stored; the key itself never leaves the host.
+  bool has_key = 5;
+  // Position in the search backend order; zero for backends without search.
+  int32 search_rank = 6;
+  // Position in the fetch backend order; zero for backends without fetch.
+  int32 fetch_rank = 7;
+}
+
+message ListWebProvidersRequest {}
+
+// All web providers, ordered by kind.
+message ListWebProvidersResponse {
+  repeated WebProvider providers = 1;
+}
+
+message UpdateWebProviderRequest {
+  string id = 1;
+  // Replaces the stored key; an empty string clears it and disables the provider.
+  optional string api_key = 2;
+  optional bool enabled = 3;
+}
+
+message UpdateWebProviderResponse {
+  WebProvider provider = 1;
+}
+
+message SetWebProviderOrderRequest {
+  enum Function {
+    FUNCTION_UNSPECIFIED = 0;
+    FUNCTION_SEARCH = 1;
+    FUNCTION_FETCH = 2;
+  }
+
+  Function function = 1;
+  // Every provider supporting the function, in the order calls should try them.
+  repeated string ids = 2;
+}
+
+message SetWebProviderOrderResponse {
+  repeated WebProvider providers = 1;
+}
+
 service ProviderService {
   // Lists every provider of the user, adding the missing predefined providers first.
   rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
@@ -151,4 +207,8 @@ service ProviderService {
   rpc FetchModels(FetchModelsRequest) returns (FetchModelsResponse);
   // Sends a minimal generation request to confirm the provider answers; a predefined provider uses its default format.
   rpc CheckProvider(CheckProviderRequest) returns (CheckProviderResponse);
+  // Web search and fetch backend accounts and their call order.
+  rpc ListWebProviders(ListWebProvidersRequest) returns (ListWebProvidersResponse);
+  rpc UpdateWebProvider(UpdateWebProviderRequest) returns (UpdateWebProviderResponse);
+  rpc SetWebProviderOrder(SetWebProviderOrderRequest) returns (SetWebProviderOrderResponse);
 }

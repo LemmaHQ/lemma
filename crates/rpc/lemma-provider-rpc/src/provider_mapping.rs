@@ -2,7 +2,9 @@ use connectrpc::ConnectError;
 use lemma_model::ApiFormat;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{ErrorReason, Provider};
-use lemma_provider::{ProviderError, ProviderModel, ProviderView};
+use lemma_provider::{
+    ProviderError, ProviderModel, ProviderView, WebFunction, WebProviderKind, WebProviderView,
+};
 use uuid::Uuid;
 
 /// Maps a proto format to the domain format. Returns `None` for unspecified
@@ -88,6 +90,34 @@ pub(crate) fn to_proto(view: ProviderView) -> Provider {
             ))),
             ..Default::default()
         },
+    }
+}
+
+pub(crate) fn web_to_proto(view: WebProviderView) -> v1::WebProvider {
+    let kind = match view.kind {
+        WebProviderKind::Native => v1::web_provider::Kind::Native,
+        WebProviderKind::Exa => v1::web_provider::Kind::Exa,
+        WebProviderKind::DeepSeek => v1::web_provider::Kind::Deepseek,
+    };
+    v1::WebProvider {
+        id: view.id.to_string(),
+        kind: kind.into(),
+        name: view.name,
+        enabled: view.enabled,
+        has_key: view.has_key,
+        search_rank: view.search_rank,
+        fetch_rank: view.fetch_rank,
+        ..Default::default()
+    }
+}
+
+pub(crate) fn web_function_from_proto(
+    function: Option<v1::set_web_provider_order_request::Function>,
+) -> Result<WebFunction, ConnectError> {
+    match function {
+        Some(v1::set_web_provider_order_request::Function::Search) => Ok(WebFunction::Search),
+        Some(v1::set_web_provider_order_request::Function::Fetch) => Ok(WebFunction::Fetch),
+        _ => Err(lemma_proto::app_error(ErrorReason::ProviderFieldsRequired)),
     }
 }
 

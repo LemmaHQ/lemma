@@ -19,6 +19,9 @@ const UPDATE_PREDEFINED: &str = "/lemma.v1.ProviderService/UpdatePredefinedProvi
 const DELETE: &str = "/lemma.v1.ProviderService/DeleteCustomProvider";
 const FETCH: &str = "/lemma.v1.ProviderService/FetchModels";
 const CHECK: &str = "/lemma.v1.ProviderService/CheckProvider";
+const LIST_WEB: &str = "/lemma.v1.ProviderService/ListWebProviders";
+const UPDATE_WEB: &str = "/lemma.v1.ProviderService/UpdateWebProvider";
+const ORDER_WEB: &str = "/lemma.v1.ProviderService/SetWebProviderOrder";
 
 async fn vendor() -> Result<String, Box<dyn Error>> {
     let router = Router::new()
@@ -72,6 +75,15 @@ async fn create(engine: &Engine, token: &str, body: &Value) -> Result<String, Bo
         .as_str()
         .map(str::to_owned)
         .ok_or_else(|| format!("no provider id in {reply:?}").into())
+}
+
+fn web_id(body: &Value, kind: &str) -> Result<String, Box<dyn Error>> {
+    body["providers"]
+        .as_array()
+        .and_then(|providers| providers.iter().find(|provider| provider["kind"] == kind))
+        .and_then(|provider| provider["id"].as_str())
+        .map(str::to_owned)
+        .ok_or_else(|| format!("no {kind} provider in {body}").into())
 }
 
 #[tokio::test]
@@ -209,6 +221,205 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
     assert_reason(&invalid, ErrorReason::ApiFormatInvalid);
     assert_reason(&fetched, ErrorReason::ProviderNotFound);
     assert_reason(&deleted, ErrorReason::ProviderNotFound);
+    engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box<dyn Error>> {
+    let mut engine = Engine::open().await?;
+    let token = engine.token("ada").await?;
+    let listed = engine.call_as(&token, LIST_WEB, &json!({})).await?;
+    let native = web_id(&listed.body, "KIND_NATIVE")?;
+    let exa = web_id(&listed.body, "KIND_EXA")?;
+    let deepseek = web_id(&listed.body, "KIND_DEEPSEEK")?;
+
+    let without_key = engine
+        .call_as(&token, UPDATE_WEB, &json!({ "id": exa, "enabled": true }))
+        .await?;
+    let exa_enabled = engine
+        .call_as(
+            &token,
+            UPDATE_WEB,
+            &json!({ "id": exa, "apiKey": "sk-exa", "enabled": true }),
+        )
+        .await?;
+    let deepseek_enabled = engine
+        .call_as(
+            &token,
+            UPDATE_WEB,
+            &json!({ "id": deepseek, "apiKey": "sk-deepseek", "enabled": true }),
+        )
+        .await?;
+    let search_order = engine
+        .call_as(
+            &token,
+            ORDER_WEB,
+            &json!({ "function": "FUNCTION_SEARCH", "ids": [deepseek, exa] }),
+        )
+        .await?;
+    let fetch_order = engine
+        .call_as(
+            &token,
+            ORDER_WEB,
+            &json!({ "function": "FUNCTION_FETCH", "ids": [deepseek, exa, native] }),
+        )
+        .await?;
+    let cleared = engine
+        .call_as(&token, UPDATE_WEB, &json!({ "id": exa, "apiKey": "" }))
+        .await?;
+
+    assert_reason(&without_key, ErrorReason::ProviderKeyRequired);
+    assert_eq!(listed.body["providers"][0]["kind"], "KIND_NATIVE");
+    assert_eq!(listed.body["providers"][0]["name"], "Native");
+    assert_eq!(listed.body["providers"][0]["enabled"], true);
+    assert_eq!(listed.body["providers"][1]["kind"], "KIND_EXA");
+    assert_eq!(listed.body["providers"][2]["kind"], "KIND_DEEPSEEK");
+    assert_eq!(exa_enabled.body["provider"]["hasKey"], true);
+    assert_eq!(deepseek_enabled.body["provider"]["hasKey"], true);
+    assert!(
+        exa_enabled.body["provider"].get("apiKey").is_none(),
+        "key stays write-only"
+    );
+    let search_exa = search_order.body["providers"]
+        .as_array()
+        .and_then(|providers| {
+            providers
+                .iter()
+                .find(|provider| provider["kind"] == "KIND_EXA")
+        })
+        .ok_or("Exa missing from search order")?;
+    let search_deepseek = search_order.body["providers"]
+        .as_array()
+        .and_then(|providers| {
+            providers
+                .iter()
+                .find(|provider| provider["kind"] == "KIND_DEEPSEEK")
+        })
+        .ok_or("DeepSeek missing from search order")?;
+    let fetch_native = fetch_order.body["providers"]
+        .as_array()
+        .and_then(|providers| {
+            providers
+                .iter()
+                .find(|provider| provider["kind"] == "KIND_NATIVE")
+        })
+        .ok_or("Native missing from fetch order")?;
+    assert_eq!(search_exa["searchRank"], 1);
+    assert_eq!(
+        search_deepseek["searchRank"].as_i64().unwrap_or_default(),
+        0
+    );
+    assert_eq!(fetch_native["fetchRank"], 2);
+    assert!(
+        !cleared.body["provider"]["enabled"]
+            .as_bool()
+            .unwrap_or_default()
+    );
+    assert!(
+        !cleared.body["provider"]["hasKey"]
+            .as_bool()
+            .unwrap_or_default()
+    );
+    engine.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
+    let mut engine = Engine::open().await?;
+    let ada = engine.token("ada").await?;
+    let bob = engine.token("bob").await?;
+    let listed = engine.call_as(&ada, LIST_WEB, &json!({})).await?;
+    let native = web_id(&listed.body, "KIND_NATIVE")?;
+    let exa = web_id(&listed.body, "KIND_EXA")?;
+    let deepseek = web_id(&listed.body, "KIND_DEEPSEEK")?;
+
+    let cases = [
+        (
+            engine.call(LIST_WEB, &json!({})).await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine.call(UPDATE_WEB, &json!({ "id": exa })).await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine
+                .call(
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_FETCH", "ids": [native] }),
+                )
+                .await?,
+            ErrorReason::TokenInvalid,
+        ),
+        (
+            engine
+                .call_as(&ada, UPDATE_WEB, &json!({ "id": "x", "enabled": true }))
+                .await?,
+            ErrorReason::IdInvalid,
+        ),
+        (
+            engine
+                .call_as(&bob, UPDATE_WEB, &json!({ "id": exa, "enabled": false }))
+                .await?,
+            ErrorReason::ProviderNotFound,
+        ),
+        (
+            engine
+                .call_as(
+                    &ada,
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_UNSPECIFIED" }),
+                )
+                .await?,
+            ErrorReason::ProviderFieldsRequired,
+        ),
+        (
+            engine
+                .call_as(
+                    &ada,
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_SEARCH", "ids": ["x"] }),
+                )
+                .await?,
+            ErrorReason::IdInvalid,
+        ),
+        (
+            engine
+                .call_as(
+                    &ada,
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_SEARCH", "ids": [] }),
+                )
+                .await?,
+            ErrorReason::ProviderNotFound,
+        ),
+        (
+            engine
+                .call_as(
+                    &ada,
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_SEARCH", "ids": [exa, exa] }),
+                )
+                .await?,
+            ErrorReason::ProviderNotFound,
+        ),
+        (
+            engine
+                .call_as(
+                    &ada,
+                    ORDER_WEB,
+                    &json!({ "function": "FUNCTION_SEARCH", "ids": [exa, deepseek, native] }),
+                )
+                .await?,
+            ErrorReason::ProviderNotFound,
+        ),
+    ];
+
+    for (reply, reason) in &cases {
+        assert_reason(reply, *reason);
+    }
     engine.close().await?;
     Ok(())
 }

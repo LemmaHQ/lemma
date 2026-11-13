@@ -19,6 +19,7 @@ impl MigratorTrait for BaseMigrator {
         let mut all = lemma_auth::migrations();
         let mut providers = lemma_provider::migrations();
         providers.pop();
+        providers.pop();
         all.extend(providers);
         all
     }
@@ -158,6 +159,13 @@ async fn migration_round_trip_keeps_custom_rows_beside_a_predefined_namesake()
         let user_id = insert_old_provider(&db).await?;
 
         CurrentMigrator::up(&db, None).await?;
+        let web_table = db
+            .query_one_raw(sea_orm::Statement::from_string(
+                db.get_database_backend(),
+                "SELECT COUNT(*) FROM web_providers",
+            ))
+            .await?;
+        assert!(web_table.is_some(), "web providers table created");
         insert_predefined(&db, user_id).await?;
         let (format, source, models) = provider_row(&db, "api_format").await?;
 
@@ -169,6 +177,7 @@ async fn migration_round_trip_keeps_custom_rows_beside_a_predefined_namesake()
             "models are not converted; development databases are recreated"
         );
 
+        CurrentMigrator::down(&db, Some(1)).await?;
         CurrentMigrator::down(&db, Some(1)).await?;
         let row = db
             .query_one_raw(sea_orm::Statement::from_string(
