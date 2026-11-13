@@ -1,5 +1,5 @@
 /** The final path segment of each settings section. */
-export type SettingsSegment = "appearance" | "providers";
+export type SettingsSegment = "appearance" | "providers" | "web";
 
 /** URL paths of the app's routes. */
 export const paths = {
