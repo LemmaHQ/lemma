@@ -9,7 +9,6 @@ use lemma_model::{Adapter, BoxEventStream, Connector, Endpoint, ModelError, Mode
 use lemma_provider::{
     ProviderError, ProviderService, UpdateWebInput, WebFunction, WebProviderKind, WebProviderView,
 };
-use lemma_test_db::database;
 
 #[derive(Debug)]
 struct NoAdapter;
@@ -36,7 +35,7 @@ impl Connector for NoConnector {
 }
 
 fn service(db: SqlitePool) -> ProviderService<NoConnector> {
-    ProviderService::new(db, "test-secret-key".to_owned(), NoConnector)
+    ProviderService::new(db, "test-secret-key", NoConnector)
 }
 
 fn view(
@@ -68,7 +67,7 @@ async fn enable(
 
 #[tokio::test]
 async fn web_providers_are_seeded_once() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
 
     let first = providers.list_web().await?;
@@ -113,7 +112,7 @@ async fn web_providers_are_seeded_once() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn web_updates_validate_keys_and_clear_atomically() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let listed = providers.list_web().await?;
     let native = view(&listed, WebProviderKind::Native)?;
@@ -221,7 +220,7 @@ async fn web_updates_validate_keys_and_clear_atomically() -> Result<(), Box<dyn 
 
 #[tokio::test]
 async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let exa = enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
     let deepseek = enable(&providers, WebProviderKind::DeepSeek, "sk-deepseek").await?;
@@ -381,7 +380,7 @@ async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box
 #[tokio::test]
 async fn web_key_races_and_open_failures_never_return_invalid_backends()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db.clone());
     let exa = enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
     providers
@@ -419,7 +418,7 @@ async fn web_key_races_and_open_failures_never_return_invalid_backends()
     );
 
     enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
-    let rotated = ProviderService::new(db, "rotated".to_owned(), NoConnector);
+    let rotated = ProviderService::new(db, "rotated", NoConnector);
     let opened = rotated.web_backends(WebFunction::Search).await;
     assert!(
         matches!(opened, Err(ProviderError::Crypto(_))),
@@ -430,7 +429,7 @@ async fn web_key_races_and_open_failures_never_return_invalid_backends()
 
 #[tokio::test]
 async fn web_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     db.close().await;
     let providers = service(db);
     let id = Uuid::new_v4();

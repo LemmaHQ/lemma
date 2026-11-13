@@ -13,7 +13,6 @@ use lemma_provider::{
     CreateCustomInput, CustomProviderView, PredefinedProviderView, ProviderError, ProviderModel,
     ProviderService, ProviderView, UpdateCustomInput, UpdatePredefinedInput,
 };
-use lemma_test_db::database;
 
 #[derive(Debug)]
 struct BoundEndpoint(Endpoint);
@@ -56,7 +55,7 @@ impl Connector for EndpointConnector {
 }
 
 fn service(db: SqlitePool) -> ProviderService<EndpointConnector> {
-    ProviderService::new(db, "test-secret-key".to_owned(), EndpointConnector)
+    ProviderService::new(db, "test-secret-key", EndpointConnector)
 }
 
 fn models(ids: &[&str]) -> Vec<ProviderModel> {
@@ -102,7 +101,7 @@ fn new_provider(identifier: &str) -> CreateCustomInput {
 
 #[tokio::test]
 async fn an_identifier_is_unique_among_custom_providers() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     providers.create_custom(new_provider("main")).await?;
 
@@ -122,7 +121,7 @@ async fn an_identifier_is_unique_among_custom_providers() -> Result<(), Box<dyn 
 
 #[tokio::test]
 async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let before = providers.create_custom(new_provider("main")).await?;
 
@@ -169,10 +168,10 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
     assert_eq!(toggled.models, models(&["model-b"]), "model list");
     assert_eq!(toggled.name, before.name, "name");
     assert_eq!(toggled.base_url, before.base_url, "base URL");
-    assert_eq!(toggled.api_key, "sk-original", "api key");
+    assert!(toggled.has_key, "has_key preserved");
     assert_eq!(toggled.api_path, before.api_path, "generation path");
     assert_eq!(toggled.models_path, before.models_path, "model-list path");
-    assert_eq!(rekeyed.api_key, "sk-replaced", "replaced api key");
+    assert!(rekeyed.has_key, "replaced api key remains present");
     assert!(!rekeyed.enabled, "enabled flag after the key change");
     assert_eq!(
         rekeyed.models,
@@ -190,8 +189,8 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
         renamed.models_path, "/v2/models",
         "trimmed updated models path"
     );
-    assert_eq!(
-        untouched.api_key, "sk-replaced",
+    assert!(
+        untouched.has_key,
         "an empty update returns the stored provider"
     );
     assert!(
@@ -203,7 +202,7 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn delete_removes_only_the_target_custom_provider() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let doomed = providers.create_custom(new_provider("main")).await?;
     let kept = providers.create_custom(new_provider("backup")).await?;
@@ -224,7 +223,7 @@ async fn delete_removes_only_the_target_custom_provider() -> Result<(), Box<dyn 
 
 #[tokio::test]
 async fn create_requires_an_ascii_identifier_and_a_base_url() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
 
     let blank = providers.create_custom(new_provider("  ")).await;
@@ -258,7 +257,7 @@ async fn create_requires_an_ascii_identifier_and_a_base_url() -> Result<(), Box<
 #[tokio::test]
 async fn a_provider_without_a_key_or_name_keeps_them_empty_and_named_by_identifier()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
 
     let created = providers
@@ -275,14 +274,14 @@ async fn a_provider_without_a_key_or_name_keeps_them_empty_and_named_by_identifi
         ("local", "local"),
         "identifier and name"
     );
-    assert_eq!(created.api_key, "", "view key");
+    assert!(!created.has_key, "view has_key is false when empty");
     assert_eq!(bound.0.api_key, "", "key the adapter sends");
     Ok(())
 }
 
 #[tokio::test]
 async fn the_adapter_is_bound_to_the_stored_connection_details() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let created = providers
         .create_custom(CreateCustomInput {
@@ -305,26 +304,22 @@ async fn the_adapter_is_bound_to_the_stored_connection_details() -> Result<(), B
 }
 
 #[tokio::test]
-async fn live_models_and_checks_use_the_stored_or_given_details() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+async fn live_models_and_checks_use_the_stored_details() -> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let created = providers.create_custom(new_provider("main")).await?;
-
-    let stored = providers.fetch_models_for(created.id).await?;
-    let adhoc = providers
-        .fetch_models_adhoc(
-            ApiFormat::Gemini,
-            " https://gemini.example.com/ ",
-            "g-key",
-            " /v1/models ",
-        )
+    let down = providers
+        .create_custom(CreateCustomInput {
+            base_url: "https://unreachable.example/".to_owned(),
+            ..new_provider("down")
+        })
         .await?;
-    let unreachable = providers
-        .fetch_models_adhoc(ApiFormat::Gemini, "https://unreachable.example", "", "")
-        .await;
-    let missing_models = providers.fetch_models_for(Uuid::new_v4()).await;
-    let checked = providers.check_for(created.id, "model-a").await;
-    let missing_check = providers.check_for(Uuid::new_v4(), "model-a").await;
+
+    let stored = providers.fetch_models(created.id).await?;
+    let unreachable = providers.fetch_models(down.id).await;
+    let missing_models = providers.fetch_models(Uuid::new_v4()).await;
+    let checked = providers.check(created.id, " model-a ").await;
+    let missing_check = providers.check(Uuid::new_v4(), "model-a").await;
 
     assert_eq!(
         stored,
@@ -335,16 +330,6 @@ async fn live_models_and_checks_use_the_stored_or_given_details() -> Result<(), 
             "sk-original"
         ],
         "stored details"
-    );
-    assert_eq!(
-        adhoc,
-        [
-            "gemini",
-            "https://gemini.example.com",
-            "/v1/models",
-            "g-key"
-        ],
-        "trimmed ad-hoc details"
     );
     assert!(
         matches!(&unreachable, Err(ProviderError::Fetch(m)) if m == "connection refused"),
@@ -369,11 +354,11 @@ async fn live_models_and_checks_use_the_stored_or_given_details() -> Result<(), 
 #[tokio::test]
 async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let created = service(db.clone())
         .create_custom(new_provider("main"))
         .await?;
-    let rotated = ProviderService::new(db.clone(), "rotated".to_owned(), EndpointConnector);
+    let rotated = ProviderService::new(db.clone(), "rotated", EndpointConnector);
 
     let with_rotated_secret = rotated.bind(created.id, "model-a", None).await;
     let listed = rotated.list().await?;
@@ -392,10 +377,10 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
     assert_eq!(
         custom_views(&listed)
             .iter()
-            .map(|provider| provider.api_key.as_str())
+            .map(|provider| provider.has_key)
             .collect::<Vec<_>>(),
-        [""],
-        "an unreadable key lists as empty"
+        [true],
+        "list reports stored ciphertext presence without opening it"
     );
     assert!(
         matches!(
@@ -409,7 +394,7 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
 
 #[tokio::test]
 async fn debug_output_never_reveals_the_sealing_secret() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let debug = format!("{:?}", service(db));
 
     assert!(
@@ -421,7 +406,7 @@ async fn debug_output_never_reveals_the_sealing_secret() -> Result<(), Box<dyn E
 
 #[tokio::test]
 async fn provider_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db.clone());
     let created = providers.create_custom(new_provider("main")).await?;
 
@@ -440,8 +425,8 @@ async fn provider_methods_report_database_failures() -> Result<(), Box<dyn Error
         .update_predefined(created.id, UpdatePredefinedInput::default())
         .await;
     let adapted = providers.bind(created.id, "model-a", None).await;
-    let fetched = providers.fetch_models_for(created.id).await;
-    let checked = providers.check_for(created.id, "model-a").await;
+    let fetched = providers.fetch_models(created.id).await;
+    let checked = providers.check(created.id, "model-a").await;
     let deleted = providers.delete_custom(created.id).await;
 
     for (operation, failed) in [
@@ -465,7 +450,7 @@ async fn provider_methods_report_database_failures() -> Result<(), Box<dyn Error
 
 #[tokio::test]
 async fn list_inserts_deepseek_once_beside_a_custom_deepseek() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let custom = providers.create_custom(new_provider("deepseek")).await?;
 
@@ -494,7 +479,7 @@ async fn list_inserts_deepseek_once_beside_a_custom_deepseek() -> Result<(), Box
 
 #[tokio::test]
 async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let listed = providers.list().await?;
     let id = deepseek(&listed).ok_or("DeepSeek missing")?.id;
@@ -552,7 +537,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
         .update_custom(id, UpdateCustomInput::default())
         .await;
     let custom_delete = providers.delete_custom(id).await;
-    let custom_fetch = providers.fetch_models_for(id).await;
+    let custom_fetch = providers.fetch_models(id).await;
     let custom = providers.create_custom(new_provider("main")).await?;
     let predefined_update = providers
         .update_predefined(custom.id, UpdatePredefinedInput::default())
@@ -572,7 +557,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
         "invalid format: {invalid_default:?}"
     );
     assert!(enabled.enabled, "enabled with a saved key");
-    assert_eq!(enabled.api_key, "sk-deepseek", "opened key");
+    assert!(enabled.has_key, "saved key reported");
     assert_eq!(
         enabled.default_api_format,
         ApiFormat::OpenAiCompatible,
@@ -587,7 +572,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
         ApiFormat::Anthropic,
         "format only update"
     );
-    assert_eq!(format_only.api_key, "sk-deepseek", "key retained");
+    assert!(format_only.has_key, "key retained");
     for (operation, result) in [
         ("custom update", custom_update.err()),
         ("custom delete", custom_delete.err()),
@@ -604,7 +589,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
 
 #[tokio::test]
 async fn binding_resolves_format_and_tool_calling() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let custom = providers
         .create_custom(CreateCustomInput {
@@ -679,7 +664,7 @@ async fn binding_resolves_format_and_tool_calling() -> Result<(), Box<dyn Error>
 
 #[tokio::test]
 async fn predefined_check_uses_its_default_format_endpoint() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let listed = providers.list().await?;
     let id = deepseek(&listed).ok_or("DeepSeek missing")?.id;
@@ -694,7 +679,7 @@ async fn predefined_check_uses_its_default_format_endpoint() -> Result<(), Box<d
         )
         .await?;
 
-    let checked = providers.check_for(id, "deepseek-flash").await;
+    let checked = providers.check(id, "deepseek-flash").await;
 
     assert!(
         matches!(&checked, Err(ProviderError::Check(message))
@@ -707,7 +692,7 @@ async fn predefined_check_uses_its_default_format_endpoint() -> Result<(), Box<d
 #[tokio::test]
 async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<(), Box<dyn Error>>
 {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = service(db);
     let listed = providers.list().await?;
     let id = deepseek(&listed).ok_or("DeepSeek missing")?.id;
@@ -740,10 +725,10 @@ async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<
     let listed = providers.list().await?;
     let after = deepseek(&listed).ok_or("DeepSeek missing")?;
     assert!(
-        !after.enabled || !after.api_key.is_empty(),
-        "enabled={} key_empty={} enable={enabled:?} clear={cleared:?}",
+        !after.enabled || after.has_key,
+        "enabled={} has_key={} enable={enabled:?} clear={cleared:?}",
         after.enabled,
-        after.api_key.is_empty()
+        after.has_key
     );
 
     if after.enabled {
@@ -767,6 +752,6 @@ async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<
         )
         .await?;
     assert!(!cleared.enabled, "clearing the key disables the provider");
-    assert!(cleared.api_key.is_empty(), "key cleared");
+    assert!(!cleared.has_key, "key cleared");
     Ok(())
 }

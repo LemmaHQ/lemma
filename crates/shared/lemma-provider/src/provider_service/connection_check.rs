@@ -2,7 +2,7 @@ use futures::StreamExt;
 use uuid::Uuid;
 
 use lemma_core::{ContentBlock, Message, TextContent};
-use lemma_model::{Adapter, Connector, Endpoint, ModelRequest};
+use lemma_model::{Adapter, Connector, ModelRequest};
 
 use crate::provider_error::ProviderError;
 
@@ -16,31 +16,17 @@ impl<C: Connector> ProviderService<C> {
     ///
     /// # Errors
     ///
+    /// [`ProviderError::ModelRequired`] when `model` is blank,
     /// [`ProviderError::NotFound`] when no such provider exists,
     /// [`ProviderError::Crypto`] when opening the key fails,
     /// [`ProviderError::Check`] when the upstream call fails, and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn check_for(&self, id: Uuid, model: &str) -> Result<(), ProviderError> {
+    pub async fn check(&self, id: Uuid, model: &str) -> Result<(), ProviderError> {
+        let model = model.trim();
+        if model.is_empty() {
+            return Err(ProviderError::ModelRequired);
+        }
         let endpoint = self.endpoint(id).await?;
-        self.check(endpoint, model).await
-    }
-
-    /// Sends a one-message generation request for `model` through ad-hoc
-    /// connection details and succeeds once the model starts answering.
-    ///
-    /// # Errors
-    ///
-    /// [`ProviderError::Check`] when the upstream call fails.
-    pub async fn check_adhoc(&self, endpoint: Endpoint, model: &str) -> Result<(), ProviderError> {
-        let endpoint = Endpoint {
-            base_url: endpoint.base_url.trim().trim_end_matches('/').to_owned(),
-            api_path: endpoint.api_path.trim().to_owned(),
-            ..endpoint
-        };
-        self.check(endpoint, model).await
-    }
-
-    async fn check(&self, endpoint: Endpoint, model: &str) -> Result<(), ProviderError> {
         let request = ModelRequest {
             model: model.to_owned(),
             system_prompt: None,

@@ -5,7 +5,7 @@ use lemma_model::Connector;
 
 use crate::preset;
 use crate::provider_error::ProviderError;
-use crate::provider_row::{self, ProviderTuple};
+use crate::provider_row::{self, ProviderSource, ProviderTuple};
 
 use super::provider_view::PredefinedProviderView;
 use super::providers::ProviderService;
@@ -52,18 +52,10 @@ impl<C: Connector> ProviderService<C> {
         id: Uuid,
         input: UpdatePredefinedInput,
     ) -> Result<PredefinedProviderView, ProviderError> {
-        let row = sqlx::query_as::<_, ProviderTuple>(
-            "SELECT id, api_format, source, identifier, name, base_url,
-                    api_key, api_path, models_path, models, enabled
-             FROM providers
-             WHERE id = ? AND source = 'predefined'",
-        )
-        .bind(id)
-        .fetch_optional(&self.db)
-        .await?
-        .map(provider_row::from_tuple)
-        .transpose()?
-        .ok_or(ProviderError::NotFound)?;
+        let row = self.find_row(id).await?;
+        if row.source != ProviderSource::Predefined {
+            return Err(ProviderError::NotFound);
+        }
         let preset = preset::find(&row.identifier).ok_or(ProviderError::NotFound)?;
         if input
             .default_api_format
@@ -80,7 +72,7 @@ impl<C: Connector> ProviderService<C> {
         }
         if input.api_key.is_none() && input.enabled.is_none() && input.default_api_format.is_none()
         {
-            return Ok(self.predefined_view(&row, preset));
+            return Ok(Self::predefined_view(&row, preset));
         }
         let clearing_key = input.api_key.as_deref() == Some("");
         let enabling_saved_key = input.enabled == Some(true) && input.api_key.is_none();
@@ -119,6 +111,6 @@ impl<C: Connector> ProviderService<C> {
         .map(provider_row::from_tuple)
         .transpose()?
         .ok_or(missing_error)?;
-        Ok(self.predefined_view(&updated, preset))
+        Ok(Self::predefined_view(&updated, preset))
     }
 }

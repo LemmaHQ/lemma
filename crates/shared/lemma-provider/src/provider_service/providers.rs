@@ -19,11 +19,11 @@ use super::update_input::UpdateCustomInput;
 /// Provider domain service over a SQLite pool holding the `providers` and
 /// `web_providers` tables.
 ///
-/// `secret_key` seals API keys with `lemma-crypto`. `connector` binds
-/// providers to adapters and fetches live model lists.
+/// `secret_key` derives the key that seals API keys with `lemma-crypto`.
+/// `connector` binds providers to adapters and fetches live model lists.
 pub struct ProviderService<C> {
     pub(super) db: SqlitePool,
-    pub(super) secret_key: String,
+    key: [u8; 32],
     pub(super) connector: C,
 }
 
@@ -39,10 +39,10 @@ impl<C: Debug> Debug for ProviderService<C> {
 impl<C: Connector> ProviderService<C> {
     /// Creates the service over a SQLite pool.
     #[must_use]
-    pub fn new(db: SqlitePool, secret_key: String, connector: C) -> Self {
+    pub fn new(db: SqlitePool, secret_key: &str, connector: C) -> Self {
         Self {
             db,
-            secret_key,
+            key: lemma_crypto::derive_key(secret_key),
             connector,
         }
     }
@@ -51,30 +51,27 @@ impl<C: Connector> ProviderService<C> {
         if plain.is_empty() {
             return Ok(String::new());
         }
-        lemma_crypto::seal(&lemma_crypto::derive_key(&self.secret_key), plain)
-            .map_err(ProviderError::Crypto)
+        lemma_crypto::seal(&self.key, plain).map_err(ProviderError::Crypto)
     }
 
     pub(super) fn open_key(&self, stored: &str) -> Result<String, ProviderError> {
         if stored.is_empty() {
             return Ok(String::new());
         }
-        lemma_crypto::open(&lemma_crypto::derive_key(&self.secret_key), stored)
-            .map_err(ProviderError::Crypto)
+        lemma_crypto::open(&self.key, stored).map_err(ProviderError::Crypto)
     }
 
-    pub(super) fn view(&self, row: &ProviderRow) -> Option<ProviderView> {
+    pub(super) fn view(row: &ProviderRow) -> Option<ProviderView> {
         match row.source {
-            ProviderSource::Custom => Some(ProviderView::Custom(self.custom_view(row))),
+            ProviderSource::Custom => Some(ProviderView::Custom(Self::custom_view(row))),
             ProviderSource::Predefined => {
                 let preset = preset::find(&row.identifier)?;
-                Some(ProviderView::Predefined(self.predefined_view(row, preset)))
+                Some(ProviderView::Predefined(Self::predefined_view(row, preset)))
             }
         }
     }
 
     pub(super) fn predefined_view(
-        &self,
         row: &ProviderRow,
         preset: &PredefinedProvider,
     ) -> PredefinedProviderView {
@@ -96,19 +93,19 @@ impl<C: Connector> ProviderService<C> {
                     tool_calling: model.tool_calling,
                 })
                 .collect(),
-            api_key: self.open_key(&row.api_key).unwrap_or_default(),
+            has_key: !row.api_key.is_empty(),
             enabled: row.enabled,
         }
     }
 
-    fn custom_view(&self, row: &ProviderRow) -> CustomProviderView {
+    fn custom_view(row: &ProviderRow) -> CustomProviderView {
         CustomProviderView {
             id: row.id,
             identifier: row.identifier.clone(),
             name: row.name.clone(),
             api_format: row.api_format,
             base_url: row.base_url.clone(),
-            api_key: self.open_key(&row.api_key).unwrap_or_default(),
+            has_key: !row.api_key.is_empty(),
             models: row.models.clone(),
             enabled: row.enabled,
             api_path: row.api_path.clone(),
@@ -135,7 +132,7 @@ impl<C: Connector> ProviderService<C> {
             .into_iter()
             .map(provider_row::from_tuple)
             .collect::<Result<_, _>>()?;
-        let mut views: Vec<_> = rows.iter().filter_map(|row| self.view(row)).collect();
+        let mut views: Vec<_> = rows.iter().filter_map(Self::view).collect();
         views.sort_by_key(|view| match view {
             ProviderView::Predefined(_) => 0,
             ProviderView::Custom(_) => 1,
@@ -204,7 +201,7 @@ impl<C: Connector> ProviderService<C> {
             name: name.to_owned(),
             api_format: input.api_format,
             base_url: base_url.to_owned(),
-            api_key: input.api_key,
+            has_key: !input.api_key.is_empty(),
             models: input.models,
             enabled: true,
             api_path,
@@ -262,7 +259,7 @@ impl<C: Connector> ProviderService<C> {
         .map(provider_row::from_tuple)
         .transpose()?
         .ok_or(ProviderError::NotFound)?;
-        Ok(self.custom_view(&row))
+        Ok(Self::custom_view(&row))
     }
 
     /// Deletes a custom provider.
@@ -282,12 +279,12 @@ impl<C: Connector> ProviderService<C> {
         Ok(())
     }
 
-    pub(super) async fn find_custom(&self, id: Uuid) -> Result<ProviderRow, ProviderError> {
+    pub(super) async fn find_row(&self, id: Uuid) -> Result<ProviderRow, ProviderError> {
         sqlx::query_as::<_, ProviderTuple>(
             "SELECT id, api_format, source, identifier, name, base_url,
                     api_key, api_path, models_path, models, enabled
              FROM providers
-             WHERE id = ? AND source = 'custom'",
+             WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(&self.db)

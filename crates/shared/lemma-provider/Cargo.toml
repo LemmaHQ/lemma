@@ -16,7 +16,7 @@ thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-lemma-test-db.workspace = true
+lemma-db.workspace = true
 tokio.workspace = true
 
 [lints]

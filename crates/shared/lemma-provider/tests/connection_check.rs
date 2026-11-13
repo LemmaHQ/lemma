@@ -1,13 +1,14 @@
 //! Connectivity check outcomes against scripted upstream answers.
 
+use std::error::Error;
+
 use futures::stream;
-use sqlx::SqlitePool;
 
 use lemma_core::{StopReason, StreamEvent};
 use lemma_model::{
     Adapter, ApiFormat, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest,
 };
-use lemma_provider::{ProviderError, ProviderService};
+use lemma_provider::{CreateCustomInput, ProviderError, ProviderService};
 
 struct ScriptedAdapter;
 
@@ -47,16 +48,21 @@ impl Connector for ScriptedConnector {
 }
 
 async fn check(model: &str) -> Result<(), ProviderError> {
-    let db = SqlitePool::connect_lazy("sqlite::memory:")?;
-    let service = ProviderService::new(db, "test-secret-key".to_owned(), ScriptedConnector);
-    let endpoint = Endpoint {
-        api_format: ApiFormat::OpenAiCompatible,
-        base_url: "https://api.example.com/v1".to_owned(),
-        api_path: String::new(),
-        models_path: String::new(),
-        api_key: "sk-test".to_owned(),
-    };
-    service.check_adhoc(endpoint, model).await
+    let db = lemma_db::in_memory().await?;
+    let service = ProviderService::new(db, "test-secret-key", ScriptedConnector);
+    let created = service
+        .create_custom(CreateCustomInput {
+            api_format: ApiFormat::OpenAiCompatible,
+            identifier: "main".to_owned(),
+            name: "Main".to_owned(),
+            base_url: "https://api.example.com/v1".to_owned(),
+            api_key: "sk-test".to_owned(),
+            api_path: String::new(),
+            models_path: String::new(),
+            models: Vec::new(),
+        })
+        .await?;
+    service.check(created.id, model).await
 }
 
 async fn check_failure(model: &str) -> String {
@@ -107,4 +113,14 @@ async fn a_stream_that_closes_before_answering_fails() {
         "stream ended without a response",
         "early stream close message"
     );
+}
+
+#[tokio::test]
+async fn a_blank_model_fails_before_connecting() -> Result<(), Box<dyn Error>> {
+    let result = check("   ").await;
+    assert!(
+        matches!(result, Err(ProviderError::ModelRequired)),
+        "blank model must require model: {result:?}"
+    );
+    Ok(())
 }

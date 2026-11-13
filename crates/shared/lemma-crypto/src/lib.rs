@@ -29,13 +29,13 @@ pub enum CryptoError {
 /// The derivation is deterministic and unsalted, so rotating the master
 /// secret makes every previously sealed value unreadable.
 #[must_use]
-pub fn derive_key(secret: &str) -> Key<Aes256Gcm> {
+pub fn derive_key(secret: &str) -> [u8; 32] {
     use sha2::Digest;
 
     let digest = Sha256::digest(secret.as_bytes());
     let mut key = [0u8; 32];
     key.copy_from_slice(&digest);
-    Key::<Aes256Gcm>::from(key)
+    key
 }
 
 /// Encrypts `plaintext` and returns the sealed payload as
@@ -44,10 +44,10 @@ pub fn derive_key(secret: &str) -> Key<Aes256Gcm> {
 /// # Errors
 ///
 /// [`CryptoError::Decrypt`] when the AEAD encryption fails.
-pub fn seal(key: &Key<Aes256Gcm>, plaintext: &str) -> Result<String, CryptoError> {
+pub fn seal(key: &[u8; 32], plaintext: &str) -> Result<String, CryptoError> {
     use aes_gcm::aead::Generate;
 
-    let cipher = Aes256Gcm::new(key);
+    let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(*key));
     let nonce = Nonce::<Aes256Gcm>::generate();
     cipher
         .encrypt(&nonce, plaintext.as_bytes())
@@ -66,10 +66,10 @@ pub fn seal(key: &Key<Aes256Gcm>, plaintext: &str) -> Result<String, CryptoError
 ///
 /// [`CryptoError::Encoding`] for malformed input; [`CryptoError::Decrypt`]
 /// for a wrong key or tampered data.
-pub fn open(key: &Key<Aes256Gcm>, sealed: &str) -> Result<String, CryptoError> {
+pub fn open(key: &[u8; 32], sealed: &str) -> Result<String, CryptoError> {
     let raw = STANDARD.decode(sealed).map_err(|_| CryptoError::Encoding)?;
     let (nonce, ct) = raw.split_first_chunk::<12>().ok_or(CryptoError::Encoding)?;
-    let cipher = Aes256Gcm::new(key);
+    let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(*key));
     let nonce = Nonce::<Aes256Gcm>::from(*nonce);
     let pt = cipher
         .decrypt(&nonce, ct)

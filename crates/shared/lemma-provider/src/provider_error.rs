@@ -21,6 +21,9 @@ pub enum ProviderError {
     /// Enabling a key-authenticated provider requires a saved API key.
     #[error("provider key required")]
     KeyRequired,
+    /// A connectivity check omitted the model ID.
+    #[error("model required")]
+    ModelRequired,
     /// Target provider is absent.
     #[error("provider not found")]
     NotFound,

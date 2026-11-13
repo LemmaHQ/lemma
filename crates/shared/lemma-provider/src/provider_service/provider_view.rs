@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use super::ProviderModel;
 
-/// A provider as presented to callers, with its API key opened to plaintext.
+/// A provider as presented to callers; stored API keys stay sealed on the host.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProviderView {
     /// Built-in provider configuration.
@@ -27,8 +27,8 @@ pub struct PredefinedProviderView {
     pub default_api_format: ApiFormat,
     /// Built-in models and their features.
     pub models: Vec<ProviderModel>,
-    /// Plaintext API key; empty when none is stored or it cannot be opened.
-    pub api_key: String,
+    /// Whether a nonempty API key is stored.
+    pub has_key: bool,
     /// Enabled flag.
     pub enabled: bool,
 }
@@ -46,8 +46,8 @@ pub struct CustomProviderView {
     pub api_format: ApiFormat,
     /// API base URL.
     pub base_url: String,
-    /// Plaintext API key; empty when none is stored or it cannot be opened.
-    pub api_key: String,
+    /// Whether a nonempty API key is stored.
+    pub has_key: bool,
     /// Models and their features.
     pub models: Vec<ProviderModel>,
     /// Enabled flag.

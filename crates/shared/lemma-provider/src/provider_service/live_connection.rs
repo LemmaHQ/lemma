@@ -4,7 +4,7 @@ use lemma_model::{ApiFormat, Connector, Endpoint};
 
 use crate::preset;
 use crate::provider_error::ProviderError;
-use crate::provider_row::{self, ProviderRow, ProviderSource, ProviderTuple};
+use crate::provider_row::{ProviderRow, ProviderSource};
 
 use super::provider_binding::ProviderBinding;
 use super::providers::ProviderService;
@@ -29,18 +29,7 @@ impl<C: Connector> ProviderService<C> {
         model: &str,
         previous_api_format: Option<ApiFormat>,
     ) -> Result<ProviderBinding<C::Adapter>, ProviderError> {
-        let row = sqlx::query_as::<_, ProviderTuple>(
-            "SELECT id, api_format, source, identifier, name, base_url,
-                    api_key, api_path, models_path, models, enabled
-             FROM providers
-             WHERE id = ?",
-        )
-        .bind(id)
-        .fetch_optional(&self.db)
-        .await?
-        .map(provider_row::from_tuple)
-        .transpose()?
-        .ok_or(ProviderError::NotFound)?;
+        let row = self.find_row(id).await?;
         let (api_format, tool_calling) = match row.source {
             ProviderSource::Custom => (
                 row.api_format,
@@ -66,18 +55,7 @@ impl<C: Connector> ProviderService<C> {
     }
 
     pub(super) async fn endpoint(&self, id: Uuid) -> Result<Endpoint, ProviderError> {
-        let row = sqlx::query_as::<_, ProviderTuple>(
-            "SELECT id, api_format, source, identifier, name, base_url,
-                    api_key, api_path, models_path, models, enabled
-             FROM providers
-             WHERE id = ?",
-        )
-        .bind(id)
-        .fetch_optional(&self.db)
-        .await?
-        .map(provider_row::from_tuple)
-        .transpose()?
-        .ok_or(ProviderError::NotFound)?;
+        let row = self.find_row(id).await?;
         self.endpoint_from_row(&row, row.api_format)
     }
 
@@ -117,35 +95,12 @@ impl<C: Connector> ProviderService<C> {
     /// [`ProviderError::Crypto`] when opening the key fails,
     /// [`ProviderError::Fetch`] when the endpoint request fails, and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn fetch_models_for(&self, id: Uuid) -> Result<Vec<String>, ProviderError> {
-        let row = self.find_custom(id).await?;
+    pub async fn fetch_models(&self, id: Uuid) -> Result<Vec<String>, ProviderError> {
+        let row = self.find_row(id).await?;
+        if row.source != ProviderSource::Custom {
+            return Err(ProviderError::NotFound);
+        }
         let endpoint = self.endpoint_from_row(&row, row.api_format)?;
-        self.fetch(endpoint).await
-    }
-
-    /// Fetches the live model list for ad-hoc custom connection details.
-    ///
-    /// # Errors
-    ///
-    /// [`ProviderError::Fetch`] when the endpoint request fails.
-    pub async fn fetch_models_adhoc(
-        &self,
-        api_format: ApiFormat,
-        base_url: &str,
-        api_key: &str,
-        models_path: &str,
-    ) -> Result<Vec<String>, ProviderError> {
-        self.fetch(Endpoint {
-            api_format,
-            base_url: base_url.trim().trim_end_matches('/').to_owned(),
-            api_path: String::new(),
-            models_path: models_path.trim().to_owned(),
-            api_key: api_key.to_owned(),
-        })
-        .await
-    }
-
-    async fn fetch(&self, endpoint: Endpoint) -> Result<Vec<String>, ProviderError> {
         self.connector
             .list_models(endpoint)
             .await
