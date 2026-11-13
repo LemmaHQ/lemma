@@ -11,7 +11,3 @@ language:
     platforms: [android]
     en: "System"
     zh: "跟随系统"
-  toggle:
-    platforms: [web]
-    en: "Language"
-    zh: "语言"

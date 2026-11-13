@@ -15,22 +15,14 @@ errors:
     platforms: [web, android]
     en: "This folder doesn't exist"
     zh: "该文件夹不存在"
-  directoryUnsupported:
-    platforms: [web, android]
-    en: "This server can't open folders on its machine"
-    zh: "此服务器无法打开其所在机器上的文件夹"
+  engineFailed:
+    platforms: [android]
+    en: "The local engine could not start."
+    zh: "本地引擎无法启动。"
   sessionNotFound:
     platforms: [web, android]
     en: "Session not found"
     zh: "会话不存在"
-  credentialsInvalid:
-    platforms: [web, android]
-    en: "Incorrect username or password"
-    zh: "用户名或密码错误"
-  emailTaken:
-    platforms: [web, android]
-    en: "This email is already registered"
-    zh: "该邮箱已注册"
   idInvalid:
     platforms: [web, android]
     en: "Invalid ID"
@@ -63,10 +55,6 @@ errors:
     platforms: [web, android]
     en: "Provider not found"
     zh: "服务商不存在"
-  signupFieldsRequired:
-    platforms: [web, android]
-    en: "Username and email are required; password must be at least 8 characters"
-    zh: "请填写用户名和邮箱，密码至少 8 位"
   timeout:
     platforms: [web, android]
     en: "The request timed out, please try again"
@@ -75,10 +63,6 @@ errors:
     platforms: [web, android]
     en: "Title is required"
     zh: "标题不能为空"
-  tokenInvalid:
-    platforms: [web, android]
-    en: "You've been signed out. Please sign in again."
-    zh: "登录状态已失效，请重新登录"
   turnNotRunning:
     platforms: [web, android]
     en: "This reply has already finished"
@@ -87,11 +71,3 @@ errors:
     platforms: [web, android]
     en: "Something went wrong, please try again"
     zh: "操作失败，请重试"
-  userNotFound:
-    platforms: [web, android]
-    en: "User not found"
-    zh: "用户不存在"
-  usernameTaken:
-    platforms: [web, android]
-    en: "This username is already taken"
-    zh: "该用户名已被占用"

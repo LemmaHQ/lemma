@@ -1,12 +1,4 @@
 sidebar:
-  account:
-    platforms: [android]
-    en: "Account"
-    zh: "账号"
-  accountMenu:
-    platforms: [android]
-    en: "Account menu"
-    zh: "账号菜单"
   appSettings:
     platforms: [web, android]
     en: "App settings"
@@ -27,10 +19,6 @@ sidebar:
     platforms: [web]
     en: "Resize sidebar"
     zh: "调整侧边栏宽度"
-  signOut:
-    platforms: [web, android]
-    en: "Sign out"
-    zh: "退出登录"
   startSession:
     platforms: [web, android]
     en: "New session"
