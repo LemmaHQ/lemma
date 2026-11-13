@@ -33,7 +33,7 @@ const files = git([
 const packageEntries = new Set(
     git(["ls-files", "package.json", "*/package.json"])
         .split("\n")
-        .filter((file) => file !== "")
+        .filter((file) => file !== "" && fs.existsSync(path.join(ROOT_DIR, file)))
         .flatMap((file) => entriesOf(file)),
 );
 const problems: string[] = [];
