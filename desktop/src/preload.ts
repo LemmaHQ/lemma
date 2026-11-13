@@ -3,9 +3,8 @@ import type {
     EngineExitNotice,
     EnginePortHandoff,
     TitleBarState,
-} from "@lemma/desktop-contract";
+} from "./desktop-bridge";
 import { contextBridge, ipcRenderer } from "electron";
-import { readAppVersion } from "./app-version";
 import { TITLEBAR_HEIGHT } from "./titlebar";
 
 ipcRenderer.on("engine-port", (event) => {
@@ -21,7 +20,6 @@ ipcRenderer.on("engine-exit", (_event, detail: unknown) => {
 });
 
 const bridge: DesktopBridge = {
-    appVersion: readAppVersion(process.argv),
     titlebarHeight: TITLEBAR_HEIGHT,
     setTitleBar: (state: TitleBarState): void => {
         ipcRenderer.send("set-titlebar", state);

@@ -1,4 +1,4 @@
-import type { EngineResponse } from "@lemma/desktop-contract";
+import type { EngineResponse } from "./desktop-bridge";
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
 
@@ -45,7 +45,7 @@ const request = (id: number) => ({
     type: "request",
     id,
     method: "POST",
-    path: "/lemma.v1.SystemService/GetVersion",
+    path: "/lemma.v1.SessionService/ListSessions",
     headers: [["content-type", "application/json"]],
     body: new TextEncoder().encode("{}"),
 });
@@ -65,7 +65,7 @@ it("answers with the head, every chunk, and the end", async () => {
 
     expect(engine.request).toHaveBeenCalledWith(
         "POST",
-        "/lemma.v1.SystemService/GetVersion",
+        "/lemma.v1.SessionService/ListSessions",
         [{ name: "content-type", value: "application/json" }],
         Buffer.from("{}"),
     );

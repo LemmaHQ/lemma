@@ -1,8 +1,7 @@
-import type { TitleBarState } from "@lemma/desktop-contract";
-import { app, BrowserWindow, nativeTheme, shell } from "electron";
+import type { TitleBarState } from "./desktop-bridge";
+import { BrowserWindow, nativeTheme, shell } from "electron";
 import path from "node:path";
 import { APP_ORIGIN, isAppUrl } from "./app-protocol";
-import { appVersionArg } from "./app-version";
 import { themeColors } from "./gen/theme-colors";
 import { TITLEBAR_HEIGHT } from "./titlebar";
 
@@ -56,7 +55,6 @@ export const createWindow = () => {
         titleBarOverlay: titleBarOverlay(initialState),
         webPreferences: {
             preload: path.join(__dirname, "preload.cjs"),
-            additionalArguments: [appVersionArg(app.getVersion())],
         },
     });
 
