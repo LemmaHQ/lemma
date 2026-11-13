@@ -54,6 +54,11 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => ({
     hasMore: false,
 
     open: async (sessionId) => {
+        if (get().sessionId !== sessionId) {
+            turn?.controller.abort();
+            turn = null;
+            set({ sessionId, streaming: false });
+        }
         set({ sessionId, ...pageState(await fetchPage(sessionId)) });
     },
 
@@ -191,10 +196,3 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => ({
         current.controller.abort();
     },
 }));
-
-/** Stops the running stream on this client and empties the open session; the stopped send leaves the new state alone. */
-export function clearActiveSession(): void {
-    turn?.controller.abort();
-    turn = null;
-    useActiveSession.setState(useActiveSession.getInitialState());
-}

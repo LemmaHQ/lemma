@@ -7,7 +7,6 @@ import type { Window as HappyWindow } from "happy-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
-import { type User, UserSchema } from "@/gen/lemma/v1/auth_pb";
 import {
     type Session,
     SessionSchema,
@@ -21,8 +20,6 @@ import {
 } from "@/gen/lemma/v1/provider_pb";
 
 const rpc = vi.hoisted(() => ({
-    me: vi.fn<(req: object) => Promise<{ user?: User }>>(),
-    signOut: vi.fn<(req: object) => Promise<object>>(),
     listSessions: vi.fn<(req: object) => Promise<{ sessions: Session[] }>>(),
     createSession: vi.fn<(req: object) => Promise<{ session?: Session }>>(),
     listMessages: vi.fn<(req: object) => Promise<object>>(),
@@ -34,7 +31,6 @@ const rpc = vi.hoisted(() => ({
 }));
 
 vi.mock("@/rpc/clients", () => ({
-    authClient: { me: rpc.me, signOut: rpc.signOut },
     sessionClient: {
         listSessions: rpc.listSessions,
         createSession: rpc.createSession,
@@ -71,12 +67,6 @@ const start = async (path: string) => {
     await i18n.changeLanguage("en");
     const { App } = await import("./App");
     return render(<App />);
-};
-
-const signIn = () => {
-    rpc.me.mockResolvedValue({
-        user: create(UserSchema, { id: "u1", username: "alice" }),
-    });
 };
 
 const pageTitle = () => document.querySelector("main header")?.textContent;
@@ -136,8 +126,6 @@ function setViewportWidth(width: number) {
 
 beforeEach(() => {
     vi.resetAllMocks();
-    rpc.me.mockResolvedValue({});
-    rpc.signOut.mockResolvedValue({});
     rpc.listSessions.mockResolvedValue({
         sessions: [session("c1", "Trip plans"), session("c2", "")],
     });
@@ -154,46 +142,16 @@ afterEach(() => {
     setViewportWidth(1024);
 });
 
-it("shows the splash, then sends a signed-out visitor to sign-in", async () => {
+it("shows the splash, then opens an untitled home", async () => {
     await start("/");
 
     expect(screen.getByRole("status", { name: "Loading…" })).toBeDefined();
-    expect(
-        await screen.findByRole("heading", { name: "Sign in to Lemma" }),
-    ).toBeDefined();
-    expect(window.location.pathname).toBe("/signin");
-    expect(screen.getByLabelText("GitHub").getAttribute("href")).toBe(
-        "https://github.com/LemmaHQ/lemma",
-    );
-});
-
-it("switches from sign-in to sign-up in a view transition", async () => {
-    const user = userEvent.setup();
-    await start("/signin");
-    const viewTransition = vi.spyOn(document, "startViewTransition");
-
-    await user.click(await screen.findByRole("link", { name: "Sign up" }));
-
-    expect(
-        await screen.findByRole("heading", {
-            name: "Create your Lemma account",
-        }),
-    ).toBeDefined();
-    expect(window.location.pathname).toBe("/signup");
-    expect(viewTransition).toHaveBeenCalledOnce();
-});
-
-it("sends a signed-in user from sign-in to an untitled home", async () => {
-    signIn();
-    await start("/signin");
-
     await sessionRows();
     expect(window.location.pathname).toBe("/");
     expect(pageTitle()).toBe("");
 });
 
 it("sends an unknown path home", async () => {
-    signIn();
     await start("/nowhere");
 
     await sessionRows();
@@ -202,7 +160,6 @@ it("sends an unknown path home", async () => {
 
 it("titles an open session, untitled ones as new", async () => {
     const user = userEvent.setup();
-    signIn();
     await start("/");
 
     await user.click((await sessionRows()).getByText("Trip plans"));
@@ -227,7 +184,6 @@ it("titles an open session, untitled ones as new", async () => {
 
 it("creates a session for the first message and opens it", async () => {
     const user = userEvent.setup();
-    signIn();
     rpc.listProviders.mockResolvedValue({
         providers: [
             create(ProviderSchema, {
@@ -268,7 +224,6 @@ it("creates a session for the first message and opens it", async () => {
 
 it("remembers a collapsed sidebar and starts from the toolbar", async () => {
     const user = userEvent.setup();
-    signIn();
     const view = await start("/sessions/c1");
 
     await sessionRows();
@@ -289,16 +244,14 @@ it("remembers a collapsed sidebar and starts from the toolbar", async () => {
     expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
 });
 
-it("navigates the settings pages from the account menu", async () => {
+it("navigates the settings pages from the sidebar", async () => {
     const user = userEvent.setup();
-    signIn();
     await start("/");
+    await sessionRows();
 
-    await user.click(await screen.findByRole("button", { name: /alice/u }));
-    await user.click(
-        await screen.findByRole("menuitem", { name: "App settings" }),
-    );
+    await user.click(screen.getByRole("link", { name: "App settings" }));
     await atPath("/settings/appearance");
+    expect(await screen.findByText("Server v1.0.0")).toBeDefined();
     expect(
         await screen.findByRole("heading", { level: 1, name: "Appearance" }),
     ).toBeDefined();
@@ -326,7 +279,6 @@ it("navigates the settings pages from the account menu", async () => {
 it.each(["/settings", "/settings/unknown", "/settings/Providers"])(
     "opens the appearance settings for %s",
     async (path) => {
-        signIn();
         await start(path);
 
         await waitFor(() => {
@@ -337,7 +289,6 @@ it.each(["/settings", "/settings/unknown", "/settings/Providers"])(
 
 it("keeps the sidebar open on settings without storing toggles", async () => {
     const user = userEvent.setup();
-    signIn();
     localStorage.setItem("sidebar-collapsed", "1");
     await start("/settings/appearance");
 
@@ -351,27 +302,12 @@ it("keeps the sidebar open on settings without storing toggles", async () => {
     expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
 });
 
-it("returns to sign-in after signing out", async () => {
-    const user = userEvent.setup();
-    signIn();
-    await start("/");
-
-    await user.click(await screen.findByRole("button", { name: /alice/u }));
-    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));
-
-    expect(
-        await screen.findByRole("heading", { name: "Sign in to Lemma" }),
-    ).toBeDefined();
-    expect(window.location.pathname).toBe("/signin");
-});
-
 it("opens the sidebar as a sheet on a narrow window", async () => {
     const user = userEvent.setup();
     setViewportWidth(500);
     rpc.listSessions.mockResolvedValue({
         sessions: [session("c1", "Trip plans")],
     });
-    signIn();
     await start("/");
 
     await user.click(
@@ -392,13 +328,13 @@ it("paints the desktop title bar for the route and theme", async () => {
     const bridge = desktopBridge();
     window.lemmaDesktop = bridge;
     localStorage.setItem("lemma.theme", "dark");
-    await start("/signin");
+    await start("/");
 
-    await screen.findByRole("heading", { name: "Sign in to Lemma" });
+    await sessionRows();
     await waitFor(() => {
         expect(bridge.setTitleBar).toHaveBeenLastCalledWith({
             theme: "dark",
-            surface: "background",
+            surface: "sidebar",
         });
     });
 
@@ -406,11 +342,9 @@ it("paints the desktop title bar for the route and theme", async () => {
     expect(bridge.toggleMaximize).toHaveBeenCalledOnce();
 });
 
-it("paints the desktop title bar as the sidebar once signed in", async () => {
+it("paints the desktop title bar with the light theme by default", async () => {
     const bridge = desktopBridge();
     window.lemmaDesktop = bridge;
-    localStorage.setItem("lemma.access_token", "access");
-    signIn();
     await start("/");
 
     await sessionRows();

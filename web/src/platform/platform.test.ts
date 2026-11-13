@@ -38,7 +38,6 @@ it("runs on the desktop engine when the preload exposes its bridge", async () =>
     expect(platform.clientVersion).toBe("2.1.0");
     expect(platform.titlebarHeight).toBe(40);
     expect(platform.baseUrl).toBe("http://engine.lemma.invalid");
-    expect(platform.auth.cookieMode).toBe(false);
     await expect(platform.directoryPicker?.pick()).resolves.toBe(
         "C:\\work\\project",
     );

@@ -9,7 +9,6 @@ import {
 } from "@/gen/lemma/v1/provider_pb";
 
 import { useWebProviderStore } from "./store";
-import { clearWebProviders } from "./useWebProviders";
 
 type Reply = { provider?: WebProvider | undefined };
 
@@ -57,7 +56,7 @@ const state = () => useWebProviderStore.getState();
 
 beforeEach(async () => {
     vi.resetAllMocks();
-    clearWebProviders();
+    useWebProviderStore.setState(useWebProviderStore.getInitialState());
     rpc.listWebProviders.mockResolvedValue({ providers: fixtures() });
     await state().refresh();
 });

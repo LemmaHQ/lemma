@@ -11,11 +11,6 @@ export function createSession(directory?: string): Promise<string> {
     return useSessionStore.getState().create(directory);
 }
 
-/** Drops the loaded session list; the next `useSessions` mount or `refreshSessions` call loads it again. */
-export function clearSessions(): void {
-    useSessionStore.setState(useSessionStore.getInitialState());
-}
-
 export function useSessions() {
     const store = useSessionStore();
     const loaded = useSessionStore((s) => s.loaded);

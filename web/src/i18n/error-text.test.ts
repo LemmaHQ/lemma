@@ -17,7 +17,6 @@ function withReason(reason: number): ConnectError {
 it.each([
     [ErrorReason.PROVIDER_NOT_FOUND, "errors.providerNotFound"],
     [ErrorReason.DIRECTORY_NOT_FOUND, "errors.directoryNotFound"],
-    [ErrorReason.DIRECTORY_UNSUPPORTED, "errors.directoryUnsupported"],
 ])("maps app error reason %s to i18n key", (reason, key) => {
     expect(errorText(withReason(reason), t)).toBe(key);
 });

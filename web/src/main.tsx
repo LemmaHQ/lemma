@@ -1,16 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { installCrossTabGuard } from "@/features/auth";
 import { getPlatform } from "@/platform/platform";
 
-import { installAccountDataReset } from "./app/account-data";
 import { App } from "./app/App.tsx";
 import "./i18n";
 import "./index.css";
 
-installCrossTabGuard();
-installAccountDataReset();
 const { titlebarHeight } = getPlatform();
 document.documentElement.classList.toggle(
     "custom-titlebar",

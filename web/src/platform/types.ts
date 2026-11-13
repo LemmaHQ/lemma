@@ -5,10 +5,6 @@ export interface WindowCapabilities {
     toggleMaximize(): void;
 }
 
-export interface AuthCapabilities {
-    readonly cookieMode: boolean;
-}
-
 export interface DirectoryPicker {
     pick(): Promise<string | null>;
 }
@@ -17,7 +13,6 @@ export interface PlatformAdapter {
     readonly baseUrl: string;
     readonly fetch: typeof globalThis.fetch;
     readonly window: WindowCapabilities;
-    readonly auth: AuthCapabilities;
     /** Native directory picker; `null` in the browser. */
     readonly directoryPicker: DirectoryPicker | null;
     readonly titlebarHeight: number;

@@ -1,8 +1,18 @@
-import { SidebarContent, SidebarFooter, SidebarHeader } from "@lemma/ui";
+import {
+    AnimateIcon,
+    SettingsIcon,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from "@lemma/ui";
 import { ViewTransition } from "react";
-import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router";
 
-import { AccountMenu } from "@/features/auth";
 import { SessionList } from "@/features/session";
 
 import { AppBrand } from "../AppBrand";
@@ -10,8 +20,10 @@ import { paths } from "../route-paths";
 import { SidebarToggleButton } from "../shell/SidebarToggleButton";
 import { NewSessionButton } from "./NewSessionButton";
 
-/** The sessions sidebar: brand, collapse toggle, new session, the session list with `activeId` highlighted, and the account menu. */
+/** The sessions sidebar: brand, collapse toggle, new session, the session list with `activeId` highlighted, and the settings link. */
 export function SessionSidebar({ activeId }: { activeId: string | null }) {
+    const { t } = useTranslation();
+    const { setOpenMobile } = useSidebar();
     const navigate = useNavigate();
 
     return (
@@ -46,7 +58,19 @@ export function SessionSidebar({ activeId }: { activeId: string | null }) {
                 </ViewTransition>
             </SidebarContent>
             <SidebarFooter>
-                <AccountMenu settingsPath={paths.settings} />
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <AnimateIcon animateOnHover asChild>
+                            <SidebarMenuButton
+                                render={<Link to={paths.settings} />}
+                                onClick={() => setOpenMobile(false)}
+                            >
+                                <SettingsIcon />
+                                <span>{t("sidebar.appSettings")}</span>
+                            </SidebarMenuButton>
+                        </AnimateIcon>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarFooter>
         </>
     );

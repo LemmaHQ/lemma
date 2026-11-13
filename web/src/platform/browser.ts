@@ -1,47 +1,19 @@
-import type { PlatformAdapter } from "./types";
-
-function resolveBaseUrl(): string {
-    const stored = localStorage.getItem("lemma.serverUrl");
-    if (stored !== null && stored !== "") {
-        return stored;
-    }
-    return "/";
-}
-
-function resolveCookieMode(baseUrl: string): boolean {
-    try {
-        return (
-            new URL(baseUrl, window.location.href).origin ===
-            window.location.origin
-        );
-    } catch {
-        return false;
-    }
-}
+import type { PlatformAdapter, WindowCapabilities } from "./types";
 
 function ignoreWindowCommand(): void {}
 
 export class BrowserAdapter implements PlatformAdapter {
-    readonly baseUrl: string;
+    readonly baseUrl = "/";
     readonly fetch: typeof globalThis.fetch = (input, init) =>
         globalThis.fetch(input, init);
 
     readonly clientVersion = null;
     readonly directoryPicker = null;
 
-    readonly window = {
+    readonly window: WindowCapabilities = {
         setTitleBar: ignoreWindowCommand,
         toggleMaximize: ignoreWindowCommand,
     };
 
-    readonly auth = {
-        cookieMode: false,
-    };
-
     readonly titlebarHeight = 0;
-
-    constructor() {
-        this.baseUrl = resolveBaseUrl();
-        this.auth.cookieMode = resolveCookieMode(this.baseUrl);
-    }
 }

@@ -10,7 +10,7 @@ import {
 } from "@/gen/lemma/v1/session_pb";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
-import { clearActiveSession, useActiveSession } from "./store";
+import { useActiveSession } from "./store";
 
 type StreamResponse = { event?: AgentEvent | undefined };
 type Stream = AsyncIterable<StreamResponse>;
@@ -119,7 +119,7 @@ const turnNotRunning = () =>
     ]);
 
 beforeEach(() => {
-    clearActiveSession();
+    useActiveSession.setState(useActiveSession.getInitialState());
     vi.resetAllMocks();
 });
 
@@ -169,6 +169,16 @@ describe("open", () => {
             { id: "call-2", output: "" },
         ]);
         expect(state().hasMore).toBe(true);
+    });
+
+    it("refreshes the open session without dropping state", async () => {
+        rpc.listMessages.mockResolvedValue(
+            page([{ id: "user-1", role: "user", content: "hi" }]),
+        );
+        await state().open("session-1");
+        await state().open("session-1");
+
+        expect(state().items.map((item) => item.id)).toEqual(["user-1"]);
     });
 });
 
@@ -355,7 +365,7 @@ describe("send", () => {
     });
 
     it("ignores a send without an open session or while streaming", async () => {
-        clearActiveSession();
+        useActiveSession.setState(useActiveSession.getInitialState());
         await state().send("provider-1", "model-1", "hi");
         useActiveSession.setState({
             sessionId: "session-1",
@@ -452,18 +462,20 @@ describe("send", () => {
         rpc.sendMessage.mockReturnValue(
             stream([started("user-msg")], turnNotRunning()),
         );
-        rpc.listMessages.mockReturnValue(reload.promise);
+        rpc.listMessages
+            .mockReturnValueOnce(reload.promise)
+            .mockResolvedValueOnce(page([]));
 
         const sending = state().send("provider-1", "model-1", "hi");
         await vi.waitFor(() => {
             expect(rpc.listMessages).toHaveBeenCalledTimes(2);
         });
-        clearActiveSession();
+        const switching = state().open("session-2");
         reload.resolve(page([{ id: "user-msg", role: "user" }]));
-        await sending;
+        await Promise.all([sending, switching]);
 
         expect(state().items).toEqual([]);
-        expect(state().sessionId).toBeNull();
+        expect(state().sessionId).toBe("session-2");
     });
 
     it("stops the turn on the server and marks the reply aborted", async () => {
@@ -500,21 +512,24 @@ describe("send", () => {
         expect(state().items.at(-1)?.status).toBe("aborted");
     });
 
-    it("leaves the emptied session alone when cleared mid-stream", async () => {
+    it("leaves the new session alone when switched mid-stream", async () => {
         rpc.sendMessage.mockImplementation((_req, { signal }) =>
             untilAborted([started("user-msg")], signal),
+        );
+        rpc.listMessages.mockResolvedValueOnce(
+            page([{ id: "other-1", role: "user" }]),
         );
 
         const sending = state().send("provider-1", "model-1", "hi");
         await vi.waitFor(() => {
             expect(rpc.sendMessage).toHaveBeenCalled();
         });
-        clearActiveSession();
+        await state().open("session-2");
         await sending;
 
         expect(state()).toMatchObject({
-            sessionId: null,
-            items: [],
+            sessionId: "session-2",
+            items: [{ id: "other-1" }],
             streaming: false,
         });
     });

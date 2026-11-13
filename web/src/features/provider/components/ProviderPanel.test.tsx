@@ -13,7 +13,7 @@ import {
     ProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
-import { clearProviders } from "../useProviders";
+import { useProviderStore } from "../store";
 import { ProviderPanel } from "./ProviderPanel";
 
 type Reply = { provider?: Provider | undefined };
@@ -126,7 +126,7 @@ const OFFLINE_TEXT =
 
 beforeEach(() => {
     vi.resetAllMocks();
-    clearProviders();
+    useProviderStore.setState(useProviderStore.getInitialState());
     rpc.listProviders.mockResolvedValue({
         providers: [
             provider("acme", "Acme"),

@@ -1,45 +1,22 @@
 import { createBrowserRouter, replace } from "react-router";
 
-import { ensureAuthReady, useAuth } from "@/features/auth";
 import { refreshSessions } from "@/features/session";
 
-import { AuthLayout } from "./auth/AuthLayout";
 import type { RouteHandle } from "./route-handle";
 import { paths } from "./route-paths";
 import { SETTINGS_PAGES } from "./settings/settings-pages";
-import { SignedInLayout } from "./shell/SignedInLayout";
+import { AppLayout } from "./shell/AppLayout";
 import { SplashScreen } from "./SplashScreen";
 
 /** The app's routes; every `handle` is a `RouteHandle`. */
 export const router = createBrowserRouter([
     {
         HydrateFallback: SplashScreen,
-        loader: authReady,
         children: [
             {
-                Component: AuthLayout,
-                handle: { titleBar: "background" } satisfies RouteHandle,
-                children: [
-                    {
-                        path: paths.signIn,
-                        lazy: async () => ({
-                            Component: (await import("./auth/SignInPage"))
-                                .SignInPage,
-                        }),
-                    },
-                    {
-                        path: paths.signUp,
-                        lazy: async () => ({
-                            Component: (await import("./auth/SignUpPage"))
-                                .SignUpPage,
-                        }),
-                    },
-                ],
-            },
-            {
-                Component: SignedInLayout,
+                Component: AppLayout,
                 handle: { titleBar: "sidebar" } satisfies RouteHandle,
-                loader: requireSignedIn,
+                loader: loadSessions,
                 shouldRevalidate: () => false,
                 children: [
                     {
@@ -90,16 +67,7 @@ export const router = createBrowserRouter([
     },
 ]);
 
-async function authReady() {
-    await ensureAuthReady();
-    return null;
-}
-
-async function requireSignedIn() {
-    await ensureAuthReady();
-    if (useAuth.getState().user === null) {
-        return replace(paths.signIn);
-    }
+function loadSessions() {
     void refreshSessions();
     return null;
 }

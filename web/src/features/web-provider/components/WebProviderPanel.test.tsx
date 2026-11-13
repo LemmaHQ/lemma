@@ -12,7 +12,7 @@ import {
     WebProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
-import { clearWebProviders } from "../useWebProviders";
+import { useWebProviderStore } from "../store";
 import { WebProviderPanel } from "./WebProviderPanel";
 
 type UpdateRequest = {
@@ -88,7 +88,7 @@ const orderRows = (name: string) =>
 
 beforeEach(() => {
     vi.resetAllMocks();
-    clearWebProviders();
+    useWebProviderStore.setState(useWebProviderStore.getInitialState());
     rpc.listWebProviders.mockResolvedValue({ providers: fixtures() });
     rpc.updateWebProvider.mockImplementation(({ id, apiKey, enabled }) => {
         const current = fixtures().find((item) => item.id === id)!;

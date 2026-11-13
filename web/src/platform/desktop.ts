@@ -17,7 +17,6 @@ export class DesktopAdapter implements PlatformAdapter {
     readonly baseUrl = ENGINE_BASE_URL;
     readonly fetch: typeof globalThis.fetch;
     readonly window: PlatformAdapter["window"];
-    readonly auth: PlatformAdapter["auth"];
     readonly directoryPicker: DirectoryPicker;
     readonly titlebarHeight: number;
     readonly clientVersion: string;
@@ -33,9 +32,6 @@ export class DesktopAdapter implements PlatformAdapter {
             toggleMaximize: (): void => {
                 bridge.toggleMaximize();
             },
-        };
-        this.auth = {
-            cookieMode: false,
         };
         this.directoryPicker = {
             pick: () => bridge.pickDirectory(),

@@ -49,10 +49,10 @@ const harness = (): Harness => {
 };
 
 const post = (fetch: typeof globalThis.fetch, init?: RequestInit) =>
-    fetch(`${ENGINE_BASE_URL}/lemma.v1.AuthService/SignIn?x=1`, {
+    fetch(`${ENGINE_BASE_URL}/lemma.v1.SystemService/GetVersion?x=1`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: '{"identifier":"lemma"}',
+        body: "{}",
         ...init,
     });
 
@@ -68,9 +68,9 @@ describe("createEngineFetch", () => {
             type: "request",
             id: 1,
             method: "POST",
-            path: "/lemma.v1.AuthService/SignIn?x=1",
+            path: "/lemma.v1.SystemService/GetVersion?x=1",
             headers: [["content-type", "application/json"]],
-            body: bytes('{"identifier":"lemma"}'),
+            body: bytes("{}"),
         });
         h.respond({
             type: "head",

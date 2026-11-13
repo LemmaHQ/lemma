@@ -45,7 +45,7 @@ const request = (id: number) => ({
     type: "request",
     id,
     method: "POST",
-    path: "/lemma.v1.AuthService/SignIn",
+    path: "/lemma.v1.SystemService/GetVersion",
     headers: [["content-type", "application/json"]],
     body: new TextEncoder().encode("{}"),
 });
@@ -65,7 +65,7 @@ it("answers with the head, every chunk, and the end", async () => {
 
     expect(engine.request).toHaveBeenCalledWith(
         "POST",
-        "/lemma.v1.AuthService/SignIn",
+        "/lemma.v1.SystemService/GetVersion",
         [{ name: "content-type", value: "application/json" }],
         Buffer.from("{}"),
     );

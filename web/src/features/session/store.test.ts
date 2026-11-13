@@ -5,7 +5,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { type Session, SessionSchema } from "@/gen/lemma/v1/session_pb";
 
 import { useSessionStore } from "./store";
-import { clearSessions, createSession, refreshSessions } from "./useSessions";
+import { createSession, refreshSessions } from "./useSessions";
 
 type Reply = { session?: Session | undefined };
 
@@ -38,7 +38,7 @@ const list = () => useSessionStore.getState().list;
 
 beforeEach(async () => {
     vi.resetAllMocks();
-    clearSessions();
+    useSessionStore.setState(useSessionStore.getInitialState());
     rpc.listSessions.mockResolvedValue({
         sessions: [
             session("c1", "First", 5000, "C:\\work\\first"),

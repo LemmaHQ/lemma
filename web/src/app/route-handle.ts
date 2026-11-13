@@ -1,6 +1,6 @@
 /** Static facts a route declares in its `handle`. */
 export interface RouteHandle {
-    titleBar?: "sidebar" | "background";
+    titleBar?: "sidebar";
     pinnedSidebar?: true;
 }
 
@@ -12,7 +12,7 @@ export function mergeRouteHandles(handles: readonly unknown[]): RouteHandle {
             continue;
         }
         const titleBar = "titleBar" in handle ? handle.titleBar : undefined;
-        if (titleBar === "sidebar" || titleBar === "background") {
+        if (titleBar === "sidebar") {
             merged.titleBar = titleBar;
         }
         if ("pinnedSidebar" in handle && handle.pinnedSidebar === true) {

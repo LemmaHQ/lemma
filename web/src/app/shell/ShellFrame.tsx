@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ShellHeader } from "./ShellHeader";
 
 /**
- * A signed-in layout: the resizable `sidebar` beside the page, with a header across the page showing `title`.
+ * A shell layout: the resizable `sidebar` beside the page, with a header across the page showing `title`.
  * `sidebar` holds the sidebar's header, content, and footer; `toolbarActions` follow the sidebar toggle while the sidebar is hidden.
  */
 export function ShellFrame({

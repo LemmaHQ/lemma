@@ -5,12 +5,6 @@ import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
 const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.UNSPECIFIED]: "errors.unspecified",
-    [ErrorReason.CREDENTIALS_INVALID]: "errors.credentialsInvalid",
-    [ErrorReason.USERNAME_TAKEN]: "errors.usernameTaken",
-    [ErrorReason.EMAIL_TAKEN]: "errors.emailTaken",
-    [ErrorReason.SIGNUP_FIELDS_REQUIRED]: "errors.signupFieldsRequired",
-    [ErrorReason.TOKEN_INVALID]: "errors.tokenInvalid",
-    [ErrorReason.USER_NOT_FOUND]: "errors.userNotFound",
     [ErrorReason.PROVIDER_FIELDS_REQUIRED]: "errors.providerFieldsRequired",
     [ErrorReason.PROVIDER_IDENTIFIER_INVALID]:
         "errors.providerIdentifierInvalid",
@@ -22,7 +16,6 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.TITLE_REQUIRED]: "errors.titleRequired",
     [ErrorReason.SESSION_NOT_FOUND]: "errors.sessionNotFound",
     [ErrorReason.DIRECTORY_NOT_FOUND]: "errors.directoryNotFound",
-    [ErrorReason.DIRECTORY_UNSUPPORTED]: "errors.directoryUnsupported",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
     [ErrorReason.TURN_NOT_RUNNING]: "errors.turnNotRunning",
@@ -31,7 +24,6 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
 const codeKeys: Partial<Record<Code, ParseKeys>> = {
     [Code.Unavailable]: "errors.network",
     [Code.DeadlineExceeded]: "errors.timeout",
-    [Code.Unauthenticated]: "errors.tokenInvalid",
 };
 
 /** Localized text for a failed request; unmapped failures read as `errors.unspecified`. */

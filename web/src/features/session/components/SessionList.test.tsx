@@ -8,7 +8,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { type Session, SessionSchema } from "@/gen/lemma/v1/session_pb";
 
-import { clearSessions } from "../useSessions";
+import { useSessionStore } from "../store";
 import { SessionList } from "./SessionList";
 
 type Reply = { session?: Session | undefined };
@@ -65,7 +65,7 @@ const startRename = async (user: UserEvent, title: string) => {
 beforeEach(() => {
     vi.resetAllMocks();
     vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
-    clearSessions();
+    useSessionStore.setState(useSessionStore.getInitialState());
     rpc.listSessions.mockResolvedValue({
         sessions: [
             session("c1", "Trip plans", 0),

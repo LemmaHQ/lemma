@@ -12,7 +12,7 @@ import {
     ListMessagesResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
 
-import { clearActiveSession, useActiveSession } from "../store";
+import { useActiveSession } from "../store";
 import type { ModelOption } from "../useModelSelection";
 import { SessionView } from "./SessionView";
 
@@ -83,7 +83,7 @@ const composer = () =>
     screen.getByRole("textbox", { name: "Message the assistant…" });
 
 beforeEach(() => {
-    clearActiveSession();
+    useActiveSession.setState(useActiveSession.getInitialState());
     platform.directoryPicker = null;
     localStorage.clear();
     vi.resetAllMocks();
