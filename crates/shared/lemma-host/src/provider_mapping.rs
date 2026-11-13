@@ -5,11 +5,7 @@ use lemma_proto::lemma::v1::{ErrorReason, Provider};
 use lemma_provider::{
     ProviderError, ProviderModel, ProviderView, WebFunction, WebProviderKind, WebProviderView,
 };
-use uuid::Uuid;
 
-/// Maps a proto format to the domain format. Returns `None` for unspecified
-/// or unknown values.
-#[must_use]
 pub(crate) fn format_from_proto(format: v1::ApiFormat) -> Option<ApiFormat> {
     match format {
         v1::ApiFormat::Openai => Some(ApiFormat::OpenAiCompatible),
@@ -19,8 +15,6 @@ pub(crate) fn format_from_proto(format: v1::ApiFormat) -> Option<ApiFormat> {
     }
 }
 
-/// Maps a domain format to its proto enum.
-#[must_use]
 pub(crate) fn format_to_proto(format: ApiFormat) -> v1::ApiFormat {
     match format {
         ApiFormat::OpenAiCompatible => v1::ApiFormat::Openai,
@@ -57,7 +51,7 @@ pub(crate) fn to_proto(view: ProviderView) -> Provider {
         ProviderView::Custom(custom) => Provider {
             id: custom.id.to_string(),
             enabled: custom.enabled,
-            api_key: custom.api_key,
+            has_key: custom.has_key,
             source: Some(v1::provider::Source::Custom(Box::new(v1::CustomProvider {
                 identifier: custom.identifier,
                 name: custom.name,
@@ -73,7 +67,7 @@ pub(crate) fn to_proto(view: ProviderView) -> Provider {
         ProviderView::Predefined(predefined) => Provider {
             id: predefined.id.to_string(),
             enabled: predefined.enabled,
-            api_key: predefined.api_key,
+            has_key: predefined.has_key,
             source: Some(v1::provider::Source::Predefined(Box::new(
                 v1::PredefinedProvider {
                     identifier: predefined.identifier,
@@ -121,10 +115,6 @@ pub(crate) fn web_function_from_proto(
     }
 }
 
-pub(crate) fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| lemma_proto::app_error(ErrorReason::IdInvalid))
-}
-
 pub(crate) fn map_domain(e: ProviderError) -> ConnectError {
     match e {
         ProviderError::FieldsRequired => {
@@ -132,6 +122,7 @@ pub(crate) fn map_domain(e: ProviderError) -> ConnectError {
         }
         ProviderError::ApiFormatInvalid => lemma_proto::app_error(ErrorReason::ApiFormatInvalid),
         ProviderError::KeyRequired => lemma_proto::app_error(ErrorReason::ProviderKeyRequired),
+        ProviderError::ModelRequired => lemma_proto::app_error(ErrorReason::ModelRequired),
         ProviderError::IdentifierInvalid => {
             lemma_proto::app_error(ErrorReason::ProviderIdentifierInvalid)
         }
@@ -146,7 +137,7 @@ pub(crate) fn map_domain(e: ProviderError) -> ConnectError {
     }
 }
 
-pub(crate) fn adhoc_format(format: Option<v1::ApiFormat>) -> Result<ApiFormat, ConnectError> {
+pub(crate) fn require_format(format: Option<v1::ApiFormat>) -> Result<ApiFormat, ConnectError> {
     format
         .and_then(format_from_proto)
         .ok_or_else(|| lemma_proto::app_error(ErrorReason::ApiFormatInvalid))

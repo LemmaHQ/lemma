@@ -529,6 +529,7 @@ async fn a_model_without_tool_calling_sees_no_tools_and_no_earlier_tool_calls()
     setup.engine.close().await;
     Ok(())
 }
+
 #[tokio::test]
 async fn a_turn_fails_before_it_starts_once_the_bound_directory_is_gone()
 -> Result<(), Box<dyn Error>> {

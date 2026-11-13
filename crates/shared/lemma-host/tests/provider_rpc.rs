@@ -119,7 +119,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         created.body["provider"],
         json!({
             "id": id,
-            "apiKey": "sk-1",
+            "hasKey": true,
             "enabled": true,
             "custom": {
                 "apiFormat": "API_FORMAT_OPENAI",
@@ -142,7 +142,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         updated.body["provider"],
         json!({
             "id": id,
-            "apiKey": "sk-1",
+            "hasKey": true,
             "custom": {
                 "apiFormat": "API_FORMAT_OPENAI",
                 "identifier": "main",
@@ -202,7 +202,11 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
             .as_bool()
             .unwrap_or_default()
     );
-    assert_eq!(updated.body["provider"]["apiKey"], "sk-deepseek");
+    assert_eq!(updated.body["provider"]["hasKey"], true);
+    assert!(
+        updated.body["provider"].get("apiKey").is_none(),
+        "key stays write-only"
+    );
     assert_eq!(
         updated.body["provider"]["predefined"]["defaultApiFormat"],
         "API_FORMAT_OPENAI"
@@ -457,10 +461,8 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             ErrorReason::IdInvalid,
         ),
         (
-            engine
-                .call(FETCH, &json!({ "baseUrl": "https://api.example.com" }))
-                .await?,
-            ErrorReason::ApiFormatInvalid,
+            engine.call(FETCH, &json!({})).await?,
+            ErrorReason::IdInvalid,
         ),
         (
             engine.call(FETCH, &json!({ "id": "x" })).await?,
@@ -478,7 +480,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
         ),
         (
             engine.call(CHECK, &json!({ "model": "m1" })).await?,
-            ErrorReason::ApiFormatInvalid,
+            ErrorReason::IdInvalid,
         ),
         (
             engine
@@ -502,34 +504,22 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
-async fn models_are_fetched_with_the_stored_or_given_key() -> Result<(), Box<dyn Error>> {
+async fn models_are_fetched_with_the_stored_key() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     let base_url = vendor().await?;
     let id = create(&engine, &provider(&base_url)).await?;
+    let mut bad = provider(&base_url);
+    bad["identifier"] = json!("bad");
+    bad["apiKey"] = json!("sk-2");
+    let bad_id = create(&engine, &bad).await?;
 
     let stored = engine.call(FETCH, &json!({ "id": id })).await?;
-    let adhoc = engine
-        .call(
-            FETCH,
-            &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-1" }),
-        )
-        .await?;
-    let wrong_key = engine
-        .call(
-            FETCH,
-            &json!({ "apiFormat": "API_FORMAT_OPENAI", "baseUrl": base_url, "apiKey": "sk-2" }),
-        )
-        .await?;
+    let wrong_key = engine.call(FETCH, &json!({ "id": bad_id })).await?;
 
     assert_eq!(
         stored.body,
         json!({ "models": ["m1", "m2"] }),
         "stored provider"
-    );
-    assert_eq!(
-        adhoc.body,
-        json!({ "models": ["m1", "m2"] }),
-        "ad-hoc details"
     );
     assert_internal(&wrong_key, "fetch models: upstream 401: bad key");
     engine.close().await;
@@ -541,30 +531,18 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
     let mut engine = Engine::open().await?;
     let base_url = vendor().await?;
     let id = create(&engine, &provider(&base_url)).await?;
-    let adhoc = |model: &str| {
-        json!({
-            "apiFormat": "API_FORMAT_OPENAI",
-            "baseUrl": format!("{base_url}/"),
-            "apiKey": "sk-1",
-            "model": model,
-        })
-    };
 
-    let stored = engine
+    let answering = engine
         .call(CHECK, &json!({ "id": id, "model": " m1 " }))
         .await?;
-    let answering = engine.call(CHECK, &adhoc("m1")).await?;
-    let missing = engine.call(CHECK, &adhoc("missing")).await?;
+    let missing = engine
+        .call(CHECK, &json!({ "id": id, "model": "missing" }))
+        .await?;
 
-    assert_eq!(
-        (stored.status, &stored.body),
-        (200, &json!({})),
-        "stored provider"
-    );
     assert_eq!(
         (answering.status, &answering.body),
         (200, &json!({})),
-        "ad-hoc"
+        "stored provider answers"
     );
     assert_eq!(
         (missing.status, &missing.body),

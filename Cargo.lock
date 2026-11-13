@@ -1630,15 +1630,16 @@ dependencies = [
 name = "lemma-agent"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dashmap",
  "futures",
  "lemma-adapter",
  "lemma-agent-loop",
  "lemma-core",
+ "lemma-db",
  "lemma-model",
  "lemma-provider",
  "lemma-session",
- "lemma-test-db",
  "lemma-tool",
  "serde_json",
  "sqlx",
@@ -1654,33 +1655,13 @@ dependencies = [
  "chrono",
  "futures",
  "lemma-core",
+ "lemma-db",
  "lemma-model",
  "lemma-session",
- "lemma-test-db",
  "lemma-tool",
  "serde_json",
  "sqlx",
  "thiserror",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "lemma-agent-rpc"
-version = "0.1.0"
-dependencies = [
- "buffa",
- "buffa-types",
- "chrono",
- "connectrpc",
- "dashmap",
- "futures",
- "lemma-agent",
- "lemma-agent-loop",
- "lemma-core",
- "lemma-model",
- "lemma-proto",
- "lemma-session",
  "tokio",
  "uuid",
 ]
@@ -1705,6 +1686,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-db"
+version = "0.1.0"
+dependencies = [
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "lemma-desktop"
 version = "0.1.0"
 dependencies = [
@@ -1720,19 +1709,21 @@ name = "lemma-host"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "buffa",
+ "buffa-types",
+ "chrono",
  "connectrpc",
  "dunce",
  "futures",
  "hex",
  "lemma-adapter",
  "lemma-agent",
- "lemma-agent-rpc",
+ "lemma-core",
+ "lemma-db",
+ "lemma-model",
  "lemma-proto",
  "lemma-provider",
- "lemma-provider-rpc",
  "lemma-session",
- "lemma-session-rpc",
- "lemma-system-rpc",
  "rand",
  "serde",
  "serde_json",
@@ -1782,24 +1773,13 @@ dependencies = [
  "futures",
  "lemma-core",
  "lemma-crypto",
+ "lemma-db",
  "lemma-model",
- "lemma-test-db",
  "serde",
  "serde_json",
  "sqlx",
  "thiserror",
  "tokio",
- "uuid",
-]
-
-[[package]]
-name = "lemma-provider-rpc"
-version = "0.1.0"
-dependencies = [
- "connectrpc",
- "lemma-model",
- "lemma-proto",
- "lemma-provider",
  "uuid",
 ]
 
@@ -1824,44 +1804,15 @@ dependencies = [
  "dunce",
  "lemma-adapter",
  "lemma-core",
+ "lemma-db",
  "lemma-model",
  "lemma-provider",
- "lemma-test-db",
  "serde",
  "serde_json",
  "sqlx",
  "thiserror",
  "tokio",
  "uuid",
-]
-
-[[package]]
-name = "lemma-session-rpc"
-version = "0.1.0"
-dependencies = [
- "buffa",
- "buffa-types",
- "connectrpc",
- "lemma-core",
- "lemma-proto",
- "lemma-session",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "lemma-system-rpc"
-version = "0.1.0"
-dependencies = [
- "connectrpc",
- "lemma-proto",
-]
-
-[[package]]
-name = "lemma-test-db"
-version = "0.1.0"
-dependencies = [
- "sqlx",
 ]
 
 [[package]]

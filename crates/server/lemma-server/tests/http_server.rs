@@ -12,7 +12,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
 
-const API: &str = "/lemma.v1.SystemService/GetVersion";
+const API: &str = "/lemma.v1.SessionService/ListSessions";
 
 fn api() -> Router {
     Router::new().route(API, post(|| async { "api" }))

@@ -4,13 +4,10 @@ members = [
     "crates/shared/lemma-proto",
     "crates/shared/lemma-provider",
     "crates/shared/lemma-session",
-    "crates/rpc/lemma-agent-rpc",
-    "crates/rpc/lemma-session-rpc",
-    "crates/rpc/lemma-host",
-    "crates/rpc/lemma-provider-rpc",
-    "crates/rpc/lemma-system-rpc",
+    "crates/shared/lemma-host",
     "crates/shared/lemma-crypto",
     "crates/shared/lemma-core",
+    "crates/shared/lemma-db",
     "crates/shared/lemma-adapter",
     "crates/shared/lemma-agent",
     "crates/shared/lemma-agent-loop",
@@ -18,7 +15,6 @@ members = [
     "crates/shared/lemma-tool",
     "crates/mobile/lemma-mobile",
     "crates/desktop/lemma-desktop",
-    "crates/test/lemma-test-db",
 ]
 resolver = "2"
 
@@ -44,16 +40,12 @@ http = "1.5.0"
 lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }
 lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
+lemma-db = { path = "crates/shared/lemma-db" }
 lemma-session = { path = "crates/shared/lemma-session" }
-lemma-session-rpc = { path = "crates/rpc/lemma-session-rpc" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
-lemma-host = { path = "crates/rpc/lemma-host" }
+lemma-host = { path = "crates/shared/lemma-host" }
 lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
-lemma-agent-rpc = { path = "crates/rpc/lemma-agent-rpc" }
-lemma-provider-rpc = { path = "crates/rpc/lemma-provider-rpc" }
-lemma-system-rpc = { path = "crates/rpc/lemma-system-rpc" }
-lemma-test-db = { path = "crates/test/lemma-test-db" }
 lemma-tool = { path = "crates/shared/lemma-tool" }
 lemma-core = { path = "crates/shared/lemma-core" }
 lemma-model = { path = "crates/shared/lemma-model" }

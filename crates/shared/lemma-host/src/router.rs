@@ -15,12 +15,8 @@ pub fn router(state: AppState) -> Router {
     let providers = connectrpc::Router::new()
         .add_service(Arc::new(state.providers))
         .into_axum_service();
-    let system = connectrpc::Router::new()
-        .add_service(Arc::new(state.system))
-        .into_axum_service();
     Router::new()
         .route_service("/lemma.v1.AgentService/{*path}", agent)
         .route_service("/lemma.v1.SessionService/{*path}", sessions)
         .route_service("/lemma.v1.ProviderService/{*path}", providers)
-        .route_service("/lemma.v1.SystemService/{*path}", system)
 }

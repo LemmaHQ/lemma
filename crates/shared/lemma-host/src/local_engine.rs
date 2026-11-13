@@ -6,8 +6,8 @@ use sqlx::SqlitePool;
 
 use crate::app_state::AppState;
 use crate::local_engine_error::LocalEngineError;
+use crate::router;
 use crate::secrets::Secrets;
-use crate::{database, router};
 
 /// The local engine: the Connect services over one SQLite database, with
 /// the secrets, the database, and the workspaces under one data directory.
@@ -27,13 +27,13 @@ impl LocalEngine {
     /// [`LocalEngineError`] naming the startup step that failed.
     pub async fn open(data_dir: &Path) -> Result<Self, LocalEngineError> {
         let secrets = load_or_create_secrets(data_dir)?;
-        let db = database::connect(&data_dir.join("lemma.db"))
+        let db = lemma_db::open(&data_dir.join("lemma.db"))
             .await
-            .map_err(LocalEngineError::Database)?;
-        database::migrate(&db)
-            .await
-            .map_err(LocalEngineError::Migration)?;
-        let state = AppState::new(db.clone(), secrets, data_dir.join("workspaces"));
+            .map_err(|e| match e {
+                sqlx::Error::Migrate(migrate) => LocalEngineError::Migration(*migrate),
+                other => LocalEngineError::Database(other),
+            })?;
+        let state = AppState::new(db.clone(), &secrets, data_dir.join("workspaces"));
         Ok(Self {
             router: router::router(state),
             db,
@@ -51,8 +51,6 @@ impl LocalEngine {
     }
 }
 
-/// Loads the secrets from `secrets.json` inside the data directory,
-/// generating and persisting them on first run.
 fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> {
     use rand::RngExt;
 

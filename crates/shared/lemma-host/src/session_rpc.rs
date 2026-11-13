@@ -1,6 +1,3 @@
-//! Connect RPC shell for the `SessionService`: proto mapping and error
-//! translation. All behavior lives in `lemma-session`.
-
 use std::path::Path;
 
 use buffa::MessageField;
@@ -18,19 +15,17 @@ use lemma_session::{
     Message as DomainMessage, MessageStatus as DomainMessageStatus, Session as DomainSession,
     SessionError, SessionService,
 };
-use uuid::Uuid;
 
-/// Connect handler implementing the `SessionService` RPCs.
+use crate::parse_id::parse_id;
+
 #[derive(Debug)]
-pub struct SessionRpc {
+pub(crate) struct SessionRpc {
     domain: SessionService,
 }
 
 impl SessionRpc {
-    /// Creates the handler over the session domain service, which the
-    /// agent shares.
     #[must_use]
-    pub fn new(domain: SessionService) -> Self {
+    pub(crate) fn new(domain: SessionService) -> Self {
         Self { domain }
     }
 }
@@ -113,10 +108,6 @@ fn message_to_proto(m: &DomainMessage) -> Message {
         updated_at: Timestamp::from(m.updated_at).into(),
         ..Default::default()
     }
-}
-
-fn parse_id(id: &str) -> Result<Uuid, ConnectError> {
-    Uuid::parse_str(id).map_err(|_| lemma_proto::app_error(ErrorReason::IdInvalid))
 }
 
 fn map_domain(e: SessionError) -> ConnectError {

@@ -1,39 +1,35 @@
 use std::sync::Arc;
 
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
-use lemma_model::{Connector, Endpoint};
+use lemma_model::Connector;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
     CheckProviderRequest, CheckProviderResponse, CreateCustomProviderRequest,
     CreateCustomProviderResponse, DeleteCustomProviderRequest, DeleteCustomProviderResponse,
-    ErrorReason, FetchModelsRequest, FetchModelsResponse, ListProvidersRequest,
-    ListProvidersResponse, ListWebProvidersRequest, ListWebProvidersResponse,
-    SetWebProviderOrderRequest, SetWebProviderOrderResponse, UpdateCustomProviderRequest,
-    UpdateCustomProviderResponse, UpdatePredefinedProviderRequest,
-    UpdatePredefinedProviderResponse, UpdateWebProviderRequest, UpdateWebProviderResponse,
+    FetchModelsRequest, FetchModelsResponse, ListProvidersRequest, ListProvidersResponse,
+    ListWebProvidersRequest, ListWebProvidersResponse, SetWebProviderOrderRequest,
+    SetWebProviderOrderResponse, UpdateCustomProviderRequest, UpdateCustomProviderResponse,
+    UpdatePredefinedProviderRequest, UpdatePredefinedProviderResponse, UpdateWebProviderRequest,
+    UpdateWebProviderResponse,
 };
 use lemma_provider::{
     CreateCustomInput, ProviderError, ProviderService, ProviderView, UpdateCustomInput,
     UpdatePredefinedInput, UpdateWebInput,
 };
 
+use crate::parse_id::parse_id;
 use crate::provider_mapping::{
-    adhoc_format, map_domain, models_from_proto, parse_id, to_proto, web_function_from_proto,
-    web_to_proto,
+    map_domain, models_from_proto, require_format, to_proto, web_function_from_proto, web_to_proto,
 };
 
-/// Connect handler implementing the `ProviderService` RPCs.
-///
-/// `domain` seals API keys at rest and fetches model lists.
 #[derive(Debug)]
-pub struct ProviderRpc<C> {
+pub(crate) struct ProviderRpc<C> {
     domain: Arc<ProviderService<C>>,
 }
 
 impl<C: Connector> ProviderRpc<C> {
-    /// Creates the handler over the provider domain service, which the
-    /// agent shares.
-    pub fn new(domain: Arc<ProviderService<C>>) -> Self {
+    #[must_use]
+    pub(crate) fn new(domain: Arc<ProviderService<C>>) -> Self {
         Self { domain }
     }
 }
@@ -58,7 +54,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         request: ServiceRequest<'_, CreateCustomProviderRequest>,
     ) -> ServiceResult<CreateCustomProviderResponse> {
         let input = CreateCustomInput {
-            api_format: adhoc_format(request.api_format.as_known())?,
+            api_format: require_format(request.api_format.as_known())?,
             identifier: request.identifier.to_string(),
             name: request.name.to_string(),
             base_url: request.base_url.to_string(),
@@ -109,7 +105,7 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
     ) -> ServiceResult<UpdatePredefinedProviderResponse> {
         let default_api_format = request
             .default_api_format
-            .map(|format| adhoc_format(format.as_known()))
+            .map(|format| require_format(format.as_known()))
             .transpose()?;
         let input = UpdatePredefinedInput {
             api_key: request.api_key.map(ToString::to_string),
@@ -144,20 +140,11 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         _ctx: RequestContext,
         request: ServiceRequest<'_, FetchModelsRequest>,
     ) -> ServiceResult<FetchModelsResponse> {
-        let models = if request.id.is_empty() {
-            let format = adhoc_format(request.api_format.as_known())?;
-            self.domain
-                .fetch_models_adhoc(
-                    format,
-                    request.base_url,
-                    request.api_key,
-                    request.models_path,
-                )
-                .await
-        } else {
-            self.domain.fetch_models_for(parse_id(request.id)?).await
-        }
-        .map_err(map_domain)?;
+        let models = self
+            .domain
+            .fetch_models(parse_id(request.id)?)
+            .await
+            .map_err(map_domain)?;
         Response::ok(FetchModelsResponse {
             models,
             ..Default::default()
@@ -169,24 +156,8 @@ impl<C: Connector> v1::ProviderService for ProviderRpc<C> {
         _ctx: RequestContext,
         request: ServiceRequest<'_, CheckProviderRequest>,
     ) -> ServiceResult<CheckProviderResponse> {
-        if request.model.trim().is_empty() {
-            return Err(lemma_proto::app_error(ErrorReason::ModelRequired));
-        }
-        let model = request.model.trim();
-        let checked = if request.id.is_empty() {
-            let format = adhoc_format(request.api_format.as_known())?;
-            let endpoint = Endpoint {
-                api_format: format,
-                base_url: request.base_url.to_owned(),
-                api_key: request.api_key.to_owned(),
-                api_path: request.api_path.to_owned(),
-                models_path: String::new(),
-            };
-            self.domain.check_adhoc(endpoint, model).await
-        } else {
-            self.domain.check_for(parse_id(request.id)?, model).await
-        };
-        let error = match checked {
+        let id = parse_id(request.id)?;
+        let error = match self.domain.check(id, request.model).await {
             Ok(()) => String::new(),
             Err(ProviderError::Check(message)) => message,
             Err(e) => return Err(map_domain(e)),
