@@ -17,8 +17,8 @@ uuid.workspace = true
 
 [dev-dependencies]
 lemma-adapter.workspace = true
+lemma-db.workspace = true
 lemma-provider.workspace = true
-lemma-test-db.workspace = true
 
 [lints]
 workspace = true

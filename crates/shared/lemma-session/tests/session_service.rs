@@ -14,7 +14,6 @@ use lemma_session::{
     LastModel, Message, MessageBody, MessagePage, MessageStatus, MessageUpdate, SessionError,
     SessionService, build_context_path,
 };
-use lemma_test_db::database;
 use uuid::Uuid;
 
 fn at(millis: i64) -> DateTime<Utc> {
@@ -68,7 +67,7 @@ async fn a_session_stores_the_canonical_path_of_its_directory() -> Result<(), Bo
     fs::create_dir_all(&dir)?;
     let canonical = dunce::canonicalize(&dir)?;
     let spelled = dir.join(".");
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
 
     let bound = sessions.create(Some(&spelled)).await?;
@@ -92,7 +91,7 @@ async fn a_directory_must_be_an_absolute_path_to_an_existing_directory()
     let file = env::temp_dir().join(format!("lemma-session-file-{}", Uuid::new_v4()));
     fs::write(&file, "x")?;
     let missing = env::temp_dir().join(format!("lemma-session-missing-{}", Uuid::new_v4()));
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
 
     for path in [Path::new("relative"), missing.as_path(), file.as_path()] {
@@ -109,7 +108,7 @@ async fn a_directory_must_be_an_absolute_path_to_an_existing_directory()
 
 #[tokio::test]
 async fn deleting_a_session_deletes_only_its_messages() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let doomed = sessions.create(None).await?;
     let kept = sessions.create(None).await?;
@@ -142,7 +141,7 @@ async fn deleting_a_session_deletes_only_its_messages() -> Result<(), Box<dyn Er
 
 #[tokio::test]
 async fn messages_page_newest_first_across_the_boundaries() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session = sessions.create(None).await?;
     let other = sessions.create(None).await?;
@@ -193,7 +192,7 @@ async fn messages_page_newest_first_across_the_boundaries() -> Result<(), Box<dy
 
 #[tokio::test]
 async fn messages_sharing_a_timestamp_page_without_gaps_or_repeats() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session = sessions.create(None).await?;
     let mut expected = Vec::new();
@@ -221,7 +220,7 @@ async fn messages_sharing_a_timestamp_page_without_gaps_or_repeats() -> Result<(
 
 #[tokio::test]
 async fn an_omitted_limit_returns_fifty_messages() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session = sessions.create(None).await?;
     append_chain(&sessions, session.id, 60).await?;
@@ -243,7 +242,7 @@ async fn an_omitted_limit_returns_fifty_messages() -> Result<(), Box<dyn Error>>
 #[tokio::test]
 async fn finalizing_a_placeholder_replaces_only_its_body_status_and_error()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session = sessions.create(None).await?;
     let provider_id = Uuid::new_v4();
@@ -299,7 +298,7 @@ async fn finalizing_a_placeholder_replaces_only_its_body_status_and_error()
 #[tokio::test]
 async fn leaf_and_last_model_follow_the_turn_and_recent_sessions_come_first()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let older = sessions.create(None).await?;
     let newer = sessions.create(None).await?;
@@ -349,10 +348,10 @@ async fn leaf_and_last_model_follow_the_turn_and_recent_sessions_come_first()
 #[tokio::test]
 async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
 -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let providers = ProviderService::new(
         db.clone(),
-        "test-secret-key".to_owned(),
+        "test-secret-key",
         HttpConnector::new(ReqwestTransport::new()),
     );
     let sessions = SessionService::new(db);
@@ -412,7 +411,7 @@ async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
 
 #[tokio::test]
 async fn the_context_path_runs_from_the_root_to_the_leaf() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session_id = sessions.create(None).await?.id;
     let ids = append_chain(&sessions, session_id, 3).await?;
@@ -435,7 +434,7 @@ async fn the_context_path_runs_from_the_root_to_the_leaf() -> Result<(), Box<dyn
 
 #[tokio::test]
 async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db.clone());
     let id = sessions.create(None).await?.id;
     let last_model = LastModel {
@@ -496,7 +495,7 @@ async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>
 
 #[tokio::test]
 async fn previous_assistant_format_follows_the_active_context_path() -> Result<(), Box<dyn Error>> {
-    let db = database().await?;
+    let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let empty = sessions.create(None).await?;
     let session = sessions.create(None).await?;
