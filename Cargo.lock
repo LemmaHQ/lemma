@@ -2259,6 +2259,7 @@ dependencies = [
  "futures",
  "lemma-core",
  "lemma-model",
+ "lemma-tool",
  "reqwest",
  "serde",
  "serde_json",
@@ -2271,6 +2272,7 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "futures",
+ "lemma-adapter",
  "lemma-agent-loop",
  "lemma-auth",
  "lemma-core",

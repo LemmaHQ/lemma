@@ -5,6 +5,7 @@
 
 mod agent;
 mod agent_error;
+mod web_tools;
 
 pub use agent::{Agent, Turn, TurnRequest};
 pub use agent_error::AgentError;

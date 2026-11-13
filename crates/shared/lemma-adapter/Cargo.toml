@@ -7,13 +7,15 @@ edition.workspace = true
 futures.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true
+lemma-tool.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tokio.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
 
 [lints]
 workspace = true

@@ -25,6 +25,7 @@ struct Sent {
 struct ScriptedTransport {
     chunks: Vec<Result<String, String>>,
     listing: Value,
+    text: String,
     sent: Arc<Mutex<Vec<Sent>>>,
 }
 
@@ -90,6 +91,19 @@ impl HttpTransport for ScriptedTransport {
         });
         Ok(self.listing.clone())
     }
+
+    async fn get_text(
+        &self,
+        url: String,
+        headers: Vec<(String, String)>,
+    ) -> Result<String, ModelError> {
+        self.record(Sent {
+            url,
+            headers,
+            body: None,
+        });
+        Ok(self.text.clone())
+    }
 }
 
 #[derive(Clone)]
@@ -110,6 +124,14 @@ impl HttpTransport for RefusingTransport {
         _url: String,
         _headers: Vec<(String, String)>,
     ) -> Result<Value, ModelError> {
+        Err(ModelError::new("upstream 401: bad key".to_owned()))
+    }
+
+    async fn get_text(
+        &self,
+        _url: String,
+        _headers: Vec<(String, String)>,
+    ) -> Result<String, ModelError> {
         Err(ModelError::new("upstream 401: bad key".to_owned()))
     }
 }

@@ -17,7 +17,7 @@ fn debug_output_never_reveals_the_signing_secret() {
         "00".repeat(32),
         HttpConnector::new(ReqwestTransport::new()),
     );
-    let agent = Agent::new(SessionService::new(db), Arc::new(providers), None);
+    let agent = Agent::new(SessionService::new(db), Arc::new(providers), None, None);
     let rpc = AgentRpc::new(agent, "jwt-secret".to_owned());
 
     let debug = format!("{rpc:?}");

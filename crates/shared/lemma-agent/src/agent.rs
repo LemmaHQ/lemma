@@ -1,7 +1,9 @@
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use dashmap::DashMap;
+use lemma_adapter::{HttpTransport, ReqwestTransport};
 use lemma_agent_loop::{AgentLoop, CancelToken, ToolRuntime, TurnEvent, TurnInput};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
@@ -12,6 +14,7 @@ use tokio::fs;
 use uuid::Uuid;
 
 use crate::agent_error::AgentError;
+use crate::web_tools;
 
 /// What a user asks one turn to do.
 #[derive(Debug)]
@@ -44,24 +47,27 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 /// `write_file`, `bash`) run in `<workspaces_dir>/<session id>`;
 /// without it, turns call the model without tools.
 #[derive(Debug)]
-pub struct Agent<C> {
+pub struct Agent<C, T = ReqwestTransport> {
     sessions: SessionService,
     providers: Arc<ProviderService<C>>,
     workspaces_dir: Option<PathBuf>,
+    web_http: Option<T>,
     running: Arc<RunningTurns>,
 }
 
-impl<C: Connector> Agent<C> {
+impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// Creates the agent over the session and provider domains.
     pub fn new(
         sessions: SessionService,
         providers: Arc<ProviderService<C>>,
         workspaces_dir: Option<PathBuf>,
+        web_http: Option<T>,
     ) -> Self {
         Self {
             sessions,
             providers,
             workspaces_dir,
+            web_http,
             running: Arc::default(),
         }
     }
@@ -103,7 +109,14 @@ impl<C: Connector> Agent<C> {
             )
             .await?;
 
-        let tools = workspace_tools(self.workspaces_dir.as_deref(), req.session_id).await?;
+        let tools = workspace_tools(
+            self.workspaces_dir.as_deref(),
+            req.session_id,
+            &self.providers,
+            self.web_http.as_ref(),
+            req.user_id,
+        )
+        .await?;
         let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, tools);
 
         let user_message_id = Uuid::new_v4();
@@ -195,9 +208,12 @@ impl Drop for Registration {
 
 /// Prepares `<workspaces_dir>/<session_id>` and the tools that run in
 /// it; `None` without a workspaces directory.
-async fn workspace_tools(
+async fn workspace_tools<C: Connector, T: HttpTransport + Debug>(
     workspaces_dir: Option<&Path>,
     session_id: Uuid,
+    providers: &ProviderService<C>,
+    web_http: Option<&T>,
+    user_id: Uuid,
 ) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
     let Some(dir) = workspaces_dir else {
         return Ok(None);
@@ -210,6 +226,9 @@ async fn workspace_tools(
     registry.register(ReadFileTool);
     registry.register(WriteFileTool);
     registry.register(BashTool);
+    if let Some(transport) = web_http {
+        web_tools::register_web_tools(&mut registry, providers, transport, user_id).await?;
+    }
     Ok(Some(ToolRuntime::new(
         registry,
         LocalExecEnv::new(workspace),

@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 dashmap.workspace = true
+lemma-adapter.workspace = true
 lemma-agent-loop.workspace = true
 lemma-session.workspace = true
 lemma-core.workspace = true

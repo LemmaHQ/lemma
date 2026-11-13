@@ -126,6 +126,29 @@ async fn a_get_returns_the_json_body() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+async fn a_get_returns_the_text_body() -> Result<(), Box<dyn Error>> {
+    let router = Router::new().route(
+        "/page",
+        get(|headers: HeaderMap| async move {
+            let key = headers
+                .get("x-api-key")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or_default()
+                .to_owned();
+            format!("<p>{key}</p>")
+        }),
+    );
+    let base = serve(router).await?;
+
+    let body = ReqwestTransport::new()
+        .get_text(format!("{base}/page"), key())
+        .await?;
+
+    assert_eq!(body, "<p>key</p>");
+    Ok(())
+}
+
+#[tokio::test]
 async fn a_get_of_a_body_that_is_not_json_fails() -> Result<(), Box<dyn Error>> {
     let base = serve(Router::new().route("/models", get(|| async { "<html>" }))).await?;
 

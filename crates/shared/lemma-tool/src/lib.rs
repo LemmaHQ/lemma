@@ -6,6 +6,7 @@ mod local_exec_env;
 mod tool;
 mod tool_error;
 mod tool_registry;
+mod web;
 
 pub use builtin::{BashTool, ReadFileTool, WriteFileTool};
 pub use exec_env::{ExecCommandResult, ExecEnv};
@@ -14,3 +15,4 @@ pub use local_exec_env::LocalExecEnv;
 pub use tool::{BoxToolFuture, Tool};
 pub use tool_error::ToolError;
 pub use tool_registry::ToolRegistry;
+pub use web::{WebFetchBackend, WebFetchTool, WebSearchBackend, WebSearchTool};
