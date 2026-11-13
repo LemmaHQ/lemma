@@ -35,3 +35,7 @@ settings:
     platforms: [web, android]
     en: "Theme"
     zh: "主题"
+  web:
+    platforms: [web, android]
+    en: "Web Search & Fetch"
+    zh: "网页搜索与抓取"

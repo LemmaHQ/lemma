@@ -132,6 +132,53 @@ provider:
     platforms: [web, android]
     en: "Save an API key before enabling this provider."
     zh: "保存 API key 后才能启用该服务商。"
+  enableWebProvider:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Enable {name}"
+    zh: "启用{name}"
+  webApiKeySavedDesc:
+    platforms: [web, android]
+    en: "A key is saved. Enter a new key to replace it."
+    zh: "已保存 API key，输入新密钥即可替换。"
+  webBackends:
+    platforms: [web, android]
+    en: "Backends"
+    zh: "后端服务"
+  webBackendsDesc:
+    platforms: [web, android]
+    en: "Configure the services used for web search and fetch."
+    zh: "配置用于网页搜索与抓取的服务。"
+  webFetchOrder:
+    platforms: [web, android]
+    en: "Fetch backend order"
+    zh: "抓取后端顺序"
+  webFetchOrderDesc:
+    platforms: [web, android]
+    en: "Fetch tries backends from top to bottom until one succeeds."
+    zh: "抓取会按从上到下的顺序尝试后端，直到成功。"
+  webMoveDown:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Move {name} down"
+    zh: "下移{name}"
+  webMoveUp:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Move {name} up"
+    zh: "上移{name}"
+  webNativeDesc:
+    platforms: [web, android]
+    en: "Fetches pages directly on this device and extracts their text. No API key required."
+    zh: "直接在此设备上抓取网页并提取文本，无需 API key。"
+  webSearchOrder:
+    platforms: [web, android]
+    en: "Search backend order"
+    zh: "搜索后端顺序"
+  webSearchOrderDesc:
+    platforms: [web, android]
+    en: "Search tries backends from top to bottom until one succeeds."
+    zh: "搜索会按从上到下的顺序尝试后端，直到成功。"
   enableProvider:
     platforms: [web, android]
     en: "Enable provider"
