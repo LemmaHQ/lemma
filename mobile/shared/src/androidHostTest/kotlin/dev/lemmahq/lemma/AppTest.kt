@@ -42,7 +42,7 @@ class AppTest {
                     client
                 }
             }
-        compose.setContent { App(settings, connector, "9.9.9") }
+        compose.setContent { App(settings, connector) }
 
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertExists()
         opening.complete(Unit)
@@ -51,7 +51,6 @@ class AppTest {
         compose.onNodeWithContentDescription("Show sessions").performClick()
         compose.onNodeWithText("App settings").performClick()
         compose.onNodeWithText("Settings").assertIsDisplayed()
-        compose.onNodeWithText("Client v9.9.9").assertIsDisplayed()
 
         compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("Dark").performClick()
@@ -86,7 +85,7 @@ class AppTest {
                     client
                 }
             }
-        compose.setContent { App(settings, connector, "9.9.9") }
+        compose.setContent { App(settings, connector) }
 
         compose.onNodeWithText("The local engine could not start.").assertIsDisplayed()
         fail = false

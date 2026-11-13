@@ -36,6 +36,8 @@ import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 private val AT: Timestamp = Timestamp.newBuilder().setSeconds(12).setNanos(345_000_000).build()
 private const val AT_MILLIS = 12_345L
@@ -50,9 +52,11 @@ class ProtoMappingTest {
             formats,
             formats.map { format ->
                 val mapped = provider {
+                    hasKey = format == "openai"
                     custom = customProvider { apiFormat = apiFormat(format) }
                 }
                     .toClient()
+                if (format == "openai") assertTrue(mapped.hasKey) else assertFalse(mapped.hasKey)
                 (mapped.source as ClientCustomProvider).apiFormat
             },
         )

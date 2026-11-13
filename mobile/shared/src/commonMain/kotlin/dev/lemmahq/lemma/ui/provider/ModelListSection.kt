@@ -44,6 +44,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun ModelListSection(
     models: List<ClientModel>,
     fetching: Boolean,
+    fetchEnabled: Boolean,
     onFetch: () -> Unit,
     onAdd: (String) -> Unit,
     onRemove: (String) -> Unit,
@@ -71,7 +72,7 @@ internal fun ModelListSection(
                 text = stringResource(Res.string.provider_fetch_model_list),
                 onClick = onFetch,
                 variant = LemmaButtonVariant.Secondary,
-                enabled = !fetching,
+                enabled = fetchEnabled && !fetching,
                 icon = Res.drawable.icon_refresh_cw,
             )
             Spacer(modifier = Modifier.width(4.dp))

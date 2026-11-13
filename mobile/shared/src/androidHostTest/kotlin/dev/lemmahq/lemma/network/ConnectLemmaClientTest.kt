@@ -18,7 +18,6 @@ import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
 import dev.lemmahq.lemma.engine.ENGINE_BASE_URL
 import dev.lemmahq.lemma.engine.LocalEngine
-import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -71,11 +70,6 @@ class ConnectLemmaClientTest {
     }
 
     @Test
-    fun answersWithTheWorkspaceVersion() = runTest {
-        assertEquals(workspaceVersion(), client().getVersion())
-    }
-
-    @Test
     fun sessionsListMostRecentlyUpdatedFirst() = runTest {
         val client = client()
         val first = client.createSession()
@@ -109,7 +103,7 @@ class ConnectLemmaClientTest {
             ClientProvider(
                 id = created.id,
                 enabled = true,
-                apiKey = "sk-1",
+                hasKey = true,
                 source =
                     ClientCustomProvider(
                         identifier = "vendor",
@@ -159,6 +153,7 @@ class ConnectLemmaClientTest {
             predefined.models.map { it.id },
         )
         assertTrue(predefined.models.all { it.toolCalling })
+        assertFalse(initial.hasKey)
         assertFalse(initial.enabled)
         val rejected =
             assertFailsWith<ServiceException> {
@@ -179,7 +174,7 @@ class ConnectLemmaClientTest {
                 ),
             )
 
-        assertEquals("sk-deepseek", updated.apiKey)
+        assertTrue(updated.hasKey)
         assertTrue(updated.enabled)
         assertEquals(
             "openai",
@@ -254,10 +249,9 @@ class ConnectLemmaClientTest {
         val client = client()
         val provider = client.createCustomProvider(vendorInput("answer"))
 
-        assertEquals(listOf("answer", "hang"), client.fetchProviderModels(provider.id))
-        assertEquals(listOf("answer", "hang"), client.fetchModels("openai", vendorUrl, "sk-1", ""))
+        assertEquals(listOf("answer", "hang"), client.fetchModels(provider.id))
         assertEquals("", client.checkProvider(provider.id, "answer"))
-        assertEquals("upstream 500: boom", client.checkCustomProvider(vendorInput(), "broken"))
+        assertEquals("upstream 500: boom", client.checkProvider(provider.id, "broken"))
     }
 
     @Test
@@ -427,7 +421,7 @@ class ConnectLemmaClientTest {
                         modelsPath = "/models",
                     )
                 }
-                .copy(apiKey = "sk-2"),
+                .copy(hasKey = true),
             updated,
         )
         assertEquals(updated, unchanged)
@@ -557,12 +551,3 @@ private fun response(code: Int, contentType: String, body: String): MockResponse
     MockResponse.Builder().code(code).setHeader("Content-Type", contentType).body(body).build()
 
 private fun sse(vararg data: String): String = data.joinToString("") { "data: $it\n\n" }
-
-private fun workspaceVersion(): String {
-    val manifest = File("../../Cargo.toml").readText()
-    return Regex("""\[workspace\.package][^\[]*?version = "([^"]+)"""")
-        .find(manifest)
-        ?.groupValues
-        ?.get(1)
-        .orEmpty()
-}

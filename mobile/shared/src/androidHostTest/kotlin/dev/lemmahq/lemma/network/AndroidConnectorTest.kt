@@ -5,7 +5,6 @@ import dev.lemmahq.lemma.client.ServiceFailure
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -18,11 +17,11 @@ class AndroidConnectorTest {
     fun theLocalEngineOpensOnceForEveryClient() = runTest {
         val connector = AndroidConnector(dataDir.newFolder().path)
 
-        val first = connector.open().getVersion()
-        val second = connector.open().getVersion()
+        val first = connector.open()
+        val second = connector.open()
 
-        assertTrue(first.isNotBlank())
-        assertEquals(first, second)
+        assertEquals(emptyList(), first.listSessions())
+        assertEquals(emptyList(), second.listSessions())
     }
 
     @Test

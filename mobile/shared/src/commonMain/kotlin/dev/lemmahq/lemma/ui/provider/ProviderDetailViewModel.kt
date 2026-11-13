@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.lemmahq.lemma.client.ClientCustomProvider
-import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientProvider
@@ -31,7 +30,7 @@ internal class ProviderDetailViewModel(
     val custom: ClientCustomProvider
         get() = provider.source as ClientCustomProvider
 
-    var apiKey by mutableStateOf(provider.apiKey)
+    var apiKey by mutableStateOf("")
     var baseUrl by mutableStateOf(custom.baseUrl)
     var apiPath by mutableStateOf(custom.apiPath)
 
@@ -81,6 +80,7 @@ internal class ProviderDetailViewModel(
         viewModelScope.launch {
             try {
                 show(client.updateCustomProvider(provider.id, connectionPatch()))
+                checked = null
                 discardEdits()
             } catch (e: ServiceException) {
                 error = errorText(e.failure)
@@ -91,7 +91,7 @@ internal class ProviderDetailViewModel(
     }
 
     fun discardEdits() {
-        apiKey = provider.apiKey
+        apiKey = ""
         baseUrl = custom.baseUrl
         apiPath = custom.apiPath
         error = null
@@ -162,21 +162,12 @@ internal class ProviderDetailViewModel(
     }
 
     fun fetchModels() {
+        if (dirty || fetching) return
         fetching = true
         error = null
         viewModelScope.launch {
             try {
-                fetched =
-                    if (dirty) {
-                        client.fetchModels(
-                            custom.apiFormat,
-                            baseUrl.trim(),
-                            apiKey.trim(),
-                            custom.modelsPath,
-                        )
-                    } else {
-                        client.fetchProviderModels(provider.id)
-                    }
+                fetched = client.fetchModels(provider.id)
             } catch (e: ServiceException) {
                 error = errorText(e.failure)
             } finally {
@@ -196,18 +187,14 @@ internal class ProviderDetailViewModel(
     }
 
     fun check() {
+        if (dirty) return
         val model = checkModel ?: return
         val key = checkKey()
         checked = key to CheckResult.Checking
         viewModelScope.launch {
             val result =
                 try {
-                    val failure =
-                        if (dirty) {
-                            client.checkCustomProvider(editedConnection(), model)
-                        } else {
-                            client.checkProvider(provider.id, model)
-                        }
+                    val failure = client.checkProvider(provider.id, model)
                     if (failure.isEmpty()) CheckResult.Passed
                     else CheckResult.Failed(UiText.Raw(failure))
                 } catch (e: ServiceException) {
@@ -244,25 +231,14 @@ internal class ProviderDetailViewModel(
 
     private fun connectionPatch(): ClientCustomProviderPatch =
         ClientCustomProviderPatch(
-            apiKey = apiKey.trim().takeIf { it != provider.apiKey },
+            apiKey = apiKey.trim().takeIf { it.isNotEmpty() },
             baseUrl = baseUrl.trim().takeIf { it != custom.baseUrl },
             apiPath = apiPath.trim().takeIf { it != custom.apiPath },
-        )
-
-    private fun editedConnection(): ClientCustomProviderInput =
-        ClientCustomProviderInput(
-            apiFormat = custom.apiFormat,
-            identifier = custom.identifier,
-            name = custom.name,
-            baseUrl = baseUrl.trim(),
-            apiKey = apiKey.trim(),
-            apiPath = apiPath.trim(),
-            modelsPath = custom.modelsPath,
-            models = custom.models,
         )
 
     private fun draftName(): String? = nameDraft?.let { it.trim().ifEmpty { custom.identifier } }
 
     private fun checkKey(): String =
-        listOf(apiKey.trim(), baseUrl.trim(), apiPath.trim(), checkModel).joinToString("\n")
+        listOf(dirty, provider.hasKey, custom.baseUrl, custom.apiPath, checkModel)
+            .joinToString("\n")
 }

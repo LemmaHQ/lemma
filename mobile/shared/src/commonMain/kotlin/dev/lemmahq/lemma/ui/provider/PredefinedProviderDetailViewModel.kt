@@ -28,7 +28,7 @@ internal class PredefinedProviderDetailViewModel(
     val predefined: ClientPredefinedProvider
         get() = provider.source as ClientPredefinedProvider
 
-    var apiKey by mutableStateOf(provider.apiKey)
+    var apiKey by mutableStateOf("")
 
     var saving by mutableStateOf(false)
         private set
@@ -39,10 +39,10 @@ internal class PredefinedProviderDetailViewModel(
     var pickedCheckModel by mutableStateOf<String?>(null)
 
     val dirty: Boolean
-        get() = apiKey.trim() != provider.apiKey
+        get() = apiKey.isNotBlank()
 
     val canEnable: Boolean
-        get() = provider.apiKey.isNotBlank()
+        get() = provider.hasKey
 
     val checkModel: String?
         get() =
@@ -64,6 +64,7 @@ internal class PredefinedProviderDetailViewModel(
                         ClientPredefinedProviderPatch(apiKey = apiKey.trim()),
                     )
                 )
+                checked = null
                 discardEdits()
             } catch (e: ServiceException) {
                 error = errorText(e.failure)
@@ -74,7 +75,7 @@ internal class PredefinedProviderDetailViewModel(
     }
 
     fun discardEdits() {
-        apiKey = provider.apiKey
+        apiKey = ""
         error = null
     }
 
@@ -96,6 +97,7 @@ internal class PredefinedProviderDetailViewModel(
     }
 
     fun check() {
+        if (dirty) return
         val model = checkModel ?: return
         val key = checkKey()
         checked = key to CheckResult.Checking
@@ -132,5 +134,6 @@ internal class PredefinedProviderDetailViewModel(
         }
     }
 
-    private fun checkKey(): String = listOf(provider.apiKey, checkModel).joinToString("\n")
+    private fun checkKey(): String =
+        listOf(dirty, provider.hasKey, predefined.defaultApiFormat, checkModel).joinToString("\n")
 }

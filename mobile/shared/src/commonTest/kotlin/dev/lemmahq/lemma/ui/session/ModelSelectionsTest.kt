@@ -40,7 +40,7 @@ class ModelSelectionsTest {
                 "deepseek-flash",
                 "deepseek-v4-pro",
                 enabled = true,
-                apiKey = "sk-1",
+                hasKey = true,
             )
 
         assertEquals(

@@ -8,7 +8,6 @@ import dev.lemmahq.gen.lemma.v1.createSessionRequest
 import dev.lemmahq.gen.lemma.v1.deleteCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.deleteSessionRequest
 import dev.lemmahq.gen.lemma.v1.fetchModelsRequest
-import dev.lemmahq.gen.lemma.v1.getVersionRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
 import dev.lemmahq.gen.lemma.v1.listProvidersRequest
 import dev.lemmahq.gen.lemma.v1.listSessionsRequest
@@ -35,11 +34,6 @@ import kotlinx.coroutines.flow.flow
 
 /** [LemmaClient] over the Connect clients of [rpc]. */
 class ConnectLemmaClient(private val rpc: LemmaRpcClient) : LemmaClient {
-
-    override suspend fun getVersion(): String = call {
-        rpc.system.getVersion(getVersionRequest {}, emptyMap())
-    }
-        .version
 
     override suspend fun listSessions(): List<ClientSession> = call {
         rpc.session.listSessions(listSessionsRequest {}, emptyMap())
@@ -125,31 +119,13 @@ class ConnectLemmaClient(private val rpc: LemmaRpcClient) : LemmaClient {
         }
     }
 
-    override suspend fun fetchProviderModels(id: String): List<String> = call {
+    override suspend fun fetchModels(id: String): List<String> = call {
         rpc.provider.fetchModels(fetchModelsRequest { this.id = id }, emptyMap())
     }
         .modelsList
 
-    override suspend fun fetchModels(
-        apiFormat: String,
-        baseUrl: String,
-        apiKey: String,
-        modelsPath: String,
-    ): List<String> {
-        val request = modelsFetchRequest(apiFormat, baseUrl, apiKey, modelsPath)
-        return call { rpc.provider.fetchModels(request, emptyMap()) }.modelsList
-    }
-
     override suspend fun checkProvider(id: String, model: String): String {
         val request = storedProviderCheckRequest(id, model)
-        return call { rpc.provider.checkProvider(request, emptyMap()) }.error
-    }
-
-    override suspend fun checkCustomProvider(
-        connection: ClientCustomProviderInput,
-        model: String,
-    ): String {
-        val request = customProviderCheckRequest(connection, model)
         return call { rpc.provider.checkProvider(request, emptyMap()) }.error
     }
 

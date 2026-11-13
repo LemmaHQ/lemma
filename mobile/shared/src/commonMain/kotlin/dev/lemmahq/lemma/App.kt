@@ -45,15 +45,12 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_retry
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * The app over one [settings] store and one [connector] for the whole process; [appVersion] is the
- * release of this app.
- */
+/** The app over one [settings] store and one [connector] for the whole process. */
 @Composable
+@Suppress("ViewModelInjection")
 fun App(
     settings: SettingsRepository,
     connector: Connector,
-    appVersion: String,
     modifier: Modifier = Modifier,
 ) {
     val appViewModel = viewModel { AppViewModel(connector) }
@@ -83,7 +80,7 @@ fun App(
                         .background(LemmaTheme.colors.background)
                         .safeDrawingPadding(),
             ) {
-                appRoutes(navController, appViewModel, settings, appVersion)
+                appRoutes(navController, appViewModel, settings)
             }
         }
     }
@@ -93,7 +90,6 @@ private fun NavGraphBuilder.appRoutes(
     navController: NavController,
     appViewModel: AppViewModel,
     settings: SettingsRepository,
-    appVersion: String,
 ) {
     composable<OpeningRoute> { LoadingIndicator() }
     composable<EngineFailedRoute> {
@@ -111,7 +107,6 @@ private fun NavGraphBuilder.appRoutes(
     }
     composable<SettingsRoute> {
         SettingsScreen(
-            appVersion = appVersion,
             onAppearance = { navController.navigate(AppearanceRoute) },
             onProviders = { navController.navigate(ProviderGraph) },
             onWebProviders = { navController.navigate(WebProviderRoute) },

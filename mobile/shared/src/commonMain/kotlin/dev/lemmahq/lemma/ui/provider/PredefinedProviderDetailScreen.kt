@@ -25,6 +25,7 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
 import lemma.mobile.shared.generated.resources.provider_api_key_placeholder
+import lemma.mobile.shared.generated.resources.provider_api_key_saved_desc
 import lemma.mobile.shared.generated.resources.provider_default_api_format
 import lemma.mobile.shared.generated.resources.provider_default_api_format_desc
 import lemma.mobile.shared.generated.resources.provider_enable_needs_key
@@ -61,7 +62,11 @@ internal fun PredefinedProviderDetailScreen(
         ) {
             LemmaField(
                 label = stringResource(Res.string.provider_api_key),
-                description = stringResource(Res.string.provider_api_key_desc),
+                description =
+                    stringResource(
+                        if (viewModel.provider.hasKey) Res.string.provider_api_key_saved_desc
+                        else Res.string.provider_api_key_desc
+                    ),
             ) {
                 LemmaPasswordField(
                     value = viewModel.apiKey,
@@ -91,7 +96,7 @@ internal fun PredefinedProviderDetailScreen(
                 models = predefined.models.map { it.id },
                 model = viewModel.checkModel,
                 result = viewModel.checkResult,
-                enabled = true,
+                enabled = !viewModel.dirty && viewModel.provider.hasKey,
                 onPickModel = { viewModel.pickedCheckModel = it },
                 onCheck = viewModel::check,
             )

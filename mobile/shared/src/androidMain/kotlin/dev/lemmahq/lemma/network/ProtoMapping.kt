@@ -30,7 +30,7 @@ internal fun Provider.toClient(): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        apiKey = apiKey,
+        hasKey = hasKey,
         source =
             when {
                 hasPredefined() ->

@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.Flow
  */
 interface LemmaClient {
 
-    /** Release version of the local engine that answers. */
-    suspend fun getVersion(): String
-
     /** Lists the sessions, most recently updated first. */
     suspend fun listSessions(): List<ClientSession>
 
@@ -42,21 +39,10 @@ interface LemmaClient {
     suspend fun deleteCustomProvider(id: String)
 
     /** Fetches the live model list with a stored custom provider's credentials. */
-    suspend fun fetchProviderModels(id: String): List<String>
-
-    /** Fetches the live model list with ad-hoc custom connection details. */
-    suspend fun fetchModels(
-        apiFormat: String,
-        baseUrl: String,
-        apiKey: String,
-        modelsPath: String,
-    ): List<String>
+    suspend fun fetchModels(id: String): List<String>
 
     /** Sends a test request for [model] through the stored provider [id]. */
     suspend fun checkProvider(id: String, model: String): String
-
-    /** Sends a test request for [model] through ad-hoc custom connection details. */
-    suspend fun checkCustomProvider(connection: ClientCustomProviderInput, model: String): String
 
     suspend fun createSession(): ClientSession
 

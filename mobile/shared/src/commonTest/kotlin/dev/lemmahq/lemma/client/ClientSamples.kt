@@ -5,12 +5,13 @@ fun sampleProvider(
     id: String,
     vararg models: String,
     enabled: Boolean = true,
+    hasKey: Boolean = true,
     name: String = id,
 ): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        apiKey = "sk-1",
+        hasKey = hasKey,
         source =
             ClientCustomProvider(
                 identifier = id,
@@ -28,12 +29,12 @@ fun samplePredefinedProvider(
     id: String,
     vararg models: String,
     enabled: Boolean = false,
-    apiKey: String = "",
+    hasKey: Boolean = false,
 ): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        apiKey = apiKey,
+        hasKey = hasKey,
         source =
             ClientPredefinedProvider(
                 identifier = id,

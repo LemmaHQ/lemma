@@ -57,14 +57,13 @@ class PredefinedProviderDetailViewModelTest {
         assertFalse(viewModel.provider.enabled)
         assertEquals(emptyList(), client.calls)
 
-        client.onUpdatePredefinedProvider = { _, patch ->
-            stored.copy(apiKey = patch.apiKey ?: stored.apiKey)
-        }
+        client.onUpdatePredefinedProvider = { _, _ -> stored.copy(hasKey = true) }
         viewModel.save()
         advanceUntilIdle()
 
         assertTrue(viewModel.canEnable)
-        assertEquals("sk-draft", viewModel.provider.apiKey)
+        assertTrue(viewModel.provider.hasKey)
+        assertEquals("", viewModel.apiKey)
         assertFalse(viewModel.dirty)
         assertEquals(
             listOf(
@@ -79,20 +78,21 @@ class PredefinedProviderDetailViewModelTest {
     }
 
     @Test
-    fun discardingRestoresTheSavedKey() = runTest {
-        val viewModel = viewModel(stored.copy(apiKey = "sk-saved"))
+    fun discardingClearsTheDraftKey() = runTest {
+        val viewModel = viewModel(stored.copy(hasKey = true))
+        assertEquals("", viewModel.apiKey)
 
         viewModel.apiKey = " sk-other "
         assertTrue(viewModel.dirty)
         viewModel.discardEdits()
 
-        assertEquals("sk-saved", viewModel.apiKey)
+        assertEquals("", viewModel.apiKey)
         assertFalse(viewModel.dirty)
     }
 
     @Test
     fun defaultFormatUsesTheServedOptionsAndPersistsImmediately() = runTest {
-        val viewModel = viewModel(stored.copy(apiKey = "sk-saved"))
+        val viewModel = viewModel(stored.copy(hasKey = true))
 
         assertEquals(listOf("anthropic", "openai"), viewModel.predefined.apiFormats)
         viewModel.setDefaultApiFormat("openai")
@@ -116,7 +116,7 @@ class PredefinedProviderDetailViewModelTest {
         client.onUpdatePredefinedProvider = { _, _ ->
             throw ServiceException(ServiceFailure.Network)
         }
-        val viewModel = viewModel(stored.copy(apiKey = "sk-saved", enabled = true))
+        val viewModel = viewModel(stored.copy(hasKey = true, enabled = true))
 
         viewModel.setDefaultApiFormat("openai")
         advanceUntilIdle()
@@ -131,7 +131,7 @@ class PredefinedProviderDetailViewModelTest {
     @Test
     fun theConnectivityCheckUsesTheStoredProviderAndPickedModel() = runTest {
         client.onCheckProvider = { _, _ -> "upstream 401" }
-        val viewModel = viewModel(stored.copy(apiKey = "sk-saved", enabled = true))
+        val viewModel = viewModel(stored.copy(hasKey = true, enabled = true))
 
         viewModel.pickedCheckModel = "deepseek-v4-pro"
         viewModel.check()
@@ -158,6 +158,12 @@ class PredefinedProviderDetailViewModelTest {
         assertEquals(errorText(ServiceFailure.Timeout), viewModel.error)
         assertTrue(viewModel.dirty)
 
+        viewModel.check()
+        advanceUntilIdle()
+        assertNull(viewModel.checkResult)
+        assertEquals(1, client.calls.size)
+
+        viewModel.discardEdits()
         viewModel.check()
         advanceUntilIdle()
         assertEquals(CheckResult.Failed(errorText(ServiceFailure.Network)), viewModel.checkResult)
@@ -187,7 +193,7 @@ class PredefinedProviderDetailViewModelTest {
         viewModel.save()
         viewModel.save()
         advanceUntilIdle()
-        reply.complete(stored.copy(apiKey = "sk-draft"))
+        reply.complete(stored.copy(hasKey = true))
         advanceUntilIdle()
 
         assertEquals(listOf("updatePredefinedProvider"), client.calls.map { it.name })
@@ -199,12 +205,10 @@ class PredefinedProviderDetailViewModelTest {
     fun aCheckResultBelongsToTheKeyAndModelItRanWith() = runTest {
         val replies = mutableMapOf<String, CompletableDeferred<String>>()
         client.onCheckProvider = { _, model -> replies.getValue(model).await() }
-        client.onUpdatePredefinedProvider = { _, patch ->
-            stored.copy(apiKey = patch.apiKey.orEmpty())
-        }
+        client.onUpdatePredefinedProvider = { _, _ -> stored.copy(hasKey = true) }
         replies["deepseek-flash"] = CompletableDeferred()
         replies["deepseek-v4-pro"] = CompletableDeferred()
-        val viewModel = viewModel(stored.copy(apiKey = "sk-saved"))
+        val viewModel = viewModel(stored.copy(hasKey = true))
 
         viewModel.check()
         advanceUntilIdle()
@@ -217,6 +221,7 @@ class PredefinedProviderDetailViewModelTest {
         assertEquals(CheckResult.Passed, viewModel.checkResult)
 
         viewModel.apiKey = "sk-rotated"
+        assertNull(viewModel.checkResult)
         viewModel.save()
         advanceUntilIdle()
         assertNull(viewModel.checkResult)

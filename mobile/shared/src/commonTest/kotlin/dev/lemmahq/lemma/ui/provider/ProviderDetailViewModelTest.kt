@@ -1,7 +1,6 @@
 package dev.lemmahq.lemma.ui.provider
 
 import dev.lemmahq.lemma.client.ClientCustomProvider
-import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientProvider
@@ -50,11 +49,17 @@ class ProviderDetailViewModelTest {
         ProviderDetailViewModel(client, stored, { changes += it }, { deletions += it })
 
     @Test
-    fun savingSendsOnlyTheChangedConnectionFieldsAndShowsTheStoredValues() = runTest {
-        client.onUpdateCustomProvider = { _, _ ->
-            stored.withCustom { copy(baseUrl = "https://proxy.example.com/v1") }
+    fun savingSendsOnlyTheChangedConnectionFieldsAndPreservesBlankKeys() = runTest {
+        client.onUpdateCustomProvider = { _, patch ->
+            stored.copy(hasKey = stored.hasKey || patch.apiKey != null).withCustom {
+                copy(baseUrl = patch.baseUrl ?: baseUrl)
+            }
         }
         val viewModel = viewModel()
+        assertEquals("", viewModel.apiKey)
+
+        viewModel.apiKey = "   "
+        assertFalse(viewModel.dirty)
 
         viewModel.baseUrl = " https://proxy.example.com/v1/ "
         assertTrue(viewModel.dirty)
@@ -63,9 +68,19 @@ class ProviderDetailViewModelTest {
 
         val patch = ClientCustomProviderPatch(baseUrl = "https://proxy.example.com/v1/")
         assertEquals(listOf(Call("updateCustomProvider", "openai", patch)), client.calls)
-        assertEquals("https://proxy.example.com/v1", viewModel.baseUrl)
+        assertEquals("https://proxy.example.com/v1/", viewModel.baseUrl)
         assertFalse(viewModel.dirty)
         assertEquals(listOf(viewModel.provider), changes)
+
+        viewModel.apiKey = " sk-rotated "
+        assertTrue(viewModel.dirty)
+        viewModel.save()
+        advanceUntilIdle()
+
+        val keyPatch = ClientCustomProviderPatch(apiKey = "sk-rotated")
+        assertEquals(Call("updateCustomProvider", "openai", keyPatch), client.calls.last())
+        assertEquals("", viewModel.apiKey)
+        assertFalse(viewModel.dirty)
     }
 
     @Test
@@ -82,14 +97,14 @@ class ProviderDetailViewModelTest {
     }
 
     @Test
-    fun discardingPutsTheStoredValuesBack() = runTest {
+    fun discardingClearsDraftKeyAndRestoresConnectionFields() = runTest {
         val viewModel = viewModel()
         viewModel.apiKey = "sk-2"
         viewModel.apiPath = "/v2/chat"
 
         viewModel.discardEdits()
 
-        assertEquals("sk-1", viewModel.apiKey)
+        assertEquals("", viewModel.apiKey)
         assertEquals("", viewModel.apiPath)
         assertFalse(viewModel.dirty)
     }
@@ -177,27 +192,26 @@ class ProviderDetailViewModelTest {
     }
 
     @Test
-    fun fetchingUsesTheStoredProviderUntilTheConnectionIsEdited() = runTest {
-        client.onFetchProviderModels = { listOf("gpt-4o", "o3") }
-        client.onFetchModels = { _, _, _, _ -> listOf("claude") }
+    fun fetchingUsesTheStoredProviderAndIsGatedWhileDirtyOrFetching() = runTest {
+        val reply = CompletableDeferred<List<String>>()
+        client.onFetchModels = { reply.await() }
         val viewModel = viewModel()
-
-        viewModel.fetchModels()
-        advanceUntilIdle()
-        assertEquals(listOf("gpt-4o", "o3"), viewModel.fetched)
 
         viewModel.apiKey = " sk-2 "
         viewModel.fetchModels()
         advanceUntilIdle()
+        assertEquals(emptyList(), client.calls)
+        assertNull(viewModel.fetched)
 
-        assertEquals(listOf("claude"), viewModel.fetched)
-        assertEquals(
-            listOf(
-                Call("fetchProviderModels", "openai"),
-                Call("fetchModels", "openai", "https://api.example.com/v1", "sk-2", ""),
-            ),
-            client.calls,
-        )
+        viewModel.discardEdits()
+        viewModel.fetchModels()
+        viewModel.fetchModels()
+        advanceUntilIdle()
+        reply.complete(listOf("gpt-4o", "o3"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("gpt-4o", "o3"), viewModel.fetched)
+        assertEquals(listOf(Call("fetchModels", "openai")), client.calls)
     }
 
     @Test
@@ -213,8 +227,8 @@ class ProviderDetailViewModelTest {
     }
 
     @Test
-    fun theCheckUsesTheStoredProviderUntilTheConnectionIsEdited() = runTest {
-        client.onCheckCustomProvider = { _, _ -> "upstream 401" }
+    fun theCheckUsesTheStoredProviderAndIsGatedWhileDirty() = runTest {
+        client.onCheckProvider = { _, model -> if (model == "gpt-4o") "" else "upstream 401" }
         val viewModel = viewModel()
 
         viewModel.check()
@@ -226,18 +240,18 @@ class ProviderDetailViewModelTest {
         viewModel.pickedCheckModel = "gpt-4o-mini"
         viewModel.check()
         advanceUntilIdle()
+        assertEquals(listOf(Call("checkProvider", "openai", "gpt-4o")), client.calls)
 
+        viewModel.discardEdits()
+        viewModel.check()
+        advanceUntilIdle()
         assertEquals(CheckResult.Failed(UiText.Raw("upstream 401")), viewModel.checkResult)
-        val edited =
-            ClientCustomProviderInput(
-                apiFormat = "openai",
-                identifier = "openai",
-                name = "openai",
-                baseUrl = "https://api.example.com/v1",
-                apiKey = "sk-wrong",
-                models = stored.custom.models,
-            )
-        assertEquals(Call("checkCustomProvider", edited, "gpt-4o-mini"), client.calls.last())
+        assertEquals(Call("checkProvider", "openai", "gpt-4o-mini"), client.calls.last())
+
+        viewModel.apiKey = "sk-rotated"
+        viewModel.save()
+        advanceUntilIdle()
+        assertNull(viewModel.checkResult)
     }
 
     @Test
@@ -296,7 +310,7 @@ class ProviderDetailViewModelTest {
     @Test
     fun failedRequestsShowTheirReason() = runTest {
         client.onUpdateCustomProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
-        client.onFetchProviderModels = { throw ServiceException(ServiceFailure.Timeout) }
+        client.onFetchModels = { throw ServiceException(ServiceFailure.Timeout) }
         client.onCheckProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         val viewModel = viewModel()
 
@@ -326,7 +340,7 @@ class ProviderDetailViewModelTest {
 
     @Test
     fun closedDialogsKeepNothing() = runTest {
-        client.onFetchProviderModels = { listOf("o3") }
+        client.onFetchModels = { listOf("o3") }
         val viewModel = viewModel()
 
         viewModel.openSettings()
@@ -339,7 +353,7 @@ class ProviderDetailViewModelTest {
 
         assertFalse(viewModel.nameChanged)
         assertNull(viewModel.fetched)
-        assertEquals(listOf(Call("fetchProviderModels", "openai")), client.calls)
+        assertEquals(listOf(Call("fetchModels", "openai")), client.calls)
     }
 
     @Test
@@ -363,13 +377,14 @@ class ProviderDetailViewModelTest {
     fun onlyTheLatestCheckReports() = runTest {
         val first = CompletableDeferred<String>()
         val second = CompletableDeferred<String>()
-        client.onCheckProvider = { _, _ -> first.await() }
-        client.onCheckCustomProvider = { _, _ -> second.await() }
+        client.onCheckProvider = { _, model ->
+            if (model == "gpt-4o") first.await() else second.await()
+        }
         val viewModel = viewModel()
 
         viewModel.check()
         advanceUntilIdle()
-        viewModel.apiKey = "sk-2"
+        viewModel.pickedCheckModel = "gpt-4o-mini"
         viewModel.check()
         advanceUntilIdle()
         first.complete("")

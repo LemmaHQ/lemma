@@ -29,11 +29,7 @@ class MainActivity : ComponentActivity() {
                         SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
                 )
             }
-            App(
-                settings = application.settings,
-                connector = application.connector,
-                appVersion = BuildConfig.VERSION_NAME,
-            )
+            App(settings = application.settings, connector = application.connector)
         }
     }
 }

@@ -7,7 +7,6 @@ import com.connectrpc.okhttp.ConnectOkHttpClient
 import dev.lemmahq.gen.lemma.v1.AgentServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
 import dev.lemmahq.gen.lemma.v1.SessionServiceClient
-import dev.lemmahq.gen.lemma.v1.SystemServiceClient
 import kotlinx.coroutines.Dispatchers
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -36,5 +35,4 @@ class LemmaRpcClient(host: String, transport: Interceptor) {
     val agent = AgentServiceClient(protocolClient)
     val session = SessionServiceClient(protocolClient)
     val provider = ProviderServiceClient(protocolClient)
-    val system = SystemServiceClient(protocolClient)
 }

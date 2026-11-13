@@ -123,18 +123,20 @@ internal fun ProviderDetailScreen(
                 onBaseUrlChange = { viewModel.baseUrl = it },
                 apiPath = viewModel.apiPath,
                 onApiPathChange = { viewModel.apiPath = it },
+                hasKey = viewModel.provider.hasKey,
             )
             ConnectionCheckField(
                 models = custom.models.map { it.id },
                 model = viewModel.checkModel,
                 result = viewModel.checkResult,
-                enabled = viewModel.baseUrlValid,
+                enabled = !viewModel.dirty && viewModel.baseUrlValid,
                 onPickModel = { viewModel.pickedCheckModel = it },
                 onCheck = viewModel::check,
             )
             ModelListSection(
                 models = custom.models,
                 fetching = viewModel.fetching,
+                fetchEnabled = !viewModel.dirty,
                 onFetch = viewModel::fetchModels,
                 onAdd = viewModel::addModel,
                 onRemove = viewModel::removeModel,

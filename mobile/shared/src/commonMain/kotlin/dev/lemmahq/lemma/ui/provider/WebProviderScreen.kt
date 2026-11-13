@@ -28,10 +28,10 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
 import lemma.mobile.shared.generated.resources.provider_api_key_placeholder
+import lemma.mobile.shared.generated.resources.provider_api_key_saved_desc
 import lemma.mobile.shared.generated.resources.provider_enable_needs_key
 import lemma.mobile.shared.generated.resources.provider_enable_web_provider
 import lemma.mobile.shared.generated.resources.provider_unsaved_changes
-import lemma.mobile.shared.generated.resources.provider_web_api_key_saved_desc
 import lemma.mobile.shared.generated.resources.provider_web_backends
 import lemma.mobile.shared.generated.resources.provider_web_backends_desc
 import lemma.mobile.shared.generated.resources.provider_web_fetch_order
@@ -150,7 +150,7 @@ private fun WebProviderBackend(
                 label = stringResource(Res.string.provider_api_key),
                 description =
                     stringResource(
-                        if (provider.hasKey) Res.string.provider_web_api_key_saved_desc
+                        if (provider.hasKey) Res.string.provider_api_key_saved_desc
                         else Res.string.provider_api_key_desc
                     ),
                 modifier = Modifier.padding(horizontal = 16.dp),

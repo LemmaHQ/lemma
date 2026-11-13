@@ -38,7 +38,7 @@ class LocalEngineTest {
     fun aRequestWithAContentTypeHeaderIsAnsweredWithItsBody() {
         val request =
             Request.Builder()
-                .url("$ENGINE_BASE_URL/lemma.v1.SystemService/GetVersion")
+                .url("$ENGINE_BASE_URL/lemma.v1.ProviderService/ListProviders")
                 .header("Content-Type", "application/json")
                 .post("{}".toRequestBody("application/json".toMediaType()))
                 .build()
@@ -46,7 +46,7 @@ class LocalEngineTest {
         client.newCall(request).execute().use { response ->
             assertEquals(200, response.code)
             assertEquals("application/json".toMediaType(), response.body.contentType())
-            assertTrue(response.body.string().startsWith("""{"version":"""))
+            assertTrue(response.body.string().startsWith("""{"providers":["""))
         }
     }
 

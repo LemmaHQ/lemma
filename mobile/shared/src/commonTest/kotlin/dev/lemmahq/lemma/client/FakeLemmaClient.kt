@@ -14,7 +14,6 @@ class FakeLemmaClient : LemmaClient {
 
     val calls = mutableListOf<Call>()
 
-    var onGetVersion: suspend () -> String = { "1.0.0" }
     var onListSessions: suspend () -> List<ClientSession> = { emptyList() }
     var onRenameSession: suspend (id: String, title: String) -> ClientSession = { id, title ->
         ClientSession(id, title, updatedAt = 0)
@@ -46,20 +45,8 @@ class FakeLemmaClient : LemmaClient {
             emptyList()
         }
     var onDeleteCustomProvider: suspend (id: String) -> Unit = {}
-    var onFetchProviderModels: suspend (id: String) -> List<String> = { emptyList() }
-    var onFetchModels:
-        suspend (apiFormat: String, baseUrl: String, apiKey: String, modelsPath: String) -> List<
-                String
-            > =
-        { _, _, _, _ ->
-            emptyList()
-        }
+    var onFetchModels: suspend (id: String) -> List<String> = { emptyList() }
     var onCheckProvider: suspend (id: String, model: String) -> String = { _, _ -> "" }
-    var onCheckCustomProvider:
-        suspend (connection: ClientCustomProviderInput, model: String) -> String =
-        { _, _ ->
-            ""
-        }
     var onCreateSession: suspend () -> ClientSession = {
         ClientSession("session-${calls.count { it.name == "createSession" }}", "", updatedAt = 0)
     }
@@ -78,11 +65,6 @@ class FakeLemmaClient : LemmaClient {
         flow { throw ServiceException(ServiceFailure.TurnNotRunning) }
     }
     var onAbortMessage: suspend (messageId: String) -> Unit = {}
-
-    override suspend fun getVersion(): String {
-        calls += Call("getVersion")
-        return onGetVersion()
-    }
 
     override suspend fun listSessions(): List<ClientSession> {
         calls += Call("listSessions")
@@ -151,32 +133,14 @@ class FakeLemmaClient : LemmaClient {
         onDeleteCustomProvider(id)
     }
 
-    override suspend fun fetchProviderModels(id: String): List<String> {
-        calls += Call("fetchProviderModels", id)
-        return onFetchProviderModels(id)
-    }
-
-    override suspend fun fetchModels(
-        apiFormat: String,
-        baseUrl: String,
-        apiKey: String,
-        modelsPath: String,
-    ): List<String> {
-        calls += Call("fetchModels", apiFormat, baseUrl, apiKey, modelsPath)
-        return onFetchModels(apiFormat, baseUrl, apiKey, modelsPath)
+    override suspend fun fetchModels(id: String): List<String> {
+        calls += Call("fetchModels", id)
+        return onFetchModels(id)
     }
 
     override suspend fun checkProvider(id: String, model: String): String {
         calls += Call("checkProvider", id, model)
         return onCheckProvider(id, model)
-    }
-
-    override suspend fun checkCustomProvider(
-        connection: ClientCustomProviderInput,
-        model: String,
-    ): String {
-        calls += Call("checkCustomProvider", connection, model)
-        return onCheckCustomProvider(connection, model)
     }
 
     override suspend fun createSession(): ClientSession {
