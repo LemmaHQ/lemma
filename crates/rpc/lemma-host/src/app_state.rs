@@ -34,7 +34,8 @@ impl AppState {
     /// directory.
     #[must_use]
     pub fn new(db: DatabaseConnection, secrets: Secrets, workspaces_dir: Option<PathBuf>) -> Self {
-        let connector = HttpConnector::new(ReqwestTransport::new());
+        let transport = ReqwestTransport::new();
+        let connector = HttpConnector::new(transport.clone());
         let provider_service = Arc::new(ProviderService::new(
             db.clone(),
             secrets.secret_key,
@@ -46,6 +47,7 @@ impl AppState {
             session_service.clone(),
             Arc::clone(&provider_service),
             workspaces_dir,
+            Some(transport),
         );
         Self {
             auth: AuthRpc::new(db, secrets.jwt_secret.clone()),

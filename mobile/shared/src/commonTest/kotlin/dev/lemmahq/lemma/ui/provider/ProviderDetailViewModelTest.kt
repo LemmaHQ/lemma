@@ -1,8 +1,10 @@
 package dev.lemmahq.lemma.ui.provider
 
+import dev.lemmahq.lemma.client.ClientCustomProvider
+import dev.lemmahq.lemma.client.ClientCustomProviderInput
+import dev.lemmahq.lemma.client.ClientCustomProviderPatch
+import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderInput
-import dev.lemmahq.lemma.client.ClientProviderPatch
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.FakeLemmaClient.Call
 import dev.lemmahq.lemma.client.ServiceException
@@ -49,7 +51,9 @@ class ProviderDetailViewModelTest {
 
     @Test
     fun savingSendsOnlyTheChangedConnectionFieldsAndShowsTheStoredValues() = runTest {
-        client.onUpdateProvider = { _, _ -> stored.copy(baseUrl = "https://proxy.example.com/v1") }
+        client.onUpdateCustomProvider = { _, _ ->
+            stored.withCustom { copy(baseUrl = "https://proxy.example.com/v1") }
+        }
         val viewModel = viewModel()
 
         viewModel.baseUrl = " https://proxy.example.com/v1/ "
@@ -57,8 +61,8 @@ class ProviderDetailViewModelTest {
         viewModel.save()
         advanceUntilIdle()
 
-        val patch = ClientProviderPatch(baseUrl = "https://proxy.example.com/v1/")
-        assertEquals(listOf(Call("updateProvider", "openai", patch)), client.calls)
+        val patch = ClientCustomProviderPatch(baseUrl = "https://proxy.example.com/v1/")
+        assertEquals(listOf(Call("updateCustomProvider", "openai", patch)), client.calls)
         assertEquals("https://proxy.example.com/v1", viewModel.baseUrl)
         assertFalse(viewModel.dirty)
         assertEquals(listOf(viewModel.provider), changes)
@@ -93,7 +97,7 @@ class ProviderDetailViewModelTest {
     @Test
     fun aRejectedToggleRevertsTheEnabledFlag() = runTest {
         val gate = CompletableDeferred<Unit>()
-        client.onUpdateProvider = { _, _ ->
+        client.onUpdateCustomProvider = { _, _ ->
             gate.await()
             throw ServiceException(ServiceFailure.Network)
         }
@@ -111,7 +115,7 @@ class ProviderDetailViewModelTest {
     }
 
     @Test
-    fun modelsAreAddedFirstOnceAndRemovedAtOnce() = runTest {
+    fun modelsAreAddedFirstOnceWithToolCallingAndRemovedAtOnce() = runTest {
         val viewModel = viewModel()
 
         viewModel.addModel(" o3 ")
@@ -120,22 +124,56 @@ class ProviderDetailViewModelTest {
         viewModel.removeModel("gpt-4o-mini")
         advanceUntilIdle()
 
-        assertEquals(listOf("o3", "gpt-4o"), viewModel.provider.models)
+        assertEquals(listOf("o3", "gpt-4o"), viewModel.custom.models.map { it.id })
         assertEquals(
             listOf(
                 Call(
-                    "updateProvider",
+                    "updateCustomProvider",
                     "openai",
-                    ClientProviderPatch(models = listOf("o3", "gpt-4o", "gpt-4o-mini")),
+                    ClientCustomProviderPatch(models = modelIds("o3", "gpt-4o", "gpt-4o-mini")),
                 ),
                 Call(
-                    "updateProvider",
+                    "updateCustomProvider",
                     "openai",
-                    ClientProviderPatch(models = listOf("o3", "gpt-4o")),
+                    ClientCustomProviderPatch(models = modelIds("o3", "gpt-4o")),
                 ),
             ),
             client.calls,
         )
+        assertTrue(viewModel.custom.models.all { it.toolCalling })
+    }
+
+    @Test
+    fun toolCallingChangesPersistThroughTheModelPatch() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.setToolCalling("gpt-4o", false)
+        advanceUntilIdle()
+
+        val expected = listOf(ClientModel("gpt-4o", false), ClientModel("gpt-4o-mini", true))
+        assertEquals(expected, viewModel.custom.models)
+        assertEquals(
+            listOf(
+                Call(
+                    "updateCustomProvider",
+                    "openai",
+                    ClientCustomProviderPatch(models = expected),
+                )
+            ),
+            client.calls,
+        )
+    }
+
+    @Test
+    fun aRejectedToolCallingChangeRestoresTheModels() = runTest {
+        client.onUpdateCustomProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
+        val viewModel = viewModel()
+
+        viewModel.setToolCalling("gpt-4o", false)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.custom.models.all { it.toolCalling })
+        assertEquals(errorText(ServiceFailure.Network), viewModel.error)
     }
 
     @Test
@@ -170,12 +208,13 @@ class ProviderDetailViewModelTest {
         advanceUntilIdle()
 
         assertNull(viewModel.fetched)
-        assertEquals(listOf("gpt-4o", "gpt-4o-mini", "o3"), viewModel.provider.models)
+        assertEquals(listOf("gpt-4o", "gpt-4o-mini", "o3"), viewModel.custom.models.map { it.id })
+        assertTrue(viewModel.custom.models.last().toolCalling)
     }
 
     @Test
     fun theCheckUsesTheStoredProviderUntilTheConnectionIsEdited() = runTest {
-        client.onCheckProvider = { id, _, _ -> if (id == null) "upstream 401" else "" }
+        client.onCheckCustomProvider = { _, _ -> "upstream 401" }
         val viewModel = viewModel()
 
         viewModel.check()
@@ -190,22 +229,22 @@ class ProviderDetailViewModelTest {
 
         assertEquals(CheckResult.Failed(UiText.Raw("upstream 401")), viewModel.checkResult)
         val edited =
-            ClientProviderInput(
-                kind = "openai",
+            ClientCustomProviderInput(
+                apiFormat = "openai",
                 identifier = "openai",
                 name = "openai",
                 baseUrl = "https://api.example.com/v1",
                 apiKey = "sk-wrong",
+                models = stored.custom.models,
             )
-        assertEquals(
-            Call("checkProvider", null, edited, "gpt-4o-mini"),
-            client.calls.last(),
-        )
+        assertEquals(Call("checkCustomProvider", edited, "gpt-4o-mini"), client.calls.last())
     }
 
     @Test
     fun aBlankNameSavesTheProviderId() = runTest {
-        client.onUpdateProvider = { _, patch -> stored.copy(name = patch.name ?: stored.name) }
+        client.onUpdateCustomProvider = { _, patch ->
+            stored.withCustom { copy(name = patch.name ?: name) }
+        }
         val viewModel = viewModel()
 
         viewModel.openSettings()
@@ -220,12 +259,12 @@ class ProviderDetailViewModelTest {
         advanceUntilIdle()
 
         assertNull(viewModel.nameDraft)
-        assertEquals(listOf("Work", "openai"), changes.map { it.name })
+        assertEquals(listOf("Work", "openai"), changes.map { it.custom.name })
     }
 
     @Test
     fun deletingReportsTheProviderOnlyOnceTheServiceDeletesIt() = runTest {
-        client.onDeleteProvider = { throw ServiceException(ServiceFailure.ProviderNotFound) }
+        client.onDeleteCustomProvider = { throw ServiceException(ServiceFailure.ProviderNotFound) }
         val viewModel = viewModel()
 
         viewModel.delete()
@@ -233,7 +272,7 @@ class ProviderDetailViewModelTest {
         assertEquals(emptyList(), deletions)
         assertEquals(errorText(ServiceFailure.ProviderNotFound), viewModel.error)
 
-        client.onDeleteProvider = {}
+        client.onDeleteCustomProvider = {}
         viewModel.delete()
         advanceUntilIdle()
 
@@ -250,15 +289,15 @@ class ProviderDetailViewModelTest {
         viewModel.save()
         advanceUntilIdle()
 
-        val patch = ClientProviderPatch(apiPath = "/v2/chat")
-        assertEquals(listOf(Call("updateProvider", "openai", patch)), client.calls)
+        val patch = ClientCustomProviderPatch(apiPath = "/v2/chat")
+        assertEquals(listOf(Call("updateCustomProvider", "openai", patch)), client.calls)
     }
 
     @Test
     fun failedRequestsShowTheirReason() = runTest {
-        client.onUpdateProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
+        client.onUpdateCustomProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         client.onFetchProviderModels = { throw ServiceException(ServiceFailure.Timeout) }
-        client.onCheckProvider = { _, _, _ -> throw ServiceException(ServiceFailure.Network) }
+        client.onCheckProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         val viewModel = viewModel()
 
         viewModel.baseUrl = "https://proxy.example.com/v1"
@@ -317,15 +356,15 @@ class ProviderDetailViewModelTest {
 
         assertNull(viewModel.checkModel)
         assertNull(viewModel.checkResult)
-        assertFalse(client.calls.any { it.name == "checkProvider" })
+        assertFalse(client.calls.any { it.name.startsWith("check") })
     }
 
     @Test
     fun onlyTheLatestCheckReports() = runTest {
         val first = CompletableDeferred<String>()
         val second = CompletableDeferred<String>()
-        val replies = ArrayDeque(listOf(first, second))
-        client.onCheckProvider = { _, _, _ -> replies.removeFirst().await() }
+        client.onCheckProvider = { _, _ -> first.await() }
+        client.onCheckCustomProvider = { _, _ -> second.await() }
         val viewModel = viewModel()
 
         viewModel.check()
@@ -342,3 +381,11 @@ class ProviderDetailViewModelTest {
         assertEquals(CheckResult.Failed(UiText.Raw("upstream 401")), viewModel.checkResult)
     }
 }
+
+private val ClientProvider.custom: ClientCustomProvider
+    get() = source as ClientCustomProvider
+
+private fun ClientProvider.withCustom(change: ClientCustomProvider.() -> ClientCustomProvider) =
+    copy(source = custom.change())
+
+private fun modelIds(vararg ids: String) = ids.map { ClientModel(it, toolCalling = true) }

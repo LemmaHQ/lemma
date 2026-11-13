@@ -38,16 +38,16 @@ import dev.lemmahq.lemma.ui.components.LemmaDisclosureChevron
 import dev.lemmahq.lemma.ui.components.LemmaSpinner
 import dev.lemmahq.lemma.ui.components.lemmaDisclosure
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.agent_tool_announce_error
-import lemma.mobile.shared.generated.resources.agent_tool_announce_running
-import lemma.mobile.shared.generated.resources.agent_tool_announce_success
-import lemma.mobile.shared.generated.resources.agent_tool_arguments
-import lemma.mobile.shared.generated.resources.agent_tool_copy_arguments
-import lemma.mobile.shared.generated.resources.agent_tool_copy_result
-import lemma.mobile.shared.generated.resources.agent_tool_error_fallback
-import lemma.mobile.shared.generated.resources.agent_tool_failed
-import lemma.mobile.shared.generated.resources.agent_tool_output
-import lemma.mobile.shared.generated.resources.agent_tool_waiting
+import lemma.mobile.shared.generated.resources.agent_tool_call_announce_error
+import lemma.mobile.shared.generated.resources.agent_tool_call_announce_running
+import lemma.mobile.shared.generated.resources.agent_tool_call_announce_success
+import lemma.mobile.shared.generated.resources.agent_tool_call_arguments
+import lemma.mobile.shared.generated.resources.agent_tool_call_copy_arguments
+import lemma.mobile.shared.generated.resources.agent_tool_call_copy_result
+import lemma.mobile.shared.generated.resources.agent_tool_call_error_fallback
+import lemma.mobile.shared.generated.resources.agent_tool_call_failed
+import lemma.mobile.shared.generated.resources.agent_tool_call_output
+import lemma.mobile.shared.generated.resources.agent_tool_call_waiting
 import lemma.mobile.shared.generated.resources.icon_check
 import lemma.mobile.shared.generated.resources.icon_circle_alert
 import lemma.mobile.shared.generated.resources.icon_wrench
@@ -64,7 +64,7 @@ private val SMALL_RADIUS = RoundedCornerShape(8.dp)
 @Composable
 internal fun ToolCallCard(call: UiToolCall) {
     var open by rememberSaveable(call.id, call.isError) { mutableStateOf(call.isError) }
-    val error = call.output.ifEmpty { stringResource(Res.string.agent_tool_error_fallback) }
+    val error = call.output.ifEmpty { stringResource(Res.string.agent_tool_call_error_fallback) }
     Column(
         modifier =
             Modifier.fillMaxWidth()
@@ -80,9 +80,10 @@ internal fun ToolCallCard(call: UiToolCall) {
 private fun ToolCallHeader(call: UiToolCall, error: String, open: Boolean, onToggle: () -> Unit) {
     val announcement =
         when {
-            call.running -> stringResource(Res.string.agent_tool_announce_running, call.name)
-            call.isError -> stringResource(Res.string.agent_tool_announce_error, call.name, error)
-            else -> stringResource(Res.string.agent_tool_announce_success, call.name)
+            call.running -> stringResource(Res.string.agent_tool_call_announce_running, call.name)
+            call.isError ->
+                stringResource(Res.string.agent_tool_call_announce_error, call.name, error)
+            else -> stringResource(Res.string.agent_tool_call_announce_success, call.name)
         }
     Row(
         modifier =
@@ -129,8 +130,8 @@ private fun ToolCallDetails(call: UiToolCall, error: String) {
             if (call.isError) ToolError(error)
             if (call.arguments.isNotBlank()) {
                 ToolCallSection(
-                    label = stringResource(Res.string.agent_tool_arguments),
-                    copyLabel = stringResource(Res.string.agent_tool_copy_arguments),
+                    label = stringResource(Res.string.agent_tool_call_arguments),
+                    copyLabel = stringResource(Res.string.agent_tool_call_copy_arguments),
                     text = call.arguments,
                 )
             }
@@ -138,8 +139,8 @@ private fun ToolCallDetails(call: UiToolCall, error: String) {
                 call.running -> ToolWaiting()
                 !call.isError ->
                     ToolCallSection(
-                        label = stringResource(Res.string.agent_tool_output),
-                        copyLabel = stringResource(Res.string.agent_tool_copy_result),
+                        label = stringResource(Res.string.agent_tool_call_output),
+                        copyLabel = stringResource(Res.string.agent_tool_call_copy_result),
                         text = call.output,
                     )
             }
@@ -151,12 +152,12 @@ private fun ToolCallDetails(call: UiToolCall, error: String) {
 private fun ToolWaiting() {
     Column(modifier = Modifier.padding(end = 12.dp, bottom = 8.dp)) {
         Text(
-            text = stringResource(Res.string.agent_tool_output),
+            text = stringResource(Res.string.agent_tool_call_output),
             style = LemmaTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
             color = LemmaTheme.colors.textSecondary,
         )
         Text(
-            text = stringResource(Res.string.agent_tool_waiting),
+            text = stringResource(Res.string.agent_tool_call_waiting),
             style = LemmaTheme.typography.labelSmall,
             color = LemmaTheme.colors.textTertiary,
         )
@@ -198,7 +199,7 @@ private fun ToolStatus(call: UiToolCall, elapsed: Long?) {
             else -> StatusIcon(Res.drawable.icon_check, LemmaTheme.colors.textPrimary)
         }
         val label =
-            if (call.isError) stringResource(Res.string.agent_tool_failed)
+            if (call.isError) stringResource(Res.string.agent_tool_call_failed)
             else elapsed?.let { formatDuration(it, live = call.running) }
         label?.let { Text(text = it, style = LemmaTheme.typography.labelSmall, color = color) }
     }

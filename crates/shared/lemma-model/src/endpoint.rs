@@ -1,72 +1,33 @@
-use std::str::FromStr;
+use sea_orm::entity::prelude::*;
 
-/// API dialect of a provider, selecting the adapter that speaks it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProviderKind {
+/// API format of a provider, selecting the adapter that speaks it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)")]
+pub enum ApiFormat {
     /// OpenAI chat-completions and compatible APIs.
+    #[sea_orm(string_value = "openai")]
     OpenAiCompatible,
     /// Anthropic Messages API.
+    #[sea_orm(string_value = "anthropic")]
     Anthropic,
-    /// Google Gemini API.
+    /// Gemini generate-content API.
+    #[sea_orm(string_value = "gemini")]
     Gemini,
-}
-
-impl ProviderKind {
-    /// Stored string form: `openai`, `anthropic`, or `gemini`.
-    #[must_use]
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::OpenAiCompatible => "openai",
-            Self::Anthropic => "anthropic",
-            Self::Gemini => "gemini",
-        }
-    }
-}
-
-impl FromStr for ProviderKind {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "openai" => Ok(Self::OpenAiCompatible),
-            "anthropic" => Ok(Self::Anthropic),
-            "gemini" => Ok(Self::Gemini),
-            _ => Err(()),
-        }
-    }
 }
 
 /// Connection details of one provider, with its API key in plaintext.
 #[derive(Debug, Clone)]
 pub struct Endpoint {
-    /// API dialect.
-    pub kind: ProviderKind,
+    /// API format.
+    pub api_format: ApiFormat,
     /// Base URL in the form the vendor SDK takes: `https://api.openai.com/v1`,
     /// `https://api.anthropic.com`, `https://generativelanguage.googleapis.com`;
     /// empty selects the vendor default.
     pub base_url: String,
-    /// Generation endpoint path override; empty selects the adapter default.
-    pub api_path: String,
-    /// Model-list endpoint path override; empty selects the adapter default.
-    pub models_path: String,
     /// Plaintext API key; empty sends no credentials.
     pub api_key: String,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn each_kind_parses_back_from_its_stored_string() {
-        for (kind, stored) in [
-            (ProviderKind::OpenAiCompatible, "openai"),
-            (ProviderKind::Anthropic, "anthropic"),
-            (ProviderKind::Gemini, "gemini"),
-        ] {
-            assert_eq!(kind.as_str(), stored, "stored form of {kind:?}");
-            assert_eq!(stored.parse(), Ok(kind), "parsed {stored}");
-        }
-        assert_eq!("OpenAI".parse::<ProviderKind>(), Err(()), "unknown kind");
-    }
+    /// Generation path override; empty selects the format default.
+    pub api_path: String,
+    /// Model-list path override; empty selects the format default.
+    pub models_path: String,
 }

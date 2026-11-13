@@ -22,6 +22,15 @@ it.each([
     expect(errorText(withReason(reason), t)).toBe(key);
 });
 
+it("maps provider API format and key errors to i18n keys", () => {
+    expect(errorText(withReason(ErrorReason.API_FORMAT_INVALID), t)).toBe(
+        "errors.apiFormatInvalid",
+    );
+    expect(errorText(withReason(ErrorReason.PROVIDER_KEY_REQUIRED), t)).toBe(
+        "errors.providerKeyRequired",
+    );
+});
+
 it("reads an unmapped reason as unspecified", () => {
     expect(errorText(withReason(999), t)).toBe("errors.unspecified");
 });

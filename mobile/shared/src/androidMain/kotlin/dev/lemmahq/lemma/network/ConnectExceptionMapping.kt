@@ -34,11 +34,12 @@ private fun ErrorReason.toFailure(): ServiceFailure? =
         ErrorReason.ERROR_REASON_USER_NOT_FOUND -> ServiceFailure.UserNotFound
         ErrorReason.ERROR_REASON_EMAIL_TAKEN -> ServiceFailure.EmailTaken
         ErrorReason.ERROR_REASON_PROVIDER_FIELDS_REQUIRED -> ServiceFailure.ProviderFieldsRequired
-        ErrorReason.ERROR_REASON_PROVIDER_KIND_INVALID -> ServiceFailure.ProviderKindInvalid
+        ErrorReason.ERROR_REASON_API_FORMAT_INVALID -> ServiceFailure.ApiFormatInvalid
         ErrorReason.ERROR_REASON_PROVIDER_NOT_FOUND -> ServiceFailure.ProviderNotFound
         ErrorReason.ERROR_REASON_PROVIDER_IDENTIFIER_INVALID ->
             ServiceFailure.ProviderIdentifierInvalid
         ErrorReason.ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN -> ServiceFailure.ProviderIdentifierTaken
+        ErrorReason.ERROR_REASON_PROVIDER_KEY_REQUIRED -> ServiceFailure.ProviderKeyRequired
         ErrorReason.ERROR_REASON_ID_INVALID -> ServiceFailure.IdInvalid
         ErrorReason.ERROR_REASON_TITLE_REQUIRED -> ServiceFailure.TitleRequired
         ErrorReason.ERROR_REASON_SESSION_NOT_FOUND -> ServiceFailure.SessionNotFound

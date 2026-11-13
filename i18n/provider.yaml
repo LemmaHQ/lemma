@@ -1,10 +1,10 @@
 provider:
   addModel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Add model"
     zh: "添加模型"
   addPicked:
-    platforms: [web]
+    platforms: [web, android]
     plural: count
     params: { count: number }
     en:
@@ -12,40 +12,60 @@ provider:
       other: "Add {count} models"
     zh:
       other: "添加 {count} 个模型"
+  apiFormat:
+    platforms: [web, android]
+    en: "API format"
+    zh: "API 格式"
+  apiFormatDesc:
+    platforms: [web, android]
+    en: "API format the provider speaks; cannot be changed after creation."
+    zh: "服务商使用的 API 格式，创建后无法修改。"
+  apiFormatAnthropic:
+    platforms: [web, android]
+    en: "Anthropic"
+    zh: "Anthropic"
+  apiFormatGemini:
+    platforms: [web, android]
+    en: "Gemini"
+    zh: "Gemini"
+  apiFormatOpenai:
+    platforms: [web, android]
+    en: "OpenAI"
+    zh: "OpenAI"
   apiKey:
-    platforms: [web]
+    platforms: [web, android]
     en: "API key"
     zh: "API key"
   apiKeyDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Authentication key for requests to the provider."
     zh: "用于向服务商发起请求的认证密钥。"
   apiKeyPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "sk-…"
     zh: "sk-…"
   apiPath:
-    platforms: [web]
+    platforms: [web, android]
     en: "Request path"
     zh: "请求路径"
   apiPathDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Path appended to the base URL; leave blank for the default."
     zh: "接在 Base URL 后面的接口路径，留空时使用默认路径。"
   apiPathDescGemini:
-    platforms: [web]
+    platforms: [web, android]
     en: 'Path appended to the base URL; leave blank for the default. \{model\} is replaced by the model ID.'
     zh: '接在 Base URL 后面的接口路径，留空时使用默认路径。\{model\} 会替换为模型 ID。'
   baseUrl:
-    platforms: [web]
+    platforms: [web, android]
     en: "Base URL"
     zh: "Base URL"
   baseUrlDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "API endpoint in the form the vendor's official SDK takes."
     zh: "API 接口地址，按厂商官方 SDK 的写法填写。"
   baseUrlInvalid:
-    platforms: [web]
+    platforms: [web, android]
     en: "Must start with http:// or https://."
     zh: "必须以 http:// 或 https:// 开头"
   basics:
@@ -53,119 +73,198 @@ provider:
     en: "Basics"
     zh: "基本信息"
   check:
-    platforms: [web]
+    platforms: [web, android]
     en: "Connectivity check"
     zh: "连通性检查"
   checkAction:
-    platforms: [web]
+    platforms: [web, android]
     en: "Check"
     zh: "检查"
   checkDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Sends a short request with the selected model to confirm the provider answers."
     zh: "用所选模型发送一条简短请求，确认服务商能正常响应。"
   checkNoModels:
-    platforms: [web]
+    platforms: [web, android]
     en: "Add a model first"
     zh: "请先添加模型"
   checkPassed:
-    platforms: [web]
+    platforms: [web, android]
     en: "The provider answered."
     zh: "服务商响应正常。"
   connection:
     platforms: [web]
     en: "Connection"
     zh: "连接"
+  customGroup:
+    platforms: [web, android]
+    en: "Custom"
+    zh: "自定义"
+  defaultApiFormat:
+    platforms: [web, android]
+    en: "Default API format"
+    zh: "默认 API 格式"
+  defaultApiFormatDesc:
+    platforms: [web, android]
+    en: "Used when the session's previous reply has no format this provider serves."
+    zh: "会话上一条回复的格式不受该服务商支持时，使用此格式。"
   deleteDescription:
-    platforms: [web]
+    platforms: [web, android]
     en: "Its API key and model list are removed. This cannot be undone."
     zh: "API key 和模型列表会一并删除，此操作不可恢复。"
   deleteProvider:
-    platforms: [web]
+    platforms: [web, android]
     en: "Delete provider"
     zh: "删除服务商"
   deleteTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Delete this provider?"
     zh: "删除该服务商？"
-  disabledGroup:
-    platforms: [web]
-    en: "Disabled"
-    zh: "已停用"
+  discard:
+    platforms: [android]
+    en: "Discard"
+    zh: "放弃"
+  discardDesc:
+    platforms: [android]
+    en: "The connection changes on this page will be lost."
+    zh: "本页对连接设置的修改将会丢失。"
+  discardTitle:
+    platforms: [android]
+    en: "Discard unsaved changes?"
+    zh: "放弃未保存的更改？"
   emptyList:
-    platforms: [web]
+    platforms: [web, android]
     en: "No providers yet."
     zh: "还没有服务商。"
+  enableNeedsKey:
+    platforms: [web, android]
+    en: "Save an API key before enabling this provider."
+    zh: "保存 API key 后才能启用该服务商。"
+  enableWebProvider:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Enable {name}"
+    zh: "启用{name}"
+  webApiKeySavedDesc:
+    platforms: [web, android]
+    en: "A key is saved. Enter a new key to replace it."
+    zh: "已保存 API key，输入新密钥即可替换。"
+  webBackends:
+    platforms: [web, android]
+    en: "Backends"
+    zh: "后端服务"
+  webBackendsDesc:
+    platforms: [web, android]
+    en: "Configure the services used for web search and fetch."
+    zh: "配置用于网页搜索与抓取的服务。"
+  webFetchOrder:
+    platforms: [web, android]
+    en: "Fetch backend order"
+    zh: "抓取后端顺序"
+  webFetchOrderDesc:
+    platforms: [web, android]
+    en: "Fetch tries backends from top to bottom until one succeeds."
+    zh: "抓取会按从上到下的顺序尝试后端，直到成功。"
+  webMoveDown:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Move {name} down"
+    zh: "下移{name}"
+  webMoveUp:
+    platforms: [web, android]
+    params: { name: string }
+    en: "Move {name} up"
+    zh: "上移{name}"
+  webNativeDesc:
+    platforms: [web, android]
+    en: "Fetches pages directly on this device and extracts their text. No API key required."
+    zh: "直接在此设备上抓取网页并提取文本，无需 API key。"
+  webSearchOrder:
+    platforms: [web, android]
+    en: "Search backend order"
+    zh: "搜索后端顺序"
+  webSearchOrderDesc:
+    platforms: [web, android]
+    en: "Search tries backends from top to bottom until one succeeds."
+    zh: "搜索会按从上到下的顺序尝试后端，直到成功。"
   enableProvider:
-    platforms: [web]
+    platforms: [web, android]
     en: "Enable provider"
     zh: "启用服务商"
-  enabledGroup:
-    platforms: [web]
-    en: "Enabled"
-    zh: "已启用"
   fetchModelList:
-    platforms: [web]
+    platforms: [web, android]
     en: "Fetch model list"
     zh: "拉取模型列表"
   identifier:
-    platforms: [web]
+    platforms: [web, android]
     en: "Provider ID"
     zh: "服务商 ID"
   identifierHint:
-    platforms: [web]
+    platforms: [web, android]
     en: "Serves as the unique identifier of this provider; cannot be changed after creation."
     zh: "作为服务商唯一标识符，创建后将无法修改。"
   identifierInvalid:
-    platforms: [web]
+    platforms: [web, android]
     en: "Provider ID must be non-empty and contain only ASCII characters."
     zh: "服务商 ID 不能为空，且仅限 ASCII 字符。"
   identifierPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "e.g. open-ai"
     zh: "例如 open-ai"
+  keepEditing:
+    platforms: [android]
+    en: "Keep editing"
+    zh: "继续编辑"
   modelAdded:
-    platforms: [web]
+    platforms: [web, android]
     en: "Added"
     zh: "已添加"
   modelList:
-    platforms: [web]
+    platforms: [web, android]
     en: "Model list"
     zh: "模型列表"
   modelPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "e.g. gpt-4o"
     zh: "例如 gpt-4o"
   modelSearchPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Search models…"
     zh: "搜索模型…"
+  modelsReadOnly:
+    platforms: [web, android]
+    en: "Models and their features ship with Lemma."
+    zh: "模型及其特性随 Lemma 内置，不可修改。"
+  moreActions:
+    platforms: [android]
+    en: "More actions"
+    zh: "更多操作"
   name:
-    platforms: [web]
+    platforms: [web, android]
     en: "Provider name"
     zh: "服务商名称"
   nameDesc:
-    platforms: [web]
+    platforms: [web, android]
     en: "Display name; any characters allowed, editable anytime. Defaults to the provider ID when left blank."
     zh: "显示名称，支持任意字符，可随时修改；留空时默认使用服务商 ID。"
   namePlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Enter the provider display name"
     zh: "请输入服务商的展示名称"
   newProvider:
-    platforms: [web]
+    platforms: [web, android]
     en: "New provider"
     zh: "新建服务商"
   newProviderHint:
-    platforms: [web]
+    platforms: [web, android]
     en: "Save to create the provider."
     zh: "保存后即创建服务商"
   noModels:
-    platforms: [web]
+    platforms: [web, android]
     en: "No models match the current filter."
     zh: "没有符合当前筛选的模型。"
   pickModelsDesc:
-    platforms: [web]
+    platforms: [web, android]
     plural: count
     params: { count: number }
     en:
@@ -174,34 +273,38 @@ provider:
     zh:
       other: "服务商返回了 {count} 个模型，勾选要加入列表的模型。"
   pickModelsTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Pick models"
     zh: "选择模型"
+  predefinedGroup:
+    platforms: [web, android]
+    en: "Predefined"
+    zh: "预定义"
   removeModel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Remove model"
     zh: "移除模型"
   searchPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Search providers…"
     zh: "搜索服务商…"
   selectAll:
-    platforms: [web]
+    platforms: [web, android]
     en: "Select all"
     zh: "全选"
   settingsTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Provider settings"
     zh: "服务商设置"
-  type:
-    platforms: [web]
-    en: "Type"
-    zh: "类型"
-  typeDesc:
-    platforms: [web]
-    en: "API format the provider speaks; cannot be changed after creation."
-    zh: "服务商使用的 API 格式，创建后无法修改。"
+  toolCalling:
+    platforms: [web, android]
+    en: "Tool calling"
+    zh: "工具调用"
+  toolCallingDesc:
+    platforms: [web, android]
+    en: "When off, requests to this model carry no tools and leave out earlier tool calls."
+    zh: "关闭后，发给该模型的请求不带工具，也不包含之前的工具调用。"
   unsavedChanges:
-    platforms: [web]
+    platforms: [web, android]
     en: "You have unsaved changes."
     zh: "有未保存的更改"

@@ -10,9 +10,9 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 | 层    | Crate                                                           | 负责                                                                                                                                                                                                                    |
 | ----- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                      | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ProviderKind` |
-| 领域  | `lemma-auth`、`lemma-session`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `sessions` 与 `messages` 表；provider 配置、模型列表，以及 provider 相关的表；这些表的迁移；API key 加密                                                               |
-| 引擎  | `lemma-adapter`、`lemma-tool`、`lemma-agent-loop`               | 厂商协议格式与模型列表；工具注册表与执行环境；turn 循环及其取消                                                                                                                                                         |
+| 契约  | `lemma-proto`、`lemma-core`、`lemma-model`                      | `proto/lemma/v1` 的 Rust 绑定与带错误码的错误辅助函数；规范化的 trace 类型：`Message`、`ContentBlock`、`StreamEvent`、`ToolSpec`、`Usage`；模型接口：`Adapter`、`Connector`、`ModelRequest`、`Endpoint`、`ApiFormat`    |
+| 领域  | `lemma-auth`、`lemma-session`、`lemma-provider`、`lemma-crypto` | 账号、令牌，以及认证相关的表；会话、消息树，以及 `sessions` 与 `messages` 表；预定义、自定义与 Web provider、模型列表与相关表；这些表的迁移；API key 加密                                                               |
+| 引擎  | `lemma-adapter`、`lemma-tool`、`lemma-agent-loop`               | 厂商协议格式、模型列表与 Web 后端客户端；工具注册表、执行环境与 Web 工具；turn 循环及其取消                                                                                                                             |
 | Agent | `lemma-agent`                                                   | 根据请求组装一个 turn（provider 端点、适配器、会话、会话目录中的工具）并运行它，以及中止正在运行的 turn                                                                                                                 |
 | RPC   | `crates/rpc/*`，包括 `lemma-host`                               | 每个 proto service 对应一个 ConnectRPC 服务；`lemma-host` 在一个数据库之上把它们组装成一个路由，连接并迁移它，从数据目录打开本地引擎，并通过 `InProcessTransport` 在进程内提供这个路由                                  |
 | 宿主  | `lemma-server`、`lemma-desktop`、`lemma-mobile`                 | 服务端可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                                |
@@ -41,7 +41,7 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 
 ## 跨线路的契约
 
-`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`SessionService`、`AgentService`、`SystemService`，以及 `errors.proto`。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`proto/lemma/v1` 是所有远程客户端的唯一契约：`AuthService`、`ProviderService`、`SessionService`、`AgentService`、`SystemService`，以及 `errors.proto`。`ProviderService` 同时涵盖模型 provider 与 Web provider：列出 Web provider、更新其密钥与启用状态，以及设置搜索与抓取后端的顺序。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 业务错误携带 `errors.proto` 中封闭枚举里的一个 `ErrorReason`，由 `lemma_proto::app_error` 作为 `ErrorInfo` detail 附加；客户端按原因码本地化。基础设施故障（数据库、解密、上游）返回 internal 级别的 Connect 错误，带原始英文信息，不带原因码。
 
@@ -54,13 +54,15 @@ Web 客户端在每次查看时从宿主获取会话与消息。Android 客户�
 ```text
 AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
-  ProviderService::adapter opens the provider's API key and binds the adapter for its kind
-  Agent::prepare reads the user's session and opens its session directory
+  Agent::prepare reads the user's session and the API format of the nearest assistant message on the path from root to leaf
+  ProviderService::bind picks the API format, opens the API key, and binds the adapter
+  open the session directory and register its tools
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
+    tool calling off -> leave tool calls and tool results out of the request
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
     Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
@@ -77,9 +79,11 @@ AgentService.SendMessage(session, provider, model, content)
 
 每个 `AgentEvent` 都带有服务端 `occurred_at` 时刻，重放时保持不变。助手消息的 JSON 正文持久化思考与工具的开始、结束时刻供历史记录使用；旧行不包含这些字段，适配器也不会把这些服务端字段写入 provider 请求。计时时点由 [agent 事件](subsystems/agent.zh.md#turn-事件)定义。
 
-适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ProviderKind` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
+适配器层把每个厂商的流规范化为 `StreamEvent`：`HttpConnector` 按 `ApiFormat` 把每个 provider 端点绑定到 `OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`，各适配器解析厂商的 server-sent events，首个内容增量的耗时也在适配器中测量。任何厂商的思考内容都成为与正文并列的 `Thinking` 内容块。
 
-只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎以会话目录为根，基于 `LocalExecEnv` 注册 `read_file`、`write_file` 与 `bash`，会话目录是创建会话时指定的目录，没有指定时是数据目录下的 `workspaces/<session id>`；同时用系统提示词告诉模型这个目录、操作系统与 shell。服务端模式不挂工具，并拒绝创建带目录的会话。路径限制与命令限制见[工具](subsystems/agent.zh.md#工具)。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。
+自定义 provider 只有一种 API 格式。预定义 provider 提供多种，`ProviderService::bind` 为整个 turn 选定一种：上下文路径上最近一条助手消息记录的格式，前提是该 provider 提供这种格式；否则使用该 provider 的默认格式。
+
+只有循环带有 `ToolRuntime` 时工具才会运行。宿主给 `Agent` 提供工作区目录时，`Agent` 会挂上它：本地引擎与 Android 引擎以会话目录为根，基于 `LocalExecEnv` 注册 `read_file`、`write_file` 与 `bash`，会话目录是创建会话时指定的目录，没有指定时是数据目录下的 `workspaces/<session id>`；同时用系统提示词告诉模型这个目录、操作系统与 shell。服务端模式不挂工具，并拒绝创建带目录的会话。路径限制与命令限制见[工具](subsystems/agent.zh.md#工具)。宿主同时提供 Web 传输层时，搜索顺序中有已启用的 provider 才注册 `web_search`，抓取顺序中有已启用的 provider 才注册 `web_fetch`。它们的后端在回合装配时从用户的 Web provider 顺序中解析，因此设置变更对下一个回合生效。`web_search` 暴露搜索顺序中第一个后端的完整参数集；后端调用失败时转移到顺序中的下一个 provider，只携带查询与结果条数，规范化后的结果记录实际作答的后端。未知工具与工具执行失败都会成为一条错误工具结果，模型在下一个 step 中看到它；这两种情况都不会结束 turn。关闭工具调用的模型收不到工具定义，发给它的请求也不包含此前各 step 的工具调用与工具结果；已存储的消息保留这些内容。
 
 `AbortMessage` 接收 `started` 事件中的用户消息 id，取消该用户正在运行的 turn。正在流式生成的占位消息以 `aborted` 状态与 `aborted` 停止原因定稿；正在运行的 `bash` 命令连同进程树一起停止，其他正在运行的工具调用会先执行完，turn 在下一个 step 之前停止；流以 `aborted` 结束。
 
@@ -89,11 +93,11 @@ AgentService.SendMessage(session, provider, model, content)
 
 认证表 `users`、`auth_credentials` 与 `refresh_tokens` 属于 `lemma-auth`，`providers` 属于 `lemma-provider`，`sessions` 与 `messages` 属于 `lemma-session`；每个 crate 用 SeaORM 定义自己的表并拥有它们的迁移，宿主打开数据库时，`lemma-host` 按名称顺序合并这些迁移，并在 SQLite 与 PostgreSQL 上同样执行（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
-一个会话是一棵消息树。每条消息行保存它的 `parent_id`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider 与模型；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-session` 中的 `SessionService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
+一个会话是一棵消息树。每条消息行保存它的 `parent_id`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider、模型与 API 格式；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-session` 中的 `SessionService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话并分页读取消息。每个针对会话的操作都带有调用者的用户 id，只触及该用户的行。
 
 分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
 
-`ProviderService` 用由配置的主密钥派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。刷新令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
+`providers` 表的一行是预定义 provider 或自定义 provider。自定义行保存完整的配置。预定义行保存 API key、启用标志与默认 API 格式；`lemma-provider` 从代码中的定义读取名称、base URL 与模型，列出 provider 时会插入该用户缺少的预定义行。`web_providers` 表的一行是一个 Web 服务账户：类型（`native`、`exa` 或 `deepseek`）、加密的 API key、启用标志，以及在搜索与抓取顺序中的位置；Native 不需要密钥，列出时同样会插入缺少的行。`ProviderService` 用由配置的主密钥派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。刷新令牌以 SHA-256 哈希存储；密码以 Argon2 哈希存储。
 
 ## 新行为放在哪里
 
@@ -101,7 +105,9 @@ AgentService.SendMessage(session, provider, model, content)
 
 | 目标                           | 机制                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 新增厂商协议                   | 在 `lemma-model` 中加一个 `ProviderKind` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定      |
+| 新增厂商协议                   | 在 `lemma-model` 中加一个 `ApiFormat` 变体，在 `lemma-adapter` 中实现 `Adapter` 及其模型列表，并在 `HttpConnector` 中绑定         |
+| 新增预定义 provider            | 在 `lemma-provider` 的预定义 provider 中加入它的定义                                                                              |
+| 新增 Web 后端                  | 在 `lemma-provider` 的 Web 目录中加入类型，并在 `lemma-adapter` 的 `web/` 模块中加入客户端                                        |
 | 新增面向模型的工具             | 在 `lemma-tool` 中实现 `Tool`，并在 `Agent` 构建 `ToolRegistry` 处注册（`lemma-agent`）                                           |
 | 在别处运行工具                 | 实现 `ExecEnv`                                                                                                                    |
 | 让 provider 流量走另一套网络栈 | 实现 `HttpTransport`，并用它构造 `HttpConnector`                                                                                  |

@@ -1,4 +1,4 @@
-use lemma_model::{Endpoint, ModelError, ProviderKind};
+use lemma_model::{ApiFormat, Endpoint, ModelError};
 use serde::Deserialize;
 
 use crate::connection;
@@ -26,10 +26,10 @@ struct NameOnly {
 }
 
 /// Lists the models an endpoint exposes, using the auth scheme of its
-/// kind: bearer token for OpenAI-compatible APIs, `x-api-key` plus a
+/// API format: bearer token for OpenAI-compatible APIs, `x-api-key` plus a
 /// pinned `anthropic-version` for Anthropic, `x-goog-api-key` for Gemini.
 ///
-/// An empty `models_path` selects the kind's default under the base URL
+/// An empty `models_path` selects the format's default under the base URL
 /// that generation uses: `/models` for OpenAI-compatible APIs,
 /// `/v1/models` for Anthropic, `/v1beta/models` for Gemini. Gemini returns
 /// names as `models/<id>`; the prefix is stripped.
@@ -37,10 +37,10 @@ pub(crate) async fn list_models<T: HttpTransport>(
     transport: &T,
     endpoint: Endpoint,
 ) -> Result<Vec<String>, ModelError> {
-    let default_path = match endpoint.kind {
-        ProviderKind::OpenAiCompatible => "/models",
-        ProviderKind::Anthropic => "/v1/models",
-        ProviderKind::Gemini => "/v1beta/models",
+    let default_path = match endpoint.api_format {
+        ApiFormat::OpenAiCompatible => "/models",
+        ApiFormat::Anthropic => "/v1/models",
+        ApiFormat::Gemini => "/v1beta/models",
     };
     let path = if endpoint.models_path.is_empty() {
         default_path
@@ -51,8 +51,8 @@ pub(crate) async fn list_models<T: HttpTransport>(
     let headers = connection::credential_headers(&endpoint);
     let body = transport.get_json(url, headers).await?;
     let bad_body = |e: serde_json::Error| error::protocol(format!("bad model list: {e}"));
-    match endpoint.kind {
-        ProviderKind::Gemini => {
+    match endpoint.api_format {
+        ApiFormat::Gemini => {
             let list: GeminiModelList = serde_json::from_value(body).map_err(bad_body)?;
             Ok(list
                 .models
@@ -63,7 +63,7 @@ pub(crate) async fn list_models<T: HttpTransport>(
                 })
                 .collect())
         }
-        ProviderKind::OpenAiCompatible | ProviderKind::Anthropic => {
+        ApiFormat::OpenAiCompatible | ApiFormat::Anthropic => {
             let list: ModelList = serde_json::from_value(body).map_err(bad_body)?;
             Ok(list.data.into_iter().map(|m| m.id).collect())
         }

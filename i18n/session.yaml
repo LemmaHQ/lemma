@@ -1,6 +1,6 @@
 session:
   actions:
-    platforms: [web]
+    platforms: [web, android]
     en: "More actions"
     zh: "更多操作"
   chooseFolder:
@@ -12,15 +12,15 @@ session:
     en: "Clear folder"
     zh: "取消选择文件夹"
   delete:
-    platforms: [web]
+    platforms: [web, android]
     en: "Delete permanently"
     zh: "彻底删除"
   deleteDescription:
-    platforms: [web]
+    platforms: [web, android]
     en: "This cannot be undone."
     zh: "此操作不可恢复。"
   deleteTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Permanently delete this session?"
     zh: "彻底删除该会话？"
   directoryLabel:
@@ -28,21 +28,29 @@ session:
     en: "Session folder"
     zh: "会话文件夹"
   earlier:
-    platforms: [web]
+    platforms: [web, android]
     en: "Earlier"
     zh: "更早"
   emptyTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "How can I help you today?"
     zh: "今天想聊点什么？"
   inputPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Message the assistant…"
     zh: "给助手发消息…"
   last7Days:
-    platforms: [web]
+    platforms: [web, android]
     en: "Last 7 days"
     zh: "近 7 天"
+  listTitle:
+    platforms: [android]
+    en: "Sessions"
+    zh: "会话"
+  manageProviders:
+    platforms: [android]
+    en: "Manage providers"
+    zh: "管理服务商"
   noModelAction:
     platforms: [web]
     en: "Open settings"
@@ -60,30 +68,34 @@ session:
     en: "No provider"
     zh: "暂无服务商"
   regenerate:
-    platforms: [web]
+    platforms: [web, android]
     en: "Regenerate"
     zh: "重新生成"
   rename:
-    platforms: [web]
+    platforms: [web, android]
     en: "Rename"
     zh: "重命名"
   scrollToBottom:
-    platforms: [web]
+    platforms: [web, android]
     en: "Scroll to latest"
     zh: "滚动到最新"
   selectModel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Select model"
     zh: "选择模型"
   send:
-    platforms: [web]
+    platforms: [web, android]
     en: "Send"
     zh: "发送"
+  showList:
+    platforms: [android]
+    en: "Show sessions"
+    zh: "显示会话列表"
   today:
-    platforms: [web]
+    platforms: [web, android]
     en: "Today"
     zh: "今天"
   yesterday:
-    platforms: [web]
+    platforms: [web, android]
     en: "Yesterday"
     zh: "昨天"

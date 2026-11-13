@@ -1,6 +1,14 @@
 sidebar:
+  account:
+    platforms: [android]
+    en: "Account"
+    zh: "账号"
+  accountMenu:
+    platforms: [android]
+    en: "Account menu"
+    zh: "账号菜单"
   appSettings:
-    platforms: [web]
+    platforms: [web, android]
     en: "App settings"
     zh: "应用设置"
   collapse:
@@ -12,7 +20,7 @@ sidebar:
     en: "Expand sidebar"
     zh: "展开侧边栏"
   newSession:
-    platforms: [web]
+    platforms: [web, android]
     en: "New session"
     zh: "新会话"
   resize:
@@ -20,11 +28,11 @@ sidebar:
     en: "Resize sidebar"
     zh: "调整侧边栏宽度"
   signOut:
-    platforms: [web]
+    platforms: [web, android]
     en: "Sign out"
     zh: "退出登录"
   startSession:
-    platforms: [web]
+    platforms: [web, android]
     en: "New session"
     zh: "新建会话"
   title:

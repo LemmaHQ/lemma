@@ -34,7 +34,7 @@ import lemma.mobile.shared.generated.resources.icon_chevron_down
 import lemma.mobile.shared.generated.resources.icon_x
 import lemma.mobile.shared.generated.resources.provider_check
 import lemma.mobile.shared.generated.resources.provider_check_action
-import lemma.mobile.shared.generated.resources.provider_check_description
+import lemma.mobile.shared.generated.resources.provider_check_desc
 import lemma.mobile.shared.generated.resources.provider_check_no_models
 import lemma.mobile.shared.generated.resources.provider_check_passed
 import org.jetbrains.compose.resources.painterResource
@@ -60,7 +60,7 @@ internal fun ConnectionCheckField(
         description =
             stringResource(
                 if (result == CheckResult.Passed) Res.string.provider_check_passed
-                else Res.string.provider_check_description
+                else Res.string.provider_check_desc
             ),
         error = (result as? CheckResult.Failed)?.message?.text(),
         modifier = modifier,

@@ -1,15 +1,12 @@
 package dev.lemmahq.lemma.ui.provider
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,9 +15,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
@@ -39,23 +36,24 @@ import lemma.mobile.shared.generated.resources.provider_model_list
 import lemma.mobile.shared.generated.resources.provider_model_placeholder
 import lemma.mobile.shared.generated.resources.provider_model_search_placeholder
 import lemma.mobile.shared.generated.resources.provider_no_models
-import lemma.mobile.shared.generated.resources.provider_remove_model
+import lemma.mobile.shared.generated.resources.provider_tool_calling_desc
 import org.jetbrains.compose.resources.stringResource
 
-/** The model list of a provider with search, adding by name, removal, and fetching. */
+/** The editable models of a custom provider and their tool-calling feature. */
 @Composable
 internal fun ModelListSection(
-    models: List<String>,
+    models: List<ClientModel>,
     fetching: Boolean,
     onFetch: () -> Unit,
     onAdd: (String) -> Unit,
     onRemove: (String) -> Unit,
+    onToolCallingChange: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var adding by rememberSaveable { mutableStateOf(false) }
     var newModel by rememberSaveable { mutableStateOf("") }
-    val visible = models.filter { it.contains(query.trim(), ignoreCase = true) }
+    val visible = models.filter { it.id.contains(query.trim(), ignoreCase = true) }
     val closeAdding = {
         adding = false
         newModel = ""
@@ -83,6 +81,12 @@ internal fun ModelListSection(
                 onClick = { adding = !adding },
             )
         }
+        Text(
+            text = stringResource(Res.string.provider_tool_calling_desc),
+            style = LemmaTheme.typography.labelSmall,
+            color = LemmaTheme.colors.textTertiary,
+            modifier = Modifier.padding(top = 4.dp),
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LemmaTextField(
             value = query,
@@ -123,43 +127,11 @@ internal fun ModelListSection(
                 modifier = Modifier.padding(vertical = 8.dp),
             )
         } else {
-            Column(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .clip(LemmaTheme.shapes.medium)
-                        .background(LemmaTheme.colors.fill2)
-            ) {
-                visible.forEachIndexed { index, model ->
-                    if (index > 0) {
-                        HorizontalDivider(
-                            color = LemmaTheme.colors.separator,
-                            modifier = Modifier.padding(start = 16.dp),
-                        )
-                    }
-                    ModelRow(model = model, onRemove = { onRemove(model) })
-                }
-            }
+            ModelFeatureList(
+                models = visible,
+                onToolCallingChange = onToolCallingChange,
+                onRemove = onRemove,
+            )
         }
-    }
-}
-
-@Composable
-private fun ModelRow(model: String, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = model,
-            style = LemmaTheme.typography.bodyMedium,
-            color = LemmaTheme.colors.textPrimary,
-            modifier = Modifier.weight(1f),
-        )
-        LemmaIconButton(
-            icon = Res.drawable.icon_x,
-            contentDescription = stringResource(Res.string.provider_remove_model),
-            onClick = onRemove,
-            tint = LemmaTheme.colors.textSecondary,
-        )
     }
 }

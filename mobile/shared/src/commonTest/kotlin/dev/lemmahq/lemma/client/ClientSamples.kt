@@ -1,18 +1,47 @@
 package dev.lemmahq.lemma.client
 
-/** An OpenAI provider named and identified by [id] that offers [models]. */
-fun sampleProvider(id: String, vararg models: String, enabled: Boolean = true): ClientProvider =
+/** An OpenAI custom provider named and identified by [id] that offers [models]. */
+fun sampleProvider(
+    id: String,
+    vararg models: String,
+    enabled: Boolean = true,
+    name: String = id,
+): ClientProvider =
     ClientProvider(
         id = id,
-        kind = "openai",
-        identifier = id,
-        name = id,
-        baseUrl = "https://api.example.com/v1",
-        apiPath = "",
-        modelsPath = "",
-        models = models.toList(),
         enabled = enabled,
         apiKey = "sk-1",
+        source =
+            ClientCustomProvider(
+                identifier = id,
+                name = name,
+                apiFormat = "openai",
+                baseUrl = "https://api.example.com/v1",
+                apiPath = "",
+                modelsPath = "",
+                models = models.map { ClientModel(it, toolCalling = true) },
+            ),
+    )
+
+/** A predefined provider serving OpenAI and Anthropic formats with tool-capable [models]. */
+fun samplePredefinedProvider(
+    id: String,
+    vararg models: String,
+    enabled: Boolean = false,
+    apiKey: String = "",
+): ClientProvider =
+    ClientProvider(
+        id = id,
+        enabled = enabled,
+        apiKey = apiKey,
+        source =
+            ClientPredefinedProvider(
+                identifier = id,
+                name = id,
+                apiFormats = listOf("anthropic", "openai"),
+                defaultApiFormat = "anthropic",
+                models = models.map { ClientModel(it, toolCalling = true) },
+            ),
     )
 
 /** A settled message whose content is its [id]; a reply names the model that wrote it. */

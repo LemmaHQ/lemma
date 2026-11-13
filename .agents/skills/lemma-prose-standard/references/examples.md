@@ -86,7 +86,7 @@ Keep the consequence of order or a surprising scope rule. Let the configuration 
 
 ## Do not trim for word count alone
 
-**Current:** "Each adapter translates its vendor's stream into stream events, so the loop handles text, thinking, and tool calls the same way for every provider kind."
+**Current:** "Each adapter translates its vendor's stream into stream events, so the loop handles text, thinking, and tool calls the same way for every API format."
 
 **Shorter but worse:** "Adapters normalize streams."
 

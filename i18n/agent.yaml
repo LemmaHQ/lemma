@@ -1,90 +1,90 @@
 agent:
   abortedNotice:
-    platforms: [web]
+    platforms: [web, android]
     en: "Generation stopped."
     zh: "生成已停止。"
   stop:
-    platforms: [web]
+    platforms: [web, android]
     en: "Stop generating"
     zh: "停止生成"
   thinking:
-    platforms: [web]
+    platforms: [web, android]
     en: "Thought"
     zh: "已思考"
   thinkingInProgress:
-    platforms: [web]
+    platforms: [web, android]
     en: "Thinking…"
     zh: "正在思考…"
   thinkingPending:
-    platforms: [web]
+    platforms: [web, android]
     en: "Thinking"
     zh: "正在思考"
   thoughtFor:
-    platforms: [web]
+    platforms: [web, android]
     params: { duration: string }
     en: "Thought for {duration}"
     zh: "思考了 {duration}"
   toolCall:
     announce:
       error:
-        platforms: [web]
+        platforms: [web, android]
         params: { name: string, error: string }
         en: "{name} failed: {error}"
         zh: "{name} 失败：{error}"
       running:
-        platforms: [web]
+        platforms: [web, android]
         params: { name: string }
         en: "{name} running"
         zh: "{name} 正在运行"
       success:
-        platforms: [web]
+        platforms: [web, android]
         params: { name: string }
         en: "{name} finished"
         zh: "{name} 已完成"
     arguments:
-      platforms: [web]
+      platforms: [web, android]
       en: "Arguments"
       zh: "参数"
     copyArguments:
-      platforms: [web]
+      platforms: [web, android]
       en: "Copy arguments"
       zh: "复制参数"
     copyResult:
-      platforms: [web]
+      platforms: [web, android]
       en: "Copy result"
       zh: "复制结果"
     errorFallback:
-      platforms: [web]
+      platforms: [web, android]
       en: "The tool call failed."
       zh: "工具调用失败"
     failed:
-      platforms: [web]
+      platforms: [web, android]
       en: "Failed"
       zh: "失败"
     output:
-      platforms: [web]
+      platforms: [web, android]
       en: "Result"
       zh: "结果"
     showAll:
-      platforms: [web]
+      platforms: [web, android]
       en: "Show all"
       zh: "展开全部"
     showLess:
-      platforms: [web]
+      platforms: [web, android]
       en: "Show less"
       zh: "收起"
     waiting:
-      platforms: [web]
+      platforms: [web, android]
       en: "Waiting for result…"
       zh: "等待结果…"
   toolGroup:
     failed:
-      platforms: [web]
+      platforms: [web, android]
       params: { count: number }
       en: "{count} failed"
       zh: "{count} 个失败"
     running:
-      platforms: [web]
+      platforms: [web, android]
       plural: count
       params: { count: number }
       en:
@@ -93,7 +93,7 @@ agent:
       zh:
         other: "正在使用 {count} 个工具…"
     used:
-      platforms: [web]
+      platforms: [web, android]
       plural: count
       params: { count: number }
       en:

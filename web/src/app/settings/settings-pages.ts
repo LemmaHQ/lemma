@@ -1,4 +1,4 @@
-import { BotIcon, PaletteIcon } from "@lemma/ui";
+import { BotIcon, GlobeIcon, PaletteIcon } from "@lemma/ui";
 import type { ParseKeys } from "i18next";
 import type { ComponentType } from "react";
 
@@ -42,6 +42,13 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
                 titleKey: "settings.aiProviders",
                 loadPage: async () =>
                     (await import("@/features/provider")).ProviderPanel,
+            },
+            {
+                segment: "web",
+                icon: GlobeIcon,
+                titleKey: "settings.web",
+                loadPage: async () =>
+                    (await import("@/features/web-provider")).WebProviderPanel,
             },
         ],
     },

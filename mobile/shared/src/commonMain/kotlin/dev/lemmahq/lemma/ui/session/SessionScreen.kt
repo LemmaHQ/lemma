@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_app_name
 import lemma.mobile.shared.generated.resources.session_select_model
-import lemma.mobile.shared.generated.resources.session_untitled
+import lemma.mobile.shared.generated.resources.sidebar_new_session
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -92,7 +92,7 @@ internal fun SessionScreen(
                         stringResource(Res.string.common_app_name)
                     } else {
                         viewModel.currentSession?.title?.takeIf { it.isNotBlank() }
-                            ?: stringResource(Res.string.session_untitled)
+                            ?: stringResource(Res.string.sidebar_new_session)
                     },
                 modelLabel =
                     if (viewModel.providers.any { it.enabled }) {

@@ -6,32 +6,33 @@ import dev.lemmahq.gen.lemma.v1.AgentEvent
 import dev.lemmahq.gen.lemma.v1.AuthTokens
 import dev.lemmahq.gen.lemma.v1.abortMessageRequest
 import dev.lemmahq.gen.lemma.v1.checkAccountRequest
-import dev.lemmahq.gen.lemma.v1.checkProviderRequest
-import dev.lemmahq.gen.lemma.v1.createProviderRequest
 import dev.lemmahq.gen.lemma.v1.createSessionRequest
-import dev.lemmahq.gen.lemma.v1.deleteProviderRequest
+import dev.lemmahq.gen.lemma.v1.deleteCustomProviderRequest
 import dev.lemmahq.gen.lemma.v1.deleteSessionRequest
 import dev.lemmahq.gen.lemma.v1.fetchModelsRequest
 import dev.lemmahq.gen.lemma.v1.getVersionRequest
 import dev.lemmahq.gen.lemma.v1.listMessagesRequest
 import dev.lemmahq.gen.lemma.v1.listProvidersRequest
 import dev.lemmahq.gen.lemma.v1.listSessionsRequest
+import dev.lemmahq.gen.lemma.v1.listWebProvidersRequest
 import dev.lemmahq.gen.lemma.v1.meRequest
-import dev.lemmahq.gen.lemma.v1.providerModelsPatch
 import dev.lemmahq.gen.lemma.v1.renameSessionRequest
 import dev.lemmahq.gen.lemma.v1.resumeStreamRequest
 import dev.lemmahq.gen.lemma.v1.sendMessageRequest
 import dev.lemmahq.gen.lemma.v1.signInRequest
 import dev.lemmahq.gen.lemma.v1.signOutRequest
 import dev.lemmahq.gen.lemma.v1.signUpRequest
-import dev.lemmahq.gen.lemma.v1.updateProviderRequest
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ClientCustomProviderInput
+import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientMessagePage
+import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderInput
-import dev.lemmahq.lemma.client.ClientProviderPatch
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientUser
+import dev.lemmahq.lemma.client.ClientWebFunction
+import dev.lemmahq.lemma.client.ClientWebProvider
+import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -122,36 +123,60 @@ class ConnectLemmaClient(
         .providersList
         .map { it.toClient() }
 
-    override suspend fun createProvider(input: ClientProviderInput): ClientProvider {
-        val request = createProviderRequest {
-            kind = providerKind(input.kind)
-            name = input.name
-            baseUrl = input.baseUrl
-            apiKey = input.apiKey
-            apiPath = input.apiPath
-            modelsPath = input.modelsPath
-            models.addAll(input.models)
-            identifier = input.identifier
-        }
-        return call { rpc.provider.createProvider(request, emptyMap()) }.provider.toClient()
+    override suspend fun createCustomProvider(input: ClientCustomProviderInput): ClientProvider {
+        val request = customProviderCreateRequest(input)
+        return call { rpc.provider.createCustomProvider(request, emptyMap()) }.provider.toClient()
     }
 
-    override suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider {
-        val request = updateProviderRequest {
-            this.id = id
-            patch.name?.let { name = it }
-            patch.baseUrl?.let { baseUrl = it }
-            patch.apiKey?.let { apiKey = it }
-            patch.apiPath?.let { apiPath = it }
-            patch.modelsPath?.let { modelsPath = it }
-            patch.enabled?.let { enabled = it }
-            patch.models?.let { models = providerModelsPatch { this.models.addAll(it) } }
-        }
-        return call { rpc.provider.updateProvider(request, emptyMap()) }.provider.toClient()
+    override suspend fun updateCustomProvider(
+        id: String,
+        patch: ClientCustomProviderPatch,
+    ): ClientProvider {
+        val request = customProviderUpdateRequest(id, patch)
+        return call { rpc.provider.updateCustomProvider(request, emptyMap()) }.provider.toClient()
     }
 
-    override suspend fun deleteProvider(id: String) {
-        call { rpc.provider.deleteProvider(deleteProviderRequest { this.id = id }, emptyMap()) }
+    override suspend fun updatePredefinedProvider(
+        id: String,
+        patch: ClientPredefinedProviderPatch,
+    ): ClientProvider {
+        val request = predefinedProviderUpdateRequest(id, patch)
+        return call { rpc.provider.updatePredefinedProvider(request, emptyMap()) }
+            .provider
+            .toClient()
+    }
+
+    override suspend fun listWebProviders(): List<ClientWebProvider> = call {
+        rpc.provider.listWebProviders(listWebProvidersRequest {}, emptyMap())
+    }
+        .providersList
+        .map { it.toClient() }
+
+    override suspend fun updateWebProvider(
+        id: String,
+        patch: ClientWebProviderPatch,
+    ): ClientWebProvider {
+        val request = webProviderUpdateRequest(id, patch)
+        return call { rpc.provider.updateWebProvider(request, emptyMap()) }.provider.toClient()
+    }
+
+    override suspend fun setWebProviderOrder(
+        function: ClientWebFunction,
+        ids: List<String>,
+    ): List<ClientWebProvider> {
+        val request = webProviderOrderRequest(function, ids)
+        return call { rpc.provider.setWebProviderOrder(request, emptyMap()) }
+            .providersList
+            .map { it.toClient() }
+    }
+
+    override suspend fun deleteCustomProvider(id: String) {
+        call {
+            rpc.provider.deleteCustomProvider(
+                deleteCustomProviderRequest { this.id = id },
+                emptyMap(),
+            )
+        }
     }
 
     override suspend fun fetchProviderModels(id: String): List<String> = call {
@@ -160,36 +185,25 @@ class ConnectLemmaClient(
         .modelsList
 
     override suspend fun fetchModels(
-        kind: String,
+        apiFormat: String,
         baseUrl: String,
         apiKey: String,
         modelsPath: String,
     ): List<String> {
-        val request = fetchModelsRequest {
-            this.kind = providerKind(kind)
-            this.baseUrl = baseUrl
-            this.apiKey = apiKey
-            this.modelsPath = modelsPath
-        }
+        val request = modelsFetchRequest(apiFormat, baseUrl, apiKey, modelsPath)
         return call { rpc.provider.fetchModels(request, emptyMap()) }.modelsList
     }
 
-    override suspend fun checkProvider(
-        id: String?,
-        connection: ClientProviderInput,
+    override suspend fun checkProvider(id: String, model: String): String {
+        val request = storedProviderCheckRequest(id, model)
+        return call { rpc.provider.checkProvider(request, emptyMap()) }.error
+    }
+
+    override suspend fun checkCustomProvider(
+        connection: ClientCustomProviderInput,
         model: String,
     ): String {
-        val request = checkProviderRequest {
-            this.model = model
-            if (id != null) {
-                this.id = id
-            } else {
-                kind = providerKind(connection.kind)
-                baseUrl = connection.baseUrl
-                apiKey = connection.apiKey
-                apiPath = connection.apiPath
-            }
-        }
+        val request = customProviderCheckRequest(connection, model)
         return call { rpc.provider.checkProvider(request, emptyMap()) }.error
     }
 

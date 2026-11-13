@@ -11,7 +11,7 @@ Lemma 用一个 Rust 核心为 Web、桌面与 Android 客户端运行 LLM agent
 
 ## 功能
 
-- **三种 provider 类型。** OpenAI chat completions 及兼容 API、Anthropic、Gemini，每个 provider 使用你自己的 base URL 与 API key。
+- **预定义与自定义 provider。** DeepSeek 是预定义 provider，只需填入你的 API key。自定义 provider 使用三种 API 格式之一（OpenAI chat completions 及兼容 API、Anthropic 或 Gemini），并使用你自己的 base URL 与 API key。
 - **会话是一棵消息树。** 每条消息记录其父消息；模型请求携带从根到当前叶子的路径。
 - **Agent 工具。** `read_file`、`write_file` 与 `bash` 在每个会话各自的工作区目录中运行，适用于桌面应用与 Android 应用。
 - **三种运行时。** 面向浏览器的服务端、面向桌面应用的本地引擎、面向 Android 的进程内引擎运行同一个 Rust 核心（[架构](docs/architecture.zh.md#运行时)）。

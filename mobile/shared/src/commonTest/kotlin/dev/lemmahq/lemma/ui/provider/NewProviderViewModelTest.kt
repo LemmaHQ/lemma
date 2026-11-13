@@ -1,7 +1,7 @@
 package dev.lemmahq.lemma.ui.provider
 
+import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderInput
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.FakeLemmaClient.Call
 import dev.lemmahq.lemma.client.ServiceException
@@ -22,7 +22,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.error_provider_fields_required
+import lemma.mobile.shared.generated.resources.errors_provider_fields_required
 import lemma.mobile.shared.generated.resources.provider_identifier_invalid
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -64,7 +64,7 @@ class NewProviderViewModelTest {
         viewModel.identifier = "My Proxy_1"
 
         viewModel.save()
-        assertEquals(UiText.Resource(Res.string.error_provider_fields_required), viewModel.error)
+        assertEquals(UiText.Resource(Res.string.errors_provider_fields_required), viewModel.error)
         viewModel.baseUrl = "ftp://files.example.com"
         viewModel.save()
         advanceUntilIdle()
@@ -76,9 +76,9 @@ class NewProviderViewModelTest {
     @Test
     fun savingSendsTheTrimmedFormAndNamesTheProviderAfterItsId() = runTest {
         val stored = sampleProvider("proxy")
-        client.onCreateProvider = { stored }
+        client.onCreateCustomProvider = { stored }
         val viewModel = viewModel()
-        viewModel.kind = "anthropic"
+        viewModel.apiFormat = "anthropic"
         viewModel.identifier = " my proxy "
         viewModel.name = "  "
         viewModel.apiKey = " sk-1 "
@@ -89,15 +89,15 @@ class NewProviderViewModelTest {
         advanceUntilIdle()
 
         val input =
-            ClientProviderInput(
-                kind = "anthropic",
+            ClientCustomProviderInput(
+                apiFormat = "anthropic",
                 identifier = "my proxy",
                 name = "my proxy",
                 baseUrl = "https://api.example.com",
                 apiKey = "sk-1",
                 apiPath = "/v1/messages",
             )
-        assertEquals(listOf(Call("createProvider", input)), client.calls)
+        assertEquals(listOf(Call("createCustomProvider", input)), client.calls)
         assertEquals(listOf(stored), created)
         assertEquals(stored, viewModel.created)
     }
@@ -114,20 +114,22 @@ class NewProviderViewModelTest {
         advanceUntilIdle()
 
         val input =
-            ClientProviderInput(
-                kind = "openai",
+            ClientCustomProviderInput(
+                apiFormat = "openai",
                 identifier = "proxy",
                 name = "Proxy",
                 baseUrl = "https://api.example.com",
                 apiKey = "",
                 apiPath = "",
             )
-        assertEquals(listOf(Call("createProvider", input)), client.calls)
+        assertEquals(listOf(Call("createCustomProvider", input)), client.calls)
     }
 
     @Test
     fun aRejectedProviderStaysOnTheForm() = runTest {
-        client.onCreateProvider = { throw ServiceException(ServiceFailure.ProviderIdentifierTaken) }
+        client.onCreateCustomProvider = {
+            throw ServiceException(ServiceFailure.ProviderIdentifierTaken)
+        }
         val viewModel = viewModel()
         viewModel.identifier = "openai"
         viewModel.baseUrl = "https://api.example.com/v1"

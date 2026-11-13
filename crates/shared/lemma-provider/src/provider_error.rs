@@ -16,6 +16,12 @@ pub enum ProviderError {
     /// The identifier is already used by another provider of this user.
     #[error("provider identifier taken")]
     IdentifierTaken,
+    /// The requested API format is unspecified or not served by the provider.
+    #[error("api format invalid")]
+    ApiFormatInvalid,
+    /// Enabling a key-authenticated provider requires a saved API key.
+    #[error("provider key required")]
+    KeyRequired,
     /// Target provider is absent for this user.
     #[error("provider not found")]
     NotFound,

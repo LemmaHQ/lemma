@@ -29,10 +29,10 @@ import lemma.mobile.shared.generated.resources.language_chinese
 import lemma.mobile.shared.generated.resources.language_english
 import lemma.mobile.shared.generated.resources.language_system
 import lemma.mobile.shared.generated.resources.settings_appearance
-import lemma.mobile.shared.generated.resources.settings_language
-import lemma.mobile.shared.generated.resources.settings_language_description
-import lemma.mobile.shared.generated.resources.settings_theme
-import lemma.mobile.shared.generated.resources.settings_theme_description
+import lemma.mobile.shared.generated.resources.settings_language_desc
+import lemma.mobile.shared.generated.resources.settings_language_label
+import lemma.mobile.shared.generated.resources.settings_theme_desc
+import lemma.mobile.shared.generated.resources.settings_theme_label
 import lemma.mobile.shared.generated.resources.theme_dark
 import lemma.mobile.shared.generated.resources.theme_light
 import lemma.mobile.shared.generated.resources.theme_system
@@ -55,8 +55,8 @@ internal fun AppearanceScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             LemmaSettingsGroup(
-                label = stringResource(Res.string.settings_theme),
-                description = stringResource(Res.string.settings_theme_description),
+                label = stringResource(Res.string.settings_theme_label),
+                description = stringResource(Res.string.settings_theme_desc),
             ) {
                 LemmaOptionRow(
                     title = stringResource(Res.string.theme_light),
@@ -81,8 +81,8 @@ internal fun AppearanceScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
             LemmaSettingsGroup(
-                label = stringResource(Res.string.settings_language),
-                description = stringResource(Res.string.settings_language_description),
+                label = stringResource(Res.string.settings_language_label),
+                description = stringResource(Res.string.settings_language_desc),
             ) {
                 LemmaOptionRow(
                     title = stringResource(Res.string.language_system),

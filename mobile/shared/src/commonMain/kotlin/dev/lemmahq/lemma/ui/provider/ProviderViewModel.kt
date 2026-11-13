@@ -31,7 +31,7 @@ internal class ProviderViewModel(private val client: LemmaClient) : ViewModel() 
 
     /** The providers whose name contains [query], ignoring case. */
     val matches: List<ClientProvider>
-        get() = providers.filter { it.name.contains(query.trim(), ignoreCase = true) }
+        get() = providers.filter { it.source.name.contains(query.trim(), ignoreCase = true) }
 
     init {
         viewModelScope.launch {

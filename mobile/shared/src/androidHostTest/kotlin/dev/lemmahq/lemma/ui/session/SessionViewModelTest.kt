@@ -48,7 +48,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.error_model_required
+import lemma.mobile.shared.generated.resources.errors_model_required
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionViewModelTest {
@@ -125,7 +125,7 @@ class SessionViewModelTest {
         assertEquals(ModelSelection("openai", "gpt-4o"), viewModel.selection)
         assertEquals(ModelSelection("openai", "gpt-4o"), settings.getModelSelection())
 
-        client.onListProviders = { listOf(openai.copy(models = listOf("gpt-4o-mini"))) }
+        client.onListProviders = { listOf(sampleProvider("openai", "gpt-4o-mini")) }
         viewModel.loadProviders()
         advanceUntilIdle()
         assertEquals(ModelSelection("openai", "gpt-4o-mini"), viewModel.selection)
@@ -138,7 +138,7 @@ class SessionViewModelTest {
 
         send(viewModel, "Hello")
 
-        assertEquals(UiText.Resource(Res.string.error_model_required), viewModel.error)
+        assertEquals(UiText.Resource(Res.string.errors_model_required), viewModel.error)
         assertEquals("Hello", viewModel.input)
         assertEquals(emptyList(), viewModel.messages)
         assertEquals(listOf(Call("listSessions"), Call("listProviders")), client.calls)

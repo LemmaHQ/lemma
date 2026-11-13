@@ -2,73 +2,119 @@ syntax = "proto3";
 
 package lemma.v1;
 
-// Provider protocol kind.
-enum ProviderKind {
-  PROVIDER_KIND_UNSPECIFIED = 0;
-  PROVIDER_KIND_OPENAI = 1; // OpenAI Compatible
-  PROVIDER_KIND_ANTHROPIC = 2; // Anthropic Messages API
-  PROVIDER_KIND_GEMINI = 3; // Gemini Content Generation API
+// Wire format of one model request.
+enum ApiFormat {
+  API_FORMAT_UNSPECIFIED = 0;
+  API_FORMAT_OPENAI = 1; // OpenAI Chat Completions
+  API_FORMAT_ANTHROPIC = 2; // Anthropic Messages
+  API_FORMAT_GEMINI = 3; // Gemini generateContent
+}
+
+// One model a provider offers, with the features requests depend on.
+message Model {
+  string id = 1;
+  // Requests to the model carry tool definitions and earlier tool calls only when true.
+  bool tool_calling = 2;
 }
 
 // Provider configuration scoped per user account.
 message Provider {
   string id = 1;
-  ProviderKind kind = 2;
-  string name = 3;
-  string base_url = 4; // Base URL as the vendor SDK takes it: https://api.openai.com/v1, https://api.anthropic.com, https://generativelanguage.googleapis.com
-  string api_key = 5; // Decrypted plaintext in read responses
-  repeated string models = 6;
-  bool enabled = 7;
-  string api_path = 8; // Empty string uses provider kind default
-  string models_path = 9; // Empty string uses provider kind default
+  bool enabled = 2;
+  string api_key = 3; // Decrypted plaintext in read responses
+  oneof source {
+    PredefinedProvider predefined = 4;
+    CustomProvider custom = 5;
+  }
+}
+
+// Provider whose formats, addresses, and models ship with Lemma; only the default format is user-set.
+message PredefinedProvider {
+  string identifier = 1; // Predefined type, such as deepseek
+  string name = 2;
+  repeated ApiFormat api_formats = 3; // Formats the provider serves
+  // Format for a turn whose session has no previous reply in a format the provider serves.
+  ApiFormat default_api_format = 4;
+  repeated Model models = 5;
+}
+
+// Provider the user configures with one format, one address, and a model list.
+message CustomProvider {
   // Machine identifier visible to users; restricted to ASCII, immutable after creation.
-  string identifier = 12;
+  string identifier = 1;
+  string name = 2;
+  ApiFormat api_format = 3; // Immutable after creation
+  string base_url = 4; // Base URL as the vendor SDK takes it: https://api.openai.com/v1, https://api.anthropic.com, https://generativelanguage.googleapis.com
+  string api_path = 5; // Empty string uses the format default
+  string models_path = 6; // Empty string uses the format default
+  repeated Model models = 7;
 }
 
 // Explicit wrapper for list update or clearing operations.
 message ProviderModelsPatch {
-  repeated string models = 1;
+  repeated Model models = 1;
 }
 
 message ListProvidersRequest {}
 
+// Predefined providers come first, then custom providers.
 message ListProvidersResponse {
   repeated Provider providers = 1;
 }
 
-message CreateProviderRequest {
-  ProviderKind kind = 1;
+message CreateCustomProviderRequest {
+  string identifier = 1;
   string name = 2;
-  string base_url = 3;
-  string api_key = 4;
-  repeated string models = 5;
+  ApiFormat api_format = 3;
+  string base_url = 4;
+  string api_key = 5;
   string api_path = 6;
   string models_path = 7;
-  string identifier = 8;
+  repeated Model models = 8;
 }
 
-message UpdateProviderRequest {
+message CreateCustomProviderResponse {
+  Provider provider = 1;
+}
+
+message UpdateCustomProviderRequest {
   string id = 1;
   // Updates provided fields while preserving existing configuration.
   optional string name = 2;
   optional string base_url = 3;
   optional string api_key = 4;
   optional bool enabled = 5;
-  optional ProviderModelsPatch models = 6;
-  optional string api_path = 7;
-  optional string models_path = 8;
+  optional string api_path = 6;
+  optional string models_path = 7;
+  optional ProviderModelsPatch models = 8;
 }
 
-message DeleteProviderRequest {
+message UpdateCustomProviderResponse {
+  Provider provider = 1;
+}
+
+message UpdatePredefinedProviderRequest {
+  string id = 1;
+  // Updates provided fields while preserving existing configuration.
+  optional string api_key = 2;
+  optional bool enabled = 3;
+  optional ApiFormat default_api_format = 4;
+}
+
+message UpdatePredefinedProviderResponse {
+  Provider provider = 1;
+}
+
+message DeleteCustomProviderRequest {
   string id = 1;
 }
 
-message DeleteProviderResponse {}
+message DeleteCustomProviderResponse {}
 
 message FetchModelsRequest {
-  // Accepts existing provider id or inline configuration credentials
+  // Accepts an existing custom provider id or inline configuration credentials
   string id = 1;
-  ProviderKind kind = 2;
+  ApiFormat api_format = 2;
   string base_url = 3;
   string api_key = 4;
   string models_path = 5;
@@ -79,9 +125,9 @@ message FetchModelsResponse {
 }
 
 message CheckProviderRequest {
-  // Checks an existing provider id or inline connection details
+  // Checks an existing provider id or inline custom connection details
   string id = 1;
-  ProviderKind kind = 2;
+  ApiFormat api_format = 2;
   string base_url = 3;
   string api_key = 4;
   string api_path = 5;
@@ -93,21 +139,76 @@ message CheckProviderResponse {
   string error = 1;
 }
 
-message CreateProviderResponse {
-  Provider provider = 1;
+// A web service account: a search or fetch backend with its own key.
+message WebProvider {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // Local HTTP fetch without any account.
+    KIND_NATIVE = 1;
+    KIND_EXA = 2;
+    KIND_DEEPSEEK = 3;
+  }
+
+  string id = 1;
+  Kind kind = 2;
+  string name = 3;
+  bool enabled = 4;
+  // Whether a nonempty key is stored; the key itself never leaves the host.
+  bool has_key = 5;
+  // Position in the search backend order; zero for backends without search.
+  int32 search_rank = 6;
+  // Position in the fetch backend order; zero for backends without fetch.
+  int32 fetch_rank = 7;
 }
 
-message UpdateProviderResponse {
-  Provider provider = 1;
+message ListWebProvidersRequest {}
+
+// All web providers, ordered by kind.
+message ListWebProvidersResponse {
+  repeated WebProvider providers = 1;
+}
+
+message UpdateWebProviderRequest {
+  string id = 1;
+  // Replaces the stored key; an empty string clears it and disables the provider.
+  optional string api_key = 2;
+  optional bool enabled = 3;
+}
+
+message UpdateWebProviderResponse {
+  WebProvider provider = 1;
+}
+
+message SetWebProviderOrderRequest {
+  enum Function {
+    FUNCTION_UNSPECIFIED = 0;
+    FUNCTION_SEARCH = 1;
+    FUNCTION_FETCH = 2;
+  }
+
+  Function function = 1;
+  // Every provider supporting the function, in the order calls should try them.
+  repeated string ids = 2;
+}
+
+message SetWebProviderOrderResponse {
+  repeated WebProvider providers = 1;
 }
 
 service ProviderService {
+  // Lists every provider of the user, adding the missing predefined providers first.
   rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
-  rpc CreateProvider(CreateProviderRequest) returns (CreateProviderResponse);
-  rpc UpdateProvider(UpdateProviderRequest) returns (UpdateProviderResponse);
-  rpc DeleteProvider(DeleteProviderRequest) returns (DeleteProviderResponse);
+  rpc CreateCustomProvider(CreateCustomProviderRequest) returns (CreateCustomProviderResponse);
+  rpc UpdateCustomProvider(UpdateCustomProviderRequest) returns (UpdateCustomProviderResponse);
+  // Enabling requires a saved API key; the default format must be one the provider serves.
+  rpc UpdatePredefinedProvider(UpdatePredefinedProviderRequest) returns (UpdatePredefinedProviderResponse);
+  rpc DeleteCustomProvider(DeleteCustomProviderRequest) returns (DeleteCustomProviderResponse);
   // Fetches remote model list from the provider endpoint.
   rpc FetchModels(FetchModelsRequest) returns (FetchModelsResponse);
-  // Sends a minimal generation request to confirm the provider answers.
+  // Sends a minimal generation request to confirm the provider answers; a predefined provider uses its default format.
   rpc CheckProvider(CheckProviderRequest) returns (CheckProviderResponse);
+  // Web search and fetch backend accounts and their call order.
+  rpc ListWebProviders(ListWebProvidersRequest) returns (ListWebProvidersResponse);
+  rpc UpdateWebProvider(UpdateWebProviderRequest) returns (UpdateWebProviderResponse);
+  rpc SetWebProviderOrder(SetWebProviderOrderRequest) returns (SetWebProviderOrderResponse);
 }

@@ -29,6 +29,8 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.auth.AuthScreen
 import dev.lemmahq.lemma.ui.auth.AuthViewModel
 import dev.lemmahq.lemma.ui.provider.ProviderGraph
+import dev.lemmahq.lemma.ui.provider.WebProviderScreen
+import dev.lemmahq.lemma.ui.provider.WebProviderViewModel
 import dev.lemmahq.lemma.ui.provider.providerGraph
 import dev.lemmahq.lemma.ui.session.SessionScreen
 import dev.lemmahq.lemma.ui.session.SessionViewModel
@@ -123,6 +125,14 @@ private fun NavGraphBuilder.appRoutes(
         SettingsScreen(
             onAppearance = { navController.navigate(AppearanceRoute) },
             onProviders = { navController.navigate(ProviderGraph) },
+            onWebProviders = { navController.navigate(WebProviderRoute) },
+            onBack = { navController.navigateUp() },
+        )
+    }
+    composable<WebProviderRoute> {
+        val connected = appViewModel.state as? AppState.Connected ?: return@composable
+        WebProviderScreen(
+            viewModel = viewModel { WebProviderViewModel(connected.client) },
             onBack = { navController.navigateUp() },
         )
     }

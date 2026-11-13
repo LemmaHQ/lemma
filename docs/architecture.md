@@ -10,9 +10,9 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 
 | Layer     | Crates                                                          | Owns                                                                                                                                                                                                                                              |
 | --------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                      | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ProviderKind` |
-| Domains   | `lemma-auth`, `lemma-session`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; sessions, the message tree, and the `sessions` and `messages` tables; provider configuration, model lists, and the `providers` table; the migrations of these tables; API-key sealing                      |
-| Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`               | Vendor wire formats and model lists; the tool registry and execution environment; the turn loop and its cancellation                                                                                                                              |
+| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                      | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ApiFormat`    |
+| Domains   | `lemma-auth`, `lemma-session`, `lemma-provider`, `lemma-crypto` | Accounts, tokens, and the auth tables; sessions, the message tree, and the `sessions` and `messages` tables; predefined, custom, and web providers, model lists, and their tables; their migrations; API-key sealing                              |
+| Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`               | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                            |
 | Agent     | `lemma-agent`                                                   | Assembling one turn from a request (provider endpoint, adapter, session, tools in the session directory), running it, and aborting running turns                                                                                                  |
 | RPC       | `crates/rpc/*`, including `lemma-host`                          | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport`    |
 | Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`                 | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                       |
@@ -41,7 +41,7 @@ The web client fetches sessions and messages from the host on each view. The And
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `SessionService`, `AgentService`, and `SystemService`, plus `errors.proto`. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every remote client: `AuthService`, `ProviderService`, `SessionService`, `AgentService`, and `SystemService`, plus `errors.proto`. `ProviderService` covers model providers and web providers: it lists web providers, updates their keys and enabled flags, and sets the search and fetch backend orders. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
@@ -54,13 +54,15 @@ A **turn** starts from one user message and ends when the model stops without re
 ```text
 AgentService.SendMessage(session, provider, model, content)
   require_user -> user id
-  ProviderService::adapter opens the provider's API key and binds the adapter for its kind
-  Agent::prepare reads the user's session and opens its session directory
+  Agent::prepare reads the user's session and the API format of the nearest assistant message on the path from root to leaf
+  ProviderService::bind picks the API format, opens the API key, and binds the adapter
+  open the session directory and register its tools
   append the user message under the active leaf; move the leaf            -> started
   record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
     fold the path from root to leaf into Vec<Message>
+    tool calling off -> leave tool calls and tool results out of the request
     append an assistant placeholder, status streaming; move the leaf      -> turn_started
     Adapter::stream(ModelRequest) -> StreamEvent*                         -> delta (text | thinking)
     settle the placeholder: content, stop reason, usage, status, timings
@@ -77,9 +79,11 @@ Messages persist as they happen: the user message and each placeholder are writt
 
 Every `AgentEvent` carries the server's `occurred_at` instant, preserved by replay. Assistant JSON bodies persist thinking and tool start/finish instants for history; old rows leave them absent, and adapters omit these server-only fields from provider requests. [Agent events](subsystems/agent.md#turn-events) define the timing points.
 
-The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ProviderKind`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
+The adapter layer normalizes every vendor stream into `StreamEvent`: `HttpConnector` binds each provider endpoint to `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate` by `ApiFormat`, each adapter parses the vendor's server-sent events, and the time to first content delta is measured in the adapter. Thinking from any vendor becomes a `Thinking` content block beside the text.
 
-Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted in the session directory, which is the directory the session was created with or else `workspaces/<session id>` under the data directory, and tell the model that directory, the operating system, and the shell in a system prompt. Server mode attaches no tools and refuses to create a session with a directory. [Tools](subsystems/agent.md#tools) defines path confinement and command limits. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn.
+A custom provider has one API format. A predefined provider serves several, and `ProviderService::bind` picks one for the whole turn: the format recorded on the nearest assistant message of the context path when the provider serves it, otherwise the provider's default format.
+
+Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one when its host gives it a workspaces directory: the local engine and the Android engine register `read_file`, `write_file`, and `bash` over a `LocalExecEnv` rooted in the session directory, which is the directory the session was created with or else `workspaces/<session id>` under the data directory, and tell the model that directory, the operating system, and the shell in a system prompt. Server mode attaches no tools and refuses to create a session with a directory. [Tools](subsystems/agent.md#tools) defines path confinement and command limits. When the host also passes a web transport, the registry gains `web_search` when the search order has an enabled provider and `web_fetch` when the fetch order has one. Their backends come from the user's web provider orders at turn assembly, so a settings change applies to the next turn. `web_search` exposes the first search backend's full parameter set; a failed backend call moves to the next provider in the order, carrying over only the query and result count, and the normalized result records the backend that answered. An unknown tool and a tool failure both become an error tool result that the model sees in the next step; neither ends the turn. A model with tool calling off gets no tool definitions, and its requests leave out the tool calls and tool results of earlier steps; the stored messages keep them.
 
 `AbortMessage` takes the user message id from the `started` event and cancels that user's running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running `bash` command stops with its process tree, any other running tool call completes, and the turn stops before its next step; the stream ends with `aborted`.
 
@@ -89,11 +93,11 @@ A turn runs to its end whether or not a client reads its stream. `lemma-agent-rp
 
 The auth tables `users`, `auth_credentials`, and `refresh_tokens` belong to `lemma-auth`, `providers` to `lemma-provider`, and `sessions` and `messages` to `lemma-session`; each crate defines its tables with SeaORM and owns their migrations, and `lemma-host` applies them, merged in name order, to SQLite and PostgreSQL alike when a host opens its database ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
-A session is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider and model that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through sessions. Every operation on a session takes the caller's user id and touches only that user's rows.
+A session is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider, model, and API format that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through sessions. Every operation on a session takes the caller's user id and touches only that user's rows.
 
 A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
 
-`ProviderService` seals every nonempty provider API key with AES-256-GCM under a key derived from the configured secret. Refresh tokens are stored as SHA-256 hashes; passwords as Argon2 hashes.
+A `providers` row is predefined or custom. A custom row holds the whole configuration. A predefined row holds the API key, the enabled flag, and the default API format; `lemma-provider` reads the name, base URLs, and models from its definition in code, and listing providers inserts the predefined rows a user is missing. A `web_providers` row is a web service account: its kind (`native`, `exa`, or `deepseek`), sealed API key, enabled flag, and positions in the search and fetch orders; Native needs no key, and listing inserts the missing rows as well. `ProviderService` seals every nonempty provider API key with AES-256-GCM under a key derived from the configured secret. Refresh tokens are stored as SHA-256 hashes; passwords as Argon2 hashes.
 
 ## Where new behavior goes
 
@@ -101,7 +105,9 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 
 | Goal                                           | Mechanism                                                                                                                                |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Add a vendor protocol                          | add a `ProviderKind` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector` |
+| Add a vendor protocol                          | add an `ApiFormat` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector`   |
+| Add a predefined provider                      | add its definition to the predefined providers of `lemma-provider`                                                                       |
+| Add a web backend                              | add its kind to the web catalog of `lemma-provider` and its client to `lemma-adapter`'s `web/` module                                    |
 | Add a model-facing tool                        | implement `Tool` in `lemma-tool` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`)                                 |
 | Run tools somewhere else                       | implement `ExecEnv`                                                                                                                      |
 | Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                      |

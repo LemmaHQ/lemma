@@ -14,7 +14,7 @@ import lemma.mobile.shared.generated.resources.common_save
 import lemma.mobile.shared.generated.resources.provider_identifier
 import lemma.mobile.shared.generated.resources.provider_identifier_hint
 import lemma.mobile.shared.generated.resources.provider_name
-import lemma.mobile.shared.generated.resources.provider_name_description
+import lemma.mobile.shared.generated.resources.provider_name_desc
 import lemma.mobile.shared.generated.resources.provider_name_placeholder
 import lemma.mobile.shared.generated.resources.provider_settings_title
 import org.jetbrains.compose.resources.stringResource
@@ -48,7 +48,7 @@ internal fun ProviderSettingsDialog(
         Spacer(modifier = Modifier.height(16.dp))
         LemmaField(
             label = stringResource(Res.string.provider_name),
-            description = stringResource(Res.string.provider_name_description),
+            description = stringResource(Res.string.provider_name_desc),
             error = error,
         ) {
             LemmaTextField(

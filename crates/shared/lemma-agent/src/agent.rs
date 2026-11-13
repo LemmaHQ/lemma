@@ -1,9 +1,11 @@
 use std::env;
+use std::fmt::Debug;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use dashmap::DashMap;
+use lemma_adapter::{HttpTransport, ReqwestTransport};
 use lemma_agent_loop::{AgentLoop, ToolRuntime, TurnEvent, TurnInput};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::{Adapter, Connector};
@@ -14,6 +16,7 @@ use tokio::fs;
 use uuid::Uuid;
 
 use crate::agent_error::AgentError;
+use crate::web_tools;
 
 /// What a user asks one turn to do.
 #[derive(Debug)]
@@ -48,24 +51,27 @@ type RunningTurns = DashMap<Uuid, RunningTurn>;
 /// the operating system, and the shell; without it, turns call the model
 /// without tools.
 #[derive(Debug)]
-pub struct Agent<C> {
+pub struct Agent<C, T = ReqwestTransport> {
     sessions: SessionService,
     providers: Arc<ProviderService<C>>,
     workspaces_dir: Option<PathBuf>,
+    web_http: Option<T>,
     running: Arc<RunningTurns>,
 }
 
-impl<C: Connector> Agent<C> {
+impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// Creates the agent over the session and provider domains.
     pub fn new(
         sessions: SessionService,
         providers: Arc<ProviderService<C>>,
         workspaces_dir: Option<PathBuf>,
+        web_http: Option<T>,
     ) -> Self {
         Self {
             sessions,
             providers,
             workspaces_dir,
+            web_http,
             running: Arc::default(),
         }
     }
@@ -91,13 +97,37 @@ impl<C: Connector> Agent<C> {
         if req.model.trim().is_empty() {
             return Err(AgentError::ModelRequired);
         }
-        let adapter = self.providers.adapter(req.user_id, req.provider_id).await?;
         let Some(session) = self.sessions.find(req.user_id, req.session_id).await? else {
             return Err(AgentError::SessionNotFound);
         };
+        let previous_api_format = self
+            .sessions
+            .previous_assistant_api_format(req.user_id, req.session_id)
+            .await?;
+        let lemma_provider::ProviderBinding {
+            adapter,
+            api_format,
+            tool_calling,
+        } = self
+            .providers
+            .bind(
+                req.user_id,
+                req.provider_id,
+                &req.model,
+                previous_api_format,
+            )
+            .await?;
 
         let cancel = CancelToken::new();
-        let tools = session_tools(self.workspaces_dir.as_deref(), &session, &cancel).await?;
+        let tools = session_tools(
+            self.workspaces_dir.as_deref(),
+            &session,
+            &cancel,
+            &self.providers,
+            self.web_http.as_ref(),
+            req.user_id,
+        )
+        .await?;
         let system_prompt = tools
             .as_ref()
             .map(|runtime| system_prompt(runtime.env.root()));
@@ -124,6 +154,8 @@ impl<C: Connector> Agent<C> {
                     provider_id: req.provider_id,
                     model: req.model,
                 },
+                api_format,
+                tool_calling,
                 system_prompt,
             },
             cancel,
@@ -191,10 +223,13 @@ impl Drop for Registration {
 /// The tools of `session`, rooted in the directory it is bound to or in
 /// its workspace under `workspaces_dir`; `None` without a workspaces
 /// directory. A running command stops when `cancel` fires.
-async fn session_tools(
+async fn session_tools<C: Connector, T: HttpTransport + Debug>(
     workspaces_dir: Option<&Path>,
     session: &Session,
     cancel: &CancelToken,
+    providers: &ProviderService<C>,
+    web_http: Option<&T>,
+    user_id: Uuid,
 ) -> Result<Option<ToolRuntime<LocalExecEnv>>, AgentError> {
     let Some(workspaces_dir) = workspaces_dir else {
         return Ok(None);
@@ -211,6 +246,9 @@ async fn session_tools(
     registry.register(ReadFileTool);
     registry.register(WriteFileTool);
     registry.register(BashTool);
+    if let Some(transport) = web_http {
+        web_tools::register_web_tools(&mut registry, providers, transport, user_id).await?;
+    }
     Ok(Some(ToolRuntime::new(registry, env)))
 }
 

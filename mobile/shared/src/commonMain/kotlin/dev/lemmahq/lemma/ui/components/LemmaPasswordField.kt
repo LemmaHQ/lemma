@@ -14,8 +14,8 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.icon_eye
 import lemma.mobile.shared.generated.resources.icon_eye_off
-import lemma.mobile.shared.generated.resources.password_hide
-import lemma.mobile.shared.generated.resources.password_show
+import lemma.mobile.shared.generated.resources.password_input_hide
+import lemma.mobile.shared.generated.resources.password_input_show
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -44,7 +44,9 @@ fun LemmaPasswordField(
         LemmaIconButton(
             icon = if (visible) Res.drawable.icon_eye_off else Res.drawable.icon_eye,
             contentDescription =
-                stringResource(if (visible) Res.string.password_hide else Res.string.password_show),
+                stringResource(
+                    if (visible) Res.string.password_input_hide else Res.string.password_input_show
+                ),
             onClick = { visible = !visible },
             tint = LemmaTheme.colors.textSecondary,
         )

@@ -24,10 +24,10 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
-import type { Provider } from "../store";
+import type { CustomProvider } from "../store";
 
 interface ProviderSettingsDialogProps {
-    provider: Provider;
+    provider: CustomProvider;
     onSaveName: (name: string) => Promise<void>;
 }
 

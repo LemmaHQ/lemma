@@ -1,39 +1,40 @@
-import {
-    Avatar,
-    AvatarFallback,
-    SettingsPage,
-    SettingsSection,
-    Switch,
-} from "@lemma/ui";
+import { Input, SettingsField, SettingsSection } from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import { API_FORMAT_I18N_KEYS } from "../api-format";
 import {
     connectionPatch,
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { CheckRequest, Provider, ProviderPatch } from "../store";
+import type {
+    CheckRequest,
+    CustomProvider,
+    CustomProviderPatch,
+    Model,
+} from "../store";
 import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
 import { DeleteProviderButton } from "./DeleteProviderButton";
 import { ModelList } from "./ModelList";
+import { ProviderHeader } from "./ProviderHeader";
 import { ProviderSettingsDialog } from "./ProviderSettingsDialog";
 import { SaveBar } from "./SaveBar";
 
 interface ProviderDetailProps {
-    provider: Provider;
-    onSave: (patch: ProviderPatch) => Promise<void>;
+    provider: CustomProvider;
+    onSave: (patch: CustomProviderPatch) => Promise<void>;
     onToggleEnabled: (enabled: boolean) => void;
-    onModelsChange: (models: string[]) => void;
+    onModelsChange: (models: Model[]) => void;
     onFetchModels: () => Promise<string[]>;
     onCheck: (req: CheckRequest) => Promise<string>;
     onDelete: () => Promise<void>;
 }
 
-/** Settings page of one provider: connection fields and model list. */
+/** Settings page of one custom provider: connection fields and model list. */
 export function ProviderDetail({
     provider,
     onSave,
@@ -81,15 +82,11 @@ export function ProviderDetail({
     };
 
     return (
-        <SettingsPage
-            title={provider.name}
-            media={
-                <Avatar>
-                    <AvatarFallback>
-                        {provider.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-            }
+        <ProviderHeader
+            name={provider.name}
+            enabled={provider.enabled}
+            toggleDisabled={false}
+            onToggleEnabled={onToggleEnabled}
             actions={
                 <>
                     <ProviderSettingsDialog
@@ -98,12 +95,6 @@ export function ProviderDetail({
                     />
                     <DeleteProviderButton
                         onDelete={() => void handleDelete()}
-                    />
-                    <Switch
-                        className="ml-2"
-                        checked={provider.enabled}
-                        onCheckedChange={onToggleEnabled}
-                        aria-label={t("provider.enableProvider")}
                     />
                 </>
             }
@@ -126,19 +117,34 @@ export function ProviderDetail({
                     )
                 }
             >
+                <SettingsField
+                    label={t("provider.apiFormat")}
+                    htmlFor="custom-provider-api-format"
+                    description={t("provider.apiFormatDesc")}
+                >
+                    <Input
+                        id="custom-provider-api-format"
+                        value={t(API_FORMAT_I18N_KEYS[provider.apiFormat])}
+                        readOnly
+                    />
+                </SettingsField>
                 <ConnectionFields
-                    kind={provider.kind}
+                    apiFormat={provider.apiFormat}
                     values={values}
                     onChange={setValues}
                 />
                 <ConnectionCheck
-                    models={provider.models}
+                    models={provider.models.map((model) => model.id)}
                     target={`${values.apiKey}\n${values.baseUrl}\n${values.apiPath}`}
                     disabled={!isBaseUrlValid(values.baseUrl)}
                     onCheck={(model) =>
                         onCheck(
                             dirty
-                                ? { kind: provider.kind, ...values, model }
+                                ? {
+                                      apiFormat: provider.apiFormat,
+                                      ...values,
+                                      model,
+                                  }
                                 : { id: provider.id, model },
                         )
                     }
@@ -149,6 +155,6 @@ export function ProviderDetail({
                 onChange={onModelsChange}
                 onFetch={onFetchModels}
             />
-        </SettingsPage>
+        </ProviderHeader>
     );
 }

@@ -22,8 +22,8 @@ import kotlinx.coroutines.test.setMain
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProviderViewModelTest {
 
-    private val openai = sampleProvider("openai").copy(name = "OpenAI")
-    private val claude = sampleProvider("claude", enabled = false).copy(name = "Claude")
+    private val openai = sampleProvider("openai", name = "OpenAI")
+    private val claude = sampleProvider("claude", enabled = false, name = "Claude")
     private val client = FakeLemmaClient().apply { onListProviders = { listOf(openai, claude) } }
 
     @BeforeTest

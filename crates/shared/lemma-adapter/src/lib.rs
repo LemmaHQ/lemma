@@ -1,6 +1,6 @@
 //! Model adapters: the only crate that knows vendor wire formats.
 //!
-//! Each adapter implements `lemma_model::Adapter` for one provider kind,
+//! Each adapter implements `lemma_model::Adapter` for one API format,
 //! translating [`ModelRequest`](lemma_model::ModelRequest) values into
 //! vendor payloads and vendor streams back into `StreamEvent`s.
 //! [`HttpConnector`] implements `lemma_model::Connector`, binding endpoints
@@ -19,6 +19,7 @@ mod models;
 mod open_ai_compatible;
 mod request;
 mod sse;
+mod web;
 
 pub use anthropic_messages::AnthropicMessages;
 pub use gemini_generate::GeminiGenerate;
@@ -26,3 +27,4 @@ pub use http_connector::HttpConnector;
 pub use http_transport::{ByteStream, HttpTransport, ReqwestTransport};
 pub use model_adapter::ModelAdapter;
 pub use open_ai_compatible::OpenAiCompatible;
+pub use web::{DeepSeekWebBackend, ExaWebBackend, NativeWebBackend};

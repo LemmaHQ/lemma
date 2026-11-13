@@ -25,6 +25,18 @@ val generateDesignTokens =
         outputs.dir(designTokensDir)
     }
 
+val generateStrings =
+    tasks.register<Exec>("generateStrings") {
+        workingDir = rootProject.projectDir
+        commandLine("node", "scripts/i18n/gen-i18n.ts")
+        inputs.dir(rootProject.file("i18n"))
+        inputs.dir(rootProject.file("scripts/i18n"))
+        inputs.dir(rootProject.file("scripts/shared"))
+        outputs.file("src/commonMain/composeResources/values/strings.xml")
+        outputs.file("src/commonMain/composeResources/values-zh/strings.xml")
+        outputs.dir(rootProject.file("web/src/i18n/locales"))
+    }
+
 val hostOs = org.gradle.internal.os.OperatingSystem.current()
 val hostArch =
     if (System.getProperty("os.arch") in setOf("aarch64", "arm64")) "aarch_64" else "x86_64"
@@ -291,6 +303,12 @@ val buildLemmaMobileJniLibs =
 tasks.configureEach {
     if (name.startsWith("compileAndroid")) {
         dependsOn(generateUniffiBindings)
+    }
+    if (
+        listOf("ComposeResources", "ValueResources", "ResourceAccessors", "ResourceCollectors")
+            .any { it in name }
+    ) {
+        dependsOn(generateStrings)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(buildLemmaMobileJniLibs)

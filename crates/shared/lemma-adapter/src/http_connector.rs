@@ -1,4 +1,4 @@
-use lemma_model::{Connector, Endpoint, ModelError, ProviderKind};
+use lemma_model::{ApiFormat, Connector, Endpoint, ModelError};
 
 use crate::anthropic_messages::AnthropicMessages;
 use crate::gemini_generate::GeminiGenerate;
@@ -7,7 +7,7 @@ use crate::model_adapter::ModelAdapter;
 use crate::models;
 use crate::open_ai_compatible::OpenAiCompatible;
 
-/// Binds endpoints to the adapter for their provider kind, all sending
+/// Binds endpoints to the adapter for their API format, all sending
 /// HTTP through one transport.
 #[derive(Debug, Clone)]
 pub struct HttpConnector<T> {
@@ -26,14 +26,14 @@ impl<T: HttpTransport> Connector for HttpConnector<T> {
 
     fn connect(&self, endpoint: Endpoint) -> ModelAdapter<T> {
         let transport = self.transport.clone();
-        match endpoint.kind {
-            ProviderKind::OpenAiCompatible => {
+        match endpoint.api_format {
+            ApiFormat::OpenAiCompatible => {
                 ModelAdapter::OpenAi(OpenAiCompatible::new(transport, endpoint))
             }
-            ProviderKind::Anthropic => {
+            ApiFormat::Anthropic => {
                 ModelAdapter::Anthropic(AnthropicMessages::new(transport, endpoint))
             }
-            ProviderKind::Gemini => ModelAdapter::Gemini(GeminiGenerate::new(transport, endpoint)),
+            ApiFormat::Gemini => ModelAdapter::Gemini(GeminiGenerate::new(transport, endpoint)),
         }
     }
 

@@ -39,8 +39,8 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.agent_tool_show_all
-import lemma.mobile.shared.generated.resources.agent_tool_show_less
+import lemma.mobile.shared.generated.resources.agent_tool_call_show_all
+import lemma.mobile.shared.generated.resources.agent_tool_call_show_less
 import org.jetbrains.compose.resources.stringResource
 
 private val CODE_CAP = 220.dp
@@ -120,7 +120,8 @@ private fun ShowAllToggle(showAll: Boolean, onToggle: () -> Unit, modifier: Modi
     Text(
         text =
             stringResource(
-                if (showAll) Res.string.agent_tool_show_less else Res.string.agent_tool_show_all
+                if (showAll) Res.string.agent_tool_call_show_less
+                else Res.string.agent_tool_call_show_all
             ),
         style = LemmaTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
         color = LemmaTheme.colors.textSecondary,

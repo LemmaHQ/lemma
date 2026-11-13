@@ -11,7 +11,7 @@ use crate::error;
 /// Raw response body as a byte stream.
 pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Vec<u8>, ModelError>> + Send>>;
 
-/// Time limit of a [`HttpTransport::get_json`] call.
+/// Time limit of a GET call.
 const GET_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Pluggable HTTP layer for provider calls.
@@ -46,6 +46,19 @@ pub trait HttpTransport: Clone + Send + Sync + 'static {
         url: String,
         headers: Vec<(String, String)>,
     ) -> impl Future<Output = Result<Value, ModelError>> + Send;
+
+    /// Sends a GET and returns the response body as text, within a 10-second
+    /// limit.
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError`] when the request fails or times out, or the status is
+    /// not 2xx.
+    fn get_text(
+        &self,
+        url: String,
+        headers: Vec<(String, String)>,
+    ) -> impl Future<Output = Result<String, ModelError>> + Send;
 }
 
 /// Default transport backed by reqwest.
@@ -103,5 +116,14 @@ impl HttpTransport for ReqwestTransport {
     ) -> Result<Value, ModelError> {
         let req = with_headers(self.client.get(&url).timeout(GET_TIMEOUT), headers);
         send(req).await?.json().await.map_err(error::transport)
+    }
+
+    async fn get_text(
+        &self,
+        url: String,
+        headers: Vec<(String, String)>,
+    ) -> Result<String, ModelError> {
+        let req = with_headers(self.client.get(&url).timeout(GET_TIMEOUT), headers);
+        send(req).await?.text().await.map_err(error::transport)
     }
 }

@@ -1,45 +1,123 @@
 use connectrpc::ConnectError;
-use lemma_model::ProviderKind;
+use lemma_model::ApiFormat;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{ErrorReason, Provider};
-use lemma_provider::{ProviderError, ProviderView};
+use lemma_provider::{
+    ProviderError, ProviderModel, ProviderView, WebFunction, WebProviderKind, WebProviderView,
+};
 use uuid::Uuid;
 
-/// Maps a proto kind to the domain kind. Returns `None` for unspecified
+/// Maps a proto format to the domain format. Returns `None` for unspecified
 /// or unknown values.
 #[must_use]
-pub(crate) fn kind_from_proto(kind: v1::ProviderKind) -> Option<ProviderKind> {
-    match kind {
-        v1::ProviderKind::Openai => Some(ProviderKind::OpenAiCompatible),
-        v1::ProviderKind::Anthropic => Some(ProviderKind::Anthropic),
-        v1::ProviderKind::Gemini => Some(ProviderKind::Gemini),
+pub(crate) fn format_from_proto(format: v1::ApiFormat) -> Option<ApiFormat> {
+    match format {
+        v1::ApiFormat::Openai => Some(ApiFormat::OpenAiCompatible),
+        v1::ApiFormat::Anthropic => Some(ApiFormat::Anthropic),
+        v1::ApiFormat::Gemini => Some(ApiFormat::Gemini),
         _ => None,
     }
 }
 
-/// Maps a domain kind to its proto enum.
+/// Maps a domain format to its proto enum.
 #[must_use]
-pub(crate) fn kind_to_proto(kind: ProviderKind) -> v1::ProviderKind {
-    match kind {
-        ProviderKind::OpenAiCompatible => v1::ProviderKind::Openai,
-        ProviderKind::Anthropic => v1::ProviderKind::Anthropic,
-        ProviderKind::Gemini => v1::ProviderKind::Gemini,
+pub(crate) fn format_to_proto(format: ApiFormat) -> v1::ApiFormat {
+    match format {
+        ApiFormat::OpenAiCompatible => v1::ApiFormat::Openai,
+        ApiFormat::Anthropic => v1::ApiFormat::Anthropic,
+        ApiFormat::Gemini => v1::ApiFormat::Gemini,
     }
 }
 
-pub(crate) fn to_proto(v: ProviderView) -> Provider {
-    Provider {
-        id: v.id.to_string(),
-        kind: kind_to_proto(v.kind).into(),
-        identifier: v.identifier,
-        name: v.name,
-        base_url: v.base_url,
-        api_key: v.api_key,
-        models: v.models,
-        enabled: v.enabled,
-        api_path: v.api_path,
-        models_path: v.models_path,
+pub(crate) fn models_from_proto<'model: 'request, 'request>(
+    models: impl IntoIterator<Item = &'request v1::ModelView<'model>>,
+) -> Vec<ProviderModel> {
+    models
+        .into_iter()
+        .map(|model| ProviderModel {
+            id: model.id.to_string(),
+            tool_calling: model.tool_calling,
+        })
+        .collect()
+}
+
+fn models_to_proto(models: Vec<ProviderModel>) -> Vec<v1::Model> {
+    models
+        .into_iter()
+        .map(|model| v1::Model {
+            id: model.id,
+            tool_calling: model.tool_calling,
+            ..Default::default()
+        })
+        .collect()
+}
+
+pub(crate) fn to_proto(view: ProviderView) -> Provider {
+    match view {
+        ProviderView::Custom(custom) => Provider {
+            id: custom.id.to_string(),
+            enabled: custom.enabled,
+            api_key: custom.api_key,
+            source: Some(v1::provider::Source::Custom(Box::new(v1::CustomProvider {
+                identifier: custom.identifier,
+                name: custom.name,
+                api_format: format_to_proto(custom.api_format).into(),
+                base_url: custom.base_url,
+                api_path: custom.api_path,
+                models_path: custom.models_path,
+                models: models_to_proto(custom.models),
+                ..Default::default()
+            }))),
+            ..Default::default()
+        },
+        ProviderView::Predefined(predefined) => Provider {
+            id: predefined.id.to_string(),
+            enabled: predefined.enabled,
+            api_key: predefined.api_key,
+            source: Some(v1::provider::Source::Predefined(Box::new(
+                v1::PredefinedProvider {
+                    identifier: predefined.identifier,
+                    name: predefined.name,
+                    api_formats: predefined
+                        .api_formats
+                        .into_iter()
+                        .map(|format| format_to_proto(format).into())
+                        .collect(),
+                    default_api_format: format_to_proto(predefined.default_api_format).into(),
+                    models: models_to_proto(predefined.models),
+                    ..Default::default()
+                },
+            ))),
+            ..Default::default()
+        },
+    }
+}
+
+pub(crate) fn web_to_proto(view: WebProviderView) -> v1::WebProvider {
+    let kind = match view.kind {
+        WebProviderKind::Native => v1::web_provider::Kind::Native,
+        WebProviderKind::Exa => v1::web_provider::Kind::Exa,
+        WebProviderKind::DeepSeek => v1::web_provider::Kind::Deepseek,
+    };
+    v1::WebProvider {
+        id: view.id.to_string(),
+        kind: kind.into(),
+        name: view.name,
+        enabled: view.enabled,
+        has_key: view.has_key,
+        search_rank: view.search_rank,
+        fetch_rank: view.fetch_rank,
         ..Default::default()
+    }
+}
+
+pub(crate) fn web_function_from_proto(
+    function: Option<v1::set_web_provider_order_request::Function>,
+) -> Result<WebFunction, ConnectError> {
+    match function {
+        Some(v1::set_web_provider_order_request::Function::Search) => Ok(WebFunction::Search),
+        Some(v1::set_web_provider_order_request::Function::Fetch) => Ok(WebFunction::Fetch),
+        _ => Err(lemma_proto::app_error(ErrorReason::ProviderFieldsRequired)),
     }
 }
 
@@ -52,6 +130,8 @@ pub(crate) fn map_domain(e: ProviderError) -> ConnectError {
         ProviderError::FieldsRequired => {
             lemma_proto::app_error(ErrorReason::ProviderFieldsRequired)
         }
+        ProviderError::ApiFormatInvalid => lemma_proto::app_error(ErrorReason::ApiFormatInvalid),
+        ProviderError::KeyRequired => lemma_proto::app_error(ErrorReason::ProviderKeyRequired),
         ProviderError::IdentifierInvalid => {
             lemma_proto::app_error(ErrorReason::ProviderIdentifierInvalid)
         }
@@ -66,7 +146,8 @@ pub(crate) fn map_domain(e: ProviderError) -> ConnectError {
     }
 }
 
-pub(crate) fn adhoc_kind(kind: Option<v1::ProviderKind>) -> Result<ProviderKind, ConnectError> {
-    kind.and_then(kind_from_proto)
-        .ok_or_else(|| lemma_proto::app_error(ErrorReason::ProviderKindInvalid))
+pub(crate) fn adhoc_format(format: Option<v1::ApiFormat>) -> Result<ApiFormat, ConnectError> {
+    format
+        .and_then(format_from_proto)
+        .ok_or_else(|| lemma_proto::app_error(ErrorReason::ApiFormatInvalid))
 }

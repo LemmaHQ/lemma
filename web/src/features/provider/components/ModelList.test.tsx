@@ -4,13 +4,19 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import { expect, it, vi } from "vitest";
 
+import type { Model } from "../store";
 import { ModelList } from "./ModelList";
+
+const model = (id: string, toolCalling = true): Model => ({
+    id,
+    toolCalling,
+});
 
 function Harness({
     initial,
     onFetch,
 }: {
-    initial: string[];
+    initial: Model[];
     onFetch: () => Promise<string[]>;
 }) {
     const [models, setModels] = useState(initial);
@@ -18,15 +24,15 @@ function Harness({
 }
 
 const renderList = (
-    initial: string[],
+    initial: Model[],
     onFetch = vi.fn<() => Promise<string[]>>(() => Promise.resolve([])),
 ) => render(<Harness initial={initial} onFetch={onFetch} />);
 
 const listed = () =>
     screen
-        .queryAllByRole("button", { name: "Remove model" })
-        .map(
-            (button) => button.closest("[data-slot=settings-row]")?.textContent,
+        .queryAllByRole("switch", { name: /Tool calling$/u })
+        .map((toggle) =>
+            toggle.getAttribute("aria-label")?.replace(/ Tool calling$/u, ""),
         );
 
 const addButton = (index: 0 | 1) => {
@@ -44,9 +50,9 @@ const typeNewModel = async (user: UserEvent, text: string) => {
     await user.type(screen.getByPlaceholderText("e.g. gpt-4o"), text);
 };
 
-it("adds a typed model to the top and ignores blanks and duplicates", async () => {
+it("adds a typed model with tool calling on and ignores blanks and duplicates", async () => {
     const user = userEvent.setup();
-    renderList(["gpt-4o"]);
+    renderList([model("gpt-4o")]);
 
     await typeNewModel(user, " o3 {Enter}");
     await typeNewModel(user, "gpt-4o");
@@ -54,6 +60,11 @@ it("adds a typed model to the top and ignores blanks and duplicates", async () =
     await typeNewModel(user, "  {Enter}");
 
     expect(listed()).toEqual(["o3", "gpt-4o"]);
+    expect(
+        screen
+            .getByRole("switch", { name: "o3 Tool calling" })
+            .getAttribute("aria-checked"),
+    ).toBe("true");
     expect(addField()).toBeNull();
 });
 
@@ -91,7 +102,7 @@ it("closes the add field with Escape, cancel, or the toggle", async () => {
 
 it("filters and removes listed models", async () => {
     const user = userEvent.setup();
-    renderList(["gpt-4o", "gpt-4o-mini", "o3"]);
+    renderList([model("gpt-4o"), model("gpt-4o-mini"), model("o3")]);
 
     await user.type(screen.getByPlaceholderText("Search models…"), " MINI ");
     expect(listed()).toEqual(["gpt-4o-mini"]);
@@ -100,6 +111,20 @@ it("filters and removes listed models", async () => {
     expect(listed()).toEqual([]);
     await user.clear(screen.getByPlaceholderText("Search models…"));
     expect(listed()).toEqual(["gpt-4o", "o3"]);
+});
+
+it("changes tool calling for only the selected model", async () => {
+    const user = userEvent.setup();
+    renderList([model("gpt-4o"), model("o3", false)]);
+
+    const gpt = screen.getByRole("switch", { name: "gpt-4o Tool calling" });
+    const o3 = screen.getByRole("switch", { name: "o3 Tool calling" });
+    await user.click(gpt);
+    expect(gpt.getAttribute("aria-checked")).toBe("false");
+    expect(o3.getAttribute("aria-checked")).toBe("false");
+    await user.click(o3);
+    expect(o3.getAttribute("aria-checked")).toBe("true");
+    expect(gpt.getAttribute("aria-checked")).toBe("false");
 });
 
 it("shows why the model list could not be fetched", async () => {
@@ -120,11 +145,11 @@ it("shows why the model list could not be fetched", async () => {
     ).toBeDefined();
 });
 
-it("fetches once at a time and adds the picked upstream models", async () => {
+it("fetches once at a time and adds picked models with tool calling on", async () => {
     const user = userEvent.setup();
     const pending = Promise.withResolvers<string[]>();
     const onFetch = vi.fn<() => Promise<string[]>>(() => pending.promise);
-    renderList(["gpt-4o"], onFetch);
+    renderList([model("gpt-4o")], onFetch);
 
     await user.click(screen.getByRole("button", { name: "Fetch model list" }));
     await user.click(screen.getByRole("button", { name: "Fetch model list" }));
@@ -145,12 +170,17 @@ it("fetches once at a time and adds the picked upstream models", async () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(listed()).toEqual(["gpt-4o", "o3"]);
+    expect(
+        screen
+            .getByRole("switch", { name: "o3 Tool calling" })
+            .getAttribute("aria-checked"),
+    ).toBe("true");
 });
 
 it("selects all matching upstream models and can deselect them", async () => {
     const user = userEvent.setup();
     renderList(
-        ["gpt-4o"],
+        [model("gpt-4o")],
         vi.fn<() => Promise<string[]>>(() =>
             Promise.resolve(["gpt-4o", "o3", "o3-mini", "o4-mini"]),
         ),

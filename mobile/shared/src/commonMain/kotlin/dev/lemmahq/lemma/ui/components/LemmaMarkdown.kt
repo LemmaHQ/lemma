@@ -30,7 +30,7 @@ import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.rememberMarkdownState
 import dev.lemmahq.lemma.theme.LemmaTheme
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.code_copy
+import lemma.mobile.shared.generated.resources.common_copy_code
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -110,7 +110,7 @@ private fun FencedCode(code: String, language: String?) {
                 color = LemmaTheme.colors.textTertiary,
                 modifier = Modifier.weight(1f),
             )
-            LemmaCopyButton(text = code, label = stringResource(Res.string.code_copy))
+            LemmaCopyButton(text = code, label = stringResource(Res.string.common_copy_code))
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(LemmaTheme.colors.separator))
         LemmaCode(code = code, language = language, modifier = Modifier.fillMaxWidth())

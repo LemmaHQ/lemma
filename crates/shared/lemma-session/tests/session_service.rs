@@ -9,8 +9,8 @@ use chrono::{DateTime, Utc};
 use lemma_adapter::{HttpConnector, ReqwestTransport};
 use lemma_auth::AuthService;
 use lemma_core::{ContentBlock, Message as CoreMessage, StopReason, TextContent};
-use lemma_model::ProviderKind;
-use lemma_provider::{CreateInput, ProviderService};
+use lemma_model::ApiFormat;
+use lemma_provider::{CreateCustomInput, ProviderModel, ProviderService};
 use lemma_session::{
     LastModel, Message, MessageBody, MessagePage, MessageStatus, MessageUpdate, SessionError,
     SessionService, build_context_path,
@@ -71,6 +71,7 @@ fn entry(
         error: None,
         provider_id: None,
         model: None,
+        api_format: None,
         created_at,
         updated_at: created_at,
     }
@@ -467,17 +468,20 @@ async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
         );
         let sessions = SessionService::new(db);
         let provider = providers
-            .create(
+            .create_custom(
                 ada,
-                CreateInput {
-                    kind: ProviderKind::OpenAiCompatible,
+                CreateCustomInput {
+                    api_format: ApiFormat::OpenAiCompatible,
                     identifier: "main".to_owned(),
                     name: "Main".to_owned(),
                     base_url: "https://api.example.com/v1".to_owned(),
                     api_key: "sk-original".to_owned(),
                     api_path: String::new(),
                     models_path: String::new(),
-                    models: vec!["model-a".to_owned()],
+                    models: vec![ProviderModel {
+                        id: "model-a".to_owned(),
+                        tool_calling: true,
+                    }],
                 },
             )
             .await?;
@@ -502,7 +506,7 @@ async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
             .update_last_model(ada, session.id, &last_model)
             .await?;
 
-        providers.delete(ada, provider.id).await?;
+        providers.delete_custom(ada, provider.id).await?;
 
         let page = sessions.list_messages(ada, session.id, None, 10).await?;
         let [kept] = page.messages.as_slice() else {
@@ -623,6 +627,88 @@ async fn the_session_tables_roll_back_and_reapply() -> Result<(), Box<dyn Error>
                 "{operation} without the messages table: {failed:?}"
             );
         }
+        Ok(())
+    })
+    .await
+}
+
+#[tokio::test]
+async fn previous_assistant_format_follows_the_active_context_path() -> Result<(), Box<dyn Error>> {
+    on_each_database::<Migrator, _, _>(|db| async move {
+        let ada = sign_up(&db, "ada").await?;
+        let bob = sign_up(&db, "bob").await?;
+        let sessions = SessionService::new(db);
+        let empty = sessions.create(ada, None).await?;
+        let session = sessions.create(ada, None).await?;
+        assert_eq!(
+            sessions
+                .previous_assistant_api_format(ada, empty.id)
+                .await?,
+            None,
+            "empty session"
+        );
+
+        let root = entry(session.id, None, "question", at(0));
+        sessions.append_message(root.clone()).await?;
+        let mut answer = entry(session.id, Some(root.id), "answer", at(1));
+        answer.body = MessageBody(CoreMessage::Assistant {
+            content: vec![ContentBlock::Text(TextContent {
+                text: "answer".to_owned(),
+            })],
+            stop_reason: StopReason::Stop,
+            usage: None,
+        });
+        answer.api_format = Some(ApiFormat::OpenAiCompatible);
+        sessions.append_message(answer.clone()).await?;
+        let trailing = entry(session.id, Some(answer.id), "next", at(2));
+        sessions.append_message(trailing.clone()).await?;
+        sessions.update_leaf(ada, session.id, trailing.id).await?;
+        assert_eq!(
+            sessions
+                .previous_assistant_api_format(ada, session.id)
+                .await?,
+            Some(ApiFormat::OpenAiCompatible),
+            "latest assistant before a user message"
+        );
+
+        let mut legacy = entry(session.id, Some(trailing.id), "legacy", at(3));
+        legacy.body = MessageBody(CoreMessage::Assistant {
+            content: Vec::new(),
+            stop_reason: StopReason::Stop,
+            usage: None,
+        });
+        sessions.append_message(legacy.clone()).await?;
+        sessions.update_leaf(ada, session.id, legacy.id).await?;
+        assert_eq!(
+            sessions
+                .previous_assistant_api_format(ada, session.id)
+                .await?,
+            None,
+            "legacy assistant has no format"
+        );
+
+        let user_only = sessions.create(ada, None).await?;
+        let user = entry(user_only.id, None, "question", at(0));
+        sessions.append_message(user.clone()).await?;
+        sessions.update_leaf(ada, user_only.id, user.id).await?;
+        assert_eq!(
+            sessions
+                .previous_assistant_api_format(ada, user_only.id)
+                .await?,
+            None,
+            "user-only session"
+        );
+        sessions.update_leaf(ada, empty.id, Uuid::new_v4()).await?;
+        assert!(matches!(
+            sessions.previous_assistant_api_format(ada, empty.id).await,
+            Err(SessionError::Missing(_))
+        ));
+        assert!(matches!(
+            sessions
+                .previous_assistant_api_format(bob, session.id)
+                .await,
+            Err(SessionError::NotFound)
+        ));
         Ok(())
     })
     .await

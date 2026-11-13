@@ -17,7 +17,7 @@ import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
 import kotlinx.coroutines.launch
 import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.error_model_required
+import lemma.mobile.shared.generated.resources.errors_model_required
 
 private const val KEY_OPEN_SESSION = "open_session"
 
@@ -164,7 +164,7 @@ internal class SessionViewModel(
         val model =
             selection
                 ?: run {
-                    error = UiText.Resource(Res.string.error_model_required)
+                    error = UiText.Resource(Res.string.errors_model_required)
                     return
                 }
         input = ""

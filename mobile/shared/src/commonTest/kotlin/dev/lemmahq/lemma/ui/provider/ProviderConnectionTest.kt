@@ -6,10 +6,10 @@ import kotlin.test.assertEquals
 class ProviderConnectionTest {
 
     @Test
-    fun eachKindHintsItsOwnRequestPath() {
+    fun eachApiFormatHintsItsOwnRequestPath() {
         assertEquals(
             listOf("/chat/completions", "/v1/messages", "/v1beta/models/{model}:…"),
-            PROVIDER_KINDS.map { connectionPlaceholders(it).apiPath },
+            API_FORMATS.map { connectionPlaceholders(it).apiPath },
         )
     }
 }

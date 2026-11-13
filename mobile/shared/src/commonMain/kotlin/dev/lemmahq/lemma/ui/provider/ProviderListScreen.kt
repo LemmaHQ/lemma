@@ -25,20 +25,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaIconButton
 import dev.lemmahq.lemma.ui.components.LemmaSettingsGroup
+import dev.lemmahq.lemma.ui.components.LemmaSwitch
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.icon_chevron_right
 import lemma.mobile.shared.generated.resources.icon_plus
 import lemma.mobile.shared.generated.resources.icon_search
-import lemma.mobile.shared.generated.resources.provider_disabled_group
-import lemma.mobile.shared.generated.resources.provider_empty
-import lemma.mobile.shared.generated.resources.provider_enabled_group
-import lemma.mobile.shared.generated.resources.provider_new
+import lemma.mobile.shared.generated.resources.provider_custom_group
+import lemma.mobile.shared.generated.resources.provider_empty_list
+import lemma.mobile.shared.generated.resources.provider_new_provider
+import lemma.mobile.shared.generated.resources.provider_predefined_group
 import lemma.mobile.shared.generated.resources.provider_search_placeholder
 import lemma.mobile.shared.generated.resources.settings_ai_providers
 import org.jetbrains.compose.resources.painterResource
@@ -56,7 +58,7 @@ internal fun ProviderListScreen(
         LemmaTopBar(title = stringResource(Res.string.settings_ai_providers), onBack = onBack) {
             LemmaIconButton(
                 icon = Res.drawable.icon_plus,
-                contentDescription = stringResource(Res.string.provider_new),
+                contentDescription = stringResource(Res.string.provider_new_provider),
                 onClick = onNew,
             )
         }
@@ -88,24 +90,25 @@ internal fun ProviderListScreen(
                     )
                 viewModel.providers.isEmpty() && viewModel.error == null ->
                     Text(
-                        text = stringResource(Res.string.provider_empty),
+                        text = stringResource(Res.string.provider_empty_list),
                         style = LemmaTheme.typography.bodyMedium,
                         color = LemmaTheme.colors.textTertiary,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                 else -> {
-                    val (enabled, disabled) = viewModel.matches.partition { it.enabled }
+                    val (predefined, custom) =
+                        viewModel.matches.partition { it.source is ClientPredefinedProvider }
                     ProviderGroup(
-                        label = stringResource(Res.string.provider_enabled_group),
-                        providers = enabled,
+                        label = stringResource(Res.string.provider_predefined_group),
+                        providers = predefined,
                         onOpen = onOpen,
                     )
-                    if (enabled.isNotEmpty() && disabled.isNotEmpty()) {
+                    if (predefined.isNotEmpty() && custom.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                     ProviderGroup(
-                        label = stringResource(Res.string.provider_disabled_group),
-                        providers = disabled,
+                        label = stringResource(Res.string.provider_custom_group),
+                        providers = custom,
                         onOpen = onOpen,
                     )
                 }
@@ -152,20 +155,22 @@ private fun ProviderRow(provider: ClientProvider, onClick: () -> Unit) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = (provider.name.firstOrNull() ?: '?').uppercase(),
+                text = (provider.source.name.firstOrNull() ?: '?').uppercase(),
                 style = LemmaTheme.typography.bodyMedium,
                 color = LemmaTheme.colors.textPrimary,
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = provider.name,
+            text = provider.source.name,
             style = LemmaTheme.typography.bodyLarge,
             color = LemmaTheme.colors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        LemmaSwitch(checked = provider.enabled, onCheckedChange = null, enabled = false)
+        Spacer(modifier = Modifier.width(8.dp))
         Icon(
             painter = painterResource(Res.drawable.icon_chevron_right),
             contentDescription = null,

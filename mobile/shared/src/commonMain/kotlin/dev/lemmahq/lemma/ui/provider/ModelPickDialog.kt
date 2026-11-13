@@ -41,7 +41,7 @@ import lemma.mobile.shared.generated.resources.provider_add_picked
 import lemma.mobile.shared.generated.resources.provider_model_added
 import lemma.mobile.shared.generated.resources.provider_model_search_placeholder
 import lemma.mobile.shared.generated.resources.provider_no_models
-import lemma.mobile.shared.generated.resources.provider_pick_models_description
+import lemma.mobile.shared.generated.resources.provider_pick_models_desc
 import lemma.mobile.shared.generated.resources.provider_pick_models_title
 import lemma.mobile.shared.generated.resources.provider_select_all
 import org.jetbrains.compose.resources.pluralStringResource
@@ -90,7 +90,7 @@ internal fun ModelPickDialog(
                 Text(
                     text =
                         pluralStringResource(
-                            Res.plurals.provider_pick_models_description,
+                            Res.plurals.provider_pick_models_desc,
                             remote.size,
                             remote.size,
                         ),

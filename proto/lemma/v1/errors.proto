@@ -17,10 +17,11 @@ enum ErrorReason {
 
   // Provider
   ERROR_REASON_PROVIDER_FIELDS_REQUIRED = 10; // Required provider configuration fields missing
-  ERROR_REASON_PROVIDER_KIND_INVALID = 11;
+  ERROR_REASON_API_FORMAT_INVALID = 11; // API format unspecified, or not served by the predefined provider
   ERROR_REASON_PROVIDER_NOT_FOUND = 12;
   ERROR_REASON_PROVIDER_IDENTIFIER_INVALID = 14; // Identifier must contain valid non-empty ASCII characters
   ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists for this user account
+  ERROR_REASON_PROVIDER_KEY_REQUIRED = 16; // Enabling a predefined provider requires a saved API key
 
   // Session and messages
   ERROR_REASON_ID_INVALID = 20; // Shared invalid UUID identifier error

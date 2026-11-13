@@ -6,7 +6,7 @@ The agent subsystem turns one user request into a running turn and reports its p
 
 ## Turn assembly
 
-`Agent` holds the session service, the provider service, the model connector, and an optional workspaces directory. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
+`Agent` holds the session service, the provider service, an optional workspaces directory, and an optional web `HttpTransport`. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
 
 | Check | Failure |
 | --- | --- |
@@ -17,11 +17,13 @@ The agent subsystem turns one user request into a running turn and reports its p
 | the session's bound directory no longer exists | `AgentError::DirectoryNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
+`ProviderService::bind` returns the adapter with the API format the turn uses and the model's tool-calling flag; [architecture.md](../architecture.md#the-path-of-one-turn) states how it picks the format. A model with tool calling off gets no tools, and its requests leave out earlier tool calls and tool results.
+
 `Turn::run(observer)` runs the turn to its end and returns `()` on success; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
 
 ## Tools
 
-With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecEnv` rooted in the session directory: the directory the session was created with, or else its workspace `<workspaces_dir>/<session id>`, which `prepare` creates after it has found the session. Every model request of the turn carries a system prompt naming that directory, the operating system, and the shell. Without a workspaces directory, the model is called without tools or a system prompt.
+With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecEnv` rooted in the session directory: the directory the session was created with, or else its workspace `<workspaces_dir>/<session id>`, which `prepare` creates after it has found the session, plus `web_search` and `web_fetch` when `Agent` has a web `HttpTransport` and the function's order has an enabled backend. Every model request of the turn carries a system prompt naming that directory, the operating system, and the shell. Without a workspaces directory, the model is called without tools or a system prompt.
 
 `LocalExecEnv` confines `read_file` and `write_file` to the root:
 

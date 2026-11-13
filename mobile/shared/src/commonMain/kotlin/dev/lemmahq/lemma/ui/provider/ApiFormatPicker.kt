@@ -17,16 +17,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
+import lemma.mobile.shared.generated.resources.Res
+import lemma.mobile.shared.generated.resources.provider_api_format_anthropic
+import lemma.mobile.shared.generated.resources.provider_api_format_gemini
+import lemma.mobile.shared.generated.resources.provider_api_format_openai
+import org.jetbrains.compose.resources.stringResource
 
-/** Chips choosing one of [PROVIDER_KINDS]. */
+private val API_FORMAT_NAMES =
+    mapOf(
+        "openai" to Res.string.provider_api_format_openai,
+        "anthropic" to Res.string.provider_api_format_anthropic,
+        "gemini" to Res.string.provider_api_format_gemini,
+    )
+
+/** Chips choosing one of [options], or displaying the immutable format when [enabled] is false. */
 @Composable
-internal fun ProviderKindPicker(kind: String, onSelect: (String) -> Unit) {
+internal fun ApiFormatPicker(
+    apiFormat: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     Row(
-        modifier = Modifier.selectableGroup(),
+        modifier = modifier.selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PROVIDER_KINDS.forEach { option ->
-            val selected = option == kind
+        options.forEach { option ->
+            val selected = option == apiFormat
             Box(
                 modifier =
                     Modifier.heightIn(min = 40.dp)
@@ -37,13 +55,14 @@ internal fun ProviderKindPicker(kind: String, onSelect: (String) -> Unit) {
                         .selectable(
                             selected = selected,
                             role = Role.RadioButton,
+                            enabled = enabled,
                             onClick = { onSelect(option) },
                         )
                         .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = option,
+                    text = stringResource(API_FORMAT_NAMES.getValue(option)),
                     style = LemmaTheme.typography.bodyMedium,
                     color = if (selected) Color.White else LemmaTheme.colors.textSecondary,
                 )

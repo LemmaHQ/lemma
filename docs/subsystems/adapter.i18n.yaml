@@ -3,14 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/subsystems/adapter.md
 /adapter:
-  en: 336a75f571ed0c95
-  zh: 4cdb9685d13dc367
+  en: b1d95b5b6fbdb4e0
+  zh: fd4fbaea5f28db86
 /adapter/interface-lemma-model:
-  en: cfc3454787eac157
-  zh: f2883efb925652eb
+  en: 922752a8903832c4
+  zh: baeeda411b8cdfdc
 /adapter/implementation-lemma-adapter:
-  en: 57fe272a366790e0
-  zh: b8a898ee4f86eb7c
+  en: 6d82bd514af70110
+  zh: c6d113e6688d7fcb
 /adapter/stream-invariants:
   en: 123760630045442d
   zh: aca5416c1cbb70de

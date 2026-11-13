@@ -2,11 +2,18 @@ package dev.lemmahq.lemma.network
 
 import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ClientCustomProvider
+import dev.lemmahq.lemma.client.ClientCustomProviderInput
+import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientMessage
+import dev.lemmahq.lemma.client.ClientModel
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
+import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderInput
-import dev.lemmahq.lemma.client.ClientProviderPatch
 import dev.lemmahq.lemma.client.ClientToolResult
+import dev.lemmahq.lemma.client.ClientWebFunction
+import dev.lemmahq.lemma.client.ClientWebProviderKind
+import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
@@ -83,7 +90,7 @@ class ConnectLemmaClientTest {
         client.signIn("ada@example.com", PASSWORD)
 
         assertTrue(settings.signedIn.value)
-        assertEquals(emptyList(), client.listProviders())
+        assertEquals(emptyList(), client.listProviders().customOnly())
     }
 
     @Test
@@ -120,7 +127,7 @@ class ConnectLemmaClientTest {
         val refreshToken = checkNotNull(settings.getRefreshToken())
         settings.setTokens("expired", refreshToken)
 
-        assertEquals(emptyList(), client.listProviders())
+        assertEquals(emptyList(), client.listProviders().customOnly())
 
         assertNotEquals("expired", settings.getAccessToken())
         assertNotEquals(refreshToken, settings.getRefreshToken())
@@ -130,59 +137,182 @@ class ConnectLemmaClientTest {
     fun providersRoundTripThroughCreateUpdateAndDelete() = runTest {
         val client = signedUpClient()
 
-        val created = client.createProvider(vendorInput("answer"))
+        val created = client.createCustomProvider(vendorInput("answer"))
         val updated =
-            client.updateProvider(
+            client.updateCustomProvider(
                 created.id,
-                ClientProviderPatch(
+                ClientCustomProviderPatch(
                     name = "Renamed",
                     enabled = false,
-                    models = listOf("answer", "hang"),
+                    models =
+                        listOf(
+                            ClientModel("answer", toolCalling = true),
+                            ClientModel("hang", toolCalling = true),
+                        ),
                 ),
             )
         val listed = client.listProviders()
-        client.deleteProvider(created.id)
+        client.deleteCustomProvider(created.id)
 
         assertEquals(
             ClientProvider(
                 id = created.id,
-                kind = "openai",
-                identifier = "vendor",
-                name = "Vendor",
-                baseUrl = vendorUrl,
-                apiPath = "",
-                modelsPath = "",
-                models = listOf("answer"),
                 enabled = true,
                 apiKey = "sk-1",
+                source =
+                    ClientCustomProvider(
+                        identifier = "vendor",
+                        name = "Vendor",
+                        apiFormat = "openai",
+                        baseUrl = vendorUrl,
+                        apiPath = "",
+                        modelsPath = "",
+                        models = listOf(ClientModel("answer", toolCalling = true)),
+                    ),
             ),
             created,
         )
         assertEquals(
-            created.copy(name = "Renamed", enabled = false, models = listOf("answer", "hang")),
+            created
+                .withCustom {
+                    copy(
+                        name = "Renamed",
+                        models =
+                            listOf(
+                                ClientModel("answer", toolCalling = true),
+                                ClientModel("hang", toolCalling = true),
+                            ),
+                    )
+                }
+                .copy(enabled = false),
             updated,
         )
-        assertEquals(listOf(updated), listed)
-        assertEquals(emptyList(), client.listProviders())
-        val missing = assertFailsWith<ServiceException> { client.deleteProvider(created.id) }
+        assertEquals(listOf(updated), listed.customOnly())
+        assertEquals(emptyList(), client.listProviders().customOnly())
+        val missing = assertFailsWith<ServiceException> { client.deleteCustomProvider(created.id) }
         assertEquals(ServiceFailure.ProviderNotFound, missing.failure)
+    }
+
+    @Test
+    fun predefinedProviderUpdatesOnlyItsUserControlledFields() = runTest {
+        val client = signedUpClient()
+        val initial = client.listProviders().single()
+        val predefined = initial.source as ClientPredefinedProvider
+
+        assertEquals("deepseek", predefined.identifier)
+        assertEquals("DeepSeek", predefined.name)
+        assertEquals(listOf("anthropic", "openai"), predefined.apiFormats)
+        assertEquals("anthropic", predefined.defaultApiFormat)
+        assertEquals(
+            listOf("deepseek-flash", "deepseek-v4-pro"),
+            predefined.models.map { it.id },
+        )
+        assertTrue(predefined.models.all { it.toolCalling })
+        assertFalse(initial.enabled)
+        val rejected =
+            assertFailsWith<ServiceException> {
+                client.updatePredefinedProvider(
+                    initial.id,
+                    ClientPredefinedProviderPatch(enabled = true),
+                )
+            }
+        assertEquals(ServiceFailure.ProviderKeyRequired, rejected.failure)
+
+        val updated =
+            client.updatePredefinedProvider(
+                initial.id,
+                ClientPredefinedProviderPatch(
+                    apiKey = "sk-deepseek",
+                    enabled = true,
+                    defaultApiFormat = "openai",
+                ),
+            )
+
+        assertEquals("sk-deepseek", updated.apiKey)
+        assertTrue(updated.enabled)
+        assertEquals(
+            "openai",
+            (updated.source as ClientPredefinedProvider).defaultApiFormat,
+        )
+        val invalid =
+            assertFailsWith<ServiceException> {
+                client.updatePredefinedProvider(
+                    initial.id,
+                    ClientPredefinedProviderPatch(defaultApiFormat = "gemini"),
+                )
+            }
+        assertEquals(ServiceFailure.ApiFormatInvalid, invalid.failure)
+    }
+
+    @Test
+    fun webProvidersToggleSaveKeysAndReorder() = runTest {
+        val client = signedUpClient()
+        val initial = client.listWebProviders()
+        val exa = initial.first { it.kind == ClientWebProviderKind.Exa }
+        val deepSeek = initial.first { it.kind == ClientWebProviderKind.DeepSeek }
+        val native = initial.first { it.kind == ClientWebProviderKind.Native }
+
+        assertTrue(native.enabled)
+        assertFalse(exa.enabled)
+
+        val rejected =
+            assertFailsWith<ServiceException> {
+                client.updateWebProvider(exa.id, ClientWebProviderPatch(enabled = true))
+            }
+        assertEquals(ServiceFailure.ProviderKeyRequired, rejected.failure)
+
+        val enabledExa =
+            client.updateWebProvider(
+                exa.id,
+                ClientWebProviderPatch(apiKey = "sk-exa", enabled = true),
+            )
+        assertTrue(enabledExa.enabled)
+        assertTrue(enabledExa.hasKey)
+        val keyedDeepSeek =
+            client.updateWebProvider(deepSeek.id, ClientWebProviderPatch(apiKey = "sk-deepseek"))
+        assertTrue(keyedDeepSeek.hasKey)
+        assertFalse(keyedDeepSeek.enabled)
+
+        val disabledNative =
+            client.updateWebProvider(native.id, ClientWebProviderPatch(enabled = false))
+        assertFalse(disabledNative.enabled)
+
+        val searchReordered =
+            client.setWebProviderOrder(ClientWebFunction.Search, listOf(deepSeek.id, exa.id))
+        assertEquals(
+            listOf(deepSeek.id, exa.id),
+            searchReordered
+                .filter { it.kind != ClientWebProviderKind.Native }
+                .sortedBy { it.searchRank }
+                .map { it.id },
+        )
+
+        val fetchReordered =
+            client.setWebProviderOrder(
+                ClientWebFunction.Fetch,
+                listOf(deepSeek.id, native.id, exa.id),
+            )
+        assertEquals(
+            listOf(deepSeek.id, native.id, exa.id),
+            fetchReordered.sortedBy { it.fetchRank }.map { it.id },
+        )
     }
 
     @Test
     fun fetchesAndChecksModelsAtTheVendor() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("answer"))
+        val provider = client.createCustomProvider(vendorInput("answer"))
 
         assertEquals(listOf("answer", "hang"), client.fetchProviderModels(provider.id))
         assertEquals(listOf("answer", "hang"), client.fetchModels("openai", vendorUrl, "sk-1", ""))
-        assertEquals("", client.checkProvider(provider.id, vendorInput(), "answer"))
-        assertEquals("upstream 500: boom", client.checkProvider(null, vendorInput(), "broken"))
+        assertEquals("", client.checkProvider(provider.id, "answer"))
+        assertEquals("upstream 500: boom", client.checkCustomProvider(vendorInput(), "broken"))
     }
 
     @Test
     fun aTurnStreamsTheReplyAndPersistsBothMessages() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("answer"))
+        val provider = client.createCustomProvider(vendorInput("answer"))
         val session = client.createSession()
 
         val events = client.sendMessage(session.id, "hi", provider.id, "answer").toList()
@@ -228,7 +358,7 @@ class ConnectLemmaClientTest {
     @Test
     fun aTurnWithAToolCallStreamsAndStoresEachStep() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("tool"))
+        val provider = client.createCustomProvider(vendorInput("tool"))
         val session = client.createSession()
 
         val events = client.sendMessage(session.id, "save a note", provider.id, "tool").toList()
@@ -272,7 +402,7 @@ class ConnectLemmaClientTest {
     @Test
     fun aRunningTurnResumesAfterTheEventsAlreadyReceived() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("hang"))
+        val provider = client.createCustomProvider(vendorInput("hang"))
         val session = client.createSession()
         val started =
             client.sendMessage(session.id, "hi", provider.id, "hang").first()
@@ -355,27 +485,30 @@ class ConnectLemmaClientTest {
     @Test
     fun connectionFieldsUpdateAndAnEmptyPatchKeepsTheProvider() = runTest {
         val client = signedUpClient()
-        val created = client.createProvider(vendorInput("answer"))
+        val created = client.createCustomProvider(vendorInput("answer"))
 
         val updated =
-            client.updateProvider(
+            client.updateCustomProvider(
                 created.id,
-                ClientProviderPatch(
+                ClientCustomProviderPatch(
                     baseUrl = "https://proxy.example.com/v1",
                     apiKey = "sk-2",
                     apiPath = "/chat",
                     modelsPath = "/models",
                 ),
             )
-        val unchanged = client.updateProvider(created.id, ClientProviderPatch())
+        val unchanged = client.updateCustomProvider(created.id, ClientCustomProviderPatch())
 
         assertEquals(
-            created.copy(
-                baseUrl = "https://proxy.example.com/v1",
-                apiKey = "sk-2",
-                apiPath = "/chat",
-                modelsPath = "/models",
-            ),
+            created
+                .withCustom {
+                    copy(
+                        baseUrl = "https://proxy.example.com/v1",
+                        apiPath = "/chat",
+                        modelsPath = "/models",
+                    )
+                }
+                .copy(apiKey = "sk-2"),
             updated,
         )
         assertEquals(updated, unchanged)
@@ -384,7 +517,7 @@ class ConnectLemmaClientTest {
     @Test
     fun aFailingVendorEndsTheTurnWithItsError() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("broken"))
+        val provider = client.createCustomProvider(vendorInput("broken"))
         val session = client.createSession()
 
         val events = client.sendMessage(session.id, "hi", provider.id, "broken").toList()
@@ -395,7 +528,7 @@ class ConnectLemmaClientTest {
     @Test
     fun anAbortedTurnEndsAsAborted() = runTest {
         val client = signedUpClient()
-        val provider = client.createProvider(vendorInput("hang"))
+        val provider = client.createCustomProvider(vendorInput("hang"))
         val session = client.createSession()
 
         val events =
@@ -426,13 +559,13 @@ class ConnectLemmaClientTest {
         client().also { it.signUp("ada", "ada@example.com", PASSWORD) }
 
     private fun vendorInput(vararg models: String) =
-        ClientProviderInput(
-            kind = "openai",
+        ClientCustomProviderInput(
+            apiFormat = "openai",
             identifier = "vendor",
             name = "Vendor",
             baseUrl = vendorUrl,
             apiKey = "sk-1",
-            models = models.toList(),
+            models = models.map { ClientModel(it, toolCalling = true) },
         )
 
     private fun answer(request: RecordedRequest): MockResponse {
@@ -482,6 +615,16 @@ class ConnectLemmaClientTest {
         }
     }
 }
+
+private fun List<ClientProvider>.customOnly(): List<ClientProvider> = filter {
+    it.source is ClientCustomProvider
+}
+
+private val ClientProvider.custom: ClientCustomProvider
+    get() = source as ClientCustomProvider
+
+private fun ClientProvider.withCustom(change: ClientCustomProvider.() -> ClientCustomProvider) =
+    copy(source = custom.change())
 
 private fun AgentStreamEvent.withoutTime(): AgentStreamEvent =
     when (this) {

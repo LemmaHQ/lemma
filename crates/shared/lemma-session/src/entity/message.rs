@@ -1,4 +1,5 @@
 use lemma_core::Message as CoreMessage;
+use lemma_model::ApiFormat;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -48,6 +49,8 @@ pub struct Model {
     pub provider_id: Option<Uuid>,
     /// Model identifier that produced the entry, when known.
     pub model: Option<String>,
+    /// API format that produced an assistant entry, when known.
+    pub api_format: Option<ApiFormat>,
     /// Creation time.
     pub created_at: DateTimeUtc,
     /// Last update time.

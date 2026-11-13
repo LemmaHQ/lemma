@@ -25,21 +25,26 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 ## Provider 与适配器
 
-- **provider** — 由 `lemma-provider` 存储的、用户配置的模型端点：类型、标识符、显示名称、base URL、API key、路径覆盖、缓存的模型 id，以及启用标志。
-- **provider 类型（provider kind）** — provider 的 API 方言：`openai`（OpenAI chat completions 及兼容 API）、`anthropic` 或 `gemini`。`lemma-model` 定义唯一的 `ProviderKind` 枚举。
-- **provider 标识符（provider identifier）** — provider 的机器名：非空 ASCII，在同一用户下唯一，创建后不可修改。
-- **端点（endpoint）** — 一个 `Endpoint`：`ProviderService::adapter` 在绑定适配器之前打开的 provider 类型、base URL、路径覆盖与明文 API key。
-- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应类型的适配器，并以 `ModelAdapter` 变体的形式返回。
-- **模型列表（model list）** — provider 端点报告的模型 id，由 `Connector::list_models` 实时获取。provider 行另行保存一份模型 id 列表。
+- **provider** — 某个用户的一个模型服务，由 `lemma-provider` 连同其 API key 与启用标志一起存储。provider 分为预定义与自定义两类。
+- **预定义 provider（predefined provider）** — 由 `lemma-provider` 在代码中定义的 provider：名称、它提供的 API 格式及每种格式的 base URL、模型及其特性。每个用户对每个预定义 provider 有一条记录；该记录保存 API key、启用标志与默认 API 格式。DeepSeek 是预定义 provider。
+- **自定义 provider（custom provider）** — 由用户配置的 provider：标识符、显示名称、一种 API 格式、base URL、API key、路径覆盖与模型记录。
+- **Web provider（web provider）** — 用户的网页搜索或抓取账户，存储在 `web_providers` 中：类型（`native`、`exa` 或 `deepseek`）、加密的 API key、启用标志，以及在搜索与抓取顺序中的位置。Native 通过本地 HTTP 抓取，无需账户。
+- **API 格式（API format）** — 模型请求的线上格式：`openai`（OpenAI chat completions 及兼容 API）、`anthropic` 或 `gemini`。`lemma-model` 定义唯一的 `ApiFormat` 枚举。
+- **provider 标识符（provider identifier）** — provider 的机器名：非空 ASCII，创建后不可修改，在同一用户的自定义 provider 中唯一。预定义 provider 的标识符指明其定义，例如 `deepseek`。
+- **模型特性（model feature）** — 模型的一项属性，它改变发给该模型的请求。工具调用是唯一的特性：关闭工具调用的模型收不到工具定义，也收不到此前的工具调用与工具结果。
+- **端点（endpoint）** — 一个 `Endpoint`：`ProviderService::bind` 在绑定适配器之前打开的一种 API 格式，及其 base URL、路径覆盖与明文 API key。
+- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应 API 格式的适配器，并以 `ModelAdapter` 变体的形式返回。
+- **模型列表（model list）** — 自定义 provider 的端点报告的模型 id，由 `Connector::list_models` 实时获取。自定义 provider 行另行保存自己的模型记录：每个模型 id 及其特性。
 
 ## 工具
 
-- **工具（tool）** — `lemma_tool::Tool` 的一个实现：提供给模型的 `ToolSpec` 与 `execute` 函数。内置工具是 `read_file`、`write_file` 与 `bash`。
+- **工具（tool）** — `lemma_tool::Tool` 的一个实现：提供给模型的 `ToolSpec` 与 `execute` 函数。内置工具是 `read_file`、`write_file`、`bash`、`web_search` 与 `web_fetch`。
 - **执行环境（execution environment）** — 一个 `ExecEnv`：工具执行的文件读写、目录列举与 shell 命令。`LocalExecEnv` 把它们限定在一个会话目录内。
 - **会话目录（session directory）** — 会话的工具运行所在的目录：创建会话时指定的绝对目录，没有指定时是会话的工作区。
 - **工作区（workspace）** — 本地数据目录下的 `workspaces/<session id>` 目录，为不指定目录创建的会话生成。
 - **系统提示词（system prompt）** — `ModelRequest` 置于历史之前发送的指令。带工具的 turn 发送一段写明会话目录、操作系统与 shell 的系统提示词。
 - **工具运行时（tool runtime）** — 一个 `ToolRuntime`：宿主挂到循环上的注册表与执行环境。没有它的循环不发送工具定义。
+- **Web 后端（web backend）** — 一种 Web provider 类型的客户端，在 `lemma-adapter` 的 `web/` 模块中基于注入的 `HttpTransport` 实现。Web 工具按用户的后端顺序尝试，出错时转移到下一个后端。
 
 ## 运行时与账号
 

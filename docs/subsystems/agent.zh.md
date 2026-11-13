@@ -6,7 +6,7 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 
 ## Turn 组装
 
-`Agent` 持有会话服务、provider 服务、模型 connector，以及可选的工作区目录。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
+`Agent` 持有会话服务、provider 服务、可选的工作区目录，以及可选的 Web `HttpTransport`。`Agent::prepare(TurnRequest)` 校验请求并返回一个 `Turn`，否则在写入任何消息之前失败：
 
 | 检查 | 失败 |
 | --- | --- |
@@ -17,11 +17,13 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | 会话绑定的目录已不存在 | `AgentError::DirectoryNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
+`ProviderService::bind` 返回适配器、该 turn 使用的 API 格式以及模型的工具调用标志；格式的选取方式见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)。关闭工具调用的模型不获得工具，它的请求也不包含之前的工具调用与工具结果。
+
 `Turn::run(observer)` 把 turn 运行到结束，成功时返回 `()`；模型流或数据库失败时返回 `AgentError::Loop`。`Turn::user_message_id` 是用户消息的存储 id；中止与恢复都用它定位 turn。
 
 ## 工具
 
-有工作区目录时，turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话目录为根的 `LocalExecEnv`：会话目录是创建会话时指定的目录，没有指定时是会话的工作区 `<workspaces_dir>/<session id>`，`prepare` 在找到会话之后才创建它。该 turn 的每次模型请求都带有一段系统提示词，写明这个目录、操作系统与 shell。没有工作区目录时，调用模型不带工具，也不带系统提示词。
+有工作区目录时，turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话目录为根的 `LocalExecEnv`：会话目录是创建会话时指定的目录，没有指定时是会话的工作区 `<workspaces_dir>/<session id>`，`prepare` 在找到会话之后才创建它，并在 `Agent` 带有 Web `HttpTransport` 且对应功能的顺序存在已启用后端时另外注册 `web_search` 与 `web_fetch`。该 turn 的每次模型请求都带有一段系统提示词，写明这个目录、操作系统与 shell。没有工作区目录时，调用模型不带工具，也不带系统提示词。
 
 `LocalExecEnv` 把 `read_file` 与 `write_file` 限定在根目录内：
 

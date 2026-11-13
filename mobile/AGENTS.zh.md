@@ -20,7 +20,7 @@
 - 根包存放承载导航的 `App` 及其 `AppViewModel`。
 - `client/` 存放 `LemmaClient` 与 `Connector` 接口及其类型；`network/` 基于 Connect 实现它们；`data/` 存放仓库类与 SQLDelight 驱动。
 - `ui/<功能>/` 存放每个功能的 ViewModel、界面及其私有 Composable；`ui/components/` 存放共用的 `Lemma*` 组件；`theme/` 存放颜色、字体与形状。
-- `i18n/` 存放 `UiText` 与 `errorText`；面向用户的文本放在 `composeResources/values/strings.xml` 与 `values-zh/strings.xml` 中，两者的键与格式参数相同。
+- `i18n/` 存放 `UiText` 与 `errorText`；面向用户的文本来自 [i18n/](../i18n/README.zh.md) 的平台中立源文件，由生成器写入被 Git 忽略的 `composeResources/values/strings.xml` 与 `values-zh/strings.xml`。
 - `commonMain` 不使用仅限 JVM 的库：Connect、OkHttp、引擎与 SQLDelight 驱动放在 `androidMain` 下对应的包或 `engine/` 中。
 
 ## 模块与生成代码
@@ -30,6 +30,7 @@
 - Gradle 在编译 Kotlin 之前为宿主机构建 `crates/mobile/lemma-mobile`，并把它的 UniFFI Kotlin 绑定生成到 `shared/build/generated/source/uniffi/`。打包 APK 时还会把它的 JNI 库交叉编译到 `shared/src/androidMain/jniLibs/`，这需要 `cargo-ndk` 与 Android NDK。`lemma-mobile` 的公共 API 变更就是 Kotlin API 变更。
 - 本地模式与远程模式使用相同的 Connect Kotlin 客户端。`engine/LocalEngine.kt` 在数据目录上打开 `LemmaEngine`，通过它的 `request`、`read` 与 `cancel` 响应 OkHttp 请求；`network/AuthInterceptor.kt` 在两种模式下都附上访问令牌并轮换令牌对。
 - Gradle 在编译前运行 `scripts/design-token/gen-tokens.ts`，把 [design/tokens.json](../design/tokens.json) 中的静态色板 `LemmaPalette` 写入 `shared/build/generated/source/tokens/`；这需要 Node。`theme/LemmaColorScheme.kt` 把色板映射到应用的颜色角色。
+- Gradle 的 `generateStrings` 任务在组装 Compose 资源前运行 `scripts/i18n/gen-i18n.ts`，从 [i18n/](../i18n/README.zh.md) 的源文件生成字符串资源；这需要 Node。Kotlin 通过生成的 `Res.string` 与 `Res.plurals` 访问器读取这些资源。
 - 修改 `LemmaDatabase.sq` 的表结构时，要新增下一个 `<N>.sqm` 迁移。修改前先运行 `./gradlew :mobile:shared:generateCommonMainLemmaDatabaseSchema`，把当前结构快照为 `shared/src/commonMain/sqldelight/databases/<N>.db`，并提交这个快照。`verifySqlDelightMigration` 对每个快照执行迁移，结果与 `LemmaDatabase.sq` 不一致时失败。
 - 生成代码不手工修改，也不提交。
 

@@ -1,37 +1,53 @@
 common:
   appName:
-    platforms: [web]
+    platforms: [web, android]
     en: "Lemma"
     zh: "Lemma"
+  back:
+    platforms: [android]
+    en: "Back"
+    zh: "返回"
   cancel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Cancel"
     zh: "取消"
   close:
-    platforms: [web]
+    platforms: [web, android]
     en: "Close"
     zh: "关闭"
   copied:
-    platforms: [web]
+    platforms: [web, android]
     en: "Copied"
     zh: "已复制"
   copy:
-    platforms: [web]
+    platforms: [web, android]
     en: "Copy"
     zh: "复制"
+  copyCode:
+    platforms: [android]
+    en: "Copy code"
+    zh: "复制代码"
   delete:
-    platforms: [web]
+    platforms: [web, android]
     en: "Delete"
     zh: "删除"
   loading:
     platforms: [web]
     en: "Loading…"
     zh: "加载中…"
+  retry:
+    platforms: [android]
+    en: "Retry"
+    zh: "重试"
   save:
-    platforms: [web]
+    platforms: [web, android]
     en: "Save"
     zh: "保存"
+  saving:
+    platforms: [android]
+    en: "Saving…"
+    zh: "保存中…"
   settings:
-    platforms: [web]
+    platforms: [web, android]
     en: "Settings"
     zh: "设置"

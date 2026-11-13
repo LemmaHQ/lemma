@@ -3,20 +3,27 @@ package dev.lemmahq.lemma.network
 import com.google.protobuf.Timestamp
 import dev.lemmahq.gen.lemma.v1.AgentDelta
 import dev.lemmahq.gen.lemma.v1.AgentEvent
+import dev.lemmahq.gen.lemma.v1.ApiFormat
 import dev.lemmahq.gen.lemma.v1.Message
 import dev.lemmahq.gen.lemma.v1.MessageStatus as ProtoMessageStatus
+import dev.lemmahq.gen.lemma.v1.Model
 import dev.lemmahq.gen.lemma.v1.Provider
-import dev.lemmahq.gen.lemma.v1.ProviderKind
 import dev.lemmahq.gen.lemma.v1.Session
 import dev.lemmahq.gen.lemma.v1.ToolCall
 import dev.lemmahq.gen.lemma.v1.User
+import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
+import dev.lemmahq.lemma.client.ClientModel
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
 import dev.lemmahq.lemma.client.ClientUser
+import dev.lemmahq.lemma.client.ClientWebProvider
+import dev.lemmahq.lemma.client.ClientWebProviderKind
 import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
@@ -26,24 +33,53 @@ internal fun User.toClient(): ClientUser = ClientUser(id = id, username = userna
 internal fun Provider.toClient(): ClientProvider =
     ClientProvider(
         id = id,
-        kind = kind.toClientKind(),
-        identifier = identifier,
-        name = name,
-        baseUrl = baseUrl,
-        apiPath = apiPath,
-        modelsPath = modelsPath,
-        models = modelsList,
         enabled = enabled,
         apiKey = apiKey,
+        source =
+            when {
+                hasPredefined() ->
+                    ClientPredefinedProvider(
+                        identifier = predefined.identifier,
+                        name = predefined.name,
+                        apiFormats = predefined.apiFormatsList.map { it.toClientFormat() },
+                        defaultApiFormat = predefined.defaultApiFormat.toClientFormat(),
+                        models = predefined.modelsList.map { it.toClient() },
+                    )
+                hasCustom() ->
+                    ClientCustomProvider(
+                        identifier = custom.identifier,
+                        name = custom.name,
+                        apiFormat = custom.apiFormat.toClientFormat(),
+                        baseUrl = custom.baseUrl,
+                        apiPath = custom.apiPath,
+                        modelsPath = custom.modelsPath,
+                        models = custom.modelsList.map { it.toClient() },
+                    )
+                else -> throw IllegalArgumentException("Provider source is not set")
+            },
     )
 
-internal fun providerKind(kind: String): ProviderKind =
-    when (kind) {
-        "openai" -> ProviderKind.PROVIDER_KIND_OPENAI
-        "anthropic" -> ProviderKind.PROVIDER_KIND_ANTHROPIC
-        "gemini" -> ProviderKind.PROVIDER_KIND_GEMINI
-        else -> throw IllegalArgumentException("Unknown provider kind: $kind")
+internal fun WebProvider.toClient(): ClientWebProvider =
+    ClientWebProvider(
+        id = id,
+        kind = kind.toClient(),
+        name = name,
+        enabled = enabled,
+        hasKey = hasKey,
+        searchRank = searchRank,
+        fetchRank = fetchRank,
+    )
+
+internal fun apiFormat(format: String): ApiFormat =
+    when (format) {
+        "openai" -> ApiFormat.API_FORMAT_OPENAI
+        "anthropic" -> ApiFormat.API_FORMAT_ANTHROPIC
+        "gemini" -> ApiFormat.API_FORMAT_GEMINI
+        else -> throw IllegalArgumentException("Unknown API format: $format")
     }
+
+internal fun ClientModel.toProto(): Model =
+    Model.newBuilder().setId(id).setToolCalling(toolCalling).build()
 
 internal fun Session.toClient(): ClientSession =
     ClientSession(id = id, title = title, updatedAt = updatedAt.epochMillis())
@@ -101,14 +137,26 @@ internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {
     }
 }
 
-private fun ProviderKind.toClientKind(): String =
+private fun ApiFormat.toClientFormat(): String =
     when (this) {
-        ProviderKind.PROVIDER_KIND_OPENAI -> "openai"
-        ProviderKind.PROVIDER_KIND_ANTHROPIC -> "anthropic"
-        ProviderKind.PROVIDER_KIND_GEMINI -> "gemini"
-        ProviderKind.PROVIDER_KIND_UNSPECIFIED,
-        ProviderKind.UNRECOGNIZED -> throw IllegalArgumentException("Unknown provider kind: $this")
+        ApiFormat.API_FORMAT_OPENAI -> "openai"
+        ApiFormat.API_FORMAT_ANTHROPIC -> "anthropic"
+        ApiFormat.API_FORMAT_GEMINI -> "gemini"
+        ApiFormat.API_FORMAT_UNSPECIFIED,
+        ApiFormat.UNRECOGNIZED -> throw IllegalArgumentException("Unknown API format: $this")
     }
+
+private fun WebProvider.Kind.toClient(): ClientWebProviderKind =
+    when (this) {
+        WebProvider.Kind.KIND_NATIVE -> ClientWebProviderKind.Native
+        WebProvider.Kind.KIND_EXA -> ClientWebProviderKind.Exa
+        WebProvider.Kind.KIND_DEEPSEEK -> ClientWebProviderKind.DeepSeek
+        WebProvider.Kind.KIND_UNSPECIFIED,
+        WebProvider.Kind.UNRECOGNIZED ->
+            throw IllegalArgumentException("Unknown web provider kind: $this")
+    }
+
+private fun Model.toClient(): ClientModel = ClientModel(id = id, toolCalling = toolCalling)
 
 private fun ProtoMessageStatus.toClient(): MessageStatus =
     when (this) {

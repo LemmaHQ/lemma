@@ -38,28 +38,42 @@ interface LemmaClient {
 
     suspend fun listProviders(): List<ClientProvider>
 
-    suspend fun createProvider(input: ClientProviderInput): ClientProvider
+    suspend fun createCustomProvider(input: ClientCustomProviderInput): ClientProvider
 
-    suspend fun updateProvider(id: String, patch: ClientProviderPatch): ClientProvider
+    suspend fun updateCustomProvider(id: String, patch: ClientCustomProviderPatch): ClientProvider
 
-    suspend fun deleteProvider(id: String)
+    suspend fun updatePredefinedProvider(
+        id: String,
+        patch: ClientPredefinedProviderPatch,
+    ): ClientProvider
 
-    /** Fetches the live model list with a stored provider's credentials. */
+    suspend fun listWebProviders(): List<ClientWebProvider>
+
+    suspend fun updateWebProvider(id: String, patch: ClientWebProviderPatch): ClientWebProvider
+
+    suspend fun setWebProviderOrder(
+        function: ClientWebFunction,
+        ids: List<String>,
+    ): List<ClientWebProvider>
+
+    suspend fun deleteCustomProvider(id: String)
+
+    /** Fetches the live model list with a stored custom provider's credentials. */
     suspend fun fetchProviderModels(id: String): List<String>
 
-    /** Fetches the live model list with ad-hoc connection details. */
+    /** Fetches the live model list with ad-hoc custom connection details. */
     suspend fun fetchModels(
-        kind: String,
+        apiFormat: String,
         baseUrl: String,
         apiKey: String,
         modelsPath: String,
     ): List<String>
 
-    /**
-     * Sends a test request for [model] through the stored provider [id], or through [connection]
-     * when [id] is null; returns the upstream failure message, empty when the model answered.
-     */
-    suspend fun checkProvider(id: String?, connection: ClientProviderInput, model: String): String
+    /** Sends a test request for [model] through the stored provider [id]. */
+    suspend fun checkProvider(id: String, model: String): String
+
+    /** Sends a test request for [model] through ad-hoc custom connection details. */
+    suspend fun checkCustomProvider(connection: ClientCustomProviderInput, model: String): String
 
     suspend fun createSession(): ClientSession
 

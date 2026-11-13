@@ -2,6 +2,7 @@ import { clearActiveSession } from "@/features/agent";
 import { useAuth } from "@/features/auth";
 import { clearSessions } from "@/features/session";
 import { clearProviders } from "@/features/provider";
+import { clearWebProviders } from "@/features/web-provider";
 
 /** Empties every feature store holding account data whenever the signed-in user changes. */
 export function installAccountDataReset(): void {
@@ -12,5 +13,6 @@ export function installAccountDataReset(): void {
         clearActiveSession();
         clearSessions();
         clearProviders();
+        clearWebProviders();
     });
 }

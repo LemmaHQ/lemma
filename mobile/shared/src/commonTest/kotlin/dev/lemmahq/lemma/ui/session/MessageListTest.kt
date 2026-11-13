@@ -18,7 +18,7 @@ class MessageListTest {
                     reply to listOf(named),
                     reply.copy(model = "") to listOf(named),
                     reply.copy(model = "gpt-4o") to emptyList(),
-                    reply.copy(model = "gpt-4o") to listOf(named.copy(name = "")),
+                    reply.copy(model = "gpt-4o") to listOf(sampleProvider("openai", name = "")),
                     reply.copy(model = "gpt-4o") to listOf(sampleProvider("other"), named),
                 )
                 .map { (message, providers) -> messageSource(message, providers) },

@@ -1,48 +1,37 @@
-import { Input, PasswordInput, SettingsField } from "@lemma/ui";
+import { Input, SettingsField } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
+import type { ApiFormat } from "../api-format";
 import {
     CONNECTION_PLACEHOLDERS,
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type { ProviderKind } from "../store";
+import { ApiKeyField } from "./ApiKeyField";
 
 interface ConnectionFieldsProps {
-    kind: ProviderKind;
+    apiFormat: ApiFormat;
     values: ConnectionValues;
     onChange: (values: ConnectionValues) => void;
 }
 
-/** API key, base URL, and request path fields of a provider's connection section. */
+/** API key, base URL, and request path fields of a custom provider's connection section. */
 export function ConnectionFields({
-    kind,
+    apiFormat,
     values,
     onChange,
 }: ConnectionFieldsProps) {
     const { t } = useTranslation();
-    const placeholders = CONNECTION_PLACEHOLDERS[kind];
+    const placeholders = CONNECTION_PLACEHOLDERS[apiFormat];
     const baseUrlInvalid =
         values.baseUrl.trim() !== "" && !isBaseUrlValid(values.baseUrl);
 
     return (
         <>
-            <SettingsField
-                label={t("provider.apiKey")}
-                htmlFor="provider-api-key"
-                description={t("provider.apiKeyDesc")}
-            >
-                <PasswordInput
-                    showLabel={t("passwordInput.show")}
-                    hideLabel={t("passwordInput.hide")}
-                    id="provider-api-key"
-                    value={values.apiKey}
-                    onChange={(e) =>
-                        onChange({ ...values, apiKey: e.target.value })
-                    }
-                    placeholder={t("provider.apiKeyPlaceholder")}
-                />
-            </SettingsField>
+            <ApiKeyField
+                value={values.apiKey}
+                onChange={(apiKey) => onChange({ ...values, apiKey })}
+            />
             <SettingsField
                 label={t("provider.baseUrl")}
                 htmlFor="provider-base-url"
@@ -65,7 +54,7 @@ export function ConnectionFields({
                 label={t("provider.apiPath")}
                 htmlFor="provider-api-path"
                 description={
-                    kind === "gemini"
+                    apiFormat === "gemini"
                         ? t("provider.apiPathDescGemini")
                         : t("provider.apiPathDesc")
                 }

@@ -11,7 +11,7 @@ use lemma_core::{
     ContentBlock, Message, StopReason, StreamEvent, TextContent, ThinkingContent, ToolCall,
     ToolSpec, Usage,
 };
-use lemma_model::{Adapter, Connector, Endpoint, ModelError, ModelRequest, ProviderKind};
+use lemma_model::{Adapter, ApiFormat, Connector, Endpoint, ModelError, ModelRequest};
 use serde_json::{Value, json};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,6 +25,7 @@ struct Sent {
 struct ScriptedTransport {
     chunks: Vec<Result<String, String>>,
     listing: Value,
+    text: String,
     sent: Arc<Mutex<Vec<Sent>>>,
 }
 
@@ -90,6 +91,19 @@ impl HttpTransport for ScriptedTransport {
         });
         Ok(self.listing.clone())
     }
+
+    async fn get_text(
+        &self,
+        url: String,
+        headers: Vec<(String, String)>,
+    ) -> Result<String, ModelError> {
+        self.record(Sent {
+            url,
+            headers,
+            body: None,
+        });
+        Ok(self.text.clone())
+    }
 }
 
 #[derive(Clone)]
@@ -112,11 +126,19 @@ impl HttpTransport for RefusingTransport {
     ) -> Result<Value, ModelError> {
         Err(ModelError::new("upstream 401: bad key".to_owned()))
     }
+
+    async fn get_text(
+        &self,
+        _url: String,
+        _headers: Vec<(String, String)>,
+    ) -> Result<String, ModelError> {
+        Err(ModelError::new("upstream 401: bad key".to_owned()))
+    }
 }
 
-fn endpoint(kind: ProviderKind) -> Endpoint {
+fn endpoint(api_format: ApiFormat) -> Endpoint {
     Endpoint {
-        kind,
+        api_format,
         base_url: String::new(),
         api_path: String::new(),
         models_path: String::new(),
@@ -243,12 +265,7 @@ fn delta(text: &str) -> StreamEvent {
 async fn openai_sends_history_tools_and_a_bearer_token() -> Result<(), Box<dyn Error>> {
     let transport = ScriptedTransport::streaming("data: [DONE]\n\n");
 
-    let events = collect(
-        &transport,
-        endpoint(ProviderKind::OpenAiCompatible),
-        history(),
-    )
-    .await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), history()).await?;
 
     let call_1 = json!({ "id": "call-1", "type": "function",
         "function": { "name": "read_file", "arguments": r#"{"path":"a.txt"}"# } });
@@ -290,7 +307,7 @@ async fn openai_sends_history_tools_and_a_bearer_token() -> Result<(), Box<dyn E
 async fn anthropic_replays_signed_thinking_and_tool_blocks() -> Result<(), Box<dyn Error>> {
     let transport = ScriptedTransport::streaming("data: {\"type\":\"message_stop\"}\n\n");
 
-    let events = collect(&transport, endpoint(ProviderKind::Anthropic), history()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Anthropic), history()).await?;
 
     assert_eq!(
         transport.sent(),
@@ -341,7 +358,7 @@ async fn anthropic_replays_signed_thinking_and_tool_blocks() -> Result<(), Box<d
 async fn gemini_sends_function_calls_and_responses() -> Result<(), Box<dyn Error>> {
     let transport = ScriptedTransport::streaming("");
 
-    let events = collect(&transport, endpoint(ProviderKind::Gemini), history()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Gemini), history()).await?;
 
     assert_eq!(
         transport.sent(),
@@ -384,31 +401,31 @@ async fn gemini_sends_function_calls_and_responses() -> Result<(), Box<dyn Error
 async fn base_url_and_api_path_override_the_vendor_defaults() -> Result<(), Box<dyn Error>> {
     let cases = [
         (
-            ProviderKind::OpenAiCompatible,
+            ApiFormat::OpenAiCompatible,
             "/v2/chat",
             "https://proxy.example/api/v2/chat",
             Vec::new(),
         ),
         (
-            ProviderKind::Anthropic,
+            ApiFormat::Anthropic,
             "/messages",
             "https://proxy.example/api/messages",
             vec![header("anthropic-version", "2023-06-01")],
         ),
         (
-            ProviderKind::Gemini,
+            ApiFormat::Gemini,
             "/models/{model}:stream",
             "https://proxy.example/api/models/m:stream",
             Vec::new(),
         ),
     ];
-    for (kind, api_path, url, headers) in cases {
+    for (api_format, api_path, url, headers) in cases {
         let transport = ScriptedTransport::streaming("");
         let endpoint = Endpoint {
             base_url: "https://proxy.example/api/".to_owned(),
             api_path: api_path.to_owned(),
             api_key: String::new(),
-            ..endpoint(kind)
+            ..endpoint(api_format)
         };
 
         collect(&transport, endpoint, ask()).await?;
@@ -419,12 +436,12 @@ async fn base_url_and_api_path_override_the_vendor_defaults() -> Result<(), Box<
                 .map(|s| (s.url.as_str(), s.headers.clone()))
                 .collect::<Vec<_>>(),
             [(url, headers)],
-            "{kind:?} request target"
+            "{api_format:?} request target"
         );
         assert!(
             sent.iter()
                 .all(|s| s.body.as_ref().is_some_and(|b| b.get("tools").is_none())),
-            "{kind:?} sends no tools when none are offered"
+            "{api_format:?} sends no tools when none are offered"
         );
     }
     Ok(())
@@ -446,7 +463,7 @@ async fn openai_closes_open_blocks_when_the_stream_ends_without_done() -> Result
     );
     let transport = ScriptedTransport::streaming(sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -473,7 +490,7 @@ async fn openai_closes_open_blocks_when_the_stream_ends_without_done() -> Result
                 call: call("c1", "bash", json!({ "command": "ls" }))
             },
             done(
-                StopReason::Stop,
+                StopReason::ToolUse,
                 Some(Usage {
                     input: 3,
                     output: 4
@@ -518,7 +535,7 @@ async fn anthropic_ignores_unknown_and_empty_stream_parts() -> Result<(), Box<dy
         .collect();
     let transport = ScriptedTransport::streaming(&sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::Anthropic), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Anthropic), ask()).await?;
 
     assert_eq!(
         events,
@@ -561,7 +578,7 @@ async fn an_anthropic_error_event_fails_the_stream_with_its_message() -> Result<
         "data: {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}}\n\n",
     );
 
-    let result = collect(&transport, endpoint(ProviderKind::Anthropic), ask()).await;
+    let result = collect(&transport, endpoint(ApiFormat::Anthropic), ask()).await;
 
     assert_eq!(
         result.map_err(|e| e.to_string()),
@@ -590,7 +607,7 @@ async fn gemini_maps_the_finish_reason_of_a_text_answer() -> Result<(), Box<dyn 
         );
         let transport = ScriptedTransport::streaming(&sse);
 
-        let events = collect(&transport, endpoint(ProviderKind::Gemini), ask()).await?;
+        let events = collect(&transport, endpoint(ApiFormat::Gemini), ask()).await?;
 
         assert_eq!(
             events,
@@ -615,38 +632,41 @@ async fn gemini_maps_the_finish_reason_of_a_text_answer() -> Result<(), Box<dyn 
 
 #[tokio::test]
 async fn a_malformed_payload_fails_the_stream() -> Result<(), Box<dyn Error>> {
-    for (kind, expected) in [
-        (ProviderKind::OpenAiCompatible, "bad chunk: "),
-        (ProviderKind::Anthropic, "bad event: "),
-        (ProviderKind::Gemini, "bad chunk: "),
+    for (api_format, expected) in [
+        (ApiFormat::OpenAiCompatible, "bad chunk: "),
+        (ApiFormat::Anthropic, "bad event: "),
+        (ApiFormat::Gemini, "bad chunk: "),
     ] {
         let transport = ScriptedTransport::streaming("data: {not json\n\n");
 
-        let result = collect(&transport, endpoint(kind), ask()).await;
+        let result = collect(&transport, endpoint(api_format), ask()).await;
 
         let Err(error) = result else {
-            return Err(format!("{kind:?} accepted a malformed payload").into());
+            return Err(format!("{api_format:?} accepted a malformed payload").into());
         };
-        assert!(error.message.starts_with(expected), "{kind:?}: {error}");
+        assert!(
+            error.message.starts_with(expected),
+            "{api_format:?}: {error}"
+        );
     }
     Ok(())
 }
 
 #[tokio::test]
 async fn a_refused_request_fails_before_streaming() -> Result<(), Box<dyn Error>> {
-    for kind in [
-        ProviderKind::OpenAiCompatible,
-        ProviderKind::Anthropic,
-        ProviderKind::Gemini,
+    for api_format in [
+        ApiFormat::OpenAiCompatible,
+        ApiFormat::Anthropic,
+        ApiFormat::Gemini,
     ] {
-        let adapter = HttpConnector::new(RefusingTransport).connect(endpoint(kind));
+        let adapter = HttpConnector::new(RefusingTransport).connect(endpoint(api_format));
 
         let result = adapter.stream(ask()).await;
 
         assert_eq!(
             result.err().map(|e| e.message),
             Some("upstream 401: bad key".to_owned()),
-            "{kind:?}"
+            "{api_format:?}"
         );
     }
     Ok(())
@@ -661,7 +681,7 @@ async fn a_transport_failure_mid_stream_fails_the_stream() -> Result<(), Box<dyn
         ],
         ..ScriptedTransport::default()
     };
-    let adapter = HttpConnector::new(transport).connect(endpoint(ProviderKind::OpenAiCompatible));
+    let adapter = HttpConnector::new(transport).connect(endpoint(ApiFormat::OpenAiCompatible));
 
     let events: Vec<_> = adapter.stream(ask()).await?.collect().await;
 
@@ -687,7 +707,7 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
         (
             Endpoint {
                 api_key: String::new(),
-                ..endpoint(ProviderKind::OpenAiCompatible)
+                ..endpoint(ApiFormat::OpenAiCompatible)
             },
             json!({ "data": [{ "id": "gpt-x" }] }),
             "https://api.openai.com/v1/models",
@@ -697,7 +717,7 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
         (
             Endpoint {
                 base_url: "https://api.anthropic.com/".to_owned(),
-                ..endpoint(ProviderKind::Anthropic)
+                ..endpoint(ApiFormat::Anthropic)
             },
             json!({ "data": [{ "id": "claude-x" }] }),
             "https://api.anthropic.com/v1/models",
@@ -710,7 +730,7 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
         (
             Endpoint {
                 models_path: "/v1/models".to_owned(),
-                ..endpoint(ProviderKind::Gemini)
+                ..endpoint(ApiFormat::Gemini)
             },
             json!({ "models": [{ "name": "models/gemini-x" }, { "name": "tuned" }] }),
             "https://generativelanguage.googleapis.com/v1/models",
@@ -719,14 +739,14 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
         ),
     ];
     for (endpoint, listing, url, headers, expected) in cases {
-        let kind = endpoint.kind;
+        let api_format = endpoint.api_format;
         let transport = ScriptedTransport::listing(listing);
 
         let models = HttpConnector::new(transport.clone())
             .list_models(endpoint)
             .await?;
 
-        assert_eq!(models, expected, "{kind:?} models");
+        assert_eq!(models, expected, "{api_format:?} models");
         assert_eq!(
             transport.sent(),
             [Sent {
@@ -734,7 +754,7 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
                 headers,
                 body: None,
             }],
-            "{kind:?} request"
+            "{api_format:?} request"
         );
     }
     Ok(())
@@ -742,19 +762,19 @@ async fn models_are_listed_from_each_vendor_format() -> Result<(), Box<dyn Error
 
 #[tokio::test]
 async fn a_model_list_in_another_format_is_rejected() -> Result<(), Box<dyn Error>> {
-    for kind in [ProviderKind::OpenAiCompatible, ProviderKind::Gemini] {
+    for api_format in [ApiFormat::OpenAiCompatible, ApiFormat::Gemini] {
         let transport = ScriptedTransport::listing(json!({ "items": [] }));
 
         let result = HttpConnector::new(transport)
-            .list_models(endpoint(kind))
+            .list_models(endpoint(api_format))
             .await;
 
         let Err(error) = result else {
-            return Err(format!("{kind:?} accepted an unknown list format").into());
+            return Err(format!("{api_format:?} accepted an unknown list format").into());
         };
         assert!(
             error.message.starts_with("bad model list: "),
-            "{kind:?}: {error}"
+            "{api_format:?}: {error}"
         );
     }
     Ok(())
@@ -791,7 +811,7 @@ event: message_stop\n\
 data: {\"type\":\"message_stop\"}\n";
     let transport = ScriptedTransport::streaming(sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::Anthropic), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Anthropic), ask()).await?;
 
     assert_eq!(
         events,
@@ -841,7 +861,7 @@ async fn anthropic_maps_its_stop_reasons() -> Result<(), Box<dyn Error>> {
         );
         let transport = ScriptedTransport::streaming(&sse);
 
-        let events = collect(&transport, endpoint(ProviderKind::Anthropic), ask()).await?;
+        let events = collect(&transport, endpoint(ApiFormat::Anthropic), ask()).await?;
 
         assert_eq!(events, [done(stop_reason, None)], "{reason}");
     }
@@ -858,7 +878,7 @@ data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":4}}\
 data: [DONE]\n";
     let transport = ScriptedTransport::streaming(sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -893,7 +913,7 @@ data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\
 data: [DONE]\n";
     let transport = ScriptedTransport::streaming(sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -930,6 +950,109 @@ data: [DONE]\n";
 }
 
 #[tokio::test]
+async fn openai_treats_a_stop_with_tool_calls_as_tool_use() -> Result<(), Box<dyn Error>> {
+    let sse = "\
+data: {\"choices\":[{\"delta\":{\"content\":\"I'll run it.\"}}]}\n\
+data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_1\",\"function\":{\"name\":\"bash\",\"arguments\":\"{\\\"command\\\":\\\"ls\\\"}\"}}]}}]}\n\
+data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\
+data: [DONE]\n";
+    let transport = ScriptedTransport::streaming(sse);
+
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
+
+    assert_eq!(
+        events,
+        [
+            StreamEvent::TextStart,
+            delta("I'll run it."),
+            StreamEvent::TextEnd,
+            StreamEvent::ToolCallStart {
+                id: "call_1".to_owned(),
+                name: "bash".to_owned()
+            },
+            StreamEvent::ToolCallDelta {
+                delta: "{\"command\":\"ls\"}".to_owned()
+            },
+            StreamEvent::ToolCallEnd {
+                call: call("call_1", "bash", json!({ "command": "ls" }))
+            },
+            done(StopReason::ToolUse, None),
+        ],
+        "events"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn openai_reports_tool_use_when_the_stream_ends_without_done() -> Result<(), Box<dyn Error>> {
+    let transport = ScriptedTransport::streaming(concat!(
+        "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",",
+        "\"function\":{\"name\":\"bash\",\"arguments\":\"{\\\"command\\\":\\\"ls\\\"}\"}}]}}]}\n\n",
+        "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
+    ));
+
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
+
+    assert_eq!(
+        events,
+        [
+            StreamEvent::ToolCallStart {
+                id: "c1".to_owned(),
+                name: "bash".to_owned()
+            },
+            StreamEvent::ToolCallDelta {
+                delta: "{\"command\":\"ls\"}".to_owned()
+            },
+            StreamEvent::ToolCallEnd {
+                call: call("c1", "bash", json!({ "command": "ls" }))
+            },
+            done(StopReason::ToolUse, None),
+        ],
+        "events"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn openai_reads_the_finish_reason_of_a_chunk_that_also_carries_usage()
+-> Result<(), Box<dyn Error>> {
+    let transport = ScriptedTransport::streaming(concat!(
+        "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",",
+        "\"function\":{\"name\":\"bash\",\"arguments\":\"{\\\"command\\\":\\\"ls\\\"}\"}}]}}]}\n\n",
+        "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],",
+        "\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":4}}\n\n",
+        "data: [DONE]\n\n",
+    ));
+
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
+
+    assert_eq!(
+        events,
+        [
+            StreamEvent::ToolCallStart {
+                id: "c1".to_owned(),
+                name: "bash".to_owned()
+            },
+            StreamEvent::ToolCallDelta {
+                delta: "{\"command\":\"ls\"}".to_owned()
+            },
+            StreamEvent::ToolCallEnd {
+                call: call("c1", "bash", json!({ "command": "ls" }))
+            },
+            done(
+                StopReason::ToolUse,
+                Some(Usage {
+                    input: 3,
+                    output: 4
+                })
+            ),
+        ],
+        "events"
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn openai_keeps_the_raw_arguments_of_a_call_cut_off_by_the_length_limit()
 -> Result<(), Box<dyn Error>> {
     let transport = ScriptedTransport::streaming(concat!(
@@ -939,7 +1062,7 @@ async fn openai_keeps_the_raw_arguments_of_a_call_cut_off_by_the_length_limit()
         "data: [DONE]\n\n",
     ));
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -972,7 +1095,7 @@ async fn openai_keeps_argument_fragments_sent_before_the_call_name() -> Result<(
         "data: [DONE]\n\n",
     ));
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -1001,7 +1124,7 @@ async fn text_is_closed_before_reasoning_that_follows_it() -> Result<(), Box<dyn
         "data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"B\"}}]}\n\n",
     ));
 
-    let events = collect(&transport, endpoint(ProviderKind::OpenAiCompatible), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::OpenAiCompatible), ask()).await?;
 
     assert_eq!(
         events,
@@ -1030,7 +1153,7 @@ data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"答案\"}]}}]}\n\
 data: {\"candidates\":[{\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"get_weather\",\"args\":{\"city\":\"北京\"}}}]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":5,\"candidatesTokenCount\":10}}\n";
     let transport = ScriptedTransport::streaming(sse);
 
-    let events = collect(&transport, endpoint(ProviderKind::Gemini), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Gemini), ask()).await?;
 
     assert_eq!(
         events,
@@ -1075,7 +1198,7 @@ async fn gemini_closes_a_thought_left_open_at_the_end_of_the_stream() -> Result<
         "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"hm\",\"thought\":true}]}}]}\n\n",
     );
 
-    let events = collect(&transport, endpoint(ProviderKind::Gemini), ask()).await?;
+    let events = collect(&transport, endpoint(ApiFormat::Gemini), ask()).await?;
 
     assert_eq!(
         events,

@@ -14,9 +14,10 @@ import {
     ListMessagesResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
 import {
+    ApiFormat,
     type Provider,
-    ProviderKind,
     ProviderSchema,
+    type WebProvider,
 } from "@/gen/lemma/v1/provider_pb";
 
 const rpc = vi.hoisted(() => ({
@@ -26,6 +27,8 @@ const rpc = vi.hoisted(() => ({
     createSession: vi.fn<(req: object) => Promise<{ session?: Session }>>(),
     listMessages: vi.fn<(req: object) => Promise<object>>(),
     listProviders: vi.fn<(req: object) => Promise<{ providers: Provider[] }>>(),
+    listWebProviders:
+        vi.fn<(req: object) => Promise<{ providers: WebProvider[] }>>(),
     sendMessage: vi.fn<(req: object) => AsyncIterable<object>>(),
     getVersion: vi.fn<(req: object) => Promise<{ version: string }>>(),
 }));
@@ -37,7 +40,10 @@ vi.mock("@/rpc/clients", () => ({
         createSession: rpc.createSession,
         listMessages: rpc.listMessages,
     },
-    providerClient: { listProviders: rpc.listProviders },
+    providerClient: {
+        listProviders: rpc.listProviders,
+        listWebProviders: rpc.listWebProviders,
+    },
     agentClient: { sendMessage: rpc.sendMessage },
     systemClient: { getVersion: rpc.getVersion },
 }));
@@ -137,6 +143,7 @@ beforeEach(() => {
     });
     rpc.listMessages.mockResolvedValue(create(ListMessagesResponseSchema, {}));
     rpc.listProviders.mockResolvedValue({ providers: [] });
+    rpc.listWebProviders.mockResolvedValue({ providers: [] });
     rpc.getVersion.mockResolvedValue({ version: "1.0.0" });
 });
 
@@ -225,10 +232,15 @@ it("creates a session for the first message and opens it", async () => {
         providers: [
             create(ProviderSchema, {
                 id: "p1",
-                kind: ProviderKind.OPENAI,
-                name: "Acme",
-                models: ["m1"],
                 enabled: true,
+                source: {
+                    case: "custom",
+                    value: {
+                        apiFormat: ApiFormat.OPENAI,
+                        name: "Acme",
+                        models: [{ id: "m1", toolCalling: true }],
+                    },
+                },
             }),
         ],
     });
@@ -295,6 +307,15 @@ it("navigates the settings pages from the account menu", async () => {
     await atPath("/settings/providers");
     expect(
         await screen.findByRole("region", { name: "AI Providers" }),
+    ).toBeDefined();
+
+    await user.click(screen.getByRole("link", { name: "Web Search & Fetch" }));
+    await atPath("/settings/web");
+    expect(
+        await screen.findByRole("heading", {
+            level: 1,
+            name: "Web Search & Fetch",
+        }),
     ).toBeDefined();
 
     await user.click(screen.getByRole("link", { name: "Back to home" }));

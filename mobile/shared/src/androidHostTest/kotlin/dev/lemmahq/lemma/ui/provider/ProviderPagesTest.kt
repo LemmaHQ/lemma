@@ -26,15 +26,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.test.espresso.Espresso
+import dev.lemmahq.lemma.client.ClientCustomProvider
+import dev.lemmahq.lemma.client.ClientCustomProviderPatch
+import dev.lemmahq.lemma.client.ClientPredefinedProvider
+import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
-import dev.lemmahq.lemma.client.ClientProviderPatch
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
+import dev.lemmahq.lemma.client.samplePredefinedProvider
 import dev.lemmahq.lemma.client.sampleProvider
 import dev.lemmahq.lemma.theme.LemmaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -49,22 +54,25 @@ class ProviderPagesTest {
     private val client =
         FakeLemmaClient().apply {
             onListProviders = { stored.toList() }
-            onCreateProvider = { input ->
+            onCreateCustomProvider = { input ->
                 ClientProvider(
                         id = "provider-${stored.size + 1}",
-                        kind = input.kind,
-                        identifier = input.identifier,
-                        name = input.name,
-                        baseUrl = input.baseUrl,
-                        apiPath = input.apiPath,
-                        modelsPath = input.modelsPath,
-                        models = input.models,
                         enabled = true,
                         apiKey = input.apiKey,
+                        source =
+                            ClientCustomProvider(
+                                identifier = input.identifier,
+                                name = input.name,
+                                apiFormat = input.apiFormat,
+                                baseUrl = input.baseUrl,
+                                apiPath = input.apiPath,
+                                modelsPath = input.modelsPath,
+                                models = input.models,
+                            ),
                     )
                     .also { stored += it }
             }
-            onDeleteProvider = { id -> stored.removeAll { it.id == id } }
+            onDeleteCustomProvider = { id -> stored.removeAll { it.id == id } }
         }
 
     private lateinit var navController: NavHostController
@@ -82,9 +90,9 @@ class ProviderPagesTest {
 
     private fun openStoredProvider(vararg models: String) {
         stored += sampleProvider("p1", *models)
-        client.onUpdateProvider = { id, patch ->
+        client.onUpdateCustomProvider = { id, patch ->
             val index = stored.indexOfFirst { it.id == id }
-            stored[index].patched(patch).also { stored[index] = it }
+            stored[index].customPatched(patch).also { stored[index] = it }
         }
         showProviders()
         compose.onNodeWithText("p1").performClick()
@@ -120,8 +128,8 @@ class ProviderPagesTest {
         Espresso.pressBack()
         compose.onNodeWithText("Discard").performClick()
 
-        compose.onNodeWithText("Enabled").assertIsDisplayed()
-        assertEquals("https://api.example.com/v1", stored.single().baseUrl)
+        compose.onNodeWithText("Custom").assertIsDisplayed()
+        assertEquals("https://api.example.com/v1", stored.single().custom.baseUrl)
         compose.onNodeWithText("my-proxy").performClick()
         compose.onNodeWithContentDescription("More actions").performClick()
         compose.onNodeWithText("Delete provider").performClick()
@@ -134,17 +142,17 @@ class ProviderPagesTest {
     @Test
     fun theSettingsDialogRenamesTheProviderOnceTheServiceAccepts() {
         openStoredProvider("gpt-4o")
-        val update = client.onUpdateProvider
-        client.onUpdateProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
+        val update = client.onUpdateCustomProvider
+        client.onUpdateCustomProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
 
         compose.onNodeWithContentDescription("More actions").performClick()
         compose.onNodeWithText("Provider settings").performClick()
         inDialog(hasText("p1") and hasSetTextAction() and isEnabled())
             .performTextReplacement("Work")
         inDialog(hasText("Save")).performClick()
-        inDialog(hasText("Cannot reach the server, check your connection and try again"))
+        inDialog(hasText("Can't reach the server, check your connection and try again"))
             .assertIsDisplayed()
-        client.onUpdateProvider = update
+        client.onUpdateCustomProvider = update
         inDialog(hasText("Save")).performClick()
 
         compose.onNode(isDialog()).assertDoesNotExist()
@@ -174,10 +182,10 @@ class ProviderPagesTest {
         compose.onNodeWithText("Fetch model list").performClick()
         inDialog(hasContentDescription("Back")).performClick()
         compose.onNode(isDialog()).assertDoesNotExist()
-        assertEquals(listOf("gpt-4o", "o3"), stored.single().models)
+        assertEquals(listOf("gpt-4o", "o3"), stored.single().custom.models.map { it.id })
 
         compose.onAllNodesWithContentDescription("Remove model")[0].performScrollTo().performClick()
-        assertEquals(listOf("o3"), stored.single().models)
+        assertEquals(listOf("o3"), stored.single().custom.models.map { it.id })
         compose.onNodeWithContentDescription("Add model").performScrollTo().performClick()
         compose.onAllNodes(hasSetTextAction()).onLast().performTextInput("custom")
         compose.onAllNodesWithContentDescription("Add model")[1].performScrollTo().performClick()
@@ -185,14 +193,26 @@ class ProviderPagesTest {
         compose.onNodeWithContentDescription("Cancel").performScrollTo().performClick()
 
         compose.onNodeWithContentDescription("Cancel").assertDoesNotExist()
-        assertEquals(listOf("custom", "o3"), stored.single().models)
+        assertEquals(listOf("custom", "o3"), stored.single().custom.models.map { it.id })
+    }
+
+    @Test
+    fun aModelToolCallingSwitchPersistsThroughUpdate() {
+        openStoredProvider("gpt-4o")
+
+        compose
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))[1]
+            .performScrollTo()
+            .performClick()
+
+        assertFalse(stored.single().custom.models.single().toolCalling)
     }
 
     @Test
     fun theCheckUsesThePickedModelAndFailedRequestsShowTheirReason() {
-        client.onCheckProvider = { _, _, _ -> throw ServiceException(ServiceFailure.Network) }
+        client.onCheckProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         openStoredProvider("gpt-4o", "o3")
-        val failure = "Cannot reach the server, check your connection and try again"
+        val failure = "Can't reach the server, check your connection and try again"
 
         compose
             .onNode(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.DropdownList))
@@ -201,9 +221,9 @@ class ProviderPagesTest {
         compose.onNode(hasText("o3") and hasAnyAncestor(isPopup())).performClick()
         compose.onNodeWithText("Check").performClick()
         compose.onNodeWithText(failure).assertExists()
-        assertEquals("o3", (client.calls.last().args[2]))
+        assertEquals("o3", client.calls.last().args[1])
 
-        client.onUpdateProvider = { _, _ -> throw ServiceException(ServiceFailure.Timeout) }
+        client.onUpdateCustomProvider = { _, _ -> throw ServiceException(ServiceFailure.Timeout) }
         compose
             .onNode(hasText("https://api.example.com/v1") and hasSetTextAction())
             .performScrollTo()
@@ -213,7 +233,42 @@ class ProviderPagesTest {
     }
 
     @Test
-    fun theListWaitsForTheProvidersAndGroupsThemByState() {
+    fun predefinedDetailsGateEnablingAndLimitDefaultFormats() {
+        stored += samplePredefinedProvider("deepseek", "deepseek-flash", "deepseek-v4-pro")
+        client.onUpdatePredefinedProvider = { id, patch ->
+            val index = stored.indexOfFirst { it.id == id }
+            stored[index].predefinedPatched(patch).also { stored[index] = it }
+        }
+        showProviders()
+        compose.onNodeWithText("Predefined").assertIsDisplayed()
+        compose.onNodeWithText("deepseek").performClick()
+
+        compose.onNodeWithText("Save an API key before enabling this provider.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
+        compose.onNodeWithText("Gemini").assertDoesNotExist()
+        compose.onNodeWithText("Models and their features ship with Lemma.").performScrollTo()
+        compose.onNodeWithText("OpenAI").performScrollTo().performClick()
+        assertEquals("openai", stored.single().predefined.defaultApiFormat)
+
+        compose.onAllNodes(hasSetTextAction())[0].performTextInput("sk-draft")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Discard").performClick()
+        compose.onNodeWithText("Predefined").assertIsDisplayed()
+        assertEquals("", stored.single().apiKey)
+
+        compose.onNodeWithText("deepseek").performClick()
+        compose.onAllNodes(hasSetTextAction())[0].performTextInput("sk-deepseek")
+        compose.onNodeWithText("Save").performClick()
+        compose
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))[0]
+            .performClick()
+        assertEquals(true, stored.single().enabled)
+    }
+
+    @Test
+    fun theListWaitsForTheProvidersAndGroupsThemBySource() {
         val providers = CompletableDeferred<List<ClientProvider>>()
         client.onListProviders = { providers.await() }
         showProviders()
@@ -221,14 +276,15 @@ class ProviderPagesTest {
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertExists()
         providers.complete(
             listOf(
+                samplePredefinedProvider("deepseek"),
                 sampleProvider("p1"),
                 sampleProvider("p2"),
                 sampleProvider("p3", enabled = false),
             )
         )
 
-        compose.onNodeWithText("Enabled").assertIsDisplayed()
-        compose.onNodeWithText("Disabled").assertIsDisplayed()
+        compose.onNodeWithText("Predefined").assertIsDisplayed()
+        compose.onNodeWithText("Custom").assertIsDisplayed()
         compose.onNodeWithText("p2").assertIsDisplayed()
     }
 
@@ -238,7 +294,7 @@ class ProviderPagesTest {
         showProviders()
 
         compose
-            .onNodeWithText("Cannot reach the server, check your connection and try again")
+            .onNodeWithText("Can't reach the server, check your connection and try again")
             .assertIsDisplayed()
     }
 
@@ -258,7 +314,9 @@ class ProviderPagesTest {
 
     @Test
     fun theNewProviderFormShowsAnInvalidAddressAndARejection() {
-        client.onCreateProvider = { throw ServiceException(ServiceFailure.ProviderIdentifierTaken) }
+        client.onCreateCustomProvider = {
+            throw ServiceException(ServiceFailure.ProviderIdentifierTaken)
+        }
         showProviders()
 
         compose.onNodeWithContentDescription("New provider").performClick()
@@ -273,12 +331,32 @@ class ProviderPagesTest {
     }
 }
 
-private fun ClientProvider.patched(patch: ClientProviderPatch): ClientProvider =
+private val ClientProvider.custom: ClientCustomProvider
+    get() = source as ClientCustomProvider
+
+private val ClientProvider.predefined: ClientPredefinedProvider
+    get() = source as ClientPredefinedProvider
+
+private fun ClientProvider.customPatched(patch: ClientCustomProviderPatch): ClientProvider =
     copy(
-        name = patch.name ?: name,
-        baseUrl = patch.baseUrl ?: baseUrl,
         apiKey = patch.apiKey ?: apiKey,
-        apiPath = patch.apiPath ?: apiPath,
         enabled = patch.enabled ?: enabled,
-        models = patch.models ?: models,
+        source =
+            custom.copy(
+                name = patch.name ?: custom.name,
+                baseUrl = patch.baseUrl ?: custom.baseUrl,
+                apiPath = patch.apiPath ?: custom.apiPath,
+                modelsPath = patch.modelsPath ?: custom.modelsPath,
+                models = patch.models ?: custom.models,
+            ),
+    )
+
+private fun ClientProvider.predefinedPatched(patch: ClientPredefinedProviderPatch): ClientProvider =
+    copy(
+        apiKey = patch.apiKey ?: apiKey,
+        enabled = patch.enabled ?: enabled,
+        source =
+            predefined.copy(
+                defaultApiFormat = patch.defaultApiFormat ?: predefined.defaultApiFormat
+            ),
     )
