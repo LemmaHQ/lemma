@@ -13,27 +13,16 @@ const ERROR_INFO_TYPE: &str = "lemma.v1.ErrorInfo";
 
 fn transport_code(reason: ErrorReason) -> ErrorCode {
     match reason {
-        ErrorReason::CredentialsInvalid | ErrorReason::TokenInvalid => ErrorCode::Unauthenticated,
-        ErrorReason::UserNotFound
-        | ErrorReason::ProviderNotFound
+        ErrorReason::ProviderNotFound
         | ErrorReason::SessionNotFound
         | ErrorReason::DirectoryNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
-        ErrorReason::DirectoryUnsupported => ErrorCode::Unimplemented,
         _ => ErrorCode::InvalidArgument,
     }
 }
 
 fn message(reason: ErrorReason) -> &'static str {
     match reason {
-        ErrorReason::CredentialsInvalid => "invalid credentials",
-        ErrorReason::UsernameTaken => "username already taken",
-        ErrorReason::EmailTaken => "email already taken",
-        ErrorReason::SignupFieldsRequired => {
-            "username and email required, password at least 8 chars"
-        }
-        ErrorReason::TokenInvalid => "invalid token",
-        ErrorReason::UserNotFound => "user not found",
         ErrorReason::ProviderFieldsRequired => "name, base_url and api_key required",
         ErrorReason::ApiFormatInvalid => "invalid API format",
         ErrorReason::ProviderKeyRequired => "save an API key before enabling this provider",
@@ -44,7 +33,6 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::TitleRequired => "title required",
         ErrorReason::SessionNotFound => "session not found",
         ErrorReason::DirectoryNotFound => "directory not found",
-        ErrorReason::DirectoryUnsupported => "this host does not bind sessions to directories",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
         ErrorReason::TurnNotRunning => "turn not running",

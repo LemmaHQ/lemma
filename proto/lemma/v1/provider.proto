@@ -17,7 +17,7 @@ message Model {
   bool tool_calling = 2;
 }
 
-// Provider configuration scoped per user account.
+// One configured model provider.
 message Provider {
   string id = 1;
   bool enabled = 2;
@@ -196,7 +196,7 @@ message SetWebProviderOrderResponse {
 }
 
 service ProviderService {
-  // Lists every provider of the user, adding the missing predefined providers first.
+  // Lists every provider, adding the missing predefined providers first.
   rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
   rpc CreateCustomProvider(CreateCustomProviderRequest) returns (CreateCustomProviderResponse);
   rpc UpdateCustomProvider(UpdateCustomProviderRequest) returns (UpdateCustomProviderResponse);

@@ -5,11 +5,11 @@ package lemma.v1;
 message GetVersionRequest {}
 
 message GetVersionResponse {
-  // Release version of the server or local engine that answers.
+  // Release version of the engine that answers.
   string version = 1;
 }
 
-// Facts about the running server; every RPC answers without authentication.
+// Facts about the running engine.
 service SystemService {
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
 }

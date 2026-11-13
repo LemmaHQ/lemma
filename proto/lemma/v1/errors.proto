@@ -7,20 +7,12 @@ package lemma.v1;
 enum ErrorReason {
   ERROR_REASON_UNSPECIFIED = 0;
 
-  // Authentication
-  ERROR_REASON_CREDENTIALS_INVALID = 1; // Invalid credentials provided
-  ERROR_REASON_USERNAME_TAKEN = 2; // Username is already registered
-  ERROR_REASON_SIGNUP_FIELDS_REQUIRED = 3; // Required signup fields missing or password length below minimum
-  ERROR_REASON_TOKEN_INVALID = 5; // Token is missing, expired, or invalid
-  ERROR_REASON_USER_NOT_FOUND = 6;
-  ERROR_REASON_EMAIL_TAKEN = 7; // Email is already registered
-
   // Provider
   ERROR_REASON_PROVIDER_FIELDS_REQUIRED = 10; // Required provider configuration fields missing
   ERROR_REASON_API_FORMAT_INVALID = 11; // API format unspecified, or not served by the predefined provider
   ERROR_REASON_PROVIDER_NOT_FOUND = 12;
   ERROR_REASON_PROVIDER_IDENTIFIER_INVALID = 14; // Identifier must contain valid non-empty ASCII characters
-  ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists for this user account
+  ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists
   ERROR_REASON_PROVIDER_KEY_REQUIRED = 16; // Enabling a predefined provider requires a saved API key
 
   // Session and messages
@@ -28,7 +20,6 @@ enum ErrorReason {
   ERROR_REASON_TITLE_REQUIRED = 21;
   ERROR_REASON_SESSION_NOT_FOUND = 22;
   ERROR_REASON_DIRECTORY_NOT_FOUND = 23; // The session directory is not an absolute path to an existing directory
-  ERROR_REASON_DIRECTORY_UNSUPPORTED = 24; // This host does not bind sessions to directories
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
 
