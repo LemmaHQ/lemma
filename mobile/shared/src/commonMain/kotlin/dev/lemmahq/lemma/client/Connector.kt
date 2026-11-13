@@ -1,14 +1,11 @@
 package dev.lemmahq.lemma.client
 
-/** Opens a [LemmaClient] for a [Connection]. */
+/** Opens a [LemmaClient] against the in-process engine. */
 interface Connector {
 
-    /** Whether this platform runs the engine in-process, so [Connection.Local] can open. */
-    val localAvailable: Boolean
-
     /**
-     * Opens a client of the server or the in-process engine; opening the engine migrates its
-     * database on first use and throws [ServiceException] when the engine cannot start.
+     * Opens the in-process engine, migrating its database on first use; throws [ServiceException]
+     * when the engine cannot start.
      */
-    suspend fun open(connection: Connection): LemmaClient
+    suspend fun open(): LemmaClient
 }

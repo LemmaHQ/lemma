@@ -17,7 +17,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -35,18 +34,14 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun SessionScreen(
     viewModel: SessionViewModel,
-    username: String?,
     onManageProviders: () -> Unit,
     onOpenSettings: () -> Unit,
-    onLoadAccount: () -> Unit,
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val composerFocus = remember { FocusRequester() }
     var showModelPicker by rememberSaveable { mutableStateOf(false) }
-    val loadAccount by rememberUpdatedState(onLoadAccount)
 
     SideEffect(Unit) { viewModel.loadProviders() }
 
@@ -54,7 +49,6 @@ internal fun SessionScreen(
         snapshotFlow { drawerState.currentValue }
             .collect { value ->
                 if (value == DrawerValue.Open) {
-                    loadAccount()
                     viewModel.refreshSessions()
                 }
             }
@@ -66,7 +60,6 @@ internal fun SessionScreen(
             SessionDrawer(
                 sessions = viewModel.sessions,
                 currentSessionId = viewModel.openSession?.id,
-                username = username,
                 onNewSession = {
                     scope.launch { drawerState.close() }
                     viewModel.newSession()
@@ -81,7 +74,6 @@ internal fun SessionScreen(
                     scope.launch { drawerState.close() }
                     onOpenSettings()
                 },
-                onSignOut = onSignOut,
             )
         },
     ) {

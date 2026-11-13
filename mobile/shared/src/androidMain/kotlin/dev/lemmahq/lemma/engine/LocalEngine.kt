@@ -26,10 +26,7 @@ class LocalEngine private constructor(private val engine: LemmaEngine) {
     /** Answers every request of an OkHttp client from the engine instead of the network. */
     val transport: Interceptor = EngineInterceptor(engine)
 
-    /**
-     * Closes the engine's database once no request is in flight; requests after it fail. Throws
-     * [EngineException] when the database fails to close.
-     */
+    /** Closes the engine's database once no request is in flight; requests after it fail. */
     suspend fun shutdown() = engine.shutdown()
 
     companion object {

@@ -1,6 +1,5 @@
 package dev.lemmahq.lemma.network
 
-import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
@@ -17,8 +16,6 @@ import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
-import dev.lemmahq.lemma.data.InMemoryTokenStore
-import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.engine.ENGINE_BASE_URL
 import dev.lemmahq.lemma.engine.LocalEngine
 import java.io.File
@@ -31,7 +28,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -47,13 +43,10 @@ import mockwebserver3.RecordedRequest
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
-private const val PASSWORD = "password-1"
-
 class ConnectLemmaClientTest {
 
     @get:Rule val dataDir: TemporaryFolder = TemporaryFolder.builder().assureDeletion().build()
 
-    private val settings = SettingsRepository(MapSettings(), InMemoryTokenStore())
     private val vendor = MockWebServer()
     private val vendorCalled = CountDownLatch(1)
     private val release = CountDownLatch(1)
@@ -83,38 +76,8 @@ class ConnectLemmaClientTest {
     }
 
     @Test
-    fun aSignedOutAccountSignsBackInByEmail() = runTest {
-        val client = signedUpClient()
-        settings.clearAuth()
-
-        client.signIn("ada@example.com", PASSWORD)
-
-        assertTrue(settings.signedIn.value)
-        assertEquals(emptyList(), client.listProviders().customOnly())
-    }
-
-    @Test
-    fun rejectedCredentialsFailWithTheirReason() = runTest {
-        val client = signedUpClient()
-
-        val rejected = assertFailsWith<ServiceException> { client.signIn("ada", "wrong-password") }
-
-        assertEquals(ServiceFailure.CredentialsInvalid, rejected.failure)
-    }
-
-    @Test
-    fun meReturnsTheSignedUpUser() = runTest {
-        val client = signedUpClient()
-
-        val user = client.me()
-
-        assertEquals("ada", user.username)
-        assertTrue(user.id.isNotBlank())
-    }
-
-    @Test
     fun sessionsListMostRecentlyUpdatedFirst() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val first = client.createSession()
         val second = client.createSession()
 
@@ -122,20 +85,8 @@ class ConnectLemmaClientTest {
     }
 
     @Test
-    fun aRejectedAccessTokenIsRotatedWithTheRefreshToken() = runTest {
-        val client = signedUpClient()
-        val refreshToken = checkNotNull(settings.getRefreshToken())
-        settings.setTokens("expired", refreshToken)
-
-        assertEquals(emptyList(), client.listProviders().customOnly())
-
-        assertNotEquals("expired", settings.getAccessToken())
-        assertNotEquals(refreshToken, settings.getRefreshToken())
-    }
-
-    @Test
     fun providersRoundTripThroughCreateUpdateAndDelete() = runTest {
-        val client = signedUpClient()
+        val client = client()
 
         val created = client.createCustomProvider(vendorInput("answer"))
         val updated =
@@ -195,7 +146,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun predefinedProviderUpdatesOnlyItsUserControlledFields() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val initial = client.listProviders().single()
         val predefined = initial.source as ClientPredefinedProvider
 
@@ -246,7 +197,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun webProvidersToggleSaveKeysAndReorder() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val initial = client.listWebProviders()
         val exa = initial.first { it.kind == ClientWebProviderKind.Exa }
         val deepSeek = initial.first { it.kind == ClientWebProviderKind.DeepSeek }
@@ -300,7 +251,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun fetchesAndChecksModelsAtTheVendor() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("answer"))
 
         assertEquals(listOf("answer", "hang"), client.fetchProviderModels(provider.id))
@@ -311,7 +262,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun aTurnStreamsTheReplyAndPersistsBothMessages() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("answer"))
         val session = client.createSession()
 
@@ -357,7 +308,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun aTurnWithAToolCallStreamsAndStoresEachStep() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("tool"))
         val session = client.createSession()
 
@@ -401,7 +352,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun aRunningTurnResumesAfterTheEventsAlreadyReceived() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("hang"))
         val session = client.createSession()
         val started =
@@ -434,7 +385,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun sessionsAreRenamedAndDeleted() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val session = client.createSession()
 
         val renamed = client.renameSession(session.id, "Trip")
@@ -451,40 +402,8 @@ class ConnectLemmaClientTest {
     }
 
     @Test
-    fun accountsAreFoundByUsernameOrEmail() = runTest {
-        val client = signedUpClient()
-
-        assertTrue(client.checkAccount(" ada "))
-        assertTrue(client.checkAccount("ada@example.com"))
-        assertFalse(client.checkAccount("grace"))
-    }
-
-    @Test
-    fun signingOutRevokesTheRefreshToken() = runTest {
-        val client = signedUpClient()
-        val refreshToken = checkNotNull(settings.getRefreshToken())
-
-        client.signOut()
-
-        assertFalse(settings.signedIn.value)
-        settings.setTokens("expired", refreshToken)
-        val rejected = assertFailsWith<ServiceException> { client.listProviders() }
-        assertEquals(ServiceFailure.TokenInvalid, rejected.failure)
-        assertFalse(settings.signedIn.value)
-    }
-
-    @Test
-    fun signingOutWithoutATokenPairCallsNothing() = runTest {
-        val client = client()
-
-        client.signOut()
-
-        assertFalse(settings.signedIn.value)
-    }
-
-    @Test
     fun connectionFieldsUpdateAndAnEmptyPatchKeepsTheProvider() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val created = client.createCustomProvider(vendorInput("answer"))
 
         val updated =
@@ -516,7 +435,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun aFailingVendorEndsTheTurnWithItsError() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("broken"))
         val session = client.createSession()
 
@@ -527,7 +446,7 @@ class ConnectLemmaClientTest {
 
     @Test
     fun anAbortedTurnEndsAsAborted() = runTest {
-        val client = signedUpClient()
+        val client = client()
         val provider = client.createCustomProvider(vendorInput("hang"))
         val session = client.createSession()
 
@@ -549,14 +468,8 @@ class ConnectLemmaClientTest {
 
     private suspend fun client(): ConnectLemmaClient {
         val engine = LocalEngine.open(dataDir.newFolder().path).also { engines += it }
-        return ConnectLemmaClient(
-            LemmaRpcClient(ENGINE_BASE_URL, settings, engine.transport),
-            settings,
-        )
+        return ConnectLemmaClient(LemmaRpcClient(ENGINE_BASE_URL, engine.transport))
     }
-
-    private suspend fun signedUpClient(): ConnectLemmaClient =
-        client().also { it.signUp("ada", "ada@example.com", PASSWORD) }
 
     private fun vendorInput(vararg models: String) =
         ClientCustomProviderInput(

@@ -16,17 +16,16 @@ import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.LemmaClient
 
 /**
- * Adds the AI provider pages under [ProviderGraph]; [client] returns the client of the open
- * connection, and the pages show nothing without one. A detail page whose provider is gone, such as
- * one just deleted, returns to the list.
+ * Adds the AI provider pages under [ProviderGraph] over [client]. A detail page whose provider is
+ * gone, such as one just deleted, returns to the list.
  */
 internal fun NavGraphBuilder.providerGraph(
     navController: NavController,
-    client: () -> LemmaClient?,
+    client: () -> LemmaClient,
 ) {
     navigation<ProviderGraph>(startDestination = ProviderListRoute) {
         composable<ProviderListRoute> { entry ->
-            val lemmaClient = client() ?: return@composable
+            val lemmaClient = client()
             ProviderListScreen(
                 viewModel = sharedViewModel(navController, entry, lemmaClient),
                 onBack = { navController.navigateUp() },
@@ -35,7 +34,7 @@ internal fun NavGraphBuilder.providerGraph(
             )
         }
         composable<ProviderDetailRoute> { entry ->
-            val lemmaClient = client() ?: return@composable
+            val lemmaClient = client()
             ProviderDetailDestination(
                 id = entry.toRoute<ProviderDetailRoute>().id,
                 providers = sharedViewModel(navController, entry, lemmaClient),
@@ -44,7 +43,7 @@ internal fun NavGraphBuilder.providerGraph(
             )
         }
         composable<NewProviderRoute> { entry ->
-            val lemmaClient = client() ?: return@composable
+            val lemmaClient = client()
             val providers = sharedViewModel(navController, entry, lemmaClient)
             NewProviderScreen(
                 viewModel = viewModel { NewProviderViewModel(lemmaClient, providers::store) },

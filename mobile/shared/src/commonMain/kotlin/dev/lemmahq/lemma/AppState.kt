@@ -1,20 +1,17 @@
 package dev.lemmahq.lemma
 
-import dev.lemmahq.lemma.client.Connection
 import dev.lemmahq.lemma.client.LemmaClient
+import dev.lemmahq.lemma.i18n.UiText
 
-/** The part of the app the stored connection and sign-in state allow. */
+/** The part of the app the local engine state allows. */
 sealed interface AppState {
 
-    /** The stored connection is opening. */
+    /** The local engine is opening. */
     data object Opening : AppState
 
-    /** No connection is chosen. */
-    data object Setup : AppState
+    /** The local engine failed to open with [error]. */
+    data class Failed(val error: UiText) : AppState
 
-    data class Connected(
-        val connection: Connection,
-        val client: LemmaClient,
-        val signedIn: Boolean,
-    ) : AppState
+    /** The local engine is open and serving [client]. */
+    data class Ready(val client: LemmaClient) : AppState
 }

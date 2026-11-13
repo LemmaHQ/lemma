@@ -31,7 +31,6 @@ class ConnectExceptionMappingTest {
             listOf(
                 Code.UNAVAILABLE,
                 Code.DEADLINE_EXCEEDED,
-                Code.UNAUTHENTICATED,
                 Code.INTERNAL_ERROR,
             )
 
@@ -39,7 +38,6 @@ class ConnectExceptionMappingTest {
             listOf(
                 ServiceFailure.Network,
                 ServiceFailure.Timeout,
-                ServiceFailure.TokenInvalid,
                 ServiceFailure.Unspecified,
             ),
             codes.map { failure(it, info = null) },

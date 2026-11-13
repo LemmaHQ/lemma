@@ -5,27 +5,21 @@ import com.connectrpc.extensions.GoogleJavaLiteProtobufStrategy
 import com.connectrpc.impl.ProtocolClient
 import com.connectrpc.okhttp.ConnectOkHttpClient
 import dev.lemmahq.gen.lemma.v1.AgentServiceClient
-import dev.lemmahq.gen.lemma.v1.AuthServiceClient
 import dev.lemmahq.gen.lemma.v1.ProviderServiceClient
 import dev.lemmahq.gen.lemma.v1.SessionServiceClient
 import dev.lemmahq.gen.lemma.v1.SystemServiceClient
-import dev.lemmahq.lemma.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 
 /**
- * Connect clients of the Lemma services at [host], authenticated by [AuthInterceptor]. Requests go
- * over the network, or to [transport] when it is set, which answers them in place of a server.
+ * Connect clients of the Lemma services at [host]; [transport] answers every request in place of a
+ * server.
  */
 @Suppress("InjectDispatcher")
-class LemmaRpcClient(host: String, settings: SettingsRepository, transport: Interceptor? = null) {
+class LemmaRpcClient(host: String, transport: Interceptor) {
     private val okHttpClient =
-        ConnectOkHttpClient.configureClient(
-                OkHttpClient.Builder().addInterceptor(AuthInterceptor(settings)).apply {
-                    transport?.let { addInterceptor(it) }
-                }
-            )
+        ConnectOkHttpClient.configureClient(OkHttpClient.Builder().addInterceptor(transport))
             .build()
 
     private val protocolClient =
@@ -39,7 +33,6 @@ class LemmaRpcClient(host: String, settings: SettingsRepository, transport: Inte
                 ),
         )
 
-    val auth = AuthServiceClient(protocolClient)
     val agent = AgentServiceClient(protocolClient)
     val session = SessionServiceClient(protocolClient)
     val provider = ProviderServiceClient(protocolClient)

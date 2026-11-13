@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -25,10 +26,12 @@ import lemma.mobile.shared.generated.resources.settings_appearance
 import lemma.mobile.shared.generated.resources.settings_group_agent
 import lemma.mobile.shared.generated.resources.settings_group_general
 import lemma.mobile.shared.generated.resources.settings_web
+import lemma.mobile.shared.generated.resources.version_client
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun SettingsScreen(
+    appVersion: String,
     onAppearance: () -> Unit,
     onProviders: () -> Unit,
     onWebProviders: () -> Unit,
@@ -63,6 +66,13 @@ internal fun SettingsScreen(
                     onClick = onWebProviders,
                 )
             }
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = stringResource(Res.string.version_client, appVersion),
+                style = LemmaTheme.typography.labelSmall,
+                color = LemmaTheme.colors.textQuaternary,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
         }
     }
 }

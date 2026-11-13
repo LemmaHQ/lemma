@@ -1,7 +1,6 @@
 package dev.lemmahq.lemma.ui.session
 
 import androidx.lifecycle.SavedStateHandle
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientMessage
@@ -17,11 +16,8 @@ import dev.lemmahq.lemma.client.ServiceFailure
 import dev.lemmahq.lemma.client.sampleMessage
 import dev.lemmahq.lemma.client.sampleProvider
 import dev.lemmahq.lemma.client.sampleSession
-import dev.lemmahq.lemma.data.InMemoryTokenStore
-import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.ModelSelection
 import dev.lemmahq.lemma.data.SettingsRepository
-import dev.lemmahq.lemma.db.LemmaDatabase
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
 import dev.lemmahq.lemma.ui.session.MessageRole.Assistant
@@ -56,16 +52,7 @@ class SessionViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val openai = sampleProvider("openai", "gpt-4o", "gpt-4o-mini")
     private val client = FakeLemmaClient().apply { onListProviders = { listOf(openai) } }
-    private val settings = SettingsRepository(MapSettings(), InMemoryTokenStore())
-    private val messageCache =
-        LocalMessageRepository(
-            LemmaDatabase(
-                JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also {
-                    LemmaDatabase.Schema.create(it)
-                }
-            ),
-            dispatcher,
-        )
+    private val settings = SettingsRepository(MapSettings())
     private val trip = sampleSession("trip", "Trip")
     private val work = sampleSession("work", "Work")
 
@@ -80,7 +67,7 @@ class SessionViewModelTest {
     }
 
     private fun TestScope.viewModel(state: SavedStateHandle = SavedStateHandle()) =
-        SessionViewModel(client, settings, messageCache, state).also {
+        SessionViewModel(client, settings, state).also {
             it.loadProviders()
             advanceUntilIdle()
         }
@@ -102,7 +89,7 @@ class SessionViewModelTest {
     @Test
     fun sessionsLoadWhenTheViewModelStartsAndRefresh() = runTest {
         client.onListSessions = { listOf(trip) }
-        val viewModel = SessionViewModel(client, settings, messageCache, SavedStateHandle())
+        val viewModel = SessionViewModel(client, settings, SavedStateHandle())
         advanceUntilIdle()
         assertEquals(listOf(trip), viewModel.sessions)
 
@@ -406,7 +393,6 @@ class SessionViewModelTest {
         send(viewModel, "Hello")
 
         assertEquals(listOf("q1", "a1"), viewModel.messages.map { it.id })
-        assertEquals(settled.asReversed(), messageCache.getMessages("session-1"))
         assertNull(viewModel.error)
         assertFalse(viewModel.turnRunning)
     }
@@ -514,14 +500,13 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun anOpenedSessionShowsItsCachedMessagesUntilTheServiceAnswers() = runTest {
-        messageCache.replaceMessages("trip", listOf(ClientMessage("q1", "user", "cached question")))
+    fun openingASessionSelectsItsLastUsedModelAndTracksOlderPages() = runTest {
         val page = CompletableDeferred<ClientMessagePage>()
         client.onListMessages = { _, _ -> page.await() }
         val viewModel = viewModel()
 
         open(viewModel, trip)
-        assertEquals(listOf(Triple(User, "cached question", MessageStatus.Done)), viewModel.shown)
+        assertEquals(emptyList(), viewModel.shown)
 
         val newestFirst =
             listOf(
@@ -534,7 +519,6 @@ class SessionViewModelTest {
         assertEquals(listOf("q1", "a1"), viewModel.messages.map { it.content })
         assertTrue(viewModel.openSession?.hasOlderMessages == true)
         assertEquals(ModelSelection("openai", "gpt-4o-mini"), viewModel.selection)
-        assertEquals(newestFirst.asReversed(), messageCache.getMessages("trip"))
     }
 
     @Test
@@ -567,7 +551,6 @@ class SessionViewModelTest {
             viewModel.messages[1].toolCalls,
         )
         assertEquals(Call("listMessages", "trip", "t1"), client.calls.last())
-        assertEquals(listOf("q1", "a1", "t1", "a2"), messageCache.getMessages("trip").map { it.id })
     }
 
     @Test
@@ -693,7 +676,7 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun deletingTheOpenSessionClosesItAndDropsItsCache() = runTest {
+    fun deletingTheOpenSessionClosesIt() = runTest {
         client.onListSessions = { listOf(trip, work) }
         client.onListMessages = { _, _ ->
             ClientMessagePage(listOf(sampleMessage("q1", "user")), hasMore = false)
@@ -713,7 +696,6 @@ class SessionViewModelTest {
 
         assertEquals(listOf(work), viewModel.sessions)
         assertNull(viewModel.openSession)
-        assertEquals(emptyList(), messageCache.getMessages("trip"))
     }
 
     @Test
@@ -732,9 +714,9 @@ class SessionViewModelTest {
         advanceUntilIdle()
         assertEquals(errorText(ServiceFailure.Timeout), viewModel.error)
 
-        client.onCreateSession = { throw ServiceException(ServiceFailure.TokenInvalid) }
+        client.onCreateSession = { throw ServiceException(ServiceFailure.SessionNotFound) }
         send(viewModel, "Hello")
-        assertEquals(errorText(ServiceFailure.TokenInvalid), viewModel.error)
+        assertEquals(errorText(ServiceFailure.SessionNotFound), viewModel.error)
         assertEquals("Hello", viewModel.retryText)
         assertFalse(viewModel.turnRunning)
 

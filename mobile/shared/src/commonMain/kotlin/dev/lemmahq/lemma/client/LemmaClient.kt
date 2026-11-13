@@ -3,32 +3,15 @@ package dev.lemmahq.lemma.client
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Lemma services, answered by a remote server or the local engine. Every call throws
- * [ServiceException] when it fails.
+ * The Lemma services, answered by the local engine. Every call throws [ServiceException] when it
+ * fails.
  */
 interface LemmaClient {
 
-    /** Release version of the server or local engine that answers. */
+    /** Release version of the local engine that answers. */
     suspend fun getVersion(): String
 
-    /** Whether an account with the username or email [identifier] exists. */
-    suspend fun checkAccount(identifier: String): Boolean
-
-    /** Authenticates by username or email and stores the issued token pair. */
-    suspend fun signIn(identifier: String, password: String)
-
-    /** Registers a new account and stores the issued token pair. */
-    suspend fun signUp(username: String, email: String, password: String)
-
-    /**
-     * Clears the stored token pair, then revokes its refresh token at the service; the pair stays
-     * cleared when the revocation fails.
-     */
-    suspend fun signOut()
-
-    suspend fun me(): ClientUser
-
-    /** Lists the account's sessions, most recently updated first. */
+    /** Lists the sessions, most recently updated first. */
     suspend fun listSessions(): List<ClientSession>
 
     suspend fun renameSession(id: String, title: String): ClientSession

@@ -15,12 +15,6 @@ class FakeLemmaClient : LemmaClient {
     val calls = mutableListOf<Call>()
 
     var onGetVersion: suspend () -> String = { "1.0.0" }
-    var onCheckAccount: suspend (identifier: String) -> Boolean = { true }
-    var onSignIn: suspend (identifier: String, password: String) -> Unit = { _, _ -> }
-    var onSignUp: suspend (username: String, email: String, password: String) -> Unit = { _, _, _ ->
-    }
-    var onSignOut: suspend () -> Unit = {}
-    var onMe: suspend () -> ClientUser = { ClientUser("user-1", "ada") }
     var onListSessions: suspend () -> List<ClientSession> = { emptyList() }
     var onRenameSession: suspend (id: String, title: String) -> ClientSession = { id, title ->
         ClientSession(id, title, updatedAt = 0)
@@ -88,31 +82,6 @@ class FakeLemmaClient : LemmaClient {
     override suspend fun getVersion(): String {
         calls += Call("getVersion")
         return onGetVersion()
-    }
-
-    override suspend fun checkAccount(identifier: String): Boolean {
-        calls += Call("checkAccount", identifier)
-        return onCheckAccount(identifier)
-    }
-
-    override suspend fun signIn(identifier: String, password: String) {
-        calls += Call("signIn", identifier, password)
-        onSignIn(identifier, password)
-    }
-
-    override suspend fun signUp(username: String, email: String, password: String) {
-        calls += Call("signUp", username, email, password)
-        onSignUp(username, email, password)
-    }
-
-    override suspend fun signOut() {
-        calls += Call("signOut")
-        onSignOut()
-    }
-
-    override suspend fun me(): ClientUser {
-        calls += Call("me")
-        return onMe()
     }
 
     override suspend fun listSessions(): List<ClientSession> {

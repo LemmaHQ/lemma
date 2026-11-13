@@ -29,6 +29,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_cancel
+import lemma.mobile.shared.generated.resources.icon_settings
 import lemma.mobile.shared.generated.resources.session_delete
 import lemma.mobile.shared.generated.resources.session_delete_description
 import lemma.mobile.shared.generated.resources.session_delete_title
@@ -37,24 +38,23 @@ import lemma.mobile.shared.generated.resources.session_last7_days
 import lemma.mobile.shared.generated.resources.session_list_title
 import lemma.mobile.shared.generated.resources.session_today
 import lemma.mobile.shared.generated.resources.session_yesterday
+import lemma.mobile.shared.generated.resources.sidebar_app_settings
 import lemma.mobile.shared.generated.resources.sidebar_start_session
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The drawer listing [sessions] by recency, with the new session button and the account menu;
- * deleting a session asks for confirmation first.
+ * The drawer listing [sessions] by recency, with the new session and settings buttons; deleting a
+ * session asks for confirmation first.
  */
 @Composable
 internal fun SessionDrawer(
     sessions: List<ClientSession>,
     currentSessionId: String?,
-    username: String?,
     onNewSession: () -> Unit,
     onSelectSession: (ClientSession) -> Unit,
     onRenameSession: (ClientSession, String) -> Unit,
     onDeleteSession: (ClientSession) -> Unit,
     onOpenSettings: () -> Unit,
-    onSignOut: () -> Unit,
 ) {
     var renaming by remember { mutableStateOf<ClientSession?>(null) }
     var deleting by remember { mutableStateOf<ClientSession?>(null) }
@@ -106,7 +106,13 @@ internal fun SessionDrawer(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            AccountMenu(username = username, onOpenSettings = onOpenSettings, onSignOut = onSignOut)
+            LemmaButton(
+                text = stringResource(Res.string.sidebar_app_settings),
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth(),
+                variant = LemmaButtonVariant.Secondary,
+                icon = Res.drawable.icon_settings,
+            )
         }
     }
 

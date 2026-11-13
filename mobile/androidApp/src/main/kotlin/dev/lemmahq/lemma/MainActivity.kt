@@ -31,7 +31,6 @@ class MainActivity : ComponentActivity() {
             }
             App(
                 settings = application.settings,
-                messageCache = application.messageCache,
                 connector = application.connector,
                 appVersion = BuildConfig.VERSION_NAME,
             )

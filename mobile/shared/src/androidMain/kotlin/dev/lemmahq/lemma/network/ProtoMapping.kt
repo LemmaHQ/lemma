@@ -10,7 +10,6 @@ import dev.lemmahq.gen.lemma.v1.Model
 import dev.lemmahq.gen.lemma.v1.Provider
 import dev.lemmahq.gen.lemma.v1.Session
 import dev.lemmahq.gen.lemma.v1.ToolCall
-import dev.lemmahq.gen.lemma.v1.User
 import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProvider
@@ -21,14 +20,11 @@ import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
-import dev.lemmahq.lemma.client.ClientUser
 import dev.lemmahq.lemma.client.ClientWebProvider
 import dev.lemmahq.lemma.client.ClientWebProviderKind
 import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
-
-internal fun User.toClient(): ClientUser = ClientUser(id = id, username = username)
 
 internal fun Provider.toClient(): ClientProvider =
     ClientProvider(

@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.androidLint)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.sqldelight)
     alias(libs.plugins.kover)
     alias(libs.plugins.detekt)
 }
@@ -123,7 +122,6 @@ kotlin {
                 implementation(libs.okhttp)
                 implementation(libs.protobuf.javalite)
                 implementation(libs.protobuf.kotlin.lite)
-                implementation(libs.sqldelight.android.driver)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(project.dependencies.variantOf(libs.jna) { artifactType("aar") })
             }
@@ -154,23 +152,12 @@ kotlin {
             implementation(libs.multiplatform.settings.test)
         }
         getByName("androidHostTest").dependencies {
-            implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.jna)
             implementation(libs.okhttp.mockwebserver)
             implementation(libs.robolectric)
             implementation(libs.compose.uiTestJunit4)
             implementation(libs.androidx.compose.uiTestManifest)
             implementation(libs.androidx.test.espresso.core)
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        create("LemmaDatabase") {
-            packageName.set("dev.lemmahq.lemma.db")
-            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
-            verifyMigrations.set(true)
         }
     }
 }
@@ -239,7 +226,10 @@ val buildLemmaMobileHost =
 
 tasks.withType<Test>().configureEach {
     dependsOn(buildLemmaMobileHost)
-    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    jvmArgs(
+        "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
+    )
     systemProperty(
         "uniffi.component.lemma_mobile.libraryOverride",
         rootProject.file(lemmaHostLibPath).absolutePath,

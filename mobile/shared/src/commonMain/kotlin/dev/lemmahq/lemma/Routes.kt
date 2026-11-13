@@ -4,9 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable internal data object OpeningRoute
 
-@Serializable internal data object SetupRoute
-
-@Serializable internal data object AuthRoute
+@Serializable internal data object EngineFailedRoute
 
 @Serializable internal data object SessionRoute
 

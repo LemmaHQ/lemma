@@ -10,7 +10,6 @@ import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.ServiceException
-import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.ModelSelection
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.i18n.UiText
@@ -22,14 +21,13 @@ import lemma.mobile.shared.generated.resources.errors_model_required
 private const val KEY_OPEN_SESSION = "open_session"
 
 /**
- * Runs the session view: the account's sessions, the open session, and the model turns use. A new
- * session is created by its first turn. The open session survives the process through [savedState]
- * and reopens with the turn it was running.
+ * Runs the session view: the sessions, the open session, and the model turns use. A new session is
+ * created by its first turn. The open session survives the process through [savedState] and reopens
+ * with the turn it was running.
  */
 internal class SessionViewModel(
     private val client: LemmaClient,
     private val settings: SettingsRepository,
-    private val messageCache: LocalMessageRepository,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
     private var startingTurn by mutableStateOf(false)
@@ -126,14 +124,13 @@ internal class SessionViewModel(
         }
     }
 
-    /** Deletes [session] with its cached messages, and closes it when it is open. */
+    /** Deletes [session], and closes it when it is open. */
     fun deleteSession(session: ClientSession) {
         viewModelScope.launch {
             try {
                 client.deleteSession(session.id)
                 sessions = sessions.filter { it.id != session.id }
                 if (openSession?.id == session.id) close()
-                messageCache.deleteMessages(session.id)
             } catch (e: ServiceException) {
                 error = errorText(e.failure)
             }
@@ -234,7 +231,7 @@ internal class SessionViewModel(
     private fun show(sessionId: String): OpenSession {
         openSession?.close()
         savedState[KEY_OPEN_SESSION] = sessionId
-        return OpenSession(sessionId, client, messageCache, viewModelScope) { error = it }
+        return OpenSession(sessionId, client, viewModelScope) { error = it }
             .also { openSession = it }
     }
 

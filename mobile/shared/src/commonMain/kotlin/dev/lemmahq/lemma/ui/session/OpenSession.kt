@@ -11,7 +11,6 @@ import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
-import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.ModelSelection
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
@@ -28,14 +27,12 @@ private const val RESUME_BACKOFF_MILLIS = 500L
 
 /**
  * The open session [id]: its messages and its turn, run in a child of [parent] until [close].
- * Loading shows the cached messages until the service returns the newest page, then follows the
- * turn that page shows running. A turn whose stream breaks resumes up to three times. Failures go
- * to [onError].
+ * Loading fetches the newest page from the service, then follows the turn that page shows running.
+ * A turn whose stream breaks resumes up to three times. Failures go to [onError].
  */
 internal class OpenSession(
     val id: String,
     private val client: LemmaClient,
-    private val messageCache: LocalMessageRepository,
     parent: CoroutineScope,
     private val onError: (UiText) -> Unit,
 ) {
@@ -67,7 +64,6 @@ internal class OpenSession(
     /** Loads the messages; [onNewestPage] receives the newest page, newest first. */
     fun load(onNewestPage: (List<ClientMessage>) -> Unit) {
         loadJob = scope.launch {
-            items = messageCache.getMessages(id).toUiMessages()
             try {
                 val page = client.listMessages(id, null, MESSAGE_PAGE_SIZE)
                 showNewestPage(page)
@@ -90,7 +86,7 @@ internal class OpenSession(
                 val older = page.messages.asReversed()
                 items = (older.toUiMessages() + items).withToolResults()
                 hasOlderMessages = page.hasMore
-                cache(older + shownPages)
+                shownPages = older + shownPages
             } catch (e: ServiceException) {
                 onError(errorText(e.failure))
             } finally {
@@ -135,16 +131,11 @@ internal class OpenSession(
         scope.cancel()
     }
 
-    private suspend fun showNewestPage(page: ClientMessagePage) {
+    private fun showNewestPage(page: ClientMessagePage) {
         val newest = page.messages.asReversed()
         items = newest.toUiMessages()
         hasOlderMessages = page.hasMore
-        cache(newest)
-    }
-
-    private suspend fun cache(pages: List<ClientMessage>) {
-        shownPages = pages
-        messageCache.replaceMessages(id, pages)
+        shownPages = newest
     }
 
     private fun followRunningTurn() {

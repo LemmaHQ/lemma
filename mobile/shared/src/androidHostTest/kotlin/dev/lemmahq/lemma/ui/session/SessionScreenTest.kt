@@ -33,11 +33,7 @@ import dev.lemmahq.lemma.client.ServiceFailure
 import dev.lemmahq.lemma.client.sampleMessage
 import dev.lemmahq.lemma.client.sampleProvider
 import dev.lemmahq.lemma.client.sampleSession
-import dev.lemmahq.lemma.data.DriverFactory
-import dev.lemmahq.lemma.data.InMemoryTokenStore
-import dev.lemmahq.lemma.data.LocalMessageRepository
 import dev.lemmahq.lemma.data.SettingsRepository
-import dev.lemmahq.lemma.db.LemmaDatabase
 import dev.lemmahq.lemma.theme.LemmaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -69,23 +65,13 @@ class SessionScreenTest {
 
     private fun showSession() {
         val viewModel =
-            SessionViewModel(
-                client,
-                SettingsRepository(MapSettings(), InMemoryTokenStore()),
-                LocalMessageRepository(
-                    LemmaDatabase(DriverFactory(RuntimeEnvironment.getApplication()).createDriver())
-                ),
-                SavedStateHandle(),
-            )
+            SessionViewModel(client, SettingsRepository(MapSettings()), SavedStateHandle())
         compose.setContent {
             LemmaTheme {
                 SessionScreen(
                     viewModel = viewModel,
-                    username = "ada",
                     onManageProviders = { providerRequests++ },
                     onOpenSettings = {},
-                    onLoadAccount = {},
-                    onSignOut = {},
                 )
             }
         }
@@ -179,16 +165,6 @@ class SessionScreenTest {
         compose.onNodeWithContentDescription("Copy").assertIsDisplayed()
         compose.onNodeWithContentDescription("Regenerate").performClick()
         assertEquals(2, client.calls.count { it.name == "sendMessage" })
-    }
-
-    @Test
-    fun aSuggestionFillsTheComposerOfANewSession() {
-        showSession()
-
-        compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
-        compose.onNodeWithText("Help me debug an issue").performClick()
-
-        compose.onNode(hasSetTextAction()).assert(hasText("Help me debug an issue"))
     }
 
     @Test

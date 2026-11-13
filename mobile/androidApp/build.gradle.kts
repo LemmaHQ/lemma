@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.multiplatform.settings)
 
     testImplementation(libs.robolectric)
+    testImplementation(libs.jna)
     testImplementation(libs.compose.uiTestJunit4)
     testImplementation(libs.androidx.test.espresso.core)
 
@@ -58,7 +59,6 @@ kover {
             excludes {
                 packages(
                     "dev.lemmahq.gen",
-                    "dev.lemmahq.lemma.db",
                     "dev.lemmahq.lemma.uniffi",
                     "lemma.mobile.shared.generated.resources",
                 )
@@ -69,8 +69,24 @@ kover {
     }
 }
 
+val lemmaHostLibPath =
+    "target/debug/" +
+        when {
+            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_mobile.dll"
+            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_mobile.dylib"
+            else -> "liblemma_mobile.so"
+        }
+
 tasks.withType<Test>().configureEach {
-    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    dependsOn(":mobile:shared:buildLemmaMobileHost")
+    jvmArgs(
+        "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
+    )
+    systemProperty(
+        "uniffi.component.lemma_mobile.libraryOverride",
+        rootProject.file(lemmaHostLibPath).absolutePath,
+    )
 }
 
 tasks.register("verifyCoverage") {

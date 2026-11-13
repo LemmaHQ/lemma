@@ -2,6 +2,7 @@ package dev.lemmahq.lemma
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import dev.lemmahq.lemma.data.ThemePreference
 import org.junit.Rule
@@ -15,12 +16,18 @@ class MainActivityTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun theAppOpensAtSetupAndKeepsItsScreenAcrossThemes() {
-        compose.onNodeWithText("Run locally on this device").assertIsDisplayed()
+    fun theAppOpensASessionAndKeepsItsScreenAcrossThemes() {
+        compose.waitUntil(timeoutMillis = 10_000) {
+            compose
+                .onAllNodesWithText("How can I help you today?")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
 
         val application = compose.activity.application as LemmaApplication
         compose.runOnUiThread { application.settings.setTheme(ThemePreference.Dark) }
 
-        compose.onNodeWithText("Run locally on this device").assertIsDisplayed()
+        compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
     }
 }
