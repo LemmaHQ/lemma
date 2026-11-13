@@ -25,7 +25,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `ai/shimmer`          | Sweeping text treatment for pending states                              |
 | `ai/thinking-loader`  | Pending indicator before the first reply token                          |
 | `ai/tool`             | Tool-call groups, status, arguments, and output                         |
-| `primitives/reveal`   | Height and opacity transition for content toggled by `open`             |
 | `primitives/settings` | The page, section, field, and row of a [settings page](#settings-pages) |
 
 `button`, `separator`, `tooltip`, the inline message `alert`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `avatar`, `collapsible`, `empty`, `scroll-area`, and `skeleton`, and the form controls `checkbox`, `field`, `input`, `input-group`, `password-input`, `label`, `select`, `switch`, `textarea`, `toggle`, and `toggle-group` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.

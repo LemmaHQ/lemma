@@ -9,11 +9,9 @@ Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM ag
 ```text
 crates/       Rust workspace（crates/AGENTS.md）
   shared/     服务端、桌面引擎与 Android 共同链接的 crate
-  rpc/        每个 proto service 对应一个 ConnectRPC 服务 crate，以及组装它们的 lemma-host
   server/     lemma-server：服务端可执行文件
   desktop/    lemma-desktop：桌面外壳用来运行引擎的 Node-API addon
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
-  test/       只供测试使用的 crate，以 dev-dependency 引入
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
 web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.md）
 desktop/      Electron 外壳，在 utility process 中运行引擎（desktop/AGENTS.md）

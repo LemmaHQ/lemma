@@ -3,23 +3,23 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/subsystems/agent.md
 /agent:
-  en: 4f84290cf996a50e
-  zh: 61647c42113c32ff
-/agent/turn-assembly:
-  en: 45419081550d5daa
-  zh: 803459016a6a795c
+  en: 573f9bd5098c836a
+  zh: f29f69809745ab92
+/agent/turn-startup:
+  en: 10a78aef279896c5
+  zh: 44a929433b396baa
 /agent/tools:
-  en: 738c75bba81f56c9
-  zh: daadd79f9ef09ab6
+  en: 3150a1ca8176d89b
+  zh: 87ec2ddaa83d59a7
 /agent/turn-events:
-  en: ece4b8596cd70256
-  zh: 7923c06efb554555
+  en: 873ecb4733516f61
+  zh: 71d5df10661200d4
 /agent/abort:
-  en: 33bb5e929cadefcc
-  zh: 49403e2428b02a25
+  en: 7e0151a94910f90c
+  zh: 0ec74928da9eac3a
 /agent/streams-and-resume:
-  en: d309351c51b643b5
-  zh: 8c4db60604fa191e
+  en: 283b79f22c5953ff
+  zh: 390df261d6515561
 /agent/errors:
   en: 30aa026d7d7573b6
   zh: 1f058a308feed72b

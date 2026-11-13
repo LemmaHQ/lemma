@@ -23,9 +23,9 @@
 
 ## 布局
 
-- `shared/` 中的 crate 为所有运行时构建，包括 Android；`rpc/` 中每个 proto service 对应一个 crate，另有 `lemma-host`；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主；`test/` 中的 crate 只作为 dev-dependency 使用。
+- `shared/` 中的 crate 为所有运行时构建，包括 Android；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主。
 - crate 命名为 `lemma-<concept>`。
-- `lemma-host` 在 `crates/rpc/lemma-host/migrations/` 中维护 SQLite schema 迁移，并在启动时通过 `lemma_host::migrate` 应用它们；`lemma-session` 与 `lemma-provider` 通过 `SqlitePool` 执行参数化的 `sqlx` 查询。
+- `lemma-db` 在 `crates/shared/lemma-db/migrations/` 中维护 SQLite schema 迁移，并在打开文件或内存连接池（`lemma_db::open`、`lemma_db::in_memory`）时应用它们；`lemma-session` 与 `lemma-provider` 通过 `SqlitePool` 执行参数化的 `sqlx` 查询。
 
 ## 命令
 

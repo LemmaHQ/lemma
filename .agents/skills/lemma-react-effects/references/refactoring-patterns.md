@@ -33,7 +33,7 @@ export function useProviders() {
 This is the feature's one mount-time load: it synchronizes with the server, runs again only while `loaded` is false, and every component reading the hook shares the result. A component that fetches on its own duplicates that lifecycle in local state:
 
 ```tsx
-// Avoid: from VersionTags.tsx
+// Avoid: fetching in a component effect instead of the feature store
 const [serverVersion, setServerVersion] = useState<string | null>(null);
 useEffect(() => {
     let active = true;

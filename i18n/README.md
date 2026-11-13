@@ -9,12 +9,12 @@ English | [中文](README.zh.md)
 Each `<namespace>.yaml` file holds one top-level namespace. Nested maps group messages; a map with `en` or `zh` is a message entry. Both `en` and `zh` are required.
 
 ```yaml
-version:
-  server:
-    platforms: [web]
-    params: { version: string }
-    en: "Server v{version}"
-    zh: "服务端 v{version}"
+sidebar:
+  renameSession:
+    platforms: [web, android]
+    params: { title: string }
+    en: "Rename {title}"
+    zh: "重命名{title}"
 ```
 
 An entry accepts these fields:

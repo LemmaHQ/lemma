@@ -7,7 +7,7 @@ How to deepen a cluster of shallow modules safely, given its dependencies. Uses 
 Classify each candidate's dependencies; the category decides how the deepened module is tested across its seam. [testing.md](../../../../docs/testing.md#real-implementations-over-mocks) fixes the rule behind all four: tests replace only the model boundary and run everything else as shipped.
 
 1. **In-process**: pure computation and in-memory state, no I/O. Always deepenable: merge the modules and test through the new interface directly. No adapter.
-2. **Local-substitutable**: dependencies with a local stand-in that runs in the suite: in-memory SQLite through `lemma-test-db` for the Rust stores, `JdbcSqliteDriver.IN_MEMORY` and `MapSettings` on Android, vitest fake timers for time. Deepenable when the stand-in exists; the seam stays internal, with no port at the module's external interface.
+2. **Local-substitutable**: dependencies with a local stand-in that runs in the suite: in-memory SQLite through `lemma_db::in_memory` for the Rust stores, `MapSettings` on Android, vitest fake timers for time. Deepenable when the stand-in exists; the seam stays internal, with no port at the module's external interface.
 3. **Remote but owned**: Lemma's own services across a transport, the ConnectRPC services the clients call. The deep module owns the logic; the transport is injected as an adapter. The web feature stores are this seam: tests drive them against mocked RPC clients.
 4. **True external**: the model vendors behind the provider adapters. The deepened module takes them through the adapter seam; tests feed vendor output written in the test through the adapter's parser.
 

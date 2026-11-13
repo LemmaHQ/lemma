@@ -9,12 +9,12 @@
 每个 `<namespace>.yaml` 文件保存一个顶层命名空间。嵌套 map 对消息分组；包含 `en` 或 `zh` 的 map 是消息条目。`en` 与 `zh` 都必须提供。
 
 ```yaml
-version:
-  server:
-    platforms: [web]
-    params: { version: string }
-    en: "Server v{version}"
-    zh: "服务端 v{version}"
+sidebar:
+  renameSession:
+    platforms: [web, android]
+    params: { title: string }
+    en: "Rename {title}"
+    zh: "重命名{title}"
 ```
 
 条目接受以下字段：

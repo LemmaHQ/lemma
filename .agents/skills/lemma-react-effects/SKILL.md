@@ -42,7 +42,7 @@ An effect that writes React or zustand state from props or store data is presume
 Refactor when any of these appear:
 
 - `useEffect(() => setX(derive(y)), [y])`;
-- a fetch in a component effect whose result goes into `setState`, as in `VersionTags.tsx`;
+- a fetch in a component effect whose result goes into `setState` instead of the feature store;
 - a flag set by a handler, acted on by an effect, then cleared;
 - effect chains, where one state write triggers the next effect;
 - local state reset because an ID or prop changed;

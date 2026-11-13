@@ -23,9 +23,9 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, Android included; `rpc/` holds one crate per proto service plus `lemma-host`; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host; `test/` crates are dev-dependencies only.
+- `shared/` crates build for every runtime, Android included; crates under a host directory (`server/`, `desktop/`, `mobile/`) build only into that host.
 - Crates are named `lemma-<concept>`.
-- `lemma-host` owns the SQLite schema migrations in `crates/rpc/lemma-host/migrations/` and applies them on startup via `lemma_host::migrate`; `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`.
+- `lemma-db` owns the SQLite schema migrations in `crates/shared/lemma-db/migrations/` and applies them when opening a file-backed or in-memory pool (`lemma_db::open`, `lemma_db::in_memory`); `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`.
 
 ## Commands
 

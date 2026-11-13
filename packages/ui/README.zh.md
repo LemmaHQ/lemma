@@ -25,7 +25,6 @@
 | `ai/shimmer`          | 等待状态的扫光文字效果                  |
 | `ai/thinking-loader`  | 首个回复 token 到达前的等待指示         |
 | `ai/tool`             | 工具调用分组、状态、参数与输出          |
-| `primitives/reveal`   | 随 `open` 切换的内容的高度与透明度过渡  |
 | `primitives/settings` | [设置页](#设置页)的页面、分区、字段与行 |
 
 共享控件还包括 `primitives/` 下的 `button`、`separator`、`tooltip`、行内提示 `alert`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `avatar`、`collapsible`、`empty`、`scroll-area` 与 `skeleton`，以及表单控件 `checkbox`、`field`、`input`、`input-group`、`password-input`、`label`、`select`、`switch`、`textarea`、`toggle` 与 `toggle-group`。`useSidebar` 读取侧边栏状态。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。

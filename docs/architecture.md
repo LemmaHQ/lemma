@@ -8,18 +8,18 @@ Read this before changing anything under `crates/`. It maps the crate layers, th
 
 Lemma is one Rust workspace. A crate depends only on crates in its own layer or the layers above it in this table; `lemma-core` is the language every layer speaks.
 
-| Layer     | Crates                                            | Owns                                                                                                                                                                                                                                           |
-| --------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`        | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ApiFormat` |
-| Domains   | `lemma-session`, `lemma-provider`, `lemma-crypto` | Sessions, the message tree, and `SessionService`; predefined, custom, and web providers, model lists, and `ProviderService`; API-key sealing                                                                                                   |
-| Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop` | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                         |
-| Agent     | `lemma-agent`                                     | Assembling one turn from a request (provider endpoint, adapter, session, tools in the session directory), running it, and aborting running turns                                                                                               |
-| RPC       | `crates/rpc/*`, including `lemma-host`            | One ConnectRPC service per proto service; `lemma-host` assembles them into one router over a database, connects and migrates it, opens the local engine from its data directory, and serves the router in-process through `InProcessTransport` |
-| Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`   | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
+| Layer     | Crates                                                        | Owns                                                                                                                                                                                                                                           |
+| --------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts | `lemma-proto`, `lemma-core`, `lemma-model`                    | Rust bindings for `proto/lemma/v1` and the coded error helpers; the canonical trace types: `Message`, `ContentBlock`, `StreamEvent`, `ToolSpec`, `Usage`; the model interface: `Adapter`, `Connector`, `ModelRequest`, `Endpoint`, `ApiFormat` |
+| Domains   | `lemma-db`, `lemma-session`, `lemma-provider`, `lemma-crypto` | SQLite pool setup and schema migrations; sessions, the message tree, and `SessionService`; predefined, custom, and web providers, model lists, and `ProviderService`; API-key sealing                                                          |
+| Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`             | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                         |
+| Agent     | `lemma-agent`                                                 | Starting, resuming, and aborting turns over a session, a bound provider adapter, and the session directory's tools, with per-turn replayable event logs                                                                                        |
+| RPC       | `lemma-host`                                                  | The ConnectRPC service handlers (`ProviderService`, `SessionService`, `AgentService`) assembled into one router, `LocalEngine` over a data directory, and `InProcessTransport`                                                                 |
+| Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`               | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
 
-`lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`; `lemma-host` owns the SQLite migrations in `crates/rpc/lemma-host/migrations/`. The engine and agent layers reach the data only through those services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
+`lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`; `lemma-db` owns the SQLite migrations in `crates/shared/lemma-db/migrations/`. The engine and agent layers reach the data only through those services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; `crates/rpc/` holds the Connect services; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host; crates under `crates/test/` serve only tests ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 
@@ -41,7 +41,7 @@ All three hosts share one data-directory layout: `lemma.db` (SQLite in WAL mode 
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every client: `ProviderService`, `SessionService`, `AgentService`, and `SystemService`, plus `errors.proto`. `ProviderService` covers model providers and web providers: it lists web providers, updates their keys and enabled flags, and sets the search and fetch backend orders. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every client: `ProviderService`, `SessionService`, and `AgentService`, plus `errors.proto`. `ProviderService` covers model providers and web providers: it lists providers with write-only `has_key` flags, updates keys and enabled flags, checks saved providers and fetches custom model lists by provider id, and sets the web search and fetch backend orders. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
@@ -49,11 +49,11 @@ Lemma runs as a single-owner local node with no user accounts or authentication 
 
 ## The path of one turn
 
-A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` assembles each turn and `lemma-agent-rpc` calls only it; the loop is `AgentLoop::run_turn` in `lemma-agent-loop`. `lemma-agent-rpc` maps its `TurnEvent`s onto `AgentEvent` messages.
+A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` starts, resumes, and aborts turns, running `AgentLoop::run_turn` in `lemma-agent-loop` in a background task; `lemma-host` calls only `Agent` and maps its `TurnEvent`s onto `AgentEvent` messages.
 
 ```text
 AgentService.SendMessage(session, provider, model, content)
-  Agent::prepare reads the session and the API format of the nearest assistant message on the path from root to leaf
+  Agent::start reads the session and the API format of the nearest assistant message on the path from root to leaf
   ProviderService::bind picks the API format, opens the API key, and binds the adapter
   open the session directory and register its tools
   append the user message under the active leaf; move the leaf            -> started
@@ -86,11 +86,11 @@ Tools run only when the loop has a `ToolRuntime`. `Agent` attaches one over the 
 
 `AbortMessage` takes the user message id from the `started` event and cancels that running turn. A streaming placeholder settles with status `aborted` and stop reason `aborted`; a running `bash` command stops with its process tree, any other running tool call completes, and the turn stops before its next step; the stream ends with `aborted`.
 
-A turn runs to its end whether or not a client reads its stream. `lemma-agent-rpc` records each running turn's `AgentEvent`s; `SendMessage` and `ResumeStream` both read that record, so a slow client misses no event. A client that loses its stream calls `ResumeStream` with the user message id and the number of events it already received, and gets the rest followed by the live events. Once the turn ends, `ResumeStream` fails with `ERROR_REASON_TURN_NOT_RUNNING`, and the client reads the settled messages instead.
+A turn runs to its end whether or not a client reads its stream. `Agent` in `lemma-agent` records each running turn's `TurnEvent`s alongside its cancellation token; `SendMessage` and `ResumeStream` both read that log, so a slow client misses no event. A client that loses its stream calls `ResumeStream` with the user message id and the number of events it already received, and gets the rest followed by the live events. Once the turn ends, `ResumeStream` fails with `ERROR_REASON_TURN_NOT_RUNNING`, and the client reads the settled messages instead.
 
 ## Persistence
 
-`lemma-host` owns the SQLite schema in `crates/rpc/lemma-host/migrations/0001_init.sql` and runs pending migrations when opening `LocalEngine`: `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+`lemma-db` owns the SQLite schema in `crates/shared/lemma-db/migrations/0001_init.sql` and runs pending migrations when opening a pool (`LocalEngine` calls `lemma_db::open`): `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 A session is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider, model, and API format that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through sessions.
 
@@ -102,16 +102,16 @@ A `providers` row is predefined or custom. A custom row holds the whole configur
 
 New behavior attaches to one of these points. Changing the turn loop itself updates this map.
 
-| Goal                                           | Mechanism                                                                                                                                |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Add a vendor protocol                          | add an `ApiFormat` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector`   |
-| Add a predefined provider                      | add its definition to the predefined providers of `lemma-provider`                                                                       |
-| Add a web backend                              | add its kind to the web catalog of `lemma-provider` and its client to `lemma-adapter`'s `web/` module                                    |
-| Add a model-facing tool                        | implement `Tool` in `lemma-tool` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`)                                 |
-| Run tools somewhere else                       | implement `ExecEnv`                                                                                                                      |
-| Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                      |
-| Add an RPC                                     | change the `.proto`, implement it in the matching `crates/rpc/` crate, and regenerate the clients                                        |
-| Add an RPC service                             | add a `.proto` and a new crate under `crates/rpc/`, list the file in `lemma-proto/build.rs`, and route it in `lemma-host`                |
-| Add a user-facing error                        | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `web/src/i18n/error-text.ts` and both locale files |
-| Change the schema                              | add a SQL migration to `crates/rpc/lemma-host/migrations/`; `lemma_host::migrate` runs it at startup                                     |
-| Reach a desktop capability from the web client | extend the preload bridge and the adapter in `web/src/platform/` ([web/AGENTS.md](../web/AGENTS.md#layout))                              |
+| Goal                                           | Mechanism                                                                                                                                     |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add a vendor protocol                          | add an `ApiFormat` variant in `lemma-model`, implement `Adapter` and its model list in `lemma-adapter`, and bind it in `HttpConnector`        |
+| Add a predefined provider                      | add its definition to the predefined providers of `lemma-provider`                                                                            |
+| Add a web backend                              | add its kind to the web catalog of `lemma-provider` and its client to `lemma-adapter`'s `web/` module                                         |
+| Add a model-facing tool                        | implement `Tool` in `lemma-tool` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`)                                      |
+| Run tools somewhere else                       | implement `ExecEnv`                                                                                                                           |
+| Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                           |
+| Add an RPC                                     | change the `.proto`, implement it in the matching RPC module of `crates/shared/lemma-host`, and regenerate the clients                        |
+| Add an RPC service                             | add a `.proto`, list it in `lemma-proto/build.rs`, implement its handler in `crates/shared/lemma-host`, and mount it in `router`              |
+| Add a user-facing error                        | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `i18n/errors.yaml` followed by `just i18n-gen`          |
+| Change the schema                              | add a SQL migration to `crates/shared/lemma-db/migrations/`; `lemma_db::open` and `lemma_db::in_memory` run it when opening the pool          |
+| Reach a desktop capability from the web client | extend `desktop/src/desktop-bridge.ts`, the preload bridge, and the adapter in `web/src/platform/` ([web/AGENTS.md](../web/AGENTS.md#layout)) |
