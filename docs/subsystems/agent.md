@@ -6,7 +6,7 @@ The agent subsystem turns one user request into a running turn and reports its p
 
 ## Turn assembly
 
-`Agent` holds the session service, the provider service, the model connector, and an optional workspaces directory. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
+`Agent` holds the session service, the provider service, an optional workspaces directory, and an optional web `HttpTransport`. `Agent::prepare(TurnRequest)` validates the request and returns a `Turn`, or fails before any message is written:
 
 | Check | Failure |
 | --- | --- |
@@ -16,7 +16,7 @@ The agent subsystem turns one user request into a running turn and reports its p
 | the provider does not belong to the user | `AgentError::ProviderNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Session`, or `Workspace` |
 
-`ProviderService::bind` returns the adapter with the API format the turn uses and the model's tool-calling flag; [architecture.md](../architecture.md#the-path-of-one-turn) states how it picks the format. With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<session id>`; without one, the model is called without tools. A model with tool calling off gets no tools, and its requests leave out earlier tool calls and tool results.
+`ProviderService::bind` returns the adapter with the API format the turn uses and the model's tool-calling flag; [architecture.md](../architecture.md#the-path-of-one-turn) states how it picks the format. With a workspaces directory, the turn gets the `read_file`, `write_file`, and `bash` tools rooted at `<workspaces_dir>/<session id>`, plus `web_search` and `web_fetch` when `Agent` has a web `HttpTransport` and the function's order has an enabled backend; without a workspaces directory, the model is called without tools. A model with tool calling off gets no tools, and its requests leave out earlier tool calls and tool results.
 
 `Turn::run(observer)` runs the turn to its end and returns `()` on success; a failed stream or database returns `AgentError::Loop`. `Turn::user_message_id` is the id the user message is stored under; abort and resume address the turn by it.
 
