@@ -4,23 +4,23 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+chrono.workspace = true
 dashmap.workspace = true
+futures.workspace = true
 lemma-adapter.workspace = true
 lemma-agent-loop.workspace = true
-lemma-session.workspace = true
 lemma-core.workspace = true
 lemma-model.workspace = true
 lemma-provider.workspace = true
+lemma-session.workspace = true
 lemma-tool.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-futures.workspace = true
-lemma-test-db.workspace = true
+lemma-db.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
-
 [lints]
 workspace = true

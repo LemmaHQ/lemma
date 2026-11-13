@@ -141,7 +141,7 @@ async fn install(db: &SqlitePool, failure: Failure) -> Result<(), Box<dyn Error>
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn persistence_failures_end_the_turn_at_the_failed_statement() -> Result<(), Box<dyn Error>> {
     for failure in Failure::ALL {
-        let db = lemma_test_db::database().await?;
+        let db = lemma_db::in_memory().await?;
         let (sessions, session_id) = new_session(&db).await?;
         install(&db, failure).await?;
         let adapter = Scripted {

@@ -30,7 +30,7 @@ impl Adapter for StalledAdapter {
 
 #[tokio::test]
 async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
         AgentLoop::new(sessions.clone(), StalledAdapter, None);
@@ -79,7 +79,7 @@ async fn cancel_mid_stream_settles_placeholder_as_aborted() -> Result<(), Box<dy
 
 #[tokio::test]
 async fn cancel_before_run_appends_only_the_user_message() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
         AgentLoop::new(sessions.clone(), StalledAdapter, None);

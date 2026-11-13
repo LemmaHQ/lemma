@@ -58,7 +58,7 @@ fn text(text: &str) -> ContentBlock {
 
 #[tokio::test]
 async fn a_tool_call_streamed_from_start_to_end_is_stored_once() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let call = ToolCall {
         id: "call-1".into(),
         name: "read_file".into(),
@@ -98,7 +98,7 @@ async fn a_tool_call_streamed_from_start_to_end_is_stored_once() -> Result<(), B
 #[tokio::test]
 async fn a_fragment_outside_an_open_tool_call_leaves_the_text_intact() -> Result<(), Box<dyn Error>>
 {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let events = vec![
         Ok(StreamEvent::TextDelta { delta: "Hi".into() }),
         Ok(StreamEvent::ToolCallDelta {
@@ -123,7 +123,7 @@ async fn a_fragment_outside_an_open_tool_call_leaves_the_text_intact() -> Result
 #[tokio::test]
 async fn a_stream_failing_midway_keeps_the_partial_answer_as_an_error() -> Result<(), Box<dyn Error>>
 {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let events = vec![
         Ok(StreamEvent::TextDelta { delta: "Hi".into() }),
         Err("connection reset".to_owned()),

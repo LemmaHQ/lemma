@@ -80,9 +80,11 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         let meta = find_session(&self.sessions, session_id).await?;
 
         let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
+        let user_at = user_entry.created_at;
         self.append(user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
+            at: user_at,
         });
 
         self.sessions
@@ -116,8 +118,12 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 model.provider_id,
                 api_format,
             );
+            let assistant_at = placeholder.created_at;
             self.append(placeholder).await?;
-            observer(TurnEvent::AssistantStarted { id: assistant_id });
+            observer(TurnEvent::AssistantStarted {
+                id: assistant_id,
+                at: assistant_at,
+            });
 
             let req = ModelRequest {
                 model: model.model.clone(),

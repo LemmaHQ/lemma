@@ -79,7 +79,7 @@ fn call(id: &str) -> ContentBlock {
 
 #[tokio::test]
 async fn no_tool_model_receives_no_tools_or_tool_history() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let root = stored(
         session_id,

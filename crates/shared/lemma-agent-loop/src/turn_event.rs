@@ -9,11 +9,15 @@ pub enum TurnEvent {
     UserAppended {
         /// Message ID.
         id: Uuid,
+        /// Server instant at which the user message was committed.
+        at: DateTime<Utc>,
     },
     /// A new assistant message node started streaming.
     AssistantStarted {
         /// Message ID.
         id: Uuid,
+        /// Server instant at which the assistant message started.
+        at: DateTime<Utc>,
     },
     /// A text delta received from the model stream.
     Delta {

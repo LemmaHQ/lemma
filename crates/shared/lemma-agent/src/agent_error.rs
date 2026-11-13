@@ -1,9 +1,8 @@
-use lemma_agent_loop::LoopError;
 use lemma_provider::ProviderError;
 use lemma_session::SessionError;
 use thiserror::Error;
 
-/// Failure preparing or running a turn.
+/// Failure starting a turn before background execution begins.
 #[derive(Debug, Error)]
 pub enum AgentError {
     /// The message content is empty after trimming.
@@ -30,9 +29,6 @@ pub enum AgentError {
     /// The session's generated workspace could not be created.
     #[error("create workspace: {0}")]
     Workspace(String),
-    /// The running turn failed.
-    #[error(transparent)]
-    Loop(LoopError),
 }
 
 impl From<ProviderError> for AgentError {
@@ -47,11 +43,5 @@ impl From<ProviderError> for AgentError {
 impl From<SessionError> for AgentError {
     fn from(err: SessionError) -> Self {
         Self::Store(err.to_string())
-    }
-}
-
-impl From<LoopError> for AgentError {
-    fn from(err: LoopError) -> Self {
-        Self::Loop(err)
     }
 }

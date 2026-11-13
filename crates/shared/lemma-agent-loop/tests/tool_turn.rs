@@ -68,7 +68,7 @@ impl Adapter for ToolThenText {
 #[tokio::test]
 async fn a_tool_call_extends_one_branch_and_moves_the_leaf_to_the_final_answer()
 -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let second_context = Arc::new(AtomicUsize::new(0));
     let adapter = ToolThenText {

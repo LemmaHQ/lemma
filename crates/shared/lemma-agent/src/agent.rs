@@ -4,11 +4,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use dashmap::DashMap;
+use chrono::Utc;
+use futures::Stream;
 use lemma_adapter::{HttpTransport, ReqwestTransport};
-use lemma_agent_loop::{AgentLoop, ToolRuntime, TurnEvent, TurnInput};
+use lemma_agent_loop::{AgentLoop, LoopError, ToolRuntime, TurnEvent, TurnInput};
 use lemma_core::{ContentBlock, Message, TextContent};
-use lemma_model::{Adapter, Connector};
+use lemma_model::Connector;
 use lemma_provider::ProviderService;
 use lemma_session::{LastModel, Session, SessionService};
 use lemma_tool::{BashTool, CancelToken, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
@@ -16,6 +17,7 @@ use tokio::fs;
 use uuid::Uuid;
 
 use crate::agent_error::AgentError;
+use crate::running_turns::RunningTurns;
 use crate::web_tools;
 
 /// What a user asks one turn to do.
@@ -31,10 +33,7 @@ pub struct TurnRequest {
     pub content: String,
 }
 
-/// Running turns by user message id.
-type RunningTurns = DashMap<Uuid, CancelToken>;
-
-/// Assembles and runs turns, and aborts the ones still running.
+/// Starts, resumes, and aborts turns.
 ///
 /// A session's tools (`read_file`, `write_file`, `bash`) run in the directory
 /// the session is bound to, or else in `<workspaces_dir>/<session id>`, and
@@ -50,6 +49,7 @@ pub struct Agent<C, T = ReqwestTransport> {
 
 impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// Creates the agent over the session and provider domains.
+    #[must_use]
     pub fn new(
         sessions: SessionService,
         providers: Arc<ProviderService<C>>,
@@ -65,9 +65,13 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         }
     }
 
-    /// Validates the request and assembles its turn: opens the provider's
-    /// adapter, reads the session, and opens its directory.
-    /// The turn is abortable from here until it is dropped.
+    /// Validates `req`, spawns the turn in the background, and returns a live
+    /// stream of its [`TurnEvent`]s from the beginning.
+    ///
+    /// Dropping the returned stream leaves the turn running; callers reconnect
+    /// with [`Self::resume`] and stop it early with [`Self::abort`]. Any
+    /// mid-turn failure after startup is delivered as a terminal
+    /// [`TurnEvent::TurnFailed`] on the stream.
     ///
     /// # Errors
     ///
@@ -79,7 +83,10 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// [`AgentError::DirectoryNotFound`] when the session's directory is
     /// gone, and [`AgentError::Workspace`] when the workspace cannot be
     /// created.
-    pub async fn prepare(&self, req: TurnRequest) -> Result<Turn<C::Adapter>, AgentError> {
+    pub async fn start(
+        &self,
+        req: TurnRequest,
+    ) -> Result<impl Stream<Item = TurnEvent> + Send + 'static + use<C, T>, AgentError> {
         if req.content.trim().is_empty() {
             return Err(AgentError::ContentRequired);
         }
@@ -115,89 +122,55 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, Some(tools));
 
         let user_message_id = Uuid::new_v4();
-        self.running.insert(user_message_id, cancel.clone());
-        Ok(Turn {
-            agent_loop,
-            input: TurnInput {
-                session_id: req.session_id,
-                user_message_id,
-                user_message: Message::User {
-                    content: vec![ContentBlock::Text(TextContent { text: req.content })],
-                },
-                model: LastModel {
-                    provider_id: req.provider_id,
-                    model: req.model,
-                },
-                api_format,
-                tool_calling,
-                system_prompt,
+        let input = TurnInput {
+            session_id: req.session_id,
+            user_message_id,
+            user_message: Message::User {
+                content: vec![ContentBlock::Text(TextContent { text: req.content })],
             },
-            cancel,
-            _registration: Registration {
-                running: Arc::clone(&self.running),
-                user_message_id,
+            model: LastModel {
+                provider_id: req.provider_id,
+                model: req.model,
             },
-        })
-    }
-
-    /// Aborts the running turn started by `message_id`, returning `true` when
-    /// a running turn matched; other ids are ignored.
-    #[must_use]
-    pub fn abort(&self, message_id: Uuid) -> bool {
-        let Some(cancel) = self.running.get(&message_id) else {
-            return false;
+            api_format,
+            tool_calling,
+            system_prompt,
         };
-        cancel.cancel();
-        true
+        let (writer, events) = self.running.start(user_message_id, cancel.clone());
+        tokio::spawn(async move {
+            match agent_loop
+                .run_turn(input, &|ev| writer.push(ev), &cancel)
+                .await
+            {
+                Ok(()) | Err(LoopError::Model(_)) => {}
+                Err(err) => writer.push(TurnEvent::TurnFailed {
+                    message: err.to_string(),
+                    at: Utc::now(),
+                }),
+            }
+        });
+        Ok(events)
     }
-}
 
-/// One assembled turn, ready to run.
-#[derive(Debug)]
-pub struct Turn<A> {
-    agent_loop: AgentLoop<A, LocalExecEnv>,
-    input: TurnInput,
-    cancel: CancelToken,
-    _registration: Registration,
-}
-
-impl<A: Adapter> Turn<A> {
-    /// The id of the user message this turn appends; abort and resume
-    /// address the turn by it.
+    /// Replays and follows the events of the running turn identified by
+    /// `message_id` starting at `offset`, or returns `None` when no such turn
+    /// is running.
     #[must_use]
-    pub fn user_message_id(&self) -> Uuid {
-        self.input.user_message_id
+    pub fn resume(
+        &self,
+        message_id: Uuid,
+        offset: usize,
+    ) -> Option<impl Stream<Item = TurnEvent> + Send + 'static + use<C, T>> {
+        self.running.resume(message_id, offset)
     }
 
-    /// Runs the turn to its end, reporting progress to `observer`.
-    ///
-    /// # Errors
-    ///
-    /// [`AgentError::Loop`] when the loop fails.
-    pub async fn run(self, observer: impl Fn(TurnEvent) + Send + Sync) -> Result<(), AgentError> {
-        Ok(self
-            .agent_loop
-            .run_turn(self.input, &observer, &self.cancel)
-            .await?)
+    /// Cancels the running turn started by `message_id`; unknown IDs are
+    /// ignored.
+    pub fn abort(&self, message_id: Uuid) {
+        self.running.abort(message_id);
     }
 }
 
-/// Removes a turn from the running set when the turn is dropped.
-#[derive(Debug)]
-struct Registration {
-    running: Arc<RunningTurns>,
-    user_message_id: Uuid,
-}
-
-impl Drop for Registration {
-    fn drop(&mut self) {
-        self.running.remove(&self.user_message_id);
-    }
-}
-
-/// The tools of `session`, rooted in the directory it is bound to or in
-/// its workspace under `workspaces_dir`. A running command stops when
-/// `cancel` fires.
 async fn session_tools<C: Connector, T: HttpTransport + Debug>(
     workspaces_dir: &Path,
     session: &Session,
@@ -222,13 +195,12 @@ async fn session_tools<C: Connector, T: HttpTransport + Debug>(
     }
     Ok(ToolRuntime::new(registry, env))
 }
-/// Creates `workspace` when missing and opens an environment over it.
+
 async fn open_workspace(workspace: &Path, cancel: &CancelToken) -> io::Result<LocalExecEnv> {
     fs::create_dir_all(workspace).await?;
     LocalExecEnv::open(workspace, cancel.clone()).await
 }
 
-/// Tells the model where its tools run.
 fn system_prompt(directory: &Path) -> String {
     format!(
         "Your working directory is {}. The operating system is {}. The bash tool runs \

@@ -53,7 +53,7 @@ impl Adapter for Refuses {
 
 #[tokio::test]
 async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
         AgentLoop::new(sessions.clone(), AsksForTool, None);
@@ -116,7 +116,7 @@ async fn a_tool_use_stop_without_tools_ends_the_turn_on_that_step() -> Result<()
 
 #[tokio::test]
 async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, Refuses, None);
 
@@ -133,7 +133,7 @@ async fn a_refused_model_call_ends_the_turn_with_the_model_message() -> Result<(
 
 #[tokio::test]
 async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> = AgentLoop::new(sessions, AsksForTool, None);
     db.close().await;
@@ -151,7 +151,7 @@ async fn a_closed_database_ends_the_turn_with_a_store_error() -> Result<(), Box<
 
 #[tokio::test]
 async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let missing = Uuid::new_v4();
     sessions.update_leaf(session_id, missing).await?;
@@ -173,7 +173,7 @@ async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(),
 
 #[tokio::test]
 async fn an_unknown_session_ends_before_any_message_is_written() -> Result<(), Box<dyn Error>> {
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let (_sessions, _session_id) = new_session(&db).await?;
     let missing = Uuid::new_v4();
     let agent_loop: AgentLoop<_, LocalExecEnv> =

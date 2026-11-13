@@ -1,4 +1,4 @@
-//! Turns assembled by an agent over migrated domains and a scripted model.
+//! Turns started, resumed, and aborted by an agent over migrated domains.
 
 use std::env;
 use std::error::Error;
@@ -6,11 +6,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use futures::stream;
+use futures::{StreamExt, stream};
 use lemma_adapter::ReqwestTransport;
 use lemma_agent::{Agent, AgentError, TurnEvent, TurnRequest};
-use lemma_agent_loop::LoopError;
-use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, ToolCall};
+use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent, ToolCall};
 use lemma_model::{
     Adapter, ApiFormat, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest,
 };
@@ -21,11 +20,9 @@ use lemma_session::SessionService;
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
 use uuid::Uuid;
-/// Every request the model receives.
+
 type Requests = Arc<Mutex<Vec<ModelRequest>>>;
 
-/// Records each request; asks for one tool call on the first step, then
-/// answers.
 #[derive(Debug)]
 struct RecordingAdapter {
     requests: Requests,
@@ -83,7 +80,34 @@ impl Connector for RecordingConnector {
     }
 }
 
-/// One provider whose model asks for `call`.
+struct StalledAdapter;
+
+impl Adapter for StalledAdapter {
+    async fn stream(&self, _req: ModelRequest) -> Result<BoxEventStream, ModelError> {
+        let head = stream::iter([
+            Ok(StreamEvent::TextStart),
+            Ok(StreamEvent::TextDelta {
+                delta: "partial".into(),
+            }),
+        ]);
+        Ok(Box::pin(head.chain(stream::pending())))
+    }
+}
+
+struct StalledConnector;
+
+impl Connector for StalledConnector {
+    type Adapter = StalledAdapter;
+
+    fn connect(&self, _endpoint: Endpoint) -> StalledAdapter {
+        StalledAdapter
+    }
+
+    async fn list_models(&self, _endpoint: Endpoint) -> Result<Vec<String>, ModelError> {
+        Ok(vec![])
+    }
+}
+
 struct Setup {
     provider_id: Uuid,
     sessions: SessionService,
@@ -104,7 +128,7 @@ impl Setup {
         let requests = Requests::default();
         let providers = ProviderService::new(
             db.clone(),
-            "test-secret-key".to_owned(),
+            "test-secret-key",
             RecordingConnector {
                 requests: Arc::clone(&requests),
                 call,
@@ -160,6 +184,7 @@ impl Setup {
             content: "look around".to_owned(),
         }
     }
+
     fn requests(&self) -> Vec<ModelRequest> {
         self.requests
             .lock()
@@ -168,7 +193,6 @@ impl Setup {
     }
 }
 
-/// A temporary directory removed when dropped.
 struct TempDir(PathBuf);
 
 impl TempDir {
@@ -193,22 +217,30 @@ fn read_marker() -> Value {
 async fn a_model_without_tool_calling_gets_no_workspace_tools_and_runs_none()
 -> Result<(), Box<dyn Error>> {
     let workspaces = TempDir::new("no-tools")?;
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let setup = Setup::with_model(db, read_marker(), false).await?;
     let session_id = setup.sessions.create(None).await?.id;
-    let events = Mutex::new(Vec::new());
 
-    setup
+    let events: Vec<_> = setup
         .agent(workspaces.0.clone())
-        .prepare(setup.request(session_id))
+        .start(setup.request(session_id))
         .await?
-        .run(|event| events.lock().unwrap_or_else(|e| e.into_inner()).push(event))
-        .await?;
+        .collect()
+        .await;
 
     let requests = setup.requests();
-    assert_eq!(requests.len(), 1);
+    assert_eq!(requests.len(), 1, "single model step");
     assert!(requests[0].tools.is_empty(), "one request without tools");
-    let events = events.into_inner().unwrap_or_else(|e| e.into_inner());
+    assert!(
+        matches!(events.first(), Some(TurnEvent::UserAppended { .. })),
+        "starts with UserAppended: {events:?}"
+    );
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event, TurnEvent::AssistantStarted { .. })),
+        "includes AssistantStarted: {events:?}"
+    );
     assert!(
         !events
             .iter()
@@ -217,29 +249,33 @@ async fn a_model_without_tool_calling_gets_no_workspace_tools_and_runs_none()
     );
     let messages = setup.sessions.all_messages(session_id).await?;
     let roles: Vec<&str> = messages.iter().map(|m| m.role()).collect();
-    assert_eq!(roles, ["user", "assistant"]);
+    assert_eq!(roles, ["user", "assistant"], "stored roles");
     Ok(())
 }
 
 #[tokio::test]
 async fn a_web_transport_adds_web_tools_following_enabled_backends() -> Result<(), Box<dyn Error>> {
     let workspaces = TempDir::new("web")?;
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let setup = Setup::new(db.clone(), read_marker()).await?;
     let s1 = setup.sessions.create(None).await?.id;
-    setup
+    let _: Vec<_> = setup
         .agent_with_web(workspaces.0.clone())
-        .prepare(setup.request(s1))
+        .start(setup.request(s1))
         .await?
-        .run(|_| {})
-        .await?;
+        .collect()
+        .await;
     let mut names: Vec<_> = setup.requests()[0]
         .tools
         .iter()
         .map(|t| t.name.clone())
         .collect();
     names.sort();
-    assert_eq!(names, ["bash", "read_file", "web_fetch", "write_file"]);
+    assert_eq!(
+        names,
+        ["bash", "read_file", "web_fetch", "write_file"],
+        "default native fetch"
+    );
 
     for provider in setup.providers.list_web().await? {
         if provider.kind != WebProviderKind::Native {
@@ -261,24 +297,28 @@ async fn a_web_transport_adds_web_tools_following_enabled_backends() -> Result<(
         .unwrap_or_else(|e| e.into_inner())
         .clear();
     let s2 = setup.sessions.create(None).await?.id;
-    setup
+    let _: Vec<_> = setup
         .agent_with_web(workspaces.0.clone())
-        .prepare(setup.request(s2))
+        .start(setup.request(s2))
         .await?
-        .run(|_| {})
-        .await?;
+        .collect()
+        .await;
     let offered = &setup.requests()[0].tools;
     let mut names: Vec<_> = offered.iter().map(|t| t.name.clone()).collect();
     names.sort();
     assert_eq!(
         names,
-        ["bash", "read_file", "web_fetch", "web_search", "write_file"]
+        ["bash", "read_file", "web_fetch", "web_search", "write_file"],
+        "search added when enabled"
     );
     let search = offered
         .iter()
         .find(|t| t.name == "web_search")
         .ok_or("missing")?;
-    assert!(search.description.contains("Exa"));
+    assert!(
+        search.description.contains("Exa"),
+        "description names active backend"
+    );
 
     for provider in setup.providers.list_web().await? {
         setup
@@ -298,27 +338,34 @@ async fn a_web_transport_adds_web_tools_following_enabled_backends() -> Result<(
         .unwrap_or_else(|e| e.into_inner())
         .clear();
     let s3 = setup.sessions.create(None).await?.id;
-    setup
+    let _: Vec<_> = setup
         .agent_with_web(workspaces.0.clone())
-        .prepare(setup.request(s3))
+        .start(setup.request(s3))
         .await?
-        .run(|_| {})
-        .await?;
+        .collect()
+        .await;
     let mut names: Vec<_> = setup.requests()[0]
         .tools
         .iter()
         .map(|t| t.name.clone())
         .collect();
     names.sort();
-    assert_eq!(names, ["bash", "read_file", "write_file"]);
+    assert_eq!(
+        names,
+        ["bash", "read_file", "write_file"],
+        "web tools omitted when disabled"
+    );
 
     sqlx::query("DROP TABLE web_providers").execute(&db).await?;
     assert!(
-        setup
-            .agent_with_web(workspaces.0.clone())
-            .prepare(setup.request(s2))
-            .await
-            .is_err()
+        matches!(
+            setup
+                .agent_with_web(workspaces.0.clone())
+                .start(setup.request(s2))
+                .await,
+            Err(AgentError::Provider(_))
+        ),
+        "broken web_providers fails start"
     );
     Ok(())
 }
@@ -329,87 +376,284 @@ async fn a_bound_session_runs_its_tools_in_its_directory_and_rejects_missing_one
     let workspaces = TempDir::new("workspaces")?;
     let bound = TempDir::new("bound")?;
     fs::write(bound.0.join("marker.txt"), "here")?;
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let setup = Setup::new(db, read_marker()).await?;
     let session = setup.sessions.create(Some(&bound.0)).await?;
     let Some(directory) = session.directory else {
         return Err("the session stores its directory".into());
     };
-    setup
+    let _: Vec<_> = setup
         .agent(workspaces.0.clone())
-        .prepare(setup.request(session.id))
+        .start(setup.request(session.id))
         .await?
-        .run(|_| {})
-        .await?;
+        .collect()
+        .await;
     let prompt = setup.requests()[0]
         .system_prompt
         .clone()
         .unwrap_or_default();
-    assert!(prompt.contains(&directory) && prompt.contains(env::consts::OS));
+    assert!(
+        prompt.contains(&directory) && prompt.contains(env::consts::OS),
+        "system prompt describes directory and OS"
+    );
     let messages = setup.sessions.all_messages(session.id).await?;
     let tool_output = messages.iter().find_map(|m| match &m.body.0 {
         Message::ToolResult { content, .. } => match content.first() {
-            Some(ContentBlock::Text(text)) => Some(text.text.clone()),
+            Some(ContentBlock::Text(TextContent { text })) => Some(text.clone()),
             _ => None,
         },
         _ => None,
     });
-    assert_eq!(tool_output.as_deref(), Some("\"here\""));
-    assert!(!workspaces.0.join(session.id.to_string()).exists());
+    assert_eq!(
+        tool_output.as_deref(),
+        Some("\"here\""),
+        "tool ran in bound dir"
+    );
+    assert!(
+        !workspaces.0.join(session.id.to_string()).exists(),
+        "no generated workspace for bound session"
+    );
 
     let gone = TempDir::new("gone")?;
     let s2 = setup.sessions.create(Some(&gone.0)).await?;
     drop(gone);
-    let prepared = setup
+    let started = setup
         .agent(workspaces.0.clone())
-        .prepare(setup.request(s2.id))
+        .start(setup.request(s2.id))
         .await;
-    assert!(matches!(prepared, Err(AgentError::DirectoryNotFound(_))));
+    assert!(
+        matches!(started, Err(AgentError::DirectoryNotFound(_))),
+        "missing bound directory rejected"
+    );
     Ok(())
 }
 
 #[tokio::test]
-async fn prepare_and_run_reject_missing_sessions_broken_stores_and_bad_workspaces()
+async fn start_validates_inputs_missing_entities_broken_stores_and_bad_workspaces()
 -> Result<(), Box<dyn Error>> {
     let workspaces = TempDir::new("workspaces")?;
     let file = workspaces.0.join("file");
     fs::write(&file, "x")?;
-    let db = lemma_test_db::database().await?;
+    let db = lemma_db::in_memory().await?;
     let setup = Setup::new(db.clone(), read_marker()).await?;
-    let unowned = Uuid::new_v4();
-    assert!(matches!(
-        setup
-            .agent(workspaces.0.clone())
-            .prepare(setup.request(unowned))
-            .await,
-        Err(AgentError::SessionNotFound)
-    ));
-    assert!(!workspaces.0.join(unowned.to_string()).exists());
-
     let session_id = setup.sessions.create(None).await?.id;
-    assert!(matches!(
-        setup.agent(file).prepare(setup.request(session_id)).await,
-        Err(AgentError::Workspace(_))
-    ));
-
     let agent = setup.agent(workspaces.0.clone());
-    assert!(!agent.abort(Uuid::new_v4()), "unknown turn is not aborted");
-    let turn = agent.prepare(setup.request(session_id)).await?;
-    assert!(agent.abort(turn.user_message_id()), "prepared turn aborts");
-    setup.sessions.delete(session_id).await?;
-    assert!(matches!(
-        turn.run(|_| {}).await,
-        Err(AgentError::Loop(LoopError::NotFound(_)))
-    ));
+
+    assert!(
+        matches!(
+            agent
+                .start(TurnRequest {
+                    content: "   ".to_owned(),
+                    ..setup.request(session_id)
+                })
+                .await,
+            Err(AgentError::ContentRequired)
+        ),
+        "blank content rejected"
+    );
+    assert!(
+        matches!(
+            agent
+                .start(TurnRequest {
+                    model: "   ".to_owned(),
+                    ..setup.request(session_id)
+                })
+                .await,
+            Err(AgentError::ModelRequired)
+        ),
+        "blank model rejected"
+    );
+    assert!(
+        matches!(
+            agent
+                .start(TurnRequest {
+                    provider_id: Uuid::new_v4(),
+                    ..setup.request(session_id)
+                })
+                .await,
+            Err(AgentError::ProviderNotFound)
+        ),
+        "missing provider rejected"
+    );
+
+    let unowned = Uuid::new_v4();
+    assert!(
+        matches!(
+            agent.start(setup.request(unowned)).await,
+            Err(AgentError::SessionNotFound)
+        ),
+        "missing session rejected"
+    );
+    assert!(
+        !workspaces.0.join(unowned.to_string()).exists(),
+        "no workspace created for missing session"
+    );
+
+    assert!(
+        matches!(
+            setup.agent(file).start(setup.request(session_id)).await,
+            Err(AgentError::Workspace(_))
+        ),
+        "bad workspace path rejected"
+    );
 
     sqlx::query("DROP TABLE messages").execute(&db).await?;
     sqlx::query("DROP TABLE sessions").execute(&db).await?;
-    assert!(matches!(
-        setup
-            .agent(workspaces.0.clone())
-            .prepare(setup.request(Uuid::new_v4()))
-            .await,
-        Err(AgentError::Store(_))
+    assert!(
+        matches!(
+            agent.start(setup.request(Uuid::new_v4())).await,
+            Err(AgentError::Store(_))
+        ),
+        "dropped tables report store error"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn resume_replays_from_offset_and_abort_stops_a_running_turn() -> Result<(), Box<dyn Error>> {
+    let workspaces = TempDir::new("live")?;
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db.clone());
+    let providers = Arc::new(ProviderService::new(
+        db,
+        "test-secret-key",
+        StalledConnector,
     ));
+    let provider_id = providers
+        .create_custom(CreateCustomInput {
+            api_format: ApiFormat::OpenAiCompatible,
+            identifier: "stalled".to_owned(),
+            name: "Stalled".to_owned(),
+            base_url: "https://api.example.com/v1".to_owned(),
+            api_key: "sk-test".to_owned(),
+            api_path: String::new(),
+            models_path: String::new(),
+            models: Vec::new(),
+        })
+        .await?
+        .id;
+    let session_id = sessions.create(None).await?.id;
+    let agent: Agent<_> = Agent::new(sessions, providers, workspaces.0.clone(), None);
+
+    let mut live = Box::pin(
+        agent
+            .start(TurnRequest {
+                session_id,
+                provider_id,
+                model: "model-a".to_owned(),
+                content: "wait".to_owned(),
+            })
+            .await?,
+    );
+
+    let Some(TurnEvent::UserAppended {
+        id: user_message_id,
+        ..
+    }) = live.next().await
+    else {
+        return Err("expected UserAppended first".into());
+    };
+    while let Some(event) = live.next().await {
+        if matches!(event, TurnEvent::Delta { .. }) {
+            break;
+        }
+    }
+
+    assert!(
+        agent.resume(Uuid::new_v4(), 0).is_none(),
+        "unknown turn is not resumable"
+    );
+    let mut from_zero = Box::pin(
+        agent
+            .resume(user_message_id, 0)
+            .ok_or("running turn should resume from 0")?,
+    );
+    let mut from_two = Box::pin(
+        agent
+            .resume(user_message_id, 2)
+            .ok_or("running turn should resume from offset 2")?,
+    );
+
+    agent.abort(Uuid::new_v4());
+    agent.abort(user_message_id);
+
+    let replayed: Vec<_> = from_zero.as_mut().collect().await;
+    let tail: Vec<_> = from_two.as_mut().collect().await;
+    assert!(
+        matches!(replayed.first(), Some(TurnEvent::UserAppended { .. })),
+        "offset 0 replays UserAppended: {replayed:?}"
+    );
+    assert!(
+        matches!(replayed.last(), Some(TurnEvent::TurnAborted { .. })),
+        "abort terminates stream with TurnAborted: {replayed:?}"
+    );
+    assert_eq!(
+        tail.len() + 2,
+        replayed.len(),
+        "offset 2 skips the first two events"
+    );
+    assert!(
+        agent.resume(user_message_id, 0).is_none(),
+        "completed turn is removed from running set"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn mid_turn_persistence_failure_emits_turn_failed() -> Result<(), Box<dyn Error>> {
+    let workspaces = TempDir::new("mid-turn-fail")?;
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db.clone());
+    let providers = Arc::new(ProviderService::new(
+        db.clone(),
+        "test-secret-key",
+        StalledConnector,
+    ));
+    let provider_id = providers
+        .create_custom(CreateCustomInput {
+            api_format: ApiFormat::OpenAiCompatible,
+            identifier: "stalled".to_owned(),
+            name: "Stalled".to_owned(),
+            base_url: "https://api.example.com/v1".to_owned(),
+            api_key: "sk-test".to_owned(),
+            api_path: String::new(),
+            models_path: String::new(),
+            models: Vec::new(),
+        })
+        .await?
+        .id;
+    let session_id = sessions.create(None).await?.id;
+    let agent: Agent<_> = Agent::new(sessions, providers, workspaces.0.clone(), None);
+
+    let mut live = Box::pin(
+        agent
+            .start(TurnRequest {
+                session_id,
+                provider_id,
+                model: "model-a".to_owned(),
+                content: "trigger store failure".to_owned(),
+            })
+            .await?,
+    );
+
+    let mut user_message_id = None;
+    let mut events = Vec::new();
+    while let Some(event) = live.next().await {
+        if let TurnEvent::UserAppended { id, .. } = &event {
+            user_message_id = Some(*id);
+        }
+        if matches!(event, TurnEvent::Delta { .. }) {
+            sqlx::query("DROP TABLE messages").execute(&db).await?;
+            if let Some(id) = user_message_id {
+                agent.abort(id);
+            }
+        }
+        events.push(event);
+    }
+
+    assert!(
+        matches!(events.last(), Some(TurnEvent::TurnFailed { .. })),
+        "store failure during settle emits TurnFailed: {events:?}"
+    );
     Ok(())
 }
