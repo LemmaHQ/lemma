@@ -91,7 +91,7 @@ export function WebProviderDetail({
                 htmlFor={inputId}
                 description={
                     provider.hasKey
-                        ? t("provider.webApiKeySavedDesc")
+                        ? t("provider.apiKeySavedDesc")
                         : t("provider.enableNeedsKey")
                 }
             >

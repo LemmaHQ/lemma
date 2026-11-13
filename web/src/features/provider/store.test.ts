@@ -41,14 +41,9 @@ const rpc = vi.hoisted(() => ({
         >(),
     deleteCustomProvider: vi.fn<(req: { id: string }) => Promise<object>>(),
     fetchModels:
-        vi.fn<
-            (req: {
-                id?: string;
-                apiFormat: number;
-            }) => Promise<{ models: string[] }>
-        >(),
+        vi.fn<(req: { id: string }) => Promise<{ models: string[] }>>(),
     checkProvider: vi.fn<
-        (req: { id?: string; apiFormat: number; model: string }) => Promise<{
+        (req: { id: string; model: string }) => Promise<{
             error: string;
         }>
     >(),
@@ -76,7 +71,7 @@ const customProvider = (id: string, apiFormat: ApiFormat, patch: object = {}) =>
 const predefinedProvider = (patch: object = {}) =>
     create(ProviderSchema, {
         id: "deepseek-id",
-        apiKey: "sk-saved",
+        hasKey: true,
         enabled: false,
         source: {
             case: "predefined",
@@ -128,6 +123,7 @@ it("loads custom and predefined providers with models and API formats", () => {
     expect(state().list[3]).toMatchObject({ apiFormat: "openai" });
     expect(state().list.at(-1)).toMatchObject({
         source: "predefined",
+        hasKey: true,
         defaultApiFormat: "anthropic",
         apiFormats: ["anthropic", "openai"],
         models: [
@@ -254,25 +250,18 @@ it("removes a deleted custom provider", async () => {
     ]);
 });
 
-it("fetches models and checks a stored or an inline connection", async () => {
+it("fetches models and checks a stored provider by id", async () => {
     rpc.fetchModels.mockResolvedValue({ models: ["x", "y"] });
     rpc.checkProvider.mockResolvedValue({ error: "401 Unauthorized" });
 
-    await expect(state().fetchModels({ id: "o" })).resolves.toEqual(["x", "y"]);
-    await expect(
-        state().checkProvider({
-            apiFormat: "anthropic",
-            baseUrl: "https://api.example.com",
-            model: "m1",
-        }),
-    ).resolves.toBe("401 Unauthorized");
+    await expect(state().fetchModels("o")).resolves.toEqual(["x", "y"]);
+    await expect(state().checkProvider("o", "m1")).resolves.toBe(
+        "401 Unauthorized",
+    );
 
-    expect(rpc.fetchModels.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.fetchModels).toHaveBeenCalledWith({ id: "o" });
+    expect(rpc.checkProvider).toHaveBeenCalledWith({
         id: "o",
-        apiFormat: ApiFormat.UNSPECIFIED,
-    });
-    expect(rpc.checkProvider.mock.lastCall?.[0]).toMatchObject({
-        apiFormat: ApiFormat.ANTHROPIC,
         model: "m1",
     });
 });

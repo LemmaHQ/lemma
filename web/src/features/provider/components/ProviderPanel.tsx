@@ -96,7 +96,7 @@ export function ProviderPanel() {
                             }),
                         )
                     }
-                    onCheck={(req) => store.checkProvider(req)}
+                    onCheck={(model) => store.checkProvider(selected.id, model)}
                 />
             ) : (
                 <ProviderDetail
@@ -113,8 +113,8 @@ export function ProviderPanel() {
                             store.updateCustom(selected.id, { models }),
                         )
                     }
-                    onFetchModels={() => store.fetchModels({ id: selected.id })}
-                    onCheck={(req) => store.checkProvider(req)}
+                    onFetchModels={() => store.fetchModels(selected.id)}
+                    onCheck={(model) => store.checkProvider(selected.id, model)}
                     onDelete={() => handleDelete(selected.id)}
                 />
             )}

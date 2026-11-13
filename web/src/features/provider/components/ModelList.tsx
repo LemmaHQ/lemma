@@ -27,11 +27,17 @@ import { FetchModelsDialog } from "./FetchModelsDialog";
 
 interface ModelListProps {
     models: Model[];
+    fetchDisabled: boolean;
     onChange: (models: Model[]) => void;
     onFetch: () => Promise<string[]>;
 }
 
-export function ModelList({ models, onChange, onFetch }: ModelListProps) {
+export function ModelList({
+    models,
+    fetchDisabled,
+    onChange,
+    onFetch,
+}: ModelListProps) {
     const { t } = useTranslation();
     const [query, setQuery] = useState("");
     const [fetching, setFetching] = useState(false);
@@ -101,6 +107,7 @@ export function ModelList({ models, onChange, onFetch }: ModelListProps) {
                         <Button
                             type="button"
                             variant="outline"
+                            disabled={fetchDisabled}
                             onClick={() => void fetchRemote()}
                             loading={fetching}
                         >

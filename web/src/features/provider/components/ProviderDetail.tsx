@@ -10,12 +10,7 @@ import {
     isBaseUrlValid,
     type ConnectionValues,
 } from "../connection";
-import type {
-    CheckRequest,
-    CustomProvider,
-    CustomProviderPatch,
-    Model,
-} from "../store";
+import type { CustomProvider, CustomProviderPatch, Model } from "../store";
 import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
 import { DeleteProviderButton } from "./DeleteProviderButton";
@@ -30,7 +25,7 @@ interface ProviderDetailProps {
     onToggleEnabled: (enabled: boolean) => void;
     onModelsChange: (models: Model[]) => void;
     onFetchModels: () => Promise<string[]>;
-    onCheck: (req: CheckRequest) => Promise<string>;
+    onCheck: (model: string) => Promise<string>;
     onDelete: () => Promise<void>;
 }
 
@@ -46,11 +41,12 @@ export function ProviderDetail({
 }: ProviderDetailProps) {
     const { t } = useTranslation();
     const saved: ConnectionValues = {
-        apiKey: provider.apiKey,
+        apiKey: "",
         baseUrl: provider.baseUrl,
         apiPath: provider.apiPath,
     };
     const [values, setValues] = useState(saved);
+    const [checkGeneration, setCheckGeneration] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const patch = connectionPatch(values, saved);
@@ -62,10 +58,11 @@ export function ProviderDetail({
         try {
             await onSave(patch);
             setValues({
-                apiKey: values.apiKey.trim(),
+                apiKey: "",
                 baseUrl: values.baseUrl.trim(),
                 apiPath: values.apiPath.trim(),
             });
+            setCheckGeneration((n) => n + 1);
         } catch (e) {
             setError(errorText(e, t));
         } finally {
@@ -131,27 +128,23 @@ export function ProviderDetail({
                 <ConnectionFields
                     apiFormat={provider.apiFormat}
                     values={values}
+                    apiKeyDescription={
+                        provider.hasKey
+                            ? t("provider.apiKeySavedDesc")
+                            : undefined
+                    }
                     onChange={setValues}
                 />
                 <ConnectionCheck
                     models={provider.models.map((model) => model.id)}
-                    target={`${values.apiKey}\n${values.baseUrl}\n${values.apiPath}`}
-                    disabled={!isBaseUrlValid(values.baseUrl)}
-                    onCheck={(model) =>
-                        onCheck(
-                            dirty
-                                ? {
-                                      apiFormat: provider.apiFormat,
-                                      ...values,
-                                      model,
-                                  }
-                                : { id: provider.id, model },
-                        )
-                    }
+                    target={`${provider.hasKey}\n${values.apiKey}\n${values.baseUrl}\n${values.apiPath}\n${checkGeneration}`}
+                    disabled={dirty}
+                    onCheck={onCheck}
                 />
             </SettingsSection>
             <ModelList
                 models={provider.models}
+                fetchDisabled={dirty}
                 onChange={onModelsChange}
                 onFetch={onFetchModels}
             />

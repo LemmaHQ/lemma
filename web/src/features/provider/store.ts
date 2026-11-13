@@ -15,7 +15,7 @@ export interface Model {
 
 interface ProviderBase {
     id: string;
-    apiKey: string;
+    hasKey: boolean;
     enabled: boolean;
     identifier: string;
     name: string;
@@ -66,24 +66,6 @@ interface NewCustomProvider {
     modelsPath?: string;
 }
 
-/** Checks a stored provider by `id`, or the inline custom connection when `id` is absent. */
-export interface CheckRequest {
-    id?: string;
-    apiFormat?: ApiFormat;
-    baseUrl?: string;
-    apiKey?: string;
-    apiPath?: string;
-    model: string;
-}
-
-interface FetchModelsInput {
-    id?: string;
-    apiFormat?: ApiFormat;
-    baseUrl?: string;
-    apiKey?: string;
-    modelsPath?: string;
-}
-
 interface ProviderState {
     list: Provider[];
     loaded: boolean;
@@ -95,8 +77,8 @@ interface ProviderState {
         patch: PredefinedProviderPatch,
     ) => Promise<void>;
     remove: (id: string) => Promise<void>;
-    fetchModels: (req: FetchModelsInput) => Promise<string[]>;
-    checkProvider: (req: CheckRequest) => Promise<string>;
+    fetchModels: (id: string) => Promise<string[]>;
+    checkProvider: (id: string, model: string) => Promise<string>;
 }
 
 const API_FORMAT_PROTOS: Record<ApiFormat, ApiFormatProto> = {
@@ -117,7 +99,7 @@ export const useProviderStore = create<ProviderState>()((set) => ({
     create: async (input) => {
         const res = await providerClient.createCustomProvider({
             ...input,
-            apiFormat: toApiFormatProto(input.apiFormat),
+            apiFormat: API_FORMAT_PROTOS[input.apiFormat],
         });
         if (res.provider === undefined) {
             throw new Error("no provider in response");
@@ -152,7 +134,7 @@ export const useProviderStore = create<ProviderState>()((set) => ({
             defaultApiFormat:
                 patch.defaultApiFormat === undefined
                     ? undefined
-                    : toApiFormatProto(patch.defaultApiFormat),
+                    : API_FORMAT_PROTOS[patch.defaultApiFormat],
         });
         replaceProvider(set, id, res.provider);
     },
@@ -162,19 +144,13 @@ export const useProviderStore = create<ProviderState>()((set) => ({
         set((s) => ({ list: s.list.filter((p) => p.id !== id) }));
     },
 
-    fetchModels: async (req) => {
-        const res = await providerClient.fetchModels({
-            ...req,
-            apiFormat: toApiFormatProto(req.apiFormat),
-        });
+    fetchModels: async (id) => {
+        const res = await providerClient.fetchModels({ id });
         return res.models;
     },
 
-    checkProvider: async (req) => {
-        const res = await providerClient.checkProvider({
-            ...req,
-            apiFormat: toApiFormatProto(req.apiFormat),
-        });
+    checkProvider: async (id, model) => {
+        const res = await providerClient.checkProvider({ id, model });
         return res.error;
     },
 }));
@@ -193,16 +169,10 @@ function replaceProvider(
     }));
 }
 
-function toApiFormatProto(format: ApiFormat | undefined): ApiFormatProto {
-    return format === undefined
-        ? ApiFormatProto.UNSPECIFIED
-        : API_FORMAT_PROTOS[format];
-}
-
 function toProvider(p: ProviderProto): Provider {
     const base = {
         id: p.id,
-        apiKey: p.apiKey,
+        hasKey: p.hasKey,
         enabled: p.enabled,
     };
     if (p.source.case === "predefined") {

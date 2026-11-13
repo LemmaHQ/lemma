@@ -14,20 +14,36 @@ const model = (id: string, toolCalling = true): Model => ({
 
 function Harness({
     initial,
+    fetchDisabled,
     onFetch,
 }: {
     initial: Model[];
+    fetchDisabled: boolean;
     onFetch: () => Promise<string[]>;
 }) {
     const [models, setModels] = useState(initial);
-    return <ModelList models={models} onChange={setModels} onFetch={onFetch} />;
+    return (
+        <ModelList
+            models={models}
+            fetchDisabled={fetchDisabled}
+            onChange={setModels}
+            onFetch={onFetch}
+        />
+    );
 }
 
 const renderList = (
     initial: Model[],
     onFetch = vi.fn<() => Promise<string[]>>(() => Promise.resolve([])),
-) => render(<Harness initial={initial} onFetch={onFetch} />);
-
+    fetchDisabled = false,
+) =>
+    render(
+        <Harness
+            initial={initial}
+            fetchDisabled={fetchDisabled}
+            onFetch={onFetch}
+        />,
+    );
 const listed = () =>
     screen
         .queryAllByRole("switch", { name: /Tool calling$/u })
@@ -216,4 +232,16 @@ it("selects all matching upstream models and can deselect them", async () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(listed()).toEqual(["gpt-4o"]);
+});
+
+it("disables fetching models when fetchDisabled is true", () => {
+    renderList(
+        [model("gpt-4o")],
+        vi.fn<() => Promise<string[]>>(() => Promise.resolve([])),
+        true,
+    );
+
+    expect(
+        screen.getByRole("button", { name: "Fetch model list" }),
+    ).toHaveProperty("disabled", true);
 });

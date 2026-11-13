@@ -35,11 +35,12 @@ export function isBaseUrlValid(baseUrl: string): boolean {
 /** The trimmed fields of `values` that differ from `saved`. */
 export function connectionPatch(
     values: ConnectionValues,
-    saved: ConnectionValues,
+    saved: Pick<ConnectionValues, "baseUrl" | "apiPath">,
 ): CustomProviderPatch {
     const patch: CustomProviderPatch = {};
-    if (values.apiKey.trim() !== saved.apiKey) {
-        patch.apiKey = values.apiKey.trim();
+    const apiKey = values.apiKey.trim();
+    if (apiKey !== "") {
+        patch.apiKey = apiKey;
     }
     if (values.baseUrl.trim() !== saved.baseUrl) {
         patch.baseUrl = values.baseUrl.trim();
