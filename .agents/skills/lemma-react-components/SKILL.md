@@ -10,7 +10,8 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 ## Scope
 
 - The rules govern the components in `web/src/features/` and `web/src/app/`, on top of the layout and styling rules in [web/AGENTS.md](../../../web/AGENTS.md).
-- The shadcn and AI Elements components in `packages/ui/src/components/` keep their upstream interfaces: they take `className`, compose through Base UI's `render` prop, and export their parts. A visual difference several features need becomes a variant there, per the [styling rules](../../../web/AGENTS.md#styling).
+- `packages/ui/src/components/` holds two kinds of code. The upstream shadcn ports in `primitives/` keep their upstream interfaces: they take `className`, compose through Base UI's `render` prop, and export their parts, and a visual difference several features need becomes a variant there, per the [styling rules](../../../web/AGENTS.md#styling).
+- The Lemma-authored presentation components in `ai/` and in `primitives/` are shared package primitives: they take `className` and pre-translated label props, because the package calls no translation hook, and they otherwise follow Minimal interface, Composition, and Explicit states.
 
 ## Minimal interface
 
@@ -35,9 +36,9 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 ## Encapsulation
 
 - Components take no `className` or `style` prop; none in `web/src` does. The exception is a headless component, one that has no styling or layout of its own.
-- A component file exports its components and the types their callers need. Helpers, class tables, constants, and subcomponents used only inside the file stay unexported; `just deadcode-check` reports exports nothing imports.
+- A component file exports its components and the types their callers need. Helpers, class tables, constants, and subcomponents used only inside the file stay unexported; `just deadcode-check` reports exports nothing imports, except an export imported only by a `*.test.ts` or `*.test.tsx` file, so verify a production caller before keeping one.
 
 ## Ownership
 
 - The parent places its children: margin and the space between siblings come from the parent, through `gap` or a wrapping element. A component sets only its own padding and the spacing of its contents.
-- A component that returns `null` signals that a parent may own the condition. Prefer having the parent skip the render when it already knows the condition, such as `ProviderGroup` in `ProviderListPane.tsx` returning `null` for an empty group its parent could skip. Keep the `null` when the condition is one branch of the component's own decision, such as `TitleBar` reading `titlebarHeight` from the platform adapter.
+- A component that returns `null` signals that a parent may own the condition. Prefer having the parent skip the render when it already knows the condition, such as skipping a group component when its item array is empty. Keep the `null` when the condition is one branch of the component's own decision, such as `TitleBar` reading `titlebarHeight` from the platform adapter.

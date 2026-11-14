@@ -19,7 +19,7 @@ Without a concrete answer to the first question, the effect goes.
 ## Scope and context
 
 - Read [web/AGENTS.md](../../../web/AGENTS.md) before changing web code: only a feature's `store.ts` calls RPC, and components take their building blocks from `@lemma/ui`.
-- The scope is `web/src`. `packages/ui/src/components/` and `packages/ui/src/hooks/` keep upstream shadcn and AI Elements code, effects included; leave them out of inventories and refactors.
+- The primary scope is `web/src`. `packages/ui/src/components/` and `packages/ui/src/hooks/` hold both upstream shadcn ports, which keep their upstream effects, and Lemma-authored shared components and hooks, whose effects follow the same external-synchronization and symmetric-cleanup rules as `web/src`; audit an upstream port only when a local change touches its effects.
 - Read [the refactoring patterns](references/refactoring-patterns.md) before implementing a refactor; they show each rule on Lemma code.
 
 ## Decision rules
@@ -27,7 +27,7 @@ Without a concrete answer to the first question, the effect goes.
 Apply these in order:
 
 1. **Derive during render.** Compute values from props, store state, and local state instead of storing a synchronized copy.
-2. **Load server data through the feature store.** The feature's zustand store in `store.ts` holds the data and a `loaded` flag, and the feature's data hook starts the first load in its one effect, as `useProviders` and `useSessions` do. Components read that hook; they never fetch in their own effect and mirror loading, error, or data into local state.
+2. **Load server data through the feature store.** The feature's zustand store in `store.ts` holds the data and a `loaded` flag, and `createLoadedHook` in `src/store/loaded-hook.ts` starts the first load in its one effect, as `useProviders` and `useSessions` do. Components read that hook; they never fetch in their own effect and mirror loading, error, or data into local state.
 3. **Mount after the data is ready.** When a form or panel cannot initialize without store data, the parent checks `loaded`, renders a `Skeleton` from `@lemma/ui` shaped like the final layout until then, and mounts the child with complete initial values for `useState`. Replacing a half-ready form with a skeleton is an intended behavior change.
 4. **Make reset semantics explicit.** A `key` remounts the child for a new entity only when discarding the old draft is intended. When a draft must survive a refetch, keep it, compute dirty state from the draft and the saved value, and reset only from a user action.
 5. **Run actions from events.** Submits, RPC calls, navigation, toasts, and multi-step async workflows run in event handlers that call the feature's store actions. A store action is a plain async function on the zustand store: it calls no hooks, and code outside React reaches it through `getState()`, as `refreshSessions` does.
@@ -56,11 +56,11 @@ Refactor when any of these appear:
 
 Identify the state owner (store or component), the store action that loads the data, the user events, the external systems, and the loading and error states.
 
-Web tests are `src/**/*.test.ts` files in vitest's `node` environment, and none renders a component ([testing.md](../../../docs/testing.md)). When logic moves out of a component into a pure module, cover a real risk such as draft preservation, an entity change, a refetch, or a submit with a test beside the module; for a bug in such a module, write the failing test first. Verify component behavior in the browser. Never write tests that inspect source or assert that a hook is absent; the inventory proves that.
+Web tests are `src/**/*.test.ts` and `src/**/*.test.tsx` files beside the module they cover, run in vitest's `happy-dom` environment with Testing Library for component behavior ([testing.md](../../../docs/testing.md)). When logic moves out of a component into a pure module, cover a real risk such as draft preservation, an entity change, a refetch, or a submit with a `*.test.ts` beside the module; for a bug in such a module, write the failing test first. Never write tests that inspect source text or assert that a hook is absent; the inventory proves that.
 
 ### 2. Inventory every effect
 
-Search the target directory, such as `web/src/features/<domain>/`, for `\buse(Layout)?Effect\b`, and for `\buse(Memo|Callback)\b` when the audit covers memoization. Classify each result as:
+Search the target directory (such as `web/src/features/<domain>/` and `web/src/store/`) for `\buse(Layout)?Effect\b`, and for `\buse(Memo|Callback)\b` when the audit covers memoization. Classify each result as:
 
 - render derivation;
 - store data seeding local state;

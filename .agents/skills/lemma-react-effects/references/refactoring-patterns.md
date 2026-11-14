@@ -162,21 +162,36 @@ When local state belongs to one entity, choose one behavior:
 
 ## Keep only external-system synchronization
 
-An effect fits when the component must connect to something React does not control. From `TitleBar.tsx`, which writes a root class and CSS variable and removes both on cleanup:
+An effect fits when the component must connect to something React does not control. `web/src/app/TitleBar.tsx` sends the resolved theme and the surface the current route declares to the desktop title bar whenever either changes:
 
 ```tsx
 useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("custom-titlebar", titlebarHeight > 0);
-    root.style.setProperty("--titlebar-height", `${titlebarHeight}px`);
-    return () => {
-        root.classList.remove("custom-titlebar");
-        root.style.removeProperty("--titlebar-height");
-    };
-}, [titlebarHeight]);
+    windowCaps.setTitleBar({
+        theme: resolvedTheme === "dark" ? "dark" : "light",
+        surface,
+    });
+}, [windowCaps, resolvedTheme, surface]);
 ```
 
-Other integrations that fit: the effect in `web/src/app/TitleBar.tsx` sending the resolved theme and surface to the desktop title bar through `platform`, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
+A browser event listener needs symmetric cleanup, as the Ctrl/Cmd+N shortcut in `web/src/app/session/SessionLayout.tsx` does:
+
+```tsx
+useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            event.key.toLowerCase() === "n"
+        ) {
+            event.preventDefault();
+            void navigate(paths.home);
+        }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+}, [navigate]);
+```
+
+`TitleBar.tsx` shows the other half of the rule: `surface` reaches the render through `useSyncExternalStore` over `router.subscribe`, `useStoredValue` in `web/src/features/preferences/useStoredValue.ts` does the same for `localStorage` preferences, and `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does the same with a media query, so none copies a subscribed value into state through an effect. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
 
 ## Prefer conditional mounting for integrations
 
