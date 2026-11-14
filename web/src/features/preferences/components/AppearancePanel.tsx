@@ -1,91 +1,89 @@
 import {
-    AnimateIcon,
-    MoonIcon,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
     SettingsField,
     SettingsPage,
     SettingsSection,
-    SunIcon,
-    SunMoonIcon,
-    ToggleGroup,
-    ToggleGroupItem,
+    ThemePreviewTiles,
 } from "@lemma/ui";
 import { useTheme } from "next-themes";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 
-import { isThemePreference } from "../theme";
+import { isThemePreference, type ThemePreference } from "../theme";
+
+const LANGUAGES = [
+    { value: "zh", label: "中文" },
+    { value: "en", label: "English" },
+] as const;
 
 /** The appearance settings page: the theme and the interface language. */
 export function AppearancePanel() {
     const { i18n, t } = useTranslation();
     const { theme, setTheme } = useTheme();
+    const transitionTimerRef = useRef<number | undefined>(undefined);
+    const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
+
+    const handleThemeChange = (next: ThemePreference) => {
+        window.clearTimeout(transitionTimerRef.current);
+        document.documentElement.classList.add("theme-transition");
+        setTheme(next);
+        transitionTimerRef.current = window.setTimeout(() => {
+            document.documentElement.classList.remove("theme-transition");
+        }, 260);
+    };
 
     return (
-        <SettingsPage title={t("settings.appearance")}>
-            <SettingsSection>
+        <SettingsPage>
+            <SettingsSection
+                title={t("settings.appearance")}
+                description={t("settings.appearanceDesc")}
+            >
                 <SettingsField
+                    align="top"
                     label={t("settings.themeLabel")}
                     description={t("settings.themeDesc")}
                 >
-                    <ToggleGroup
-                        variant="outline"
-                        value={isThemePreference(theme) ? [theme] : []}
-                        onValueChange={([value]) => {
-                            if (isThemePreference(value)) {
-                                setTheme(value);
-                            }
+                    <ThemePreviewTiles
+                        value={isThemePreference(theme) ? theme : "system"}
+                        onValueChange={handleThemeChange}
+                        label={t("settings.themeLabel")}
+                        labels={{
+                            light: t("theme.light"),
+                            dark: t("theme.dark"),
+                            system: t("theme.system"),
                         }}
-                        aria-label={t("settings.themeLabel")}
-                    >
-                        <AnimateIcon animateOnHover asChild>
-                            <ToggleGroupItem
-                                value="light"
-                                aria-label={t("theme.light")}
-                            >
-                                <SunIcon />
-                                {t("theme.light")}
-                            </ToggleGroupItem>
-                        </AnimateIcon>
-                        <AnimateIcon animateOnHover asChild>
-                            <ToggleGroupItem
-                                value="dark"
-                                aria-label={t("theme.dark")}
-                            >
-                                <MoonIcon />
-                                {t("theme.dark")}
-                            </ToggleGroupItem>
-                        </AnimateIcon>
-                        <AnimateIcon animateOnHover asChild>
-                            <ToggleGroupItem
-                                value="system"
-                                aria-label={t("theme.system")}
-                            >
-                                <SunMoonIcon />
-                                {t("theme.system")}
-                            </ToggleGroupItem>
-                        </AnimateIcon>
-                    </ToggleGroup>
+                    />
                 </SettingsField>
                 <SettingsField
                     label={t("settings.languageLabel")}
                     description={t("settings.languageDesc")}
                 >
-                    <ToggleGroup
-                        variant="outline"
-                        value={[i18n.language.startsWith("zh") ? "zh" : "en"]}
-                        onValueChange={([value]) => {
-                            if (value === "zh" || value === "en") {
-                                void i18n.changeLanguage(value);
+                    <Select
+                        items={LANGUAGES}
+                        value={currentLang}
+                        onValueChange={(value) => {
+                            for (const option of LANGUAGES.filter(
+                                (lang) => lang.value === value,
+                            )) {
+                                void i18n.changeLanguage(option.value);
                             }
                         }}
-                        aria-label={t("settings.languageLabel")}
                     >
-                        <ToggleGroupItem value="zh" aria-label="中文">
-                            中文
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="en" aria-label="English">
-                            English
-                        </ToggleGroupItem>
-                    </ToggleGroup>
+                        <SelectTrigger aria-label={t("settings.languageLabel")}>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {LANGUAGES.map(({ value, label }) => (
+                                <SelectItem key={value} value={value}>
+                                    {label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </SettingsField>
             </SettingsSection>
         </SettingsPage>
