@@ -25,7 +25,7 @@ export interface WebProviderPatch {
     enabled?: boolean;
 }
 
-interface WebProviderState {
+export interface WebProviderState {
     list: WebProvider[];
     loaded: boolean;
     refresh: () => Promise<void>;

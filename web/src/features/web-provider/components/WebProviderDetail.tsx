@@ -1,4 +1,4 @@
-import { Button, PasswordInput, Switch, toast } from "@lemma/ui";
+import { Button, PasswordInput, SettingsField, Switch, toast } from "@lemma/ui";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -16,7 +16,7 @@ interface WebProviderDetailProps {
     onUpdate: (patch: WebProviderPatch) => Promise<void>;
 }
 
-/** One backend row inside the web backends settings section. */
+/** One backend row inside the web backends settings section, composed over `SettingsField`. */
 export function WebProviderDetail({
     provider,
     onUpdate,
@@ -69,35 +69,38 @@ export function WebProviderDetail({
         <fieldset
             aria-labelledby={nameId}
             data-slot="web-backend-row"
-            className="flex flex-col gap-2.5 py-3.5 first:pt-0"
+            className="flex flex-col"
         >
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <span
-                            id={nameId}
-                            className="text-body font-medium text-foreground"
-                        >
-                            {provider.name}
+            <SettingsField
+                align="top"
+                label={
+                    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span id={nameId}>{provider.name}</span>
+                        <span className="text-caption font-normal text-muted-foreground">
+                            {host === undefined ? (
+                                t("provider.webCapFetchOnly")
+                            ) : (
+                                <>
+                                    {t("provider.webCapBoth")}
+                                    {" · "}
+                                    <span className="font-mono">{host}</span>
+                                </>
+                            )}
                         </span>
-                        {host === undefined ? (
-                            <span className="text-caption text-muted-foreground">
-                                {t("provider.webCapFetchOnly")}
+                    </span>
+                }
+                description={
+                    provider.kind === "native" ? (
+                        <>
+                            <span>{t("provider.webNativeDesc")}</span>
+                            {" · "}
+                            <span className="text-caption">
+                                {t("provider.webLocalNoKey")}
                             </span>
-                        ) : (
-                            <span className="text-caption text-muted-foreground">
-                                {t("provider.webCapBoth")}
-                                {" · "}
-                                <span className="font-mono">{host}</span>
-                            </span>
-                        )}
-                    </div>
-                    {provider.kind === "native" && (
-                        <p className="text-small text-muted-foreground">
-                            {t("provider.webNativeDesc")}
-                        </p>
-                    )}
-                </div>
+                        </>
+                    ) : undefined
+                }
+            >
                 <Switch
                     checked={provider.enabled}
                     disabled={switchDisabled}
@@ -106,13 +109,9 @@ export function WebProviderDetail({
                         name: provider.name,
                     })}
                 />
-            </div>
-            {provider.kind === "native" ? (
-                <p className="text-caption text-muted-foreground">
-                    {t("provider.webLocalNoKey")}
-                </p>
-            ) : (
-                <div className="flex flex-wrap items-center gap-2">
+            </SettingsField>
+            {provider.kind !== "native" && (
+                <div className="flex flex-wrap items-center gap-2 pb-3.5">
                     <div className="min-w-0 flex-1">
                         <PasswordInput
                             showLabel={t("passwordInput.show")}

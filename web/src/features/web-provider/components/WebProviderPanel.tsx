@@ -33,7 +33,7 @@ export function WebProviderPanel() {
     };
 
     return (
-        <SettingsPage>
+        <SettingsPage title={t("settings.web")}>
             {store.loaded ? (
                 <>
                     <SettingsSection

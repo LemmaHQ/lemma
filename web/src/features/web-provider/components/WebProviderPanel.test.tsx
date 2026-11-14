@@ -127,6 +127,9 @@ it("loads backends with plaintext key prefill, reveal, captions, live chains, an
     expect(
         await screen.findByRole("region", { name: "Backends" }),
     ).toBeDefined();
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Web Search & Fetch" }),
+    ).toBeDefined();
 
     const native = backend("Native");
     expect(native.getByText("Fetch only · Local HTTP")).toBeDefined();

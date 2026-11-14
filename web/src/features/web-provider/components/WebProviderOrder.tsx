@@ -122,7 +122,7 @@ export function WebProviderOrder({
                     onDrop={(event) => handleDrop(event, index, provider.id)}
                     onDragEnd={resetDrag}
                     className={cn(
-                        "flex cursor-grab items-center gap-3 py-2.5 transition-opacity first:pt-0 active:cursor-grabbing",
+                        "flex cursor-grab items-center gap-3 py-2.5 transition-opacity first:pt-0 active:cursor-grabbing pointer-coarse:cursor-default",
                         !active && "opacity-60",
                         dropTargetId === provider.id && "bg-accent",
                     )}
