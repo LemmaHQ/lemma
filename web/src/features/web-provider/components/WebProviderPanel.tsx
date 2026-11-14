@@ -1,20 +1,19 @@
-import {
-    SettingsField,
-    SettingsPage,
-    SettingsSection,
-    Skeleton,
-    Switch,
-    toast,
-} from "@lemma/ui";
+import { SettingsPage, SettingsSection, Skeleton, toast } from "@lemma/ui";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
-import type { WebFunction, WebProvider } from "../store";
+import {
+    isWebProviderActive,
+    type WebFunction,
+    type WebProvider,
+} from "../store";
 import { useWebProviders } from "../useWebProviders";
 import { WebProviderDetail } from "./WebProviderDetail";
 import { WebProviderOrder } from "./WebProviderOrder";
 
+/** Web search and fetch backend configuration and priority settings page. */
 export function WebProviderPanel() {
     const { t } = useTranslation();
     const store = useWebProviders();
@@ -25,97 +24,54 @@ export function WebProviderPanel() {
         (a, b) => a.fetchRank - b.fetchRank,
     );
 
-    const applyPatch = async (update: () => Promise<void>) => {
+    const reorder = async (fn: WebFunction, ids: string[]) => {
         try {
-            await update();
+            await store.setOrder(fn, ids);
         } catch (e) {
             toast.error(errorText(e, t));
         }
     };
 
-    const move = (
-        fn: WebFunction,
-        providers: WebProvider[],
-        index: number,
-        direction: -1 | 1,
-    ) => {
-        const ids = providers.map((provider) => provider.id);
-        const target = index + direction;
-        const moved = ids.splice(index, 1);
-        ids.splice(target, 0, ...moved);
-        void applyPatch(() => store.setOrder(fn, ids));
-    };
-
     return (
-        <SettingsPage title={t("settings.web")}>
+        <SettingsPage>
             {store.loaded ? (
                 <>
-                    {store.list
-                        .filter((provider) => provider.kind !== "native")
-                        .map((provider) => (
+                    <SettingsSection
+                        title={t("provider.webBackends")}
+                        description={t("provider.webBackendsDesc")}
+                    >
+                        {store.list.map((provider) => (
                             <WebProviderDetail
                                 key={provider.id}
                                 provider={provider}
-                                onSave={(apiKey) =>
-                                    store.update(provider.id, {
-                                        apiKey,
-                                    })
-                                }
-                                onToggleEnabled={(enabled) =>
-                                    void applyPatch(() =>
-                                        store.update(provider.id, {
-                                            enabled,
-                                        }),
-                                    )
+                                onUpdate={(patch) =>
+                                    store.update(provider.id, patch)
                                 }
                             />
                         ))}
-                    {store.list
-                        .filter((provider) => provider.kind === "native")
-                        .map((provider) => (
-                            <SettingsSection
-                                key={provider.id}
-                                title={provider.name}
-                            >
-                                <SettingsField
-                                    label={t("provider.enableWebProvider", {
-                                        name: provider.name,
-                                    })}
-                                    description={t("provider.webNativeDesc")}
-                                >
-                                    <Switch
-                                        checked={provider.enabled}
-                                        onCheckedChange={(enabled) =>
-                                            void applyPatch(() =>
-                                                store.update(provider.id, {
-                                                    enabled,
-                                                }),
-                                            )
-                                        }
-                                        aria-label={t(
-                                            "provider.enableWebProvider",
-                                            { name: provider.name },
-                                        )}
-                                    />
-                                </SettingsField>
-                            </SettingsSection>
-                        ))}
-                    <WebProviderOrder
+                    </SettingsSection>
+                    <SettingsSection
                         title={t("provider.webSearchOrder")}
                         description={t("provider.webSearchOrderDesc")}
-                        providers={searchProviders}
-                        onMove={(index, direction) =>
-                            move("search", searchProviders, index, direction)
-                        }
-                    />
-                    <WebProviderOrder
+                        meta={activeChainMeta("web_search", searchProviders, t)}
+                    >
+                        <WebProviderOrder
+                            fn="search"
+                            providers={searchProviders}
+                            onReorder={(ids) => void reorder("search", ids)}
+                        />
+                    </SettingsSection>
+                    <SettingsSection
                         title={t("provider.webFetchOrder")}
                         description={t("provider.webFetchOrderDesc")}
-                        providers={fetchProviders}
-                        onMove={(index, direction) =>
-                            move("fetch", fetchProviders, index, direction)
-                        }
-                    />
+                        meta={activeChainMeta("web_fetch", fetchProviders, t)}
+                    >
+                        <WebProviderOrder
+                            fn="fetch"
+                            providers={fetchProviders}
+                            onReorder={(ids) => void reorder("fetch", ids)}
+                        />
+                    </SettingsSection>
                 </>
             ) : (
                 <output
@@ -129,4 +85,21 @@ export function WebProviderPanel() {
             )}
         </SettingsPage>
     );
+}
+
+function activeChainMeta(
+    tool: string,
+    providers: WebProvider[],
+    t: TFunction,
+): string {
+    const names = providers
+        .filter(isWebProviderActive)
+        .map((provider) => provider.name);
+    if (names.length === 0) {
+        return t("provider.webInactiveTool", { tool });
+    }
+    return t("provider.webActiveChain", {
+        tool,
+        chain: names.join(" → "),
+    });
 }

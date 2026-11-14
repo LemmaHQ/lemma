@@ -8,8 +8,7 @@ import {
     WebProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
-import { useWebProviderStore } from "./store";
-
+import { isWebProviderActive, useWebProviderStore } from "./store";
 type Reply = { provider?: WebProvider | undefined };
 
 const rpc = vi.hoisted(() => ({
@@ -40,7 +39,7 @@ const provider = (kind: WebProvider_Kind, patch: object = {}) =>
         kind,
         name: WebProvider_Kind[kind],
         enabled: kind === WebProvider_Kind.NATIVE,
-        hasKey: kind === WebProvider_Kind.EXA,
+        apiKey: kind === WebProvider_Kind.EXA ? "sk-exa" : "",
         searchRank: 1,
         fetchRank: 2,
         ...patch,
@@ -61,7 +60,7 @@ beforeEach(async () => {
     await state().refresh();
 });
 
-it("loads every web provider with write-only key state and ranks", () => {
+it("loads every web provider with plaintext key state and ranks", () => {
     expect(state().loaded).toBe(true);
     expect(state().list).toEqual([
         {
@@ -69,7 +68,7 @@ it("loads every web provider with write-only key state and ranks", () => {
             kind: "native",
             name: "NATIVE",
             enabled: true,
-            hasKey: false,
+            apiKey: "",
             searchRank: 1,
             fetchRank: 2,
         },
@@ -78,7 +77,7 @@ it("loads every web provider with write-only key state and ranks", () => {
             kind: "exa",
             name: "EXA",
             enabled: false,
-            hasKey: true,
+            apiKey: "sk-exa",
             searchRank: 1,
             fetchRank: 2,
         },
@@ -87,11 +86,34 @@ it("loads every web provider with write-only key state and ranks", () => {
             kind: "deepseek",
             name: "DEEPSEEK",
             enabled: false,
-            hasKey: false,
+            apiKey: "",
             searchRank: 1,
             fetchRank: 2,
         },
     ]);
+    expect(state().list.map(isWebProviderActive)).toEqual([true, false, false]);
+    expect(
+        isWebProviderActive({
+            id: "2-id",
+            kind: "exa",
+            name: "EXA",
+            enabled: true,
+            apiKey: "sk-exa",
+            searchRank: 1,
+            fetchRank: 2,
+        }),
+    ).toBe(true);
+    expect(
+        isWebProviderActive({
+            id: "3-id",
+            kind: "deepseek",
+            name: "DEEPSEEK",
+            enabled: true,
+            apiKey: "",
+            searchRank: 1,
+            fetchRank: 2,
+        }),
+    ).toBe(false);
 });
 
 it("rejects an unknown provider kind without replacing the list", async () => {
@@ -110,7 +132,7 @@ it("sends key and enable patches and replaces the updated provider", async () =>
     rpc.updateWebProvider.mockResolvedValue({
         provider: provider(WebProvider_Kind.EXA, {
             enabled: true,
-            hasKey: true,
+            apiKey: "sk-new",
             name: "Exa",
         }),
     });
@@ -122,7 +144,11 @@ it("sends key and enable patches and replaces the updated provider", async () =>
         apiKey: "sk-new",
         enabled: true,
     });
-    expect(state().list[1]).toMatchObject({ name: "Exa", enabled: true });
+    expect(state().list[1]).toMatchObject({
+        name: "Exa",
+        enabled: true,
+        apiKey: "sk-new",
+    });
 });
 
 it("keeps the list when an update returns no provider", async () => {

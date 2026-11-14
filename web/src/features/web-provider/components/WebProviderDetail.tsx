@@ -1,110 +1,163 @@
-import {
-    Button,
-    PasswordInput,
-    SettingsField,
-    SettingsSection,
-    Switch,
-} from "@lemma/ui";
-import { useState } from "react";
+import { Button, PasswordInput, Switch, toast } from "@lemma/ui";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
-import type { WebProvider } from "../store";
+import type { WebProvider, WebProviderKind, WebProviderPatch } from "../store";
+
+const HOSTS: Partial<Record<WebProviderKind, string>> = {
+    exa: "api.exa.ai",
+    deepseek: "api.deepseek.com",
+};
 
 interface WebProviderDetailProps {
     provider: WebProvider;
-    onSave: (apiKey: string) => Promise<void>;
-    onToggleEnabled: (enabled: boolean) => void;
+    onUpdate: (patch: WebProviderPatch) => Promise<void>;
 }
 
+/** One backend row inside the web backends settings section. */
 export function WebProviderDetail({
     provider,
-    onSave,
-    onToggleEnabled,
+    onUpdate,
 }: WebProviderDetailProps) {
     const { t } = useTranslation();
-    const [apiKey, setApiKey] = useState("");
-    const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const trimmedKey = apiKey.trim();
-    const dirty = trimmedKey !== "";
-    const inputId = `web-provider-api-key-${provider.id}`;
+    const [draftKey, setDraftKey] = useState(provider.apiKey);
+    const [pending, setPending] = useState<"save" | "clear" | "toggle" | null>(
+        null,
+    );
+    const nameId = useId();
+    const inputId = useId();
+    const trimmedKey = draftKey.trim();
+    const busy = pending !== null;
+    const canSave = trimmedKey !== provider.apiKey && trimmedKey !== "";
+    const switchDisabled =
+        busy ||
+        (provider.kind !== "native" &&
+            provider.apiKey === "" &&
+            trimmedKey === "");
+    const host = HOSTS[provider.kind];
 
-    const save = async () => {
-        setBusy(true);
-        setError(null);
+    const runUpdate = async (
+        action: "save" | "clear" | "toggle",
+        patch: WebProviderPatch,
+        nextDraft?: string,
+    ) => {
+        setPending(action);
         try {
-            await onSave(trimmedKey);
-            setApiKey("");
+            await onUpdate(patch);
+            if (nextDraft !== undefined) {
+                setDraftKey(nextDraft);
+            }
         } catch (e) {
-            setError(errorText(e, t));
+            toast.error(errorText(e, t));
         } finally {
-            setBusy(false);
+            setPending(null);
         }
     };
 
+    const toggle = (enabled: boolean) => {
+        const includeDraft =
+            enabled && provider.kind !== "native" && provider.apiKey === "";
+        const patch: WebProviderPatch = includeDraft
+            ? { apiKey: trimmedKey, enabled }
+            : { enabled };
+        void runUpdate("toggle", patch, includeDraft ? trimmedKey : undefined);
+    };
+
     return (
-        <SettingsSection
-            title={provider.name}
-            actions={
+        <fieldset
+            aria-labelledby={nameId}
+            data-slot="web-backend-row"
+            className="flex flex-col gap-2.5 py-3.5 first:pt-0"
+        >
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-0.5">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span
+                            id={nameId}
+                            className="text-body font-medium text-foreground"
+                        >
+                            {provider.name}
+                        </span>
+                        {host === undefined ? (
+                            <span className="text-caption text-muted-foreground">
+                                {t("provider.webCapFetchOnly")}
+                            </span>
+                        ) : (
+                            <span className="text-caption text-muted-foreground">
+                                {t("provider.webCapBoth")}
+                                {" · "}
+                                <span className="font-mono">{host}</span>
+                            </span>
+                        )}
+                    </div>
+                    {provider.kind === "native" && (
+                        <p className="text-small text-muted-foreground">
+                            {t("provider.webNativeDesc")}
+                        </p>
+                    )}
+                </div>
                 <Switch
                     checked={provider.enabled}
-                    disabled={!provider.hasKey || busy}
-                    onCheckedChange={onToggleEnabled}
+                    disabled={switchDisabled}
+                    onCheckedChange={toggle}
                     aria-label={t("provider.enableWebProvider", {
                         name: provider.name,
                     })}
                 />
-            }
-            error={error}
-            footer={
-                dirty && (
-                    <div className="flex animate-in items-center justify-between gap-3 rounded-lg border bg-muted py-2 pr-2 pl-4 text-small text-muted-foreground duration-base ease-enter fade-in slide-in-from-top-1">
-                        <span>{t("provider.unsavedChanges")}</span>
-                        <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={busy}
-                                onClick={() => {
-                                    setApiKey("");
-                                    setError(null);
-                                }}
-                            >
-                                {t("common.cancel")}
-                            </Button>
-                            <Button
-                                type="button"
-                                loading={busy}
-                                onClick={() => void save()}
-                            >
-                                {t("common.save")}
-                            </Button>
-                        </div>
+            </div>
+            {provider.kind === "native" ? (
+                <p className="text-caption text-muted-foreground">
+                    {t("provider.webLocalNoKey")}
+                </p>
+            ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                        <PasswordInput
+                            showLabel={t("passwordInput.show")}
+                            hideLabel={t("passwordInput.hide")}
+                            id={inputId}
+                            aria-label={t("provider.apiKey")}
+                            value={draftKey}
+                            onChange={(event) =>
+                                setDraftKey(event.target.value)
+                            }
+                            placeholder={t("provider.apiKeyPlaceholder")}
+                            autoComplete="off"
+                        />
                     </div>
-                )
-            }
-        >
-            <SettingsField
-                label={t("provider.apiKey")}
-                htmlFor={inputId}
-                description={
-                    provider.hasKey
-                        ? t("provider.apiKeySavedDesc")
-                        : t("provider.enableNeedsKey")
-                }
-            >
-                <PasswordInput
-                    showLabel={t("passwordInput.show")}
-                    hideLabel={t("passwordInput.hide")}
-                    id={inputId}
-                    value={apiKey}
-                    onChange={(event) => setApiKey(event.target.value)}
-                    placeholder={t("provider.apiKeyPlaceholder")}
-                    autoComplete="off"
-                />
-            </SettingsField>
-        </SettingsSection>
+                    <Button
+                        type="button"
+                        size="sm"
+                        loading={pending === "save"}
+                        disabled={busy || !canSave}
+                        onClick={() =>
+                            void runUpdate(
+                                "save",
+                                { apiKey: trimmedKey },
+                                trimmedKey,
+                            )
+                        }
+                    >
+                        {t("common.save")}
+                    </Button>
+                    {provider.apiKey !== "" && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            loading={pending === "clear"}
+                            disabled={busy}
+                            onClick={() =>
+                                void runUpdate("clear", { apiKey: "" }, "")
+                            }
+                        >
+                            {t("provider.clearKey")}
+                        </Button>
+                    )}
+                </div>
+            )}
+        </fieldset>
     );
 }

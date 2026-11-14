@@ -10,16 +10,16 @@ import { providerClient } from "@/rpc/clients";
 export type WebProviderKind = "native" | "exa" | "deepseek";
 export type WebFunction = "search" | "fetch";
 
+/** A configured web search or fetch backend. */
 export interface WebProvider {
     id: string;
     kind: WebProviderKind;
     name: string;
     enabled: boolean;
-    hasKey: boolean;
+    apiKey: string;
     searchRank: number;
     fetchRank: number;
 }
-
 export interface WebProviderPatch {
     apiKey?: string;
     enabled?: boolean;
@@ -65,18 +65,25 @@ export const useWebProviderStore = create<WebProviderState>()((set) => ({
     },
 }));
 
+/** Returns whether a web backend is active (enabled and configured with a key if hosted). */
+export function isWebProviderActive(provider: WebProvider): boolean {
+    return (
+        provider.enabled &&
+        (provider.kind === "native" || provider.apiKey !== "")
+    );
+}
+
 function toWebProvider(provider: WebProviderProto): WebProvider {
     return {
         id: provider.id,
         kind: toWebProviderKind(provider.kind),
         name: provider.name,
         enabled: provider.enabled,
-        hasKey: provider.hasKey,
+        apiKey: provider.apiKey,
         searchRank: provider.searchRank,
         fetchRank: provider.fetchRank,
     };
 }
-
 function toWebProviderKind(kind: WebProviderKindProto): WebProviderKind {
     switch (kind) {
         case WebProviderKindProto.NATIVE:
