@@ -1,0 +1,17 @@
+.theme-preview-light {
+    --background: #ffffff;
+    --foreground: #121212;
+    --muted-foreground: #636363;
+    --border: #ebebeb;
+    --brand: #1783ff;
+    --sidebar: #fafafa;
+}
+
+.theme-preview-dark {
+    --background: #121212;
+    --foreground: #ececec;
+    --muted-foreground: #9a9a9a;
+    --border: #272727;
+    --brand: #3d97ff;
+    --sidebar: #0e0e0e;
+}

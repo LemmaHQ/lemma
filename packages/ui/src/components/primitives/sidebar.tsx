@@ -157,7 +157,7 @@ function Sidebar({
             className="group peer hidden text-sidebar-foreground md:block"
             data-state={state}
             data-collapsible={state === "collapsed" ? "offcanvas" : ""}
-            data-variant="inset"
+            data-variant="sidebar"
             data-side="left"
             data-slot="sidebar"
         >
@@ -169,7 +169,7 @@ function Sidebar({
                 data-slot="sidebar-container"
                 data-side="left"
                 className={cn(
-                    "fixed top-(--sidebar-inset-top) bottom-0 left-0 z-10 hidden w-(--sidebar-width) p-2 [transition:var(--sidebar-show)] group-data-[collapsible=offcanvas]:invisible group-data-[collapsible=offcanvas]:-translate-x-4 group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:[transition:var(--sidebar-hide)] group-data-resizing/sidebar-wrapper:transition-none motion-reduce:transition-none md:flex",
+                    "fixed top-(--sidebar-inset-top) bottom-0 left-0 z-10 hidden w-(--sidebar-width) border-r border-border [transition:var(--sidebar-show)] group-data-[collapsible=offcanvas]:invisible group-data-[collapsible=offcanvas]:-translate-x-4 group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:[transition:var(--sidebar-hide)] group-data-resizing/sidebar-wrapper:transition-none motion-reduce:transition-none md:flex",
                     className,
                 )}
                 {...props}
@@ -312,7 +312,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
         <main
             data-slot="sidebar-inset"
             className={cn(
-                "relative flex w-full flex-1 flex-col bg-background transition-[margin] duration-reveal ease-enter motion-reduce:transition-none md:m-2 md:ml-0 md:rounded-lg md:border md:border-border md:peer-data-[state=collapsed]:ml-2",
+                "relative flex min-w-0 w-full flex-1 flex-col bg-background",
                 className,
             )}
             {...props}

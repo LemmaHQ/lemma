@@ -145,6 +145,12 @@
     }
 }
 
+@keyframes ui-live {
+    50% {
+        opacity: 0.35;
+    }
+}
+
 @utility duration-* {
     --tw-duration: --value(--duration-*);
     transition-duration: --value(--duration-*);
@@ -208,6 +214,26 @@
     background-clip: text;
     color: transparent;
     animation: ui-text-sweep 1.8s linear infinite;
+}
+
+@utility live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--brand);
+    animation: ui-live 1.6s ease-in-out infinite;
+}
+
+@utility qed-mark {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 0.5rem;
+    vertical-align: 1px;
+    background: var(--completion);
+    animation: ui-pop var(--motion-duration-reveal) var(--motion-easing-spring)
+        both;
 }
 
 @utility grid-collapse {
@@ -338,6 +364,14 @@
     }
 }
 
+html.theme-transition,
+html.theme-transition * {
+    transition:
+        color 240ms var(--motion-easing-move),
+        background-color 240ms var(--motion-easing-move),
+        border-color 240ms var(--motion-easing-move),
+        box-shadow 240ms var(--motion-easing-move) !important;
+}
 @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
@@ -366,6 +400,8 @@
     .animate-spin-once,
     .animate-card-in,
     .animate-morph-in,
+    .live-dot,
+    .qed-mark,
     .text-sweep,
     .stagger-children > * {
         animation: none !important;
@@ -388,7 +424,9 @@
     .grid-collapse,
     .press-scale,
     .swap-layer,
-    .swap-turn {
+    .swap-turn,
+    html.theme-transition,
+    html.theme-transition * {
         transition: none !important;
     }
 

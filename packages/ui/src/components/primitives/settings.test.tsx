@@ -34,7 +34,58 @@ it("heads a page with its title, media, and actions", () => {
     expect(screen.getByText("gpt-4o")).toBeDefined();
 });
 
-it("names a section by its title and holds its actions, error, and footer", () => {
+it("omits the page header when no title, media, or actions are passed", () => {
+    render(
+        <SettingsPage>
+            <SettingsSection actions={<Button>Add</Button>}>
+                <SettingsRow label="Item">
+                    <Button>Edit</Button>
+                </SettingsRow>
+            </SettingsSection>
+        </SettingsPage>,
+    );
+
+    expect(screen.queryByRole("banner")).toBeNull();
+    expect(screen.getByRole("button", { name: "Add" })).toBeDefined();
+});
+
+it("renders a two-column section when description or meta is passed", () => {
+    render(
+        <SettingsPage actions={<Button>Help</Button>}>
+            <SettingsSection
+                title="Appearance"
+                description="Choose theme and font."
+                meta="Synced across devices"
+                actions={<Button>Reset</Button>}
+                error="Failed to save."
+                footer={<Button>Apply</Button>}
+            >
+                <SettingsField label="Mode" align="top">
+                    <Button>Dark</Button>
+                </SettingsField>
+            </SettingsSection>
+            <SettingsSection description="Only description">
+                <SettingsRow label="Row">
+                    <Button>Go</Button>
+                </SettingsRow>
+            </SettingsSection>
+        </SettingsPage>,
+    );
+
+    expect(screen.getByRole("banner")).toBeDefined();
+    const section = within(screen.getByRole("region", { name: "Appearance" }));
+    expect(section.getByRole("heading", { level: 2 }).textContent).toBe(
+        "Appearance",
+    );
+    expect(section.getByText("Choose theme and font.")).toBeDefined();
+    expect(section.getByText("Synced across devices")).toBeDefined();
+    expect(section.getByRole("button", { name: "Reset" })).toBeDefined();
+    expect(section.getByRole("alert").textContent).toBe("Failed to save.");
+    expect(section.getByRole("button", { name: "Apply" })).toBeDefined();
+    expect(screen.getByText("Only description")).toBeDefined();
+});
+
+it("names a compact section by its title and holds its actions, error, and footer", () => {
     render(
         <SettingsPage title="Providers">
             <SettingsSection

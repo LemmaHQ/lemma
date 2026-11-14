@@ -7,6 +7,7 @@
 @import "./components/message.css";
 @import "./components/model-picker.css";
 @import "./components/thinking-loader.css";
+@import "./components/theme-preview-tiles.css";
 
 @source "../";
 @source "../../../../node_modules/streamdown/dist/*.js";
@@ -19,7 +20,7 @@
         @apply border-border outline-ring/50;
     }
     ::selection {
-        background-color: color-mix(in oklab, var(--primary) 25%, transparent);
+        background-color: color-mix(in oklab, var(--brand) 22%, transparent);
     }
     input::-ms-reveal {
         display: none;
@@ -29,7 +30,7 @@
     }
     html {
         @apply font-sans;
-        caret-color: var(--primary);
+        caret-color: var(--brand);
         scrollbar-color: var(--input) transparent;
     }
 }
