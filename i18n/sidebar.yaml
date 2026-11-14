@@ -37,10 +37,6 @@ sidebar:
     platforms: [web, android]
     en: "New session"
     zh: "新会话"
-  resize:
-    platforms: [web]
-    en: "Resize sidebar"
-    zh: "调整侧边栏宽度"
   startSession:
     platforms: [web, android]
     en: "New session"

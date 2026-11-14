@@ -1,16 +1,3 @@
-@keyframes ui-blur-in {
-    from {
-        opacity: 0;
-        transform: translateY(3px);
-        filter: blur(2px);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-        filter: none;
-    }
-}
-
 @keyframes ui-draw {
     from {
         stroke-dashoffset: 1;
@@ -28,21 +15,6 @@
     to {
         opacity: 1;
         transform: none;
-    }
-}
-
-@keyframes ui-text-sweep {
-    from {
-        background-position: 100% center;
-    }
-    to {
-        background-position: 0% center;
-    }
-}
-
-@keyframes ui-fade-in {
-    from {
-        opacity: 0;
     }
 }
 
@@ -86,17 +58,6 @@
     }
 }
 
-@keyframes ui-card-in {
-    from {
-        opacity: 0;
-        transform: translateY(6px) scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
 @keyframes ui-lift-in {
     from {
         opacity: 0;
@@ -105,32 +66,6 @@
     to {
         opacity: 1;
         transform: none;
-    }
-}
-
-@keyframes ui-ray {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0.18;
-    }
-}
-
-@keyframes ui-grow-y {
-    from {
-        transform: scaleY(0);
-    }
-    to {
-        transform: scaleY(1);
-    }
-}
-
-@keyframes ui-morph-in {
-    from {
-        opacity: 0;
-        filter: blur(3px);
-        transform: translateY(30%);
     }
 }
 
@@ -156,64 +91,14 @@
     transition-duration: --value(--duration-*);
 }
 
-@utility animate-blur-in {
-    animation: ui-blur-in var(--motion-duration-reveal)
-        var(--motion-easing-enter) both;
-}
-
 @utility animate-draw {
     stroke-dasharray: 1;
     animation: ui-draw var(--motion-duration-reveal) var(--motion-easing-enter)
         80ms both;
 }
 
-@utility animate-pop {
-    animation: ui-pop var(--motion-duration-reveal) var(--motion-easing-spring)
-        both;
-}
-
-@utility animate-spin-loop {
-    animation: ui-spin 800ms linear infinite;
-}
-
 @utility animate-spin-once {
     animation: ui-spin 640ms var(--motion-easing-enter);
-}
-
-@utility animate-card-in {
-    animation: ui-card-in var(--motion-duration-reveal)
-        var(--motion-easing-enter) both;
-}
-
-@utility animate-ray {
-    opacity: 0.18;
-    animation: ui-ray 800ms linear infinite;
-    animation-delay: calc((var(--ray-index) - 8) * 100ms);
-}
-
-@utility animate-grow-y {
-    transform-origin: top;
-    animation: ui-grow-y var(--motion-duration-reveal)
-        var(--motion-easing-enter) both;
-}
-
-@utility animate-morph-in {
-    animation: ui-morph-in var(--motion-duration-reveal)
-        var(--motion-easing-enter) both;
-}
-
-@utility text-sweep {
-    display: inline-block;
-    background-image: linear-gradient(
-        90deg,
-        var(--muted-foreground),
-        var(--background),
-        var(--muted-foreground)
-    );
-    background-size: 250% 100%;
-    background-clip: text;
-    color: transparent;
-    animation: ui-text-sweep 1.8s linear infinite;
 }
 
 @utility live-dot {
@@ -256,37 +141,12 @@
     }
 }
 
-@utility transition-sidebar-reveal-show {
-    transition: var(--sidebar-reveal-show);
-}
-
-@utility transition-sidebar-reveal-hide {
-    transition: var(--sidebar-reveal-hide);
-}
-
-@utility transition-sidebar-rail-show {
-    transition: var(--sidebar-rail-show);
-}
-
-@utility transition-sidebar-rail-hide {
-    transition: var(--sidebar-rail-hide);
-}
-
-::view-transition-old(*.ui-fade),
 ::view-transition-old(*.ui-rise),
 ::view-transition-old(*.ui-from-start),
-::view-transition-old(*.ui-from-end),
-::view-transition-old(*.ui-morph) {
+::view-transition-old(*.ui-from-end) {
     animation: ui-fade-out var(--motion-duration-fast) var(--motion-easing-exit)
         both;
 }
-
-::view-transition-new(*.ui-fade),
-::view-transition-new(*.ui-morph) {
-    animation: ui-fade-in var(--motion-duration-medium)
-        var(--motion-easing-enter) both;
-}
-
 ::view-transition-new(*.ui-rise) {
     animation: ui-rise var(--motion-duration-medium) var(--motion-easing-enter)
         both;
@@ -302,25 +162,6 @@
         var(--motion-easing-enter) both;
 }
 
-::view-transition-group(*.ui-morph) {
-    animation-name: revert;
-    animation-duration: var(--motion-duration-slow);
-    animation-timing-function: var(--motion-easing-move);
-    animation-fill-mode: both;
-}
-
-.press-scale {
-    transition:
-        transform var(--motion-duration-base) var(--motion-easing-enter),
-        background-color var(--motion-duration-base) var(--motion-easing-move),
-        color var(--motion-duration-base) var(--motion-easing-move),
-        opacity var(--motion-duration-base) ease-out;
-
-    &:not(:disabled):active {
-        transform: scale(var(--press-scale, 0.96));
-    }
-}
-
 .swap-layer {
     transition:
         opacity var(--motion-duration-medium) var(--motion-easing-enter),
@@ -331,19 +172,6 @@
         opacity: 0;
         transform: scale(0.6);
         filter: blur(2px);
-    }
-}
-
-.swap-turn {
-    transition:
-        opacity var(--motion-duration-medium) ease-out,
-        filter var(--motion-duration-medium) ease-out,
-        transform var(--motion-duration-medium) var(--motion-easing-enter);
-
-    &:not([data-on="true"]) {
-        opacity: 0;
-        filter: blur(2px);
-        transform: scale(0.72) rotate(-10deg);
     }
 }
 
@@ -393,45 +221,18 @@ html.theme-transition * {
         animation: none !important;
     }
 
-    .animate-blur-in,
     .animate-draw,
-    .animate-pop,
-    .animate-spin-loop,
     .animate-spin-once,
-    .animate-card-in,
-    .animate-morph-in,
     .live-dot,
     .qed-mark,
-    .text-sweep,
     .stagger-children > * {
         animation: none !important;
     }
 
-    .before\:animate-grow-y::before {
-        animation: none;
-    }
-
-    .animate-ray {
-        animation: none;
-        opacity: 0.6;
-    }
-
-    .text-sweep {
-        background: none;
-        color: var(--muted-foreground);
-    }
-
     .grid-collapse,
-    .press-scale,
     .swap-layer,
-    .swap-turn,
     html.theme-transition,
     html.theme-transition * {
         transition: none !important;
-    }
-
-    .swap-turn:not([data-on="true"]) {
-        filter: none;
-        transform: none;
     }
 }
