@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 
 use futures::{StreamExt, stream};
 use lemma_adapter::ReqwestTransport;
-use lemma_agent::{Agent, AgentError, TurnEvent, TurnRequest};
+use lemma_agent::{Agent, AgentError, BranchTarget, TurnEvent, TurnRequest};
 use lemma_core::{ContentBlock, Message, StopReason, StreamEvent, TextContent, ToolCall};
 use lemma_model::{
     Adapter, ApiFormat, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest,
@@ -16,7 +16,7 @@ use lemma_model::{
 use lemma_provider::{
     CreateCustomInput, ProviderModel, ProviderService, UpdateWebInput, WebProviderKind,
 };
-use lemma_session::SessionService;
+use lemma_session::{SessionError, SessionService};
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
 use uuid::Uuid;
@@ -182,6 +182,7 @@ impl Setup {
             provider_id: self.provider_id,
             model: "model-a".to_owned(),
             content: "look around".to_owned(),
+            branch: BranchTarget::ActiveLeaf,
         }
     }
 
@@ -542,6 +543,7 @@ async fn resume_replays_from_offset_and_abort_stops_a_running_turn() -> Result<(
                 provider_id,
                 model: "model-a".to_owned(),
                 content: "wait".to_owned(),
+                branch: BranchTarget::ActiveLeaf,
             })
             .await?,
     );
@@ -632,6 +634,7 @@ async fn mid_turn_persistence_failure_emits_turn_failed() -> Result<(), Box<dyn 
                 provider_id,
                 model: "model-a".to_owned(),
                 content: "trigger store failure".to_owned(),
+                branch: BranchTarget::ActiveLeaf,
             })
             .await?,
     );
@@ -654,6 +657,244 @@ async fn mid_turn_persistence_failure_emits_turn_failed() -> Result<(), Box<dyn 
     assert!(
         matches!(events.last(), Some(TurnEvent::TurnFailed { .. })),
         "store failure during settle emits TurnFailed: {events:?}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn busy_session_rejects_second_turn_and_failed_start_releases_claim()
+-> Result<(), Box<dyn Error>> {
+    let workspaces = TempDir::new("busy")?;
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db.clone());
+    let providers = Arc::new(ProviderService::new(
+        db,
+        "test-secret-key",
+        StalledConnector,
+    ));
+    let provider_id = providers
+        .create_custom(CreateCustomInput {
+            api_format: ApiFormat::OpenAiCompatible,
+            identifier: "stalled".to_owned(),
+            name: "Stalled".to_owned(),
+            base_url: "https://api.example.com/v1".to_owned(),
+            api_key: "sk-test".to_owned(),
+            api_path: String::new(),
+            models_path: String::new(),
+            models: Vec::new(),
+        })
+        .await?
+        .id;
+    let session_id = sessions.create(None).await?.id;
+    let agent: Agent<_> = Agent::new(sessions, providers, workspaces.0.clone(), None);
+
+    assert_eq!(agent.active_turn(session_id), None, "idle before start");
+
+    let failed = agent
+        .start(TurnRequest {
+            session_id,
+            provider_id: Uuid::new_v4(),
+            model: "model-a".to_owned(),
+            content: "first".to_owned(),
+            branch: BranchTarget::ActiveLeaf,
+        })
+        .await;
+    assert!(
+        matches!(failed, Err(AgentError::ProviderNotFound)),
+        "startup failure reported"
+    );
+    assert_eq!(
+        agent.active_turn(session_id),
+        None,
+        "claim released on startup failure"
+    );
+
+    let mut live = Box::pin(
+        agent
+            .start(TurnRequest {
+                session_id,
+                provider_id,
+                model: "model-a".to_owned(),
+                content: "running".to_owned(),
+                branch: BranchTarget::ActiveLeaf,
+            })
+            .await?,
+    );
+    let Some(TurnEvent::UserAppended {
+        id: user_message_id,
+        ..
+    }) = live.next().await
+    else {
+        return Err("expected UserAppended".into());
+    };
+    assert_eq!(
+        agent.active_turn(session_id),
+        Some(user_message_id),
+        "active turn tracks running user message"
+    );
+
+    let busy = agent
+        .start(TurnRequest {
+            session_id,
+            provider_id,
+            model: "model-a".to_owned(),
+            content: "second".to_owned(),
+            branch: BranchTarget::ActiveLeaf,
+        })
+        .await;
+    assert!(
+        matches!(busy, Err(AgentError::SessionBusy)),
+        "concurrent turn rejected with SessionBusy"
+    );
+
+    agent.abort(user_message_id);
+    let _: Vec<_> = live.collect().await;
+    assert_eq!(
+        agent.active_turn(session_id),
+        None,
+        "turn completion clears active turn"
+    );
+
+    let mut second = Box::pin(
+        agent
+            .start(TurnRequest {
+                session_id,
+                provider_id,
+                model: "model-a".to_owned(),
+                content: "after abort".to_owned(),
+                branch: BranchTarget::ActiveLeaf,
+            })
+            .await?,
+    );
+    let Some(TurnEvent::UserAppended { id: second_id, .. }) = second.next().await else {
+        return Err("expected UserAppended on second turn".into());
+    };
+    agent.abort(second_id);
+    let _: Vec<_> = second.collect().await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn branch_targets_route_history_and_reject_invalid_targets() -> Result<(), Box<dyn Error>> {
+    let workspaces = TempDir::new("branching")?;
+    let db = lemma_db::in_memory().await?;
+    let setup = Setup::with_model(db, read_marker(), false).await?;
+    let session_id = setup.sessions.create(None).await?.id;
+    let agent = setup.agent(workspaces.0.clone());
+
+    let first_events: Vec<_> = agent
+        .start(TurnRequest {
+            content: "turn one".to_owned(),
+            ..setup.request(session_id)
+        })
+        .await?
+        .collect()
+        .await;
+    assert!(
+        matches!(
+            first_events.first(),
+            Some(TurnEvent::UserAppended {
+                parent_id: None,
+                ..
+            })
+        ),
+        "first turn is at root: {first_events:?}"
+    );
+    let first_messages = setup.sessions.all_messages(session_id).await?;
+    let first_user_id = first_messages[0].id;
+    let first_assistant_id = first_messages[1].id;
+
+    let root_events: Vec<_> = agent
+        .start(TurnRequest {
+            content: "root two".to_owned(),
+            branch: BranchTarget::Root,
+            ..setup.request(session_id)
+        })
+        .await?
+        .collect()
+        .await;
+    assert!(
+        matches!(
+            root_events.first(),
+            Some(TurnEvent::UserAppended {
+                parent_id: None,
+                ..
+            })
+        ),
+        "Root branch has None parent: {root_events:?}"
+    );
+
+    let branch_events: Vec<_> = agent
+        .start(TurnRequest {
+            content: "branch off assistant".to_owned(),
+            branch: BranchTarget::Message(first_assistant_id),
+            ..setup.request(session_id)
+        })
+        .await?
+        .collect()
+        .await;
+    assert!(
+        matches!(
+            branch_events.first(),
+            Some(TurnEvent::UserAppended {
+                parent_id: Some(parent),
+                ..
+            }) if *parent == first_assistant_id
+        ),
+        "Message branch attaches under first_assistant_id: {branch_events:?}"
+    );
+
+    let requests = setup.requests();
+    assert_eq!(requests.len(), 3, "three turns ran");
+    assert_eq!(
+        requests[1]
+            .messages
+            .iter()
+            .map(Message::visible_text)
+            .collect::<Vec<_>>(),
+        ["root two"],
+        "Root branch omits prior history"
+    );
+    assert_eq!(
+        requests[2]
+            .messages
+            .iter()
+            .map(Message::visible_text)
+            .collect::<Vec<_>>(),
+        ["turn one", "branch off assistant"],
+        "Message branch includes only first turn path (tool-only assistant stripped)"
+    );
+
+    assert!(
+        matches!(
+            agent
+                .start(TurnRequest {
+                    branch: BranchTarget::Message(Uuid::new_v4()),
+                    ..setup.request(session_id)
+                })
+                .await,
+            Err(AgentError::MessageNotFound)
+        ),
+        "missing branch message rejected"
+    );
+    assert!(
+        matches!(
+            agent
+                .start(TurnRequest {
+                    branch: BranchTarget::Message(first_user_id),
+                    ..setup.request(session_id)
+                })
+                .await,
+            Err(AgentError::InvalidBranchPoint)
+        ),
+        "user message branch target rejected"
+    );
+    assert!(
+        matches!(
+            AgentError::from(SessionError::DirectoryNotFound("missing".to_owned())),
+            AgentError::DirectoryNotFound(dir) if dir == "missing"
+        ),
+        "SessionError::DirectoryNotFound maps directly"
     );
     Ok(())
 }

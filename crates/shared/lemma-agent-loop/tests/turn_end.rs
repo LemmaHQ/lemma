@@ -154,14 +154,14 @@ async fn a_leaf_missing_from_the_tree_ends_the_turn_as_not_found() -> Result<(),
     let db = lemma_db::in_memory().await?;
     let (sessions, session_id) = new_session(&db).await?;
     let missing = Uuid::new_v4();
-    sessions.update_leaf(session_id, missing).await?;
     let agent_loop: AgentLoop<_, LocalExecEnv> =
         AgentLoop::new(sessions.clone(), AsksForTool, None);
+    let mut turn = input(session_id);
+    turn.parent_id = Some(missing);
 
     let result = agent_loop
-        .run_turn(input(session_id), &|_| {}, &CancelToken::new())
+        .run_turn(turn, &|_| {}, &CancelToken::new())
         .await;
-
     assert!(
         matches!(&result, Err(LoopError::NotFound(message)) if message.contains(&missing.to_string())),
         "{result:?}"

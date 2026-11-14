@@ -23,6 +23,9 @@ const ABORT: &str = "/lemma.v1.AgentService/AbortMessage";
 const RESUME: &str = "/lemma.v1.AgentService/ResumeStream";
 const CREATE_PROVIDER: &str = "/lemma.v1.ProviderService/CreateCustomProvider";
 const CREATE_SESSION: &str = "/lemma.v1.SessionService/CreateSession";
+const LIST_SESSIONS: &str = "/lemma.v1.SessionService/ListSessions";
+const SET_LEAF: &str = "/lemma.v1.SessionService/SetSessionLeaf";
+const SET_LABEL: &str = "/lemma.v1.SessionService/SetMessageLabel";
 const MESSAGES: &str = "/lemma.v1.SessionService/ListMessages";
 const DELETE_SESSION: &str = "/lemma.v1.SessionService/DeleteSession";
 const UPDATE_PROVIDER: &str = "/lemma.v1.ProviderService/UpdateCustomProvider";
@@ -159,6 +162,31 @@ impl Setup {
             .await
     }
 
+    async fn send_with_parent(
+        &self,
+        model: &str,
+        content: &str,
+        parent_id: Option<&str>,
+    ) -> Result<Frames, Box<dyn Error>> {
+        let mut body = json!({
+            "sessionId": self.session_id,
+            "providerId": self.provider_id,
+            "model": model,
+            "content": content,
+        });
+        if let Some(parent_id) = parent_id {
+            body["parentId"] = json!(parent_id);
+        }
+        self.engine.stream(SEND, &body).await
+    }
+
+    async fn tree(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(self
+            .engine
+            .call(MESSAGES, &json!({ "sessionId": self.session_id }))
+            .await?
+            .body)
+    }
     async fn messages(&self) -> Result<Vec<Value>, Box<dyn Error>> {
         let reply = self
             .engine
@@ -251,6 +279,14 @@ async fn a_turn_streams_thinking_and_text_and_persists_the_answer() -> Result<()
     assert!(
         events.iter().all(|e| e["event"]["occurredAt"].is_string()),
         "every event carries its time: {events:?}"
+    );
+    assert!(
+        events[0]["event"]["started"].get("parentId").is_none(),
+        "root AgentStarted omits parentId: {events:?}"
+    );
+    assert_eq!(
+        events[1]["event"]["turnStarted"]["parentId"], events[0]["event"]["started"]["messageId"],
+        "AgentTurnStarted references user message: {events:?}"
     );
     assert_eq!(end, json!({}), "clean end of stream");
     let assistant = by_role(&messages, "assistant");
@@ -387,7 +423,18 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts() -> Result<(), Box<dy
     }
     let message_id = seen[0]["event"]["started"]["messageId"].clone();
 
-    let streaming = setup.messages().await?;
+    let streaming_tree = setup.tree().await?;
+    let streaming = streaming_tree["messages"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let sessions = setup.engine.call(LIST_SESSIONS, &json!({})).await?;
+    let busy_leaf = setup
+        .engine
+        .call(SET_LEAF, &json!({ "sessionId": setup.session_id }))
+        .await?;
+    let mut busy_send = setup.send("answer").await?;
+    let (_, busy_end) = setup.engine.finish(&mut busy_send).await?;
     let mut resumed = setup
         .engine
         .stream(RESUME, &json!({ "messageId": message_id, "offset": 1 }))
@@ -414,6 +461,16 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts() -> Result<(), Box<dy
         "MESSAGE_STATUS_STREAMING",
         "placeholder while streaming"
     );
+    assert_eq!(
+        streaming_tree["activeMessageId"], message_id,
+        "ListMessages reports activeMessageId while running"
+    );
+    assert_eq!(
+        sessions.body["sessions"][0]["activeMessageId"], message_id,
+        "ListSessions reports activeMessageId while running"
+    );
+    assert_reason(&busy_leaf, ErrorReason::SessionBusy);
+    assert_stream_reason(&busy_end, ErrorReason::SessionBusy);
     assert_eq!(aborted.status, 200, "{aborted:?}");
     assert_eq!(labels(&rest), ["aborted"], "events after the abort");
     assert_eq!(end, json!({}), "clean end of stream");
@@ -429,6 +486,11 @@ async fn a_running_turn_resumes_from_an_offset_and_aborts() -> Result<(), Box<dy
         "settled placeholder"
     );
     assert_stream_reason(&ended_end, ErrorReason::TurnNotRunning);
+    let idle_tree = setup.tree().await?;
+    assert!(
+        idle_tree.get("activeMessageId").is_none(),
+        "activeMessageId clears once turn ends: {idle_tree}"
+    );
     setup.engine.close().await;
     Ok(())
 }
@@ -641,6 +703,28 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             json!({ "messageId": unknown }),
             ErrorReason::TurnNotRunning,
         ),
+        (
+            SEND,
+            json!({
+                "sessionId": session,
+                "providerId": provider,
+                "model": "answer",
+                "content": "hi",
+                "parentId": "x",
+            }),
+            ErrorReason::IdInvalid,
+        ),
+        (
+            SEND,
+            json!({
+                "sessionId": session,
+                "providerId": provider,
+                "model": "answer",
+                "content": "hi",
+                "parentId": unknown,
+            }),
+            ErrorReason::MessageNotFound,
+        ),
     ];
 
     for (path, body, reason) in cases {
@@ -701,6 +785,118 @@ async fn turns_that_cannot_be_prepared_fail_as_internal_errors() -> Result<(), B
             "{case}: {end}"
         );
     }
+    setup.engine.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn branching_labels_and_leaf_updates_operate_on_the_message_tree()
+-> Result<(), Box<dyn Error>> {
+    let mut setup = setup().await?;
+
+    let mut turn1 = setup.send_with_parent("answer", "first", None).await?;
+    setup.engine.finish(&mut turn1).await?;
+    let tree1 = setup.tree().await?;
+    let msgs1 = tree1["messages"].as_array().ok_or("missing messages")?;
+    let user1_id = msgs1[0]["id"].as_str().ok_or("no user1 id")?.to_owned();
+    let assistant1_id = msgs1[1]["id"]
+        .as_str()
+        .ok_or("no assistant1 id")?
+        .to_owned();
+    assert_eq!(tree1["leafId"], assistant1_id, "leafId after first turn");
+    assert!(msgs1[0].get("parentId").is_none(), "root has no parentId");
+    assert_eq!(
+        msgs1[1]["parentId"], user1_id,
+        "assistant parentId points to user"
+    );
+
+    let labeled = setup
+        .engine
+        .call(
+            SET_LABEL,
+            &json!({
+                "sessionId": setup.session_id,
+                "messageId": assistant1_id,
+                "label": " main branch ",
+            }),
+        )
+        .await?;
+    assert_eq!(
+        labeled.body["message"]["label"], "main branch",
+        "label trimmed and stored"
+    );
+    let labeled_tree = setup.tree().await?;
+    assert_eq!(
+        labeled_tree["messages"][1]["label"], "main branch",
+        "ListMessages includes message label"
+    );
+    let cleared = setup
+        .engine
+        .call(
+            SET_LABEL,
+            &json!({
+                "sessionId": setup.session_id,
+                "messageId": assistant1_id,
+                "label": "   ",
+            }),
+        )
+        .await?;
+    assert!(
+        cleared.body["message"].get("label").is_none(),
+        "blank label clears field"
+    );
+
+    let mut root_branch = setup
+        .send_with_parent("answer", "fresh root", Some(""))
+        .await?;
+    let (root_events, _) = setup.engine.finish(&mut root_branch).await?;
+    assert!(
+        root_events[0]["event"]["started"].get("parentId").is_none(),
+        "Root branch omits parentId: {root_events:?}"
+    );
+
+    let mut sub_branch = setup
+        .send_with_parent("answer", "forked", Some(&assistant1_id))
+        .await?;
+    let (sub_events, _) = setup.engine.finish(&mut sub_branch).await?;
+    assert_eq!(
+        sub_events[0]["event"]["started"]["parentId"], assistant1_id,
+        "Message branch carries parentId: {sub_events:?}"
+    );
+
+    let rewound = setup
+        .engine
+        .call(
+            SET_LEAF,
+            &json!({
+                "sessionId": setup.session_id,
+                "leafId": assistant1_id,
+            }),
+        )
+        .await?;
+    assert_eq!(
+        rewound.body["session"]["leafId"], assistant1_id,
+        "SetSessionLeaf updates session leafId"
+    );
+
+    let bad_leaf = setup
+        .engine
+        .call(
+            SET_LEAF,
+            &json!({
+                "sessionId": setup.session_id,
+                "leafId": user1_id,
+            }),
+        )
+        .await?;
+    assert_reason(&bad_leaf, ErrorReason::InvalidBranchPoint);
+
+    let mut bad_branch = setup
+        .send_with_parent("answer", "bad", Some(&user1_id))
+        .await?;
+    let (_, bad_branch_end) = setup.engine.finish(&mut bad_branch).await?;
+    assert_stream_reason(&bad_branch_end, ErrorReason::InvalidBranchPoint);
+
     setup.engine.close().await;
     Ok(())
 }

@@ -8,8 +8,8 @@ use uuid::Uuid;
 
 pub(crate) fn turn_event(ev: TurnEvent) -> AgentEvent {
     let (at, kind) = match ev {
-        TurnEvent::UserAppended { id, at } => (at, started_kind(id)),
-        TurnEvent::AssistantStarted { id, at } => (at, turn_started_kind(id)),
+        TurnEvent::UserAppended { id, parent_id, at } => (at, started_kind(id, parent_id)),
+        TurnEvent::AssistantStarted { id, parent_id, at } => (at, turn_started_kind(id, parent_id)),
         TurnEvent::Delta { delta, at } => (at, text_delta_kind(delta)),
         TurnEvent::ThinkingDelta { delta, at } => (at, thinking_delta_kind(delta)),
         TurnEvent::ToolStarted {
@@ -41,16 +41,18 @@ pub(crate) fn turn_event(ev: TurnEvent) -> AgentEvent {
     }
 }
 
-fn started_kind(id: Uuid) -> agent_event::Kind {
+fn started_kind(id: Uuid, parent_id: Option<Uuid>) -> agent_event::Kind {
     agent_event::Kind::Started(Box::new(AgentStarted {
         message_id: id.to_string(),
+        parent_id: parent_id.map(|p| p.to_string()),
         ..Default::default()
     }))
 }
 
-fn turn_started_kind(id: Uuid) -> agent_event::Kind {
+fn turn_started_kind(id: Uuid, parent_id: Uuid) -> agent_event::Kind {
     agent_event::Kind::TurnStarted(Box::new(AgentTurnStarted {
         message_id: id.to_string(),
+        parent_id: parent_id.to_string(),
         ..Default::default()
     }))
 }

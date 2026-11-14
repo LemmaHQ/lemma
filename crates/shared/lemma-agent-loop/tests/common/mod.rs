@@ -20,6 +20,7 @@ pub(crate) fn input(session_id: Uuid) -> TurnInput {
     TurnInput {
         session_id,
         user_message_id: Uuid::new_v4(),
+        parent_id: None,
         user_message: Message::User {
             content: vec![ContentBlock::Text(TextContent {
                 text: "hello".into(),

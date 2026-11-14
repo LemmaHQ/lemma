@@ -9,6 +9,8 @@ pub enum TurnEvent {
     UserAppended {
         /// Message ID.
         id: Uuid,
+        /// Parent message ID under which the user message was committed; `None` at the root.
+        parent_id: Option<Uuid>,
         /// Server instant at which the user message was committed.
         at: DateTime<Utc>,
     },
@@ -16,6 +18,8 @@ pub enum TurnEvent {
     AssistantStarted {
         /// Message ID.
         id: Uuid,
+        /// Parent message ID under which the assistant message started.
+        parent_id: Uuid,
         /// Server instant at which the assistant message started.
         at: DateTime<Utc>,
     },

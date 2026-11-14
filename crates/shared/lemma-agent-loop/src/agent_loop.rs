@@ -1,10 +1,11 @@
 use chrono::Utc;
 use lemma_core::{ContentBlock, Message, StopReason};
 use lemma_model::{Adapter, ApiFormat, ModelRequest};
-use lemma_session::{LastModel, Message as StoredMessage, Session, SessionService};
+use lemma_session::{LastModel, Message as StoredMessage, SessionService};
 use lemma_tool::{CancelToken, ExecEnv};
 use uuid::Uuid;
 
+use crate::history;
 use crate::loop_error::LoopError;
 use crate::persist;
 use crate::stream::{self, StepEnd, StepOutcome};
@@ -14,10 +15,12 @@ use crate::turn_event::TurnEvent;
 /// One user message and where it goes.
 #[derive(Debug)]
 pub struct TurnInput {
-    /// Session the turn continues from its active leaf.
+    /// Session the turn belongs to.
     pub session_id: Uuid,
     /// Id the user message is stored under.
     pub user_message_id: Uuid,
+    /// Parent message id under which the user message is appended; `None` starts a root branch.
+    pub parent_id: Option<Uuid>,
     /// The user message.
     pub user_message: Message,
     /// Model selection, also recorded as the session's last model.
@@ -51,7 +54,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         }
     }
 
-    /// Appends the user message under the active leaf and runs steps until
+    /// Appends the user message under `input.parent_id` and runs steps until
     /// one requests no tools, a stream fails, or `cancel` fires. Cancelling
     /// interrupts a model stream and stops before the next step; a running
     /// tool call completes first, and an environment holding the same token,
@@ -71,19 +74,21 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
         let TurnInput {
             session_id,
             user_message_id,
+            parent_id,
             user_message,
             model,
             api_format,
             tool_calling,
             system_prompt,
         } = input;
-        let meta = find_session(&self.sessions, session_id).await?;
+        find_session(&self.sessions, session_id).await?;
 
-        let user_entry = persist::settled(user_message_id, session_id, meta.leaf_id, user_message);
+        let user_entry = persist::settled(user_message_id, session_id, parent_id, user_message);
         let user_at = user_entry.created_at;
         self.append(user_entry).await?;
         observer(TurnEvent::UserAppended {
             id: user_message_id,
+            parent_id,
             at: user_at,
         });
 
@@ -107,7 +112,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             }
             let entries = self.sessions.all_messages(session_id).await?;
             let messages = lemma_session::build_context_path(&entries, leaf_id)?;
-            let messages = history_for_model(messages, tool_calling);
+            let messages = history::for_model(messages, tool_calling);
 
             let assistant_id = Uuid::new_v4();
             let placeholder = persist::placeholder(
@@ -122,6 +127,7 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             self.append(placeholder).await?;
             observer(TurnEvent::AssistantStarted {
                 id: assistant_id,
+                parent_id: leaf_id,
                 at: assistant_at,
             });
 
@@ -236,42 +242,11 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
 }
 
 /// Loads `session_id` or fails with [`LoopError::NotFound`].
-async fn find_session(sessions: &SessionService, session_id: Uuid) -> Result<Session, LoopError> {
-    let Some(session) = sessions.find(session_id).await? else {
+async fn find_session(sessions: &SessionService, session_id: Uuid) -> Result<(), LoopError> {
+    if sessions.find(session_id).await?.is_none() {
         return Err(LoopError::NotFound(format!(
             "session {session_id} not found"
         )));
-    };
-    Ok(session)
-}
-
-fn history_for_model(messages: Vec<Message>, tool_calling: bool) -> Vec<Message> {
-    if tool_calling {
-        return messages;
     }
-    messages
-        .into_iter()
-        .filter_map(|message| match message {
-            Message::Assistant {
-                content,
-                stop_reason,
-                usage,
-            } => {
-                let content: Vec<_> = content
-                    .into_iter()
-                    .filter(|block| !matches!(block, ContentBlock::ToolCall(_)))
-                    .collect();
-                let has_text = content
-                    .iter()
-                    .any(|block| matches!(block, ContentBlock::Text(_)));
-                has_text.then_some(Message::Assistant {
-                    content,
-                    stop_reason,
-                    usage,
-                })
-            }
-            Message::ToolResult { .. } => None,
-            user @ Message::User { .. } => Some(user),
-        })
-        .collect()
+    Ok(())
 }

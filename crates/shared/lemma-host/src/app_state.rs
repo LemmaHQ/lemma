@@ -18,7 +18,7 @@ type HostConnector = HttpConnector<ReqwestTransport>;
 #[derive(Debug)]
 pub struct AppState {
     pub(crate) providers: ProviderRpc<HostConnector>,
-    pub(crate) sessions: SessionRpc,
+    pub(crate) sessions: SessionRpc<HostConnector>,
     pub(crate) agent: AgentRpc<HostConnector>,
 }
 
@@ -34,15 +34,15 @@ impl AppState {
             connector,
         ));
         let session_service = SessionService::new(db);
-        let agent = Agent::new(
+        let agent = Arc::new(Agent::new(
             session_service.clone(),
             Arc::clone(&provider_service),
             workspaces_dir,
             Some(transport),
-        );
+        ));
         Self {
             providers: ProviderRpc::new(provider_service),
-            sessions: SessionRpc::new(session_service),
+            sessions: SessionRpc::new(session_service, Arc::clone(&agent)),
             agent: AgentRpc::new(agent),
         }
     }

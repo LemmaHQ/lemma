@@ -20,6 +20,15 @@ pub enum AgentError {
     /// The session is absent.
     #[error("session not found")]
     SessionNotFound,
+    /// Target message is absent from the session.
+    #[error("message not found")]
+    MessageNotFound,
+    /// Target message cannot serve as a branch parent.
+    #[error("invalid branch point")]
+    InvalidBranchPoint,
+    /// The session already has a running turn.
+    #[error("session already has a running turn")]
+    SessionBusy,
     /// The session database failed.
     #[error("store: {0}")]
     Store(String),
@@ -42,6 +51,14 @@ impl From<ProviderError> for AgentError {
 
 impl From<SessionError> for AgentError {
     fn from(err: SessionError) -> Self {
-        Self::Store(err.to_string())
+        match err {
+            SessionError::NotFound => Self::SessionNotFound,
+            SessionError::MessageNotFound => Self::MessageNotFound,
+            SessionError::InvalidBranchPoint => Self::InvalidBranchPoint,
+            SessionError::DirectoryNotFound(dir) => Self::DirectoryNotFound(dir),
+            other @ (SessionError::TitleRequired
+            | SessionError::Missing(_)
+            | SessionError::Store(_)) => Self::Store(other.to_string()),
+        }
     }
 }

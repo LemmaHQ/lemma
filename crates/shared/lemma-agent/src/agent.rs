@@ -11,7 +11,7 @@ use lemma_agent_loop::{AgentLoop, LoopError, ToolRuntime, TurnEvent, TurnInput};
 use lemma_core::{ContentBlock, Message, TextContent};
 use lemma_model::Connector;
 use lemma_provider::ProviderService;
-use lemma_session::{LastModel, Session, SessionService};
+use lemma_session::{BranchTarget, LastModel, Session, SessionService};
 use lemma_tool::{BashTool, CancelToken, LocalExecEnv, ReadFileTool, ToolRegistry, WriteFileTool};
 use tokio::fs;
 use uuid::Uuid;
@@ -23,7 +23,7 @@ use crate::web_tools;
 /// What a user asks one turn to do.
 #[derive(Debug)]
 pub struct TurnRequest {
-    /// Session the turn continues from its active leaf.
+    /// Session the turn belongs to.
     pub session_id: Uuid,
     /// Provider the turn is dispatched to.
     pub provider_id: Uuid,
@@ -31,6 +31,8 @@ pub struct TurnRequest {
     pub model: String,
     /// User message text.
     pub content: String,
+    /// Branch point for the new user message.
+    pub branch: BranchTarget,
 }
 
 /// Starts, resumes, and aborts turns.
@@ -76,13 +78,15 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// # Errors
     ///
     /// [`AgentError::ContentRequired`] or [`AgentError::ModelRequired`] for
-    /// blank content or model, [`AgentError::ProviderNotFound`] when the
+    /// blank content or model, [`AgentError::SessionBusy`] when the session
+    /// already has a running turn, [`AgentError::ProviderNotFound`] when the
     /// provider is absent, [`AgentError::Provider`] when opening it fails,
     /// [`AgentError::SessionNotFound`] when the session is absent,
-    /// [`AgentError::Store`] when the session database fails,
-    /// [`AgentError::DirectoryNotFound`] when the session's directory is
-    /// gone, and [`AgentError::Workspace`] when the workspace cannot be
-    /// created.
+    /// [`AgentError::MessageNotFound`] or [`AgentError::InvalidBranchPoint`]
+    /// when the branch target is missing or invalid, [`AgentError::Store`] when
+    /// the session database fails, [`AgentError::DirectoryNotFound`] when the
+    /// session's directory is gone, and [`AgentError::Workspace`] when the
+    /// workspace cannot be created.
     pub async fn start(
         &self,
         req: TurnRequest,
@@ -93,12 +97,14 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         if req.model.trim().is_empty() {
             return Err(AgentError::ModelRequired);
         }
-        let Some(session) = self.sessions.find(req.session_id).await? else {
-            return Err(AgentError::SessionNotFound);
-        };
-        let previous_api_format = self
+        let user_message_id = Uuid::new_v4();
+        let claim = self
+            .running
+            .claim_session(req.session_id, user_message_id)
+            .ok_or(AgentError::SessionBusy)?;
+        let (session, parent_id, previous_api_format) = self
             .sessions
-            .previous_assistant_api_format(req.session_id)
+            .resolve_branch_parent(req.session_id, req.branch)
             .await?;
         let lemma_provider::ProviderBinding {
             adapter,
@@ -121,10 +127,10 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
         let system_prompt = Some(system_prompt(tools.env.root()));
         let agent_loop = AgentLoop::new(self.sessions.clone(), adapter, Some(tools));
 
-        let user_message_id = Uuid::new_v4();
         let input = TurnInput {
             session_id: req.session_id,
             user_message_id,
+            parent_id,
             user_message: Message::User {
                 content: vec![ContentBlock::Text(TextContent { text: req.content })],
             },
@@ -136,7 +142,7 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
             tool_calling,
             system_prompt,
         };
-        let (writer, events) = self.running.start(user_message_id, cancel.clone());
+        let (writer, events) = claim.into_turn(cancel.clone());
         tokio::spawn(async move {
             match agent_loop
                 .run_turn(input, &|ev| writer.push(ev), &cancel)
@@ -168,6 +174,12 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     /// ignored.
     pub fn abort(&self, message_id: Uuid) {
         self.running.abort(message_id);
+    }
+
+    /// User message ID of the turn currently running on `session_id`, if any.
+    #[must_use]
+    pub fn active_turn(&self, session_id: Uuid) -> Option<Uuid> {
+        self.running.active_turn(session_id)
     }
 }
 

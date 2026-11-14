@@ -1,41 +1,49 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use uuid::Uuid;
+
+use crate::parse_id::parse_id;
+use lemma_agent::Agent;
 use lemma_core::ContentBlock;
+use lemma_model::Connector;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
     CreateSessionRequest, CreateSessionResponse, DeleteSessionRequest, DeleteSessionResponse,
     ErrorReason, ListMessagesRequest, ListMessagesResponse, ListSessionsRequest,
     ListSessionsResponse, Message, MessageStatus, RenameSessionRequest, RenameSessionResponse,
-    Session, ToolCall, ToolResultMeta,
+    Session, SetMessageLabelRequest, SetMessageLabelResponse, SetSessionLeafRequest,
+    SetSessionLeafResponse, ToolCall, ToolResultMeta,
 };
 use lemma_session::{
     Message as DomainMessage, MessageStatus as DomainMessageStatus, Session as DomainSession,
     SessionError, SessionService,
 };
 
-use crate::parse_id::parse_id;
-
 #[derive(Debug)]
-pub(crate) struct SessionRpc {
+pub(crate) struct SessionRpc<C> {
     domain: SessionService,
+    agent: Arc<Agent<C>>,
 }
 
-impl SessionRpc {
+impl<C: Connector> SessionRpc<C> {
     #[must_use]
-    pub(crate) fn new(domain: SessionService) -> Self {
-        Self { domain }
+    pub(crate) fn new(domain: SessionService, agent: Arc<Agent<C>>) -> Self {
+        Self { domain, agent }
     }
 }
 
-fn session_to_proto(c: &DomainSession) -> Session {
+fn session_to_proto(c: &DomainSession, active_message_id: Option<Uuid>) -> Session {
     Session {
         id: c.id.to_string(),
         title: c.title.clone(),
+        leaf_id: c.leaf_id.map(|id| id.to_string()),
         updated_at: Timestamp::from(c.updated_at).into(),
         directory: c.directory.clone(),
+        active_message_id: active_message_id.map(|id| id.to_string()),
         ..Default::default()
     }
 }
@@ -44,6 +52,7 @@ fn message_to_proto(m: &DomainMessage) -> Message {
     let core_msg = &m.body.0;
     Message {
         id: m.id.to_string(),
+        parent_id: m.parent_id.map(|id| id.to_string()),
         role: m.role().to_string(),
         content: core_msg.visible_text(),
         thinking: core_msg
@@ -104,6 +113,7 @@ fn message_to_proto(m: &DomainMessage) -> Message {
         }
         .into(),
         error: m.error.clone().unwrap_or_default(),
+        label: m.label.clone(),
         created_at: Timestamp::from(m.created_at).into(),
         updated_at: Timestamp::from(m.updated_at).into(),
         ..Default::default()
@@ -114,6 +124,8 @@ fn map_domain(e: SessionError) -> ConnectError {
     match e {
         SessionError::TitleRequired => lemma_proto::app_error(ErrorReason::TitleRequired),
         SessionError::NotFound => lemma_proto::app_error(ErrorReason::SessionNotFound),
+        SessionError::MessageNotFound => lemma_proto::app_error(ErrorReason::MessageNotFound),
+        SessionError::InvalidBranchPoint => lemma_proto::app_error(ErrorReason::InvalidBranchPoint),
         SessionError::DirectoryNotFound(_) => {
             lemma_proto::app_error(ErrorReason::DirectoryNotFound)
         }
@@ -124,7 +136,7 @@ fn map_domain(e: SessionError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl v1::SessionService for SessionRpc {
+impl<C: Connector> v1::SessionService for SessionRpc<C> {
     async fn list_sessions(
         &self,
         _ctx: RequestContext,
@@ -132,7 +144,10 @@ impl v1::SessionService for SessionRpc {
     ) -> ServiceResult<ListSessionsResponse> {
         let list = self.domain.list_sessions().await.map_err(map_domain)?;
         Response::ok(ListSessionsResponse {
-            sessions: list.iter().map(session_to_proto).collect(),
+            sessions: list
+                .iter()
+                .map(|c| session_to_proto(c, self.agent.active_turn(c.id)))
+                .collect(),
             ..Default::default()
         })
     }
@@ -145,7 +160,7 @@ impl v1::SessionService for SessionRpc {
         let directory = request.directory.map(Path::new);
         let c = self.domain.create(directory).await.map_err(map_domain)?;
         Response::ok(CreateSessionResponse {
-            session: session_to_proto(&c).into(),
+            session: session_to_proto(&c, self.agent.active_turn(c.id)).into(),
             ..Default::default()
         })
     }
@@ -162,7 +177,7 @@ impl v1::SessionService for SessionRpc {
             .await
             .map_err(map_domain)?;
         Response::ok(RenameSessionResponse {
-            session: session_to_proto(&c).into(),
+            session: session_to_proto(&c, self.agent.active_turn(c.id)).into(),
             ..Default::default()
         })
     }
@@ -173,19 +188,57 @@ impl v1::SessionService for SessionRpc {
         request: ServiceRequest<'_, ListMessagesRequest>,
     ) -> ServiceResult<ListMessagesResponse> {
         let session_id = parse_id(request.session_id)?;
-        let before_id = if request.before_id.is_empty() {
-            None
-        } else {
-            Some(parse_id(request.before_id)?)
-        };
-        let page = self
+        let tree = self
             .domain
-            .list_messages(session_id, before_id, request.limit)
+            .list_messages(session_id)
             .await
             .map_err(map_domain)?;
         Response::ok(ListMessagesResponse {
-            messages: page.messages.iter().map(message_to_proto).collect(),
-            has_more: page.has_more,
+            messages: tree.messages.iter().map(message_to_proto).collect(),
+            leaf_id: tree.leaf_id.map(|id| id.to_string()),
+            active_message_id: self.agent.active_turn(session_id).map(|id| id.to_string()),
+            ..Default::default()
+        })
+    }
+
+    async fn set_session_leaf(
+        &self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, SetSessionLeafRequest>,
+    ) -> ServiceResult<SetSessionLeafResponse> {
+        let session_id = parse_id(request.session_id)?;
+        if self.agent.active_turn(session_id).is_some() {
+            return Err(lemma_proto::app_error(ErrorReason::SessionBusy));
+        }
+        let leaf_id = match request.leaf_id {
+            None | Some("") => None,
+            Some(id) => Some(parse_id(id)?),
+        };
+        let c = self
+            .domain
+            .set_leaf(session_id, leaf_id)
+            .await
+            .map_err(map_domain)?;
+        Response::ok(SetSessionLeafResponse {
+            session: session_to_proto(&c, None).into(),
+            ..Default::default()
+        })
+    }
+
+    async fn set_message_label(
+        &self,
+        _ctx: RequestContext,
+        request: ServiceRequest<'_, SetMessageLabelRequest>,
+    ) -> ServiceResult<SetMessageLabelResponse> {
+        let session_id = parse_id(request.session_id)?;
+        let message_id = parse_id(request.message_id)?;
+        let message = self
+            .domain
+            .set_message_label(session_id, message_id, request.label)
+            .await
+            .map_err(map_domain)?;
+        Response::ok(SetMessageLabelResponse {
+            message: message_to_proto(&message).into(),
             ..Default::default()
         })
     }

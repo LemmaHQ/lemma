@@ -3,6 +3,7 @@
 //! no vendor, credential, or host.
 
 mod agent_loop;
+mod history;
 mod loop_error;
 mod persist;
 mod stream;

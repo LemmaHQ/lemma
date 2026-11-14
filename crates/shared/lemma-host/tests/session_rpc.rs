@@ -13,6 +13,8 @@ const LIST: &str = "/lemma.v1.SessionService/ListSessions";
 const CREATE: &str = "/lemma.v1.SessionService/CreateSession";
 const RENAME: &str = "/lemma.v1.SessionService/RenameSession";
 const MESSAGES: &str = "/lemma.v1.SessionService/ListMessages";
+const SET_LEAF: &str = "/lemma.v1.SessionService/SetSessionLeaf";
+const SET_LABEL: &str = "/lemma.v1.SessionService/SetMessageLabel";
 const DELETE: &str = "/lemma.v1.SessionService/DeleteSession";
 
 fn session_id(reply: &Reply) -> Result<String, Box<dyn Error>> {
@@ -33,11 +35,9 @@ async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn
         .await?;
     let listed = engine.call(LIST, &json!({})).await?;
     let messages = engine.call(MESSAGES, &json!({ "sessionId": id })).await?;
-    let paged = engine
-        .call(
-            MESSAGES,
-            &json!({ "sessionId": id, "beforeId": "00000000-0000-4000-8000-000000000000" }),
-        )
+    let rewound = engine.call(SET_LEAF, &json!({ "sessionId": id })).await?;
+    let cleared_leaf = engine
+        .call(SET_LEAF, &json!({ "sessionId": id, "leafId": "" }))
         .await?;
     let deleted = engine.call(DELETE, &json!({ "id": id })).await?;
     let after = engine.call(LIST, &json!({})).await?;
@@ -61,10 +61,15 @@ async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn
         "listed sessions"
     );
     assert_eq!(messages.body, json!({}), "an empty session has no messages");
-    assert_eq!(
-        paged.body,
-        json!({}),
-        "a valid beforeId returns no messages"
+    assert_eq!(rewound.status, 200, "{rewound:?}");
+    assert!(
+        rewound.body["session"].get("leafId").is_none(),
+        "omitted leafId clears leaf: {rewound:?}"
+    );
+    assert_eq!(cleared_leaf.status, 200, "{cleared_leaf:?}");
+    assert!(
+        cleared_leaf.body["session"].get("leafId").is_none(),
+        "empty leafId clears leaf: {cleared_leaf:?}"
     );
     assert_eq!(deleted.status, 200, "{deleted:?}");
     assert_eq!(after.body, json!({}), "no sessions left");
@@ -77,7 +82,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
     let mut engine = Engine::open().await?;
     let id = session_id(&engine.call(CREATE, &json!({})).await?)?;
     let unknown = "00000000-0000-4000-8000-000000000000";
-    let calls: [(&str, Value, ErrorReason); 8] = [
+    let calls: [(&str, Value, ErrorReason); 14] = [
         (
             RENAME,
             json!({ "id": id, "title": " " }),
@@ -99,9 +104,39 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
             ErrorReason::IdInvalid,
         ),
         (
-            MESSAGES,
-            json!({ "sessionId": id, "beforeId": "x" }),
+            SET_LEAF,
+            json!({ "sessionId": "x" }),
             ErrorReason::IdInvalid,
+        ),
+        (
+            SET_LEAF,
+            json!({ "sessionId": id, "leafId": "x" }),
+            ErrorReason::IdInvalid,
+        ),
+        (
+            SET_LEAF,
+            json!({ "sessionId": unknown }),
+            ErrorReason::SessionNotFound,
+        ),
+        (
+            SET_LEAF,
+            json!({ "sessionId": id, "leafId": unknown }),
+            ErrorReason::MessageNotFound,
+        ),
+        (
+            SET_LABEL,
+            json!({ "sessionId": "x", "messageId": unknown, "label": "hi" }),
+            ErrorReason::IdInvalid,
+        ),
+        (
+            SET_LABEL,
+            json!({ "sessionId": id, "messageId": "x", "label": "hi" }),
+            ErrorReason::IdInvalid,
+        ),
+        (
+            SET_LABEL,
+            json!({ "sessionId": id, "messageId": unknown, "label": "hi" }),
+            ErrorReason::MessageNotFound,
         ),
         (
             MESSAGES,

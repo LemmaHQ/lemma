@@ -62,6 +62,7 @@ fn stored(session_id: Uuid, parent_id: Option<Uuid>, body: Message) -> StoredMes
         provider_id: None,
         model: None,
         api_format: None,
+        label: None,
         created_at: now,
         updated_at: now,
     }
@@ -159,10 +160,10 @@ async fn no_tool_model_receives_no_tools_or_tool_history() -> Result<(), Box<dyn
     );
     let turn = input(session_id);
     let turn = lemma_agent_loop::TurnInput {
+        parent_id: Some(last_result.id),
         tool_calling: false,
         ..turn
     };
-
     agent_loop
         .run_turn(turn, &|_| {}, &CancelToken::new())
         .await?;

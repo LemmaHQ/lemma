@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use buffa::MessageField;
 use connectrpc::{
     ConnectError, RequestContext, Response, ServiceRequest, ServiceResult, ServiceStream,
 };
-use lemma_agent::{Agent, AgentError as TurnError, TurnRequest};
+use lemma_agent::{Agent, AgentError as TurnError, BranchTarget, TurnRequest};
 use lemma_model::Connector;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
@@ -15,12 +17,12 @@ use crate::parse_id::parse_id;
 
 #[derive(Debug)]
 pub(crate) struct AgentRpc<C> {
-    agent: Agent<C>,
+    agent: Arc<Agent<C>>,
 }
 
 impl<C: Connector> AgentRpc<C> {
     #[must_use]
-    pub(crate) fn new(agent: Agent<C>) -> Self {
+    pub(crate) fn new(agent: Arc<Agent<C>>) -> Self {
         Self { agent }
     }
 }
@@ -31,6 +33,9 @@ fn start_error(e: TurnError) -> ConnectError {
         TurnError::ModelRequired => lemma_proto::app_error(ErrorReason::ModelRequired),
         TurnError::ProviderNotFound => lemma_proto::app_error(ErrorReason::ProviderNotFound),
         TurnError::SessionNotFound => lemma_proto::app_error(ErrorReason::SessionNotFound),
+        TurnError::MessageNotFound => lemma_proto::app_error(ErrorReason::MessageNotFound),
+        TurnError::InvalidBranchPoint => lemma_proto::app_error(ErrorReason::InvalidBranchPoint),
+        TurnError::SessionBusy => lemma_proto::app_error(ErrorReason::SessionBusy),
         TurnError::DirectoryNotFound(_) => lemma_proto::app_error(ErrorReason::DirectoryNotFound),
         other @ (TurnError::Provider(_) | TurnError::Store(_) | TurnError::Workspace(_)) => {
             ConnectError::internal(other.to_string())
@@ -47,6 +52,11 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
     ) -> ServiceResult<ServiceStream<SendMessageResponse>> {
         use futures::StreamExt;
 
+        let branch = match request.parent_id {
+            None => BranchTarget::ActiveLeaf,
+            Some("") => BranchTarget::Root,
+            Some(id) => BranchTarget::Message(parse_id(id)?),
+        };
         let events = self
             .agent
             .start(TurnRequest {
@@ -54,6 +64,7 @@ impl<C: Connector> v1::AgentService for AgentRpc<C> {
                 provider_id: parse_id(request.provider_id)?,
                 model: request.model.to_string(),
                 content: request.content.to_string(),
+                branch,
             })
             .await
             .map_err(start_error)?;

@@ -26,6 +26,7 @@ pub(crate) fn settled(
         model: None,
         provider_id: None,
         api_format: None,
+        label: None,
         created_at: now,
         updated_at: now,
     }
@@ -58,6 +59,7 @@ pub(crate) fn placeholder(
         model: Some(model.to_string()),
         provider_id: Some(provider_id),
         api_format: Some(api_format),
+        label: None,
         created_at: now,
         updated_at: now,
     }
