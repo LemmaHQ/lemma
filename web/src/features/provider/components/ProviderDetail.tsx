@@ -41,7 +41,7 @@ export function ProviderDetail({
 }: ProviderDetailProps) {
     const { t } = useTranslation();
     const saved: ConnectionValues = {
-        apiKey: "",
+        apiKey: provider.apiKey,
         baseUrl: provider.baseUrl,
         apiPath: provider.apiPath,
     };
@@ -58,7 +58,7 @@ export function ProviderDetail({
         try {
             await onSave(patch);
             setValues({
-                apiKey: "",
+                apiKey: values.apiKey.trim(),
                 baseUrl: values.baseUrl.trim(),
                 apiPath: values.apiPath.trim(),
             });
@@ -128,16 +128,11 @@ export function ProviderDetail({
                 <ConnectionFields
                     apiFormat={provider.apiFormat}
                     values={values}
-                    apiKeyDescription={
-                        provider.hasKey
-                            ? t("provider.apiKeySavedDesc")
-                            : undefined
-                    }
                     onChange={setValues}
                 />
                 <ConnectionCheck
                     models={provider.models.map((model) => model.id)}
-                    target={`${provider.hasKey}\n${values.apiKey}\n${values.baseUrl}\n${values.apiPath}\n${checkGeneration}`}
+                    target={`${provider.apiKey}\n${values.apiKey}\n${values.baseUrl}\n${values.apiPath}\n${checkGeneration}`}
                     disabled={dirty}
                     onCheck={onCheck}
                 />

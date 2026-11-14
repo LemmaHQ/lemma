@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import type { Provider } from "./store";
 import { useProviders } from "./useProviders";
 
 /** A model a session can use, with the provider that serves it. */
@@ -9,10 +10,11 @@ export interface ModelOption {
     model: string;
 }
 
-/** The models of every enabled provider, and the name of every provider by ID. */
+/** The models of every enabled provider, every provider name by ID, and all configured providers. */
 export function useModelOptions(): {
     options: ModelOption[];
     providerNames: Map<string, string>;
+    providers: Provider[];
 } {
     const providers = useProviders();
     return useMemo(
@@ -27,6 +29,7 @@ export function useModelOptions(): {
                     })),
                 ),
             providerNames: new Map(providers.list.map((p) => [p.id, p.name])),
+            providers: providers.list,
         }),
         [providers.list],
     );

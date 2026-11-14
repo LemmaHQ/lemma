@@ -15,7 +15,7 @@ export interface Model {
 
 interface ProviderBase {
     id: string;
-    hasKey: boolean;
+    apiKey: string;
     enabled: boolean;
     identifier: string;
     name: string;
@@ -172,7 +172,7 @@ function replaceProvider(
 function toProvider(p: ProviderProto): Provider {
     const base = {
         id: p.id,
-        hasKey: p.hasKey,
+        apiKey: p.apiKey,
         enabled: p.enabled,
     };
     if (p.source.case === "predefined") {

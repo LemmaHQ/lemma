@@ -35,7 +35,7 @@ type PredefinedUpdateRequest = {
 };
 type ProviderFixture = {
     enabled?: boolean;
-    hasKey?: boolean;
+    apiKey?: string;
     identifier?: string;
     apiFormat?: ApiFormat;
     baseUrl?: string;
@@ -64,12 +64,12 @@ vi.mock("@/rpc/clients", () => ({ providerClient: rpc }));
 const provider = (
     id: string,
     name: string,
-    { enabled = true, hasKey = false, ...patch }: ProviderFixture = {},
+    { enabled = true, apiKey = "", ...patch }: ProviderFixture = {},
 ) =>
     create(ProviderSchema, {
         id,
         enabled,
-        hasKey,
+        apiKey,
         source: {
             case: "custom",
             value: create(CustomProviderSchema, {
@@ -85,17 +85,17 @@ const provider = (
 
 const predefinedProvider = ({
     enabled = false,
-    hasKey = false,
+    apiKey = "",
     ...patch
 }: {
     enabled?: boolean;
-    hasKey?: boolean;
+    apiKey?: string;
     defaultApiFormat?: ApiFormat;
 } = {}) =>
     create(ProviderSchema, {
         id: "deepseek-id",
         enabled,
-        hasKey,
+        apiKey,
         source: {
             case: "predefined",
             value: create(PredefinedProviderSchema, {
@@ -133,14 +133,16 @@ beforeEach(() => {
     useProviderStore.setState(useProviderStore.getInitialState());
     rpc.listProviders.mockResolvedValue({
         providers: [
-            provider("acme", "Acme", { hasKey: true }),
+            provider("acme", "Acme", { apiKey: "sk-acme" }),
             provider("beta", "Beta", { enabled: false }),
         ],
     });
     const customState: Record<string, ProviderFixture> = {};
     rpc.updateCustomProvider.mockImplementation(
         ({ id, models, apiKey, ...fields }) => {
-            const previous = customState[id] ?? { hasKey: id === "acme" };
+            const previous = customState[id] ?? {
+                apiKey: id === "acme" ? "sk-acme" : "",
+            };
             const next: ProviderFixture = {
                 ...previous,
                 ...Object.fromEntries(
@@ -148,7 +150,7 @@ beforeEach(() => {
                         ([, value]) => value !== undefined,
                     ),
                 ),
-                ...(apiKey === undefined ? {} : { hasKey: apiKey !== "" }),
+                ...(apiKey === undefined ? {} : { apiKey }),
                 ...(models === undefined ? {} : { models: models.models }),
             };
             customState[id] = next;
@@ -167,7 +169,7 @@ beforeEach(() => {
                         ([, value]) => value !== undefined,
                     ),
                 ),
-                ...(apiKey === undefined ? {} : { hasKey: apiKey !== "" }),
+                ...(apiKey === undefined ? {} : { apiKey }),
             };
             return Promise.resolve({
                 provider: predefinedProvider(predefinedState),
@@ -177,6 +179,7 @@ beforeEach(() => {
 });
 
 it("loads the providers and opens the first one", async () => {
+    const user = userEvent.setup();
     renderPanel();
 
     expect(screen.getByRole("status", { name: "Loading…" })).toBeDefined();
@@ -189,9 +192,15 @@ it("loads the providers and opens the first one", async () => {
         "readOnly",
         true,
     );
-    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
+    const apiKeyInput = screen.getByLabelText("API key");
+    expect(apiKeyInput).toHaveProperty("value", "sk-acme");
+    expect(apiKeyInput).toHaveProperty("type", "password");
+    await user.click(screen.getByRole("button", { name: "Show" }));
+    expect(apiKeyInput).toHaveProperty("type", "text");
+    await user.click(screen.getByRole("button", { name: "Hide" }));
+    expect(apiKeyInput).toHaveProperty("type", "password");
     expect(
-        screen.getByText("A key is saved. Enter a new key to replace it."),
+        screen.getByText("Authentication key for requests to the provider."),
     ).toBeDefined();
     expect(
         screen
@@ -347,13 +356,16 @@ it("checks the saved connection and disables Check and Fetch while dirty", async
     });
     expect(await screen.findByText("The provider answered.")).toBeDefined();
 
+    await user.clear(screen.getByLabelText("API key"));
     await user.type(screen.getByLabelText("API key"), "sk-new");
     expect(check()).toHaveProperty("disabled", true);
     expect(fetchModels()).toHaveProperty("disabled", true);
     await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "sk-acme");
     expect(check()).toHaveProperty("disabled", false);
     expect(fetchModels()).toHaveProperty("disabled", false);
 
+    await user.clear(screen.getByLabelText("API key"));
     await user.type(screen.getByLabelText("API key"), " sk-replaced ");
     await user.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() => {
@@ -369,10 +381,24 @@ it("checks the saved connection and disables Check and Fetch while dirty", async
         modelsPath: undefined,
         name: undefined,
     });
-    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("API key")).toHaveProperty(
+        "value",
+        "sk-replaced",
+    );
     expect(screen.queryByText("The provider answered.")).toBeNull();
     expect(check()).toHaveProperty("disabled", false);
     expect(fetchModels()).toHaveProperty("disabled", false);
+
+    await user.clear(screen.getByLabelText("API key"));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => {
+        expect(screen.queryByText("You have unsaved changes.")).toBeNull();
+    });
+    expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "acme",
+        apiKey: "",
+    });
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
 });
 
 it("saves edited connection settings, or discards them", async () => {
@@ -582,7 +608,7 @@ it("saves a predefined key, enables the provider, and checks its models", async 
         expect(screen.queryByText("You have unsaved changes.")).toBeNull();
     });
     expect(check()).toHaveProperty("disabled", false);
-    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "sk-new");
     expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
         id: "deepseek-id",
         apiKey: "sk-new",
@@ -591,10 +617,14 @@ it("saves a predefined key, enables the provider, and checks its models", async 
         screen.queryByText("Save an API key before enabling this provider."),
     ).toBeNull();
     expect(
-        screen.getByText("A key is saved. Enter a new key to replace it."),
+        screen.getByText("Authentication key for requests to the provider."),
     ).toBeDefined();
 
     const enabled = screen.getByRole("switch", { name: "Enable provider" });
+    expect(enabled.getAttribute("aria-disabled")).not.toBe("true");
+    await user.type(screen.getByLabelText("API key"), "x");
+    expect(enabled.getAttribute("aria-disabled")).toBe("true");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(enabled.getAttribute("aria-disabled")).not.toBe("true");
     await user.click(enabled);
     expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
@@ -608,12 +638,27 @@ it("saves a predefined key, enables the provider, and checks its models", async 
     });
     expect(await screen.findByText("The provider answered.")).toBeDefined();
 
+    await user.clear(screen.getByLabelText("API key"));
     await user.type(screen.getByLabelText("API key"), "sk-next");
     expect(check()).toHaveProperty("disabled", true);
+    expect(enabled.getAttribute("aria-disabled")).not.toBe("true");
     await user.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() => {
         expect(screen.queryByText("You have unsaved changes.")).toBeNull();
     });
     expect(screen.queryByText("The provider answered.")).toBeNull();
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "sk-next");
     expect(check()).toHaveProperty("disabled", false);
+
+    await user.clear(screen.getByLabelText("API key"));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => {
+        expect(screen.queryByText("You have unsaved changes.")).toBeNull();
+    });
+    expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
+        id: "deepseek-id",
+        apiKey: "",
+    });
+    expect(screen.getByLabelText("API key")).toHaveProperty("value", "");
+    expect(check()).toHaveProperty("disabled", true);
 });

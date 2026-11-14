@@ -23,7 +23,7 @@ const customProvider = (
     identifier: "custom",
     name: "Custom",
     baseUrl: "",
-    hasKey: false,
+    apiKey: "",
     apiPath: "",
     modelsPath: "",
     models: [],
@@ -38,7 +38,7 @@ const predefinedProvider = (
     source: "predefined",
     identifier: "deepseek",
     name: "DeepSeek",
-    hasKey: true,
+    apiKey: "sk-deepseek",
     apiFormats: ["anthropic", "openai"],
     defaultApiFormat: "anthropic",
     models: [{ id: "deepseek-flash", toolCalling: true }],
@@ -51,27 +51,28 @@ beforeEach(() => {
     useProviderStore.setState(useProviderStore.getInitialState());
 });
 
-it("offers models of enabled custom and predefined providers", () => {
+it("offers models of enabled providers and returns all providers", () => {
+    const providers = [
+        predefinedProvider(),
+        customProvider({
+            id: "a",
+            name: "Acme",
+            models: [
+                { id: "m1", toolCalling: true },
+                { id: "m2", toolCalling: false },
+            ],
+        }),
+        customProvider({
+            id: "b",
+            name: "Beta",
+            models: [{ id: "m3", toolCalling: true }],
+            enabled: false,
+        }),
+        customProvider({ id: "c", name: "Cold", models: [] }),
+    ];
     useProviderStore.setState({
         loaded: true,
-        list: [
-            predefinedProvider(),
-            customProvider({
-                id: "a",
-                name: "Acme",
-                models: [
-                    { id: "m1", toolCalling: true },
-                    { id: "m2", toolCalling: false },
-                ],
-            }),
-            customProvider({
-                id: "b",
-                name: "Beta",
-                models: [{ id: "m3", toolCalling: true }],
-                enabled: false,
-            }),
-            customProvider({ id: "c", name: "Cold", models: [] }),
-        ],
+        list: providers,
     });
 
     const { result } = renderHook(() => useModelOptions());
@@ -91,6 +92,7 @@ it("offers models of enabled custom and predefined providers", () => {
         ["b", "Beta"],
         ["c", "Cold"],
     ]);
+    expect(result.current.providers).toEqual(providers);
     expect(rpc.listProviders).not.toHaveBeenCalled();
 });
 

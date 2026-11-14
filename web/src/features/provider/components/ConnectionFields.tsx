@@ -12,7 +12,6 @@ import { ApiKeyField } from "./ApiKeyField";
 interface ConnectionFieldsProps {
     apiFormat: ApiFormat;
     values: ConnectionValues;
-    apiKeyDescription?: string | undefined;
     onChange: (values: ConnectionValues) => void;
 }
 
@@ -20,7 +19,6 @@ interface ConnectionFieldsProps {
 export function ConnectionFields({
     apiFormat,
     values,
-    apiKeyDescription,
     onChange,
 }: ConnectionFieldsProps) {
     const { t } = useTranslation();
@@ -32,7 +30,6 @@ export function ConnectionFields({
         <>
             <ApiKeyField
                 value={values.apiKey}
-                description={apiKeyDescription}
                 onChange={(apiKey) => onChange({ ...values, apiKey })}
             />
             <SettingsField

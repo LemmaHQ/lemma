@@ -36,18 +36,18 @@ export function PredefinedProviderDetail({
     onCheck,
 }: PredefinedProviderDetailProps) {
     const { t } = useTranslation();
-    const [apiKey, setApiKey] = useState("");
+    const [apiKey, setApiKey] = useState(provider.apiKey);
     const [checkGeneration, setCheckGeneration] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const trimmedKey = apiKey.trim();
-    const dirty = trimmedKey !== "";
+    const dirty = trimmedKey !== provider.apiKey;
     const save = async () => {
         setBusy(true);
         setError(null);
         try {
             await onSave({ apiKey: trimmedKey });
-            setApiKey("");
+            setApiKey(trimmedKey);
             setCheckGeneration((n) => n + 1);
         } catch (e) {
             setError(errorText(e, t));
@@ -60,7 +60,9 @@ export function PredefinedProviderDetail({
         <ProviderHeader
             name={provider.name}
             enabled={provider.enabled}
-            toggleDisabled={!provider.hasKey}
+            toggleDisabled={
+                !provider.enabled && (provider.apiKey === "" || dirty)
+            }
             onToggleEnabled={onToggleEnabled}
         >
             <SettingsSection
@@ -74,7 +76,7 @@ export function PredefinedProviderDetail({
                             saveDisabled={false}
                             onSave={() => void save()}
                             onCancel={() => {
-                                setApiKey("");
+                                setApiKey(provider.apiKey);
                                 setError(null);
                             }}
                         />
@@ -84,9 +86,9 @@ export function PredefinedProviderDetail({
                 <ApiKeyField
                     value={apiKey}
                     description={
-                        provider.hasKey
-                            ? t("provider.apiKeySavedDesc")
-                            : t("provider.enableNeedsKey")
+                        provider.apiKey === ""
+                            ? t("provider.enableNeedsKey")
+                            : undefined
                     }
                     onChange={setApiKey}
                 />
@@ -122,8 +124,8 @@ export function PredefinedProviderDetail({
                 </SettingsField>
                 <ConnectionCheck
                     models={provider.models.map((model) => model.id)}
-                    target={`${provider.hasKey}\n${provider.defaultApiFormat}\n${checkGeneration}`}
-                    disabled={dirty || !provider.hasKey}
+                    target={`${provider.apiKey}\n${provider.defaultApiFormat}\n${checkGeneration}`}
+                    disabled={dirty || provider.apiKey === ""}
                     onCheck={onCheck}
                 />
             </SettingsSection>

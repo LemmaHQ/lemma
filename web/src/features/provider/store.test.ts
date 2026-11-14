@@ -51,10 +51,16 @@ const rpc = vi.hoisted(() => ({
 
 vi.mock("@/rpc/clients", () => ({ providerClient: rpc }));
 
-const customProvider = (id: string, apiFormat: ApiFormat, patch: object = {}) =>
+const customProvider = (
+    id: string,
+    apiFormat: ApiFormat,
+    patch: object = {},
+    apiKey = "",
+) =>
     create(ProviderSchema, {
         id,
         enabled: true,
+        apiKey,
         source: {
             case: "custom",
             value: create(CustomProviderSchema, {
@@ -71,7 +77,7 @@ const customProvider = (id: string, apiFormat: ApiFormat, patch: object = {}) =>
 const predefinedProvider = (patch: object = {}) =>
     create(ProviderSchema, {
         id: "deepseek-id",
-        hasKey: true,
+        apiKey: "sk-deepseek",
         enabled: false,
         source: {
             case: "predefined",
@@ -96,7 +102,7 @@ beforeEach(async () => {
     useProviderStore.setState(useProviderStore.getInitialState());
     rpc.listProviders.mockResolvedValue({
         providers: [
-            customProvider("a", ApiFormat.ANTHROPIC),
+            customProvider("a", ApiFormat.ANTHROPIC, {}, "sk-a"),
             customProvider("g", ApiFormat.GEMINI),
             customProvider("o", ApiFormat.OPENAI),
             customProvider("u", ApiFormat.UNSPECIFIED),
@@ -117,13 +123,16 @@ it("loads custom and predefined providers with models and API formats", () => {
         ["u", "custom"],
         ["deepseek-id", "predefined"],
     ]);
-    expect(state().list[0]).toMatchObject({ apiFormat: "anthropic" });
+    expect(state().list[0]).toMatchObject({
+        apiFormat: "anthropic",
+        apiKey: "sk-a",
+    });
     expect(state().list[1]).toMatchObject({ apiFormat: "gemini" });
     expect(state().list[2]).toMatchObject({ apiFormat: "openai" });
     expect(state().list[3]).toMatchObject({ apiFormat: "openai" });
     expect(state().list.at(-1)).toMatchObject({
         source: "predefined",
-        hasKey: true,
+        apiKey: "sk-deepseek",
         defaultApiFormat: "anthropic",
         apiFormats: ["anthropic", "openai"],
         models: [
@@ -217,12 +226,18 @@ it("sends predefined key, enabled, and default format patches", async () => {
         apiKey: "sk-new",
         defaultApiFormat: "openai",
     });
+    await state().updatePredefined("deepseek-id", { enabled: true });
 
-    expect(rpc.updatePredefinedProvider.mock.lastCall?.[0]).toMatchObject({
+    expect(rpc.updatePredefinedProvider.mock.calls[0]?.[0]).toMatchObject({
         id: "deepseek-id",
         apiKey: "sk-new",
         enabled: undefined,
         defaultApiFormat: ApiFormat.OPENAI,
+    });
+    expect(rpc.updatePredefinedProvider.mock.calls[1]?.[0]).toMatchObject({
+        id: "deepseek-id",
+        enabled: true,
+        defaultApiFormat: undefined,
     });
     expect(state().list.at(-1)).toMatchObject({
         defaultApiFormat: "openai",
