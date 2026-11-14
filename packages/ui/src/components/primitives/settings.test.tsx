@@ -8,40 +8,56 @@ import {
     SettingsPage,
     SettingsRow,
     SettingsSection,
+    SettingsSectionCompact,
 } from "./settings";
 
-it("heads a page with its title, media, and actions", () => {
-    render(
+it("heads a page with its index slot, title, badge, and actions", () => {
+    const { rerender } = render(
         <SettingsPage
+            index={<aside aria-label="Providers index">Index</aside>}
             title="Acme"
-            media={<img alt="Acme logo" />}
+            badge="Custom provider"
             actions={<Button>Delete</Button>}
         >
-            <SettingsSection error={null}>
+            <SettingsSectionCompact error={null}>
                 <SettingsRow label="gpt-4o">
                     <Button>Remove</Button>
+                </SettingsRow>
+            </SettingsSectionCompact>
+        </SettingsPage>,
+    );
+
+    expect(
+        screen.getByRole("complementary", { name: "Providers index" }),
+    ).toBeDefined();
+    const header = within(screen.getByRole("banner"));
+    expect(header.getByRole("heading", { level: 1 }).textContent).toBe("Acme");
+    expect(header.getByText("Custom provider")).toBeDefined();
+    expect(header.getByRole("button", { name: "Delete" })).toBeDefined();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("gpt-4o")).toBeDefined();
+    rerender(
+        <SettingsPage title={<span>Node title</span>}>
+            <SettingsSection>
+                <SettingsRow label="item">
+                    <Button>Edit</Button>
                 </SettingsRow>
             </SettingsSection>
         </SettingsPage>,
     );
-
-    const header = within(screen.getByRole("banner"));
-    expect(header.getByRole("heading", { level: 1 }).textContent).toBe("Acme");
-    expect(header.getByRole("img", { name: "Acme logo" })).toBeDefined();
-    expect(header.getByRole("button", { name: "Delete" })).toBeDefined();
-    expect(screen.queryByRole("region")).toBeNull();
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByText("gpt-4o")).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+        "Node title",
+    );
 });
 
-it("omits the page header when no title, media, or actions are passed", () => {
+it("omits the page header when no title, badge, or actions are passed", () => {
     render(
         <SettingsPage>
-            <SettingsSection actions={<Button>Add</Button>}>
+            <SettingsSectionCompact actions={<Button>Add</Button>}>
                 <SettingsRow label="Item">
                     <Button>Edit</Button>
                 </SettingsRow>
-            </SettingsSection>
+            </SettingsSectionCompact>
         </SettingsPage>,
     );
 
@@ -49,25 +65,20 @@ it("omits the page header when no title, media, or actions are passed", () => {
     expect(screen.getByRole("button", { name: "Add" })).toBeDefined();
 });
 
-it("renders a two-column section when description or meta is passed", () => {
+it("renders a two-column section with description, meta, actions, error, and footer", () => {
     render(
         <SettingsPage actions={<Button>Help</Button>}>
             <SettingsSection
                 title="Appearance"
                 description="Choose theme and font."
-                meta="Synced across devices"
+                meta={<span>Synced across devices</span>}
                 actions={<Button>Reset</Button>}
                 error="Failed to save."
                 footer={<Button>Apply</Button>}
             >
                 <SettingsField label="Mode" align="top">
-                    <Button>Dark</Button>
+                    <Button>System</Button>
                 </SettingsField>
-            </SettingsSection>
-            <SettingsSection description="Only description">
-                <SettingsRow label="Row">
-                    <Button>Go</Button>
-                </SettingsRow>
             </SettingsSection>
         </SettingsPage>,
     );
@@ -82,13 +93,12 @@ it("renders a two-column section when description or meta is passed", () => {
     expect(section.getByRole("button", { name: "Reset" })).toBeDefined();
     expect(section.getByRole("alert").textContent).toBe("Failed to save.");
     expect(section.getByRole("button", { name: "Apply" })).toBeDefined();
-    expect(screen.getByText("Only description")).toBeDefined();
 });
 
 it("names a compact section by its title and holds its actions, error, and footer", () => {
     render(
         <SettingsPage title="Providers">
-            <SettingsSection
+            <SettingsSectionCompact
                 title="Models"
                 actions={<Button>Fetch</Button>}
                 error="The provider is unreachable."
@@ -97,7 +107,7 @@ it("names a compact section by its title and holds its actions, error, and foote
                 <SettingsRow label="gpt-4o">
                     <Button>Remove</Button>
                 </SettingsRow>
-            </SettingsSection>
+            </SettingsSectionCompact>
         </SettingsPage>,
     );
 
@@ -123,7 +133,7 @@ it("labels a field's control and replaces the description with an error", () => 
             >
                 <Input id="base-url" />
             </SettingsField>
-            <SettingsField label="Theme">
+            <SettingsField label="Theme" error={null}>
                 <Button>Dark</Button>
             </SettingsField>
         </SettingsSection>,
