@@ -20,11 +20,14 @@ enum ErrorReason {
   ERROR_REASON_TITLE_REQUIRED = 21;
   ERROR_REASON_SESSION_NOT_FOUND = 22;
   ERROR_REASON_DIRECTORY_NOT_FOUND = 23; // The session directory is not an absolute path to an existing directory
+  ERROR_REASON_MESSAGE_NOT_FOUND = 24;
+  ERROR_REASON_INVALID_BRANCH_POINT = 25; // Target message cannot serve as a turn boundary or branch parent
   ERROR_REASON_CONTENT_REQUIRED = 28;
   ERROR_REASON_MODEL_REQUIRED = 29;
 
   // Agent
   ERROR_REASON_TURN_NOT_RUNNING = 30; // No running turn for the message: it ended or never started
+  ERROR_REASON_SESSION_BUSY = 31; // Session already has a running turn
 }
 
 // Structured error details carried on ConnectError; rendered by client i18n based on reason.

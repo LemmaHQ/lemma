@@ -16,9 +16,13 @@ enum MessageStatus {
 message Session {
   string id = 1;
   string title = 2;
+  // Active leaf message id; absent when the session has no active path.
+  optional string leaf_id = 3;
   google.protobuf.Timestamp updated_at = 7;
   // Absolute directory the session's tools run in; absent for a session that runs in a generated workspace.
   optional string directory = 8;
+  // User message id of the turn currently running on this session, when any.
+  optional string active_message_id = 9;
 }
 
 // Tool call block within an assistant message.
@@ -41,6 +45,8 @@ message ToolResultMeta {
 
 message Message {
   string id = 1;
+  // Parent message id in the session tree; absent for root messages.
+  optional string parent_id = 2;
   string role = 3; // user | assistant | system | tool
   string content = 4;
   // Originating provider and model for assistant messages.
@@ -61,6 +67,8 @@ message Message {
   google.protobuf.Timestamp thinking_started_at = 15;
   // Server instant of the first non-thinking event after thinking began.
   google.protobuf.Timestamp thinking_finished_at = 16;
+  // Optional short user label attached to this tree node.
+  optional string label = 17;
 }
 
 message ListSessionsRequest {}
@@ -89,15 +97,36 @@ message RenameSessionResponse {
 
 message ListMessagesRequest {
   string session_id = 1;
-  // Keyset pagination anchor using (created_at, id); omitted to start from the beginning.
-  string before_id = 2;
-  int32 limit = 3;
 }
 
 message ListMessagesResponse {
+  // Complete message tree of the session, ordered oldest first.
   repeated Message messages = 1;
-  // Indicates presence of earlier messages in the history timeline.
-  bool has_more = 2;
+  // Active leaf message id of the session, when set.
+  optional string leaf_id = 3;
+  // User message id of the turn currently running on this session, when any.
+  optional string active_message_id = 4;
+}
+
+message SetSessionLeafRequest {
+  string session_id = 1;
+  // Target leaf message id; absent rewinds the active leaf before the root.
+  optional string leaf_id = 2;
+}
+
+message SetSessionLeafResponse {
+  Session session = 1;
+}
+
+message SetMessageLabelRequest {
+  string session_id = 1;
+  string message_id = 2;
+  // Short label text; empty clears the label.
+  string label = 3;
+}
+
+message SetMessageLabelResponse {
+  Message message = 1;
 }
 
 message DeleteSessionRequest {
@@ -111,6 +140,8 @@ service SessionService {
   rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
   rpc RenameSession(RenameSessionRequest) returns (RenameSessionResponse);
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  rpc SetSessionLeaf(SetSessionLeafRequest) returns (SetSessionLeafResponse);
+  rpc SetMessageLabel(SetMessageLabelRequest) returns (SetMessageLabelResponse);
   // Permanently deletes a session and all of its messages.
   rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse);
 }

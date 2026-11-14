@@ -16,13 +16,26 @@ fn transport_code(reason: ErrorReason) -> ErrorCode {
         ErrorReason::ProviderNotFound
         | ErrorReason::SessionNotFound
         | ErrorReason::DirectoryNotFound
+        | ErrorReason::MessageNotFound
         | ErrorReason::TurnNotRunning => ErrorCode::NotFound,
-        _ => ErrorCode::InvalidArgument,
+        ErrorReason::SessionBusy => ErrorCode::FailedPrecondition,
+        ErrorReason::Unspecified
+        | ErrorReason::ProviderFieldsRequired
+        | ErrorReason::ApiFormatInvalid
+        | ErrorReason::ProviderKeyRequired
+        | ErrorReason::ProviderIdentifierInvalid
+        | ErrorReason::ProviderIdentifierTaken
+        | ErrorReason::IdInvalid
+        | ErrorReason::TitleRequired
+        | ErrorReason::InvalidBranchPoint
+        | ErrorReason::ContentRequired
+        | ErrorReason::ModelRequired => ErrorCode::InvalidArgument,
     }
 }
 
 fn message(reason: ErrorReason) -> &'static str {
     match reason {
+        ErrorReason::Unspecified => "unspecified error",
         ErrorReason::ProviderFieldsRequired => "name, base_url and api_key required",
         ErrorReason::ApiFormatInvalid => "invalid API format",
         ErrorReason::ProviderKeyRequired => "save an API key before enabling this provider",
@@ -33,10 +46,12 @@ fn message(reason: ErrorReason) -> &'static str {
         ErrorReason::TitleRequired => "title required",
         ErrorReason::SessionNotFound => "session not found",
         ErrorReason::DirectoryNotFound => "directory not found",
+        ErrorReason::MessageNotFound => "message not found",
+        ErrorReason::InvalidBranchPoint => "invalid branch point",
         ErrorReason::ContentRequired => "content required",
         ErrorReason::ModelRequired => "model required",
         ErrorReason::TurnNotRunning => "turn not running",
-        ErrorReason::Unspecified => "unspecified error reason",
+        ErrorReason::SessionBusy => "session already has a running turn",
     }
 }
 
