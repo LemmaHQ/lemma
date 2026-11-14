@@ -39,8 +39,8 @@ export function generateWebCss(
 
 ${cssBlock("@theme", radiusVariables)}
 ${cssBlock(":root", motionVariables)}
-${cssBlock(":root", themes.light)}
-${cssBlock(".dark", themes.dark)}`;
+${cssBlock(':root, [data-theme-preview="light"]', themes.light)}
+${cssBlock('.dark, [data-theme-preview="dark"]', themes.dark)}`;
 }
 
 export function generateDesktopTs(themes: Record<ThemeName, Theme>): string {
