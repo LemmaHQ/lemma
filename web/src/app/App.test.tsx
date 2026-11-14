@@ -17,12 +17,16 @@ import {
     type Provider,
     ProviderSchema,
     type WebProvider,
+    WebProvider_Kind,
+    WebProviderSchema,
 } from "@/gen/lemma/v1/provider_pb";
 
 const rpc = vi.hoisted(() => ({
     listSessions: vi.fn<(req: object) => Promise<{ sessions: Session[] }>>(),
     createSession: vi.fn<(req: object) => Promise<{ session?: Session }>>(),
     listMessages: vi.fn<(req: object) => Promise<object>>(),
+    setSessionLeaf: vi.fn<(req: object) => Promise<object>>(),
+    setMessageLabel: vi.fn<(req: object) => Promise<object>>(),
     listProviders: vi.fn<(req: object) => Promise<{ providers: Provider[] }>>(),
     listWebProviders:
         vi.fn<(req: object) => Promise<{ providers: WebProvider[] }>>(),
@@ -34,6 +38,8 @@ vi.mock("@/rpc/clients", () => ({
         listSessions: rpc.listSessions,
         createSession: rpc.createSession,
         listMessages: rpc.listMessages,
+        setSessionLeaf: rpc.setSessionLeaf,
+        setMessageLabel: rpc.setMessageLabel,
     },
     providerClient: {
         listProviders: rpc.listProviders,
@@ -42,10 +48,11 @@ vi.mock("@/rpc/clients", () => ({
     agentClient: { sendMessage: rpc.sendMessage },
 }));
 
-const session = (id: string, title: string) =>
+const session = (id: string, title: string, directory = "") =>
     create(SessionSchema, {
         id,
         title,
+        directory,
         updatedAt: timestampFromDate(new Date()),
     });
 
@@ -66,8 +73,6 @@ const start = async (path: string) => {
     return render(<App />);
 };
 
-const pageTitle = () => document.querySelector("main header")?.textContent;
-
 const titleBar = () => {
     const element = document.querySelector(".app-titlebar");
     if (element === null) {
@@ -84,11 +89,19 @@ const sidebar = () => {
     return element;
 };
 
+const mainArea = () => {
+    const element = document.querySelector("main");
+    if (!(element instanceof HTMLElement)) {
+        throw new TypeError("no main");
+    }
+    return within(element);
+};
+
 const sessionRows = async () => {
     const list = (await within(document.body).findAllByText("Trip plans"))
-        .map((element) => element.closest("ul"))
+        .map((element) => element.closest("[data-slot='sidebar-content']"))
         .find((element) => element !== null);
-    if (list === undefined) {
+    if (!(list instanceof HTMLElement)) {
         throw new TypeError("no session list");
     }
     return within(list);
@@ -98,14 +111,6 @@ const atPath = (path: string) =>
     waitFor(() => {
         expect(window.location.pathname).toBe(path);
     });
-
-const header = () => {
-    const element = document.querySelector("main header");
-    if (!(element instanceof HTMLElement)) {
-        throw new TypeError("no page header");
-    }
-    return within(element);
-};
 
 const doneStream = async function* () {
     await Promise.resolve();
@@ -124,9 +129,14 @@ function setViewportWidth(width: number) {
 beforeEach(() => {
     vi.resetAllMocks();
     rpc.listSessions.mockResolvedValue({
-        sessions: [session("c1", "Trip plans"), session("c2", "")],
+        sessions: [
+            session("c1", "Trip plans", "/work/proj"),
+            session("c2", ""),
+        ],
     });
     rpc.listMessages.mockResolvedValue(create(ListMessagesResponseSchema, {}));
+    rpc.setSessionLeaf.mockResolvedValue({});
+    rpc.setMessageLabel.mockResolvedValue({});
     rpc.listProviders.mockResolvedValue({ providers: [] });
     rpc.listWebProviders.mockResolvedValue({ providers: [] });
 });
@@ -138,13 +148,18 @@ afterEach(() => {
     setViewportWidth(1024);
 });
 
-it("shows the splash, then opens an untitled home", async () => {
+it("shows the splash, then opens the new-session home without a top shell header", async () => {
     await start("/");
 
     expect(screen.getByRole("status", { name: "Loading…" })).toBeDefined();
     await sessionRows();
     expect(window.location.pathname).toBe("/");
-    expect(pageTitle()).toBe("");
+    expect(document.querySelector("main header")).toBeNull();
+    expect(
+        await screen.findByRole("textbox", {
+            name: "Configure a provider and model to start…",
+        }),
+    ).toBeDefined();
 });
 
 it("sends an unknown path home", async () => {
@@ -154,26 +169,37 @@ it("sends an unknown path home", async () => {
     expect(window.location.pathname).toBe("/");
 });
 
-it("titles an open session, untitled ones as new", async () => {
+it("opens sessions, starts new ones from sidebar, directory, and Ctrl+N", async () => {
     const user = userEvent.setup();
     await start("/");
 
     await user.click((await sessionRows()).getByText("Trip plans"));
     await atPath("/sessions/c1");
-    await waitFor(() => {
-        expect(pageTitle()).toBe("Trip plans");
-    });
 
     await user.click((await sessionRows()).getByText("New session"));
     await atPath("/sessions/c2");
-    await waitFor(() => {
-        expect(pageTitle()).toBe("New session");
-    });
 
     await user.click(
         within(sidebar()).getAllByRole("button", {
             name: "New session",
         })[0]!,
+    );
+    await atPath("/");
+
+    await user.click((await sessionRows()).getByText("Trip plans"));
+    await atPath("/sessions/c1");
+
+    await user.keyboard("n");
+    await user.keyboard("{Control>}a{/Control}");
+    expect(window.location.pathname).toBe("/sessions/c1");
+
+    await user.keyboard("{Control>}n{/Control}");
+    await atPath("/");
+
+    await user.click((await sessionRows()).getByText("Trip plans"));
+    await atPath("/sessions/c1");
+    await user.click(
+        within(sidebar()).getByRole("button", { name: "New session in proj" }),
     );
     await atPath("/");
 });
@@ -208,9 +234,7 @@ it("creates a session for the first message and opens it", async () => {
     await user.type(composer, "hello");
     await user.click(screen.getByRole("button", { name: "Send" }));
 
-    await waitFor(() => {
-        expect(window.location.pathname).toBe("/sessions/c9");
-    });
+    await atPath("/sessions/c9");
     expect(rpc.createSession).toHaveBeenCalledWith({});
     expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
         sessionId: "c9",
@@ -218,7 +242,7 @@ it("creates a session for the first message and opens it", async () => {
     });
 });
 
-it("remembers a collapsed sidebar and starts from the toolbar", async () => {
+it("remembers a collapsed sidebar and reopens it from the floating trigger", async () => {
     const user = userEvent.setup();
     const view = await start("/sessions/c1");
 
@@ -228,47 +252,117 @@ it("remembers a collapsed sidebar and starts from the toolbar", async () => {
     );
     expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
     expect(sidebar().dataset.state).toBe("collapsed");
-
-    await user.click(header().getByRole("button", { name: "New session" }));
-    await atPath("/");
+    expect(
+        mainArea().getByRole("button", { name: "Expand sidebar" }),
+    ).toBeDefined();
     view.unmount();
 
     await start("/");
     await sessionRows();
     expect(sidebar().dataset.state).toBe("collapsed");
-    await user.click(header().getByRole("button", { name: "Expand sidebar" }));
+    await user.click(
+        mainArea().getByRole("button", { name: "Expand sidebar" }),
+    );
     expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
 });
 
-it("navigates the settings pages from the sidebar", async () => {
+it("navigates settings with active counts and returns to the active session", async () => {
     const user = userEvent.setup();
-    await start("/");
+    rpc.listProviders.mockResolvedValue({
+        providers: [
+            create(ProviderSchema, {
+                id: "p1",
+                enabled: true,
+                source: {
+                    case: "custom",
+                    value: {
+                        apiFormat: ApiFormat.OPENAI,
+                        name: "Acme",
+                        models: [{ id: "m1", toolCalling: true }],
+                    },
+                },
+            }),
+            create(ProviderSchema, {
+                id: "p2",
+                enabled: false,
+                source: {
+                    case: "custom",
+                    value: {
+                        apiFormat: ApiFormat.OPENAI,
+                        name: "Disabled",
+                        models: [{ id: "m2", toolCalling: true }],
+                    },
+                },
+            }),
+        ],
+    });
+    rpc.listWebProviders.mockResolvedValue({
+        providers: [
+            create(WebProviderSchema, {
+                id: "wp-native",
+                kind: WebProvider_Kind.NATIVE,
+                name: "Native",
+                enabled: true,
+            }),
+            create(WebProviderSchema, {
+                id: "wp-ds",
+                kind: WebProvider_Kind.DEEPSEEK,
+                name: "DeepSeek",
+                enabled: true,
+                apiKey: "",
+            }),
+        ],
+    });
+    await start("/sessions/c1");
     await sessionRows();
 
     await user.click(screen.getByRole("link", { name: "App settings" }));
     await atPath("/settings/appearance");
     expect(
-        await screen.findByRole("heading", { level: 1, name: "Appearance" }),
+        await screen.findByRole("heading", { level: 2, name: "Appearance" }),
     ).toBeDefined();
 
-    await user.click(screen.getByRole("link", { name: "AI Providers" }));
+    const providersLink = screen.getByRole("link", { name: /AI Providers/u });
+    expect(within(providersLink).getByText("1")).toBeDefined();
+    const webLink = screen.getByRole("link", { name: /Web Search & Fetch/u });
+    expect(within(webLink).getByText("1")).toBeDefined();
+
+    await user.click(providersLink);
     await atPath("/settings/providers");
     expect(
         await screen.findByRole("region", { name: "AI Providers" }),
     ).toBeDefined();
 
-    await user.click(screen.getByRole("link", { name: "Web Search & Fetch" }));
+    await user.click(webLink);
     await atPath("/settings/web");
     expect(
         await screen.findByRole("heading", {
-            level: 1,
-            name: "Web Search & Fetch",
+            level: 2,
+            name: "Backends",
         }),
     ).toBeDefined();
 
-    await user.click(screen.getByRole("link", { name: "Back to home" }));
+    await user.click(screen.getByRole("link", { name: "Back to sessions" }));
     await sessionRows();
+    await atPath("/sessions/c1");
+});
+
+it("opens provider settings from the empty model picker", async () => {
+    const user = userEvent.setup();
+    await start("/");
+    await sessionRows();
+
+    await user.click(screen.getByRole("button", { name: "Select model" }));
+    await user.click(
+        await screen.findByRole("button", { name: "Open settings" }),
+    );
+    await atPath("/settings/providers");
+    expect(
+        await screen.findByRole("region", { name: "AI Providers" }),
+    ).toBeDefined();
+    await user.click(screen.getByRole("link", { name: "Back to sessions" }));
     await atPath("/");
+    expect(window.location.pathname).toBe("/");
 });
 
 it.each(["/settings", "/settings/unknown", "/settings/Providers"])(
@@ -287,17 +381,15 @@ it("keeps the sidebar open on settings without storing toggles", async () => {
     localStorage.setItem("sidebar-collapsed", "1");
     await start("/settings/appearance");
 
-    await screen.findByRole("link", { name: "Back to home" });
+    await screen.findByRole("link", { name: "Back to sessions" });
     expect(sidebar().dataset.state).toBe("expanded");
 
-    await user.click(
-        header().getByRole("button", { name: "Collapse sidebar" }),
-    );
+    await user.keyboard("{Control>}b{/Control}");
     expect(sidebar().dataset.state).toBe("expanded");
     expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
 });
 
-it("opens the sidebar as a sheet on a narrow window", async () => {
+it("opens and closes the sidebar sheet across mobile routes", async () => {
     const user = userEvent.setup();
     setViewportWidth(500);
     rpc.listSessions.mockResolvedValue({
@@ -309,10 +401,44 @@ it("opens the sidebar as a sheet on a narrow window", async () => {
         await screen.findByRole("button", { name: "Expand sidebar" }),
     );
     const sheet = await screen.findByRole("dialog", { name: "Sidebar" });
+    expect(
+        within(sheet).getByRole("button", { name: "Collapse sidebar" }),
+    ).toBeDefined();
     await user.click(
         within(sheet).getByRole("button", { name: "New session" }),
     );
+    await waitFor(() => {
+        expect(screen.queryByRole("dialog")).toBeNull();
+    });
 
+    await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
+    const settingsSheet = await screen.findByRole("dialog", {
+        name: "Sidebar",
+    });
+    await user.click(
+        within(settingsSheet).getByRole("link", { name: "App settings" }),
+    );
+    await atPath("/settings/appearance");
+    await waitFor(() => {
+        expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
+    const navSheet = await screen.findByRole("dialog", { name: "Sidebar" });
+    await user.click(
+        within(navSheet).getByRole("link", { name: /AI Providers/u }),
+    );
+    await atPath("/settings/providers");
+    await waitFor(() => {
+        expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
+    const backSheet = await screen.findByRole("dialog", { name: "Sidebar" });
+    await user.click(
+        within(backSheet).getByRole("link", { name: "Back to sessions" }),
+    );
+    await atPath("/");
     await waitFor(() => {
         expect(screen.queryByRole("dialog")).toBeNull();
     });

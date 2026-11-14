@@ -3,44 +3,86 @@ export interface SessionSummary {
     title: string;
     updatedAtMs: number;
     directory?: string;
+    leafId?: string;
+    activeMessageId?: string;
 }
 
-export type GroupKey = "today" | "yesterday" | "last7Days" | "earlier";
-
-const GROUP_ORDER: GroupKey[] = ["today", "yesterday", "last7Days", "earlier"];
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function startOfDayMs(ms: number): number {
-    const d = new Date(ms);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+export interface DirectoryGroup {
+    directory: string;
+    items: SessionSummary[];
 }
 
-export function groupSessions(
-    sessions: SessionSummary[],
-): { key: GroupKey; items: SessionSummary[] }[] {
-    const byGroup = new Map<GroupKey, SessionSummary[]>();
-    const today = startOfDayMs(Date.now());
+export const VISIBLE_SESSION_LIMIT = 4;
+const COLLAPSE_THRESHOLD = 5;
+
+/** Groups sessions by bound directory (`""` for default workspace), newest activity first. */
+export function groupSessions(sessions: SessionSummary[]): DirectoryGroup[] {
+    const byDirectory = new Map<string, SessionSummary[]>();
     const sorted = sessions.toSorted((a, b) => b.updatedAtMs - a.updatedAtMs);
-    for (const s of sorted) {
-        const diff = Math.round((today - startOfDayMs(s.updatedAtMs)) / DAY_MS);
-        const key: GroupKey =
-            diff <= 0
-                ? "today"
-                : diff === 1
-                  ? "yesterday"
-                  : diff <= 6
-                    ? "last7Days"
-                    : "earlier";
-        const items = byGroup.get(key) ?? [];
-        items.push(s);
-        byGroup.set(key, items);
-    }
-    const groups: { key: GroupKey; items: SessionSummary[] }[] = [];
-    for (const key of GROUP_ORDER) {
-        const items = byGroup.get(key);
-        if (items !== undefined) {
-            groups.push({ key, items });
+    for (const session of sorted) {
+        const key = session.directory ?? "";
+        const items = byDirectory.get(key);
+        if (items === undefined) {
+            byDirectory.set(key, [session]);
+        } else {
+            items.push(session);
         }
     }
-    return groups;
+    return Array.from(byDirectory, ([directory, items]) => ({
+        directory,
+        items,
+    }));
+}
+
+/** Terminal path segment of `directory`, or `defaultLabel` when unbound. */
+export function directoryBasename(
+    directory: string,
+    defaultLabel: string,
+): string {
+    if (directory === "") {
+        return defaultLabel;
+    }
+    return (
+        directory.split(/[\\/]/u).findLast((part) => part !== "") ?? directory
+    );
+}
+
+/** Slices a directory group's sessions unless at most five exist or `expanded` is true. */
+export function visibleDirectorySessions(
+    items: SessionSummary[],
+    expanded: boolean,
+): { visible: SessionSummary[]; hiddenCount: number } {
+    if (items.length <= COLLAPSE_THRESHOLD || expanded) {
+        return { visible: items, hiddenCount: 0 };
+    }
+    return {
+        visible: items.slice(0, VISIBLE_SESSION_LIMIT),
+        hiddenCount: items.length - VISIBLE_SESSION_LIMIT,
+    };
+}
+
+function pad2(value: number): string {
+    return String(value).padStart(2, "0");
+}
+
+/** Compact local timestamp (`HH:mm` today, `MM-DD` same year, `YYYY-MM-DD` older). */
+export function formatSessionTime(
+    updatedAtMs: number,
+    nowMs = Date.now(),
+): string {
+    if (updatedAtMs <= 0) {
+        return "";
+    }
+    const date = new Date(updatedAtMs);
+    const now = new Date(nowMs);
+    const sameYear = date.getFullYear() === now.getFullYear();
+    const sameDay =
+        sameYear &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
+    if (sameDay) {
+        return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+    }
+    const monthDay = `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+    return sameYear ? monthDay : `${date.getFullYear()}-${monthDay}`;
 }

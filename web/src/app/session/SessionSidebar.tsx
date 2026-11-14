@@ -13,15 +13,21 @@ import { ViewTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
 
-import { SessionList } from "@/features/session";
+import { SessionList, type SessionDirectoryState } from "@/features/session";
 
 import { AppBrand } from "../AppBrand";
-import { paths } from "../route-paths";
+import { paths, rememberSessionPath, sessionPath } from "../route-paths";
 import { SidebarToggleButton } from "../shell/SidebarToggleButton";
 import { NewSessionButton } from "./NewSessionButton";
 
-/** The sessions sidebar: brand, collapse toggle, new session, the session list with `activeId` highlighted, and the settings link. */
-export function SessionSidebar({ activeId }: { activeId: string | null }) {
+/** The sessions sidebar: brand, collapse toggle, new session, directory-grouped sessions, and settings link. */
+export function SessionSidebar({
+    activeId,
+    directoryState,
+}: {
+    activeId: string | null;
+    directoryState: SessionDirectoryState;
+}) {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
     const navigate = useNavigate();
@@ -49,28 +55,44 @@ export function SessionSidebar({ activeId }: { activeId: string | null }) {
                 >
                     <div className="flex flex-col">
                         <SessionList
-                            activeId={activeId}
-                            onOpen={(id) => {
+                            activeSessionId={activeId ?? undefined}
+                            activeNewDirectory={directoryState.directory}
+                            isNewSessionView={activeId === null}
+                            onSelectSession={(id) => {
+                                setOpenMobile(false);
                                 void navigate(paths.session(id));
+                            }}
+                            onNewInDirectory={(dir) => {
+                                directoryState.selectDirectory(dir);
+                                setOpenMobile(false);
+                                void navigate(paths.home);
                             }}
                         />
                     </div>
                 </ViewTransition>
             </SidebarContent>
             <SidebarFooter>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <AnimateIcon animateOnHover asChild>
-                            <SidebarMenuButton
-                                render={<Link to={paths.settings} />}
-                                onClick={() => setOpenMobile(false)}
-                            >
-                                <SettingsIcon />
-                                <span>{t("sidebar.appSettings")}</span>
-                            </SidebarMenuButton>
-                        </AnimateIcon>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <div className="border-t border-border pt-2">
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <AnimateIcon animateOnHover asChild>
+                                <SidebarMenuButton
+                                    aria-label={t("sidebar.appSettings")}
+                                    render={<Link to={paths.settings} />}
+                                    onClick={() => {
+                                        rememberSessionPath(
+                                            sessionPath(activeId),
+                                        );
+                                        setOpenMobile(false);
+                                    }}
+                                >
+                                    <SettingsIcon />
+                                    <span>{t("common.settings")}</span>
+                                </SidebarMenuButton>
+                            </AnimateIcon>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </div>
             </SidebarFooter>
         </>
     );

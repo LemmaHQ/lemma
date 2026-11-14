@@ -2,7 +2,12 @@ import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { beforeEach, expect, it, vi } from "vitest";
 
-import { type Session, SessionSchema } from "@/gen/lemma/v1/session_pb";
+import {
+    type Message,
+    MessageSchema,
+    type Session,
+    SessionSchema,
+} from "@/gen/lemma/v1/session_pb";
 
 import { useSessionStore } from "./store";
 import { createSession, refreshSessions } from "./useSessions";
@@ -15,6 +20,18 @@ const rpc = vi.hoisted(() => ({
     renameSession:
         vi.fn<(req: { id: string; title: string }) => Promise<Reply>>(),
     deleteSession: vi.fn<(req: { id: string }) => Promise<object>>(),
+    setSessionLeaf:
+        vi.fn<
+            (req: { sessionId: string; leafId?: string }) => Promise<Reply>
+        >(),
+    setMessageLabel:
+        vi.fn<
+            (req: {
+                sessionId: string;
+                messageId: string;
+                label: string;
+            }) => Promise<{ message?: Message | undefined }>
+        >(),
 }));
 
 vi.mock("@/rpc/clients", () => ({ sessionClient: rpc }));
@@ -24,6 +41,7 @@ const session = (
     title: string,
     updatedMs?: number,
     directory?: string,
+    extra?: { leafId?: string; activeMessageId?: string },
 ) =>
     create(SessionSchema, {
         id,
@@ -32,6 +50,7 @@ const session = (
             ? {}
             : { updatedAt: timestampFromDate(new Date(updatedMs)) }),
         ...(directory === undefined ? {} : { directory }),
+        ...extra,
     });
 
 const list = () => useSessionStore.getState().list;
@@ -41,14 +60,17 @@ beforeEach(async () => {
     useSessionStore.setState(useSessionStore.getInitialState());
     rpc.listSessions.mockResolvedValue({
         sessions: [
-            session("c1", "First", 5000, "C:\\work\\first"),
+            session("c1", "First", 5000, "C:\\work\\first", {
+                leafId: "m2",
+                activeMessageId: "m3",
+            }),
             session("c2", ""),
         ],
     });
     await refreshSessions();
 });
 
-it("loads the list with update times, zero when unknown", () => {
+it("loads the list with update times, leafId, activeMessageId, and zero when unknown", () => {
     expect(useSessionStore.getState().loaded).toBe(true);
     expect(list()).toEqual([
         {
@@ -56,6 +78,8 @@ it("loads the list with update times, zero when unknown", () => {
             title: "First",
             updatedAtMs: 5000,
             directory: "C:\\work\\first",
+            leafId: "m2",
+            activeMessageId: "m3",
         },
         { id: "c2", title: "", updatedAtMs: 0 },
     ]);
@@ -104,11 +128,87 @@ it("keeps the list when a rename returns no session", async () => {
     expect(list()[1]?.title).toBe("");
 });
 
-it("removes a deleted session", async () => {
+it("removes a deleted session and clears its markers", async () => {
     rpc.deleteSession.mockResolvedValue({});
+    useSessionStore.getState().markTurnFinished("c1", "done", false);
 
     await useSessionStore.getState().delete("c1");
 
     expect(rpc.deleteSession).toHaveBeenCalledWith({ id: "c1" });
     expect(list().map((c) => c.id)).toEqual(["c2"]);
+    expect(useSessionStore.getState().unseenDoneIds.has("c1")).toBe(false);
+});
+
+it("tracks active turns, unseen completions, errors, and seen state", () => {
+    const store = useSessionStore.getState();
+
+    store.markTurnFinished("c2", "done", false);
+    expect(useSessionStore.getState().unseenDoneIds.has("c2")).toBe(true);
+    expect(useSessionStore.getState().erroredIds.has("c2")).toBe(false);
+
+    store.markTurnFinished("c2", "done", false);
+    expect(useSessionStore.getState().unseenDoneIds.has("c2")).toBe(true);
+
+    store.setActiveTurn("c2", "m9");
+    expect(list()[1]?.activeMessageId).toBe("m9");
+    expect(useSessionStore.getState().unseenDoneIds.has("c2")).toBe(false);
+
+    store.markTurnFinished("c2", "error", true);
+    expect(list()[1]?.activeMessageId).toBeUndefined();
+    expect(useSessionStore.getState().erroredIds.has("c2")).toBe(true);
+
+    store.markTurnFinished("c2", "error", false);
+    expect(useSessionStore.getState().erroredIds.has("c2")).toBe(true);
+
+    store.markTurnFinished("c2", "done", true);
+    expect(useSessionStore.getState().erroredIds.has("c2")).toBe(false);
+    expect(useSessionStore.getState().unseenDoneIds.has("c2")).toBe(false);
+
+    store.markTurnFinished("c1", "error", false);
+    store.markSeen("c1");
+    expect(useSessionStore.getState().erroredIds.has("c1")).toBe(false);
+
+    store.setActiveTurn("c1", undefined);
+    expect(list()[0]?.activeMessageId).toBeUndefined();
+});
+
+it("updates session leaf and ignores empty leaf responses", async () => {
+    rpc.setSessionLeaf.mockResolvedValueOnce({
+        session: session("c1", "First", 6000, "C:\\work\\first", {
+            leafId: "m5",
+        }),
+    });
+
+    const updated = await useSessionStore.getState().setLeaf("c1", "m5");
+    expect(rpc.setSessionLeaf).toHaveBeenCalledWith({
+        sessionId: "c1",
+        leafId: "m5",
+    });
+    expect(updated?.leafId).toBe("m5");
+    expect(list()[0]?.leafId).toBe("m5");
+
+    rpc.setSessionLeaf.mockResolvedValueOnce({});
+    const missing = await useSessionStore.getState().setLeaf("c1");
+    expect(rpc.setSessionLeaf).toHaveBeenLastCalledWith({ sessionId: "c1" });
+    expect(missing).toBeUndefined();
+});
+
+it("sets a message label and returns the updated label", async () => {
+    rpc.setMessageLabel.mockResolvedValueOnce({
+        message: create(MessageSchema, { id: "m1", label: "checkpoint" }),
+    });
+
+    await expect(
+        useSessionStore.getState().setMessageLabel("c1", "m1", "checkpoint"),
+    ).resolves.toBe("checkpoint");
+    expect(rpc.setMessageLabel).toHaveBeenCalledWith({
+        sessionId: "c1",
+        messageId: "m1",
+        label: "checkpoint",
+    });
+
+    rpc.setMessageLabel.mockResolvedValueOnce({});
+    await expect(
+        useSessionStore.getState().setMessageLabel("c1", "m1", ""),
+    ).resolves.toBeUndefined();
 });

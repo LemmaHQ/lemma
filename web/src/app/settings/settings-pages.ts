@@ -1,4 +1,3 @@
-import { BotIcon, GlobeIcon, PaletteIcon } from "@lemma/ui";
 import type { ParseKeys } from "i18next";
 import type { ComponentType } from "react";
 
@@ -6,10 +5,9 @@ import { AppearancePanel } from "@/features/preferences";
 
 import type { SettingsSegment } from "../route-paths";
 
-/** One settings page in the routes and the navigation: its path segment, its navigation icon and title, and the page component it loads. */
+/** One settings page in the routes and the navigation: its path segment, its navigation title, and the page component it loads. */
 export interface SettingsPageRoute {
     segment: SettingsSegment;
-    icon: ComponentType;
     titleKey: ParseKeys;
     loadPage: () => Promise<ComponentType>;
 }
@@ -27,7 +25,6 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
         pages: [
             {
                 segment: "appearance",
-                icon: PaletteIcon,
                 titleKey: "settings.appearance",
                 loadPage: () => Promise.resolve(AppearancePanel),
             },
@@ -38,14 +35,12 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
         pages: [
             {
                 segment: "providers",
-                icon: BotIcon,
                 titleKey: "settings.aiProviders",
                 loadPage: async () =>
                     (await import("@/features/provider")).ProviderPanel,
             },
             {
                 segment: "web",
-                icon: GlobeIcon,
                 titleKey: "settings.web",
                 loadPage: async () =>
                     (await import("@/features/web-provider")).WebProviderPanel,

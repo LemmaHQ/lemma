@@ -7,35 +7,27 @@ afterEach(() => {
     localStorage.clear();
 });
 
-it("starts open at the default width", () => {
+it("starts open by default and reads collapsed state from storage", () => {
+    expect(renderHook(() => useStoredSidebar()).result.current.open).toBe(true);
+
+    localStorage.setItem("sidebar-collapsed", "1");
+    expect(renderHook(() => useStoredSidebar()).result.current.open).toBe(
+        false,
+    );
+});
+
+it("persists open and collapsed toggles in storage", () => {
     const { result } = renderHook(() => useStoredSidebar());
 
+    act(() => {
+        result.current.storeOpen(false);
+    });
+    expect(result.current.open).toBe(false);
+    expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
+
+    act(() => {
+        result.current.storeOpen(true);
+    });
     expect(result.current.open).toBe(true);
-    expect(result.current.width).toBeNull();
-});
-
-it("restores a stored width and ignores one that is not positive", () => {
-    localStorage.setItem("sidebar-width", "320");
-    expect(renderHook(() => useStoredSidebar()).result.current.width).toBe(320);
-
-    localStorage.setItem("sidebar-width", "0");
-    expect(
-        renderHook(() => useStoredSidebar()).result.current.width,
-    ).toBeNull();
-});
-
-it("stores a dragged width and forgets it on reset", () => {
-    const { result } = renderHook(() => useStoredSidebar());
-
-    act(() => {
-        result.current.storeWidth(288);
-    });
-    expect(result.current.width).toBe(288);
-    expect(localStorage.getItem("sidebar-width")).toBe("288");
-
-    act(() => {
-        result.current.storeWidth(null);
-    });
-    expect(result.current.width).toBeNull();
-    expect(localStorage.getItem("sidebar-width")).toBeNull();
+    expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
 });

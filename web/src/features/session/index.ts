@@ -1,4 +1,7 @@
 export { SessionList } from "./components/SessionList";
-export { useSessionDirectory } from "./useSessionDirectory";
-export { useSessionTitle } from "./useSessionTitle";
+export { useSessionStore } from "./store";
+export {
+    type SessionDirectoryState,
+    useSessionDirectory,
+} from "./useSessionDirectory";
 export { createSession, refreshSessions } from "./useSessions";

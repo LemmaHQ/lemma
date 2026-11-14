@@ -1,170 +1,132 @@
 import {
     AnimateIcon,
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    EllipsisIcon,
-    PencilIcon,
+    ChevronRightIcon,
+    cn,
+    PlusIcon,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarInput,
     SidebarMenu,
-    SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
     Skeleton,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-    Trash2Icon,
     useSidebar,
 } from "@lemma/ui";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { groupSessions, type SessionSummary } from "../grouping";
+import {
+    directoryBasename,
+    groupSessions,
+    type SessionSummary,
+    visibleDirectorySessions,
+} from "../grouping";
+import { SessionItem } from "./SessionItem";
 
 interface SessionGroupsProps {
     sessions: SessionSummary[];
     loaded: boolean;
-    activeSessionId: string | null;
+    activeSessionId?: string | undefined;
+    activeNewDirectory?: string | undefined;
+    isNewSessionView: boolean;
+    unseenDoneIds: Set<string>;
+    erroredIds: Set<string>;
     onOpenSession: (id: string) => void;
-    onRenameSession: (id: string, title: string) => void;
+    onNewInDirectory?: ((directory: string | undefined) => void) | undefined;
+    onRequestRename: (session: SessionSummary) => void;
     onDeleteSession: (id: string) => void;
-}
-
-function SessionActions({ children }: { children: ReactNode }) {
-    const { t } = useTranslation();
-    return (
-        <DropdownMenu>
-            <Tooltip>
-                <AnimateIcon animateOnHover asChild>
-                    <TooltipTrigger
-                        render={
-                            <DropdownMenuTrigger
-                                render={
-                                    <SidebarMenuAction
-                                        showOnHover
-                                        aria-label={t("session.actions")}
-                                    />
-                                }
-                            />
-                        }
-                    >
-                        <EllipsisIcon />
-                    </TooltipTrigger>
-                </AnimateIcon>
-                <TooltipContent>{t("session.actions")}</TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent side="right" align="start">
-                {children}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
-
-function SessionItem({
-    session,
-    active,
-    onOpen,
-    onDelete,
-    onRename,
-}: {
-    session: SessionSummary;
-    active: boolean;
-    onOpen: (id: string) => void;
-    onDelete: (id: string) => void;
-    onRename: (id: string, title: string) => void;
-}) {
-    const { t } = useTranslation();
-    const [editing, setEditing] = useState(false);
-    const selectOnMount = useCallback((el: HTMLInputElement | null) => {
-        el?.select();
-    }, []);
-
-    const commit = (value: string) => {
-        const title = value.trim();
-        setEditing(false);
-        if (title !== "" && title !== session.title) {
-            onRename(session.id, title);
-        }
-    };
-
-    if (editing) {
-        return (
-            <SidebarMenuItem>
-                <SidebarInput
-                    ref={selectOnMount}
-                    defaultValue={session.title}
-                    aria-label={t("session.rename")}
-                    onBlur={(e) => {
-                        commit(e.currentTarget.value);
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.nativeEvent.isComposing) {
-                            return;
-                        }
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            commit(e.currentTarget.value);
-                        } else if (e.key === "Escape") {
-                            setEditing(false);
-                        }
-                    }}
-                />
-            </SidebarMenuItem>
-        );
-    }
-
-    return (
-        <SidebarMenuItem>
-            <SidebarMenuButton
-                isActive={active}
-                onClick={() => onOpen(session.id)}
-            >
-                <span>
-                    {session.title === ""
-                        ? t("sidebar.newSession")
-                        : session.title}
-                </span>
-            </SidebarMenuButton>
-            <SessionActions>
-                <AnimateIcon animateOnHover asChild>
-                    <DropdownMenuItem onClick={() => setEditing(true)}>
-                        <PencilIcon />
-                        {t("session.rename")}
-                    </DropdownMenuItem>
-                </AnimateIcon>
-                <AnimateIcon animateOnHover asChild>
-                    <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => onDelete(session.id)}
-                    >
-                        <Trash2Icon />
-                        {t("session.delete")}
-                    </DropdownMenuItem>
-                </AnimateIcon>
-            </SessionActions>
-        </SidebarMenuItem>
-    );
 }
 
 const SKELETON_ROW_WIDTHS = ["w-4/5", "w-3/5", "w-2/3", "w-1/2", "w-3/4"];
 
-/** Session groups by recency; skeleton rows until the first load ends. */
+function toggleSet(
+    setState: Dispatch<SetStateAction<Set<string>>>,
+    key: string,
+) {
+    setState((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) {
+            next.delete(key);
+        } else {
+            next.add(key);
+        }
+        return next;
+    });
+}
+
+function DirectoryToggle({
+    directory,
+    label,
+    collapsed,
+    highlighted,
+    onToggle,
+}: {
+    directory: string;
+    label: string;
+    collapsed: boolean;
+    highlighted: boolean;
+    onToggle: () => void;
+}) {
+    const button = (
+        <button
+            type="button"
+            aria-expanded={!collapsed}
+            onClick={onToggle}
+            className={cn(
+                "flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-sm text-left text-caption ring-sidebar-ring outline-hidden hover:text-foreground focus-visible:ring-2",
+                highlighted
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground",
+            )}
+        >
+            <span
+                className={cn(
+                    "inline-flex shrink-0 transition-transform duration-base ease-move motion-reduce:transition-none",
+                    !collapsed && "rotate-90",
+                )}
+            >
+                <ChevronRightIcon className="size-3.5" />
+            </span>
+            <span className="truncate">{label}</span>
+        </button>
+    );
+
+    if (directory === "") {
+        return button;
+    }
+
+    return (
+        <Tooltip>
+            <TooltipTrigger render={button} />
+            <TooltipContent side="right">{directory}</TooltipContent>
+        </Tooltip>
+    );
+}
+
+/** Session groups by directory; skeleton rows until the first load ends. */
 export function SessionGroups({
     sessions,
     loaded,
     activeSessionId,
+    activeNewDirectory,
+    isNewSessionView,
+    unseenDoneIds,
+    erroredIds,
     onOpenSession,
-    onRenameSession,
+    onNewInDirectory,
+    onRequestRename,
     onDeleteSession,
 }: SessionGroupsProps) {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
-    const groups = useMemo(() => groupSessions(sessions), [sessions]);
+    const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(
+        () => new Set(),
+    );
+    const [expandedDirs, setExpandedDirs] = useState<Set<string>>(
+        () => new Set(),
+    );
 
     if (!loaded) {
         return (
@@ -183,32 +145,132 @@ export function SessionGroups({
         );
     }
 
+    const groups = groupSessions(sessions);
+
     return (
         <>
-            {groups.map((group) => (
-                <SidebarGroup key={group.key}>
-                    <SidebarGroupLabel>
-                        {t(`session.${group.key}`)}
-                    </SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {group.items.map((session) => (
-                                <SessionItem
-                                    key={session.id}
-                                    session={session}
-                                    active={session.id === activeSessionId}
-                                    onOpen={(id) => {
-                                        setOpenMobile(false);
-                                        onOpenSession(id);
-                                    }}
-                                    onDelete={onDeleteSession}
-                                    onRename={onRenameSession}
-                                />
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            ))}
+            {groups.map((group) => {
+                const collapsed = collapsedDirs.has(group.directory);
+                const expanded = expandedDirs.has(group.directory);
+                const { visible, hiddenCount } = visibleDirectorySessions(
+                    group.items,
+                    expanded,
+                );
+                const label = directoryBasename(
+                    group.directory,
+                    t("sidebar.defaultWorkspace"),
+                );
+                const highlighted =
+                    isNewSessionView &&
+                    group.directory === (activeNewDirectory ?? "");
+
+                return (
+                    <SidebarGroup key={group.directory}>
+                        <div className="group/dir flex h-7 items-center gap-1 rounded-md px-2">
+                            <DirectoryToggle
+                                directory={group.directory}
+                                label={label}
+                                collapsed={collapsed}
+                                highlighted={highlighted}
+                                onToggle={() =>
+                                    toggleSet(setCollapsedDirs, group.directory)
+                                }
+                            />
+                            {onNewInDirectory !== undefined && (
+                                <Tooltip>
+                                    <AnimateIcon animateOnHover asChild>
+                                        <TooltipTrigger
+                                            render={
+                                                <button
+                                                    type="button"
+                                                    aria-label={t(
+                                                        "sidebar.newInFolder",
+                                                        { folder: label },
+                                                    )}
+                                                    onClick={() =>
+                                                        onNewInDirectory(
+                                                            group.directory ===
+                                                                ""
+                                                                ? undefined
+                                                                : group.directory,
+                                                        )
+                                                    }
+                                                    className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground opacity-100 ring-sidebar-ring outline-hidden transition-opacity duration-base group-focus-within/dir:opacity-100 group-hover/dir:opacity-100 hover:bg-sidebar-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 md:opacity-0"
+                                                />
+                                            }
+                                        >
+                                            <PlusIcon className="size-3.5" />
+                                        </TooltipTrigger>
+                                    </AnimateIcon>
+                                    <TooltipContent>
+                                        {t("sidebar.newInFolder", {
+                                            folder: label,
+                                        })}
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                        <div
+                            className="grid-collapse"
+                            data-open={!collapsed}
+                            inert={collapsed}
+                        >
+                            <div>
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        {visible.map((session) => (
+                                            <SessionItem
+                                                key={session.id}
+                                                session={session}
+                                                active={
+                                                    session.id ===
+                                                    activeSessionId
+                                                }
+                                                unseenDone={unseenDoneIds.has(
+                                                    session.id,
+                                                )}
+                                                errored={erroredIds.has(
+                                                    session.id,
+                                                )}
+                                                onOpen={(id) => {
+                                                    setOpenMobile(false);
+                                                    onOpenSession(id);
+                                                }}
+                                                onRequestRename={
+                                                    onRequestRename
+                                                }
+                                                onDelete={onDeleteSession}
+                                            />
+                                        ))}
+                                        {hiddenCount > 0 && (
+                                            <SidebarMenuItem>
+                                                <SidebarMenuButton
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        toggleSet(
+                                                            setExpandedDirs,
+                                                            group.directory,
+                                                        )
+                                                    }
+                                                >
+                                                    <span className="text-caption text-subtle-foreground">
+                                                        {t(
+                                                            "sidebar.moreSessions",
+                                                            {
+                                                                count: hiddenCount,
+                                                            },
+                                                        )}
+                                                    </span>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        )}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </div>
+                        </div>
+                    </SidebarGroup>
+                );
+            })}
         </>
     );
 }

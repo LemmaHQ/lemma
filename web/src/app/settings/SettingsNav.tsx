@@ -1,5 +1,4 @@
 import {
-    AnimateIcon,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -8,16 +7,37 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@lemma/ui";
-import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch } from "react-router";
 
-import { paths } from "../route-paths";
+import { useProviders } from "@/features/provider";
+import { isWebProviderActive, useWebProviders } from "@/features/web-provider";
+
+import { paths, type SettingsSegment } from "../route-paths";
 import { SETTINGS_GROUPS } from "./settings-pages";
 
-/** Settings pages in the sidebar, grouped as `SETTINGS_GROUPS` lists them. */
+/** Settings pages in the sidebar, grouped with enabled counts for providers and web backends. */
 export function SettingsNav() {
     const { t } = useTranslation();
+    const providers = useProviders();
+    const webProviders = useWebProviders();
+
+    const countFor = (segment: SettingsSegment): number | undefined => {
+        switch (segment) {
+            case "providers":
+                return providers.loaded
+                    ? providers.list.filter((provider) => provider.enabled)
+                          .length
+                    : undefined;
+            case "web":
+                return webProviders.loaded
+                    ? webProviders.list.filter(isWebProviderActive).length
+                    : undefined;
+            case "appearance":
+                return undefined;
+        }
+    };
+
     return SETTINGS_GROUPS.map((group) => (
         <SidebarGroup key={group.labelKey}>
             <SidebarGroupLabel>{t(group.labelKey)}</SidebarGroupLabel>
@@ -26,8 +46,8 @@ export function SettingsNav() {
                     {group.pages.map((page) => (
                         <NavItem
                             key={page.segment}
-                            icon={page.icon}
                             label={t(page.titleKey)}
+                            count={countFor(page.segment)}
                             to={paths.settingsPage(page.segment)}
                         />
                     ))}
@@ -38,28 +58,31 @@ export function SettingsNav() {
 }
 
 function NavItem({
-    icon: Icon,
     label,
+    count,
     to,
 }: {
-    icon: ComponentType;
     label: string;
+    count: number | undefined;
     to: string;
 }) {
     const { setOpenMobile } = useSidebar();
     const active = useMatch(to) !== null;
     return (
         <SidebarMenuItem>
-            <AnimateIcon animateOnHover asChild>
-                <SidebarMenuButton
-                    isActive={active}
-                    render={<NavLink to={to} />}
-                    onClick={() => setOpenMobile(false)}
-                >
-                    <Icon />
-                    <span>{label}</span>
-                </SidebarMenuButton>
-            </AnimateIcon>
+            <SidebarMenuButton
+                isActive={active}
+                className="justify-between"
+                render={<NavLink to={to} />}
+                onClick={() => setOpenMobile(false)}
+            >
+                <span className="truncate">{label}</span>
+                {count !== undefined && (
+                    <span className="text-caption text-subtle-foreground tabular-nums">
+                        {count}
+                    </span>
+                )}
+            </SidebarMenuButton>
         </SidebarMenuItem>
     );
 }

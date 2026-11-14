@@ -1,6 +1,4 @@
 import {
-    AnimateIcon,
-    ArrowLeftIcon,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -9,24 +7,21 @@ import {
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
-import { paths } from "../route-paths";
+import { getLastSessionPath } from "../route-paths";
 
-/** The way back to sessions, shown as the sidebar header of the settings pages. */
+/** The way back to sessions, shown in the settings sidebar header. */
 export function BackHomeButton() {
     const { t } = useTranslation();
     const { setOpenMobile } = useSidebar();
     return (
         <SidebarMenu>
             <SidebarMenuItem>
-                <AnimateIcon animateOnHover asChild>
-                    <SidebarMenuButton
-                        render={<NavLink to={paths.home} end />}
-                        onClick={() => setOpenMobile(false)}
-                    >
-                        <ArrowLeftIcon />
-                        <span>{t("settings.backToHome")}</span>
-                    </SidebarMenuButton>
-                </AnimateIcon>
+                <SidebarMenuButton
+                    render={<NavLink to={getLastSessionPath()} end />}
+                    onClick={() => setOpenMobile(false)}
+                >
+                    <span>{t("sidebar.backToSessions")}</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
     );

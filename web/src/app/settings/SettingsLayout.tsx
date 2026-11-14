@@ -6,7 +6,7 @@ import { SettingsSidebar } from "./SettingsSidebar";
 /** The layout route of the settings pages; each page shows its own heading. */
 export function SettingsLayout() {
     return (
-        <ShellFrame sidebar={<SettingsSidebar />} title={undefined}>
+        <ShellFrame sidebar={<SettingsSidebar />}>
             <Outlet />
         </ShellFrame>
     );
