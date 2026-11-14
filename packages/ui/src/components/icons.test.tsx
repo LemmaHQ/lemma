@@ -3,29 +3,22 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
 import { expect, it } from "vitest";
 
-import * as thinkingLoader from "#ai/thinking-loader";
-import * as toolCallIcons from "#ai/tool-call-icon";
-
-import * as ui from "../index";
-
 type IconComponent = ComponentType<{
     size?: number;
     "aria-label"?: string;
     animateOnHover?: boolean;
 }>;
 
-const NOT_GLYPHS = new Set([
-    "AnimateIcon",
-    ...Object.keys(thinkingLoader),
-    ...Object.keys(toolCallIcons),
-]);
-
 const isGlyph = (entry: [string, unknown]): entry is [string, IconComponent] =>
-    entry[0].endsWith("Icon") &&
-    !NOT_GLYPHS.has(entry[0]) &&
-    typeof entry[1] === "function";
+    entry[0].endsWith("Icon") && typeof entry[1] === "function";
 
-const icons = Object.entries<unknown>(ui).filter(isGlyph);
+const iconModules = import.meta.glob<Record<string, unknown>>("./icons/*.tsx", {
+    eager: true,
+});
+
+const icons = Object.values(iconModules)
+    .flatMap((mod: Record<string, unknown>) => Object.entries(mod))
+    .filter(isGlyph);
 
 it.each(icons)("%s draws a labeled, sized stroke icon", (name, Icon) => {
     render(<Icon size={20} aria-label={name} />);

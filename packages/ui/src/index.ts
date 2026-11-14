@@ -1,90 +1,137 @@
 export { AnimateIcon } from "@animate-ui/react/icons";
-export { cn } from "./lib/cn";
 export { toast } from "sonner";
-export * from "./components/primitives/alert";
-export * from "./components/primitives/anchored-picker";
-export * from "./components/primitives/alert-dialog";
-export * from "./components/primitives/avatar";
-export * from "./components/primitives/button";
-export * from "./components/primitives/checkbox";
-export * from "./components/primitives/collapsible";
-export * from "./components/primitives/dialog";
-export * from "./components/primitives/dropdown-menu";
-export * from "./components/primitives/empty";
-export * from "./components/primitives/field";
-export * from "./components/primitives/input-group";
-export * from "./components/primitives/input";
-export * from "./components/primitives/label";
-export * from "./components/primitives/password-input";
-export * from "./components/primitives/scroll-area";
-export * from "./components/primitives/select";
-export * from "./components/primitives/separator";
-export * from "./components/primitives/settings";
-export * from "./components/primitives/sheet";
-export * from "./components/primitives/sidebar";
-export * from "./components/primitives/skeleton";
-export * from "./components/primitives/sonner";
-export * from "./components/primitives/switch";
-export * from "./components/primitives/textarea";
-export * from "./components/primitives/toggle-group";
-export * from "./components/primitives/toggle";
-export * from "./components/primitives/theme-preview-tiles";
-export * from "./components/primitives/wordmark";
-export * from "./components/primitives/tooltip";
-export * from "./components/ai/code-block";
-export * from "./components/ai/composer-box";
-export * from "./components/ai/detail-pane";
-export * from "./components/ai/session";
-export * from "./components/ai/message";
-export * from "./components/ai/model-picker";
-export * from "./components/ai/prompt-input";
-export * from "./components/ai/reasoning";
-export * from "./components/ai/session-stage";
-export * from "./components/ai/session-tree-pane";
-export * from "./components/ai/step-timeline";
-export * from "./components/ai/turn-card";
-export * from "./components/ai/shimmer";
-export * from "./components/ai/thinking-loader";
-export * from "./components/ai/tool-call-group";
-export * from "./components/ai/tool-call-icon";
-export * from "./components/ai/tool";
-export { ArrowDownIcon } from "./components/icons/arrow-down";
-export { ArrowLeftIcon } from "./components/icons/arrow-left";
-export { BotIcon } from "./components/icons/bot";
+export {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "./components/primitives/alert-dialog";
+export {
+    AnchoredPicker,
+    type AnchoredPickerGroup,
+    type AnchoredPickerItem,
+} from "./components/primitives/anchored-picker";
+export { Button } from "./components/primitives/button";
+export { Checkbox } from "./components/primitives/checkbox";
+export {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "./components/primitives/collapsible";
+export {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "./components/primitives/dialog";
+export {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "./components/primitives/dropdown-menu";
+export {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from "./components/primitives/empty";
+export { Input } from "./components/primitives/input";
+export {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "./components/primitives/input-group";
+export { PasswordInput } from "./components/primitives/password-input";
+export {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./components/primitives/select";
+export {
+    SettingsField,
+    SettingsPage,
+    SettingsRow,
+    SettingsSection,
+    SettingsSectionCompact,
+} from "./components/primitives/settings";
+export {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
+} from "./components/primitives/sidebar";
+export { Skeleton } from "./components/primitives/skeleton";
+export { Toaster } from "./components/primitives/sonner";
+export { Switch } from "./components/primitives/switch";
+export { ThemePreviewTiles } from "./components/primitives/theme-preview-tiles";
+export {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "./components/primitives/tooltip";
+export { Wordmark } from "./components/primitives/wordmark";
+export { ComposerBox } from "./components/ai/composer-box";
+export {
+    DetailPane,
+    type DetailPaneBody,
+    type DetailPaneProps,
+} from "./components/ai/detail-pane";
+export {
+    MessageActions,
+    MessageCopyAction,
+    MessageRegenerateAction,
+    MessageResponse,
+} from "./components/ai/message";
+export { SessionStage } from "./components/ai/session-stage";
+export {
+    SessionTreePane,
+    type SessionTreePaneLabels,
+    type TreePaneRow,
+    type TreeRailSegment,
+} from "./components/ai/session-tree-pane";
+export {
+    StepTimeline,
+    type StepTimelineRow,
+} from "./components/ai/step-timeline";
+export { TurnCard } from "./components/ai/turn-card";
 export { CheckIcon } from "./components/icons/check";
 export { ChevronDownIcon } from "./components/icons/chevron-down";
 export { ChevronRightIcon } from "./components/icons/chevron-right";
-export { ChevronUpDownIcon } from "./components/icons/chevron-up-down";
 export { ChevronUpIcon } from "./components/icons/chevron-up";
-export { CircleAlertIcon } from "./components/icons/circle-alert";
-export { CircleCheckIcon } from "./components/icons/circle-check";
-export { CopyIcon } from "./components/icons/copy";
 export { EllipsisIcon } from "./components/icons/ellipsis";
-export { EyeOffIcon } from "./components/icons/eye-off";
-export { EyeIcon } from "./components/icons/eye";
-export { GlobeIcon } from "./components/icons/globe";
-export { InfoIcon } from "./components/icons/info";
-export { LoaderCircleIcon } from "./components/icons/loader-circle";
-export { MessageCirclePlusIcon } from "./components/icons/message-circle-plus";
-export { MoonIcon } from "./components/icons/moon";
-export { PaletteIcon } from "./components/icons/palette";
-export { PanelLeftIcon } from "./components/icons/panel-left";
 export { PencilIcon } from "./components/icons/pencil";
 export { PlusIcon } from "./components/icons/plus";
-export { RefreshCwIcon } from "./components/icons/refresh-cw";
 export { SearchIcon } from "./components/icons/search";
 export { SettingsIcon } from "./components/icons/settings";
-export { SunMoonIcon } from "./components/icons/sun-moon";
-export { SunIcon } from "./components/icons/sun";
 export { Trash2Icon } from "./components/icons/trash-2";
-export { TriangleAlertIcon } from "./components/icons/triangle-alert";
 export { XIcon } from "./components/icons/x";
-export * from "./hooks/use-copy-text";
-export * from "./hooks/use-mobile";
-export * from "./hooks/use-sidebar";
-export * from "./hooks/use-stopwatch";
-export * from "./lib/format-duration";
-
+export { useSidebar } from "./hooks/use-sidebar";
+export { cn } from "./lib/cn";
+export { formatClockTime, formatDuration } from "./lib/format-duration";
+export { isShortcutIgnored } from "./lib/shortcut";
 declare module "react" {
     interface CSSProperties {
         [property: `--${string}`]: string | number | undefined;

@@ -26,6 +26,8 @@
             ]
         },
         "packages/ui": {
+            "project": ["src/**/*.{ts,tsx}"],
+            "includeEntryExports": true,
             "ignoreIssues": {
                 "src/components/icons/**": ["exports", "types"]
             }

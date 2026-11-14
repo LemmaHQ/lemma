@@ -107,10 +107,8 @@
                             "@streamdown/*",
                             "class-variance-authority",
                             "cn",
-                            "lucide-react",
                             "motion",
                             "motion/*",
-                            "shiki",
                             "sonner",
                             "streamdown",
                             "use-stick-to-bottom"
@@ -140,10 +138,8 @@
                                     "@streamdown/*",
                                     "class-variance-authority",
                                     "cn",
-                                    "lucide-react",
                                     "motion",
                                     "motion/*",
-                                    "shiki",
                                     "sonner",
                                     "streamdown",
                                     "use-stick-to-bottom"
@@ -177,10 +173,8 @@
                                     "@streamdown/*",
                                     "class-variance-authority",
                                     "cn",
-                                    "lucide-react",
                                     "motion",
                                     "motion/*",
-                                    "shiki",
                                     "sonner",
                                     "streamdown",
                                     "use-stick-to-bottom"
