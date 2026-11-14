@@ -46,11 +46,8 @@ interface LemmaClient {
 
     suspend fun createSession(): ClientSession
 
-    /**
-     * Lists up to [limit] of a session's messages, newest first, before the message [beforeId] when
-     * set.
-     */
-    suspend fun listMessages(sessionId: String, beforeId: String?, limit: Int): ClientMessagePage
+    /** Lists the session's message tree, oldest first, with its active leaf and running turn. */
+    suspend fun listMessages(sessionId: String): ClientMessageTree
 
     /**
      * Streams one agent turn from its [AgentStreamEvent.Started] event; the turn keeps running on

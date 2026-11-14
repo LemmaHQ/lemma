@@ -16,6 +16,7 @@ import dev.lemmahq.gen.lemma.v1.message
 import dev.lemmahq.gen.lemma.v1.model
 import dev.lemmahq.gen.lemma.v1.predefinedProvider
 import dev.lemmahq.gen.lemma.v1.provider
+import dev.lemmahq.gen.lemma.v1.session
 import dev.lemmahq.gen.lemma.v1.textDelta
 import dev.lemmahq.gen.lemma.v1.thinkingDelta
 import dev.lemmahq.gen.lemma.v1.toolCall
@@ -28,6 +29,7 @@ import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientPredefinedProvider
+import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
 import dev.lemmahq.lemma.client.ClientWebProvider
@@ -36,8 +38,6 @@ import dev.lemmahq.lemma.client.MessageStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 private val AT: Timestamp = Timestamp.newBuilder().setSeconds(12).setNanos(345_000_000).build()
 private const val AT_MILLIS = 12_345L
@@ -52,11 +52,11 @@ class ProtoMappingTest {
             formats,
             formats.map { format ->
                 val mapped = provider {
-                    hasKey = format == "openai"
+                    apiKey = if (format == "openai") "sk-test" else ""
                     custom = customProvider { apiFormat = apiFormat(format) }
                 }
                     .toClient()
-                if (format == "openai") assertTrue(mapped.hasKey) else assertFalse(mapped.hasKey)
+                assertEquals(if (format == "openai") "sk-test" else "", mapped.apiKey)
                 (mapped.source as ClientCustomProvider).apiFormat
             },
         )
@@ -111,7 +111,7 @@ class ProtoMappingTest {
                         this.kind = kind
                         name = "Web $index"
                         enabled = index == 0
-                        hasKey = index == 1
+                        apiKey = if (index == 1) "sk-exa" else ""
                         searchRank = index
                         fetchRank = 2 - index
                     }
@@ -124,17 +124,25 @@ class ProtoMappingTest {
                     ClientWebProviderKind.Native,
                     "Web 0",
                     true,
-                    false,
+                    "",
                     0,
                     2,
                 ),
-                ClientWebProvider("web-1", ClientWebProviderKind.Exa, "Web 1", false, true, 1, 1),
+                ClientWebProvider(
+                    "web-1",
+                    ClientWebProviderKind.Exa,
+                    "Web 1",
+                    false,
+                    "sk-exa",
+                    1,
+                    1,
+                ),
                 ClientWebProvider(
                     "web-2",
                     ClientWebProviderKind.DeepSeek,
                     "Web 2",
                     false,
-                    false,
+                    "",
                     2,
                     0,
                 ),
@@ -166,6 +174,8 @@ class ProtoMappingTest {
     fun aMessageKeepsTheTimesAndResultTheServiceRecorded() {
         val recorded = message {
             id = "a1"
+            parentId = "q1"
+            label = "pinned"
             role = "assistant"
             providerId = "openai"
             model = "gpt-4o"
@@ -203,6 +213,8 @@ class ProtoMappingTest {
                 toolResult = ClientToolResult("c0", isError = true),
                 thinkingStartedAt = AT_MILLIS,
                 thinkingFinishedAt = AT_MILLIS,
+                parentId = "q1",
+                label = "pinned",
             ),
             recorded.toClient(),
         )
@@ -218,11 +230,45 @@ class ProtoMappingTest {
     }
 
     @Test
+    fun aSessionKeepsItsOptionalLeafAndActiveTurn() {
+        assertEquals(
+            ClientSession("s1", "Trip", AT_MILLIS, leafId = "a1", activeMessageId = "q2"),
+            session {
+                id = "s1"
+                title = "Trip"
+                updatedAt = AT
+                leafId = "a1"
+                activeMessageId = "q2"
+            }
+                .toClient(),
+        )
+        assertEquals(
+            ClientSession("s2", "", AT_MILLIS),
+            session {
+                id = "s2"
+                updatedAt = AT
+            }
+                .toClient(),
+        )
+    }
+
+    @Test
     fun everyEventKindMapsWithTheTimeItOccurred() {
         val events =
             listOf(
                 agentEvent { started = agentStarted { messageId = "q1" } },
-                agentEvent { turnStarted = agentTurnStarted { messageId = "a1" } },
+                agentEvent {
+                    started = agentStarted {
+                        messageId = "q2"
+                        parentId = "a1"
+                    }
+                },
+                agentEvent {
+                    turnStarted = agentTurnStarted {
+                        messageId = "a1"
+                        parentId = "q1"
+                    }
+                },
                 agentEvent { delta = agentDelta { text = textDelta { content = "Hi" } } },
                 agentEvent { delta = agentDelta { thinking = thinkingDelta { content = "Hm" } } },
                 agentEvent { delta = agentDelta {} },
@@ -249,7 +295,8 @@ class ProtoMappingTest {
         assertEquals(
             listOf(
                 AgentStreamEvent.Started("q1", AT_MILLIS),
-                AgentStreamEvent.TurnStarted("a1", AT_MILLIS),
+                AgentStreamEvent.Started("q2", AT_MILLIS, parentId = "a1"),
+                AgentStreamEvent.TurnStarted("a1", AT_MILLIS, parentId = "q1"),
                 AgentStreamEvent.TextDelta("Hi", AT_MILLIS),
                 AgentStreamEvent.ThinkingDelta("Hm", AT_MILLIS),
                 AgentStreamEvent.Unknown(AT_MILLIS),

@@ -30,7 +30,7 @@ internal fun Provider.toClient(): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        hasKey = hasKey,
+        apiKey = apiKey,
         source =
             when {
                 hasPredefined() ->
@@ -61,7 +61,7 @@ internal fun WebProvider.toClient(): ClientWebProvider =
         kind = kind.toClient(),
         name = name,
         enabled = enabled,
-        hasKey = hasKey,
+        apiKey = apiKey,
         searchRank = searchRank,
         fetchRank = fetchRank,
     )
@@ -78,7 +78,13 @@ internal fun ClientModel.toProto(): Model =
     Model.newBuilder().setId(id).setToolCalling(toolCalling).build()
 
 internal fun Session.toClient(): ClientSession =
-    ClientSession(id = id, title = title, updatedAt = updatedAt.epochMillis())
+    ClientSession(
+        id = id,
+        title = title,
+        updatedAt = updatedAt.epochMillis(),
+        leafId = if (hasLeafId()) leafId else null,
+        activeMessageId = if (hasActiveMessageId()) activeMessageId else null,
+    )
 
 internal fun Message.toClient(): ClientMessage =
     ClientMessage(
@@ -97,14 +103,26 @@ internal fun Message.toClient(): ClientMessage =
         thinkingStartedAt = if (hasThinkingStartedAt()) thinkingStartedAt.epochMillis() else null,
         thinkingFinishedAt =
             if (hasThinkingFinishedAt()) thinkingFinishedAt.epochMillis() else null,
+        parentId = if (hasParentId()) parentId else null,
+        label = if (hasLabel()) label else null,
     )
 
 internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {
     val at = if (hasOccurredAt()) occurredAt.epochMillis() else null
     val kind: AgentEvent.KindCase = kindCase
     return when (kind) {
-        AgentEvent.KindCase.STARTED -> AgentStreamEvent.Started(started.messageId, at)
-        AgentEvent.KindCase.TURN_STARTED -> AgentStreamEvent.TurnStarted(turnStarted.messageId, at)
+        AgentEvent.KindCase.STARTED ->
+            AgentStreamEvent.Started(
+                messageId = started.messageId,
+                occurredAt = at,
+                parentId = if (started.hasParentId()) started.parentId else null,
+            )
+        AgentEvent.KindCase.TURN_STARTED ->
+            AgentStreamEvent.TurnStarted(
+                messageId = turnStarted.messageId,
+                occurredAt = at,
+                parentId = turnStarted.parentId,
+            )
         AgentEvent.KindCase.DELTA ->
             when (delta.partCase) {
                 AgentDelta.PartCase.TEXT -> AgentStreamEvent.TextDelta(delta.text.content, at)

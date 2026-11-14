@@ -18,4 +18,6 @@ data class ClientMessage(
     val toolResult: ClientToolResult? = null,
     val thinkingStartedAt: Long? = null,
     val thinkingFinishedAt: Long? = null,
+    val parentId: String? = null,
+    val label: String? = null,
 )

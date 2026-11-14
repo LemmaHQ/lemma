@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientMessage
-import dev.lemmahq.lemma.client.ClientMessagePage
+import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
@@ -218,15 +218,15 @@ class SessionViewModelTest {
     @Test
     fun regeneratingAReplySendsItsQuestionAgainOncePerTurn() = runTest {
         client.onListSessions = { listOf(trip) }
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
+        client.onListMessages = {
+            ClientMessageTree(
                 listOf(
-                    sampleMessage("a2", "assistant", "openai", "gpt-4o"),
-                    sampleMessage("q2", "user"),
-                    sampleMessage("a1", "assistant", "openai", "gpt-4o"),
                     sampleMessage("q1", "user"),
+                    sampleMessage("a1", "assistant", "openai", "gpt-4o", parentId = "q1"),
+                    sampleMessage("q2", "user", parentId = "a1"),
+                    sampleMessage("a2", "assistant", "openai", "gpt-4o", parentId = "q2"),
                 ),
-                hasMore = false,
+                leafId = "a2",
             )
         }
         client.onSendMessage = { _, _, _, _ -> flow { awaitCancellation() } }
@@ -379,15 +379,16 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun aTurnThatEndedWhileTheStreamWasBrokenShowsTheNewestPage() = runTest {
+    fun aTurnThatEndedWhileTheStreamWasBrokenReloadsTheTree() = runTest {
         client.onSendMessage = { _, _, _, _ ->
             flow {
                 emit(AgentStreamEvent.Started("q1"))
                 throw ServiceException(ServiceFailure.Network)
             }
         }
-        val settled = listOf(sampleMessage("a1", "assistant"), sampleMessage("q1", "user"))
-        client.onListMessages = { _, _ -> ClientMessagePage(settled, hasMore = false) }
+        val settled =
+            listOf(sampleMessage("q1", "user"), sampleMessage("a1", "assistant", parentId = "q1"))
+        client.onListMessages = { ClientMessageTree(settled, leafId = "a1") }
         val viewModel = viewModel()
 
         send(viewModel, "Hello")
@@ -399,26 +400,7 @@ class SessionViewModelTest {
 
     @Test
     fun openingASessionFollowsTheTurnItIsRunning() = runTest {
-        val running =
-            ClientMessage(
-                "a1",
-                "assistant",
-                "",
-                status = MessageStatus.Streaming,
-                providerId = "openai",
-                model = "gpt-4o",
-            )
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
-                listOf(
-                    running,
-                    sampleMessage("q1", "user"),
-                    sampleMessage("a0", "assistant"),
-                    sampleMessage("q0", "user"),
-                ),
-                hasMore = false,
-            )
-        }
+        client.onListMessages = { runningMultiStepTree() }
         val events = Channel<AgentStreamEvent>(Channel.UNLIMITED)
         client.onResumeStream = { _, _ -> events.consumeAsFlow() }
         val viewModel = viewModel()
@@ -438,15 +420,61 @@ class SessionViewModelTest {
         )
 
         events.send(AgentStreamEvent.Started("q1"))
+        events.send(AgentStreamEvent.TurnStarted("a05"))
+        events.send(AgentStreamEvent.ToolCallStarted("c1", "bash", "{}"))
+        events.send(AgentStreamEvent.ToolCallFinished("c1", "ok", isError = false))
         events.send(AgentStreamEvent.TurnStarted("a1"))
         events.send(AgentStreamEvent.TextDelta("Sunny"))
         events.send(AgentStreamEvent.Done())
         events.close()
         advanceUntilIdle()
 
-        assertEquals(listOf("q0", "a0", "q1", "a1"), viewModel.messages.map { it.id })
+        assertEquals(listOf("q0", "a0", "q1", "a05", "a1"), viewModel.messages.map { it.id })
         assertEquals(Triple(Assistant, "Sunny", MessageStatus.Done), viewModel.shown.last())
         assertFalse(viewModel.turnRunning)
+    }
+
+    private fun runningMultiStepTree(): ClientMessageTree {
+        val toolStep =
+            ClientMessage(
+                "a05",
+                "assistant",
+                "",
+                providerId = "openai",
+                model = "gpt-4o",
+                toolCalls = listOf(ClientToolCall("c1", "bash", "{}")),
+                parentId = "q1",
+            )
+        val toolOut =
+            ClientMessage(
+                "t1",
+                "tool",
+                "ok",
+                toolResult = ClientToolResult("c1", isError = false),
+                parentId = "a05",
+            )
+        val running =
+            ClientMessage(
+                "a1",
+                "assistant",
+                "",
+                status = MessageStatus.Streaming,
+                providerId = "openai",
+                model = "gpt-4o",
+                parentId = "t1",
+            )
+        return ClientMessageTree(
+            listOf(
+                sampleMessage("q0", "user"),
+                sampleMessage("a0", "assistant", parentId = "q0"),
+                sampleMessage("q1", "user", parentId = "a0"),
+                toolStep,
+                toolOut,
+                running,
+            ),
+            leafId = "a1",
+            activeMessageId = "q1",
+        )
     }
 
     @Test
@@ -484,8 +512,11 @@ class SessionViewModelTest {
     @Test
     fun aRecreatedViewModelReopensTheSessionThatWasOpen() = runTest {
         client.onListSessions = { listOf(trip, work) }
-        client.onListMessages = { sessionId, _ ->
-            ClientMessagePage(listOf(sampleMessage("$sessionId-q", "user")), hasMore = false)
+        client.onListMessages = { sessionId ->
+            ClientMessageTree(
+                listOf(sampleMessage("$sessionId-q", "user")),
+                leafId = "$sessionId-q",
+            )
         }
         val state = SavedStateHandle()
         open(viewModel(state), work)
@@ -500,127 +531,103 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun openingASessionSelectsItsLastUsedModelAndTracksOlderPages() = runTest {
-        val page = CompletableDeferred<ClientMessagePage>()
-        client.onListMessages = { _, _ -> page.await() }
+    fun openingASessionSelectsItsLastUsedModelFromTheActivePath() = runTest {
+        val tree = CompletableDeferred<ClientMessageTree>()
+        client.onListMessages = { tree.await() }
         val viewModel = viewModel()
 
         open(viewModel, trip)
         assertEquals(emptyList(), viewModel.shown)
 
-        val newestFirst =
+        val messages =
             listOf(
-                sampleMessage("a1", "assistant", providerId = "openai", model = "gpt-4o-mini"),
                 sampleMessage("q1", "user"),
+                sampleMessage(
+                    "a1",
+                    "assistant",
+                    providerId = "openai",
+                    model = "gpt-4o-mini",
+                    parentId = "q1",
+                ),
+                sampleMessage(
+                    "a2",
+                    "assistant",
+                    providerId = "openai",
+                    model = "gpt-4o",
+                    parentId = "q1",
+                ),
             )
-        page.complete(ClientMessagePage(newestFirst, hasMore = true))
+        tree.complete(ClientMessageTree(messages, leafId = "a1"))
         advanceUntilIdle()
 
         assertEquals(listOf("q1", "a1"), viewModel.messages.map { it.content })
-        assertTrue(viewModel.openSession?.hasOlderMessages == true)
         assertEquals(ModelSelection("openai", "gpt-4o-mini"), viewModel.selection)
     }
 
     @Test
-    fun toolMessagesAreHiddenAndTheirResultsJoinTheCallsAcrossPages() = runTest {
+    fun toolMessagesAreHiddenAndTheirResultsJoinTheCallsAlongTheActivePath() = runTest {
         val call = ClientToolCall("c1", "bash", """{"cmd":"date"}""")
+        val q1 = sampleMessage("q1", "user")
+        val a1 = ClientMessage("a1", "assistant", "", toolCalls = listOf(call), parentId = "q1")
         val result =
-            ClientMessage("t1", "tool", "Fri", toolResult = ClientToolResult("c1", isError = true))
-        client.onListMessages = { _, beforeId ->
-            if (beforeId == null) {
-                ClientMessagePage(listOf(sampleMessage("a2", "assistant"), result), hasMore = true)
-            } else {
-                ClientMessagePage(
-                    listOf(
-                        ClientMessage("a1", "assistant", "", toolCalls = listOf(call)),
-                        sampleMessage("q1", "user"),
-                    ),
-                    hasMore = false,
-                )
-            }
-        }
+            ClientMessage(
+                "t1",
+                "tool",
+                "Fri",
+                toolResult = ClientToolResult("c1", isError = true),
+                parentId = "a1",
+            )
+        val a2 = sampleMessage("a2", "assistant", parentId = "t1")
+        client.onListMessages = { ClientMessageTree(listOf(q1, a1, result, a2), leafId = "a2") }
         val viewModel = viewModel()
         open(viewModel, trip)
-
-        viewModel.loadOlderMessages()
-        advanceUntilIdle()
 
         assertEquals(listOf("q1", "a1", "a2"), viewModel.messages.map { it.id })
         assertEquals(
             listOf(UiToolCall("c1", "bash", """{"cmd":"date"}""", running = false, "Fri", true)),
             viewModel.messages[1].toolCalls,
         )
-        assertEquals(Call("listMessages", "trip", "t1"), client.calls.last())
     }
 
     @Test
-    fun olderMessagesArePrependedUntilTheFirstMessage() = runTest {
-        client.onListMessages = { _, beforeId ->
-            if (beforeId == null) {
-                ClientMessagePage(
-                    listOf(sampleMessage("a2", "assistant"), sampleMessage("q2", "user")),
-                    hasMore = true,
-                )
-            } else {
-                ClientMessagePage(
-                    listOf(sampleMessage("a1", "assistant"), sampleMessage("q1", "user")),
-                    hasMore = false,
-                )
-            }
+    fun activeMessageIdResumesEvenBeforeAssistantReplyAndIgnoresOtherBranches() = runTest {
+        val q1 = sampleMessage("q1", "user")
+        val q2 = sampleMessage("q2", "user")
+        client.onListMessages = {
+            ClientMessageTree(listOf(q1, q2), leafId = "q1", activeMessageId = "q2")
         }
         val viewModel = viewModel()
         open(viewModel, trip)
+        assertFalse(client.calls.any { it.name == "resumeStream" })
+        assertFalse(viewModel.turnRunning)
 
-        viewModel.loadOlderMessages()
-        assertTrue(viewModel.openSession?.loadingOlderMessages == true)
-        viewModel.loadOlderMessages()
-        advanceUntilIdle()
-        viewModel.loadOlderMessages()
-        advanceUntilIdle()
-
-        assertFalse(viewModel.openSession?.loadingOlderMessages == true)
-        assertFalse(viewModel.openSession?.hasOlderMessages == true)
-        assertEquals(listOf("q1", "a1", "q2", "a2"), viewModel.messages.map { it.id })
-        assertEquals(
-            listOf(Call("listMessages", "trip", null), Call("listMessages", "trip", "q2")),
-            client.calls.filter { it.name == "listMessages" },
-        )
-    }
-
-    @Test
-    fun aFailedOlderPageKeepsTheShownMessages() = runTest {
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(listOf(sampleMessage("q2", "user")), hasMore = true)
+        client.onListMessages = {
+            ClientMessageTree(listOf(q1, q2), leafId = "q1", activeMessageId = "q1")
         }
-        val viewModel = viewModel()
-        open(viewModel, trip)
-        client.onListMessages = { _, _ -> throw ServiceException(ServiceFailure.Network) }
+        client.onResumeStream = { _, _ -> flow { awaitCancellation() } }
+        open(viewModel, work)
 
-        viewModel.loadOlderMessages()
-        advanceUntilIdle()
-
-        assertEquals(errorText(ServiceFailure.Network), viewModel.error)
-        assertFalse(viewModel.openSession?.loadingOlderMessages == true)
-        assertTrue(viewModel.openSession?.hasOlderMessages == true)
-        assertEquals(listOf("q2"), viewModel.messages.map { it.id })
+        assertEquals(Call("resumeStream", "q1", 0L), client.calls.last())
+        assertTrue(viewModel.turnRunning)
+        assertEquals(Triple(Assistant, "", MessageStatus.Streaming), viewModel.shown.last())
     }
 
     @Test
     fun switchingSessionsDropsTheEarlierLoad() = runTest {
         client.onListSessions = { listOf(trip, work) }
-        val tripPage = CompletableDeferred<ClientMessagePage>()
-        client.onListMessages = { sessionId, _ ->
+        val tripTree = CompletableDeferred<ClientMessageTree>()
+        client.onListMessages = { sessionId ->
             if (sessionId == "trip") {
-                tripPage.await()
+                tripTree.await()
             } else {
-                ClientMessagePage(listOf(sampleMessage("w1", "user")), hasMore = false)
+                ClientMessageTree(listOf(sampleMessage("w1", "user")), leafId = "w1")
             }
         }
         val viewModel = viewModel()
 
         open(viewModel, trip)
         open(viewModel, work)
-        tripPage.complete(ClientMessagePage(listOf(sampleMessage("t1", "user")), hasMore = false))
+        tripTree.complete(ClientMessageTree(listOf(sampleMessage("t1", "user")), leafId = "t1"))
         advanceUntilIdle()
         open(viewModel, work)
 
@@ -633,12 +640,12 @@ class SessionViewModelTest {
     fun aNewSessionWaitsForItsFirstTurnWithTheDefaultModel() = runTest {
         settings.setModelSelection(ModelSelection("openai", "gpt-4o"))
         client.onListSessions = { listOf(trip, work) }
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
+        client.onListMessages = {
+            ClientMessageTree(
                 listOf(
                     sampleMessage("a1", "assistant", providerId = "openai", model = "gpt-4o-mini")
                 ),
-                hasMore = true,
+                leafId = "a1",
             )
         }
         val viewModel = viewModel()
@@ -678,8 +685,8 @@ class SessionViewModelTest {
     @Test
     fun deletingTheOpenSessionClosesIt() = runTest {
         client.onListSessions = { listOf(trip, work) }
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(listOf(sampleMessage("q1", "user")), hasMore = false)
+        client.onListMessages = {
+            ClientMessageTree(listOf(sampleMessage("q1", "user")), leafId = "q1")
         }
         val viewModel = viewModel()
         open(viewModel, trip)
@@ -720,7 +727,7 @@ class SessionViewModelTest {
         assertEquals("Hello", viewModel.retryText)
         assertFalse(viewModel.turnRunning)
 
-        client.onListMessages = { _, _ -> throw ServiceException(ServiceFailure.SessionNotFound) }
+        client.onListMessages = { throw ServiceException(ServiceFailure.SessionNotFound) }
         open(viewModel, trip)
         assertEquals(errorText(ServiceFailure.SessionNotFound), viewModel.error)
     }
@@ -729,7 +736,6 @@ class SessionViewModelTest {
     fun sessionActionsWithoutAnOpenSessionDoNothing() = runTest {
         val viewModel = viewModel()
 
-        viewModel.loadOlderMessages()
         viewModel.stop()
         viewModel.regenerate("a1")
         viewModel.newSession()
@@ -744,8 +750,8 @@ class SessionViewModelTest {
     @Test
     fun regeneratingNeedsAModelAndAnEarlierQuestion() = runTest {
         client.onListProviders = { emptyList() }
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(listOf(sampleMessage("a1", "assistant")), hasMore = true)
+        client.onListMessages = {
+            ClientMessageTree(listOf(sampleMessage("a1", "assistant")), leafId = "a1")
         }
         val viewModel = viewModel()
         open(viewModel, trip)
@@ -762,14 +768,14 @@ class SessionViewModelTest {
 
     @Test
     fun regeneratingALaterStepResendsTheQuestionOfItsTurn() = runTest {
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
+        client.onListMessages = {
+            ClientMessageTree(
                 listOf(
-                    sampleMessage("a2", "assistant", "openai", "gpt-4o"),
-                    sampleMessage("a1", "assistant", "openai", "gpt-4o"),
                     sampleMessage("q1", "user"),
+                    sampleMessage("a1", "assistant", "openai", "gpt-4o", parentId = "q1"),
+                    sampleMessage("a2", "assistant", "openai", "gpt-4o", parentId = "a1"),
                 ),
-                hasMore = false,
+                leafId = "a2",
             )
         }
         client.onSendMessage = { _, _, _, _ -> flow { awaitCancellation() } }
@@ -783,31 +789,27 @@ class SessionViewModelTest {
     }
 
     @Test
-    fun anEmptySessionHasNoOlderPage() = runTest {
-        val viewModel = viewModel()
-        open(viewModel, trip)
-
-        viewModel.loadOlderMessages()
-        advanceUntilIdle()
-
-        assertEquals(1, client.calls.count { it.name == "listMessages" })
-    }
-
-    @Test
     fun aTurnSentWhileTheSessionLoadsFollowsOnlyItsOwnStream() = runTest {
-        val page = CompletableDeferred<ClientMessagePage>()
-        client.onListMessages = { _, _ -> page.await() }
+        val tree = CompletableDeferred<ClientMessageTree>()
+        client.onListMessages = { tree.await() }
         val viewModel = viewModel()
         open(viewModel, trip)
 
         send(viewModel, "Hello")
-        page.complete(
-            ClientMessagePage(
+        tree.complete(
+            ClientMessageTree(
                 listOf(
-                    ClientMessage("a0", "assistant", "", status = MessageStatus.Streaming),
                     sampleMessage("q0", "user"),
+                    ClientMessage(
+                        "a0",
+                        "assistant",
+                        "",
+                        status = MessageStatus.Streaming,
+                        parentId = "q0",
+                    ),
                 ),
-                hasMore = false,
+                leafId = "a0",
+                activeMessageId = "q0",
             )
         )
         advanceUntilIdle()
@@ -818,13 +820,19 @@ class SessionViewModelTest {
 
     @Test
     fun aRunningTurnWithoutItsModelIsFollowed() = runTest {
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
+        client.onListMessages = {
+            ClientMessageTree(
                 listOf(
-                    ClientMessage("a1", "assistant", "", status = MessageStatus.Streaming),
                     sampleMessage("q1", "user"),
+                    ClientMessage(
+                        "a1",
+                        "assistant",
+                        "",
+                        status = MessageStatus.Streaming,
+                        parentId = "q1",
+                    ),
                 ),
-                hasMore = false,
+                leafId = "a1",
             )
         }
         client.onResumeStream = { _, _ -> flow { awaitCancellation() } }
@@ -845,7 +853,7 @@ class SessionViewModelTest {
                 throw ServiceException(ServiceFailure.Network)
             }
         }
-        client.onListMessages = { _, _ -> throw ServiceException(ServiceFailure.Timeout) }
+        client.onListMessages = { throw ServiceException(ServiceFailure.Timeout) }
         val viewModel = viewModel()
 
         send(viewModel, "Hello")

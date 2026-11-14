@@ -14,7 +14,6 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
 import lemma.mobile.shared.generated.resources.provider_api_key_placeholder
-import lemma.mobile.shared.generated.resources.provider_api_key_saved_desc
 import lemma.mobile.shared.generated.resources.provider_api_path
 import lemma.mobile.shared.generated.resources.provider_api_path_desc
 import lemma.mobile.shared.generated.resources.provider_api_path_desc_gemini
@@ -34,17 +33,12 @@ internal fun ProviderConnectionFields(
     apiPath: String,
     onApiPathChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    hasKey: Boolean = false,
 ) {
     val placeholders = connectionPlaceholders(apiFormat)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         LemmaField(
             label = stringResource(Res.string.provider_api_key),
-            description =
-                stringResource(
-                    if (hasKey) Res.string.provider_api_key_saved_desc
-                    else Res.string.provider_api_key_desc
-                ),
+            description = stringResource(Res.string.provider_api_key_desc),
         ) {
             LemmaPasswordField(
                 value = apiKey,

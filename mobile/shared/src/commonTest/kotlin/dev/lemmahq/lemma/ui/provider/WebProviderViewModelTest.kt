@@ -74,36 +74,55 @@ class WebProviderViewModelTest {
     }
 
     @Test
-    fun savingTrimsAWriteOnlyKeyAndClearsItsDraft() = runTest {
+    fun savingTrimsAndClearsTheKeyAndUpdatesTheStoredValue() = runTest {
         val viewModel = viewModel()
         advanceUntilIdle()
-        viewModel.setApiKey("exa", "  sk-new  ")
+        assertEquals("sk-exa", viewModel.apiKey("exa"))
+        assertFalse(viewModel.hasUnsavedKey("exa"))
 
+        viewModel.setApiKey("exa", "  sk-exa  ")
+        assertFalse(viewModel.hasUnsavedKey("exa"))
+
+        viewModel.setApiKey("exa", "  sk-new  ")
         assertEquals("  sk-new  ", viewModel.apiKey("exa"))
         assertTrue(viewModel.hasUnsavedKey("exa"))
         viewModel.saveApiKey("exa")
         advanceUntilIdle()
 
-        assertEquals("", viewModel.apiKey("exa"))
+        assertEquals("sk-new", viewModel.apiKey("exa"))
         assertFalse(viewModel.hasUnsavedKey("exa"))
         assertFalse(viewModel.isSaving("exa"))
         assertEquals(
             Call("updateWebProvider", "exa", ClientWebProviderPatch(apiKey = "sk-new")),
             client.calls.last(),
         )
-        assertTrue(viewModel.providers.single { it.id == "exa" }.hasKey)
+        assertEquals("sk-new", viewModel.providers.single { it.id == "exa" }.apiKey)
+
+        viewModel.setApiKey("exa", "")
+        assertTrue(viewModel.hasUnsavedKey("exa"))
+        viewModel.saveApiKey("exa")
+        advanceUntilIdle()
+
+        assertEquals("", viewModel.apiKey("exa"))
+        assertEquals("", viewModel.providers.single { it.id == "exa" }.apiKey)
+        assertEquals(
+            Call("updateWebProvider", "exa", ClientWebProviderPatch(apiKey = "")),
+            client.calls.last(),
+        )
     }
 
     @Test
-    fun blankKeysAndDuplicateSavesDoNotCallTheService() = runTest {
+    fun unchangedKeysAndDuplicateSavesDoNotCallTheService() = runTest {
         val viewModel = viewModel()
         advanceUntilIdle()
         viewModel.saveApiKey("native")
-        viewModel.setApiKey("exa", "   ")
-        viewModel.saveApiKey("exa")
+        viewModel.saveApiKey("missing")
+        viewModel.setApiKey("deepseek", "   ")
+        viewModel.saveApiKey("deepseek")
         advanceUntilIdle()
         assertEquals(0, client.calls.count { it.name == "updateWebProvider" })
-        assertFalse(viewModel.hasUnsavedKey("exa"))
+        assertFalse(viewModel.hasUnsavedKey("deepseek"))
+        assertFalse(viewModel.hasUnsavedKey("missing"))
 
         val answer = CompletableDeferred<ClientWebProvider>()
         client.onUpdateWebProvider = { _, _ -> answer.await() }
@@ -115,7 +134,7 @@ class WebProviderViewModelTest {
         advanceUntilIdle()
         assertEquals(1, client.calls.count { it.name == "updateWebProvider" })
 
-        answer.complete(exa().copy(hasKey = true))
+        answer.complete(exa().copy(apiKey = "sk-new"))
         advanceUntilIdle()
         assertFalse(viewModel.isSaving("exa"))
     }
@@ -241,15 +260,16 @@ class WebProviderViewModelTest {
 }
 
 private fun native() =
-    ClientWebProvider("native", ClientWebProviderKind.Native, "Native", true, false, 0, 2)
+    ClientWebProvider("native", ClientWebProviderKind.Native, "Native", true, "", 0, 2)
 
-private fun exa() = ClientWebProvider("exa", ClientWebProviderKind.Exa, "Exa", false, true, 1, 1)
+private fun exa() =
+    ClientWebProvider("exa", ClientWebProviderKind.Exa, "Exa", false, "sk-exa", 1, 1)
 
 private fun deepSeek() =
-    ClientWebProvider("deepseek", ClientWebProviderKind.DeepSeek, "DeepSeek", false, false, 0, 0)
+    ClientWebProvider("deepseek", ClientWebProviderKind.DeepSeek, "DeepSeek", false, "", 0, 0)
 
 private fun ClientWebProvider.patched(patch: ClientWebProviderPatch) =
     copy(
         enabled = if (patch.apiKey == "") false else patch.enabled ?: enabled,
-        hasKey = patch.apiKey?.isNotEmpty() ?: hasKey,
+        apiKey = patch.apiKey ?: apiKey,
     )

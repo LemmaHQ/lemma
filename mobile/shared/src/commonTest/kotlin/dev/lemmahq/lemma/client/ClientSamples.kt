@@ -5,13 +5,13 @@ fun sampleProvider(
     id: String,
     vararg models: String,
     enabled: Boolean = true,
-    hasKey: Boolean = true,
+    apiKey: String = "sk-test",
     name: String = id,
 ): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        hasKey = hasKey,
+        apiKey = apiKey,
         source =
             ClientCustomProvider(
                 identifier = id,
@@ -29,12 +29,12 @@ fun samplePredefinedProvider(
     id: String,
     vararg models: String,
     enabled: Boolean = false,
-    hasKey: Boolean = false,
+    apiKey: String = "",
 ): ClientProvider =
     ClientProvider(
         id = id,
         enabled = enabled,
-        hasKey = hasKey,
+        apiKey = apiKey,
         source =
             ClientPredefinedProvider(
                 identifier = id,
@@ -51,9 +51,22 @@ fun sampleMessage(
     role: String,
     providerId: String? = null,
     model: String? = null,
+    parentId: String? = null,
 ): ClientMessage =
-    ClientMessage(id = id, role = role, content = id, providerId = providerId, model = model)
+    ClientMessage(
+        id = id,
+        role = role,
+        content = id,
+        providerId = providerId,
+        model = model,
+        parentId = parentId,
+    )
 
 /** A session titled [title], last updated at epoch millisecond [updatedAt]. */
-fun sampleSession(id: String, title: String = id, updatedAt: Long = 0): ClientSession =
-    ClientSession(id = id, title = title, updatedAt = updatedAt)
+fun sampleSession(
+    id: String,
+    title: String = id,
+    updatedAt: Long = 0,
+    leafId: String? = null,
+    activeMessageId: String? = null,
+): ClientSession = ClientSession(id, title, updatedAt, leafId, activeMessageId)

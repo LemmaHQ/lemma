@@ -5,6 +5,7 @@ import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientMessage
+import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientPredefinedProvider
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
@@ -16,6 +17,7 @@ import dev.lemmahq.lemma.client.ClientWebProviderPatch
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
+import dev.lemmahq.lemma.client.activePath
 import dev.lemmahq.lemma.engine.ENGINE_BASE_URL
 import dev.lemmahq.lemma.engine.LocalEngine
 import java.net.InetAddress
@@ -27,6 +29,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -103,7 +106,7 @@ class ConnectLemmaClientTest {
             ClientProvider(
                 id = created.id,
                 enabled = true,
-                hasKey = true,
+                apiKey = "sk-1",
                 source =
                     ClientCustomProvider(
                         identifier = "vendor",
@@ -153,7 +156,7 @@ class ConnectLemmaClientTest {
             predefined.models.map { it.id },
         )
         assertTrue(predefined.models.all { it.toolCalling })
-        assertFalse(initial.hasKey)
+        assertEquals("", initial.apiKey)
         assertFalse(initial.enabled)
         val rejected =
             assertFailsWith<ServiceException> {
@@ -174,7 +177,7 @@ class ConnectLemmaClientTest {
                 ),
             )
 
-        assertTrue(updated.hasKey)
+        assertEquals("sk-deepseek", updated.apiKey)
         assertTrue(updated.enabled)
         assertEquals(
             "openai",
@@ -213,10 +216,10 @@ class ConnectLemmaClientTest {
                 ClientWebProviderPatch(apiKey = "sk-exa", enabled = true),
             )
         assertTrue(enabledExa.enabled)
-        assertTrue(enabledExa.hasKey)
+        assertEquals("sk-exa", enabledExa.apiKey)
         val keyedDeepSeek =
             client.updateWebProvider(deepSeek.id, ClientWebProviderPatch(apiKey = "sk-deepseek"))
-        assertTrue(keyedDeepSeek.hasKey)
+        assertEquals("sk-deepseek", keyedDeepSeek.apiKey)
         assertFalse(keyedDeepSeek.enabled)
 
         val disabledNative =
@@ -260,8 +263,10 @@ class ConnectLemmaClientTest {
         val provider = client.createCustomProvider(vendorInput("answer"))
         val session = client.createSession()
 
+        assertEquals(ClientMessageTree(emptyList()), client.listMessages(session.id))
+
         val events = client.sendMessage(session.id, "hi", provider.id, "answer").toList()
-        val page = client.listMessages(session.id, null, 50)
+        val tree = client.listMessages(session.id)
 
         val started = events.first() as AgentStreamEvent.Started
         val reply = events[1] as AgentStreamEvent.TurnStarted
@@ -275,29 +280,26 @@ class ConnectLemmaClientTest {
                 .map { it.withoutTime() },
             events.map { it.withoutTime() },
         )
+        assertNull(started.parentId)
+        assertEquals(started.messageId, reply.parentId)
         assertTrue(events.all { it.occurredAt != null })
-        assertFalse(page.hasMore)
+        assertEquals(reply.messageId, tree.leafId)
+        assertNull(tree.activeMessageId)
         assertEquals(
             listOf(
+                ClientMessage(started.messageId, "user", "hi"),
                 ClientMessage(
                     reply.messageId,
                     "assistant",
                     "pong",
                     providerId = provider.id,
                     model = "answer",
+                    parentId = started.messageId,
                 ),
-                ClientMessage(started.messageId, "user", "hi"),
             ),
-            page.messages,
+            tree.messages,
         )
-        assertEquals(
-            emptyList(),
-            client.listMessages(session.id, beforeId = started.messageId, limit = 50).messages,
-        )
-        assertEquals(
-            listOf(reply.messageId),
-            client.listMessages(session.id, null, 1).messages.map { it.id },
-        )
+        assertEquals(tree.messages, activePath(tree))
     }
 
     @Test
@@ -307,7 +309,8 @@ class ConnectLemmaClientTest {
         val session = client.createSession()
 
         val events = client.sendMessage(session.id, "save a note", provider.id, "tool").toList()
-        val page = client.listMessages(session.id, null, 50).messages
+        val tree = client.listMessages(session.id)
+        val messages = tree.messages
 
         assertEquals(
             listOf(
@@ -327,8 +330,9 @@ class ConnectLemmaClientTest {
         assertEquals("write_file", call.name)
         assertTrue("a.txt" in call.arguments)
         assertEquals(call.callId to false, finished.callId to finished.isError)
-        assertEquals(listOf("assistant", "tool", "assistant", "user"), page.map { it.role })
-        val (answer, result, toolStep) = page
+        assertEquals(listOf("user", "assistant", "tool", "assistant"), messages.map { it.role })
+        val (toolStep, result, answer) = messages.drop(1)
+        assertEquals(answer.id, tree.leafId)
         assertEquals("saved", answer.content)
         assertEquals(ClientToolResult(call.callId, isError = false), result.toolResult)
         assertEquals(finished.content, result.content)
@@ -352,6 +356,7 @@ class ConnectLemmaClientTest {
         val started =
             client.sendMessage(session.id, "hi", provider.id, "hang").first()
                 as AgentStreamEvent.Started
+        assertEquals(started.messageId, client.listMessages(session.id).activeMessageId)
 
         val resumed =
             client
@@ -390,8 +395,7 @@ class ConnectLemmaClientTest {
         assertTrue(renamed.updatedAt >= session.updatedAt && session.updatedAt > 0)
         assertEquals(listOf(renamed), listed)
         assertEquals(emptyList(), client.listSessions())
-        val missing =
-            assertFailsWith<ServiceException> { client.listMessages(session.id, null, 50) }
+        val missing = assertFailsWith<ServiceException> { client.listMessages(session.id) }
         assertEquals(ServiceFailure.SessionNotFound, missing.failure)
     }
 
@@ -421,7 +425,7 @@ class ConnectLemmaClientTest {
                         modelsPath = "/models",
                     )
                 }
-                .copy(hasKey = true),
+                .copy(apiKey = "sk-2"),
             updated,
         )
         assertEquals(updated, unchanged)

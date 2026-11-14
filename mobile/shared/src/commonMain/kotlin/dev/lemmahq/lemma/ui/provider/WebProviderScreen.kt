@@ -28,7 +28,6 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
 import lemma.mobile.shared.generated.resources.provider_api_key_placeholder
-import lemma.mobile.shared.generated.resources.provider_api_key_saved_desc
 import lemma.mobile.shared.generated.resources.provider_enable_needs_key
 import lemma.mobile.shared.generated.resources.provider_enable_web_provider
 import lemma.mobile.shared.generated.resources.provider_unsaved_changes
@@ -132,9 +131,10 @@ private fun WebProviderBackend(
                 !saving &&
                     (provider.enabled ||
                         provider.kind == ClientWebProviderKind.Native ||
-                        provider.hasKey),
+                        provider.apiKey.isNotBlank()),
             hint =
-                if (provider.kind == ClientWebProviderKind.Native || provider.hasKey) null
+                if (provider.kind == ClientWebProviderKind.Native || provider.apiKey.isNotBlank())
+                    null
                 else stringResource(Res.string.provider_enable_needs_key),
             label = stringResource(Res.string.provider_enable_web_provider, provider.name),
         )
@@ -148,11 +148,7 @@ private fun WebProviderBackend(
         } else {
             LemmaField(
                 label = stringResource(Res.string.provider_api_key),
-                description =
-                    stringResource(
-                        if (provider.hasKey) Res.string.provider_api_key_saved_desc
-                        else Res.string.provider_api_key_desc
-                    ),
+                description = stringResource(Res.string.provider_api_key_desc),
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 LemmaPasswordField(

@@ -6,11 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientMessage
-import dev.lemmahq.lemma.client.ClientMessagePage
+import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.MessageStatus
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
+import dev.lemmahq.lemma.client.activePath
 import dev.lemmahq.lemma.data.ModelSelection
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
@@ -21,14 +22,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-private const val MESSAGE_PAGE_SIZE = 50
 private const val MAX_RESUMES = 3
 private const val RESUME_BACKOFF_MILLIS = 500L
 
 /**
  * The open session [id]: its messages and its turn, run in a child of [parent] until [close].
- * Loading fetches the newest page from the service, then follows the turn that page shows running.
- * A turn whose stream breaks resumes up to three times. Failures go to [onError].
+ * Loading fetches the message tree from the service, shows its active path, then follows the
+ * running turn. A turn whose stream breaks resumes up to three times. Failures go to [onError].
  */
 internal class OpenSession(
     val id: String,
@@ -38,7 +38,6 @@ internal class OpenSession(
 ) {
     private val scope = CoroutineScope(parent.coroutineContext + Job(parent.coroutineContext[Job]))
     private var loadJob: Job? = null
-    private var shownPages = emptyList<ClientMessage>()
     private var turn by mutableStateOf<Turn?>(null)
     private var localIds = 0
 
@@ -48,12 +47,6 @@ internal class OpenSession(
 
     val messages by derivedStateOf { items.filter { it.role != MessageRole.Tool } }
 
-    var hasOlderMessages by mutableStateOf(false)
-        private set
-
-    var loadingOlderMessages by mutableStateOf(false)
-        private set
-
     val turnRunning: Boolean
         get() = turn != null
 
@@ -61,36 +54,16 @@ internal class OpenSession(
     val stoppable: Boolean
         get() = turn?.messageId != null
 
-    /** Loads the messages; [onNewestPage] receives the newest page, newest first. */
-    fun load(onNewestPage: (List<ClientMessage>) -> Unit) {
+    /** Loads the message tree; [onLoaded] receives the active path, newest first. */
+    fun load(onLoaded: (List<ClientMessage>) -> Unit) {
         loadJob = scope.launch {
             try {
-                val page = client.listMessages(id, null, MESSAGE_PAGE_SIZE)
-                showNewestPage(page)
-                onNewestPage(page.messages)
-                if (turn == null) followRunningTurn()
+                val tree = client.listMessages(id)
+                val path = showTree(tree)
+                onLoaded(path.asReversed())
+                if (turn == null) followRunningTurn(path, tree.activeMessageId)
             } catch (e: ServiceException) {
                 onError(errorText(e.failure))
-            }
-        }
-    }
-
-    /** Prepends the page before the oldest loaded message while the service has older ones. */
-    fun loadOlder() {
-        val beforeId = (shownPages.firstOrNull() ?: return).id
-        if (!hasOlderMessages || loadingOlderMessages) return
-        loadingOlderMessages = true
-        scope.launch {
-            try {
-                val page = client.listMessages(id, beforeId, MESSAGE_PAGE_SIZE)
-                val older = page.messages.asReversed()
-                items = (older.toUiMessages() + items).withToolResults()
-                hasOlderMessages = page.hasMore
-                shownPages = older + shownPages
-            } catch (e: ServiceException) {
-                onError(errorText(e.failure))
-            } finally {
-                loadingOlderMessages = false
             }
         }
     }
@@ -131,22 +104,18 @@ internal class OpenSession(
         scope.cancel()
     }
 
-    private fun showNewestPage(page: ClientMessagePage) {
-        val newest = page.messages.asReversed()
-        items = newest.toUiMessages()
-        hasOlderMessages = page.hasMore
-        shownPages = newest
+    private fun showTree(tree: ClientMessageTree): List<ClientMessage> {
+        val path = activePath(tree)
+        items = path.toUiMessages()
+        return path
     }
 
-    private fun followRunningTurn() {
-        val userIndex = shownPages.indexOfLast { it.role == "user" }
-        if (userIndex < 0) return
-        val running =
-            shownPages.drop(userIndex + 1).lastOrNull { it.status == MessageStatus.Streaming }
-                ?: return
-        val selection = ModelSelection(running.providerId.orEmpty(), running.model.orEmpty())
+    private fun followRunningTurn(path: List<ClientMessage>, activeMessageId: String?) {
+        val userId = runningUserId(path, activeMessageId) ?: return
+        val userIndex = path.indexOfFirst { it.id == userId }
+        val running = path.drop(userIndex + 1).lastOrNull { it.role == "assistant" }
+        val selection = ModelSelection(running?.providerId.orEmpty(), running?.model.orEmpty())
         val reply = localMessage(MessageRole.Assistant, "", selection)
-        val userId = shownPages[userIndex].id
         items = items.take(items.indexOfFirst { it.id == userId } + 1) + reply
         val turn = Turn(messageId = userId)
         this.turn = turn
@@ -160,9 +129,24 @@ internal class OpenSession(
         }
     }
 
+    private fun runningUserId(path: List<ClientMessage>, activeMessageId: String?): String? =
+        if (activeMessageId != null) {
+            activeMessageId.takeIf { id -> path.any { it.id == id } }
+        } else {
+            val userIndex = path.indexOfLast { it.role == "user" }
+            if (
+                userIndex >= 0 &&
+                    path.drop(userIndex + 1).any { it.status == MessageStatus.Streaming }
+            ) {
+                path[userIndex].id
+            } else {
+                null
+            }
+        }
+
     /**
      * Applies the events of [turn] from [stream]; after the stream breaks, resumes it from the
-     * events received so far, and once the turn has ended, shows the newest page instead.
+     * events received so far, and once the turn has ended, reloads the tree instead.
      */
     private suspend fun follow(
         turn: Turn,
@@ -188,7 +172,7 @@ internal class OpenSession(
                         resumes++
                         when {
                             e.failure == ServiceFailure.TurnNotRunning -> {
-                                reloadNewestPage()
+                                reloadTree()
                                 null
                             }
                             messageId == null || resumes > MAX_RESUMES -> {
@@ -209,9 +193,9 @@ internal class OpenSession(
         }
     }
 
-    private suspend fun reloadNewestPage() {
+    private suspend fun reloadTree() {
         try {
-            showNewestPage(client.listMessages(id, null, MESSAGE_PAGE_SIZE))
+            showTree(client.listMessages(id))
         } catch (e: ServiceException) {
             onError(errorText(e.failure))
         }

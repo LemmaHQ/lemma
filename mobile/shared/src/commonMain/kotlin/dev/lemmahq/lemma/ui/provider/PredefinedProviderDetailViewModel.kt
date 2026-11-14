@@ -28,7 +28,7 @@ internal class PredefinedProviderDetailViewModel(
     val predefined: ClientPredefinedProvider
         get() = provider.source as ClientPredefinedProvider
 
-    var apiKey by mutableStateOf("")
+    var apiKey by mutableStateOf(provider.apiKey)
 
     var saving by mutableStateOf(false)
         private set
@@ -39,10 +39,10 @@ internal class PredefinedProviderDetailViewModel(
     var pickedCheckModel by mutableStateOf<String?>(null)
 
     val dirty: Boolean
-        get() = apiKey.isNotBlank()
+        get() = apiKey.trim() != provider.apiKey
 
     val canEnable: Boolean
-        get() = provider.hasKey
+        get() = provider.apiKey.isNotBlank()
 
     val checkModel: String?
         get() =
@@ -75,7 +75,7 @@ internal class PredefinedProviderDetailViewModel(
     }
 
     fun discardEdits() {
-        apiKey = ""
+        apiKey = provider.apiKey
         error = null
     }
 
@@ -135,5 +135,5 @@ internal class PredefinedProviderDetailViewModel(
     }
 
     private fun checkKey(): String =
-        listOf(dirty, provider.hasKey, predefined.defaultApiFormat, checkModel).joinToString("\n")
+        listOf(dirty, provider.apiKey, predefined.defaultApiFormat, checkModel).joinToString("\n")
 }

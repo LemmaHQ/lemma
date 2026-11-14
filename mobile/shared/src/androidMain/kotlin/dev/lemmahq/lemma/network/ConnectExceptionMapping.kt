@@ -37,8 +37,11 @@ private fun ErrorReason.toFailure(): ServiceFailure? =
         ErrorReason.ERROR_REASON_TITLE_REQUIRED -> ServiceFailure.TitleRequired
         ErrorReason.ERROR_REASON_SESSION_NOT_FOUND -> ServiceFailure.SessionNotFound
         ErrorReason.ERROR_REASON_DIRECTORY_NOT_FOUND -> ServiceFailure.DirectoryNotFound
+        ErrorReason.ERROR_REASON_MESSAGE_NOT_FOUND -> ServiceFailure.MessageNotFound
+        ErrorReason.ERROR_REASON_INVALID_BRANCH_POINT -> ServiceFailure.InvalidBranchPoint
         ErrorReason.ERROR_REASON_CONTENT_REQUIRED -> ServiceFailure.ContentRequired
         ErrorReason.ERROR_REASON_MODEL_REQUIRED -> ServiceFailure.ModelRequired
         ErrorReason.ERROR_REASON_TURN_NOT_RUNNING -> ServiceFailure.TurnNotRunning
+        ErrorReason.ERROR_REASON_SESSION_BUSY -> ServiceFailure.SessionBusy
         ErrorReason.UNRECOGNIZED -> null
     }

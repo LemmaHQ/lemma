@@ -123,7 +123,6 @@ internal fun ProviderDetailScreen(
                 onBaseUrlChange = { viewModel.baseUrl = it },
                 apiPath = viewModel.apiPath,
                 onApiPathChange = { viewModel.apiPath = it },
-                hasKey = viewModel.provider.hasKey,
             )
             ConnectionCheckField(
                 models = custom.models.map { it.id },

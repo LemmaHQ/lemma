@@ -23,7 +23,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientMessage
-import dev.lemmahq.lemma.client.ClientMessagePage
+import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.FakeLemmaClient.Call
@@ -245,18 +245,19 @@ class SessionScreenTest {
                 sampleSession("plan", "Plan", updatedAt = now - 3 * day),
             )
         }
-        client.onListMessages = { sessionId, _ ->
-            ClientMessagePage(
+        client.onListMessages = { sessionId ->
+            ClientMessageTree(
                 listOf(
+                    sampleMessage("$sessionId-q", "user"),
                     ClientMessage(
                         "$sessionId-a",
                         "assistant",
                         "",
                         toolCalls = listOf(ClientToolCall("c1", "bash", "{}", startedAt = 1_000)),
+                        parentId = "$sessionId-q",
                     ),
-                    sampleMessage("$sessionId-q", "user"),
                 ),
-                hasMore = false,
+                leafId = "$sessionId-a",
             )
         }
         showSession()
@@ -328,15 +329,28 @@ class SessionScreenTest {
     @Test
     fun readingOlderMessagesIsNotInterruptedUntilAskedToReturn() {
         val history =
-            (30 downTo 1).flatMap {
-                listOf(sampleMessage("a$it", "assistant"), sampleMessage("q$it", "user"))
+            (1..30).flatMap { index ->
+                val prevAssistant = if (index == 1) null else "a${index - 1}"
+                listOf(
+                    sampleMessage("q$index", "user", parentId = prevAssistant),
+                    sampleMessage("a$index", "assistant", parentId = "q$index"),
+                )
             }
-        val running = ClientMessage("a31", "assistant", "", status = MessageStatus.Streaming)
+        val q31 = sampleMessage("q31", "user", parentId = "a30")
+        val running =
+            ClientMessage(
+                "a31",
+                "assistant",
+                "",
+                status = MessageStatus.Streaming,
+                parentId = "q31",
+            )
         client.onListSessions = { listOf(sampleSession("long", "Long")) }
-        client.onListMessages = { _, _ ->
-            ClientMessagePage(
-                listOf(running, sampleMessage("q31", "user")) + history,
-                hasMore = false,
+        client.onListMessages = {
+            ClientMessageTree(
+                history + listOf(q31, running),
+                leafId = "a31",
+                activeMessageId = "q31",
             )
         }
         val events = Channel<AgentStreamEvent>(Channel.UNLIMITED)

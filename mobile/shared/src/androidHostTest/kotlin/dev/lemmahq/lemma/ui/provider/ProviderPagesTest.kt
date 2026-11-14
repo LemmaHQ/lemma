@@ -41,7 +41,6 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -60,7 +59,7 @@ class ProviderPagesTest {
                 ClientProvider(
                         id = "provider-${stored.size + 1}",
                         enabled = true,
-                        hasKey = input.apiKey.isNotEmpty(),
+                        apiKey = input.apiKey,
                         source =
                             ClientCustomProvider(
                                 identifier = input.identifier,
@@ -117,8 +116,10 @@ class ProviderPagesTest {
 
         compose.onNodeWithText("my-proxy").assertIsDisplayed()
         compose.onNodeWithText("Enable provider").assertIsDisplayed()
-        assertTrue(stored.single().hasKey)
-        compose.onNodeWithText("A key is saved. Enter a new key to replace it.").assertIsDisplayed()
+        assertEquals("sk-test", stored.single().apiKey)
+        compose
+            .onNodeWithText("Authentication key for requests to the provider.")
+            .assertIsDisplayed()
 
         compose
             .onNode(hasText("https://api.example.com/v1") and hasSetTextAction())
@@ -261,12 +262,12 @@ class ProviderPagesTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Discard").performClick()
         compose.onNodeWithText("Predefined").assertIsDisplayed()
-        assertFalse(stored.single().hasKey)
+        assertEquals("", stored.single().apiKey)
 
         compose.onNodeWithText("deepseek").performClick()
         compose.onAllNodes(hasSetTextAction())[0].performTextInput("sk-deepseek")
         compose.onNodeWithText("Save").performClick()
-        compose.onNodeWithText("A key is saved. Enter a new key to replace it.").assertIsDisplayed()
+        assertEquals("sk-deepseek", stored.single().apiKey)
         compose
             .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))[0]
             .performClick()
@@ -345,7 +346,7 @@ private val ClientProvider.predefined: ClientPredefinedProvider
 
 private fun ClientProvider.customPatched(patch: ClientCustomProviderPatch): ClientProvider =
     copy(
-        hasKey = hasKey || (patch.apiKey?.isNotEmpty() == true),
+        apiKey = patch.apiKey ?: apiKey,
         enabled = patch.enabled ?: enabled,
         source =
             custom.copy(
@@ -359,7 +360,7 @@ private fun ClientProvider.customPatched(patch: ClientCustomProviderPatch): Clie
 
 private fun ClientProvider.predefinedPatched(patch: ClientPredefinedProviderPatch): ClientProvider =
     copy(
-        hasKey = hasKey || (patch.apiKey?.isNotEmpty() == true),
+        apiKey = patch.apiKey ?: apiKey,
         enabled = patch.enabled ?: enabled,
         source =
             predefined.copy(

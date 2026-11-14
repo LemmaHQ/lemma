@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -39,7 +38,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.theme.LemmaTheme
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.icon_arrow_down
@@ -49,7 +47,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The shown [messages], oldest first, kept at the newest while the reader stays there: user
- * messages as bubbles, replies with their steps. Scrolling to the oldest calls [onReachOldest].
+ * messages as bubbles, replies with their steps.
  */
 @Composable
 internal fun MessageList(
@@ -57,7 +55,6 @@ internal fun MessageList(
     providers: List<ClientProvider>,
     canRegenerate: Boolean,
     onRegenerate: (String) -> Unit,
-    onReachOldest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (messages.isEmpty()) {
@@ -74,7 +71,6 @@ internal fun MessageList(
     var following by remember { mutableStateOf(true) }
     val lastAssistantId = messages.lastOrNull { it.role == MessageRole.Assistant }?.id
     val lastUserId = messages.lastOrNull { it.role == MessageRole.User }?.id
-    val reachOldest by rememberUpdatedState(onReachOldest)
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
@@ -86,14 +82,6 @@ internal fun MessageList(
     }
     LaunchedEffect(messages.size, messages.last().id) {
         if (following) listState.scrollToItem(0)
-    }
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val info = listState.layoutInfo
-            info.visibleItemsInfo.any { it.index == info.totalItemsCount - 1 }
-        }
-            .distinctUntilChanged()
-            .collect { reachedOldest -> if (reachedOldest) reachOldest() }
     }
 
     Box(modifier = modifier) {

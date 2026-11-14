@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import dev.lemmahq.lemma.client.ClientWebFunction
 import dev.lemmahq.lemma.client.ClientWebProvider
 import dev.lemmahq.lemma.client.ClientWebProviderKind
@@ -54,10 +55,7 @@ class WebProviderScreenTest {
         showScreen()
 
         compose.onNodeWithText("Web Search & Fetch").assertIsDisplayed()
-        compose
-            .onNodeWithText("A key is saved. Enter a new key to replace it.")
-            .performScrollTo()
-            .assertIsDisplayed()
+        compose.onAllNodes(hasSetTextAction())[0].assertIsDisplayed()
         compose
             .onNodeWithText("Save an API key before enabling this provider.")
             .performScrollTo()
@@ -84,7 +82,7 @@ class WebProviderScreenTest {
         compose
             .onAllNodes(hasSetTextAction())[0]
             .performScrollTo()
-            .performTextInput("  sk-screen  ")
+            .performTextReplacement("  sk-screen  ")
         compose.onNodeWithText("Save").performScrollTo().performClick()
         assertEquals(
             Call("updateWebProvider", "exa", ClientWebProviderPatch(apiKey = "sk-screen")),
@@ -153,15 +151,16 @@ class WebProviderScreenTest {
 }
 
 private fun native() =
-    ClientWebProvider("native", ClientWebProviderKind.Native, "Native", true, false, 0, 2)
+    ClientWebProvider("native", ClientWebProviderKind.Native, "Native", true, "", 0, 2)
 
-private fun exa() = ClientWebProvider("exa", ClientWebProviderKind.Exa, "Exa", false, true, 1, 1)
+private fun exa() =
+    ClientWebProvider("exa", ClientWebProviderKind.Exa, "Exa", false, "sk-exa", 1, 1)
 
 private fun deepSeek() =
-    ClientWebProvider("deepseek", ClientWebProviderKind.DeepSeek, "DeepSeek", false, false, 0, 0)
+    ClientWebProvider("deepseek", ClientWebProviderKind.DeepSeek, "DeepSeek", false, "", 0, 0)
 
 private fun ClientWebProvider.patched(patch: ClientWebProviderPatch) =
     copy(
         enabled = if (patch.apiKey == "") false else patch.enabled ?: enabled,
-        hasKey = patch.apiKey?.isNotEmpty() ?: hasKey,
+        apiKey = patch.apiKey ?: apiKey,
     )

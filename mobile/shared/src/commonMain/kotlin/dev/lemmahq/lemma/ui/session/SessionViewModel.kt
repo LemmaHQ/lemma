@@ -137,10 +137,6 @@ internal class SessionViewModel(
         }
     }
 
-    fun loadOlderMessages() {
-        openSession?.loadOlder()
-    }
-
     fun changeInput(value: String) {
         input = value
     }

@@ -49,16 +49,17 @@ class ProviderDetailViewModelTest {
         ProviderDetailViewModel(client, stored, { changes += it }, { deletions += it })
 
     @Test
-    fun savingSendsOnlyTheChangedConnectionFieldsAndPreservesBlankKeys() = runTest {
+    fun savingSendsOnlyTheChangedConnectionFieldsAndClearsKeys() = runTest {
         client.onUpdateCustomProvider = { _, patch ->
-            stored.copy(hasKey = stored.hasKey || patch.apiKey != null).withCustom {
+            stored.copy(apiKey = patch.apiKey ?: stored.apiKey).withCustom {
                 copy(baseUrl = patch.baseUrl ?: baseUrl)
             }
         }
         val viewModel = viewModel()
-        assertEquals("", viewModel.apiKey)
+        assertEquals("sk-test", viewModel.apiKey)
+        assertFalse(viewModel.dirty)
 
-        viewModel.apiKey = "   "
+        viewModel.apiKey = " sk-test "
         assertFalse(viewModel.dirty)
 
         viewModel.baseUrl = " https://proxy.example.com/v1/ "
@@ -79,6 +80,16 @@ class ProviderDetailViewModelTest {
 
         val keyPatch = ClientCustomProviderPatch(apiKey = "sk-rotated")
         assertEquals(Call("updateCustomProvider", "openai", keyPatch), client.calls.last())
+        assertEquals("sk-rotated", viewModel.apiKey)
+        assertFalse(viewModel.dirty)
+
+        viewModel.apiKey = "  "
+        assertTrue(viewModel.dirty)
+        viewModel.save()
+        advanceUntilIdle()
+
+        val clearPatch = ClientCustomProviderPatch(apiKey = "")
+        assertEquals(Call("updateCustomProvider", "openai", clearPatch), client.calls.last())
         assertEquals("", viewModel.apiKey)
         assertFalse(viewModel.dirty)
     }
@@ -97,14 +108,14 @@ class ProviderDetailViewModelTest {
     }
 
     @Test
-    fun discardingClearsDraftKeyAndRestoresConnectionFields() = runTest {
+    fun discardingRestoresStoredKeyAndConnectionFields() = runTest {
         val viewModel = viewModel()
         viewModel.apiKey = "sk-2"
         viewModel.apiPath = "/v2/chat"
 
         viewModel.discardEdits()
 
-        assertEquals("", viewModel.apiKey)
+        assertEquals("sk-test", viewModel.apiKey)
         assertEquals("", viewModel.apiPath)
         assertFalse(viewModel.dirty)
     }

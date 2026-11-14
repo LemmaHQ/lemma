@@ -15,7 +15,7 @@ import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
 import kotlinx.coroutines.launch
 
-/** Loads web backends and edits their write-only keys, enabled flags, and fallback order. */
+/** Loads web backends and edits their keys, enabled flags, and fallback order. */
 internal class WebProviderViewModel(private val client: LemmaClient) : ViewModel() {
 
     var providers by mutableStateOf<List<ClientWebProvider>>(emptyList())
@@ -49,9 +49,12 @@ internal class WebProviderViewModel(private val client: LemmaClient) : ViewModel
         }
     }
 
-    fun apiKey(id: String) = apiKeys[id].orEmpty()
+    fun apiKey(id: String) = apiKeys[id] ?: providers.find { it.id == id }?.apiKey.orEmpty()
 
-    fun hasUnsavedKey(id: String) = apiKey(id).isNotBlank()
+    fun hasUnsavedKey(id: String): Boolean {
+        val provider = providers.find { it.id == id } ?: return false
+        return apiKeys[id]?.let { it.trim() != provider.apiKey } == true
+    }
 
     fun isSaving(id: String) = id in saving
 
@@ -64,8 +67,8 @@ internal class WebProviderViewModel(private val client: LemmaClient) : ViewModel
     }
 
     fun saveApiKey(id: String) {
-        val apiKey = apiKeys[id]?.trim().orEmpty()
-        if (apiKey.isEmpty() || id in saving) return
+        if (!hasUnsavedKey(id) || id in saving) return
+        val apiKey = apiKeys.getValue(id).trim()
         saving = saving + id
         error = null
         viewModelScope.launch {
@@ -82,7 +85,7 @@ internal class WebProviderViewModel(private val client: LemmaClient) : ViewModel
 
     fun setEnabled(id: String, enabled: Boolean) {
         val provider = providers.find { it.id == id } ?: return
-        if (enabled && provider.kind != ClientWebProviderKind.Native && !provider.hasKey) {
+        if (enabled && provider.kind != ClientWebProviderKind.Native && provider.apiKey.isBlank()) {
             return
         }
         store(provider.copy(enabled = enabled))

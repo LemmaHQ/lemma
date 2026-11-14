@@ -30,7 +30,7 @@ internal class ProviderDetailViewModel(
     val custom: ClientCustomProvider
         get() = provider.source as ClientCustomProvider
 
-    var apiKey by mutableStateOf("")
+    var apiKey by mutableStateOf(provider.apiKey)
     var baseUrl by mutableStateOf(custom.baseUrl)
     var apiPath by mutableStateOf(custom.apiPath)
 
@@ -91,7 +91,7 @@ internal class ProviderDetailViewModel(
     }
 
     fun discardEdits() {
-        apiKey = ""
+        apiKey = provider.apiKey
         baseUrl = custom.baseUrl
         apiPath = custom.apiPath
         error = null
@@ -231,7 +231,7 @@ internal class ProviderDetailViewModel(
 
     private fun connectionPatch(): ClientCustomProviderPatch =
         ClientCustomProviderPatch(
-            apiKey = apiKey.trim().takeIf { it.isNotEmpty() },
+            apiKey = apiKey.trim().takeIf { it != provider.apiKey },
             baseUrl = baseUrl.trim().takeIf { it != custom.baseUrl },
             apiPath = apiPath.trim().takeIf { it != custom.apiPath },
         )
@@ -239,6 +239,6 @@ internal class ProviderDetailViewModel(
     private fun draftName(): String? = nameDraft?.let { it.trim().ifEmpty { custom.identifier } }
 
     private fun checkKey(): String =
-        listOf(dirty, provider.hasKey, custom.baseUrl, custom.apiPath, checkModel)
+        listOf(dirty, provider.apiKey, custom.baseUrl, custom.apiPath, checkModel)
             .joinToString("\n")
 }

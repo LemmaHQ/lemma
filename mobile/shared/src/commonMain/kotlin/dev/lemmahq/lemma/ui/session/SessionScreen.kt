@@ -106,7 +106,6 @@ internal fun SessionScreen(
                     providers = viewModel.providers,
                     canRegenerate = !viewModel.turnRunning,
                     onRegenerate = viewModel::regenerate,
-                    onReachOldest = viewModel::loadOlderMessages,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
             }

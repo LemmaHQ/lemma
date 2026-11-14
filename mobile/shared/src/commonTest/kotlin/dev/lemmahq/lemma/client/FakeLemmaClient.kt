@@ -37,7 +37,7 @@ class FakeLemmaClient : LemmaClient {
     var onUpdateWebProvider:
         suspend (id: String, patch: ClientWebProviderPatch) -> ClientWebProvider =
         { id, _ ->
-            ClientWebProvider(id, ClientWebProviderKind.Native, "Native", false, false, 0, 0)
+            ClientWebProvider(id, ClientWebProviderKind.Native, "Native", false, "", 0, 0)
         }
     var onSetWebProviderOrder:
         suspend (function: ClientWebFunction, ids: List<String>) -> List<ClientWebProvider> =
@@ -50,10 +50,9 @@ class FakeLemmaClient : LemmaClient {
     var onCreateSession: suspend () -> ClientSession = {
         ClientSession("session-${calls.count { it.name == "createSession" }}", "", updatedAt = 0)
     }
-    var onListMessages: suspend (sessionId: String, beforeId: String?) -> ClientMessagePage =
-        { _, _ ->
-            ClientMessagePage(emptyList(), hasMore = false)
-        }
+    var onListMessages: suspend (sessionId: String) -> ClientMessageTree = {
+        ClientMessageTree(emptyList())
+    }
     var onSendMessage:
         (sessionId: String, content: String, providerId: String, model: String) -> Flow<
                 AgentStreamEvent
@@ -148,14 +147,9 @@ class FakeLemmaClient : LemmaClient {
         return onCreateSession()
     }
 
-    /** Records the call without [limit], which the session view always sets to its page size. */
-    override suspend fun listMessages(
-        sessionId: String,
-        beforeId: String?,
-        limit: Int,
-    ): ClientMessagePage {
-        calls += Call("listMessages", sessionId, beforeId)
-        return onListMessages(sessionId, beforeId)
+    override suspend fun listMessages(sessionId: String): ClientMessageTree {
+        calls += Call("listMessages", sessionId)
+        return onListMessages(sessionId)
     }
 
     override fun sendMessage(

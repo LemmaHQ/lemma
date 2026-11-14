@@ -18,7 +18,7 @@ import dev.lemmahq.gen.lemma.v1.sendMessageRequest
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
-import dev.lemmahq.lemma.client.ClientMessagePage
+import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.ClientSession
@@ -135,20 +135,14 @@ class ConnectLemmaClient(private val rpc: LemmaRpcClient) : LemmaClient {
         .session
         .toClient()
 
-    override suspend fun listMessages(
-        sessionId: String,
-        beforeId: String?,
-        limit: Int,
-    ): ClientMessagePage {
-        val request = listMessagesRequest {
-            this.sessionId = sessionId
-            beforeId?.let { this.beforeId = it }
-            this.limit = limit
+    override suspend fun listMessages(sessionId: String): ClientMessageTree {
+        val response = call {
+            rpc.session.listMessages(listMessagesRequest { this.sessionId = sessionId }, emptyMap())
         }
-        val response = call { rpc.session.listMessages(request, emptyMap()) }
-        return ClientMessagePage(
+        return ClientMessageTree(
             messages = response.messagesList.map { it.toClient() },
-            hasMore = response.hasMore,
+            leafId = if (response.hasLeafId()) response.leafId else null,
+            activeMessageId = if (response.hasActiveMessageId()) response.activeMessageId else null,
         )
     }
 
