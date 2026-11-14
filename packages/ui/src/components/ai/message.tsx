@@ -1,9 +1,10 @@
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { cn } from "#lib/cn";
-import { type ComponentProps, memo, useState } from "react";
+import { type ComponentProps, memo, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
 
+import { MessageCodeBlock, MessageCodeProvider } from "#ai/message-code-block";
 import { Button } from "#primitives/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 import { useCopyText } from "#hooks/use-copy-text";
@@ -15,6 +16,10 @@ const RESPONSE_ANIMATION = {
     animation: "answerBlurIn",
     duration: 400,
     easing: "var(--motion-easing-enter)",
+} as const;
+const DEFAULT_CONTROLS = {
+    table: false,
+    code: { copy: true, download: false },
 } as const;
 
 type MessageProps = ComponentProps<"div"> & {
@@ -164,6 +169,12 @@ export function MessageRegenerateAction({
     );
 }
 
+export type MessageResponseProps = ComponentProps<typeof Streamdown> & {
+    openCodeLabel?: string;
+    onOpenCode?: (code: string, language: string) => void;
+    completionMark?: boolean;
+};
+
 /** Markdown reply; while `isAnimating`, new text blurs in behind a pulsing caret. */
 export const MessageResponse = memo(function MessageResponse({
     className,
@@ -171,9 +182,44 @@ export const MessageResponse = memo(function MessageResponse({
     caret = "circle",
     isAnimating = false,
     animated = isAnimating ? RESPONSE_ANIMATION : false,
+    controls = DEFAULT_CONTROLS,
+    components,
+    openCodeLabel,
+    onOpenCode,
+    completionMark = false,
     ...props
-}: ComponentProps<typeof Streamdown>) {
-    return (
+}: MessageResponseProps) {
+    const mergedComponents = useMemo(() => {
+        if (onOpenCode === undefined || openCodeLabel === undefined) {
+            return components;
+        }
+        return {
+            ...components,
+            code: MessageCodeBlock,
+        };
+    }, [components, onOpenCode, openCodeLabel]);
+    const streamdownElement = completionMark ? (
+        <div className="inline">
+            <Streamdown
+                className={cn(
+                    "streaming-caret [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p:last-child]:inline has-[>p:last-child]:inline",
+                    className,
+                )}
+                animated={animated}
+                caret={caret}
+                controls={controls}
+                isAnimating={isAnimating}
+                plugins={plugins}
+                {...(mergedComponents === undefined
+                    ? {}
+                    : { components: mergedComponents })}
+                {...props}
+            />
+            <span className="whitespace-nowrap">
+                <span aria-hidden="true" className="qed-mark" />
+            </span>
+        </div>
+    ) : (
         <Streamdown
             className={cn(
                 "streaming-caret size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
@@ -181,9 +227,22 @@ export const MessageResponse = memo(function MessageResponse({
             )}
             animated={animated}
             caret={caret}
+            controls={controls}
             isAnimating={isAnimating}
             plugins={plugins}
+            {...(mergedComponents === undefined
+                ? {}
+                : { components: mergedComponents })}
             {...props}
         />
+    );
+
+    return (
+        <MessageCodeProvider
+            openCodeLabel={openCodeLabel}
+            onOpenCode={onOpenCode}
+        >
+            {streamdownElement}
+        </MessageCodeProvider>
     );
 });
