@@ -7,6 +7,10 @@ session:
     platforms: [web]
     en: "Choose folder"
     zh: "选择文件夹"
+  chooseOtherFolder:
+    platforms: [web]
+    en: "Choose another folder…"
+    zh: "选择其他目录…"
   clearFolder:
     platforms: [web]
     en: "Clear folder"
@@ -35,6 +39,14 @@ session:
     platforms: [web, android]
     en: "How can I help you today?"
     zh: "今天想聊点什么？"
+  filterFolders:
+    platforms: [web]
+    en: "Filter folders…"
+    zh: "筛选目录…"
+  filterModels:
+    platforms: [web]
+    en: "Search models…"
+    zh: "搜索模型…"
   inputPlaceholder:
     platforms: [web, android]
     en: "Message the assistant…"
@@ -67,6 +79,14 @@ session:
     platforms: [web]
     en: "No provider"
     zh: "暂无服务商"
+  openInPane:
+    platforms: [web]
+    en: "Open on right"
+    zh: "右侧打开"
+  providerDisabledGoSettings:
+    platforms: [web]
+    en: "Disabled · Settings"
+    zh: "未启用 · 去设置"
   regenerate:
     platforms: [web, android]
     en: "Regenerate"
@@ -75,6 +95,23 @@ session:
     platforms: [web, android]
     en: "Rename"
     zh: "重命名"
+  retryWithModel:
+    platforms: [web]
+    params: { model: string }
+    en: "Retry with {model}"
+    zh: "使用 {model} 重试"
+  rewindBanner:
+    platforms: [web]
+    en: "Rewound before question · sending starts a new branch (original kept)"
+    zh: "已回退到分叉前 · 修改后发送将生成新分支（原分支保留）"
+  rewindRestore:
+    platforms: [web]
+    en: "Restore branch"
+    zh: "恢复原分支"
+  switchModelRetry:
+    platforms: [web]
+    en: "Switch model"
+    zh: "切换模型"
   scrollToBottom:
     platforms: [web, android]
     en: "Scroll to latest"
@@ -99,3 +136,61 @@ session:
     platforms: [web, android]
     en: "Yesterday"
     zh: "昨天"
+  treeAddLabel:
+    platforms: [web]
+    en: "Label"
+    zh: "标签"
+  treeButton:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "Tree · {count} path"
+      other: "Tree · {count} paths"
+    zh:
+      other: "会话树 · {count} 条路径"
+  treeEditLabel:
+    platforms: [web]
+    en: "Edit label"
+    zh: "改标签"
+  treeEmpty:
+    platforms: [web]
+    en: "No matching messages."
+    zh: "没有匹配的节点"
+  treeFilterAll:
+    platforms: [web]
+    en: "All"
+    zh: "全部"
+  treeFilterLabeled:
+    platforms: [web]
+    en: "Labeled"
+    zh: "已加标签"
+  treeFilterQuestions:
+    platforms: [web]
+    en: "Questions"
+    zh: "只看提问"
+  treeHint:
+    platforms: [web]
+    en: "Click question to branch · click reply to switch path"
+    zh: "点提问回退重问 · 点回复切路径"
+  treeLabelPlaceholder:
+    platforms: [web]
+    en: "Label…"
+    zh: "标签…"
+  treePaths:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "{count} path"
+      other: "{count} paths"
+    zh:
+      other: "{count} 条路径"
+  treeSearchPlaceholder:
+    platforms: [web]
+    en: "Search tree…"
+    zh: "搜索会话树…"
+  treeTitle:
+    platforms: [web]
+    en: "Session tree"
+    zh: "会话树"

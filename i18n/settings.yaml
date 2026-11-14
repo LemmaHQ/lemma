@@ -7,6 +7,10 @@ settings:
     platforms: [web, android]
     en: "Appearance"
     zh: "外观"
+  appearanceDesc:
+    platforms: [web]
+    en: "Choose the light or dark appearance and interface language."
+    zh: "选择界面的浅深色与显示语言。"
   backToHome:
     platforms: [web]
     en: "Back to home"

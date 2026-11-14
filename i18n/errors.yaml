@@ -27,6 +27,14 @@ errors:
     platforms: [web, android]
     en: "Invalid ID"
     zh: "无效的 ID"
+  invalidBranchPoint:
+    platforms: [web, android]
+    en: "Cannot branch from this message"
+    zh: "无法从该消息处分叉"
+  messageNotFound:
+    platforms: [web, android]
+    en: "Message not found"
+    zh: "消息不存在"
   modelRequired:
     platforms: [web, android]
     en: "Please select a model"
@@ -63,6 +71,10 @@ errors:
     platforms: [web, android]
     en: "Title is required"
     zh: "标题不能为空"
+  sessionBusy:
+    platforms: [web, android]
+    en: "Wait for the current reply to finish"
+    zh: "请等待当前回复结束后再操作"
   turnNotRunning:
     platforms: [web, android]
     en: "This reply has already finished"

@@ -44,10 +44,6 @@ provider:
     platforms: [web, android]
     en: "sk-…"
     zh: "sk-…"
-  apiKeySavedDesc:
-    platforms: [web, android]
-    en: "A key is saved. Enter a new key to replace it."
-    zh: "已保存 API key，输入新密钥即可替换。"
   apiPath:
     platforms: [web, android]
     en: "Request path"
@@ -96,6 +92,10 @@ provider:
     platforms: [web, android]
     en: "The provider answered."
     zh: "服务商响应正常。"
+  clearKey:
+    platforms: [web]
+    en: "Clear"
+    zh: "清除"
   connection:
     platforms: [web]
     en: "Connection"
@@ -187,6 +187,41 @@ provider:
     platforms: [web, android]
     en: "Search tries backends from top to bottom until one succeeds."
     zh: "搜索会按从上到下的顺序尝试后端，直到成功。"
+  webActiveChain:
+    platforms: [web]
+    params: { tool: string, chain: string }
+    en: "Active: {tool} ({chain})"
+    zh: "当前生效：{tool}（{chain}）"
+  webCapBoth:
+    platforms: [web]
+    en: "Search · Fetch"
+    zh: "搜索 · 抓取"
+  webCapFetchOnly:
+    platforms: [web]
+    en: "Fetch only · Local HTTP"
+    zh: "仅抓取 · 本机直连"
+  webInactiveTool:
+    platforms: [web]
+    params: { tool: string }
+    en: "No enabled backend; {tool} is not registered"
+    zh: "无已启用后端，不注册 {tool}"
+  webLocalNoKey:
+    platforms: [web]
+    en: "Runs locally · no key needed"
+    zh: "本机运行 · 无需密钥"
+  webRoleFallback:
+    platforms: [web]
+    params: { rank: number }
+    en: "Fallback #{rank}"
+    zh: "第 {rank} 顺位回退"
+  webRolePrimary:
+    platforms: [web]
+    en: "Primary"
+    zh: "首选调用"
+  webRoleSkipped:
+    platforms: [web]
+    en: "Disabled · skipped"
+    zh: "未启用 · 调用时跳过"
   enableProvider:
     platforms: [web, android]
     en: "Enable provider"

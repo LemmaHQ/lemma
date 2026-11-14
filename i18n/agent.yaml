@@ -7,6 +7,56 @@ agent:
     platforms: [web, android]
     en: "Stop generating"
     zh: "停止生成"
+  reconnecting:
+    platforms: [web]
+    params: { offset: number }
+    en: "Connection interrupted, resuming from event {offset}…"
+    zh: "连接中断，正在从第 {offset} 个事件续传…"
+  runningTool:
+    platforms: [web]
+    params: { name: string }
+    en: "Running {name}…"
+    zh: "正在运行 {name}…"
+  selfHealed:
+    platforms: [web]
+    en: "Failed · fixed later"
+    zh: "失败 · 已修复"
+  stepCount:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "{count} step"
+      other: "{count} steps"
+    zh:
+      other: "{count} 步"
+  stopShort:
+    platforms: [web]
+    en: "Stop"
+    zh: "停止"
+  summaryFetchedWeb:
+    platforms: [web]
+    en: "fetched page"
+    zh: "抓取网页"
+  summaryRan:
+    platforms: [web]
+    params: { target: string }
+    en: "ran {target}"
+    zh: "执行 {target}"
+  summaryRead:
+    platforms: [web]
+    params: { target: string }
+    en: "read {target}"
+    zh: "读了 {target}"
+  summarySearchedWeb:
+    platforms: [web]
+    en: "searched the web"
+    zh: "搜索网页"
+  summaryWrote:
+    platforms: [web]
+    params: { target: string }
+    en: "wrote {target}"
+    zh: "写了 {target}"
   thinking:
     platforms: [web, android]
     en: "Thought"
@@ -24,6 +74,11 @@ agent:
     params: { duration: string }
     en: "Thought for {duration}"
     zh: "思考了 {duration}"
+  thoughtDuration:
+    platforms: [web]
+    params: { duration: string }
+    en: "Thought {duration}"
+    zh: "思考 {duration}"
   toolCall:
     announce:
       error:

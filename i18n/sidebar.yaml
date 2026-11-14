@@ -3,6 +3,28 @@ sidebar:
     platforms: [web, android]
     en: "App settings"
     zh: "应用设置"
+  backToSessions:
+    platforms: [web]
+    en: "Back to sessions"
+    zh: "返回会话"
+  defaultWorkspace:
+    platforms: [web]
+    en: "Default workspace"
+    zh: "默认工作区"
+  moreSessions:
+    platforms: [web]
+    plural: count
+    params: { count: number }
+    en:
+      one: "{count} more"
+      other: "{count} more"
+    zh:
+      other: "还有 {count} 个"
+  newInFolder:
+    platforms: [web]
+    params: { folder: string }
+    en: "New session in {folder}"
+    zh: "在 {folder} 中新建会话"
   collapse:
     platforms: [web]
     en: "Collapse sidebar"
