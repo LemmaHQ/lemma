@@ -10,7 +10,7 @@ import {
     ThemePreviewTiles,
 } from "@lemma/ui";
 import { useTheme } from "next-themes";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isThemePreference, type ThemePreference } from "../theme";
@@ -27,6 +27,14 @@ export function AppearancePanel() {
     const transitionTimerRef = useRef<number | undefined>(undefined);
     const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
 
+    useEffect(
+        () => () => {
+            window.clearTimeout(transitionTimerRef.current);
+            document.documentElement.classList.remove("theme-transition");
+        },
+        [],
+    );
+
     const handleThemeChange = (next: ThemePreference) => {
         window.clearTimeout(transitionTimerRef.current);
         document.documentElement.classList.add("theme-transition");
@@ -37,7 +45,7 @@ export function AppearancePanel() {
     };
 
     return (
-        <SettingsPage>
+        <SettingsPage title={t("settings.appearance")}>
             <SettingsSection
                 title={t("settings.appearance")}
                 description={t("settings.appearanceDesc")}

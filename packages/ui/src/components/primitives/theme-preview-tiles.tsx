@@ -3,7 +3,7 @@ import { type KeyboardEvent, useRef } from "react";
 
 export type ThemeChoice = "light" | "dark" | "system";
 
-export type ThemePreviewTilesProps = {
+type ThemePreviewTilesProps = {
     value: ThemeChoice;
     onValueChange: (value: ThemeChoice) => void;
     label: string;
@@ -16,12 +16,8 @@ const OPTIONS: readonly ThemeChoice[] = ["light", "dark", "system"];
 function PreviewSurface({ theme }: { theme: "light" | "dark" }) {
     return (
         <div
-            className={cn(
-                "flex size-full overflow-hidden bg-background text-foreground",
-                theme === "light"
-                    ? "theme-preview-light"
-                    : "theme-preview-dark",
-            )}
+            data-theme-preview={theme}
+            className="flex size-full overflow-hidden bg-background text-foreground"
         >
             <div className="flex w-6 shrink-0 flex-col gap-1 border-r border-border bg-sidebar p-1.5">
                 <span className="h-1 w-full rounded-full bg-brand" />

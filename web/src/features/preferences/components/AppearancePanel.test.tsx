@@ -37,7 +37,9 @@ afterEach(async () => {
 it("renders the appearance section, all three theme tiles, and the language select", () => {
     renderPanel();
 
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Appearance" }),
+    ).toBeDefined();
     const section = screen.getByRole("region", { name: "Appearance" });
     expect(
         within(section).getByRole("heading", { level: 2, name: "Appearance" }),
@@ -121,6 +123,21 @@ it("adds and removes the theme-transition class across rapid theme switches", ()
     act(() => {
         vi.advanceTimersByTime(60);
     });
+    expect(
+        document.documentElement.classList.contains("theme-transition"),
+    ).toBe(false);
+});
+
+it("removes the theme-transition class when unmounted mid-transition", () => {
+    vi.useFakeTimers();
+    const { unmount } = renderPanel();
+
+    fireEvent.click(tile("Dark"));
+    expect(
+        document.documentElement.classList.contains("theme-transition"),
+    ).toBe(true);
+
+    unmount();
     expect(
         document.documentElement.classList.contains("theme-transition"),
     ).toBe(false);
