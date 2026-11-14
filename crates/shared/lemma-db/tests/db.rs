@@ -41,10 +41,32 @@ async fn assert_foreign_keys_enforced(pool: &SqlitePool) -> Result<(), Box<dyn E
     Ok(())
 }
 
+async fn assert_message_tree_schema(pool: &SqlitePool) -> Result<(), Box<dyn Error>> {
+    let label_columns: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM pragma_table_info('messages') WHERE name = 'label' AND type = 'TEXT'",
+    )
+    .fetch_one(pool)
+    .await?;
+    assert_eq!(label_columns, 1, "messages.label column exists");
+
+    let parent_index: Option<String> = sqlx::query_scalar(
+        "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'messages' AND name = 'idx_messages_session_id_parent_id'",
+    )
+    .fetch_optional(pool)
+    .await?;
+    assert_eq!(
+        parent_index.as_deref(),
+        Some("idx_messages_session_id_parent_id"),
+        "messages(session_id, parent_id) index exists"
+    );
+    Ok(())
+}
+
 #[tokio::test]
 async fn in_memory_migrates_schema_and_enforces_foreign_keys() -> Result<(), Box<dyn Error>> {
     let pool = lemma_db::in_memory().await?;
     assert_foreign_keys_enforced(&pool).await?;
+    assert_message_tree_schema(&pool).await?;
     pool.close().await;
     Ok(())
 }
@@ -56,6 +78,7 @@ async fn open_creates_migrates_and_enforces_foreign_keys() -> Result<(), Box<dyn
     let pool = lemma_db::open(&path).await?;
     assert!(path.is_file(), "database file was created");
     assert_foreign_keys_enforced(&pool).await?;
+    assert_message_tree_schema(&pool).await?;
     pool.close().await;
     Ok(())
 }

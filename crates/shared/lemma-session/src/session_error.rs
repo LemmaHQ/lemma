@@ -12,6 +12,12 @@ pub enum SessionError {
     /// Target session is absent.
     #[error("session not found")]
     NotFound,
+    /// Target message is absent.
+    #[error("message not found")]
+    MessageNotFound,
+    /// Target message cannot serve as a branch or leaf boundary.
+    #[error("invalid branch point")]
+    InvalidBranchPoint,
     /// The directory is not an absolute path to an existing directory.
     #[error("directory not found: {0}")]
     DirectoryNotFound(String),

@@ -11,8 +11,8 @@ use lemma_core::{ContentBlock, Message as CoreMessage, StopReason, TextContent};
 use lemma_model::ApiFormat;
 use lemma_provider::{CreateCustomInput, ProviderModel, ProviderService};
 use lemma_session::{
-    LastModel, Message, MessageBody, MessagePage, MessageStatus, MessageUpdate, SessionError,
-    SessionService, build_context_path,
+    BranchTarget, LastModel, Message, MessageBody, MessageStatus, MessageUpdate, SessionError,
+    SessionService, SessionTree, build_context_path, is_valid_turn_boundary,
 };
 use uuid::Uuid;
 
@@ -40,6 +40,7 @@ fn entry(
         provider_id: None,
         model: None,
         api_format: None,
+        label: None,
         created_at,
         updated_at: created_at,
     }
@@ -59,6 +60,42 @@ async fn append_chain(
         sessions.append_message(message).await?;
     }
     Ok(ids)
+}
+
+fn assistant_entry(
+    session_id: Uuid,
+    parent_id: Option<Uuid>,
+    text: &str,
+    api_format: Option<ApiFormat>,
+    created_at: DateTime<Utc>,
+) -> Message {
+    let mut message = entry(session_id, parent_id, text, created_at);
+    message.body = MessageBody(CoreMessage::Assistant {
+        content: vec![ContentBlock::Text(TextContent {
+            text: text.to_owned(),
+        })],
+        stop_reason: StopReason::Stop,
+        usage: None,
+    });
+    message.api_format = api_format;
+    message
+}
+
+fn tool_result_entry(
+    session_id: Uuid,
+    parent_id: Option<Uuid>,
+    tool_call_id: &str,
+    tool_name: &str,
+    created_at: DateTime<Utc>,
+) -> Message {
+    let mut message = entry(session_id, parent_id, "", created_at);
+    message.body = MessageBody(CoreMessage::ToolResult {
+        tool_call_id: tool_call_id.to_owned(),
+        tool_name: tool_name.to_owned(),
+        content: Vec::new(),
+        is_error: false,
+    });
+    message
 }
 
 #[tokio::test]
@@ -140,101 +177,53 @@ async fn deleting_a_session_deletes_only_its_messages() -> Result<(), Box<dyn Er
 }
 
 #[tokio::test]
-async fn messages_page_newest_first_across_the_boundaries() -> Result<(), Box<dyn Error>> {
+async fn list_messages_returns_session_tree_oldest_first_with_active_leaf()
+-> Result<(), Box<dyn Error>> {
     let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let session = sessions.create(None).await?;
     let other = sessions.create(None).await?;
-    let ids = append_chain(&sessions, session.id, 5).await?;
-    let foreign = append_chain(&sessions, other.id, 1).await?;
 
-    let first = sessions.list_messages(session.id, None, 2).await?;
-    let second = sessions.list_messages(session.id, Some(ids[3]), 2).await?;
-    let last = sessions.list_messages(session.id, Some(ids[1]), 2).await?;
-    let exact = sessions.list_messages(session.id, Some(ids[2]), 2).await?;
-    let unknown = sessions
-        .list_messages(session.id, Some(Uuid::new_v4()), 2)
-        .await?;
-    let foreign_cursor = sessions
-        .list_messages(session.id, Some(foreign[0]), 2)
-        .await?;
-    let missing_session = sessions.list_messages(Uuid::new_v4(), None, 2).await;
-
-    let page_ids =
-        |page: &MessagePage| -> Vec<Uuid> { page.messages.iter().map(|m| m.id).collect() };
-    assert_eq!(page_ids(&first), [ids[4], ids[3]], "first page");
-    assert!(first.has_more, "first page has more");
-    assert_eq!(page_ids(&second), [ids[2], ids[1]], "second page");
-    assert!(second.has_more, "second page has more");
-    assert_eq!(page_ids(&last), [ids[0]], "last page");
-    assert!(!last.has_more, "last page has no more");
+    let empty = sessions.list_messages(session.id).await?;
     assert_eq!(
-        page_ids(&exact),
-        [ids[1], ids[0]],
-        "page ending at the oldest"
+        empty,
+        SessionTree {
+            leaf_id: None,
+            messages: Vec::new(),
+        },
+        "empty session tree"
     );
-    assert!(
-        !exact.has_more,
-        "a page that ends at the oldest has no more"
-    );
-    assert!(unknown.messages.is_empty(), "unknown cursor: {unknown:?}");
-    assert!(!unknown.has_more, "unknown cursor has no more");
-    assert!(
-        foreign_cursor.messages.is_empty(),
-        "another session's cursor: {foreign_cursor:?}"
-    );
-    assert!(
-        matches!(missing_session, Err(SessionError::NotFound)),
-        "missing session: {missing_session:?}"
-    );
-    Ok(())
-}
 
-#[tokio::test]
-async fn messages_sharing_a_timestamp_page_without_gaps_or_repeats() -> Result<(), Box<dyn Error>> {
-    let db = lemma_db::in_memory().await?;
-    let sessions = SessionService::new(db);
-    let session = sessions.create(None).await?;
-    let mut expected = Vec::new();
-    for n in 0..4 {
-        let message = entry(session.id, None, &format!("m{n}"), at(0));
-        expected.push(message.id);
-        sessions.append_message(message).await?;
+    let mut m0 = entry(session.id, None, "m0", at(0));
+    m0.label = Some("root".to_owned());
+    let m1 = assistant_entry(session.id, Some(m0.id), "a1", None, at(10));
+    let m2 = assistant_entry(session.id, Some(m0.id), "a2", None, at(10));
+    let foreign = entry(other.id, None, "foreign", at(5));
+    let mut tie_ids = [m1.id, m2.id];
+    tie_ids.sort_unstable();
+    for msg in [m0.clone(), m1.clone(), m2.clone(), foreign] {
+        sessions.append_message(msg).await?;
     }
-    expected.sort_unstable_by(|a, b| b.cmp(a));
+    sessions.set_leaf(session.id, Some(m2.id)).await?;
 
-    let mut seen = Vec::new();
-    let mut before_id = None;
-    let mut has_more = true;
-    for _ in &expected {
-        let page = sessions.list_messages(session.id, before_id, 1).await?;
-        before_id = page.messages.last().map(|m| m.id);
-        has_more = page.has_more;
-        seen.extend(page.messages.iter().map(|m| m.id));
-    }
-
-    assert_eq!(seen, expected, "ids newest first, ties broken by id");
-    assert!(!has_more, "the last page has no more");
-    Ok(())
-}
-
-#[tokio::test]
-async fn an_omitted_limit_returns_fifty_messages() -> Result<(), Box<dyn Error>> {
-    let db = lemma_db::in_memory().await?;
-    let sessions = SessionService::new(db);
-    let session = sessions.create(None).await?;
-    append_chain(&sessions, session.id, 60).await?;
-
-    let mut pages = Vec::new();
-    for limit in [0, -5, i32::MAX] {
-        let page = sessions.list_messages(session.id, None, limit).await?;
-        pages.push((page.messages.len(), page.has_more));
-    }
-
+    let tree = sessions.list_messages(session.id).await?;
+    let ids: Vec<Uuid> = tree.messages.iter().map(|m| m.id).collect();
+    assert_eq!(tree.leaf_id, Some(m2.id), "active leaf");
     assert_eq!(
-        pages,
-        [(50, true), (50, true), (60, false)],
-        "pages for 0, -5, i32::MAX"
+        ids,
+        [m0.id, tie_ids[0], tie_ids[1]],
+        "oldest first, timestamp ties ordered by id"
+    );
+    assert_eq!(
+        tree.messages[0].label.as_deref(),
+        Some("root"),
+        "persisted label"
+    );
+
+    let missing = sessions.list_messages(Uuid::new_v4()).await;
+    assert!(
+        matches!(missing, Err(SessionError::NotFound)),
+        "missing session: {missing:?}"
     );
     Ok(())
 }
@@ -393,9 +382,9 @@ async fn deleting_a_provider_keeps_the_messages_and_sessions_that_used_it()
 
     providers.delete_custom(provider.id).await?;
 
-    let page = sessions.list_messages(session.id, None, 10).await?;
-    let [kept] = page.messages.as_slice() else {
-        return Err(format!("expected one message: {page:?}").into());
+    let tree = sessions.list_messages(session.id).await?;
+    let [kept] = tree.messages.as_slice() else {
+        return Err(format!("expected one message: {tree:?}").into());
     };
     assert_eq!(kept.id, answer_id, "message survives");
     assert_eq!(kept.provider_id, Some(provider.id), "message provider id");
@@ -443,8 +432,14 @@ async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>
     };
 
     sqlx::query("DROP TABLE messages").execute(&db).await?;
-    let first_page = sessions.list_messages(id, None, 2).await;
-    let cursor_page = sessions.list_messages(id, Some(Uuid::new_v4()), 2).await;
+    let listed_tree_no_messages = sessions.list_messages(id).await;
+    let resolved_no_messages = sessions
+        .resolve_branch_parent(id, BranchTarget::ActiveLeaf)
+        .await;
+    let leaf_set_no_messages = sessions.set_leaf(id, Some(Uuid::new_v4())).await;
+    let label_set_no_messages = sessions
+        .set_message_label(id, Uuid::new_v4(), "branch")
+        .await;
     let appended = sessions
         .append_message(entry(id, None, "message", at(0)))
         .await;
@@ -467,12 +462,24 @@ async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>
     let created = sessions.create(None).await;
     let deleted = sessions.delete(id).await;
     let leaf_updated = sessions.update_leaf(id, Uuid::new_v4()).await;
+    let leaf_set_no_sessions = sessions.set_leaf(id, None).await;
     let model_updated = sessions.update_last_model(id, last_model).await;
-    let prev_format = sessions.previous_assistant_api_format(id).await;
+    let listed_tree_no_sessions = sessions.list_messages(id).await;
+    let resolved_no_sessions = sessions
+        .resolve_branch_parent(id, BranchTarget::ActiveLeaf)
+        .await;
 
     for (operation, failed) in [
-        ("first page", first_page.err()),
-        ("cursor lookup", cursor_page.err()),
+        (
+            "list messages without messages",
+            listed_tree_no_messages.err(),
+        ),
+        (
+            "resolve branch parent without messages",
+            resolved_no_messages.err(),
+        ),
+        ("set leaf without messages", leaf_set_no_messages.err()),
+        ("set label without messages", label_set_no_messages.err()),
         ("append message", appended.err()),
         ("update message", message_updated.err()),
         ("all messages", all_messages.err()),
@@ -482,8 +489,16 @@ async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>
         ("create", created.err()),
         ("delete", deleted.err()),
         ("update leaf", leaf_updated.err()),
+        ("set leaf without sessions", leaf_set_no_sessions.err()),
         ("update last model", model_updated.err()),
-        ("previous assistant format", prev_format.err()),
+        (
+            "list messages without sessions",
+            listed_tree_no_sessions.err(),
+        ),
+        (
+            "resolve branch parent without sessions",
+            resolved_no_sessions.err(),
+        ),
     ] {
         assert!(
             matches!(failed, Some(SessionError::Store(_))),
@@ -494,75 +509,346 @@ async fn session_methods_report_database_failures() -> Result<(), Box<dyn Error>
 }
 
 #[tokio::test]
-async fn previous_assistant_format_follows_the_active_context_path() -> Result<(), Box<dyn Error>> {
+async fn resolve_branch_parent_covers_active_leaf_root_and_message_targets()
+-> Result<(), Box<dyn Error>> {
     let db = lemma_db::in_memory().await?;
     let sessions = SessionService::new(db);
     let empty = sessions.create(None).await?;
     let session = sessions.create(None).await?;
-    assert_eq!(
-        sessions.previous_assistant_api_format(empty.id).await?,
-        None,
-        "empty session"
-    );
 
-    let root = entry(session.id, None, "question", at(0));
-    sessions.append_message(root.clone()).await?;
-    let mut answer = entry(session.id, Some(root.id), "answer", at(1));
-    answer.body = MessageBody(CoreMessage::Assistant {
-        content: vec![ContentBlock::Text(TextContent {
-            text: "answer".to_owned(),
-        })],
-        stop_reason: StopReason::Stop,
-        usage: None,
-    });
-    answer.api_format = Some(ApiFormat::OpenAiCompatible);
-    sessions.append_message(answer.clone()).await?;
-    let trailing = entry(session.id, Some(answer.id), "next", at(2));
-    sessions.append_message(trailing.clone()).await?;
-    sessions.update_leaf(session.id, trailing.id).await?;
-    assert_eq!(
-        sessions.previous_assistant_api_format(session.id).await?,
+    let (empty_session, empty_parent, empty_fmt) = sessions
+        .resolve_branch_parent(empty.id, BranchTarget::ActiveLeaf)
+        .await?;
+    assert_eq!(empty_session.id, empty.id, "empty session returned");
+    assert_eq!(empty_parent, None, "empty active leaf parent");
+    assert_eq!(empty_fmt, None, "empty active leaf format");
+
+    let root_user = entry(session.id, None, "question", at(0));
+    let assistant_base = assistant_entry(
+        session.id,
+        Some(root_user.id),
+        "base",
         Some(ApiFormat::OpenAiCompatible),
-        "latest assistant before a user message"
+        at(1),
+    );
+    let branch_a_user = entry(session.id, Some(assistant_base.id), "branch a", at(2));
+    let branch_a_assistant = assistant_entry(
+        session.id,
+        Some(branch_a_user.id),
+        "a answer",
+        Some(ApiFormat::Anthropic),
+        at(3),
+    );
+    let branch_b_user = entry(session.id, Some(assistant_base.id), "branch b", at(4));
+    let branch_b_assistant = assistant_entry(
+        session.id,
+        Some(branch_b_user.id),
+        "b answer",
+        Some(ApiFormat::Gemini),
+        at(5),
+    );
+    let branch_b_tool = tool_result_entry(
+        session.id,
+        Some(branch_b_assistant.id),
+        "call-1",
+        "read_file",
+        at(6),
+    );
+    let legacy_user = entry(session.id, Some(branch_a_assistant.id), "follow-up", at(7));
+    let legacy_assistant = assistant_entry(session.id, Some(legacy_user.id), "legacy", None, at(8));
+    for msg in [
+        root_user.clone(),
+        assistant_base.clone(),
+        branch_a_user.clone(),
+        branch_a_assistant.clone(),
+        branch_b_user.clone(),
+        branch_b_assistant.clone(),
+        branch_b_tool.clone(),
+        legacy_user.clone(),
+        legacy_assistant.clone(),
+    ] {
+        sessions.append_message(msg).await?;
+    }
+
+    sessions.update_leaf(session.id, branch_a_user.id).await?;
+    let (_, active_parent, active_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::ActiveLeaf)
+        .await?;
+    assert_eq!(active_parent, Some(branch_a_user.id), "active leaf parent");
+    assert_eq!(
+        active_fmt,
+        Some(ApiFormat::OpenAiCompatible),
+        "active leaf inherits ancestor assistant format"
     );
 
-    let mut legacy = entry(session.id, Some(trailing.id), "legacy", at(3));
-    legacy.body = MessageBody(CoreMessage::Assistant {
-        content: Vec::new(),
-        stop_reason: StopReason::Stop,
-        usage: None,
-    });
-    sessions.append_message(legacy.clone()).await?;
-    sessions.update_leaf(session.id, legacy.id).await?;
+    let (_, root_parent, root_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::Root)
+        .await?;
+    assert_eq!(root_parent, None, "root branch has no parent");
+    assert_eq!(root_fmt, None, "root branch has no inherited format");
+
+    let (_, msg_a_parent, msg_a_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::Message(branch_a_assistant.id))
+        .await?;
+    assert_eq!(msg_a_parent, Some(branch_a_assistant.id), "branch a parent");
+    assert_eq!(msg_a_fmt, Some(ApiFormat::Anthropic), "branch a format");
+
+    let (_, msg_b_parent, msg_b_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::Message(branch_b_tool.id))
+        .await?;
+    assert_eq!(msg_b_parent, Some(branch_b_tool.id), "branch b tool parent");
+    assert_eq!(msg_b_fmt, Some(ApiFormat::Gemini), "branch b format");
+
+    let (_, base_parent, base_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::Message(assistant_base.id))
+        .await?;
     assert_eq!(
-        sessions.previous_assistant_api_format(session.id).await?,
-        None,
-        "legacy assistant has no format"
+        base_parent,
+        Some(assistant_base.id),
+        "base assistant parent"
+    );
+    assert_eq!(
+        base_fmt,
+        Some(ApiFormat::OpenAiCompatible),
+        "base assistant format"
     );
 
-    let user_only = sessions.create(None).await?;
-    let user = entry(user_only.id, None, "question", at(0));
-    sessions.append_message(user.clone()).await?;
-    sessions.update_leaf(user_only.id, user.id).await?;
-    assert_eq!(
-        sessions.previous_assistant_api_format(user_only.id).await?,
-        None,
-        "user-only session"
+    sessions
+        .update_leaf(session.id, legacy_assistant.id)
+        .await?;
+    let (_, _, legacy_fmt) = sessions
+        .resolve_branch_parent(session.id, BranchTarget::ActiveLeaf)
+        .await?;
+    assert_eq!(legacy_fmt, None, "legacy assistant has no format");
+
+    let mut streaming = assistant_entry(session.id, Some(root_user.id), "", None, at(9));
+    streaming.status = MessageStatus::Streaming;
+    sessions.append_message(streaming.clone()).await?;
+    sessions.update_leaf(session.id, streaming.id).await?;
+    assert!(
+        matches!(
+            sessions
+                .resolve_branch_parent(session.id, BranchTarget::ActiveLeaf)
+                .await,
+            Err(SessionError::InvalidBranchPoint)
+        ),
+        "streaming active leaf rejected"
     );
+    assert!(
+        matches!(
+            sessions
+                .resolve_branch_parent(session.id, BranchTarget::Message(root_user.id))
+                .await,
+            Err(SessionError::InvalidBranchPoint)
+        ),
+        "user message branch target rejected"
+    );
+    assert!(
+        matches!(
+            sessions
+                .resolve_branch_parent(session.id, BranchTarget::Message(Uuid::new_v4()))
+                .await,
+            Err(SessionError::MessageNotFound)
+        ),
+        "missing message branch target rejected"
+    );
+
+    let broken_user = entry(session.id, Some(Uuid::new_v4()), "orphan", at(10));
+    let broken_tool = tool_result_entry(
+        session.id,
+        Some(broken_user.id),
+        "call-2",
+        "read_file",
+        at(11),
+    );
+    sessions.append_message(broken_user).await?;
+    sessions.append_message(broken_tool.clone()).await?;
+    assert!(
+        matches!(
+            sessions
+                .resolve_branch_parent(session.id, BranchTarget::Message(broken_tool.id))
+                .await,
+            Err(SessionError::Missing(_))
+        ),
+        "broken ancestor chain rejected"
+    );
+
     sessions.update_leaf(empty.id, Uuid::new_v4()).await?;
     assert!(
         matches!(
-            sessions.previous_assistant_api_format(empty.id).await,
+            sessions
+                .resolve_branch_parent(empty.id, BranchTarget::ActiveLeaf)
+                .await,
             Err(SessionError::Missing(_))
         ),
-        "missing context node"
+        "missing active leaf node"
     );
     assert!(
         matches!(
-            sessions.previous_assistant_api_format(Uuid::new_v4()).await,
+            sessions
+                .resolve_branch_parent(Uuid::new_v4(), BranchTarget::Root)
+                .await,
             Err(SessionError::NotFound)
         ),
         "missing session"
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn set_leaf_validates_turn_boundaries_and_rewinds() -> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db);
+    let session = sessions.create(None).await?;
+    let other = sessions.create(None).await?;
+
+    let user = entry(session.id, None, "run tools", at(0));
+    let assistant_tool_call = assistant_entry(
+        session.id,
+        Some(user.id),
+        "calling",
+        Some(ApiFormat::Anthropic),
+        at(1),
+    );
+    let tool_res_1 = tool_result_entry(
+        session.id,
+        Some(assistant_tool_call.id),
+        "call-1",
+        "read_file",
+        at(2),
+    );
+    let tool_res_2 = tool_result_entry(
+        session.id,
+        Some(tool_res_1.id),
+        "call-2",
+        "write_file",
+        at(3),
+    );
+    let mut assistant_final = assistant_entry(
+        session.id,
+        Some(tool_res_2.id),
+        "done",
+        Some(ApiFormat::Anthropic),
+        at(4),
+    );
+    assistant_final.status = MessageStatus::Aborted;
+    let mut streaming = assistant_entry(session.id, Some(user.id), "", None, at(5));
+    streaming.status = MessageStatus::Streaming;
+    let other_assistant = assistant_entry(other.id, None, "other", None, at(6));
+
+    for msg in [
+        user.clone(),
+        assistant_tool_call.clone(),
+        tool_res_1.clone(),
+        tool_res_2.clone(),
+        assistant_final.clone(),
+        streaming.clone(),
+        other_assistant.clone(),
+    ] {
+        sessions.append_message(msg).await?;
+    }
+
+    let entries = sessions.all_messages(session.id).await?;
+    assert!(
+        is_valid_turn_boundary(assistant_final.id, &entries).is_ok(),
+        "aborted assistant without tool children is valid"
+    );
+
+    let updated = sessions
+        .set_leaf(session.id, Some(assistant_final.id))
+        .await?;
+    assert_eq!(
+        updated.leaf_id,
+        Some(assistant_final.id),
+        "set leaf to assistant"
+    );
+
+    let updated = sessions.set_leaf(session.id, Some(tool_res_2.id)).await?;
+    assert_eq!(
+        updated.leaf_id,
+        Some(tool_res_2.id),
+        "set leaf to terminal tool result"
+    );
+
+    let rewound = sessions.set_leaf(session.id, None).await?;
+    assert_eq!(rewound.leaf_id, None, "rewind leaf to root");
+
+    assert!(
+        matches!(
+            sessions.set_leaf(Uuid::new_v4(), None).await,
+            Err(SessionError::NotFound)
+        ),
+        "missing session"
+    );
+    for invalid_id in [Uuid::new_v4(), other_assistant.id] {
+        assert!(
+            matches!(
+                sessions.set_leaf(session.id, Some(invalid_id)).await,
+                Err(SessionError::MessageNotFound)
+            ),
+            "unknown or foreign message {invalid_id}"
+        );
+    }
+    for bad_boundary in [streaming.id, user.id, assistant_tool_call.id, tool_res_1.id] {
+        assert!(
+            matches!(
+                sessions.set_leaf(session.id, Some(bad_boundary)).await,
+                Err(SessionError::InvalidBranchPoint)
+            ),
+            "invalid boundary {bad_boundary}"
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn set_message_label_sets_trims_clears_and_rejects_foreign_messages()
+-> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db);
+    let session = sessions.create(None).await?;
+    let other = sessions.create(None).await?;
+    let msg = entry(session.id, None, "hello", at(0));
+    let other_msg = entry(other.id, None, "other", at(1));
+    sessions.append_message(msg.clone()).await?;
+    sessions.append_message(other_msg.clone()).await?;
+
+    let labeled = sessions
+        .set_message_label(session.id, msg.id, "  main branch  ")
+        .await?;
+    assert_eq!(
+        labeled.label.as_deref(),
+        Some("main branch"),
+        "trimmed label stored"
+    );
+
+    let cleared_ws = sessions
+        .set_message_label(session.id, msg.id, "   \t ")
+        .await?;
+    assert_eq!(cleared_ws.label, None, "whitespace clears label");
+
+    sessions
+        .set_message_label(session.id, msg.id, "retry")
+        .await?;
+    let cleared_empty = sessions.set_message_label(session.id, msg.id, "").await?;
+    assert_eq!(cleared_empty.label, None, "empty string clears label");
+
+    let stored = sessions.list_messages(session.id).await?;
+    assert_eq!(stored.messages[0].label, None, "persisted cleared label");
+
+    for (sid, mid) in [
+        (session.id, Uuid::new_v4()),
+        (session.id, other_msg.id),
+        (other.id, msg.id),
+        (Uuid::new_v4(), msg.id),
+    ] {
+        assert!(
+            matches!(
+                sessions.set_message_label(sid, mid, "nope").await,
+                Err(SessionError::MessageNotFound)
+            ),
+            "reject ({sid}, {mid})"
+        );
+    }
     Ok(())
 }

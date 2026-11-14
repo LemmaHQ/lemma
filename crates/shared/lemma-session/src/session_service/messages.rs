@@ -4,16 +4,17 @@ use chrono::{DateTime, Utc};
 use sqlx::types::Json;
 use uuid::Uuid;
 
+use lemma_core::Message as CoreMessage;
 use lemma_model::ApiFormat;
 
 use crate::message::{self, Message, MessageBody, MessageStatus};
+use crate::session::Session;
 use crate::session_error::SessionError;
+use crate::tree;
 
-use super::message_page::MessagePage;
 use super::message_update::MessageUpdate;
+use super::session_tree::{BranchTarget, SessionTree};
 use super::sessions::SessionService;
-
-const DEFAULT_PAGE_LEN: i32 = 50;
 
 type MessageRow = (
     Uuid,
@@ -23,6 +24,7 @@ type MessageRow = (
     String,
     Option<String>,
     Option<Uuid>,
+    Option<String>,
     Option<String>,
     Option<String>,
     DateTime<Utc>,
@@ -41,9 +43,9 @@ impl SessionService {
         sqlx::query(
             "INSERT INTO messages (
                  id, session_id, parent_id, body, status, error,
-                 provider_id, model, api_format, created_at, updated_at
+                 provider_id, model, api_format, label, created_at, updated_at
              )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(entry.id)
         .bind(entry.session_id)
@@ -54,6 +56,7 @@ impl SessionService {
         .bind(entry.provider_id)
         .bind(entry.model)
         .bind(api_format)
+        .bind(entry.label)
         .bind(entry.created_at)
         .bind(entry.updated_at)
         .execute(&self.db)
@@ -94,7 +97,7 @@ impl SessionService {
     pub async fn all_messages(&self, session_id: Uuid) -> Result<Vec<Message>, SessionError> {
         let rows = sqlx::query_as::<_, MessageRow>(
             "SELECT id, session_id, parent_id, body, status, error,
-                    provider_id, model, api_format, created_at, updated_at
+                    provider_id, model, api_format, label, created_at, updated_at
              FROM messages
              WHERE session_id = ?
              ORDER BY created_at ASC, id ASC",
@@ -105,106 +108,123 @@ impl SessionService {
         rows.into_iter().map(message_from_row).collect()
     }
 
-    /// Returns the API format of the latest assistant message on the active
-    /// context path, or `None` when no assistant message or format exists.
+    /// Resolves the parent message id and inherited assistant API format for
+    /// starting or branching a turn.
     ///
     /// # Errors
     ///
     /// [`SessionError::NotFound`] when no such session exists,
-    /// [`SessionError::Missing`] when a context-path node is absent, and
+    /// [`SessionError::MessageNotFound`] when `BranchTarget::Message` names a
+    /// message absent from the session, [`SessionError::InvalidBranchPoint`]
+    /// when the target is streaming or not a valid turn boundary,
+    /// [`SessionError::Missing`] when a tree ancestor is absent, and
     /// [`SessionError::Store`] when the database fails.
-    pub async fn previous_assistant_api_format(
+    pub async fn resolve_branch_parent(
         &self,
         session_id: Uuid,
-    ) -> Result<Option<ApiFormat>, SessionError> {
+        target: BranchTarget,
+    ) -> Result<(Session, Option<Uuid>, Option<ApiFormat>), SessionError> {
         let session = self.find(session_id).await?.ok_or(SessionError::NotFound)?;
-        let Some(leaf_id) = session.leaf_id else {
-            return Ok(None);
-        };
         let entries = self.all_messages(session_id).await?;
+        let parent_id = match target {
+            BranchTarget::ActiveLeaf => {
+                if let Some(id) = session.leaf_id {
+                    let entry = entries.iter().find(|entry| entry.id == id).ok_or_else(|| {
+                        SessionError::Missing(format!("node {id} missing in tree"))
+                    })?;
+                    if entry.status == MessageStatus::Streaming {
+                        return Err(SessionError::InvalidBranchPoint);
+                    }
+                }
+                session.leaf_id
+            }
+            BranchTarget::Root => None,
+            BranchTarget::Message(id) => {
+                tree::is_valid_turn_boundary(id, &entries)?;
+                Some(id)
+            }
+        };
         let by_id: HashMap<_, _> = entries.iter().map(|entry| (entry.id, entry)).collect();
-        let mut current = Some(leaf_id);
+        let mut api_format = None;
+        let mut current = parent_id;
         while let Some(id) = current {
             let entry = by_id
                 .get(&id)
                 .ok_or_else(|| SessionError::Missing(format!("node {id} missing in tree")))?;
-            if matches!(&entry.body.0, lemma_core::Message::Assistant { .. }) {
-                return Ok(entry.api_format);
+            if matches!(&entry.body.0, CoreMessage::Assistant { .. }) {
+                api_format = entry.api_format;
+                break;
             }
             current = entry.parent_id;
         }
-        Ok(None)
+        Ok((session, parent_id, api_format))
     }
 
-    /// Lists a session's messages newest-first with keyset
-    /// pagination: `before_id` selects messages older than that message,
-    /// and an unknown `before_id` yields an empty page. A `limit` that is
-    /// not positive, as when the request omits it, returns 50 messages.
+    /// Loads the session's active leaf id and every message ordered oldest
+    /// first inside one database transaction.
     ///
     /// # Errors
     ///
     /// [`SessionError::NotFound`] when no such session exists and
     /// [`SessionError::Store`] when the database fails.
-    pub async fn list_messages(
-        &self,
-        session_id: Uuid,
-        before_id: Option<Uuid>,
-        limit: i32,
-    ) -> Result<MessagePage, SessionError> {
-        self.find(session_id).await?.ok_or(SessionError::NotFound)?;
-        let page_len = if limit > 0 { limit } else { DEFAULT_PAGE_LEN };
-        let fetch_limit = i64::from(page_len) + 1;
-        let rows = if let Some(before_id) = before_id {
-            let Some((before_created_at, before_row_id)) =
-                sqlx::query_as::<_, (DateTime<Utc>, Uuid)>(
-                    "SELECT created_at, id FROM messages WHERE id = ? AND session_id = ?",
-                )
-                .bind(before_id)
+    pub async fn list_messages(&self, session_id: Uuid) -> Result<SessionTree, SessionError> {
+        let mut tx = self.db.begin().await?;
+        let Some((leaf_id,)) =
+            sqlx::query_as::<_, (Option<Uuid>,)>("SELECT leaf_id FROM sessions WHERE id = ?")
                 .bind(session_id)
-                .fetch_optional(&self.db)
+                .fetch_optional(&mut *tx)
                 .await?
-            else {
-                return Ok(MessagePage {
-                    messages: Vec::new(),
-                    has_more: false,
-                });
-            };
-            sqlx::query_as::<_, MessageRow>(
-                "SELECT id, session_id, parent_id, body, status, error,
-                        provider_id, model, api_format, created_at, updated_at
-                 FROM messages
-                 WHERE session_id = ? AND (created_at, id) < (?, ?)
-                 ORDER BY created_at DESC, id DESC
-                 LIMIT ?",
-            )
-            .bind(session_id)
-            .bind(before_created_at)
-            .bind(before_row_id)
-            .bind(fetch_limit)
-            .fetch_all(&self.db)
-            .await?
-        } else {
-            sqlx::query_as::<_, MessageRow>(
-                "SELECT id, session_id, parent_id, body, status, error,
-                        provider_id, model, api_format, created_at, updated_at
-                 FROM messages
-                 WHERE session_id = ?
-                 ORDER BY created_at DESC, id DESC
-                 LIMIT ?",
-            )
-            .bind(session_id)
-            .bind(fetch_limit)
-            .fetch_all(&self.db)
-            .await?
+        else {
+            return Err(SessionError::NotFound);
         };
-        let mut messages: Vec<Message> = rows
+        let rows = sqlx::query_as::<_, MessageRow>(
+            "SELECT id, session_id, parent_id, body, status, error,
+                    provider_id, model, api_format, label, created_at, updated_at
+             FROM messages
+             WHERE session_id = ?
+             ORDER BY created_at ASC, id ASC",
+        )
+        .bind(session_id)
+        .fetch_all(&mut *tx)
+        .await?;
+        tx.commit().await?;
+        let messages = rows
             .into_iter()
             .map(message_from_row)
-            .collect::<Result<_, _>>()?;
-        let page_len = page_len as usize;
-        let has_more = messages.len() > page_len;
-        messages.truncate(page_len);
-        Ok(MessagePage { messages, has_more })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(SessionTree { leaf_id, messages })
+    }
+
+    /// Sets or clears a branch label on a message belonging to `session_id`.
+    ///
+    /// # Errors
+    ///
+    /// [`SessionError::MessageNotFound`] when no message in `session_id` has
+    /// `message_id`, and [`SessionError::Store`] when the database fails.
+    pub async fn set_message_label(
+        &self,
+        session_id: Uuid,
+        message_id: Uuid,
+        label: &str,
+    ) -> Result<Message, SessionError> {
+        let trimmed = label.trim();
+        let label = (!trimmed.is_empty()).then(|| trimmed.to_owned());
+        let row = sqlx::query_as::<_, MessageRow>(
+            "UPDATE messages
+             SET label = ?, updated_at = ?
+             WHERE id = ? AND session_id = ?
+             RETURNING id, session_id, parent_id, body, status, error,
+                       provider_id, model, api_format, label, created_at, updated_at",
+        )
+        .bind(label)
+        .bind(Utc::now())
+        .bind(message_id)
+        .bind(session_id)
+        .fetch_optional(&self.db)
+        .await?;
+        row.map(message_from_row)
+            .transpose()?
+            .ok_or(SessionError::MessageNotFound)
     }
 }
 
@@ -219,6 +239,7 @@ fn message_from_row(
         provider_id,
         model,
         api_format,
+        label,
         created_at,
         updated_at,
     ): MessageRow,
@@ -238,6 +259,7 @@ fn message_from_row(
         provider_id,
         model,
         api_format,
+        label,
         created_at,
         updated_at,
     })

@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::session::{LastModel, Session};
 use crate::session_error::SessionError;
+use crate::tree;
 
 type SessionRow = (
     Uuid,
@@ -145,6 +146,35 @@ impl SessionService {
             return Err(SessionError::NotFound);
         }
         Ok(())
+    }
+
+    /// Sets the active leaf of a session after validating the target boundary.
+    ///
+    /// # Errors
+    ///
+    /// [`SessionError::NotFound`] when no such session exists,
+    /// [`SessionError::MessageNotFound`] when `leaf_id` is absent from the
+    /// session, [`SessionError::InvalidBranchPoint`] when `leaf_id` cannot
+    /// serve as a turn boundary, and [`SessionError::Store`] when the database
+    /// fails.
+    pub async fn set_leaf(&self, id: Uuid, leaf_id: Option<Uuid>) -> Result<Session, SessionError> {
+        self.find(id).await?.ok_or(SessionError::NotFound)?;
+        if let Some(target_id) = leaf_id {
+            let entries = self.all_messages(id).await?;
+            tree::is_valid_turn_boundary(target_id, &entries)?;
+        }
+        let row = sqlx::query_as::<_, SessionRow>(
+            "UPDATE sessions
+             SET leaf_id = ?, updated_at = ?
+             WHERE id = ?
+             RETURNING id, title, leaf_id, last_model, directory, created_at, updated_at",
+        )
+        .bind(leaf_id)
+        .bind(Utc::now())
+        .bind(id)
+        .fetch_optional(&self.db)
+        .await?;
+        row.map(session_from_row).ok_or(SessionError::NotFound)
     }
 
     /// Moves the active leaf of a session.

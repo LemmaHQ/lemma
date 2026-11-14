@@ -27,6 +27,8 @@ pub struct Message {
     pub model: Option<String>,
     /// API format used to generate this message, when applicable.
     pub api_format: Option<ApiFormat>,
+    /// Optional user-assigned branch label.
+    pub label: Option<String>,
     /// Creation timestamp.
     pub created_at: DateTime<Utc>,
     /// Last modification timestamp.
@@ -124,6 +126,7 @@ mod tests {
             provider_id: None,
             model: None,
             api_format: None,
+            label: None,
             created_at: now,
             updated_at: now,
         }
