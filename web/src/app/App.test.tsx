@@ -250,7 +250,7 @@ it("remembers a collapsed sidebar and reopens it from the floating trigger", asy
     await user.click(
         within(sidebar()).getByRole("button", { name: "Collapse sidebar" }),
     );
-    expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
+    expect(localStorage.getItem("lemma.sidebarCollapsed")).toBe("1");
     expect(sidebar().dataset.state).toBe("collapsed");
     expect(
         mainArea().getByRole("button", { name: "Expand sidebar" }),
@@ -263,7 +263,7 @@ it("remembers a collapsed sidebar and reopens it from the floating trigger", asy
     await user.click(
         mainArea().getByRole("button", { name: "Expand sidebar" }),
     );
-    expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
+    expect(localStorage.getItem("lemma.sidebarCollapsed")).toBe("0");
 });
 
 it("navigates settings with active counts and returns to the active session", async () => {
@@ -378,7 +378,7 @@ it.each(["/settings", "/settings/unknown", "/settings/Providers"])(
 
 it("keeps the sidebar open on settings without storing toggles", async () => {
     const user = userEvent.setup();
-    localStorage.setItem("sidebar-collapsed", "1");
+    localStorage.setItem("lemma.sidebarCollapsed", "1");
     await start("/settings/appearance");
 
     await screen.findByRole("link", { name: "Back to sessions" });
@@ -386,7 +386,7 @@ it("keeps the sidebar open on settings without storing toggles", async () => {
 
     await user.keyboard("{Control>}b{/Control}");
     expect(sidebar().dataset.state).toBe("expanded");
-    expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
+    expect(localStorage.getItem("lemma.sidebarCollapsed")).toBe("1");
 });
 
 it("opens and closes the sidebar sheet across mobile routes", async () => {

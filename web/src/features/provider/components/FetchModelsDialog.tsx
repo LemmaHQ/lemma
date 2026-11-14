@@ -13,7 +13,7 @@ import {
     InputGroupInput,
     SearchIcon,
 } from "@lemma/ui";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface FetchModelsDialogProps {
@@ -49,7 +49,7 @@ export function FetchModelsDialog({
                     </DialogDescription>
                 </DialogHeader>
                 {remote !== null && (
-                    <ModelPicker
+                    <RemoteModelPicker
                         remote={remote}
                         existing={existing}
                         onAdd={onAdd}
@@ -60,24 +60,24 @@ export function FetchModelsDialog({
     );
 }
 
-interface ModelPickerProps {
+interface RemoteModelPickerProps {
     remote: string[];
     existing: string[];
     onAdd: (models: string[]) => void;
 }
 
-function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
+function RemoteModelPicker({
+    remote,
+    existing,
+    onAdd,
+}: RemoteModelPickerProps) {
     const { t } = useTranslation();
     const [query, setQuery] = useState("");
     const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
-    const added = useMemo(() => new Set(existing), [existing]);
-
-    const visible = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        return q === ""
-            ? remote
-            : remote.filter((m) => m.toLowerCase().includes(q));
-    }, [remote, query]);
+    const added = new Set(existing);
+    const q = query.trim().toLowerCase();
+    const visible =
+        q === "" ? remote : remote.filter((m) => m.toLowerCase().includes(q));
     const selectable = visible.filter((m) => !added.has(m));
     const allPicked =
         selectable.length > 0 && selectable.every((m) => picked.has(m));
@@ -118,6 +118,7 @@ function ModelPicker({ remote, existing, onAdd }: ModelPickerProps) {
                 <InputGroupInput
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    aria-label={t("provider.modelSearchPlaceholder")}
                     placeholder={t("provider.modelSearchPlaceholder")}
                 />
             </InputGroup>

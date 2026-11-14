@@ -30,8 +30,7 @@ const fill = (
     );
 
 const save = (user: UserEvent) =>
-    user.click(screen.getByRole("button", { name: "Save" }));
-
+    user.click(screen.getByRole("button", { name: "Save and create" }));
 it("titles the page by name, then by ID, then as a new provider", async () => {
     const user = userEvent.setup();
     renderForm();
@@ -60,15 +59,19 @@ it("creates an OpenAI provider named after its ID by default", async () => {
         apiKey: "",
         baseUrl: "https://api.corp.dev/v1",
         apiPath: "",
+        modelsPath: "",
     });
 });
 
-it("creates a Gemini provider with its own name and path", async () => {
+it("creates a Gemini provider with its own name and custom paths", async () => {
     const user = userEvent.setup();
     const { onSave } = renderForm();
 
     await user.click(screen.getByRole("combobox"));
     await user.click(await screen.findByRole("option", { name: "Gemini" }));
+    await user.click(
+        screen.getByRole("button", { name: "Custom endpoint paths" }),
+    );
     expect(
         screen.getByText(/\{model\} is replaced by the model ID/u),
     ).toBeDefined();
@@ -79,6 +82,7 @@ it("creates a Gemini provider with its own name and path", async () => {
     });
     await user.type(screen.getByLabelText("API key"), " key ");
     await user.type(screen.getByLabelText("Request path"), " /v1/models ");
+    await user.type(screen.getByLabelText("Model list path"), " /v1/list ");
     await save(user);
 
     expect(onSave).toHaveBeenCalledWith({
@@ -88,6 +92,7 @@ it("creates a Gemini provider with its own name and path", async () => {
         apiKey: "key",
         baseUrl: "https://generativelanguage.googleapis.com",
         apiPath: "/v1/models",
+        modelsPath: "/v1/list",
     });
 });
 
@@ -120,10 +125,9 @@ it("blocks saving a malformed base URL", async () => {
 
     await fill(user, { "Base URL": "api.corp.dev" });
 
-    expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-        "disabled",
-        true,
-    );
+    expect(
+        screen.getByRole("button", { name: "Save and create" }),
+    ).toHaveProperty("disabled", true);
 });
 
 it("shows why the provider could not be created", async () => {
@@ -140,10 +144,9 @@ it("shows why the provider could not be created", async () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
         "Can't reach the server, check your connection and try again",
     );
-    expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-        "disabled",
-        false,
-    );
+    expect(
+        screen.getByRole("button", { name: "Save and create" }),
+    ).toHaveProperty("disabled", false);
 });
 
 it("cancels creating", async () => {

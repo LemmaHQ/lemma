@@ -1,40 +1,40 @@
-import { Avatar, AvatarFallback, SettingsPage, Switch } from "@lemma/ui";
+import { SettingsPage, Switch } from "@lemma/ui";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 interface ProviderHeaderProps {
+    index?: ReactNode;
     name: string;
+    badge: string;
     enabled: boolean;
     toggleDisabled: boolean;
     onToggleEnabled: (enabled: boolean) => void;
-    actions?: ReactNode;
     children: ReactNode;
 }
 
 export function ProviderHeader({
+    index,
     name,
+    badge,
     enabled,
     toggleDisabled,
     onToggleEnabled,
-    actions,
     children,
 }: ProviderHeaderProps) {
     const { t } = useTranslation();
     return (
         <SettingsPage
+            index={index}
             title={name}
-            media={
-                <Avatar>
-                    <AvatarFallback>
-                        {name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-            }
+            badge={badge}
             actions={
                 <>
-                    {actions}
+                    <span className="text-small text-muted-foreground">
+                        {enabled
+                            ? t("provider.statusEnabled")
+                            : t("provider.statusDisabled")}
+                    </span>
                     <Switch
-                        className="ml-2"
                         checked={enabled}
                         disabled={toggleDisabled}
                         onCheckedChange={onToggleEnabled}

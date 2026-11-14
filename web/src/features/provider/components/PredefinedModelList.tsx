@@ -1,4 +1,4 @@
-import { SettingsRow, SettingsSection, Switch } from "@lemma/ui";
+import { SettingsRow, SettingsSectionCompact } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 import type { Model } from "../store";
@@ -10,26 +10,28 @@ interface PredefinedModelListProps {
 export function PredefinedModelList({ models }: PredefinedModelListProps) {
     const { t } = useTranslation();
     return (
-        <SettingsSection
+        <SettingsSectionCompact
             title={t("provider.modelList")}
             actions={
-                <span className="text-small text-muted-foreground">
+                <span className="text-caption text-subtle-foreground">
                     {t("provider.modelsReadOnly")}
                 </span>
             }
         >
             {models.map((model) => (
-                <SettingsRow key={model.id} label={model.id}>
-                    <span className="text-small text-muted-foreground">
-                        {t("provider.toolCalling")}
+                <SettingsRow
+                    key={model.id}
+                    label={
+                        <span className="font-mono text-small">{model.id}</span>
+                    }
+                >
+                    <span className="text-caption text-muted-foreground">
+                        {model.toolCalling
+                            ? t("provider.toolsSupported")
+                            : t("provider.toolsUnsupported")}
                     </span>
-                    <Switch
-                        checked={model.toolCalling}
-                        disabled
-                        aria-label={`${model.id} ${t("provider.toolCalling")}`}
-                    />
                 </SettingsRow>
             ))}
-        </SettingsSection>
+        </SettingsSectionCompact>
     );
 }

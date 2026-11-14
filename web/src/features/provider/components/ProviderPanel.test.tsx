@@ -1,7 +1,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { Toaster, TooltipProvider } from "@lemma/ui";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 
@@ -24,6 +24,7 @@ type UpdateRequest = {
     apiKey?: string | undefined;
     baseUrl?: string | undefined;
     apiPath?: string | undefined;
+    modelsPath?: string | undefined;
     enabled?: boolean | undefined;
     models?: { models: ModelRecord[] } | undefined;
 };
@@ -184,14 +185,10 @@ it("loads the providers and opens the first one", async () => {
 
     expect(screen.getByRole("status", { name: "Loading…" })).toBeDefined();
     expect(await screen.findByRole("heading", { name: "Acme" })).toBeDefined();
-    expect(screen.getByLabelText("API format")).toHaveProperty(
-        "value",
-        "OpenAI",
-    );
-    expect(screen.getByLabelText("API format")).toHaveProperty(
-        "readOnly",
-        true,
-    );
+    expect(screen.getByText("Custom provider")).toBeDefined();
+    expect(screen.getByText("Enabled")).toBeDefined();
+    expect(screen.getByText("OpenAI")).toBeDefined();
+    expect(screen.getByText("acme")).toBeDefined();
     const apiKeyInput = screen.getByLabelText("API key");
     expect(apiKeyInput).toHaveProperty("value", "sk-acme");
     expect(apiKeyInput).toHaveProperty("type", "password");
@@ -204,22 +201,39 @@ it("loads the providers and opens the first one", async () => {
     ).toBeDefined();
     expect(
         screen
-            .getByRole("button", { name: /Acme$/u })
+            .getByRole("button", { name: /^Acme/u })
             .getAttribute("aria-pressed"),
     ).toBe("true");
 });
 
-it("shows an empty page without providers", async () => {
+it("shows an empty page without providers and creates from it", async () => {
+    const user = userEvent.setup();
     rpc.listProviders.mockResolvedValue({ providers: [] });
     renderPanel();
 
     expect(await screen.findByText("No providers yet.")).toBeDefined();
+    expect(
+        screen.getByText("Add a custom provider to start chatting."),
+    ).toBeDefined();
+    const createButtons = screen.getAllByRole("button", {
+        name: "New provider",
+    });
+    await user.click(createButtons.at(-1)!);
+
+    expect(
+        screen.getByRole("heading", { level: 1, name: "New provider" }),
+    ).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("No providers yet.")).toBeDefined();
 });
 
-it("creates a provider and opens it", async () => {
+it("creates a provider and opens it, falling back to identifier in the directory", async () => {
     const user = userEvent.setup();
     rpc.createCustomProvider.mockResolvedValue({
-        provider: provider("corp", "", { models: [] }),
+        provider: provider("corp", "", {
+            apiPath: "/custom/chat",
+            models: [],
+        }),
     });
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
@@ -227,17 +241,23 @@ it("creates a provider and opens it", async () => {
     await user.click(screen.getByRole("button", { name: "New provider" }));
     expect(
         screen
-            .getByRole("button", { name: /Acme$/u })
+            .getByRole("button", { name: /^Acme/u })
             .getAttribute("aria-pressed"),
     ).toBe("false");
     await user.type(screen.getByLabelText("Provider ID"), "corp");
     await user.type(screen.getByLabelText("Base URL"), "https://a.dev");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save and create" }));
 
-    expect(await screen.findByRole("button", { name: "?" })).toBeDefined();
+    expect(await screen.findByRole("button", { name: /^corp/u })).toBeDefined();
     expect(
-        screen.getByRole("button", { name: "?" }).getAttribute("aria-pressed"),
+        screen
+            .getByRole("button", { name: /^corp/u })
+            .getAttribute("aria-pressed"),
     ).toBe("true");
+    expect(screen.getByLabelText("Request path")).toHaveProperty(
+        "value",
+        "/custom/chat",
+    );
     expect(rpc.createCustomProvider.mock.lastCall?.[0]).toMatchObject({
         identifier: "corp",
         name: "corp",
@@ -254,28 +274,10 @@ it("leaves the new provider page by cancelling or picking a provider", async () 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("heading", { name: "Acme" })).toBeDefined();
     await user.click(screen.getByRole("button", { name: "New provider" }));
-    await user.click(screen.getByRole("button", { name: /Beta$/u }));
+    await user.click(screen.getByRole("button", { name: /^Beta/u }));
 
     expect(await screen.findByRole("heading", { name: "Beta" })).toBeDefined();
-});
-
-it("searches, collapses groups, and switches providers", async () => {
-    const user = userEvent.setup();
-    renderPanel();
-    await screen.findByRole("heading", { name: "Acme" });
-
-    await user.type(screen.getByPlaceholderText("Search providers…"), " BE ");
-    expect(screen.queryByRole("button", { name: /Acme$/u })).toBeNull();
-    await user.clear(screen.getByPlaceholderText("Search providers…"));
-    await user.click(screen.getByRole("button", { name: /Custom/u }));
-    expect(screen.queryByRole("button", { name: /Acme$/u })).toBeNull();
-    await user.click(screen.getByRole("button", { name: /Custom/u }));
-    await user.click(screen.getByRole("button", { name: /Beta$/u }));
-
-    expect(await screen.findByRole("heading", { name: "Beta" })).toBeDefined();
-    expect(
-        screen.getByText("Authentication key for requests to the provider."),
-    ).toBeDefined();
+    expect(screen.getByText("Disabled")).toBeDefined();
     expect(
         screen
             .getByRole("switch", { name: "Enable provider" })
@@ -286,7 +288,7 @@ it("searches, collapses groups, and switches providers", async () => {
 it("enables a provider and reports a failed toggle", async () => {
     const user = userEvent.setup();
     renderPanel();
-    await user.click(await screen.findByRole("button", { name: /Beta$/u }));
+    await user.click(await screen.findByRole("button", { name: /^Beta/u }));
 
     await user.click(screen.getByRole("switch", { name: "Enable provider" }));
     expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
@@ -311,8 +313,8 @@ it("saves model list changes for the open provider", async () => {
         id: "acme",
         models: {
             models: [
-                { id: "m2", toolCalling: true },
                 { id: "m1", toolCalling: true },
+                { id: "m2", toolCalling: true },
             ],
         },
     });
@@ -322,8 +324,8 @@ it("saves model list changes for the open provider", async () => {
         id: "acme",
         models: {
             models: [
-                { id: "m2", toolCalling: true },
                 { id: "m1", toolCalling: false },
+                { id: "m2", toolCalling: true },
             ],
         },
     });
@@ -422,7 +424,11 @@ it("saves edited connection settings, or discards them", async () => {
     expect(baseUrl.getAttribute("aria-invalid")).toBe("false");
     expect(screen.queryByText("You have unsaved changes.")).toBeNull();
 
+    await user.click(
+        screen.getByRole("button", { name: "Custom endpoint paths" }),
+    );
     await user.type(screen.getByLabelText("Request path"), " /v2/chat ");
+    await user.type(screen.getByLabelText("Model list path"), " /v2/models ");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await vi.waitFor(() => {
@@ -431,11 +437,16 @@ it("saves edited connection settings, or discards them", async () => {
     expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "acme",
         apiPath: "/v2/chat",
+        modelsPath: "/v2/models",
     });
     expect(rpc.updateCustomProvider.mock.lastCall?.[0]?.apiKey).toBeUndefined();
     expect(screen.getByLabelText("Request path")).toHaveProperty(
         "value",
         "/v2/chat",
+    );
+    expect(screen.getByLabelText("Model list path")).toHaveProperty(
+        "value",
+        "/v2/models",
     );
 });
 
@@ -454,25 +465,17 @@ it("keeps edits and shows the error when saving fails", async () => {
     expect(screen.queryByRole("alert")).toBeNull();
 });
 
-it("renames the provider, falling back to its ID for a blank name", async () => {
+it("renames the provider inline, falling back to its ID for a blank name", async () => {
     const user = userEvent.setup();
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
-    await user.click(screen.getByRole("button", { name: "Settings" }));
-    const dialog = await screen.findByRole("dialog", {
-        name: "Provider settings",
-    });
-    const name = within(dialog).getByLabelText("Provider name");
-    const save = within(dialog).getByRole("button", { name: "Save" });
-    expect(save).toHaveProperty("disabled", true);
-    await user.clear(name);
-
-    expect(save).toHaveProperty("disabled", false);
-    await user.click(save);
+    const nameInput = screen.getByLabelText("Provider name");
+    await user.clear(nameInput);
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
     await vi.waitFor(() => {
-        expect(screen.queryByRole("dialog")).toBeNull();
+        expect(screen.queryByText("You have unsaved changes.")).toBeNull();
     });
     expect(rpc.updateCustomProvider.mock.lastCall?.[0]).toMatchObject({
         id: "acme",
@@ -480,36 +483,36 @@ it("renames the provider, falling back to its ID for a blank name", async () => 
     });
 });
 
-it("shows a rename failure and resets the dialog when reopened", async () => {
-    const user = userEvent.setup();
-    rpc.updateCustomProvider.mockRejectedValue(offline());
-    renderPanel();
-    await screen.findByRole("heading", { name: "Acme" });
-
-    await user.click(screen.getByRole("button", { name: "Settings" }));
-    let dialog = await screen.findByRole("dialog");
-    await user.type(within(dialog).getByLabelText("Provider name"), " Corp");
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(await within(dialog).findByText(OFFLINE_TEXT)).toBeDefined();
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    await user.click(screen.getByRole("button", { name: "Settings" }));
-
-    dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByLabelText("Provider name")).toHaveProperty(
-        "value",
-        "Acme",
-    );
-    expect(within(dialog).queryByText(OFFLINE_TEXT)).toBeNull();
-});
-
-it("deletes the provider after confirmation and opens the next one", async () => {
+it("deletes the provider with two-step inline confirmation or disarms on Escape/blur", async () => {
     const user = userEvent.setup();
     rpc.deleteCustomProvider.mockResolvedValue({});
     renderPanel();
     await screen.findByRole("heading", { name: "Acme" });
 
+    const del = screen.getByRole("button", { name: "Delete provider" });
+    await user.click(del);
+    expect(
+        screen.getByRole("button", {
+            name: /Click again to confirm deletion/u,
+        }),
+    ).toBeDefined();
+    await user.keyboard("a{Escape}");
+    expect(
+        screen.getByRole("button", { name: "Delete provider" }),
+    ).toBeDefined();
+
     await user.click(screen.getByRole("button", { name: "Delete provider" }));
-    await user.click(await screen.findByRole("button", { name: "Delete" }));
+    await user.click(screen.getByLabelText("Base URL"));
+    expect(
+        screen.getByRole("button", { name: "Delete provider" }),
+    ).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "Delete provider" }));
+    await user.click(
+        screen.getByRole("button", {
+            name: /Click again to confirm deletion/u,
+        }),
+    );
 
     expect(await screen.findByRole("heading", { name: "Beta" })).toBeDefined();
     expect(rpc.deleteCustomProvider).toHaveBeenCalledWith({ id: "acme" });
@@ -522,7 +525,11 @@ it("shows a failed delete on the provider page", async () => {
     await screen.findByRole("heading", { name: "Acme" });
 
     await user.click(screen.getByRole("button", { name: "Delete provider" }));
-    await user.click(await screen.findByRole("button", { name: "Delete" }));
+    await user.click(
+        screen.getByRole("button", {
+            name: /Click again to confirm deletion/u,
+        }),
+    );
 
     expect((await screen.findByRole("alert")).textContent).toBe(OFFLINE_TEXT);
     expect(screen.getByRole("heading", { name: "Acme" })).toBeDefined();
@@ -538,8 +545,9 @@ it("shows predefined formats and read-only models, and requires a key to enable"
     expect(
         await screen.findByRole("heading", { name: "DeepSeek" }),
     ).toBeDefined();
-    expect(screen.getByRole("button", { name: /Predefined/u })).toBeDefined();
-    expect(screen.getByRole("button", { name: /Custom/u })).toBeDefined();
+    expect(screen.getByText("Predefined provider")).toBeDefined();
+    expect(screen.getByText("Predefined")).toBeDefined();
+    expect(screen.getByText("Custom")).toBeDefined();
     expect(
         screen
             .getByRole("switch", { name: "Enable provider" })
@@ -551,22 +559,8 @@ it("shows predefined formats and read-only models, and requires a key to enable"
     expect(
         screen.getByText("Models and their features ship with Lemma."),
     ).toBeDefined();
-    expect(
-        screen
-            .getByRole("switch", { name: "deepseek-flash Tool calling" })
-            .getAttribute("aria-disabled"),
-    ).toBe("true");
-    expect(
-        screen
-            .getByRole("switch", { name: "deepseek-flash Tool calling" })
-            .getAttribute("aria-checked"),
-    ).toBe("true");
-    expect(
-        screen
-            .getByRole("switch", { name: "deepseek-v4-pro Tool calling" })
-            .getAttribute("aria-checked"),
-    ).toBe("false");
-    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
+    expect(screen.getByText("Tools")).toBeDefined();
+    expect(screen.getByText("No tools")).toBeDefined();
     expect(
         screen.queryByRole("button", { name: "Delete provider" }),
     ).toBeNull();
@@ -574,7 +568,6 @@ it("shows predefined formats and read-only models, and requires a key to enable"
     expect(
         screen.queryByRole("button", { name: "Fetch model list" }),
     ).toBeNull();
-
     await user.click(screen.getByLabelText("Default API format"));
     expect(screen.queryByRole("option", { name: "Gemini" })).toBeNull();
     await user.click(await screen.findByRole("option", { name: "OpenAI" }));

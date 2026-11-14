@@ -75,7 +75,7 @@ it("adds a typed model with tool calling on and ignores blanks and duplicates", 
     await user.click(addButton(1));
     await typeNewModel(user, "  {Enter}");
 
-    expect(listed()).toEqual(["o3", "gpt-4o"]);
+    expect(listed()).toEqual(["gpt-4o", "o3"]);
     expect(
         screen
             .getByRole("switch", { name: "o3 Tool calling" })
@@ -101,6 +101,9 @@ it("closes the add field with Escape, cancel, or the toggle", async () => {
     const user = userEvent.setup();
     renderList([]);
 
+    expect(
+        screen.getByText("No models yet. Fetch the list or add one manually."),
+    ).toBeDefined();
     await typeNewModel(user, "x{Escape}");
     expect(addField()).toBeNull();
     await typeNewModel(user, "x");
@@ -112,20 +115,19 @@ it("closes the add field with Escape, cancel, or the toggle", async () => {
 
     expect(addField()).toBeNull();
     expect(
-        screen.getByText("No models match the current filter."),
+        screen.getByText("No models yet. Fetch the list or add one manually."),
     ).toBeDefined();
 });
 
-it("filters and removes listed models", async () => {
+it("removes listed models", async () => {
     const user = userEvent.setup();
     renderList([model("gpt-4o"), model("gpt-4o-mini"), model("o3")]);
 
-    await user.type(screen.getByPlaceholderText("Search models…"), " MINI ");
-    expect(listed()).toEqual(["gpt-4o-mini"]);
-    await user.click(screen.getByRole("button", { name: "Remove model" }));
+    const removeButtons = screen.getAllByRole("button", {
+        name: "Remove model",
+    });
+    await user.click(removeButtons[1]!);
 
-    expect(listed()).toEqual([]);
-    await user.clear(screen.getByPlaceholderText("Search models…"));
     expect(listed()).toEqual(["gpt-4o", "o3"]);
 });
 

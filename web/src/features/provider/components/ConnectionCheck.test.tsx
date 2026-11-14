@@ -9,7 +9,7 @@ type Props = Parameters<typeof ConnectionCheck>[0];
 
 const props = (patch: Partial<Props> = {}): Props => ({
     models: ["m1", "m2"],
-    target: "key\nurl\npath",
+    target: { apiKey: "key", baseUrl: "url", apiPath: "path" },
     disabled: false,
     onCheck: () => Promise.resolve(""),
     ...patch,
@@ -76,7 +76,10 @@ it("drops a result once the connection settings change", async () => {
     expect(checkButton().getAttribute("aria-busy")).toBe("true");
     rerender(
         <ConnectionCheck
-            {...props({ target: "other", onCheck: () => answer.promise })}
+            {...props({
+                target: { apiKey: "other" },
+                onCheck: () => answer.promise,
+            })}
         />,
     );
     answer.resolve("");

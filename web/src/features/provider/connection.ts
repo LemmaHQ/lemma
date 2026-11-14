@@ -1,29 +1,33 @@
 import type { ApiFormat } from "./api-format";
 import type { CustomProviderPatch } from "./store";
 
-/** The editable connection settings of a provider. */
+/** The editable connection settings of a custom provider. */
 export interface ConnectionValues {
     apiKey: string;
     baseUrl: string;
     apiPath: string;
+    modelsPath: string;
 }
 
-/** Example base URL and default request path of each API format. */
+/** Example base URL and default endpoint paths of each API format. */
 export const CONNECTION_PLACEHOLDERS: Record<
     ApiFormat,
-    { baseUrl: string; apiPath: string }
+    { baseUrl: string; apiPath: string; modelsPath: string }
 > = {
     openai: {
         baseUrl: "https://api.example.com/v1",
         apiPath: "/chat/completions",
+        modelsPath: "/models",
     },
     anthropic: {
         baseUrl: "https://api.example.com",
         apiPath: "/v1/messages",
+        modelsPath: "/v1/models",
     },
     gemini: {
         baseUrl: "https://api.example.com",
         apiPath: "/v1beta/models/{model}:…",
+        modelsPath: "/v1beta/models",
     },
 };
 
@@ -49,6 +53,10 @@ export function connectionPatch(
     const apiPath = values.apiPath.trim();
     if (apiPath !== saved.apiPath) {
         patch.apiPath = apiPath;
+    }
+    const modelsPath = values.modelsPath.trim();
+    if (modelsPath !== saved.modelsPath) {
+        patch.modelsPath = modelsPath;
     }
     return patch;
 }

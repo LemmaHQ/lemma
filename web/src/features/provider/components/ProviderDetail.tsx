@@ -1,5 +1,5 @@
-import { Input, SettingsField, SettingsSection } from "@lemma/ui";
-import { useState } from "react";
+import { Input, SettingsField, SettingsSectionCompact, cn } from "@lemma/ui";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -13,13 +13,12 @@ import {
 import type { CustomProvider, CustomProviderPatch, Model } from "../store";
 import { ConnectionCheck } from "./ConnectionCheck";
 import { ConnectionFields } from "./ConnectionFields";
-import { DeleteProviderButton } from "./DeleteProviderButton";
 import { ModelList } from "./ModelList";
 import { ProviderHeader } from "./ProviderHeader";
-import { ProviderSettingsDialog } from "./ProviderSettingsDialog";
 import { SaveBar } from "./SaveBar";
 
 interface ProviderDetailProps {
+    index?: ReactNode;
     provider: CustomProvider;
     onSave: (patch: CustomProviderPatch) => Promise<void>;
     onToggleEnabled: (enabled: boolean) => void;
@@ -29,8 +28,9 @@ interface ProviderDetailProps {
     onDelete: () => Promise<void>;
 }
 
-/** Settings page of one custom provider: connection fields and model list. */
+/** Settings canvas of one custom provider: connection fields, model list, diagnostics, and inline two-step delete. */
 export function ProviderDetail({
+    index,
     provider,
     onSave,
     onToggleEnabled,
@@ -40,16 +40,25 @@ export function ProviderDetail({
     onDelete,
 }: ProviderDetailProps) {
     const { t } = useTranslation();
+    const nameId = useId();
     const saved: ConnectionValues = {
         apiKey: provider.apiKey,
         baseUrl: provider.baseUrl,
         apiPath: provider.apiPath,
+        modelsPath: provider.modelsPath,
     };
+    const [name, setName] = useState(provider.name);
     const [values, setValues] = useState(saved);
-    const [checkGeneration, setCheckGeneration] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const patch = connectionPatch(values, saved);
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+    const nextName = name.trim() === "" ? provider.identifier : name.trim();
+    const connPatch = connectionPatch(values, saved);
+    const patch: CustomProviderPatch =
+        nextName === provider.name
+            ? connPatch
+            : { ...connPatch, name: nextName };
     const dirty = Object.keys(patch).length > 0;
 
     const save = async () => {
@@ -57,12 +66,13 @@ export function ProviderDetail({
         setError(null);
         try {
             await onSave(patch);
+            setName(nextName);
             setValues({
                 apiKey: values.apiKey.trim(),
                 baseUrl: values.baseUrl.trim(),
                 apiPath: values.apiPath.trim(),
+                modelsPath: values.modelsPath.trim(),
             });
-            setCheckGeneration((n) => n + 1);
         } catch (e) {
             setError(errorText(e, t));
         } finally {
@@ -80,24 +90,14 @@ export function ProviderDetail({
 
     return (
         <ProviderHeader
+            index={index}
             name={provider.name}
+            badge={t("provider.customBadge")}
             enabled={provider.enabled}
             toggleDisabled={false}
             onToggleEnabled={onToggleEnabled}
-            actions={
-                <>
-                    <ProviderSettingsDialog
-                        provider={provider}
-                        onSaveName={(name) => onSave({ name })}
-                    />
-                    <DeleteProviderButton
-                        onDelete={() => void handleDelete()}
-                    />
-                </>
-            }
         >
-            <SettingsSection
-                title={t("provider.connection")}
+            <SettingsSectionCompact
                 error={error}
                 footer={
                     dirty && (
@@ -107,6 +107,7 @@ export function ProviderDetail({
                             saveDisabled={!isBaseUrlValid(values.baseUrl)}
                             onSave={() => void save()}
                             onCancel={() => {
+                                setName(provider.name);
                                 setValues(saved);
                                 setError(null);
                             }}
@@ -116,13 +117,31 @@ export function ProviderDetail({
             >
                 <SettingsField
                     label={t("provider.apiFormat")}
-                    htmlFor="custom-provider-api-format"
                     description={t("provider.apiFormatDesc")}
                 >
+                    <div className="text-small text-muted-foreground">
+                        <span>
+                            {t(API_FORMAT_I18N_KEYS[provider.apiFormat])}
+                        </span>
+                        <span className="mx-2 text-subtle-foreground">·</span>
+                        <span>
+                            ID{" "}
+                            <code className="font-mono text-foreground">
+                                {provider.identifier}
+                            </code>
+                        </span>
+                    </div>
+                </SettingsField>
+                <SettingsField
+                    label={t("provider.name")}
+                    htmlFor={nameId}
+                    description={t("provider.nameDesc")}
+                >
                     <Input
-                        id="custom-provider-api-format"
-                        value={t(API_FORMAT_I18N_KEYS[provider.apiFormat])}
-                        readOnly
+                        id={nameId}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={provider.identifier}
                     />
                 </SettingsField>
                 <ConnectionFields
@@ -130,19 +149,56 @@ export function ProviderDetail({
                     values={values}
                     onChange={setValues}
                 />
-                <ConnectionCheck
-                    models={provider.models.map((model) => model.id)}
-                    target={`${provider.apiKey}\n${values.apiKey}\n${values.baseUrl}\n${values.apiPath}\n${checkGeneration}`}
-                    disabled={dirty}
-                    onCheck={onCheck}
-                />
-            </SettingsSection>
+            </SettingsSectionCompact>
             <ModelList
                 models={provider.models}
                 fetchDisabled={dirty}
                 onChange={onModelsChange}
                 onFetch={onFetchModels}
             />
+            <SettingsSectionCompact title={t("provider.diagnostics")}>
+                <ConnectionCheck
+                    models={provider.models.map((model) => model.id)}
+                    target={{
+                        apiKey: values.apiKey,
+                        baseUrl: values.baseUrl,
+                        apiPath: values.apiPath,
+                        apiFormat: provider.apiFormat,
+                    }}
+                    disabled={dirty}
+                    onCheck={onCheck}
+                />
+            </SettingsSectionCompact>
+            <div className="mt-5 border-t border-border pt-3">
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (!confirmingDelete) {
+                            setConfirmingDelete(true);
+                            return;
+                        }
+                        setConfirmingDelete(false);
+                        void handleDelete();
+                    }}
+                    onBlur={() => setConfirmingDelete(false)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                            e.preventDefault();
+                            setConfirmingDelete(false);
+                        }
+                    }}
+                    className={cn(
+                        "-ml-2 cursor-pointer rounded-md px-2 py-1 text-small transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-ring",
+                        confirmingDelete
+                            ? "bg-selected text-destructive"
+                            : "text-subtle-foreground hover:bg-selected hover:text-destructive",
+                    )}
+                >
+                    {confirmingDelete
+                        ? t("provider.deleteConfirmInline")
+                        : t("provider.deleteProvider")}
+                </button>
+            </div>
         </ProviderHeader>
     );
 }

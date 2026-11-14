@@ -68,10 +68,6 @@ provider:
     platforms: [web, android]
     en: "Must start with http:// or https://."
     zh: "必须以 http:// 或 https:// 开头"
-  basics:
-    platforms: [web]
-    en: "Basics"
-    zh: "基本信息"
   check:
     platforms: [web, android]
     en: "Connectivity check"
@@ -96,14 +92,22 @@ provider:
     platforms: [web]
     en: "Clear"
     zh: "清除"
-  connection:
+  createAction:
     platforms: [web]
-    en: "Connection"
-    zh: "连接"
+    en: "Save and create"
+    zh: "保存并创建"
+  customBadge:
+    platforms: [web]
+    en: "Custom provider"
+    zh: "自定义服务商"
   customGroup:
     platforms: [web, android]
     en: "Custom"
     zh: "自定义"
+  customPaths:
+    platforms: [web]
+    en: "Custom endpoint paths"
+    zh: "自定义接口路径"
   defaultApiFormat:
     platforms: [web, android]
     en: "Default API format"
@@ -112,8 +116,12 @@ provider:
     platforms: [web, android]
     en: "Used when the session's previous reply has no format this provider serves."
     zh: "会话上一条回复的格式不受该服务商支持时，使用此格式。"
+  deleteConfirmInline:
+    platforms: [web]
+    en: "Click again to confirm deletion (API key and models cannot be recovered)"
+    zh: "再点一次确认删除（密钥与模型列表不可恢复）"
   deleteDescription:
-    platforms: [web, android]
+    platforms: [android]
     en: "Its API key and model list are removed. This cannot be undone."
     zh: "API key 和模型列表会一并删除，此操作不可恢复。"
   deleteProvider:
@@ -121,9 +129,13 @@ provider:
     en: "Delete provider"
     zh: "删除服务商"
   deleteTitle:
-    platforms: [web, android]
+    platforms: [android]
     en: "Delete this provider?"
     zh: "删除该服务商？"
+  diagnostics:
+    platforms: [web]
+    en: "Diagnostics"
+    zh: "诊断"
   discard:
     platforms: [android]
     en: "Discard"
@@ -140,6 +152,14 @@ provider:
     platforms: [web, android]
     en: "No providers yet."
     zh: "还没有服务商。"
+  emptyDesc:
+    platforms: [web]
+    en: "Add a custom provider to start chatting."
+    zh: "添加一个自定义服务商以开始对话。"
+  emptyModels:
+    platforms: [web]
+    en: "No models yet. Fetch the list or add one manually."
+    zh: "还没有模型，可拉取列表或手动添加。"
   enableNeedsKey:
     platforms: [web, android]
     en: "Save an API key before enabling this provider."
@@ -258,6 +278,10 @@ provider:
     platforms: [web, android]
     en: "Model list"
     zh: "模型列表"
+  modelListHint:
+    platforms: [web]
+    en: "Model list · switches toggle tool definitions"
+    zh: "模型列表 · 右侧开关控制是否携带工具定义"
   modelPlaceholder:
     platforms: [web, android]
     en: "e.g. gpt-4o"
@@ -270,6 +294,14 @@ provider:
     platforms: [web, android]
     en: "Models and their features ship with Lemma."
     zh: "模型及其特性随 Lemma 内置，不可修改。"
+  modelsPath:
+    platforms: [web]
+    en: "Model list path"
+    zh: "模型列表路径"
+  modelsPathDesc:
+    platforms: [web]
+    en: "Model-list path appended to the base URL; leave blank for the default."
+    zh: "接在 Base URL 后面的模型列表路径，留空时使用默认路径。"
   moreActions:
     platforms: [android]
     en: "More actions"
@@ -311,16 +343,24 @@ provider:
     platforms: [web, android]
     en: "Pick models"
     zh: "选择模型"
+  predefinedBadge:
+    platforms: [web]
+    en: "Predefined provider"
+    zh: "预置服务商"
   predefinedGroup:
     platforms: [web, android]
     en: "Predefined"
     zh: "预定义"
+  removeAction:
+    platforms: [web]
+    en: "Remove"
+    zh: "移除"
   removeModel:
     platforms: [web, android]
     en: "Remove model"
     zh: "移除模型"
   searchPlaceholder:
-    platforms: [web, android]
+    platforms: [android]
     en: "Search providers…"
     zh: "搜索服务商…"
   selectAll:
@@ -328,9 +368,17 @@ provider:
     en: "Select all"
     zh: "全选"
   settingsTitle:
-    platforms: [web, android]
+    platforms: [android]
     en: "Provider settings"
     zh: "服务商设置"
+  statusDisabled:
+    platforms: [web]
+    en: "Disabled"
+    zh: "未启用"
+  statusEnabled:
+    platforms: [web]
+    en: "Enabled"
+    zh: "已启用"
   toolCalling:
     platforms: [web, android]
     en: "Tool calling"
@@ -339,6 +387,14 @@ provider:
     platforms: [web, android]
     en: "When off, requests to this model carry no tools and leave out earlier tool calls."
     zh: "关闭后，发给该模型的请求不带工具，也不包含之前的工具调用。"
+  toolsSupported:
+    platforms: [web]
+    en: "Tools"
+    zh: "支持工具"
+  toolsUnsupported:
+    platforms: [web]
+    en: "No tools"
+    zh: "无工具"
   unsavedChanges:
     platforms: [web, android]
     en: "You have unsaved changes."

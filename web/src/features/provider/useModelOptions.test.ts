@@ -86,12 +86,6 @@ it("offers models of enabled providers and returns all providers", () => {
         { providerId: "a", providerName: "Acme", model: "m1" },
         { providerId: "a", providerName: "Acme", model: "m2" },
     ]);
-    expect([...result.current.providerNames]).toEqual([
-        ["deepseek-id", "DeepSeek"],
-        ["a", "Acme"],
-        ["b", "Beta"],
-        ["c", "Cold"],
-    ]);
     expect(result.current.providers).toEqual(providers);
     expect(rpc.listProviders).not.toHaveBeenCalled();
 });

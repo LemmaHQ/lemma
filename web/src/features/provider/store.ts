@@ -66,7 +66,7 @@ interface NewCustomProvider {
     modelsPath?: string;
 }
 
-interface ProviderState {
+export interface ProviderState {
     list: Provider[];
     loaded: boolean;
     refresh: () => Promise<void>;

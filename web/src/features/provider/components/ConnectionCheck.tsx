@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
+import type { ApiFormat } from "../api-format";
+
 type CheckResult =
     | { status: "checking" }
     | { status: "passed" }
@@ -21,27 +23,49 @@ type CheckResult =
 
 type CheckStatus = CheckResult["status"] | "idle";
 
+/** The connection a check runs against; a result stays visible only while it matches. */
+export interface ConnectionTarget {
+    apiKey: string;
+    baseUrl?: string | undefined;
+    apiPath?: string | undefined;
+    apiFormat?: ApiFormat | undefined;
+}
+
+type Snapshot = ConnectionTarget & { model: string };
+
+type CheckedResult = CheckResult & { snapshot: Snapshot };
+
 interface ConnectionCheckProps {
     models: string[];
     /** Identifies the connection being checked; a result stays visible only while it matches. */
-    target: string;
+    target: ConnectionTarget;
     disabled: boolean;
     /** Resolves to the upstream failure message, empty when the model answered. */
     onCheck: (model: string) => Promise<string>;
 }
 
-const STATUS_TONES: Record<CheckStatus, "default" | "success" | "destructive"> =
-    {
-        idle: "default",
-        checking: "default",
-        passed: "success",
-        failed: "destructive",
-    };
+const STATUS_TONES = {
+    idle: "default",
+    checking: "default",
+    passed: "success",
+    failed: "destructive",
+} satisfies Record<CheckStatus, "default" | "success" | "destructive">;
 
 const STATUS_ICONS: Partial<Record<CheckStatus, ReactNode>> = {
     passed: <CheckIcon animate />,
     failed: <XIcon animate />,
 };
+
+const matchesSnapshot = (
+    snapshot: Snapshot,
+    target: ConnectionTarget,
+    model: string | undefined,
+): boolean =>
+    snapshot.apiKey === target.apiKey &&
+    snapshot.baseUrl === target.baseUrl &&
+    snapshot.apiPath === target.apiPath &&
+    snapshot.apiFormat === target.apiFormat &&
+    snapshot.model === model;
 
 /** Settings row that sends a test request for one model through the connection. */
 export function ConnectionCheck({
@@ -52,18 +76,19 @@ export function ConnectionCheck({
 }: ConnectionCheckProps) {
     const { t } = useTranslation();
     const [picked, setPicked] = useState<string | null>(null);
-    const [result, setResult] = useState<
-        (CheckResult & { key: string }) | null
-    >(null);
+    const [result, setResult] = useState<CheckedResult | null>(null);
     const model =
         picked !== null && models.includes(picked) ? picked : models.at(0);
-    const key = `${target}\n${model ?? ""}`;
-    const current = result?.key === key ? result : null;
+    const current =
+        result !== null && matchesSnapshot(result.snapshot, target, model)
+            ? result
+            : null;
     const status = current?.status ?? "idle";
     const runnable = model !== undefined && !disabled;
 
     const check = async (checked: string) => {
-        setResult({ key, status: "checking" });
+        const snapshot = { ...target, model: checked };
+        setResult({ snapshot, status: "checking" });
         let next: CheckResult;
         try {
             const message = await onCheck(checked);
@@ -74,7 +99,15 @@ export function ConnectionCheck({
         } catch (e) {
             next = { status: "failed", message: errorText(e, t) };
         }
-        setResult((r) => (r?.key === key ? { key, ...next } : r));
+        setResult((r) => {
+            if (r === null || !matchesSnapshot(r.snapshot, target, checked)) {
+                return r;
+            }
+            if (next.status === "failed") {
+                return { snapshot, status: "failed", message: next.message };
+            }
+            return { snapshot, status: next.status };
+        });
     };
 
     return (

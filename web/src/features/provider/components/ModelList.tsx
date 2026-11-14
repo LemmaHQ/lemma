@@ -1,23 +1,16 @@
 import {
     Button,
     CheckIcon,
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
     InputGroup,
     InputGroupAddon,
     InputGroupButton,
     InputGroupInput,
-    PlusIcon,
-    RefreshCwIcon,
-    SearchIcon,
-    SettingsField,
     SettingsRow,
-    SettingsSection,
+    SettingsSectionCompact,
     Switch,
     XIcon,
 } from "@lemma/ui";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -39,19 +32,11 @@ export function ModelList({
     onFetch,
 }: ModelListProps) {
     const { t } = useTranslation();
-    const [query, setQuery] = useState("");
     const [fetching, setFetching] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [remote, setRemote] = useState<string[] | null>(null);
     const [adding, setAdding] = useState(false);
     const [newModel, setNewModel] = useState("");
-
-    const visible = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        return q === ""
-            ? models
-            : models.filter((m) => m.id.toLowerCase().includes(q));
-    }, [models, query]);
 
     const fetchRemote = async () => {
         setFetching(true);
@@ -72,7 +57,7 @@ export function ModelList({
         if (id === "" || models.some((model) => model.id === id)) {
             return;
         }
-        onChange([{ id, toolCalling: true }, ...models]);
+        onChange([...models, { id, toolCalling: true }]);
     };
 
     const remove = (id: string) =>
@@ -87,53 +72,63 @@ export function ModelList({
 
     return (
         <>
-            <SettingsSection
-                title={t("provider.modelList")}
+            <SettingsSectionCompact
+                title={t("provider.modelListHint")}
                 error={fetchError}
                 actions={
                     <>
-                        <InputGroup className="w-48">
-                            <InputGroupAddon>
-                                <SearchIcon />
-                            </InputGroupAddon>
-                            <InputGroupInput
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder={t(
-                                    "provider.modelSearchPlaceholder",
-                                )}
-                            />
-                        </InputGroup>
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
+                            size="xs"
                             disabled={fetchDisabled}
                             onClick={() => void fetchRemote()}
                             loading={fetching}
                         >
-                            {!fetching && <RefreshCwIcon />}
                             {t("provider.fetchModelList")}
                         </Button>
                         <Button
                             type="button"
-                            variant="outline"
-                            size="icon"
-                            aria-label={t("provider.addModel")}
+                            variant="ghost"
+                            size="xs"
                             onClick={() => setAdding((v) => !v)}
                         >
-                            <PlusIcon />
+                            {t("provider.addModel")}
                         </Button>
                     </>
                 }
             >
-                {adding && (
-                    <SettingsField
-                        label={t("provider.addModel")}
-                        htmlFor="provider-new-model"
+                {models.map((model) => (
+                    <SettingsRow
+                        key={model.id}
+                        label={
+                            <span className="font-mono text-small">
+                                {model.id}
+                            </span>
+                        }
                     >
+                        <button
+                            type="button"
+                            aria-label={t("provider.removeModel")}
+                            onClick={() => remove(model.id)}
+                            className="cursor-pointer rounded-md px-2 py-0.5 text-caption text-subtle-foreground opacity-100 transition-opacity duration-fast hover:bg-selected hover:text-foreground focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring pointer-fine:opacity-0 pointer-fine:group-hover/settings-row:opacity-100"
+                        >
+                            {t("provider.removeAction")}
+                        </button>
+                        <Switch
+                            checked={model.toolCalling}
+                            onCheckedChange={(checked) =>
+                                setToolCalling(model.id, checked)
+                            }
+                            aria-label={`${model.id} ${t("provider.toolCalling")}`}
+                        />
+                    </SettingsRow>
+                ))}
+                {adding && (
+                    <div className="py-2">
                         <InputGroup>
                             <InputGroupInput
-                                id="provider-new-model"
+                                aria-label={t("provider.addModel")}
                                 value={newModel}
                                 onChange={(e) => setNewModel(e.target.value)}
                                 placeholder={t("provider.modelPlaceholder")}
@@ -171,42 +166,14 @@ export function ModelList({
                                 </InputGroupButton>
                             </InputGroupAddon>
                         </InputGroup>
-                    </SettingsField>
+                    </div>
                 )}
-                {visible.length > 0 ? (
-                    visible.map((model) => (
-                        <SettingsRow key={model.id} label={model.id}>
-                            <span className="text-small text-muted-foreground">
-                                {t("provider.toolCalling")}
-                            </span>
-                            <Switch
-                                checked={model.toolCalling}
-                                onCheckedChange={(checked) =>
-                                    setToolCalling(model.id, checked)
-                                }
-                                aria-label={`${model.id} ${t("provider.toolCalling")}`}
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={t("provider.removeModel")}
-                                onClick={() => remove(model.id)}
-                            >
-                                <XIcon />
-                            </Button>
-                        </SettingsRow>
-                    ))
-                ) : (
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyDescription>
-                                {t("provider.noModels")}
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
+                {models.length === 0 && !adding && (
+                    <p className="py-2.5 text-small text-muted-foreground">
+                        {t("provider.emptyModels")}
+                    </p>
                 )}
-            </SettingsSection>
+            </SettingsSectionCompact>
             <FetchModelsDialog
                 remote={remote}
                 existing={models.map((model) => model.id)}

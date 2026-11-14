@@ -1,7 +1,5 @@
 import {
-    Avatar,
-    AvatarFallback,
-    BotIcon,
+    Button,
     Input,
     Select,
     SelectContent,
@@ -10,9 +8,9 @@ import {
     SelectValue,
     SettingsField,
     SettingsPage,
-    SettingsSection,
+    SettingsSectionCompact,
 } from "@lemma/ui";
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -24,7 +22,6 @@ import {
 } from "../api-format";
 import { isBaseUrlValid, type ConnectionValues } from "../connection";
 import { ConnectionFields } from "./ConnectionFields";
-import { SaveBar } from "./SaveBar";
 
 export interface NewProviderData extends ConnectionValues {
     apiFormat: ApiFormat;
@@ -33,13 +30,21 @@ export interface NewProviderData extends ConnectionValues {
 }
 
 interface NewProviderFormProps {
+    index?: ReactNode;
     onSave: (data: NewProviderData) => Promise<void>;
     onCancel: () => void;
 }
 
 /** Blank custom provider page; saving creates the provider. */
-export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
+export function NewProviderForm({
+    index,
+    onSave,
+    onCancel,
+}: NewProviderFormProps) {
     const { t } = useTranslation();
+    const nameId = useId();
+    const identifierId = useId();
+    const formatId = useId();
     const [apiFormat, setApiFormat] = useState<ApiFormat>("openai");
     const [identifier, setIdentifier] = useState("");
     const [name, setName] = useState("");
@@ -47,6 +52,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
         apiKey: "",
         baseUrl: "",
         apiPath: "",
+        modelsPath: "",
     });
     const [busy, setBusy] = useState(false);
     const [failed, setFailed] = useState<string | null>(null);
@@ -72,6 +78,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                 apiKey: connection.apiKey.trim(),
                 baseUrl: connection.baseUrl.trim(),
                 apiPath: connection.apiPath.trim(),
+                modelsPath: connection.modelsPath.trim(),
             });
         } catch (e) {
             setFailed(errorText(e, t));
@@ -82,23 +89,64 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
 
     return (
         <SettingsPage
+            index={index}
             title={title === "" ? t("provider.newProvider") : title}
-            media={
-                <Avatar>
-                    <AvatarFallback>
-                        {title === "" ? (
-                            <BotIcon className="size-4" />
-                        ) : (
-                            title.charAt(0).toUpperCase()
-                        )}
-                    </AvatarFallback>
-                </Avatar>
-            }
+            badge={t("provider.newProviderHint")}
         >
-            <SettingsSection title={t("provider.basics")}>
+            <SettingsSectionCompact
+                error={failed}
+                footer={
+                    <div className="flex items-center gap-2.5 pt-2">
+                        <Button
+                            type="button"
+                            disabled={
+                                busy ||
+                                (connection.baseUrl.trim() !== "" &&
+                                    !isBaseUrlValid(connection.baseUrl))
+                            }
+                            onClick={() => void handleSave()}
+                        >
+                            {t("provider.createAction")}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={onCancel}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                    </div>
+                }
+            >
+                <SettingsField
+                    label={t("provider.name")}
+                    htmlFor={nameId}
+                    description={t("provider.nameDesc")}
+                >
+                    <Input
+                        id={nameId}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={t("provider.namePlaceholder")}
+                    />
+                </SettingsField>
+                <SettingsField
+                    label={t("provider.identifier")}
+                    htmlFor={identifierId}
+                    description={t("provider.identifierHint")}
+                >
+                    <Input
+                        id={identifierId}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder={t("provider.identifierPlaceholder")}
+                        required
+                    />
+                </SettingsField>
                 <SettingsField
                     label={t("provider.apiFormat")}
-                    htmlFor="provider-api-format"
+                    htmlFor={formatId}
                     description={t("provider.apiFormatDesc")}
                 >
                     <Select
@@ -111,10 +159,7 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                             }
                         }}
                     >
-                        <SelectTrigger
-                            id="provider-api-format"
-                            className="w-full"
-                        >
+                        <SelectTrigger id={formatId} className="w-full">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -126,54 +171,12 @@ export function NewProviderForm({ onSave, onCancel }: NewProviderFormProps) {
                         </SelectContent>
                     </Select>
                 </SettingsField>
-                <SettingsField
-                    label={t("provider.identifier")}
-                    htmlFor="provider-identifier"
-                    description={t("provider.identifierHint")}
-                >
-                    <Input
-                        id="provider-identifier"
-                        value={identifier}
-                        onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder={t("provider.identifierPlaceholder")}
-                        required
-                    />
-                </SettingsField>
-                <SettingsField
-                    label={t("provider.name")}
-                    htmlFor="provider-name"
-                    description={t("provider.nameDesc")}
-                >
-                    <Input
-                        id="provider-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={t("provider.namePlaceholder")}
-                    />
-                </SettingsField>
-            </SettingsSection>
-            <SettingsSection
-                title={t("provider.connection")}
-                error={failed}
-                footer={
-                    <SaveBar
-                        message={t("provider.newProviderHint")}
-                        busy={busy}
-                        saveDisabled={
-                            connection.baseUrl.trim() !== "" &&
-                            !isBaseUrlValid(connection.baseUrl)
-                        }
-                        onSave={() => void handleSave()}
-                        onCancel={onCancel}
-                    />
-                }
-            >
                 <ConnectionFields
                     apiFormat={apiFormat}
                     values={connection}
                     onChange={setConnection}
                 />
-            </SettingsSection>
+            </SettingsSectionCompact>
         </SettingsPage>
     );
 }

@@ -1,26 +1,12 @@
 import {
-    AnimateIcon,
-    Avatar,
-    AvatarBadge,
-    AvatarFallback,
     Button,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
     PlusIcon,
-    ScrollArea,
-    SearchIcon,
     Skeleton,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
+    cn,
 } from "@lemma/ui";
-import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Provider } from "../store";
@@ -28,6 +14,7 @@ import type { Provider } from "../store";
 interface ProviderListPaneProps {
     providers: Provider[];
     loaded: boolean;
+    creating: boolean;
     selectedId: string | null;
     onSelect: (id: string) => void;
     onCreate: () => void;
@@ -38,166 +25,136 @@ function ProviderGroup({
     providers,
     selectedId,
     onSelect,
+    spaced,
 }: {
     label: string;
     providers: Provider[];
     selectedId: string | null;
     onSelect: (id: string) => void;
+    spaced: boolean;
 }) {
-    const [open, setOpen] = useState(true);
-    if (providers.length === 0) {
-        return null;
-    }
     return (
-        <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger
-                render={
-                    <button
-                        type="button"
-                        aria-label={label}
-                        className="flex h-7 w-full items-center gap-1 rounded-md px-2 text-left text-caption text-subtle-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-                    />
-                }
-            >
-                {open ? (
-                    <ChevronDownIcon className="size-3.5" />
-                ) : (
-                    <ChevronRightIcon className="size-3.5" />
-                )}
+        <div className={cn("flex flex-col gap-0.5", spaced && "mt-3.5")}>
+            <div className="px-2 pb-1 text-caption text-subtle-foreground">
                 {label}
-                <span className="ml-auto">{providers.length}</span>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="flex flex-col">
-                {providers.map((provider) => (
-                    <Button
-                        key={provider.id}
-                        variant="row"
-                        data-active={
-                            provider.id === selectedId ? "" : undefined
-                        }
-                        onClick={() => onSelect(provider.id)}
-                        aria-pressed={provider.id === selectedId}
-                    >
-                        <Avatar size="sm">
-                            <AvatarFallback>
-                                {(provider.name === "" ? "?" : provider.name)
-                                    .charAt(0)
-                                    .toUpperCase()}
-                            </AvatarFallback>
-                            {provider.enabled && <AvatarBadge />}
-                        </Avatar>
-                        <span className="truncate">{provider.name}</span>
-                    </Button>
-                ))}
-            </CollapsibleContent>
-        </Collapsible>
+            </div>
+            {providers.map((provider) => {
+                const active = provider.id === selectedId;
+                const displayName =
+                    provider.name === "" ? provider.identifier : provider.name;
+                return (
+                    <Tooltip key={provider.id}>
+                        <TooltipTrigger
+                            render={
+                                <Button
+                                    type="button"
+                                    variant="row"
+                                    data-active={active ? "" : undefined}
+                                    aria-pressed={active}
+                                    onClick={() => onSelect(provider.id)}
+                                />
+                            }
+                        >
+                            <span
+                                aria-hidden="true"
+                                className={cn(
+                                    "size-1.5 shrink-0 rounded-full",
+                                    provider.enabled
+                                        ? "bg-foreground"
+                                        : "bg-input",
+                                )}
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                                {displayName}
+                            </span>
+                            <span className="shrink-0 text-caption text-subtle-foreground tabular-nums">
+                                {provider.models.length}
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            {displayName}
+                        </TooltipContent>
+                    </Tooltip>
+                );
+            })}
+        </div>
     );
 }
 
 const SKELETON_ROW_WIDTHS = ["w-3/5", "w-2/5", "w-1/2"];
 
+/** Sticky 220px provider directory grouping predefined and custom providers above the create action. */
 export function ProviderListPane({
     providers,
     loaded,
+    creating,
     selectedId,
     onSelect,
     onCreate,
 }: ProviderListPaneProps) {
     const { t } = useTranslation();
-    const titleId = useId();
-    const [query, setQuery] = useState("");
-
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        if (q === "") {
-            return providers;
-        }
-        return providers.filter((p) => p.name.toLowerCase().includes(q));
-    }, [providers, query]);
-
-    const predefinedProviders = filtered.filter(
+    const predefinedProviders = providers.filter(
         (p) => p.source === "predefined",
     );
-    const customProviders = filtered.filter((p) => p.source === "custom");
+    const customProviders = providers.filter((p) => p.source === "custom");
 
     return (
         <section
-            aria-labelledby={titleId}
-            className="flex w-64 shrink-0 flex-col border-r pt-2"
+            aria-label={t("settings.aiProviders")}
+            className="flex flex-col"
         >
-            <div className="flex h-9 items-center gap-2 pr-3 pl-4">
-                <div
-                    id={titleId}
-                    className="min-w-0 flex-1 truncate text-title"
-                >
-                    {t("settings.aiProviders")}
-                </div>
-                <Tooltip>
-                    <AnimateIcon animateOnHover asChild>
-                        <TooltipTrigger
-                            render={
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    aria-label={t("provider.newProvider")}
-                                    onClick={onCreate}
-                                />
-                            }
-                        >
-                            <PlusIcon />
-                        </TooltipTrigger>
-                    </AnimateIcon>
-                    <TooltipContent>{t("provider.newProvider")}</TooltipContent>
-                </Tooltip>
-            </div>
-            <div className="p-3">
-                <InputGroup>
-                    <InputGroupAddon>
-                        <SearchIcon />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={t("provider.searchPlaceholder")}
-                    />
-                </InputGroup>
-            </div>
-            <ScrollArea className="min-h-0 flex-1">
-                {loaded ? (
-                    <div className="px-2 pb-3">
+            {loaded ? (
+                <>
+                    {predefinedProviders.length > 0 && (
                         <ProviderGroup
                             label={t("provider.predefinedGroup")}
                             providers={predefinedProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}
+                            spaced={false}
                         />
+                    )}
+                    {customProviders.length > 0 && (
                         <ProviderGroup
                             label={t("provider.customGroup")}
                             providers={customProviders}
                             selectedId={selectedId}
                             onSelect={onSelect}
+                            spaced={predefinedProviders.length > 0}
                         />
-                    </div>
-                ) : (
-                    <output
-                        aria-label={t("common.loading")}
-                        className="flex flex-col px-2 pt-6 pb-3"
+                    )}
+                    <Button
+                        type="button"
+                        variant="row"
+                        data-active={creating ? "" : undefined}
+                        aria-pressed={creating}
+                        onClick={onCreate}
+                        className={providers.length > 0 ? "mt-2.5" : undefined}
                     >
-                        {SKELETON_ROW_WIDTHS.map((width) => (
-                            <div
-                                key={width}
-                                className="flex h-8 items-center gap-1.5 px-2"
-                            >
-                                <Skeleton shape="circle" className="size-6" />
-                                <div className={width}>
-                                    <Skeleton className="h-3.5" />
-                                </div>
+                        <PlusIcon className="size-3.5 shrink-0" />
+                        <span className="truncate">
+                            {t("provider.newProvider")}
+                        </span>
+                    </Button>
+                </>
+            ) : (
+                <output
+                    aria-label={t("common.loading")}
+                    className="flex flex-col gap-1 px-2 py-1"
+                >
+                    {SKELETON_ROW_WIDTHS.map((width) => (
+                        <div
+                            key={width}
+                            className="flex h-8 items-center gap-2"
+                        >
+                            <Skeleton shape="circle" className="size-1.5" />
+                            <div className={width}>
+                                <Skeleton className="h-3.5" />
                             </div>
-                        ))}
-                    </output>
-                )}
-            </ScrollArea>
+                        </div>
+                    ))}
+                </output>
+            )}
         </section>
     );
 }

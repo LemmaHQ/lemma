@@ -5,9 +5,9 @@ import {
     SelectTrigger,
     SelectValue,
     SettingsField,
-    SettingsSection,
+    SettingsSectionCompact,
 } from "@lemma/ui";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
@@ -21,6 +21,7 @@ import { ProviderHeader } from "./ProviderHeader";
 import { SaveBar } from "./SaveBar";
 
 interface PredefinedProviderDetailProps {
+    index?: ReactNode;
     provider: PredefinedProvider;
     onSave: (patch: PredefinedProviderPatch) => Promise<void>;
     onToggleEnabled: (enabled: boolean) => void;
@@ -29,6 +30,7 @@ interface PredefinedProviderDetailProps {
 }
 
 export function PredefinedProviderDetail({
+    index,
     provider,
     onSave,
     onToggleEnabled,
@@ -37,7 +39,6 @@ export function PredefinedProviderDetail({
 }: PredefinedProviderDetailProps) {
     const { t } = useTranslation();
     const [apiKey, setApiKey] = useState(provider.apiKey);
-    const [checkGeneration, setCheckGeneration] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const trimmedKey = apiKey.trim();
@@ -48,7 +49,6 @@ export function PredefinedProviderDetail({
         try {
             await onSave({ apiKey: trimmedKey });
             setApiKey(trimmedKey);
-            setCheckGeneration((n) => n + 1);
         } catch (e) {
             setError(errorText(e, t));
         } finally {
@@ -58,15 +58,16 @@ export function PredefinedProviderDetail({
 
     return (
         <ProviderHeader
+            index={index}
             name={provider.name}
+            badge={t("provider.predefinedBadge")}
             enabled={provider.enabled}
             toggleDisabled={
                 !provider.enabled && (provider.apiKey === "" || dirty)
             }
             onToggleEnabled={onToggleEnabled}
         >
-            <SettingsSection
-                title={t("provider.connection")}
+            <SettingsSectionCompact
                 error={error}
                 footer={
                     dirty && (
@@ -122,14 +123,16 @@ export function PredefinedProviderDetail({
                         </SelectContent>
                     </Select>
                 </SettingsField>
+            </SettingsSectionCompact>
+            <PredefinedModelList models={provider.models} />
+            <SettingsSectionCompact title={t("provider.diagnostics")}>
                 <ConnectionCheck
                     models={provider.models.map((model) => model.id)}
-                    target={`${provider.apiKey}\n${provider.defaultApiFormat}\n${checkGeneration}`}
+                    target={{ apiKey, apiFormat: provider.defaultApiFormat }}
                     disabled={dirty || provider.apiKey === ""}
                     onCheck={onCheck}
                 />
-            </SettingsSection>
-            <PredefinedModelList models={provider.models} />
+            </SettingsSectionCompact>
         </ProviderHeader>
     );
 }
