@@ -4,7 +4,6 @@ import { cn } from "#lib/cn";
 
 import { Button } from "#primitives/button";
 import { Input } from "#primitives/input";
-import { Textarea } from "#primitives/textarea";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
     return (
@@ -126,26 +125,4 @@ function InputGroupInput({
     );
 }
 
-function InputGroupTextarea({
-    className,
-    ...props
-}: React.ComponentProps<"textarea">) {
-    return (
-        <Textarea
-            data-slot="input-group-control"
-            className={cn(
-                "flex-1 resize-none rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-export {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-    InputGroupTextarea,
-};
+export { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput };

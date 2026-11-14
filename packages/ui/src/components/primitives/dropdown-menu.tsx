@@ -1,8 +1,5 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { cn } from "#lib/cn";
-
-import { CheckIcon } from "#icons/check";
-
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
     return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
@@ -47,30 +44,6 @@ function DropdownMenuContent({
     );
 }
 
-function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
-    return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
-}
-
-function DropdownMenuLabel({
-    className,
-    inset,
-    ...props
-}: MenuPrimitive.GroupLabel.Props & {
-    inset?: boolean;
-}) {
-    return (
-        <MenuPrimitive.GroupLabel
-            data-slot="dropdown-menu-label"
-            data-inset={inset}
-            className={cn(
-                "px-2 py-1 text-caption font-medium text-subtle-foreground data-inset:pl-7",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
 function DropdownMenuItem({
     className,
     inset,
@@ -94,67 +67,9 @@ function DropdownMenuItem({
     );
 }
 
-function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
-    return (
-        <MenuPrimitive.RadioGroup
-            data-slot="dropdown-menu-radio-group"
-            {...props}
-        />
-    );
-}
-
-function DropdownMenuRadioItem({
-    className,
-    children,
-    inset,
-    ...props
-}: MenuPrimitive.RadioItem.Props & {
-    inset?: boolean;
-}) {
-    return (
-        <MenuPrimitive.RadioItem
-            data-slot="dropdown-menu-radio-item"
-            data-inset={inset}
-            className={cn(
-                "relative flex h-8 cursor-default items-center gap-1.5 rounded-md pr-8 pl-2 text-body outline-hidden select-none focus:bg-accent data-inset:pl-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-                className,
-            )}
-            {...props}
-        >
-            <span
-                className="pointer-events-none absolute right-2 flex items-center justify-center"
-                data-slot="dropdown-menu-radio-item-indicator"
-            >
-                <MenuPrimitive.RadioItemIndicator>
-                    <CheckIcon />
-                </MenuPrimitive.RadioItemIndicator>
-            </span>
-            {children}
-        </MenuPrimitive.RadioItem>
-    );
-}
-
-function DropdownMenuSeparator({
-    className,
-    ...props
-}: MenuPrimitive.Separator.Props) {
-    return (
-        <MenuPrimitive.Separator
-            data-slot="dropdown-menu-separator"
-            className={cn("-mx-1 my-1 h-px bg-border", className)}
-            {...props}
-        />
-    );
-}
-
 export {
     DropdownMenu,
     DropdownMenuTrigger,
     DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuLabel,
     DropdownMenuItem,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
 };

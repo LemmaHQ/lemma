@@ -5,16 +5,13 @@ import { expect, it } from "vitest";
 import { Checkbox } from "./checkbox";
 import {
     Field,
-    FieldContent,
     FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "./field";
 import { Input } from "./input";
-import { Separator } from "./separator";
 import { Switch } from "./switch";
-import { Textarea } from "./textarea";
 
 it("names its controls by their labels and reports errors", async () => {
     const user = userEvent.setup();
@@ -25,10 +22,9 @@ it("names its controls by their labels and reports errors", async () => {
                 <Input id="name" aria-invalid />
                 <FieldError>Name is taken</FieldError>
             </Field>
-            <Separator />
             <Field>
                 <FieldLabel htmlFor="notes">Notes</FieldLabel>
-                <Textarea id="notes" />
+                <Input id="notes" />
                 <FieldDescription>Shown to you only.</FieldDescription>
             </Field>
         </FieldGroup>,
@@ -46,7 +42,6 @@ it("names its controls by their labels and reports errors", async () => {
         "Hi",
     );
     expect(screen.getByRole("alert").textContent).toBe("Name is taken");
-    expect(screen.getByRole("separator")).toBeDefined();
 });
 
 it("toggles labeled checkboxes and switches", async () => {
@@ -55,9 +50,7 @@ it("toggles labeled checkboxes and switches", async () => {
         <>
             <Field orientation="horizontal">
                 <Checkbox id="agree" />
-                <FieldContent>
-                    <FieldLabel htmlFor="agree">Agree</FieldLabel>
-                </FieldContent>
+                <FieldLabel htmlFor="agree">Agree</FieldLabel>
             </Field>
             <Field orientation="horizontal">
                 <FieldLabel htmlFor="enabled">Enabled</FieldLabel>

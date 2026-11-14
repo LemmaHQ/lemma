@@ -21,21 +21,21 @@ export type {
     AnchoredPickerItem,
 } from "#primitives/anchored-picker-group";
 
-export type AnchoredPickerFooterAction = {
+type AnchoredPickerFooterAction = {
     label: string;
     onSelect: () => void;
 };
 
-export type AnchoredPickerProps = {
+type AnchoredPickerProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     trigger: ReactNode;
     searchPlaceholder: string;
     emptyText: string;
     groups: AnchoredPickerGroup[];
-    footerAction?: AnchoredPickerFooterAction;
-    side?: "top" | "bottom";
-    className?: string;
+    footerAction?: AnchoredPickerFooterAction | undefined;
+    side?: "top" | "bottom" | undefined;
+    className?: string | undefined;
 };
 
 /** 340px anchored searchable picker popover with grouped options and keyboard navigation. */
