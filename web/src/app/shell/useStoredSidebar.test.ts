@@ -10,7 +10,7 @@ afterEach(() => {
 it("starts open by default and reads collapsed state from storage", () => {
     expect(renderHook(() => useStoredSidebar()).result.current.open).toBe(true);
 
-    localStorage.setItem("sidebar-collapsed", "1");
+    localStorage.setItem("lemma.sidebarCollapsed", "1");
     expect(renderHook(() => useStoredSidebar()).result.current.open).toBe(
         false,
     );
@@ -23,11 +23,11 @@ it("persists open and collapsed toggles in storage", () => {
         result.current.storeOpen(false);
     });
     expect(result.current.open).toBe(false);
-    expect(localStorage.getItem("sidebar-collapsed")).toBe("1");
+    expect(localStorage.getItem("lemma.sidebarCollapsed")).toBe("1");
 
     act(() => {
         result.current.storeOpen(true);
     });
     expect(result.current.open).toBe(true);
-    expect(localStorage.getItem("sidebar-collapsed")).toBe("0");
+    expect(localStorage.getItem("lemma.sidebarCollapsed")).toBe("0");
 });

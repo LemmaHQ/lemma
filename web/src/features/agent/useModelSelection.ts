@@ -1,6 +1,4 @@
-import { useState } from "react";
-
-const MODEL_KEY = "lemma.model";
+import { type StoredCodec, useStoredValue } from "@/features/preferences";
 
 export interface ModelSelection {
     providerId: string;
@@ -24,21 +22,24 @@ function isModelSelection(value: unknown): value is ModelSelection {
     );
 }
 
-/** The stored model choice while `options` offers it, else the first option. */
-export function useModelSelection(options: ModelOption[]) {
-    const [stored, setStored] = useState<ModelSelection | null>(() => {
+const MODEL_CODEC: StoredCodec<ModelSelection | null> = {
+    parse: (raw) => {
+        if (raw === null) {
+            return null;
+        }
         try {
-            const raw = localStorage.getItem(MODEL_KEY);
-            if (raw === null) {
-                return null;
-            }
             const parsed: unknown = JSON.parse(raw);
             return isModelSelection(parsed) ? parsed : null;
         } catch {
             return null;
         }
-    });
+    },
+    serialize: (selection) => JSON.stringify(selection),
+};
 
+/** The stored model choice while `options` offers it, else the first option. */
+export function useModelSelection(options: ModelOption[]) {
+    const [stored, setStored] = useStoredValue("lemma.model", MODEL_CODEC);
     const storedOffered =
         stored !== null &&
         options.some(
@@ -53,7 +54,6 @@ export function useModelSelection(options: ModelOption[]) {
           : { providerId: first.providerId, model: first.model };
 
     const selectModel = (selection: ModelSelection) => {
-        localStorage.setItem(MODEL_KEY, JSON.stringify(selection));
         setStored(selection);
     };
 

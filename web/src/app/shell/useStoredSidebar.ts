@@ -1,18 +1,15 @@
-import { useState } from "react";
+import { type StoredCodec, useStoredValue } from "@/features/preferences";
 
-const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
+const SIDEBAR_CODEC: StoredCodec<boolean> = {
+    parse: (raw) => raw !== "1",
+    serialize: (open) => (open ? "0" : "1"),
+};
 
 /** The sidebar's open state, persisted in `localStorage`. */
 export function useStoredSidebar() {
-    const [open, setOpen] = useState(
-        () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) !== "1",
+    const [open, storeOpen] = useStoredValue(
+        "lemma.sidebarCollapsed",
+        SIDEBAR_CODEC,
     );
-
-    return {
-        open,
-        storeOpen: (next: boolean) => {
-            setOpen(next);
-            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "0" : "1");
-        },
-    };
+    return { open, storeOpen };
 }
