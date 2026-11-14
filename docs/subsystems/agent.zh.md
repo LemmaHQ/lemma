@@ -12,14 +12,17 @@ agent 子系统把一条用户请求变成一个正在运行的 turn，并报告
 | --- | --- |
 | 去除首尾空白后内容为空 | `AgentError::ContentRequired` |
 | 去除首尾空白后模型 id 为空 | `AgentError::ModelRequired` |
-| provider 不存在 | `AgentError::ProviderNotFound` |
+| 该会话已有正在运行的 turn | `AgentError::SessionBusy` |
 | 会话不存在 | `AgentError::SessionNotFound` |
+| 请求的分支父消息不在该会话中 | `AgentError::MessageNotFound` |
+| 请求的分支父消息或当前叶子不是已定稿的 turn 边界 | `AgentError::InvalidBranchPoint` |
+| provider 不存在 | `AgentError::ProviderNotFound` |
 | 会话绑定的目录已不存在 | `AgentError::DirectoryNotFound` |
 | 无法打开 provider 密钥、数据库失败或无法创建工作区 | `Provider`、`Store` 或 `Workspace` |
 
 `ProviderService::bind` 返回适配器、该 turn 使用的 API 格式以及模型的工具调用标志；格式的选取方式见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)。关闭工具调用的模型不获得工具，它的请求也不包含之前的工具调用与工具结果。
 
-`Agent::start` 成功后，turn 在派生任务中运行到结束；除取消以外的任何中途故障都会向流发出终态 `TurnEvent::TurnFailed`。首条事件（`TurnEvent::UserAppended`）携带用户消息的存储 id；`Agent::abort` 与 `Agent::resume` 都用它定位 turn。
+`Agent::start` 成功后，turn 持有该会话的运行槽位（`Agent::active_turn`）并在派生任务中运行到结束；除取消以外的任何中途故障都会向流发出终态 `TurnEvent::TurnFailed`。首条事件（`TurnEvent::UserAppended`）携带用户消息的存储 id 与 `parent_id`；`Agent::abort` 与 `Agent::resume` 都用该消息 id 定位 turn。
 
 ## 工具
 
@@ -39,8 +42,8 @@ turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话
 
 | 来源 | `AgentEvent`（`lemma-host`） | 含义 |
 | --- | --- | --- |
-| `UserAppended` | `started` | 用户消息已存储；携带它的 id。 |
-| `AssistantStarted` | `turn_started` | 某个 step 的占位消息已存储；携带 assistant 消息 id。 |
+| `UserAppended` | `started` | 用户消息已存储；携带它的 id 与可选的 `parent_id`。 |
+| `AssistantStarted` | `turn_started` | 某个 step 的占位消息已存储；携带 assistant 消息 id 与 `parent_id`。 |
 | `Delta`、`ThinkingDelta` | `delta`（`text` 或 `thinking`） | 模型流的一个分块。 |
 | `ToolStarted`、`ToolFinished` | `tool_call_started`、`tool_call_finished` | 一次工具调用：先是参数，然后是输出与错误标志。 |
 | `AssistantDone` | `done` | 最后一个 step 结束且不再请求工具。 |
@@ -65,4 +68,4 @@ Web 客户端统计它已应用的事件数，流中断后用这个数恢复，�
 
 ## 错误
 
-`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED`、`PROVIDER_NOT_FOUND`、`SESSION_NOT_FOUND` 与 `DIRECTORY_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。
+`AgentService.SendMessage` 在流打开之前以 RPC 错误报告组装失败：`CONTENT_REQUIRED`、`MODEL_REQUIRED`、`SESSION_BUSY`、`SESSION_NOT_FOUND`、`MESSAGE_NOT_FOUND`、`INVALID_BRANCH_POINT`、`PROVIDER_NOT_FOUND` 与 `DIRECTORY_NOT_FOUND` 带有 `ErrorReason`；其他失败是内部错误。流打开之后的失败以 `error` 事件到达，失败 step 的占位消息保持 `error` 状态并带有失败文本。

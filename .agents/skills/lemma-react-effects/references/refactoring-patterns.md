@@ -108,7 +108,7 @@ Move a complicated transformation into a pure function in a logic module beside 
 `useCallback` is `useMemo` for a function, and both are optimizations until a measurement says otherwise. Needing them everywhere means a component re-renders too often because a state boundary is wrong; split the component or move the state down instead.
 
 ```tsx
-// Avoid: from MessageList.tsx
+// Avoid: memoizing a cheap linear scan
 const lastAssistantId = useMemo(
     () => items.findLast((m) => m.role === "assistant")?.id ?? null,
     [items],
@@ -176,7 +176,7 @@ useEffect(() => {
 }, [titlebarHeight]);
 ```
 
-Other integrations that fit: the effect in `app/shell/TitleBar.tsx` sending the resolved theme and surface to the desktop title bar through `platform`, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
+Other integrations that fit: the effect in `web/src/app/TitleBar.tsx` sending the resolved theme and surface to the desktop title bar through `platform`, browser event listeners, observers, and timers. A subscription that produces a value React renders uses `useSyncExternalStore`, as `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does with a media query. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
 
 ## Prefer conditional mounting for integrations
 

@@ -51,14 +51,14 @@ assets/brand/
 | Role | Value | Usage |
 | :--- | :--- | :--- |
 | Base | `#121212` / `#ffffff` | Plates, backgrounds, body text |
-| Brand blue | `#1783ff` | The icon dot and the light theme's focus ring; matches `palette.blue.500` and the `brand` role in `design/tokens.json`. Buttons and links use the `primary` role, a deeper blue that keeps text contrast at 4.5:1 |
-| Proof rose | `#e83168` | Q.E.D. seals only |
+| Brand blue | `#1783ff` | The icon dot, running markers, links, and the light theme's focus ring (`#3d97ff` in dark); matches `palette.blue.500` and the `brand` role in `design/tokens.json` |
+| Proof rose | `#e83168` | Q.E.D. seals and turn-completion marks (`completion` role in `design/tokens.json`, `#ec4a7b` in dark) |
 
 ## Usage Conventions
 
 - Always reference the `svg/` masters for vector contexts; use PNGs only for raster-only pipelines (e.g. `.ico` generation, mipmap intermediates).
 - Platform-local copies (e.g. `web/public/favicon.svg`, `desktop/assets/icon.*`, mipmap PNGs) must be derived from these masters: generate copies exclusively from masters, refreshing them upon any master update.
-- The client UI shows the name as a wordmark: `Lemma` in the system serif through the `font-brand` utility, with the brand-blue dot at its top right. The L mark appears only in the app icons and the favicon.
+- The client UI shows the name as a wordmark: `Lemma` in New Computer Modern (`NewCM10`, redistributed under the GUST Font License in `packages/ui/src/styles/fonts/GUST-FONT-LICENSE.txt`) through the `font-brand` utility, with the brand-blue dot at its top right. The L mark appears only in the app icons and the favicon.
 - Dark and light variants are swapped in pairs on theme change: deploy paired theme-specific assets directly.
 
 ## Regeneration

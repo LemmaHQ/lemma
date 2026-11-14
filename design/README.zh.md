@@ -10,8 +10,8 @@
 
 `tokens.json` 遵循 [W3C Design Tokens Community Group 格式](https://www.designtokens.org/tr/drafts/format/)：token 是带 `$value` 的对象，分组通过 `$type` 为其后代设定类型。它有五个分组：
 
-- `palette` 以 `#rrggbb` 或 `#rrggbbaa` 字符串存放静态颜色：白、透明、一套偏冷的灰阶，蓝、红、绿与琥珀的色阶，以及红、黑、白的透明度阶。色板名称描述颜色本身，而不是用途。
-- `light` 与 `dark` 存放同一组颜色角色，每个角色引用一个色板条目，例如 `{palette.blue.600}`。
+- `palette` 以 `#rrggbb` 或 `#rrggbbaa` 字符串存放静态颜色：白、透明、一套中性灰阶，蓝、玫红、红、绿与琥珀的色阶，以及红、黑、白的透明度阶。色板名称描述颜色本身，而不是用途。
+- `light` 与 `dark` 存放同一组颜色角色，每个角色引用一个色板条目，例如 `{palette.gray.925}`。
 - `radius` 存放 `dimension` token，写作 `{ "value": <像素数>, "unit": "px" }`：`sm`、`md` 与 `lg`。
 - `motion` 存放 `duration` token，写作 `{ "value": <毫秒数>, "unit": "ms" }`，以及 `easing` token，写作三次贝塞尔控制点 `[x1, y1, x2, y2]`。
 
@@ -20,10 +20,10 @@
 - 表面：`background`、`card`、`popover`、`muted`、`sidebar`，以及输入框与描边按钮用的 `control`。
 - 文字，分三级：`foreground`，用于说明文字的 `muted-foreground`，用于时间、标签与占位符的 `subtle-foreground`。
 - 交互：`primary` 及 `primary-hover`、`secondary` 及 `secondary-hover`，作为悬停色调的 `accent`，作为当前项色调的 `selected`，以及表示焦点的 `ring`。
-- 状态：`destructive` 及其 `-border`、`-ring`、`-subtle`、`-subtle-hover` 色调，`success` 与 `warning`。
-- 其余：`border`、`input`、`track`、`thumb`，logo 用的 `brand`，`scrim`，以及层级阴影的颜色 `shadow`。
+- 状态：`destructive` 及其 `-border`、`-ring`、`-subtle`、`-subtle-hover` 色调，标示 turn 完成印记的 `completion`，以及 `success` 与 `warning`。
+- 其余：`border`、`input`、`track`、`thumb`，用于 logo、运行指示与链接的 `brand`，`scrim`，以及层级阴影的颜色 `shadow`。
 
-两套主题中，每个文字角色、`primary` 与各状态角色在 `background`、`card`、`popover`、`muted` 与 `sidebar` 上的对比度都达到 4.5:1；在 `accent` 与 `selected` 色调上，`foreground` 与 `muted-foreground` 达到这一对比度。`primary-foreground` 在 `primary` 与 `primary-hover` 上达到这一对比度。
+两套主题中，每个文字角色、`primary` 与各文字状态角色（`destructive`、`success`、`warning`）在 `background`、`card`、`popover`、`muted`、`sidebar`、`accent` 与 `selected` 上的对比度都达到 4.5:1；`completion` 用于非文字印记。`primary-foreground` 在 `primary` 与 `primary-hover` 上达到 4.5:1。
 
 ## 输出
 

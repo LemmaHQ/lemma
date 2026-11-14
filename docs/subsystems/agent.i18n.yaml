@@ -6,14 +6,14 @@
   en: 573f9bd5098c836a
   zh: f29f69809745ab92
 /agent/turn-startup:
-  en: 10a78aef279896c5
-  zh: 44a929433b396baa
+  en: e02e7ed0e8991986
+  zh: 6f2ca5268ca7d45b
 /agent/tools:
   en: 3150a1ca8176d89b
   zh: 87ec2ddaa83d59a7
 /agent/turn-events:
-  en: 873ecb4733516f61
-  zh: 71d5df10661200d4
+  en: ecdf3a61a8efd606
+  zh: 5a31b7bd28589883
 /agent/abort:
   en: 7e0151a94910f90c
   zh: 0ec74928da9eac3a
@@ -21,5 +21,5 @@
   en: 283b79f22c5953ff
   zh: 390df261d6515561
 /agent/errors:
-  en: 30aa026d7d7573b6
-  zh: 1f058a308feed72b
+  en: c8c83d6a34ccf09a
+  zh: 1e3453c77bb80385

@@ -7,7 +7,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 ## Session tree
 
 - **session** — a tree of messages with a title, an active leaf, and the last model selection. Deleting a session removes it with all its messages. `lemma-session` owns the lifecycle and the tree.
-- **message** — one node of the tree: a canonical `lemma_core::Message` (`user`, `assistant`, or `tool_result`) plus its parent id, status, provider, and model. The stored form is `lemma_session::Message`.
+- **message** — one node of the tree: a canonical `lemma_core::Message` (`user`, `assistant`, or `tool_result`) plus its parent id, optional user label, status, provider, and model. The stored form is `lemma_session::Message`.
 - **leaf** — the message `leaf_id` points at; the next user message is appended under it, and every append in a turn moves it.
 - **branch** — a message appended under an earlier parent instead of the leaf. Branches add nodes; they never rewrite existing ones.
 - **context path** — the messages from the root to the leaf, in order, produced by `build_context_path`. It is the only history a model request contains.

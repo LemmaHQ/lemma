@@ -7,7 +7,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 ## 会话树
 
 - **会话（session）** — 一棵带标题、当前叶子与最近一次模型选择的消息树。删除会话会连同全部消息一起移除。`lemma-session` 负责生命周期与消息树。
-- **消息（message）** — 树上的一个节点：一条规范化的 `lemma_core::Message`（`user`、`assistant` 或 `tool_result`），加上父消息 id、状态、provider 与模型。存储形式是 `lemma_session::Message`。
+- **消息（message）** — 树上的一个节点：一条规范化的 `lemma_core::Message`（`user`、`assistant` 或 `tool_result`），加上父消息 id、可选的用户标签、状态、provider 与模型。存储形式是 `lemma_session::Message`。
 - **叶子（leaf）** — `leaf_id` 指向的消息；下一条用户消息挂在它下面，turn 中的每次追加都会移动它。
 - **分支（branch）** — 挂在较早父消息而非叶子下的一条消息。分支只新增节点，从不改写已有节点。
 - **上下文路径（context path）** — 从根到叶子按顺序排列的消息，由 `build_context_path` 生成。它是模型请求包含的唯一历史。

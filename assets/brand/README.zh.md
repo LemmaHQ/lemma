@@ -51,14 +51,14 @@ assets/brand/
 | 角色 | 取值 | 用途 |
 | :--- | :--- | :--- |
 | 基底 | `#121212` / `#ffffff` | 底板、背景、正文 |
-| 品牌蓝 | `#1783ff` | 图标蓝点与浅色主题的焦点环；与 `design/tokens.json` 中的 `palette.blue.500` 及 `brand` 角色一致。按钮与链接使用 `primary` 角色，这种更深的蓝色让文字对比度保持在 4.5:1 |
-| 证明玫红 | `#e83168` | 只用于 Q.E.D. 印章 |
+| 品牌蓝 | `#1783ff` | 图标蓝点、运行指示、链接与浅色主题的焦点环（深色主题为 `#3d97ff`）；与 `design/tokens.json` 中的 `palette.blue.500` 及 `brand` 角色一致 |
+| 证明玫红 | `#e83168` | Q.E.D. 印章与 turn 完成印记（对应 `design/tokens.json` 中的 `completion` 角色，深色主题为 `#ec4a7b`） |
 
 ## 使用约定
 
 - 矢量场景始终引用 `svg/` 母版；PNG 只用于只支持位图的流程（例如生成 `.ico`、mipmap 中间产物）。
 - 平台本地副本（例如 `web/public/favicon.svg`、`desktop/assets/icon.*`、mipmap PNG）必须从这些母版派生：副本只从母版生成，母版更新后随之刷新。
-- 客户端界面以文字标识展示名称：`Lemma` 通过 `font-brand` 工具类使用系统衬线字体，右上角带一个品牌蓝点。L 标志只出现在应用图标与网页图标中。
+- 客户端界面以文字标识展示名称：`Lemma` 通过 `font-brand` 工具类使用 New Computer Modern（`NewCM10`，按 `packages/ui/src/styles/fonts/GUST-FONT-LICENSE.txt` 中的 GUST Font License 随包分发）衬线字体，右上角带一个品牌蓝点。L 标志只出现在应用图标与网页图标中。
 - 切换主题时深色与浅色版本成对替换：直接部署成对的主题专用素材。
 
 ## 重新生成

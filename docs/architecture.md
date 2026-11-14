@@ -41,7 +41,7 @@ All three hosts share one data-directory layout: `lemma.db` (SQLite in WAL mode 
 
 ## Contracts across the wire
 
-`proto/lemma/v1` is the single contract for every client: `ProviderService`, `SessionService`, and `AgentService`, plus `errors.proto`. `ProviderService` covers model providers and web providers: it lists providers with write-only `has_key` flags, updates keys and enabled flags, checks saved providers and fetches custom model lists by provider id, and sets the web search and fetch backend orders. Rust compiles it in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`proto/lemma/v1` is the single contract for every client: `ProviderService`, `SessionService`, and `AgentService`, plus `errors.proto`. `ProviderService` covers model providers and web providers: it unseals stored API keys for read responses, seals written keys at rest, checks saved providers and fetches custom model lists by provider id, and sets the web search and fetch backend orders. `SessionService` manages sessions, returns a session's complete message tree with its active `leaf_id` and running `active_message_id`, switches the active leaf, and updates node labels. Rust compiles the contracts in `lemma-proto/build.rs`, the web npm scripts generate the web TypeScript, and the Gradle build generates the Android Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 A business error carries an `ErrorReason` from the closed enum in `errors.proto`, attached as an `ErrorInfo` detail by `lemma_proto::app_error`; clients localize by reason code. Infrastructure failures (database, decryption, upstream) return an internal Connect error with a raw English message and no reason.
 
@@ -52,11 +52,11 @@ Lemma runs as a single-owner local node with no user accounts or authentication 
 A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` starts, resumes, and aborts turns, running `AgentLoop::run_turn` in `lemma-agent-loop` in a background task; `lemma-host` calls only `Agent` and maps its `TurnEvent`s onto `AgentEvent` messages.
 
 ```text
-AgentService.SendMessage(session, provider, model, content)
-  Agent::start reads the session and the API format of the nearest assistant message on the path from root to leaf
+AgentService.SendMessage(session, provider, model, content, parent_id?)
+  Agent::start claims the session slot and resolves the target branch parent and the API format of the nearest assistant message above it
   ProviderService::bind picks the API format, opens the API key, and binds the adapter
   open the session directory and register its tools
-  append the user message under the active leaf; move the leaf            -> started
+  append the user message under the resolved branch parent; move the leaf -> started
   record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
@@ -90,11 +90,11 @@ A turn runs to its end whether or not a client reads its stream. `Agent` in `lem
 
 ## Persistence
 
-`lemma-db` owns the SQLite schema in `crates/shared/lemma-db/migrations/0001_init.sql` and runs pending migrations when opening a pool (`LocalEngine` calls `lemma_db::open`): `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+`lemma-db` owns the SQLite schema in `crates/shared/lemma-db/migrations/` and runs pending migrations when opening a pool (`LocalEngine` calls `lemma_db::open`): `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
-A session is a tree of messages. Each message row stores its `parent_id`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider, model, and API format that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, deletes, and pages through sessions.
+A session is a tree of messages. Each message row stores its `parent_id`, optional user `label`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider, model, and API format that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, and deletes sessions, reads the full message tree, validates and switches `leaf_id`, and sets message labels.
 
-A branch is a message appended under an earlier parent; past messages are never rewritten. Every turn continues from the active leaf. Model context is always the path from the root to the leaf, so sibling branches never reach the model.
+A branch is a message appended under an earlier turn boundary (or at the root); past messages are never rewritten. A turn continues from the active leaf by default or branches from an explicit target parent. Model context is always the path from the root to the turn's leaf, with unanswered tool calls from earlier interrupted turns omitted, so sibling branches never reach the model.
 
 A `providers` row is predefined or custom. A custom row holds the whole configuration. A predefined row holds the API key, the enabled flag, and the default API format; `lemma-provider` reads the name, base URLs, and models from its definition in code, and listing providers inserts missing predefined rows. A `web_providers` row is a web service entry: its kind (`native`, `exa`, or `deepseek`), sealed API key, enabled flag, and positions in the search and fetch orders; Native needs no key, and listing inserts missing rows as well. `ProviderService` seals every nonempty provider API key with AES-256-GCM under a key derived from `secret_key` in `secrets.json`.
 

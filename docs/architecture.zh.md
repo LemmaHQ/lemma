@@ -41,7 +41,7 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 
 ## 跨线路的契约
 
-`proto/lemma/v1` 是所有客户端的唯一契约：`ProviderService`、`SessionService`、`AgentService`，以及 `errors.proto`。`ProviderService` 同时涵盖模型 provider 与 Web provider：列出带只写 `has_key` 标志的 provider、更新密钥与启用状态、按 provider id 检查已保存的 provider 并拉取自定义模型列表，以及设置 Web 搜索与抓取后端的顺序。Rust 在 `lemma-proto/build.rs` 中编译它，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`proto/lemma/v1` 是所有客户端的唯一契约：`ProviderService`、`SessionService`、`AgentService`，以及 `errors.proto`。`ProviderService` 同时涵盖模型 provider 与 Web provider：读取响应时解封已存储的 API key、写入时在磁盘加密保存、按 provider id 检查已保存的 provider 并拉取自定义模型列表，以及设置 Web 搜索与抓取后端的顺序。`SessionService` 管理会话，返回会话的完整消息树及其当前 `leaf_id` 与运行中的 `active_message_id`，切换当前叶子并更新节点标签。Rust 在 `lemma-proto/build.rs` 中编译契约，Web 的 npm 脚本生成 Web 的 TypeScript，Gradle 构建生成 Android 的 Kotlin（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 业务错误携带 `errors.proto` 中封闭枚举里的一个 `ErrorReason`，由 `lemma_proto::app_error` 作为 `ErrorInfo` detail 附加；客户端按原因码本地化。基础设施故障（数据库、解密、上游）返回 internal 级别的 Connect 错误，带原始英文信息，不带原因码。
 
@@ -52,11 +52,11 @@ Lemma 作为单拥有者本地节点运行，没有用户账号或认证层；�
 一次 **turn** 从一条用户消息开始，在模型停止且不再请求工具、模型流失败或 turn 被中止时结束。一个 **step** 是一次模型请求；带工具调用的 turn 会运行多个 step。`lemma-agent` 中的 `Agent` 启动、恢复与中止 turn，并在后台任务中运行 `lemma-agent-loop` 的 `AgentLoop::run_turn`；`lemma-host` 只调用 `Agent`，并把它的 `TurnEvent` 映射为 `AgentEvent` 消息。
 
 ```text
-AgentService.SendMessage(session, provider, model, content)
-  Agent::start reads the session and the API format of the nearest assistant message on the path from root to leaf
+AgentService.SendMessage(session, provider, model, content, parent_id?)
+  Agent::start claims the session slot and resolves the target branch parent and the API format of the nearest assistant message above it
   ProviderService::bind picks the API format, opens the API key, and binds the adapter
   open the session directory and register its tools
-  append the user message under the active leaf; move the leaf            -> started
+  append the user message under the resolved branch parent; move the leaf -> started
   record the model selection on the session
   step:
     aborted -> end the turn                                               -> aborted
@@ -90,11 +90,11 @@ AgentService.SendMessage(session, provider, model, content)
 
 ## 持久化
 
-`lemma-db` 在 `crates/shared/lemma-db/migrations/0001_init.sql` 中维护 SQLite schema，并在打开连接池时执行待应用的迁移（`LocalEngine` 调用 `lemma_db::open`）：`sessions` 与 `messages` 归 `lemma-session`，`providers` 与 `web_providers` 归 `lemma-provider`（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`lemma-db` 在 `crates/shared/lemma-db/migrations/` 中维护 SQLite schema，并在打开连接池时执行待应用的迁移（`LocalEngine` 调用 `lemma_db::open`）：`sessions` 与 `messages` 归 `lemma-session`，`providers` 与 `web_providers` 归 `lemma-provider`（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
-一个会话是一棵消息树。每条消息行保存它的 `parent_id`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider、模型与 API 格式；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-session` 中的 `SessionService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话并分页读取消息。
+一个会话是一棵消息树。每条消息行保存它的 `parent_id`、可选的用户 `label`、以 JSON 正文保存的带 token 用量的规范化消息、状态（`streaming`、`done`、`aborted`、`error`），以及产生它的 provider、模型与 API 格式；provider id 只是一个普通 id，没有外键，因此删除 provider 不会改动任何消息或会话。会话行保存当前 `leaf_id` 与最近一次的模型选择。`lemma-session` 中的 `SessionService` 是这些表上唯一的读写代码：turn 循环通过它追加、定稿消息并移动叶子，它同时负责创建、重命名、删除会话，读取完整消息树，校验并切换 `leaf_id`，以及设置消息标签。
 
-分支是挂在较早父消息下的一条新消息；已有消息从不改写。每个 turn 都从当前叶子继续。模型上下文始终是从根到叶子的路径，因此兄弟分支永远不会进入模型。
+分支是挂在较早 turn 边界（或根处）下的一条新消息；已有消息从不改写。每个 turn 默认从当前叶子继续，也可以指定目标父节点分叉。模型上下文始终是从根到该 turn 叶子的路径，并过滤掉此前中断 turn 留下的未应答工具调用，因此兄弟分支永远不会进入模型。
 
 `providers` 表的一行是预定义 provider 或自定义 provider。自定义行保存完整的配置。预定义行保存 API key、启用标志与默认 API 格式；`lemma-provider` 从代码中的定义读取名称、base URL 与模型，列出 provider 时会插入缺少的预定义行。`web_providers` 表的一行是一个 Web 服务条目：类型（`native`、`exa` 或 `deepseek`）、加密的 API key、启用标志，以及在搜索与抓取顺序中的位置；Native 不需要密钥，列出时同样会插入缺少的行。`ProviderService` 用由 `secrets.json` 中 `secret_key` 派生的密钥，以 AES-256-GCM 加密每个非空的 provider API key。
 

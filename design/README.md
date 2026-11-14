@@ -10,8 +10,8 @@ English | [中文](README.zh.md)
 
 `tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has five groups:
 
-- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, a cool gray ramp, blue, red, green, and amber steps, and alpha tiers of red, black, and white. Palette names describe the color, not its use.
-- `light` and `dark` hold the same color roles, each referencing a palette entry such as `{palette.blue.600}`.
+- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, a neutral gray ramp, blue, rose, red, green, and amber steps, and alpha tiers of red, black, and white. Palette names describe the color, not its use.
+- `light` and `dark` hold the same color roles, each referencing a palette entry such as `{palette.gray.925}`.
 - `radius` holds `dimension` tokens as `{ "value": <pixels>, "unit": "px" }`: `sm`, `md`, and `lg`.
 - `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`.
 
@@ -20,10 +20,10 @@ The color roles fall into five families:
 - Surfaces: `background`, `card`, `popover`, `muted`, `sidebar`, and `control` for inputs and outline buttons.
 - Text, in three levels: `foreground`, `muted-foreground` for descriptions, and `subtle-foreground` for timestamps, labels, and placeholders.
 - Interaction: `primary` with `primary-hover`, `secondary` with `secondary-hover`, `accent` as the hover tint, `selected` as the tint of the current item, and `ring` for focus.
-- Status: `destructive` with its `-border`, `-ring`, `-subtle`, and `-subtle-hover` tints, `success`, and `warning`.
-- The rest: `border`, `input`, `track`, `thumb`, `brand` for the logo, `scrim`, and `shadow`, the color of the elevation shadows.
+- Status: `destructive` with its `-border`, `-ring`, `-subtle`, and `-subtle-hover` tints, `completion` for turn-completion marks, `success`, and `warning`.
+- The rest: `border`, `input`, `track`, `thumb`, `brand` for the logo, running indicators, and links, `scrim`, and `shadow`, the color of the elevation shadows.
 
-Every text role, `primary`, and the status roles reach a 4.5:1 contrast ratio on `background`, `card`, `popover`, `muted`, and `sidebar` in both themes; on the `accent` and `selected` tints, `foreground` and `muted-foreground` do. `primary-foreground` reaches it on `primary` and `primary-hover`.
+Every text role, `primary`, and the text status roles (`destructive`, `success`, `warning`) reach a 4.5:1 contrast ratio on `background`, `card`, `popover`, `muted`, `sidebar`, `accent`, and `selected` in both themes; `completion` colors non-text markers. `primary-foreground` reaches 4.5:1 on `primary` and `primary-hover`.
 
 ## Output
 

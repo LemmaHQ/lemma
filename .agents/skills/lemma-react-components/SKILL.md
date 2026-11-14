@@ -16,13 +16,13 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 
 - Every prop is read.
 - A default value only where it saves real repetition at the call sites.
-- Props are required unless call sites actually omit them. `MessageComposer` marks `onStop` and `streaming` optional and defaults `streaming` to `false`, though its one caller always passes both.
-- No conflicting or overlapping props, such as both `onClick` and `onSelect`, or a flag beside the handler it enables: `MessageItem`'s `canRegenerate` and `onRegenerate` state one fact, so one prop carries it.
+- Props are required unless call sites actually omit them; do not mark a prop optional and supply a default when every caller passes it.
+- No conflicting or overlapping props, such as both `onClick` and `onSelect`, or a boolean flag beside the handler it enables when one nullable or optional handler prop states the whole fact.
 
 ## Composition
 
 - A component owns meaningful presentation or complex logic. When most of the logic is independent of JSX, write a pure function and keep the trivial JSX at each call site; write a hook instead only when the logic needs React state or lifecycle.
-- One component has one presentation. When an action looks different in different places, write one component per presentation instead of choosing with a mode prop or flag. Starting a session is the labeled sidebar card `NewSessionButton` and the toolbar icon with a tooltip `NewSessionIconButton`, which share the `useStartSession` hook.
+- One component has one presentation. When an action looks different in different places, write one component per presentation instead of choosing with a mode prop or flag, sharing behavior through a hook.
 - One component has one workflow. When a prop would select fundamentally different workflows, split them: creating and editing a provider are `NewProviderForm` and `ProviderDetail`, not one form with a `mode`.
 - Extract only what call sites share. Shared presentation becomes a presentational component; shared state or behavior alone becomes a hook, and each call site keeps its own presentation.
 
@@ -40,4 +40,4 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 ## Ownership
 
 - The parent places its children: margin and the space between siblings come from the parent, through `gap` or a wrapping element. A component sets only its own padding and the spacing of its contents.
-- A component that returns `null` signals that a parent may own the condition. Prefer having the parent skip the render when it already knows the condition: `MessageItem` returns `null` for tool messages, which `MessageList` could filter out, and `ProviderGroup` in `ProviderListPane.tsx` returns `null` for an empty group its parent could skip. Keep the `null` when the condition is one branch of the component's own decision: `MessageThinking` chooses among a loader, nothing, and the reasoning block from the same message fields, and moving one branch into `MessageItem` would split that decision.
+- A component that returns `null` signals that a parent may own the condition. Prefer having the parent skip the render when it already knows the condition, such as `ProviderGroup` in `ProviderListPane.tsx` returning `null` for an empty group its parent could skip. Keep the `null` when the condition is one branch of the component's own decision, such as `TitleBar` reading `titlebarHeight` from the platform adapter.

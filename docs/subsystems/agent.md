@@ -12,14 +12,17 @@ The agent subsystem turns one user request into a running turn and reports its p
 | --- | --- |
 | content is empty after trimming | `AgentError::ContentRequired` |
 | model id is empty after trimming | `AgentError::ModelRequired` |
-| the provider does not exist | `AgentError::ProviderNotFound` |
+| the session already has a running turn | `AgentError::SessionBusy` |
 | the session does not exist | `AgentError::SessionNotFound` |
+| the requested branch parent does not exist in the session | `AgentError::MessageNotFound` |
+| the requested branch parent or active leaf is not a settled turn boundary | `AgentError::InvalidBranchPoint` |
+| the provider does not exist | `AgentError::ProviderNotFound` |
 | the session's bound directory no longer exists | `AgentError::DirectoryNotFound` |
 | the provider key cannot be opened, the database fails, or the workspace cannot be created | `Provider`, `Store`, or `Workspace` |
 
 `ProviderService::bind` returns the adapter with the API format the turn uses and the model's tool-calling flag; [architecture.md](../architecture.md#the-path-of-one-turn) states how it picks the format. A model with tool calling off gets no tools, and its requests leave out earlier tool calls and tool results.
 
-Once `Agent::start` succeeds, the turn runs to its end in a spawned task; any mid-turn failure outside cancellation emits a terminal `TurnEvent::TurnFailed` on the stream. The first event (`TurnEvent::UserAppended`) carries the id the user message is stored under; `Agent::abort` and `Agent::resume` address the turn by it.
+Once `Agent::start` succeeds, the turn runs to its end in a spawned task while holding the session's active-turn slot (`Agent::active_turn`); any mid-turn failure outside cancellation emits a terminal `TurnEvent::TurnFailed` on the stream. The first event (`TurnEvent::UserAppended`) carries the id and `parent_id` the user message is stored under; `Agent::abort` and `Agent::resume` address the turn by that message id.
 
 ## Tools
 
@@ -39,8 +42,8 @@ The loop reports timestamped `TurnEvent`s to its observer in the order they happ
 
 | Source | `AgentEvent` (`lemma-host`) | Meaning |
 | --- | --- | --- |
-| `UserAppended` | `started` | The user message is stored; carries its id. |
-| `AssistantStarted` | `turn_started` | A step's placeholder is stored; carries the assistant message id. |
+| `UserAppended` | `started` | The user message is stored; carries its id and optional `parent_id`. |
+| `AssistantStarted` | `turn_started` | A step's placeholder is stored; carries the assistant message id and `parent_id`. |
 | `Delta`, `ThinkingDelta` | `delta` (`text` or `thinking`) | One chunk of the model stream. |
 | `ToolStarted`, `ToolFinished` | `tool_call_started`, `tool_call_finished` | One tool call, with its arguments, then its output and error flag. |
 | `AssistantDone` | `done` | The last step finished without requesting tools. |
@@ -65,4 +68,4 @@ The web client counts the events it applies, resumes with that count after a bro
 
 ## Errors
 
-`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, `PROVIDER_NOT_FOUND`, `SESSION_NOT_FOUND`, and `DIRECTORY_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.
+`AgentService.SendMessage` reports preparation failures as RPC errors before the stream opens: `CONTENT_REQUIRED`, `MODEL_REQUIRED`, `SESSION_BUSY`, `SESSION_NOT_FOUND`, `MESSAGE_NOT_FOUND`, `INVALID_BRANCH_POINT`, `PROVIDER_NOT_FOUND`, and `DIRECTORY_NOT_FOUND` carry an `ErrorReason`; other failures are internal errors. Failures after the stream opens arrive as an `error` event, and the failed step's placeholder keeps status `error` with the failure text.
