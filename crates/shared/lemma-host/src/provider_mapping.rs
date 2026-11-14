@@ -51,7 +51,7 @@ pub(crate) fn to_proto(view: ProviderView) -> Provider {
         ProviderView::Custom(custom) => Provider {
             id: custom.id.to_string(),
             enabled: custom.enabled,
-            has_key: custom.has_key,
+            api_key: custom.api_key,
             source: Some(v1::provider::Source::Custom(Box::new(v1::CustomProvider {
                 identifier: custom.identifier,
                 name: custom.name,
@@ -67,7 +67,7 @@ pub(crate) fn to_proto(view: ProviderView) -> Provider {
         ProviderView::Predefined(predefined) => Provider {
             id: predefined.id.to_string(),
             enabled: predefined.enabled,
-            has_key: predefined.has_key,
+            api_key: predefined.api_key,
             source: Some(v1::provider::Source::Predefined(Box::new(
                 v1::PredefinedProvider {
                     identifier: predefined.identifier,
@@ -98,7 +98,7 @@ pub(crate) fn web_to_proto(view: WebProviderView) -> v1::WebProvider {
         kind: kind.into(),
         name: view.name,
         enabled: view.enabled,
-        has_key: view.has_key,
+        api_key: view.api_key,
         search_rank: view.search_rank,
         fetch_rank: view.fetch_rank,
         ..Default::default()

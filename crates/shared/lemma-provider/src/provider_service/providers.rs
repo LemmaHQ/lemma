@@ -7,13 +7,12 @@ use uuid::Uuid;
 
 use lemma_model::Connector;
 
-use crate::preset::{self, PredefinedProvider};
+use crate::preset;
 use crate::provider_error::ProviderError;
-use crate::provider_model::ProviderModel;
 use crate::provider_row::{self, ProviderRow, ProviderSource, ProviderTuple};
 
 use super::create_input::CreateCustomInput;
-use super::provider_view::{CustomProviderView, PredefinedProviderView, ProviderView};
+use super::provider_view::{CustomProviderView, ProviderView};
 use super::update_input::UpdateCustomInput;
 
 /// Provider domain service over a SQLite pool holding the `providers` and
@@ -61,62 +60,38 @@ impl<C: Connector> ProviderService<C> {
         lemma_crypto::open(&self.key, stored).map_err(ProviderError::Crypto)
     }
 
-    pub(super) fn view(row: &ProviderRow) -> Option<ProviderView> {
+    pub(super) fn view(&self, row: &ProviderRow) -> Result<Option<ProviderView>, ProviderError> {
         match row.source {
-            ProviderSource::Custom => Some(ProviderView::Custom(Self::custom_view(row))),
-            ProviderSource::Predefined => {
-                let preset = preset::find(&row.identifier)?;
-                Some(ProviderView::Predefined(Self::predefined_view(row, preset)))
-            }
-        }
-    }
-
-    pub(super) fn predefined_view(
-        row: &ProviderRow,
-        preset: &PredefinedProvider,
-    ) -> PredefinedProviderView {
-        PredefinedProviderView {
-            id: row.id,
-            identifier: preset.identifier.to_owned(),
-            name: preset.name.to_owned(),
-            api_formats: preset
-                .formats
-                .iter()
-                .map(|format| format.api_format)
-                .collect(),
-            default_api_format: row.api_format,
-            models: preset
-                .models
-                .iter()
-                .map(|model| ProviderModel {
-                    id: model.id.to_owned(),
-                    tool_calling: model.tool_calling,
+            ProviderSource::Custom => Ok(Some(ProviderView::Custom(self.custom_view(row)?))),
+            ProviderSource::Predefined => preset::find(&row.identifier)
+                .map(|preset| {
+                    self.predefined_view(row, preset)
+                        .map(ProviderView::Predefined)
                 })
-                .collect(),
-            has_key: !row.api_key.is_empty(),
-            enabled: row.enabled,
+                .transpose(),
         }
     }
 
-    fn custom_view(row: &ProviderRow) -> CustomProviderView {
-        CustomProviderView {
+    fn custom_view(&self, row: &ProviderRow) -> Result<CustomProviderView, ProviderError> {
+        Ok(CustomProviderView {
             id: row.id,
             identifier: row.identifier.clone(),
             name: row.name.clone(),
             api_format: row.api_format,
             base_url: row.base_url.clone(),
-            has_key: !row.api_key.is_empty(),
+            api_key: self.open_key(&row.api_key)?,
             models: row.models.clone(),
             enabled: row.enabled,
             api_path: row.api_path.clone(),
             models_path: row.models_path.clone(),
-        }
+        })
     }
 
     /// Lists predefined providers first, then custom providers in creation order.
     ///
     /// # Errors
     ///
+    /// [`ProviderError::Crypto`] when opening a stored key fails and
     /// [`ProviderError::Store`] when the database fails.
     pub async fn list(&self) -> Result<Vec<ProviderView>, ProviderError> {
         self.insert_missing_predefined().await?;
@@ -132,7 +107,10 @@ impl<C: Connector> ProviderService<C> {
             .into_iter()
             .map(provider_row::from_tuple)
             .collect::<Result<_, _>>()?;
-        let mut views: Vec<_> = rows.iter().filter_map(Self::view).collect();
+        let mut views: Vec<_> = rows
+            .iter()
+            .filter_map(|row| self.view(row).transpose())
+            .collect::<Result<_, _>>()?;
         views.sort_by_key(|view| match view {
             ProviderView::Predefined(_) => 0,
             ProviderView::Custom(_) => 1,
@@ -201,7 +179,7 @@ impl<C: Connector> ProviderService<C> {
             name: name.to_owned(),
             api_format: input.api_format,
             base_url: base_url.to_owned(),
-            has_key: !input.api_key.is_empty(),
+            api_key: input.api_key,
             models: input.models,
             enabled: true,
             api_path,
@@ -214,8 +192,8 @@ impl<C: Connector> ProviderService<C> {
     /// # Errors
     ///
     /// [`ProviderError::NotFound`] when no such custom provider exists,
-    /// [`ProviderError::Crypto`] when sealing fails, and [`ProviderError::Store`]
-    /// when the database fails.
+    /// [`ProviderError::Crypto`] when sealing or opening a key fails, and
+    /// [`ProviderError::Store`] when the database fails.
     pub async fn update_custom(
         &self,
         id: Uuid,
@@ -259,7 +237,7 @@ impl<C: Connector> ProviderService<C> {
         .map(provider_row::from_tuple)
         .transpose()?
         .ok_or(ProviderError::NotFound)?;
-        Ok(Self::custom_view(&row))
+        self.custom_view(&row)
     }
 
     /// Deletes a custom provider.

@@ -3,9 +3,10 @@ use uuid::Uuid;
 
 use lemma_model::Connector;
 
-use crate::preset;
+use crate::preset::{self, PredefinedProvider};
 use crate::provider_error::ProviderError;
-use crate::provider_row::{self, ProviderSource, ProviderTuple};
+use crate::provider_model::ProviderModel;
+use crate::provider_row::{self, ProviderRow, ProviderSource, ProviderTuple};
 
 use super::provider_view::PredefinedProviderView;
 use super::providers::ProviderService;
@@ -46,7 +47,8 @@ impl<C: Connector> ProviderService<C> {
     /// [`ProviderError::ApiFormatInvalid`] when the catalog does not serve the
     /// requested default, [`ProviderError::KeyRequired`] when the resulting
     /// provider would be enabled without a key, [`ProviderError::Crypto`] when
-    /// sealing fails, and [`ProviderError::Store`] when the database fails.
+    /// sealing or opening a key fails, and [`ProviderError::Store`] when the
+    /// database fails.
     pub async fn update_predefined(
         &self,
         id: Uuid,
@@ -72,7 +74,7 @@ impl<C: Connector> ProviderService<C> {
         }
         if input.api_key.is_none() && input.enabled.is_none() && input.default_api_format.is_none()
         {
-            return Ok(Self::predefined_view(&row, preset));
+            return self.predefined_view(&row, preset);
         }
         let clearing_key = input.api_key.as_deref() == Some("");
         let enabling_saved_key = input.enabled == Some(true) && input.api_key.is_none();
@@ -111,6 +113,34 @@ impl<C: Connector> ProviderService<C> {
         .map(provider_row::from_tuple)
         .transpose()?
         .ok_or(missing_error)?;
-        Ok(Self::predefined_view(&updated, preset))
+        self.predefined_view(&updated, preset)
+    }
+
+    pub(super) fn predefined_view(
+        &self,
+        row: &ProviderRow,
+        preset: &PredefinedProvider,
+    ) -> Result<PredefinedProviderView, ProviderError> {
+        Ok(PredefinedProviderView {
+            id: row.id,
+            identifier: preset.identifier.to_owned(),
+            name: preset.name.to_owned(),
+            api_formats: preset
+                .formats
+                .iter()
+                .map(|format| format.api_format)
+                .collect(),
+            default_api_format: row.api_format,
+            models: preset
+                .models
+                .iter()
+                .map(|model| ProviderModel {
+                    id: model.id.to_owned(),
+                    tool_calling: model.tool_calling,
+                })
+                .collect(),
+            api_key: self.open_key(&row.api_key)?,
+            enabled: row.enabled,
+        })
     }
 }

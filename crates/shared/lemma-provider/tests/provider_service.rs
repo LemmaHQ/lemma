@@ -168,10 +168,10 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
     assert_eq!(toggled.models, models(&["model-b"]), "model list");
     assert_eq!(toggled.name, before.name, "name");
     assert_eq!(toggled.base_url, before.base_url, "base URL");
-    assert!(toggled.has_key, "has_key preserved");
+    assert_eq!(toggled.api_key, "sk-original", "api key preserved");
     assert_eq!(toggled.api_path, before.api_path, "generation path");
     assert_eq!(toggled.models_path, before.models_path, "model-list path");
-    assert!(rekeyed.has_key, "replaced api key remains present");
+    assert_eq!(rekeyed.api_key, "sk-replaced", "replaced api key");
     assert!(!rekeyed.enabled, "enabled flag after the key change");
     assert_eq!(
         rekeyed.models,
@@ -189,8 +189,8 @@ async fn update_changes_only_the_given_fields() -> Result<(), Box<dyn Error>> {
         renamed.models_path, "/v2/models",
         "trimmed updated models path"
     );
-    assert!(
-        untouched.has_key,
+    assert_eq!(
+        untouched.api_key, "sk-replaced",
         "an empty update returns the stored provider"
     );
     assert!(
@@ -274,7 +274,7 @@ async fn a_provider_without_a_key_or_name_keeps_them_empty_and_named_by_identifi
         ("local", "local"),
         "identifier and name"
     );
-    assert!(!created.has_key, "view has_key is false when empty");
+    assert_eq!(created.api_key, "", "view api_key is empty when unset");
     assert_eq!(bound.0.api_key, "", "key the adapter sends");
     Ok(())
 }
@@ -361,11 +361,12 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
     let rotated = ProviderService::new(db.clone(), "rotated", EndpointConnector);
 
     let with_rotated_secret = rotated.bind(created.id, "model-a", None).await;
-    let listed = rotated.list().await?;
+    let listed_rotated = rotated.list().await;
     sqlx::query("UPDATE providers SET api_key = 'not sealed'")
         .execute(&db)
         .await?;
-    let corrupted = service(db).bind(created.id, "model-a", None).await;
+    let corrupted = service(db.clone()).bind(created.id, "model-a", None).await;
+    let listed_corrupted = service(db).list().await;
 
     assert!(
         matches!(
@@ -374,13 +375,12 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
         ),
         "rotated secret: {with_rotated_secret:?}"
     );
-    assert_eq!(
-        custom_views(&listed)
-            .iter()
-            .map(|provider| provider.has_key)
-            .collect::<Vec<_>>(),
-        [true],
-        "list reports stored ciphertext presence without opening it"
+    assert!(
+        matches!(
+            &listed_rotated,
+            Err(ProviderError::Crypto(CryptoError::Decrypt))
+        ),
+        "list with rotated secret: {listed_rotated:?}"
     );
     assert!(
         matches!(
@@ -388,6 +388,13 @@ async fn a_key_sealed_under_another_secret_or_corrupted_cannot_be_opened()
             Err(ProviderError::Crypto(CryptoError::Encoding))
         ),
         "corrupted key: {corrupted:?}"
+    );
+    assert!(
+        matches!(
+            &listed_corrupted,
+            Err(ProviderError::Crypto(CryptoError::Encoding))
+        ),
+        "list with corrupted key: {listed_corrupted:?}"
     );
     Ok(())
 }
@@ -462,6 +469,7 @@ async fn list_inserts_deepseek_once_beside_a_custom_deepseek() -> Result<(), Box
     let deepseek = deepseek(&first).ok_or("DeepSeek missing")?;
     assert_eq!(deepseek.name, "DeepSeek", "catalog name");
     assert!(!deepseek.enabled, "initially disabled");
+    assert_eq!(deepseek.api_key, "", "initially unset key");
     assert_eq!(deepseek.default_api_format, ApiFormat::Anthropic, "default");
     assert_eq!(
         deepseek.api_formats,
@@ -473,7 +481,12 @@ async fn list_inserts_deepseek_once_beside_a_custom_deepseek() -> Result<(), Box
         models(&["deepseek-flash", "deepseek-v4-pro"]),
         "catalog models"
     );
-    assert_eq!(custom_views(&first)[0].id, custom.id, "custom coexistence");
+    let listed_custom = custom_views(&first)[0];
+    assert_eq!(listed_custom.id, custom.id, "custom coexistence");
+    assert_eq!(
+        listed_custom.api_key, "sk-original",
+        "list opens custom key"
+    );
     Ok(())
 }
 
@@ -557,7 +570,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
         "invalid format: {invalid_default:?}"
     );
     assert!(enabled.enabled, "enabled with a saved key");
-    assert!(enabled.has_key, "saved key reported");
+    assert_eq!(enabled.api_key, "sk-deepseek", "saved key reported");
     assert_eq!(
         enabled.default_api_format,
         ApiFormat::OpenAiCompatible,
@@ -572,7 +585,7 @@ async fn predefined_updates_validate_keys_formats_and_source() -> Result<(), Box
         ApiFormat::Anthropic,
         "format only update"
     );
-    assert!(format_only.has_key, "key retained");
+    assert_eq!(format_only.api_key, "sk-deepseek", "key retained");
     for (operation, result) in [
         ("custom update", custom_update.err()),
         ("custom delete", custom_delete.err()),
@@ -725,10 +738,10 @@ async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<
     let listed = providers.list().await?;
     let after = deepseek(&listed).ok_or("DeepSeek missing")?;
     assert!(
-        !after.enabled || after.has_key,
-        "enabled={} has_key={} enable={enabled:?} clear={cleared:?}",
+        !after.enabled || !after.api_key.is_empty(),
+        "enabled={} api_key={} enable={enabled:?} clear={cleared:?}",
         after.enabled,
-        after.has_key
+        after.api_key
     );
 
     if after.enabled {
@@ -752,6 +765,6 @@ async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<
         )
         .await?;
     assert!(!cleared.enabled, "clearing the key disables the provider");
-    assert!(!cleared.has_key, "key cleared");
+    assert_eq!(cleared.api_key, "", "key cleared");
     Ok(())
 }

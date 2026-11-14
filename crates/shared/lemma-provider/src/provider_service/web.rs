@@ -40,12 +40,13 @@ impl<C: Connector> ProviderService<C> {
     ///
     /// # Errors
     ///
+    /// [`ProviderError::Crypto`] when opening a stored key fails and
     /// [`ProviderError::Store`] when the database fails.
     pub async fn list_web(&self) -> Result<Vec<WebProviderView>, ProviderError> {
         self.insert_missing_web().await?;
         let mut rows = self.web_rows().await?;
         rows.sort_by_key(|row| row.kind);
-        Ok(rows.iter().map(Self::web_view).collect())
+        rows.iter().map(|row| self.web_view(row)).collect()
     }
 
     /// Updates a web provider's API key or enabled flag.
@@ -58,8 +59,8 @@ impl<C: Connector> ProviderService<C> {
     ///
     /// [`ProviderError::NotFound`] when the provider is absent,
     /// [`ProviderError::KeyRequired`] when enabling a non-native provider
-    /// without a key, [`ProviderError::Crypto`] when sealing fails, and
-    /// [`ProviderError::Store`] when the database fails.
+    /// without a key, [`ProviderError::Crypto`] when sealing or opening a key
+    /// fails, and [`ProviderError::Store`] when the database fails.
     pub async fn update_web(
         &self,
         id: Uuid,
@@ -86,7 +87,7 @@ impl<C: Connector> ProviderService<C> {
             return Err(ProviderError::KeyRequired);
         }
         if input.api_key.is_none() && input.enabled.is_none() {
-            return Ok(Self::web_view(&row));
+            return self.web_view(&row);
         }
         let enabling_saved_key = input.enabled == Some(true)
             && input.api_key.is_none()
@@ -117,7 +118,7 @@ impl<C: Connector> ProviderService<C> {
             .map(web_row_from_tuple)
             .transpose()?
             .ok_or(ProviderError::KeyRequired)?;
-            return Ok(Self::web_view(&updated));
+            return self.web_view(&updated);
         }
         let updated = sqlx::query_as::<_, WebTuple>(
             "UPDATE web_providers
@@ -134,7 +135,7 @@ impl<C: Connector> ProviderService<C> {
         .map(web_row_from_tuple)
         .transpose()?
         .ok_or(ProviderError::NotFound)?;
-        Ok(Self::web_view(&updated))
+        self.web_view(&updated)
     }
 
     /// Replaces the complete fallback order for a web function.
@@ -142,8 +143,9 @@ impl<C: Connector> ProviderService<C> {
     /// # Errors
     ///
     /// [`ProviderError::NotFound`] when the ids are not exactly the
-    /// providers supporting the function, and [`ProviderError::Store`] when
-    /// the database fails.
+    /// providers supporting the function, [`ProviderError::Crypto`] when
+    /// opening a stored key fails, and [`ProviderError::Store`] when the
+    /// database fails.
     pub async fn set_web_order(
         &self,
         function: WebFunction,
@@ -217,11 +219,7 @@ impl<C: Connector> ProviderService<C> {
                 Ok(WebBackend {
                     kind: row.kind,
                     base_url: row.kind.base_url().to_owned(),
-                    api_key: if row.kind == WebProviderKind::Native {
-                        String::new()
-                    } else {
-                        self.open_key(&row.api_key)?
-                    },
+                    api_key: self.open_web_key(row)?,
                 })
             })
             .collect()
@@ -262,15 +260,23 @@ impl<C: Connector> ProviderService<C> {
         tuples.into_iter().map(web_row_from_tuple).collect()
     }
 
-    fn web_view(row: &WebRow) -> WebProviderView {
-        WebProviderView {
+    fn web_view(&self, row: &WebRow) -> Result<WebProviderView, ProviderError> {
+        Ok(WebProviderView {
             id: row.id,
             kind: row.kind,
             name: row.kind.name().to_owned(),
             enabled: row.enabled,
-            has_key: !row.api_key.is_empty(),
+            api_key: self.open_web_key(row)?,
             search_rank: row.search_rank,
             fetch_rank: row.fetch_rank,
+        })
+    }
+
+    fn open_web_key(&self, row: &WebRow) -> Result<String, ProviderError> {
+        if row.kind == WebProviderKind::Native {
+            Ok(String::new())
+        } else {
+            self.open_key(&row.api_key)
         }
     }
 }

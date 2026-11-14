@@ -90,7 +90,10 @@ async fn web_providers_are_seeded_once() -> Result<(), Box<dyn Error>> {
         !first[1].enabled && !first[2].enabled,
         "accounts start disabled"
     );
-    assert!(first.iter().all(|view| !view.has_key), "no initial keys");
+    assert!(
+        first.iter().all(|view| view.api_key.is_empty()),
+        "no initial keys"
+    );
     assert_eq!(first[0].name, "Native", "native display name");
     assert_eq!(first[1].name, "Exa", "exa display name");
     assert_eq!(first[2].name, "DeepSeek", "deepseek display name");
@@ -195,20 +198,23 @@ async fn web_updates_validate_keys_and_clear_atomically() -> Result<(), Box<dyn 
     );
     assert!(!disabled_native.enabled, "native disabled");
     assert!(
-        enabled_native.enabled && !enabled_native.has_key,
+        enabled_native.enabled && enabled_native.api_key.is_empty(),
         "native needs no key"
     );
-    assert!(enabled.enabled && enabled.has_key, "key enables account");
     assert!(
-        !cleared.enabled && !cleared.has_key,
+        enabled.enabled && enabled.api_key == "sk-exa",
+        "key enables account"
+    );
+    assert!(
+        !cleared.enabled && cleared.api_key.is_empty(),
         "clear overrides enable"
     );
     assert!(
-        !keyed.enabled && keyed.has_key,
+        !keyed.enabled && keyed.api_key == "sk-next",
         "key patch retains disabled state"
     );
     assert!(
-        reenabled.enabled && reenabled.has_key,
+        reenabled.enabled && reenabled.api_key == "sk-next",
         "saved key enables account"
     );
     assert!(
@@ -411,18 +417,31 @@ async fn web_key_races_and_open_failures_never_return_invalid_backends()
     let listed = providers.list_web().await?;
     let after = view(&listed, WebProviderKind::Exa)?;
     assert!(
-        !after.enabled || after.has_key,
-        "enabled={} has_key={} enable={enabled:?} clear={cleared:?}",
+        !after.enabled || !after.api_key.is_empty(),
+        "enabled={} api_key={} enable={enabled:?} clear={cleared:?}",
         after.enabled,
-        after.has_key
+        after.api_key
     );
 
     enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
-    let rotated = ProviderService::new(db, "rotated", NoConnector);
+    let rotated = ProviderService::new(db.clone(), "rotated", NoConnector);
     let opened = rotated.web_backends(WebFunction::Search).await;
+    let listed_rotated = rotated.list_web().await;
+    sqlx::query("UPDATE web_providers SET api_key = 'not sealed' WHERE kind = 'exa'")
+        .execute(&db)
+        .await?;
+    let listed_corrupted = service(db).list_web().await;
     assert!(
         matches!(opened, Err(ProviderError::Crypto(_))),
         "key open failure: {opened:?}"
+    );
+    assert!(
+        matches!(listed_rotated, Err(ProviderError::Crypto(_))),
+        "list_web with rotated secret: {listed_rotated:?}"
+    );
+    assert!(
+        matches!(listed_corrupted, Err(ProviderError::Crypto(_))),
+        "list_web with corrupted ciphertext: {listed_corrupted:?}"
     );
     Ok(())
 }

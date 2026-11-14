@@ -11,7 +11,7 @@ pub enum WebFunction {
     Fetch,
 }
 
-/// A web provider as presented to callers without exposing its API key.
+/// A web provider as presented to callers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WebProviderView {
     /// Provider id.
@@ -22,8 +22,8 @@ pub struct WebProviderView {
     pub name: String,
     /// Whether the backend is selectable.
     pub enabled: bool,
-    /// Whether a nonempty API key is stored.
-    pub has_key: bool,
+    /// Plaintext API key; empty when unset or for [`WebProviderKind::Native`].
+    pub api_key: String,
     /// Position in the search fallback order.
     pub search_rank: i32,
     /// Position in the fetch fallback order.

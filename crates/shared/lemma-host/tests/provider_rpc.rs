@@ -119,7 +119,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         created.body["provider"],
         json!({
             "id": id,
-            "hasKey": true,
+            "apiKey": "sk-1",
             "enabled": true,
             "custom": {
                 "apiFormat": "API_FORMAT_OPENAI",
@@ -142,7 +142,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
         updated.body["provider"],
         json!({
             "id": id,
-            "hasKey": true,
+            "apiKey": "sk-1",
             "custom": {
                 "apiFormat": "API_FORMAT_OPENAI",
                 "identifier": "main",
@@ -202,11 +202,7 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
             .as_bool()
             .unwrap_or_default()
     );
-    assert_eq!(updated.body["provider"]["hasKey"], true);
-    assert!(
-        updated.body["provider"].get("apiKey").is_none(),
-        "key stays write-only"
-    );
+    assert_eq!(updated.body["provider"]["apiKey"], "sk-deepseek");
     assert_eq!(
         updated.body["provider"]["predefined"]["defaultApiFormat"],
         "API_FORMAT_OPENAI"
@@ -262,12 +258,8 @@ async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box
     assert_eq!(listed.body["providers"][0]["enabled"], true);
     assert_eq!(listed.body["providers"][1]["kind"], "KIND_EXA");
     assert_eq!(listed.body["providers"][2]["kind"], "KIND_DEEPSEEK");
-    assert_eq!(exa_enabled.body["provider"]["hasKey"], true);
-    assert_eq!(deepseek_enabled.body["provider"]["hasKey"], true);
-    assert!(
-        exa_enabled.body["provider"].get("apiKey").is_none(),
-        "key stays write-only"
-    );
+    assert_eq!(exa_enabled.body["provider"]["apiKey"], "sk-exa");
+    assert_eq!(deepseek_enabled.body["provider"]["apiKey"], "sk-deepseek");
     let search_exa = search_order.body["providers"]
         .as_array()
         .and_then(|providers| {
@@ -304,9 +296,8 @@ async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box
             .unwrap_or_default()
     );
     assert!(
-        !cleared.body["provider"]["hasKey"]
-            .as_bool()
-            .unwrap_or_default()
+        cleared.body["provider"].get("apiKey").is_none(),
+        "cleared key omitted"
     );
     engine.close().await;
     Ok(())

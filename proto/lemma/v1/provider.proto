@@ -21,8 +21,8 @@ message Model {
 message Provider {
   string id = 1;
   bool enabled = 2;
-  // Whether a nonempty key is stored; the key itself never leaves the host.
-  bool has_key = 3;
+  // Decrypted API key; empty when unset.
+  string api_key = 3;
   oneof source {
     PredefinedProvider predefined = 4;
     CustomProvider custom = 5;
@@ -144,8 +144,8 @@ message WebProvider {
   Kind kind = 2;
   string name = 3;
   bool enabled = 4;
-  // Whether a nonempty key is stored; the key itself never leaves the host.
-  bool has_key = 5;
+  // Decrypted API key; empty for native or when unset.
+  string api_key = 5;
   // Position in the search backend order; zero for backends without search.
   int32 search_rank = 6;
   // Position in the fetch backend order; zero for backends without fetch.
