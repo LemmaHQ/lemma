@@ -1,15 +1,5 @@
-import { useEffect } from "react";
+import { createLoadedHook } from "@/store/loaded-hook";
 
 import { useWebProviderStore } from "./store";
 
-export function useWebProviders() {
-    const store = useWebProviderStore();
-    const loaded = useWebProviderStore((state) => state.loaded);
-    const refresh = useWebProviderStore((state) => state.refresh);
-    useEffect(() => {
-        if (!loaded) {
-            void refresh();
-        }
-    }, [loaded, refresh]);
-    return store;
-}
+export const useWebProviders = createLoadedHook(useWebProviderStore);

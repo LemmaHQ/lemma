@@ -18,9 +18,9 @@
 
 ## 布局
 
-- 依赖只朝一个方向：`src/platform/` → `src/rpc/` → `src/features/` → `src/app/`。`src/i18n/` 存放语言文件与 `error-text.ts`，后者把失败的请求转成本地化文字。
+- 依赖只朝一个方向：`src/platform/` → `src/rpc/` → `src/store/` → `src/features/` → `src/app/`。`src/i18n/` 存放语言文件与 `error-text.ts`，后者把失败的请求转成本地化文字。
 - `src/platform/` 导出浏览器或桌面引擎的 `platform` 适配器；它之外的代码只通过该适配器使用桌面能力。
-- `src/rpc/` 存放传输层、ConnectRPC 客户端，以及读取失败原因 `ErrorReason` 的 `errors.ts`。
+- `src/rpc/` 存放传输层、ConnectRPC 客户端，以及读取失败原因 `ErrorReason` 的 `errors.ts`。`src/store/` 存放 `loaded-hook.ts`，为功能列表 store 构造首载与浅比较选择器 hook。
 - `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
 - `src/app/` 在 `router.tsx` 中存放路由表，在 `route-paths.ts` 中存放路径，并为每个布局路由设一个目录：`session/` 与 `settings/`，各自包含只负责编排功能组件的页面。`shell/` 存放 `AppLayout` 与 `ShellFrame`：前者持有侧边栏状态，后者由两个布局填入各自的侧边栏。功能组件以属性接收路径，不直接引用路由。
 - oxlint 负责守住边界：在 `src/app/` 与 `src/features/` 中，越过功能 `index.ts` 的导入、在 `store.ts` 之外导入 `src/rpc/` 中 `errors.ts` 以外的模块、导入 `@lemma/ui` 底层的库，都会让 `just web-lint-check` 失败。
@@ -32,7 +32,7 @@
 - **功能代码只使用 shadcn 主题的语义工具类，**不写十六进制颜色、任意值或 `dark:` 变体；主题的角色与刻度见[样式规则](../packages/ui/README.zh.md#样式)。
 - **工具负责执行类名规则：** Prettier 对 Tailwind 类名排序；oxlint-tailwindcss 拒绝冲突、矛盾、重复与已弃用的类名，并在整个 `src/` 中拒绝 `dark:` 变体、Tailwind 的字号刻度、`rounded-xl` 及以上的圆角、任意值圆角、数字时长、默认缓动、阴影刻度以及黑白颜色；`@shadcn/lint` 拒绝未知类名、原始颜色、任意值、内联样式与动态类名字符串，也拒绝改写 shadcn 组件的颜色、间距、字体排印或形状。宽度、flex、外边距等布局类仍可用在组件上。
 - **控件复用 `@lemma/ui`；** 先查阅[组件目录](../packages/ui/README.zh.md#component-catalog)。多个功能都需要的视觉差异做成共享组件的变体，而不是复制一份再改样式。
-- **设置页由 `SettingsPage`、`SettingsSection`、`SettingsField` 与 `SettingsRow` 组合而成，**不在其外另加布局；[设置页规则](../packages/ui/README.zh.md#设置页)固定几何尺寸，并规定每类选择所用的控件。
+- **设置页由 `SettingsPage`、`SettingsSection`、`SettingsSectionCompact`、`SettingsField` 与 `SettingsRow` 组合而成，**不在其外另加布局；[设置页规则](../packages/ui/README.zh.md#设置页)固定几何尺寸，并规定每类选择所用的控件。
 
 ## 生成文件
 

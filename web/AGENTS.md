@@ -18,9 +18,9 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## Layout
 
-- Dependencies point one way: `src/platform/` → `src/rpc/` → `src/features/` → `src/app/`. `src/i18n/` holds the locale files and `error-text.ts`, which turns a failed request into localized text.
+- Dependencies point one way: `src/platform/` → `src/rpc/` → `src/store/` → `src/features/` → `src/app/`. `src/i18n/` holds the locale files and `error-text.ts`, which turns a failed request into localized text.
 - `src/platform/` exports the `platform` adapter for the browser or the desktop engine; code outside it reaches desktop capabilities only through that adapter.
-- `src/rpc/` holds the transport, the ConnectRPC clients, and `errors.ts`, which reads the `ErrorReason` of a failure.
+- `src/rpc/` holds the transport, the ConnectRPC clients, and `errors.ts`, which reads the `ErrorReason` of a failure. `src/store/` holds `loaded-hook.ts`, which builds first-load hooks with shallow zustand selectors across feature list stores.
 - `src/features/<domain>/` follows one layout: `index.ts` exports the feature's public components and hooks, `store.ts` is the only module that calls RPC and turns proto messages into view types, logic modules and their tests sit beside it, and every component lives in `components/`. Code outside a feature imports it through `@/features/<domain>`.
 - `src/app/` holds the route table in `router.tsx`, the paths in `route-paths.ts`, and one directory per layout route: `session/` and `settings/`, each with pages that arrange feature components. `shell/` holds `AppLayout`, which owns the sidebar state, and `ShellFrame`, which both layouts fill with their sidebar. Features take paths as props instead of naming routes.
 - oxlint enforces the boundaries: in `src/app/` and `src/features/`, an import past a feature's `index.ts`, an import of `src/rpc/` other than `errors.ts` outside a `store.ts`, and any import of the libraries beneath `@lemma/ui` fail `just web-lint-check`.
@@ -32,7 +32,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 - **Feature code uses only the semantic utilities of the shadcn theme,** with no hex color, no arbitrary value, and no `dark:` variant; the theme's roles and scales are listed in the [styling rules](../packages/ui/README.md#styling).
 - **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes, and across `src/` also `dark:` variants, Tailwind's type sizes, radii from `rounded-xl` up, arbitrary radii, numeric durations, default easings, shadow scale, and black and white colors; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
 - **Controls reuse `@lemma/ui`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
-- **Settings pages compose `SettingsPage`, `SettingsSection`, `SettingsField`, and `SettingsRow`** and add no layout around them; the [settings rules](../packages/ui/README.md#settings-pages) fix the geometry and the control for each kind of choice.
+- **Settings pages compose `SettingsPage`, `SettingsSection`, `SettingsSectionCompact`, `SettingsField`, and `SettingsRow`** and add no layout around them; the [settings rules](../packages/ui/README.md#settings-pages) fix the geometry and the control for each kind of choice.
 
 ## Generated files
 
