@@ -41,16 +41,6 @@ export function isBlankReply(item: AgentItem): boolean {
     );
 }
 
-/** How an assistant reply reads while it streams. */
-export function replyView(
-    item: AgentItem,
-): "pending" | "streaming" | "settled" {
-    if (item.status !== "streaming") {
-        return "settled";
-    }
-    return isBlankReply(item) ? "pending" : "streaming";
-}
-
 /** Maps a stored message to its display item. */
 export function protoToItem(m: Message): AgentItem {
     return {
@@ -118,43 +108,6 @@ export function hydrateToolResults(items: AgentItem[]): AgentItem[] {
             }),
         };
     });
-}
-
-/** Walks upward past tool-role messages to the nearest non-tool ancestor id. */
-function resolveNonToolParentId(
-    parentId: string | undefined,
-    byId: ReadonlyMap<string, AgentItem>,
-): string | undefined {
-    const visited = new Set<string>();
-    let current = parentId;
-    while (current !== undefined && !visited.has(current)) {
-        const parent = byId.get(current);
-        if (parent === undefined || parent.role !== "tool") {
-            return current;
-        }
-        visited.add(current);
-        current = parent.parentId;
-    }
-    return undefined;
-}
-
-/** Removes tool-role messages while rewriting each remaining item's parentId past skipped tool chains. */
-export function collapseToolItems(items: AgentItem[]): AgentItem[] {
-    const byId = new Map<string, AgentItem>();
-    for (const item of items) {
-        byId.set(item.id, item);
-    }
-    const result: AgentItem[] = [];
-    for (const item of items) {
-        if (item.role === "tool") {
-            continue;
-        }
-        result.push({
-            ...item,
-            parentId: resolveNonToolParentId(item.parentId, byId),
-        });
-    }
-    return result;
 }
 
 function epochMillis(value: Timestamp | undefined): number | undefined {

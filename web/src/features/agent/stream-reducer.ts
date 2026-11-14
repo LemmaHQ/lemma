@@ -29,17 +29,28 @@ export interface StreamReducer {
     updateCurrent: (patch: Partial<AgentItem>) => void;
 }
 
+export interface StreamReducerOptions {
+    set: StreamSet;
+    get: StreamGet;
+    providerId: string;
+    model: string;
+    initialId: string;
+    userPlaceholderId?: string | undefined;
+    onStarted: (messageId: string, parentId?: string) => void;
+    onTurnStarted?: ((messageId: string) => void) | undefined;
+}
+
 /** Creates the reducer for one send call, tracking its current item. */
-export function createStreamReducer(
-    set: StreamSet,
-    get: StreamGet,
-    providerId: string,
-    model: string,
-    initialId: string,
-    onStarted: (messageId: string, parentId?: string) => void,
-    userPlaceholderId?: string,
-    onTurnStarted?: (messageId: string) => void,
-): StreamReducer {
+export function createStreamReducer({
+    set,
+    get,
+    providerId,
+    model,
+    initialId,
+    userPlaceholderId,
+    onStarted,
+    onTurnStarted,
+}: StreamReducerOptions): StreamReducer {
     let currentId = initialId;
     let currentUserId = userPlaceholderId;
 

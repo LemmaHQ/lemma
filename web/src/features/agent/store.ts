@@ -1,38 +1,36 @@
 import { create } from "zustand";
-
+import {
+    markSessionSeen,
+    markSessionTurnFinished,
+    setSessionActiveTurn,
+} from "@/features/session";
 import { i18n } from "@/i18n";
 import { errorText } from "@/i18n/error-text";
 import { agentClient, sessionClient } from "@/rpc/clients";
-
-import { type AgentItem, hydrateToolResults, protoToItem } from "./agent-item";
-import type { LiveStep } from "./stream-reducer";
-import { resolveActivePath } from "./tree";
 import {
     EMPTY_SESSION_SLICE,
     nonEmptyId,
-    type PreparedTurn,
-    prepareNewTurn,
-    prepareResumedTurn,
-} from "./turn-prep";
-import { runSessionTurn, type Turn } from "./turn-stream";
+    resolveActivePath,
+    type TurnStoreSlice,
+} from "./active-path";
+import { createActiveTurnRunner } from "./active-turn";
+import { hydrateToolResults, protoToItem } from "./agent-item";
 
 /** Pending rewind state while editing/branching from an earlier user question. */
 export interface RewindState {
     backupLeafId: string | undefined;
     parentId: string | undefined;
-    draftText: string;
+    previousDraft: string;
 }
 
-interface ActiveSessionState {
+export interface ActiveSessionState extends TurnStoreSlice {
     sessionId: string | null;
-    treeMessages: AgentItem[];
-    leafId: string | undefined;
-    items: AgentItem[];
-    streaming: boolean;
-    turnStartedAtMs: number | null;
-    currentStep: LiveStep;
-    reconnectingOffset: number | null;
+    loadedSessionId: string | null;
     rewind: RewindState | null;
+    drafts: Record<string, string>;
+    setDraft: (sessionKey: string, text: string) => void;
+    clearDraft: (sessionKey: string) => void;
+    beginCreatedSession: (sessionId: string) => void;
     open: (sessionId: string) => Promise<void>;
     send: (
         providerId: string,
@@ -45,57 +43,95 @@ interface ActiveSessionState {
     startRewind: (userMessageId: string) => void;
     cancelRewind: () => void;
     labelMessage: (messageId: string, label: string) => Promise<void>;
+    reset: () => void;
 }
 
-let turn: Turn | null = null;
+function setDraftEntry(
+    drafts: Record<string, string>,
+    key: string,
+    text: string,
+): Record<string, string> {
+    if (text !== "") {
+        return { ...drafts, [key]: text };
+    }
+    const { [key]: _removed, ...rest } = drafts;
+    return key in drafts ? rest : drafts;
+}
 
-export const useActiveSession = create<ActiveSessionState>()((set, get) => {
-    const launchTurn = async (
-        sessionId: string,
-        own: Turn,
-        prepared: PreparedTurn,
-        openStream: Parameters<typeof runSessionTurn>[0]["openStream"],
-    ) => {
-        turn = own;
-        set({ ...prepared.patch, rewind: null });
-        await runSessionTurn({
-            own,
-            prepared,
-            isCurrent: () => turn === own,
-            getSlice: () => get(),
-            patchStore: (fn) => set((s) => fn(s)),
-            openStream,
-            reload: async () => {
-                const res = await sessionClient.listMessages({ sessionId });
-                if (turn !== own || get().sessionId !== sessionId) {
-                    return;
-                }
-                const treeMessages = hydrateToolResults(
-                    res.messages.map(protoToItem),
+export const useActiveSessionStore = create<ActiveSessionState>()((
+    set,
+    get,
+) => {
+    const runner = createActiveTurnRunner({
+        getSlice: () => get(),
+        patchStore: (p) => set(typeof p === "function" ? (s) => p(s) : p),
+        sendMessage: ({ parentId, ...req }, signal) =>
+            agentClient.sendMessage(
+                parentId === undefined ? req : { ...req, parentId },
+                { signal },
+            ),
+        resumeStream: (messageId, offset, signal) =>
+            agentClient.resumeStream({ messageId, offset }, { signal }),
+        abortMessage: (messageId) => agentClient.abortMessage({ messageId }),
+        reload: async (sessionId, isCurrent) => {
+            const res = await sessionClient.listMessages({ sessionId });
+            if (!isCurrent() || get().sessionId !== sessionId) {
+                return;
+            }
+            const treeMessages = hydrateToolResults(
+                res.messages.map(protoToItem),
+            );
+            const leafId = nonEmptyId(res.leafId);
+            set({
+                treeMessages,
+                leafId,
+                items: resolveActivePath(treeMessages, leafId),
+            });
+        },
+        failedText: (cause) => errorText(cause, i18n.t),
+        onUserMessageStarted: setSessionActiveTurn,
+        onTurnOutcome: (sessionId, status) => {
+            if (status === "aborted") {
+                setSessionActiveTurn(sessionId, undefined);
+            } else {
+                markSessionTurnFinished(
+                    sessionId,
+                    status,
+                    get().sessionId === sessionId,
                 );
-                const leafId = nonEmptyId(res.leafId);
-                set({
-                    treeMessages,
-                    leafId,
-                    items: resolveActivePath(treeMessages, leafId),
-                });
-            },
-            failedText: (e) => errorText(e, i18n.t),
-            onSettled: () => {
-                turn = null;
-            },
-        });
-    };
+            }
+        },
+    });
 
     return {
         sessionId: null,
+        loadedSessionId: null,
+        drafts: {},
         ...EMPTY_SESSION_SLICE,
-
+        setDraft: (key, text) =>
+            set((s) => ({ drafts: setDraftEntry(s.drafts, key, text) })),
+        clearDraft: (key) =>
+            set((s) => ({ drafts: setDraftEntry(s.drafts, key, "") })),
+        beginCreatedSession: (sessionId) => {
+            runner.cancel();
+            set((s) => ({
+                sessionId,
+                loadedSessionId: sessionId,
+                drafts: setDraftEntry(s.drafts, "", ""),
+                ...EMPTY_SESSION_SLICE,
+            }));
+        },
         open: async (sessionId) => {
-            if (get().sessionId !== sessionId) {
-                turn?.controller.abort();
-                turn = null;
-                set({ sessionId, ...EMPTY_SESSION_SLICE });
+            markSessionSeen(sessionId);
+            if (get().sessionId === sessionId) {
+                set({ loadedSessionId: sessionId });
+            } else {
+                runner.cancel();
+                set({
+                    sessionId,
+                    loadedSessionId: sessionId,
+                    ...EMPTY_SESSION_SLICE,
+                });
             }
             const res = await sessionClient.listMessages({ sessionId });
             if (get().sessionId !== sessionId) {
@@ -106,9 +142,11 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => {
             );
             const leafId = nonEmptyId(res.leafId);
             const activeMessageId = nonEmptyId(res.activeMessageId);
+            setSessionActiveTurn(sessionId, activeMessageId);
             if (activeMessageId === undefined) {
                 set({
                     sessionId,
+                    loadedSessionId: sessionId,
                     treeMessages,
                     leafId,
                     items: resolveActivePath(treeMessages, leafId),
@@ -116,29 +154,14 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => {
                 });
                 return;
             }
-            if (turn?.messageId === activeMessageId) {
-                return;
+            if (!runner.isCurrentMessage(activeMessageId)) {
+                await runner.resume({
+                    sessionId,
+                    treeMessages,
+                    activeMessageId,
+                });
             }
-            const prepared = prepareResumedTurn(treeMessages, activeMessageId);
-            await launchTurn(
-                sessionId,
-                {
-                    controller: new AbortController(),
-                    messageId: activeMessageId,
-                    userAborted: false,
-                },
-                prepared,
-                (received, signal) =>
-                    agentClient.resumeStream(
-                        {
-                            messageId: activeMessageId,
-                            offset: BigInt(received),
-                        },
-                        { signal },
-                    ),
-            );
         },
-
         send: async (providerId, model, content, explicitParentId) => {
             const { sessionId, streaming, rewind, leafId, treeMessages } =
                 get();
@@ -147,116 +170,89 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => {
             }
             const hasExplicitParent =
                 explicitParentId !== undefined || rewind !== null;
-            const requestParentId = explicitParentId ?? rewind?.parentId ?? "";
+            const requestParentId = hasExplicitParent
+                ? (explicitParentId ?? rewind?.parentId ?? "")
+                : undefined;
             const targetParentId =
                 explicitParentId === undefined
                     ? rewind === null
                         ? leafId
                         : rewind.parentId
                     : nonEmptyId(explicitParentId);
-            const prepared = prepareNewTurn(
+            set((s) => ({
+                drafts: setDraftEntry(s.drafts, sessionId, ""),
+            }));
+            await runner.send({
+                sessionId,
                 treeMessages,
                 targetParentId,
+                requestParentId,
                 providerId,
                 model,
                 content,
-            );
-            const own: Turn = {
-                controller: new AbortController(),
-                messageId: null,
-                userAborted: false,
-            };
-            await launchTurn(sessionId, own, prepared, (received, signal) => {
-                const resumeId = own.messageId;
-                if (resumeId !== null) {
-                    return agentClient.resumeStream(
-                        { messageId: resumeId, offset: BigInt(received) },
-                        { signal },
-                    );
-                }
-                return agentClient.sendMessage(
-                    {
-                        sessionId,
-                        content,
-                        providerId,
-                        model,
-                        ...(hasExplicitParent
-                            ? { parentId: requestParentId }
-                            : {}),
-                    },
-                    { signal },
-                );
             });
         },
-
-        abort: async () => {
-            const current = turn;
-            if (current === null) {
-                return;
-            }
-            current.userAborted = true;
-            if (current.messageId !== null) {
-                await agentClient
-                    .abortMessage({ messageId: current.messageId })
-                    .catch(() => {});
-            }
-            current.controller.abort();
-        },
-
+        abort: () => runner.abort(),
         switchLeaf: async (leafId) => {
-            const { sessionId } = get();
-            if (sessionId === null) {
+            const { sessionId, streaming } = get();
+            if (sessionId === null || streaming) {
                 return;
             }
             await sessionClient.setSessionLeaf({
                 sessionId,
                 ...(leafId === undefined ? {} : { leafId }),
             });
-            if (get().sessionId !== sessionId) {
+            if (get().sessionId === sessionId) {
+                set((s) => ({
+                    leafId,
+                    items: resolveActivePath(s.treeMessages, leafId),
+                    rewind: null,
+                }));
+            }
+        },
+        startRewind: (userMessageId) => {
+            const { sessionId, streaming, treeMessages, rewind, leafId } =
+                get();
+            if (sessionId === null || streaming) {
+                return;
+            }
+            const user = treeMessages.find(
+                (m) => m.id === userMessageId && m.role === "user",
+            );
+            if (user === undefined) {
                 return;
             }
             set((s) => ({
-                leafId,
-                items: resolveActivePath(s.treeMessages, leafId),
-                rewind: null,
-            }));
-        },
-
-        startRewind: (userMessageId) => {
-            const { streaming, treeMessages, rewind, leafId } = get();
-            if (streaming) {
-                return;
-            }
-            const userMessage = treeMessages.find(
-                (item) => item.id === userMessageId && item.role === "user",
-            );
-            if (userMessage === undefined) {
-                return;
-            }
-            set({
                 rewind: {
                     backupLeafId:
                         rewind === null ? leafId : rewind.backupLeafId,
-                    parentId: userMessage.parentId,
-                    draftText: userMessage.content,
+                    parentId: user.parentId,
+                    previousDraft:
+                        rewind === null
+                            ? (s.drafts[sessionId] ?? "")
+                            : rewind.previousDraft,
                 },
-                leafId: userMessage.parentId,
-                items: resolveActivePath(treeMessages, userMessage.parentId),
-            });
+                leafId: user.parentId,
+                items: resolveActivePath(treeMessages, user.parentId),
+                drafts: setDraftEntry(s.drafts, sessionId, user.content),
+            }));
         },
-
         cancelRewind: () => {
-            const { rewind, treeMessages } = get();
-            if (rewind === null) {
+            const { sessionId, rewind, treeMessages } = get();
+            if (sessionId === null || rewind === null) {
                 return;
             }
-            set({
+            set((s) => ({
                 leafId: rewind.backupLeafId,
                 items: resolveActivePath(treeMessages, rewind.backupLeafId),
                 rewind: null,
-            });
+                drafts: setDraftEntry(
+                    s.drafts,
+                    sessionId,
+                    rewind.previousDraft,
+                ),
+            }));
         },
-
         labelMessage: async (messageId, label) => {
             const { sessionId } = get();
             if (sessionId === null) {
@@ -270,14 +266,12 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => {
             if (get().sessionId !== sessionId) {
                 return;
             }
-            const nextLabel = nonEmptyId(
+            const next = nonEmptyId(
                 res.message === undefined ? label : res.message.label,
             );
             set((s) => {
-                const treeMessages = s.treeMessages.map((item) =>
-                    item.id === messageId
-                        ? { ...item, label: nextLabel }
-                        : item,
+                const treeMessages = s.treeMessages.map((m) =>
+                    m.id === messageId ? { ...m, label: next } : m,
                 );
                 return {
                     treeMessages,
@@ -285,5 +279,19 @@ export const useActiveSession = create<ActiveSessionState>()((set, get) => {
                 };
             });
         },
+        reset: () => {
+            runner.cancel();
+            set(useActiveSessionStore.getInitialState(), true);
+        },
     };
 });
+
+/** Clears any unsent in-memory draft stored for `sessionId`. */
+export function clearSessionDraft(sessionId: string): void {
+    useActiveSessionStore.getState().clearDraft(sessionId);
+}
+
+/** Prepares the active-session store synchronously for a newly created empty session before route navigation. */
+export function beginCreatedSession(sessionId: string): void {
+    useActiveSessionStore.getState().beginCreatedSession(sessionId);
+}

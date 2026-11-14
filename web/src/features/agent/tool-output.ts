@@ -62,6 +62,10 @@ export function nonEmptyString(value: unknown): string | undefined {
     return typeof value === "string" && value !== "" ? value : undefined;
 }
 
+/** Terminal path segment of `path`, or `path` itself when no separator is present. */
+export function lastPathSegment(path: string): string {
+    return path.split(/[\\/]/u).findLast((part) => part !== "") ?? path;
+}
 /** Formats a completed tool call's output and provider metadata into a DetailPayload. */
 export function parseToolOutput(
     call: ToolCallItem,
@@ -178,8 +182,7 @@ function formatBashOutput(raw: string): string {
 }
 
 function languageFromPath(path: string): string | undefined {
-    const slash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-    const base = slash >= 0 ? path.slice(slash + 1) : path;
+    const base = lastPathSegment(path);
     const dot = base.lastIndexOf(".");
     return dot < 0
         ? undefined

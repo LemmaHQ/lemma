@@ -56,16 +56,16 @@ function harness(withUser = false) {
             state.reconnectingOffset = patch.reconnectingOffset;
         }
     };
-    const reducer = createStreamReducer(
+    const reducer = createStreamReducer({
         set,
-        () => state,
-        "provider-1",
-        "model-1",
-        "assistant-1",
+        get: () => state,
+        providerId: "provider-1",
+        model: "model-1",
+        initialId: "assistant-1",
+        userPlaceholderId: withUser ? "user-temp" : undefined,
         onStarted,
-        withUser ? "user-temp" : undefined,
-        withUser ? onTurnStarted : undefined,
-    );
+        onTurnStarted: withUser ? onTurnStarted : undefined,
+    });
     return {
         reducer,
         items: () => state.items,

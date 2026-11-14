@@ -13,7 +13,11 @@ import {
     SetMessageLabelResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
 
-import { useActiveSession } from "./store";
+import {
+    beginCreatedSession,
+    clearSessionDraft,
+    useActiveSessionStore,
+} from "./store";
 
 type StreamResponse = { event?: AgentEvent | undefined };
 type Stream = AsyncIterable<StreamResponse>;
@@ -134,7 +138,7 @@ const treeResponse = (
         ...(activeMessageId === undefined ? {} : { activeMessageId }),
     });
 
-const state = () => useActiveSession.getState();
+const state = () => useActiveSessionStore.getState();
 
 const turnNotRunning = () =>
     new ConnectError("finished", Code.FailedPrecondition, undefined, [
@@ -145,7 +149,7 @@ const turnNotRunning = () =>
     ]);
 
 beforeEach(() => {
-    useActiveSession.setState(useActiveSession.getInitialState());
+    useActiveSessionStore.getState().reset();
     vi.resetAllMocks();
 });
 
@@ -503,9 +507,12 @@ describe("send", () => {
     });
 
     it("ignores send without open session or while streaming", async () => {
-        useActiveSession.setState(useActiveSession.getInitialState());
+        useActiveSessionStore.getState().reset();
         await state().send("provider-1", "model-1", "hi");
-        useActiveSession.setState({ sessionId: "session-1", streaming: true });
+        useActiveSessionStore.setState({
+            sessionId: "session-1",
+            streaming: true,
+        });
         await state().send("provider-1", "model-1", "hi");
 
         expect(rpc.sendMessage).not.toHaveBeenCalled();
@@ -713,6 +720,12 @@ describe("branching, rewind, and labeling", () => {
         });
         expect(state().items).toEqual([]);
 
+        useActiveSessionStore.setState({ streaming: true });
+        rpc.setSessionLeaf.mockClear();
+        await state().switchLeaf("a1");
+        expect(rpc.setSessionLeaf).not.toHaveBeenCalled();
+        useActiveSessionStore.setState({ streaming: false });
+
         const pending = Promise.withResolvers<unknown>();
         rpc.setSessionLeaf.mockReturnValueOnce(pending.promise);
         const switching = state().switchLeaf("a2");
@@ -734,7 +747,7 @@ describe("branching, rewind, and labeling", () => {
         expect(state().rewind).toEqual({
             backupLeafId: "a2",
             parentId: "a1",
-            draftText: "second q",
+            previousDraft: "",
         });
         expect(state().leafId).toBe("a1");
         expect(state().items.map((m) => m.id)).toEqual(["u1", "a1"]);
@@ -743,7 +756,7 @@ describe("branching, rewind, and labeling", () => {
         expect(state().rewind).toEqual({
             backupLeafId: "a2",
             parentId: undefined,
-            draftText: "first q",
+            previousDraft: "",
         });
         expect(state().items).toEqual([]);
 
@@ -785,7 +798,7 @@ describe("branching, rewind, and labeling", () => {
         });
         expect(state().rewind).toBeNull();
 
-        useActiveSession.setState({ streaming: true });
+        useActiveSessionStore.setState({ streaming: true });
         state().startRewind("u1");
         expect(state().rewind).toBeNull();
     });
@@ -820,5 +833,56 @@ describe("branching, rewind, and labeling", () => {
         pending.resolve({});
         await labeling;
         expect(state().sessionId).toBe("session-2");
+    });
+});
+
+describe("drafts and created session seeding", () => {
+    it("isolates drafts per session, restores pre-rewind draft on cancel, and seeds created sessions", async () => {
+        state().setDraft("", "home draft");
+        state().setDraft("s1", "s1 draft");
+        state().setDraft("s1", "");
+        state().setDraft("s2", "s2 draft");
+        expect(state().drafts).toEqual({
+            "": "home draft",
+            s2: "s2 draft",
+        });
+
+        clearSessionDraft("s2");
+        clearSessionDraft("missing");
+        expect(state().drafts).toEqual({ "": "home draft" });
+
+        beginCreatedSession("s-created");
+        expect(state().sessionId).toBe("s-created");
+        expect(state().loadedSessionId).toBe("s-created");
+        expect(state().drafts).toEqual({});
+
+        rpc.listMessages.mockResolvedValueOnce(
+            treeResponse(
+                [
+                    { id: "u1", role: "user", content: "first q" },
+                    {
+                        id: "a1",
+                        parentId: "u1",
+                        role: "assistant",
+                        content: "r1",
+                    },
+                    {
+                        id: "u2",
+                        parentId: "a1",
+                        role: "user",
+                        content: "second q",
+                    },
+                ],
+                "u2",
+            ),
+        );
+        await state().open("s-rewind");
+        state().setDraft("s-rewind", "unsent thought");
+        state().startRewind("u2");
+        expect(state().drafts["s-rewind"]).toBe("second q");
+        state().startRewind("u1");
+        expect(state().drafts["s-rewind"]).toBe("first q");
+        state().cancelRewind();
+        expect(state().drafts["s-rewind"]).toBe("unsent thought");
     });
 });

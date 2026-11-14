@@ -4,13 +4,7 @@ import { expect, it } from "vitest";
 
 import { MessageSchema, MessageStatus } from "@/gen/lemma/v1/session_pb";
 
-import {
-    collapseToolItems,
-    hydrateToolResults,
-    isBlankReply,
-    protoToItem,
-    replyView,
-} from "./agent-item";
+import { hydrateToolResults, isBlankReply, protoToItem } from "./agent-item";
 
 const startedMs = Date.parse("2026-10-29T10:00:00.000Z");
 const finishedMs = Date.parse("2026-10-29T10:00:02.500Z");
@@ -159,7 +153,7 @@ it("maps parentId, label, and createdAtMs in protoToItem", () => {
     expect(cleared.createdAtMs).toBeUndefined();
 });
 
-it("computes isBlankReply and replyView for streaming and settled replies", () => {
+it("computes isBlankReply for blank and non-blank replies", () => {
     const blank = protoToItem(
         create(MessageSchema, {
             id: "a-1",
@@ -168,13 +162,9 @@ it("computes isBlankReply and replyView for streaming and settled replies", () =
         }),
     );
     const active = { ...blank, content: "hi" };
-    const settled = { ...blank, status: "done" as const };
 
     expect(isBlankReply(blank)).toBe(true);
     expect(isBlankReply(active)).toBe(false);
-    expect(replyView(blank)).toBe("pending");
-    expect(replyView(active)).toBe("streaming");
-    expect(replyView(settled)).toBe("settled");
 });
 
 it("ignores tool items without toolCallId and leaves unmatched calls untouched", () => {
@@ -190,99 +180,4 @@ it("ignores tool items without toolCallId and leaves unmatched calls untouched",
     );
     const [hydrated] = hydrateToolResults([assistant, orphanTool]);
     expect(hydrated?.toolCalls[0]?.output).toBe("");
-});
-
-it("collapses tool-role items while preserving the parentId chain across multi-tool turns", () => {
-    const items = hydrateToolResults([
-        protoToItem(
-            create(MessageSchema, {
-                id: "user-1",
-                role: "user",
-                content: "check files",
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "assistant-1",
-                parentId: "user-1",
-                role: "assistant",
-                toolCalls: [
-                    { id: "c1", name: "read_file", arguments: '{"path":"a"}' },
-                    { id: "c2", name: "read_file", arguments: '{"path":"b"}' },
-                ],
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "tool-1",
-                parentId: "assistant-1",
-                role: "tool",
-                content: "A",
-                toolResult: { toolCallId: "c1", isError: false },
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "tool-2",
-                parentId: "tool-1",
-                role: "tool",
-                content: "B",
-                toolResult: { toolCallId: "c2", isError: true },
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "assistant-2",
-                parentId: "tool-2",
-                role: "assistant",
-                content: "done",
-                status: MessageStatus.DONE,
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "user-2",
-                parentId: "dangling-parent",
-                role: "user",
-                content: "dangling",
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "tool-loop-a",
-                parentId: "tool-loop-b",
-                role: "tool",
-                content: "",
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "tool-loop-b",
-                parentId: "tool-loop-a",
-                role: "tool",
-                content: "",
-            }),
-        ),
-        protoToItem(
-            create(MessageSchema, {
-                id: "assistant-cycle",
-                parentId: "tool-loop-a",
-                role: "assistant",
-                content: "after cycle",
-            }),
-        ),
-    ]);
-
-    const collapsed = collapseToolItems(items);
-    expect(collapsed.map((item) => [item.id, item.parentId])).toEqual([
-        ["user-1", undefined],
-        ["assistant-1", "user-1"],
-        ["assistant-2", "assistant-1"],
-        ["user-2", "dangling-parent"],
-        ["assistant-cycle", undefined],
-    ]);
-    expect(collapsed[1]?.toolCalls).toMatchObject([
-        { id: "c1", output: "A", isError: false },
-        { id: "c2", output: "B", isError: true },
-    ]);
 });

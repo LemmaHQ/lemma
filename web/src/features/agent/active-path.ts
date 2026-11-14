@@ -1,6 +1,6 @@
 import type { AgentItem } from "./agent-item";
+import { buildTurnSteps, type TurnStep } from "./step-details";
 import type { StreamSlice } from "./stream-reducer";
-import { resolveActivePath } from "./tree";
 
 /** Store slice fields updated during a live turn. */
 export interface TurnStoreSlice extends StreamSlice {
@@ -21,6 +21,14 @@ export interface PreparedTurn {
     patch: TurnStoreSlice;
 }
 
+/** One user question grouped with its assistant steps along the active path. */
+export interface ConversationTurn {
+    id: string;
+    userMessage: AgentItem;
+    finalReply: AgentItem | undefined;
+    steps: TurnStep[];
+}
+
 /** Default cleared fields when opening or resetting an active session. */
 export const EMPTY_SESSION_SLICE: TurnStoreSlice & { rewind: null } = {
     treeMessages: [],
@@ -38,26 +46,60 @@ export function nonEmptyId(value: string | undefined): string | undefined {
     return value === undefined || value === "" ? undefined : value;
 }
 
-/** Prepares initial live-turn state when resuming an active message after open. */
-export function prepareResumedTurn(
-    treeMessages: AgentItem[],
-    activeMessageId: string,
-): PreparedTurn {
-    const activeUser = treeMessages.find((m) => m.id === activeMessageId);
-    const firstReply = treeMessages.find(
-        (m) => m.parentId === activeMessageId && m.role === "assistant",
-    );
-    const preTree = removeSubtree(treeMessages, activeMessageId);
-    const basePath = resolveActivePath(preTree, activeUser?.parentId);
-    const userEntry = activeUser ?? makeUser(activeMessageId, undefined, "");
-    return buildPreparedTurn(
-        preTree,
-        basePath,
-        userEntry,
-        firstReply?.providerId ?? "",
-        firstReply?.model ?? "",
-        activeUser?.createdAtMs ?? Date.now(),
-    );
+/** Resolves the active branch path from root to effectiveLeafId in oldest-first order. */
+export function resolveActivePath(
+    allMessages: AgentItem[],
+    effectiveLeafId: string | undefined,
+): AgentItem[] {
+    if (effectiveLeafId === undefined) {
+        return [];
+    }
+    const byId = new Map(allMessages.map((item) => [item.id, item]));
+    const visited = new Set<string>();
+    const reversed: AgentItem[] = [];
+    let cursor: string | undefined = effectiveLeafId;
+    while (cursor !== undefined && !visited.has(cursor)) {
+        const current = byId.get(cursor);
+        if (current === undefined) {
+            break;
+        }
+        visited.add(cursor);
+        reversed.push(current);
+        cursor = current.parentId;
+    }
+    return reversed.toReversed();
+}
+
+/** Groups an active path into conversation turns. */
+export function groupTurns(activePath: AgentItem[]): ConversationTurn[] {
+    const turns: ConversationTurn[] = [];
+    let currentUser: AgentItem | null = null;
+    let currentItems: AgentItem[] = [];
+    const flush = () => {
+        if (currentUser === null) {
+            return;
+        }
+        const assistantSteps = currentItems.filter(
+            (item) => item.role === "assistant",
+        );
+        turns.push({
+            id: currentUser.id,
+            userMessage: currentUser,
+            finalReply: assistantSteps.at(-1),
+            steps: buildTurnSteps(assistantSteps),
+        });
+    };
+    for (const item of activePath) {
+        if (item.role === "user") {
+            flush();
+            currentUser = item;
+            currentItems = [];
+        } else if (currentUser !== null) {
+            currentItems.push(item);
+        }
+    }
+    flush();
+    return turns;
 }
 
 /** Prepares initial optimistic state for a new outgoing user turn. */
@@ -68,7 +110,6 @@ export function prepareNewTurn(
     model: string,
     content: string,
 ): PreparedTurn {
-    const basePath = resolveActivePath(treeMessages, targetParentId);
     const now = Date.now();
     const userEntry = makeUser(
         crypto.randomUUID(),
@@ -78,11 +119,31 @@ export function prepareNewTurn(
     );
     return buildPreparedTurn(
         treeMessages,
-        basePath,
+        resolveActivePath(treeMessages, targetParentId),
         userEntry,
         providerId,
         model,
         now,
+    );
+}
+
+/** Prepares initial live-turn state when resuming an active message after open. */
+export function prepareResumedTurn(
+    treeMessages: AgentItem[],
+    activeMessageId: string,
+): PreparedTurn {
+    const activeUser = treeMessages.find((m) => m.id === activeMessageId);
+    const firstReply = treeMessages.find(
+        (m) => m.parentId === activeMessageId && m.role === "assistant",
+    );
+    const preTree = removeSubtree(treeMessages, activeMessageId);
+    return buildPreparedTurn(
+        preTree,
+        resolveActivePath(preTree, activeUser?.parentId),
+        activeUser ?? makeUser(activeMessageId, undefined, ""),
+        firstReply?.providerId ?? "",
+        firstReply?.model ?? "",
+        activeUser?.createdAtMs ?? Date.now(),
     );
 }
 

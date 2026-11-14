@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 import type { AgentItem } from "./agent-item";
 import {
     type DetailPayload,
@@ -109,23 +111,25 @@ function thinkingStep(item: AgentItem): TurnStep {
     };
 }
 
-const TOOL_VERBS: Readonly<Record<string, string>> = {
-    read_file: "read",
-    write_file: "write",
-    bash: "bash",
-    web_search: "search",
-    web_fetch: "fetch",
-};
-
-/** Short verb label for a tool name in timeline rows and detail headers. */
-export function toolVerb(toolName: string | undefined): string {
-    return toolName === undefined ? "" : (TOOL_VERBS[toolName] ?? toolName);
+/** Localized short verb badge for a timeline step or detail-pane header. */
+export function stepVerb(step: TurnStep, t: TFunction): string {
+    if (step.kind === "thinking") {
+        return t("agent.thinking");
+    }
+    switch (step.toolName) {
+        case "read_file":
+            return t("agent.verbRead");
+        case "write_file":
+            return t("agent.verbWrite");
+        case "bash":
+            return t("agent.verbBash");
+        case "web_search":
+            return t("agent.verbSearch");
+        case "web_fetch":
+            return t("agent.verbFetch");
+        default:
+            return step.toolName ?? "";
+    }
 }
 
-/** Formats an epoch millisecond instant as local `HH:mm`. */
-export function formatClockTime(timestampMs: number): string {
-    const date = new Date(timestampMs);
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
-}
+export { formatClockTime } from "@lemma/ui";
