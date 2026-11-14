@@ -24,7 +24,7 @@ common:
     en: "Copy"
     zh: "复制"
   copyCode:
-    platforms: [android]
+    platforms: [web, android]
     en: "Copy code"
     zh: "复制代码"
   delete:

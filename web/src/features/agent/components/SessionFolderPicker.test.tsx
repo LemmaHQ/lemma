@@ -3,9 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
-import { FolderPicker } from "./FolderPicker";
+import { SessionFolderBadge } from "./SessionFolderBadge";
+import { SessionFolderPicker } from "./SessionFolderPicker";
 
-it("handles FolderPicker editable and read-only states including pick errors", async () => {
+it("renders SessionFolderBadge and handles SessionFolderPicker selection and errors", async () => {
     const user = userEvent.setup();
     const onSelectDirectory = vi.fn<(dir: string | undefined) => void>();
     const onPickDirectory = vi
@@ -17,29 +18,7 @@ it("handles FolderPicker editable and read-only states including pick errors", a
     const { rerender } = render(
         <TooltipProvider>
             <Toaster />
-            <FolderPicker
-                editable={false}
-                directoryControl={{
-                    directory: undefined,
-                    recentDirectories: [],
-                    canPickDirectory: false,
-                }}
-            />
-        </TooltipProvider>,
-    );
-    expect(screen.queryByRole("button")).toBeNull();
-
-    rerender(
-        <TooltipProvider>
-            <Toaster />
-            <FolderPicker
-                editable={false}
-                directoryControl={{
-                    directory: "C:\\work\\project",
-                    recentDirectories: [],
-                    canPickDirectory: false,
-                }}
-            />
+            <SessionFolderBadge directory="C:\\work\\project" />
         </TooltipProvider>,
     );
     expect(screen.getByText("project")).toBeDefined();
@@ -47,11 +26,10 @@ it("handles FolderPicker editable and read-only states including pick errors", a
     rerender(
         <TooltipProvider>
             <Toaster />
-            <FolderPicker
-                editable
+            <SessionFolderPicker
                 directoryControl={{
                     directory: undefined,
-                    recentDirectories: ["/work/alpha", "/"],
+                    recentDirectories: ["/work/alpha"],
                     canPickDirectory: true,
                     onSelectDirectory,
                     onPickDirectory,
@@ -92,12 +70,12 @@ it("handles FolderPicker editable and read-only states including pick errors", a
     rerender(
         <TooltipProvider>
             <Toaster />
-            <FolderPicker
-                editable
+            <SessionFolderPicker
                 directoryControl={{
                     directory: "/work/custom",
-                    recentDirectories: ["/work/alpha"],
+                    recentDirectories: [],
                     canPickDirectory: false,
+                    onSelectDirectory,
                 }}
             />
         </TooltipProvider>,
@@ -109,24 +87,5 @@ it("handles FolderPicker editable and read-only states including pick errors", a
     await user.click(
         await screen.findByRole("option", { name: "Default workspace" }),
     );
-
-    rerender(
-        <TooltipProvider>
-            <Toaster />
-            <FolderPicker
-                editable
-                directoryControl={{
-                    directory: "/",
-                    recentDirectories: ["/"],
-                    canPickDirectory: false,
-                    onSelectDirectory,
-                }}
-            />
-        </TooltipProvider>,
-    );
-    await user.click(screen.getByRole("button", { name: "/" }));
-    await user.click(
-        await screen.findByRole("option", { name: "Default workspace" }),
-    );
-    expect(onSelectDirectory).toHaveBeenCalledWith(undefined);
+    expect(onSelectDirectory).toHaveBeenLastCalledWith(undefined);
 });

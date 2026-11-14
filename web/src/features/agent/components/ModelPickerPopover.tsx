@@ -6,7 +6,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import type { ModelSelection } from "../useModelSelection";
-import type { SessionProviderGroup } from "./SessionView";
+import type { SessionProviderGroup } from "./SessionComposer";
 
 interface ModelPickerPopoverProps {
     open: boolean;
@@ -91,7 +91,7 @@ export function ModelPickerPopover({
                     : t("provider.noModels")
             }
             groups={groups}
-            {...(footerAction === undefined ? {} : { footerAction })}
+            footerAction={footerAction}
             trigger={
                 <button
                     type="button"

@@ -1,6 +1,9 @@
 import {
     cn,
     formatDuration,
+    MessageActions,
+    MessageCopyAction,
+    MessageRegenerateAction,
     MessageResponse,
     StepTimeline,
     type StepTimelineRow,
@@ -10,40 +13,37 @@ import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { formatClockTime, toolVerb, type TurnStep } from "../step-details";
-import type { ConversationTurn } from "../tree";
+import type { ConversationTurn } from "../active-path";
+import type { AgentItem } from "../agent-item";
+import { formatClockTime, stepVerb, type TurnStep } from "../step-details";
+import { lastPathSegment } from "../tool-output";
 
 interface TurnViewProps {
     turn: ConversationTurn;
     activePaneStepId: string | undefined;
+    streaming?: boolean | undefined;
     onInspectStep: (step: TurnStep) => void;
     onInspectCode: (code: string, language: string) => void;
-}
-
-function stepVerb(step: TurnStep, t: TFunction): string {
-    return step.kind === "thinking"
-        ? t("agent.thinking")
-        : toolVerb(step.toolName);
+    onRegenerate?:
+        ((turn: ConversationTurn, reply: AgentItem) => void) | undefined;
 }
 
 function summarizeToolStep(step: TurnStep, t: TFunction): string {
     switch (step.toolName) {
-        case "read_file": {
-            const base =
-                step.argument.split(/[\\/]/u).findLast(Boolean) ??
-                step.argument;
+        case "read_file":
             return t("agent.summaryRead", {
-                target: step.argument === "" ? "read_file" : base,
+                target:
+                    step.argument === ""
+                        ? "read_file"
+                        : lastPathSegment(step.argument),
             });
-        }
-        case "write_file": {
-            const base =
-                step.argument.split(/[\\/]/u).findLast(Boolean) ??
-                step.argument;
+        case "write_file":
             return t("agent.summaryWrote", {
-                target: step.argument === "" ? "write_file" : base,
+                target:
+                    step.argument === ""
+                        ? "write_file"
+                        : lastPathSegment(step.argument),
             });
-        }
         case "bash":
             return t("agent.summaryRan", {
                 target: step.argument === "" ? "bash" : step.argument,
@@ -98,12 +98,14 @@ function buildStepsSummary(steps: TurnStep[], t: TFunction): string {
         : t("agent.stepCount", { count: steps.length });
 }
 
-/** Single conversation turn with sticky user card, collapsible step timeline, and final reply. */
+/** Single conversation turn with sticky user card, collapsible step timeline, final reply, and settled actions. */
 export function TurnView({
     turn,
     activePaneStepId,
+    streaming = false,
     onInspectStep,
     onInspectCode,
+    onRegenerate,
 }: TurnViewProps) {
     const { t } = useTranslation();
     const [stepsOpen, setStepsOpen] = useState(false);
@@ -116,7 +118,11 @@ export function TurnView({
     const reply = turn.finalReply;
     const showReply = reply !== undefined && reply.content !== "";
     const showAborted = reply?.status === "aborted";
-
+    const settledReply = reply?.status === "done" ? reply : undefined;
+    const footerMeta =
+        settledReply === undefined
+            ? undefined
+            : turnFooterMeta(turn, settledReply);
     const rows: StepTimelineRow[] = turn.steps.map((step) => {
         const meta = step.selfHealed
             ? t("agent.selfHealed")
@@ -136,8 +142,8 @@ export function TurnView({
             warn: step.warn,
             active: activePaneStepId === step.id,
             onSelect: () => onInspectStep(step),
-            ...(meta === undefined ? {} : { meta }),
-            ...(step.via === undefined ? {} : { via: step.via }),
+            meta,
+            via: step.via,
         };
     });
 
@@ -145,7 +151,7 @@ export function TurnView({
         <TurnCard
             turnId={turn.id}
             question={turn.userMessage.content}
-            {...(timeLabel === undefined ? {} : { timeLabel })}
+            timeLabel={timeLabel}
         >
             {turn.steps.length > 0 && (
                 <div className={cn((showReply || showAborted) && "mb-3")}>
@@ -170,6 +176,29 @@ export function TurnView({
                     {reply.content}
                 </MessageResponse>
             )}
+            {settledReply !== undefined && (
+                <MessageActions className="mt-2">
+                    {settledReply.content !== "" && (
+                        <MessageCopyAction
+                            text={settledReply.content}
+                            label={t("common.copy")}
+                            copiedLabel={t("common.copied")}
+                        />
+                    )}
+                    {onRegenerate !== undefined && (
+                        <MessageRegenerateAction
+                            label={t("session.regenerate")}
+                            disabled={streaming}
+                            onRegenerate={() =>
+                                onRegenerate(turn, settledReply)
+                            }
+                        />
+                    )}
+                    {footerMeta !== undefined && (
+                        <span className="ml-1 tabular-nums">{footerMeta}</span>
+                    )}
+                </MessageActions>
+            )}
             {showAborted && (
                 <p className="mt-1.5 text-small text-subtle-foreground">
                     {t("agent.abortedNotice")}
@@ -177,4 +206,21 @@ export function TurnView({
             )}
         </TurnCard>
     );
+}
+
+function turnFooterMeta(
+    turn: ConversationTurn,
+    reply: AgentItem,
+): string | undefined {
+    const startMs = turn.userMessage.createdAtMs;
+    const endMs = reply.thinkingFinishedAt ?? reply.createdAtMs;
+    const durationText =
+        startMs !== undefined && endMs !== undefined && endMs > startMs
+            ? formatDuration(endMs - startMs)
+            : undefined;
+    const parts = [
+        reply.model === "" ? undefined : reply.model,
+        durationText,
+    ].filter((part): part is string => part !== undefined);
+    return parts.length > 0 ? parts.join(" · ") : undefined;
 }

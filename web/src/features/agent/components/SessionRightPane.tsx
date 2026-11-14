@@ -10,14 +10,12 @@ import {
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
-import { formatClockTime, toolVerb, type TurnStep } from "../step-details";
-import type { FlatTreeRow } from "../tree";
+import { stepVerb, type TurnStep } from "../step-details";
 
 export type ActiveRightPane =
     | { mode: "step"; step: TurnStep }
     | { mode: "code"; code: string; language: string }
-    | { mode: "tree"; rows: FlatTreeRow[]; pathCount: number };
-
+    | { mode: "tree"; rows: TreePaneRow[]; pathCount: number };
 interface SessionRightPaneProps {
     pane: ActiveRightPane;
     onSelectTreeRow: (id: string) => void;
@@ -25,33 +23,7 @@ interface SessionRightPaneProps {
     onClose: () => void;
 }
 
-function mapTreeRows(rows: FlatTreeRow[]): TreePaneRow[] {
-    return rows.map((row) => {
-        const meta =
-            row.role === "assistant"
-                ? (row.model ??
-                  (row.createdAtMs === undefined
-                      ? undefined
-                      : formatClockTime(row.createdAtMs)))
-                : row.createdAtMs === undefined
-                  ? undefined
-                  : formatClockTime(row.createdAtMs);
-        return {
-            id: row.id,
-            kind: row.role === "user" ? "question" : "answer",
-            title: row.text === "" ? (row.model ?? "") : row.text,
-            rails: row.rails.map((cell) => cell.type),
-            hasTopSpine: row.hasParentSpine,
-            hasBottomSpine: row.hasChildSpine,
-            onPath: row.onPath,
-            isLeaf: row.isLeaf,
-            ...(row.label === undefined ? {} : { label: row.label }),
-            ...(meta === undefined ? {} : { meta }),
-        };
-    });
-}
-
-function stepDetailBody(step: TurnStep): DetailPaneBody {
+function stepDetailBody(step: TurnStep, t: TFunction): DetailPaneBody {
     switch (step.detail.kind) {
         case "prose":
             return {
@@ -62,43 +34,42 @@ function stepDetailBody(step: TurnStep): DetailPaneBody {
             return {
                 kind: "code",
                 code: step.detail.code,
-                ...(step.detail.language === undefined
-                    ? {}
-                    : { language: step.detail.language }),
+                language: step.detail.language,
+                copyLabel: t("common.copyCode"),
+                copiedLabel: t("common.copied"),
             };
         case "web":
             return {
                 kind: "web",
+                note: step.detail.note,
                 hits: step.detail.hits.map((hit, index) => ({
                     id: `${step.id}-${index}`,
                     title: hit.title,
                     url: hit.url,
-                    ...(hit.snippet === "" ? {} : { snippet: hit.snippet }),
+                    snippet: hit.snippet === "" ? undefined : hit.snippet,
                 })),
             };
         case "output":
             return {
                 kind: "output",
                 content: step.detail.text,
-                ...(step.isError ? { warn: true } : {}),
+                warn: step.isError ? true : undefined,
             };
     }
+}
+
+function stepTitle(step: TurnStep, t: TFunction): string {
+    if (step.kind === "thinking") {
+        return t("agent.thinking");
+    }
+    return step.argument === "" ? (step.toolName ?? "") : step.argument;
 }
 
 function stepDetailProps(
     step: TurnStep,
     t: TFunction,
 ): Pick<DetailPaneProps, "verb" | "title" | "meta" | "body"> {
-    const verb =
-        step.kind === "thinking"
-            ? t("agent.thinking")
-            : toolVerb(step.toolName);
-    const title =
-        step.kind === "thinking"
-            ? t("agent.thinking")
-            : step.argument === ""
-              ? (step.toolName ?? "")
-              : step.argument;
+    const verb = stepVerb(step, t);
     const meta = step.selfHealed
         ? t("agent.selfHealed")
         : step.isError
@@ -106,9 +77,9 @@ function stepDetailProps(
           : step.via;
     return {
         verb,
-        title,
-        body: stepDetailBody(step),
-        ...(meta === undefined ? {} : { meta }),
+        title: stepTitle(step, t),
+        meta,
+        body: stepDetailBody(step, t),
     };
 }
 
@@ -134,10 +105,10 @@ export function SessionRightPane({
     if (pane.mode === "code") {
         return (
             <DetailPane
-                verb="code"
+                verb={t("agent.verbCode")}
                 title={
                     pane.language === ""
-                        ? t("session.openInPane")
+                        ? t("session.codeTitle")
                         : pane.language
                 }
                 closeLabel={t("common.close")}
@@ -145,15 +116,16 @@ export function SessionRightPane({
                 body={{
                     kind: "code",
                     code: pane.code,
-                    ...(pane.language === ""
-                        ? {}
-                        : { language: pane.language }),
+                    language: pane.language === "" ? undefined : pane.language,
+                    copyLabel: t("common.copyCode"),
+                    copiedLabel: t("common.copied"),
                 }}
             />
         );
     }
 
     const treeLabels: SessionTreePaneLabels = {
+        verb: t("session.treeVerb"),
         title: t("session.treeTitle"),
         hint: t("session.treeHint"),
         pathsLabel: t("session.treePaths", { count: pane.pathCount }),
@@ -170,7 +142,7 @@ export function SessionRightPane({
 
     return (
         <SessionTreePane
-            rows={mapTreeRows(pane.rows)}
+            rows={pane.rows}
             labels={treeLabels}
             onSelectRow={onSelectTreeRow}
             onSaveLabel={onSaveLabel}

@@ -1,9 +1,9 @@
+import type { TreePaneRow } from "@lemma/ui";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
 import type { TurnStep } from "../step-details";
-import type { FlatTreeRow } from "../tree";
 import { ComposerDock } from "./ComposerDock";
 import { SessionRightPane } from "./SessionRightPane";
 
@@ -21,7 +21,7 @@ const makeStep = (patch: Partial<TurnStep>): TurnStep => ({
     ...patch,
 });
 
-it("renders SessionRightPane and ComposerDock fallback branches", async () => {
+it("renders SessionRightPane localized verbs, code/web/output bodies, and ComposerDock fallbacks", async () => {
     const user = userEvent.setup();
     const onSelectTreeRow = vi.fn<(id: string) => void>();
     const onSaveLabel = vi.fn<(id: string, label: string) => void>();
@@ -52,12 +52,49 @@ it("renders SessionRightPane and ComposerDock fallback branches", async () => {
             pane={{
                 mode: "step",
                 step: makeStep({
+                    id: "s-write",
+                    toolName: "write_file",
+                    argument: "out.txt",
+                    detail: { kind: "output", text: "wrote" },
+                }),
+            }}
+            onSelectTreeRow={onSelectTreeRow}
+            onSaveLabel={onSaveLabel}
+            onClose={onClose}
+        />,
+    );
+    expect(screen.getByText("write")).toBeDefined();
+
+    rerender(
+        <SessionRightPane
+            pane={{
+                mode: "step",
+                step: makeStep({
+                    id: "s-fetch",
+                    toolName: "web_fetch",
+                    argument: "https://example.com",
+                    detail: { kind: "output", text: "fetched" },
+                }),
+            }}
+            onSelectTreeRow={onSelectTreeRow}
+            onSaveLabel={onSaveLabel}
+            onClose={onClose}
+        />,
+    );
+    expect(screen.getByText("fetch")).toBeDefined();
+
+    rerender(
+        <SessionRightPane
+            pane={{
+                mode: "step",
+                step: makeStep({
                     id: "s-web-nosnip",
                     toolName: undefined,
                     argument: "",
                     via: "ddg",
                     detail: {
                         kind: "web",
+                        note: "Search summary",
                         hits: [
                             {
                                 title: "Hit",
@@ -74,6 +111,7 @@ it("renders SessionRightPane and ComposerDock fallback branches", async () => {
         />,
     );
     expect(screen.getByText("ddg")).toBeDefined();
+    expect(screen.getByText("Search summary")).toBeDefined();
 
     rerender(
         <SessionRightPane
@@ -113,6 +151,7 @@ it("renders SessionRightPane and ComposerDock fallback branches", async () => {
         />,
     );
     expect(screen.getByText("/work")).toBeDefined();
+
     rerender(
         <SessionRightPane
             pane={{ mode: "code", code: "plain", language: "" }}
@@ -122,52 +161,31 @@ it("renders SessionRightPane and ComposerDock fallback branches", async () => {
         />,
     );
     expect(
-        screen.getByRole("heading", { level: 2, name: "Open on right" }),
+        screen.getByRole("heading", { level: 2, name: "Code" }),
     ).toBeDefined();
 
-    const rows: FlatTreeRow[] = [
+    const rows: TreePaneRow[] = [
         {
             id: "u1",
-            role: "user",
-            text: "Question",
+            kind: "question",
+            title: "Question",
             label: "tag-1",
-            rails: [{ type: "tee", last: false, active: true }],
-            hasParentSpine: false,
-            hasChildSpine: true,
+            rails: ["tee"],
+            hasTopSpine: false,
+            hasBottomSpine: true,
             onPath: true,
             isLeaf: false,
         },
         {
             id: "a1",
-            role: "assistant",
-            text: "",
-            createdAtMs: new Date(2026, 9, 31, 8, 9).getTime(),
-            rails: [{ type: "bar", active: false }],
-            hasParentSpine: true,
-            hasChildSpine: false,
+            kind: "answer",
+            title: "",
+            meta: "08:09",
+            rails: ["bar"],
+            hasTopSpine: true,
+            hasBottomSpine: false,
             onPath: false,
             isLeaf: true,
-        },
-        {
-            id: "a2",
-            role: "assistant",
-            text: "",
-            model: "m1",
-            rails: [{ type: "empty", active: false }],
-            hasParentSpine: true,
-            hasChildSpine: false,
-            onPath: false,
-            isLeaf: true,
-        },
-        {
-            id: "a3",
-            role: "assistant",
-            text: "Bare",
-            rails: [{ type: "empty", active: false }],
-            hasParentSpine: true,
-            hasChildSpine: false,
-            onPath: false,
-            isLeaf: false,
         },
     ];
     rerender(

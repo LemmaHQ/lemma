@@ -15,6 +15,10 @@ session:
     platforms: [web]
     en: "Clear folder"
     zh: "取消选择文件夹"
+  codeTitle:
+    platforms: [web]
+    en: "Code"
+    zh: "代码"
   delete:
     platforms: [web, android]
     en: "Delete permanently"
@@ -51,6 +55,11 @@ session:
     platforms: [web, android]
     en: "Message the assistant…"
     zh: "给助手发消息…"
+  jumpToTurn:
+    platforms: [web]
+    params: { index: number }
+    en: "Question {index}"
+    zh: "第 {index} 条提问"
   last7Days:
     platforms: [web, android]
     en: "Last 7 days"
@@ -83,6 +92,10 @@ session:
     platforms: [web]
     en: "Open on right"
     zh: "右侧打开"
+  outlineLabel:
+    platforms: [web]
+    en: "Jump to question"
+    zh: "跳转到提问"
   providerDisabledGoSettings:
     platforms: [web]
     en: "Disabled · Settings"
@@ -194,3 +207,7 @@ session:
     platforms: [web]
     en: "Session tree"
     zh: "会话树"
+  treeVerb:
+    platforms: [web]
+    en: "tree"
+    zh: "分支"

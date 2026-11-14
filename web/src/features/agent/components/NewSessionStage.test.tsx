@@ -9,19 +9,13 @@ import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
 import {
     type ListMessagesResponse,
     ListMessagesResponseSchema,
-    MessageSchema,
 } from "@/gen/lemma/v1/session_pb";
 
-import { useActiveSession } from "../store";
+import { useActiveSessionStore } from "../store";
 import type { ModelOption } from "../useModelSelection";
-import {
-    type SessionDirectoryControl,
-    type SessionProviderGroup,
-    SessionView,
-    type SessionViewProps,
-} from "./SessionView";
-
-type Stream = AsyncIterable<{ event?: unknown }>;
+import { NewSessionStage, type NewSessionStageProps } from "./NewSessionStage";
+import type { SessionProviderGroup } from "./SessionComposer";
+import type { SessionDirectoryControl } from "./SessionFolderPicker";
 
 const rpc = vi.hoisted(() => ({
     listMessages:
@@ -33,8 +27,7 @@ const rpc = vi.hoisted(() => ({
                 content: string;
                 providerId: string;
                 model: string;
-                parentId?: string;
-            }) => Stream
+            }) => AsyncIterable<{ event?: unknown }>
         >(),
 }));
 
@@ -48,12 +41,7 @@ const defaultOptions: ModelOption[] = [
 ];
 
 const defaultProviders: SessionProviderGroup[] = [
-    {
-        id: "p1",
-        name: "Acme",
-        enabled: true,
-        models: [{ id: "m1" }],
-    },
+    { id: "p1", name: "Acme", enabled: true, models: [{ id: "m1" }] },
 ];
 
 const defaultDirectoryControl: SessionDirectoryControl = {
@@ -69,12 +57,11 @@ const doneStream = async function* () {
     };
 };
 
-const renderView = (props: Partial<SessionViewProps> = {}) =>
+const renderStage = (props: Partial<NewSessionStageProps> = {}) =>
     render(
         <TooltipProvider>
             <Toaster />
-            <SessionView
-                sessionId="c1"
+            <NewSessionStage
                 directoryControl={defaultDirectoryControl}
                 modelOptions={defaultOptions}
                 providers={defaultProviders}
@@ -85,11 +72,8 @@ const renderView = (props: Partial<SessionViewProps> = {}) =>
         </TooltipProvider>,
     );
 
-const composer = () =>
-    screen.getByRole("textbox", { name: "Message the assistant…" });
-
 beforeEach(() => {
-    useActiveSession.setState(useActiveSession.getInitialState());
+    useActiveSessionStore.getState().reset();
     localStorage.clear();
     vi.resetAllMocks();
     rpc.listMessages.mockResolvedValue(
@@ -98,85 +82,13 @@ beforeEach(() => {
     rpc.sendMessage.mockImplementation(doneStream);
 });
 
-it("opens the session, sends a trimmed draft, and closes stale panes on session switch", async () => {
-    const user = userEvent.setup();
-    rpc.listMessages
-        .mockResolvedValueOnce(
-            create(ListMessagesResponseSchema, { messages: [] }),
-        )
-        .mockResolvedValueOnce(
-            create(ListMessagesResponseSchema, {
-                messages: [
-                    create(MessageSchema, {
-                        id: "u1",
-                        role: "user",
-                        content: "hello",
-                    }),
-                ],
-                leafId: "u1",
-            }),
-        );
-    const { rerender } = renderView();
-
-    await waitFor(() => {
-        expect(rpc.listMessages).toHaveBeenCalledWith({ sessionId: "c1" });
-    });
-
-    await user.type(composer(), "  hello  ");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-
-    expect(await screen.findByText("hello")).toBeDefined();
-    expect(rpc.sendMessage.mock.lastCall?.[0]).toEqual({
-        sessionId: "c1",
-        content: "hello",
-        providerId: "p1",
-        model: "m1",
-    });
-    expect(composer()).toHaveProperty("value", "");
-
-    await user.click(screen.getByRole("button", { name: /Tree/u }));
-    expect(await screen.findByText("Session tree")).toBeDefined();
-
-    rerender(
-        <TooltipProvider>
-            <Toaster />
-            <SessionView
-                sessionId="c2"
-                directoryControl={defaultDirectoryControl}
-                modelOptions={defaultOptions}
-                providers={defaultProviders}
-                onOpenProviders={vi.fn<() => void>()}
-                onCreateSession={() => Promise.resolve("new")}
-            />
-        </TooltipProvider>,
-    );
-    expect(screen.queryByText("Session tree")).toBeNull();
-    await user.click(screen.getByRole("button", { name: /Tree/u }));
-    expect(await screen.findByText("Session tree")).toBeDefined();
-});
-
-it("keeps draft when Enter is pressed during streaming", async () => {
-    const user = userEvent.setup();
-    renderView();
-    await waitFor(() => {
-        expect(rpc.listMessages).toHaveBeenCalled();
-    });
-    useActiveSession.setState({ streaming: true });
-
-    await user.type(composer(), "follow-up{Enter}");
-
-    expect(rpc.sendMessage).not.toHaveBeenCalled();
-    expect(composer()).toHaveProperty("value", "follow-up");
-});
-
-it("creates a new session on first send, disables without models, and toasts errors", async () => {
+it("creates a new session without pre-send listMessages, preserves draft on failure, and disables without models", async () => {
     const user = userEvent.setup();
     const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
         Promise.resolve("new"),
     );
 
-    const { rerender } = renderView({
-        sessionId: null,
+    const { rerender } = renderStage({
         directoryControl: {
             directory: "/work/custom",
             recentDirectories: [],
@@ -185,12 +97,16 @@ it("creates a new session on first send, disables without models, and toasts err
         onCreateSession,
     });
 
-    await user.type(composer(), "start here");
+    const composer = screen.getByRole("textbox", {
+        name: "Message the assistant…",
+    });
+    await user.type(composer, "start here");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => {
         expect(rpc.sendMessage).toHaveBeenCalled();
     });
     expect(onCreateSession).toHaveBeenCalledWith("/work/custom");
+    expect(rpc.listMessages).toHaveBeenCalledTimes(1);
     expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
         sessionId: "new",
         content: "start here",
@@ -199,8 +115,7 @@ it("creates a new session on first send, disables without models, and toasts err
     rerender(
         <TooltipProvider>
             <Toaster />
-            <SessionView
-                sessionId={null}
+            <NewSessionStage
                 directoryControl={defaultDirectoryControl}
                 modelOptions={defaultOptions}
                 providers={defaultProviders}
@@ -211,19 +126,22 @@ it("creates a new session on first send, disables without models, and toasts err
             />
         </TooltipProvider>,
     );
-    await user.type(composer(), "fail create");
+    const failedComposer = screen.getByRole("textbox", {
+        name: "Message the assistant…",
+    });
+    await user.type(failedComposer, "keep on failure");
     await user.click(screen.getByRole("button", { name: "Send" }));
     expect(
         await screen.findByText(
             "Can't reach the server, check your connection and try again",
         ),
     ).toBeDefined();
+    expect(failedComposer).toHaveProperty("value", "keep on failure");
 
     rerender(
         <TooltipProvider>
             <Toaster />
-            <SessionView
-                sessionId={null}
+            <NewSessionStage
                 directoryControl={defaultDirectoryControl}
                 modelOptions={[]}
                 providers={[]}

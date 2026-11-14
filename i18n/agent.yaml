@@ -156,3 +156,27 @@ agent:
         other: "Used {count} tools"
       zh:
         other: "使用了 {count} 个工具"
+  verbBash:
+    platforms: [web]
+    en: "bash"
+    zh: "终端"
+  verbCode:
+    platforms: [web]
+    en: "code"
+    zh: "代码"
+  verbFetch:
+    platforms: [web]
+    en: "fetch"
+    zh: "抓取"
+  verbRead:
+    platforms: [web]
+    en: "read"
+    zh: "读取"
+  verbSearch:
+    platforms: [web]
+    en: "search"
+    zh: "搜索"
+  verbWrite:
+    platforms: [web]
+    en: "write"
+    zh: "写入"

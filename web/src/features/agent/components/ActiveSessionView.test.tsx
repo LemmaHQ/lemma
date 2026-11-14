@@ -2,7 +2,13 @@ import { create, type MessageInitShape } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { toast, Toaster, TooltipProvider } from "@lemma/ui";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 
@@ -15,15 +21,13 @@ import {
     SetMessageLabelResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
 
-import { useActiveSession } from "../store";
+import { useActiveSessionStore } from "../store";
 import type { ModelOption } from "../useModelSelection";
 import {
-    type SessionDirectoryControl,
-    type SessionProviderGroup,
-    SessionView,
-    type SessionViewProps,
-} from "./SessionView";
-
+    ActiveSessionView,
+    type ActiveSessionViewProps,
+} from "./ActiveSessionView";
+import type { SessionProviderGroup } from "./SessionComposer";
 type MessageInit = MessageInitShape<typeof MessageSchema>;
 type MessageExtra = Omit<
     Extract<MessageInit, { $typeName?: never }>,
@@ -88,12 +92,6 @@ const defaultProviders: SessionProviderGroup[] = [
     { id: "p1", name: "Acme", enabled: true, models: [{ id: "m1" }] },
 ];
 
-const defaultDirectoryControl: SessionDirectoryControl = {
-    directory: undefined,
-    recentDirectories: [],
-    canPickDirectory: false,
-};
-
 const protoMessage = (
     id: string,
     role: string,
@@ -123,17 +121,16 @@ const doneStream = async function* () {
     };
 };
 
-const renderActive = (props: Partial<SessionViewProps> = {}) =>
+const renderActive = (props: Partial<ActiveSessionViewProps> = {}) =>
     render(
         <TooltipProvider>
             <Toaster />
-            <SessionView
+            <ActiveSessionView
                 sessionId="c1"
-                directoryControl={defaultDirectoryControl}
+                directory="/work/alpha"
                 modelOptions={defaultOptions}
                 providers={defaultProviders}
                 onOpenProviders={vi.fn<() => void>()}
-                onCreateSession={() => Promise.resolve("new")}
                 {...props}
             />
         </TooltipProvider>,
@@ -143,7 +140,7 @@ const composer = () =>
     screen.getByRole("textbox", { name: "Message the assistant…" });
 
 beforeEach(() => {
-    useActiveSession.setState(useActiveSession.getInitialState());
+    useActiveSessionStore.getState().reset();
     localStorage.clear();
     vi.resetAllMocks();
     toast.dismiss();
@@ -326,12 +323,12 @@ it("toggles tree with Ctrl+K, switches branches, rewinds, restores, and labels n
     await user.click(screen.getByRole("button", { name: /Tree/u }));
     expect(screen.queryByText("Session tree")).toBeNull();
     await user.click(screen.getByRole("button", { name: /Tree/u }));
-    useActiveSession.setState({ streaming: true });
+    useActiveSessionStore.setState({ streaming: true });
     await user.click(
         await screen.findByRole("button", { name: /First question/u }),
     );
     expect(composer()).toHaveProperty("value", "");
-    useActiveSession.setState({ streaming: false });
+    useActiveSessionStore.setState({ streaming: false });
     await user.click(screen.getByRole("button", { name: "Close" }));
 });
 
@@ -386,13 +383,11 @@ it("retries failed turns with or without selected model and handles retry errors
     rerender(
         <TooltipProvider>
             <Toaster />
-            <SessionView
+            <ActiveSessionView
                 sessionId="c1"
-                directoryControl={defaultDirectoryControl}
                 modelOptions={defaultOptions}
                 providers={defaultProviders}
                 onOpenProviders={vi.fn<() => void>()}
-                onCreateSession={() => Promise.resolve("new")}
             />
         </TooltipProvider>,
     );
@@ -415,7 +410,7 @@ it("retries failed turns with or without selected model and handles retry errors
         );
     });
 
-    useActiveSession.setState({
+    useActiveSessionStore.setState({
         send: () => Promise.reject(new Error("retry boom")),
     });
     await user.click(screen.getByRole("button", { name: "Retry with m1" }));
@@ -423,7 +418,7 @@ it("retries failed turns with or without selected model and handles retry errors
         await screen.findByText("Something went wrong, please try again"),
     ).toBeDefined();
 
-    await useActiveSession.getState().open("c1");
+    await useActiveSessionStore.getState().open("c1");
     rpc.listMessages.mockResolvedValueOnce(
         history(
             [
@@ -439,13 +434,13 @@ it("retries failed turns with or without selected model and handles retry errors
             "a0",
         ),
     );
-    await useActiveSession.getState().open("c2");
+    await useActiveSessionStore.getState().open("c2");
     expect(await screen.findByText("Root error")).toBeDefined();
-    useActiveSession.setState({
+    useActiveSessionStore.setState({
         send: vi.fn<() => Promise<void>>(() => Promise.resolve()),
     });
     await user.click(screen.getByRole("button", { name: "Retry with m1" }));
-    expect(useActiveSession.getState().send).toHaveBeenCalledWith(
+    expect(useActiveSessionStore.getState().send).toHaveBeenCalledWith(
         "p1",
         "m1",
         "First",
@@ -461,7 +456,7 @@ it("renders streaming step, abort button, and reconnect indicators", async () =>
     });
 
     const abort = vi.fn<() => Promise<void>>(() => Promise.resolve());
-    useActiveSession.setState({
+    useActiveSessionStore.setState({
         abort,
         streaming: true,
         turnStartedAtMs: null,
@@ -472,7 +467,7 @@ it("renders streaming step, abort button, and reconnect indicators", async () =>
     await user.click(screen.getByRole("button", { name: "Stop" }));
     expect(abort).toHaveBeenCalledOnce();
 
-    useActiveSession.setState({
+    useActiveSessionStore.setState({
         streaming: true,
         turnStartedAtMs: Date.now(),
         currentStep: { kind: "thinking" },
@@ -483,4 +478,183 @@ it("renders streaming step, abort button, and reconnect indicators", async () =>
             "Connection interrupted, resuming from event 12…",
         ),
     ).toHaveLength(2);
+});
+
+it("isolates unsent drafts per sessionId, trims on send, and closes stale panes across switches", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderActive({ sessionId: "c1" });
+    await waitFor(() => {
+        expect(rpc.listMessages).toHaveBeenCalledWith({ sessionId: "c1" });
+    });
+
+    await user.type(composer(), "  draft for c1  ");
+    await user.click(screen.getByRole("button", { name: /Tree/u }));
+    expect(await screen.findByText("Session tree")).toBeDefined();
+
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <ActiveSessionView
+                sessionId="c2"
+                modelOptions={defaultOptions}
+                providers={defaultProviders}
+                onOpenProviders={vi.fn<() => void>()}
+            />
+        </TooltipProvider>,
+    );
+    await waitFor(() => {
+        expect(rpc.listMessages).toHaveBeenCalledWith({ sessionId: "c2" });
+    });
+    expect(screen.queryByText("Session tree")).toBeNull();
+    expect(composer()).toHaveProperty("value", "");
+
+    await user.type(composer(), "draft for c2");
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <ActiveSessionView
+                sessionId="c1"
+                modelOptions={defaultOptions}
+                providers={defaultProviders}
+                onOpenProviders={vi.fn<() => void>()}
+            />
+        </TooltipProvider>,
+    );
+    expect(composer()).toHaveProperty("value", "  draft for c1  ");
+
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => {
+        expect(rpc.sendMessage).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sessionId: "c1",
+                content: "draft for c1",
+            }),
+            expect.anything(),
+        );
+    });
+    expect(composer()).toHaveProperty("value", "");
+
+    useActiveSessionStore.setState({
+        send: () => Promise.reject(new Error("submit boom")),
+    });
+    await user.type(composer(), "trigger error");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(
+        await screen.findByText("Something went wrong, please try again"),
+    ).toBeDefined();
+});
+
+it("ignores Ctrl+K inside composer and regenerates settled turns on sibling parentId", async () => {
+    const user = userEvent.setup();
+    rpc.listMessages.mockResolvedValue(
+        history(
+            [
+                protoMessage("u1", "user", "Explain it"),
+                protoMessage("a1", "assistant", "Initial answer", {
+                    parentId: "u1",
+                }),
+            ],
+            "a1",
+        ),
+    );
+
+    const { rerender } = renderActive();
+    expect(await screen.findByText("Initial answer")).toBeDefined();
+
+    composer().focus();
+    fireEvent.keyDown(composer(), { key: "k", ctrlKey: true, bubbles: true });
+    expect(screen.queryByText("Session tree")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Regenerate" }));
+    await waitFor(() => {
+        expect(rpc.sendMessage).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                sessionId: "c1",
+                content: "Explain it",
+                providerId: "p1",
+                model: "m1",
+                parentId: "",
+            }),
+            expect.anything(),
+        );
+    });
+    await waitFor(() => {
+        expect(useActiveSessionStore.getState().streaming).toBe(false);
+    });
+
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <ActiveSessionView
+                sessionId="c1"
+                modelOptions={[]}
+                providers={[]}
+                onOpenProviders={vi.fn<() => void>()}
+            />
+        </TooltipProvider>,
+    );
+    act(() => {
+        useActiveSessionStore.setState({
+            items: [
+                {
+                    id: "u-no-m",
+                    role: "user",
+                    content: "No model",
+                    thinking: "",
+                    status: "done",
+                    providerId: "",
+                    model: "",
+                    toolCalls: [],
+                },
+                {
+                    id: "a-no-m",
+                    parentId: "u-no-m",
+                    role: "assistant",
+                    content: "Settled without model",
+                    thinking: "",
+                    status: "done",
+                    providerId: "",
+                    model: "",
+                    toolCalls: [],
+                },
+                {
+                    id: "u-saved",
+                    parentId: "a-no-m",
+                    role: "user",
+                    content: "Saved model turn",
+                    thinking: "",
+                    status: "done",
+                    providerId: "",
+                    model: "",
+                    toolCalls: [],
+                },
+                {
+                    id: "a-saved",
+                    parentId: "u-saved",
+                    role: "assistant",
+                    content: "Settled with saved model",
+                    thinking: "",
+                    status: "done",
+                    providerId: "p-saved",
+                    model: "m-saved",
+                    toolCalls: [],
+                },
+            ],
+        });
+    });
+    const regenButtons = screen.getAllByRole("button", {
+        name: "Regenerate",
+    });
+    await user.click(regenButtons[0]!);
+    await user.click(regenButtons[1]!);
+    await waitFor(() => {
+        expect(rpc.sendMessage).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                providerId: "p-saved",
+                model: "m-saved",
+                parentId: "a-no-m",
+            }),
+            expect.anything(),
+        );
+    });
 });

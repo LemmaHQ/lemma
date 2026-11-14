@@ -1,4 +1,4 @@
-import { Button } from "@lemma/ui";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
 export type ComposerDockState =
@@ -20,11 +20,19 @@ export function ComposerDock({ state }: ComposerDockProps) {
     const { t } = useTranslation();
 
     if (state.kind === "rewind") {
+        const banner = t("session.rewindBanner");
         return (
             <div className="flex items-center justify-between gap-2 text-small">
-                <span className="min-w-0 truncate text-muted-foreground">
-                    {t("session.rewindBanner")}
-                </span>
+                <Tooltip>
+                    <TooltipTrigger
+                        render={
+                            <span className="min-w-0 truncate text-muted-foreground" />
+                        }
+                    >
+                        {banner}
+                    </TooltipTrigger>
+                    <TooltipContent>{banner}</TooltipContent>
+                </Tooltip>
                 <Button
                     type="button"
                     size="xs"
@@ -37,13 +45,23 @@ export function ComposerDock({ state }: ComposerDockProps) {
         );
     }
 
+    const errorMessage =
+        state.error !== undefined && state.error !== ""
+            ? state.error
+            : t("errors.agentFailed");
+
     return (
         <div className="flex flex-wrap items-center justify-between gap-2 text-small">
-            <span className="min-w-0 flex-1 truncate text-destructive">
-                {state.error !== undefined && state.error !== ""
-                    ? state.error
-                    : t("errors.agentFailed")}
-            </span>
+            <Tooltip>
+                <TooltipTrigger
+                    render={
+                        <span className="min-w-0 flex-1 truncate text-destructive" />
+                    }
+                >
+                    {errorMessage}
+                </TooltipTrigger>
+                <TooltipContent>{errorMessage}</TooltipContent>
+            </Tooltip>
             <div className="flex shrink-0 items-center gap-1.5">
                 <Button
                     type="button"

@@ -3,31 +3,31 @@ import {
     type AnchoredPickerItem,
     ChevronDownIcon,
     toast,
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
 } from "@lemma/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
-import type { SessionDirectoryControl } from "./SessionView";
+import { lastPathSegment } from "../tool-output";
 
-interface FolderPickerProps {
-    editable: boolean;
+/** Workspace directory selection state and callbacks for a new session. */
+export interface SessionDirectoryControl {
+    directory: string | undefined;
+    recentDirectories: string[];
+    canPickDirectory: boolean;
+    onSelectDirectory?: ((dir: string | undefined) => void) | undefined;
+    onPickDirectory?: (() => Promise<string | undefined>) | undefined;
+}
+
+interface SessionFolderPickerProps {
     directoryControl: SessionDirectoryControl;
 }
 
-function directoryBasename(directory: string): string {
-    return directory.split(/[\\/]/u).findLast(Boolean) ?? directory;
-}
-
-/** Workspace folder selector for new sessions and static folder badge for existing sessions. */
-export function FolderPicker({
-    editable,
+/** Interactive workspace folder picker popover for the new-session composer. */
+export function SessionFolderPicker({
     directoryControl,
-}: FolderPickerProps) {
+}: SessionFolderPickerProps) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const {
@@ -38,28 +38,10 @@ export function FolderPicker({
         onPickDirectory,
     } = directoryControl;
 
-    if (!editable) {
-        if (directory === undefined) {
-            return null;
-        }
-        return (
-            <Tooltip>
-                <TooltipTrigger
-                    render={
-                        <span className="max-w-44 truncate px-1.5 font-mono text-small text-subtle-foreground" />
-                    }
-                >
-                    {directoryBasename(directory)}
-                </TooltipTrigger>
-                <TooltipContent>{directory}</TooltipContent>
-            </Tooltip>
-        );
-    }
-
     const label =
         directory === undefined
             ? t("sidebar.defaultWorkspace")
-            : directoryBasename(directory);
+            : lastPathSegment(directory);
 
     const directories =
         directory !== undefined && !recentDirectories.includes(directory)
@@ -77,7 +59,7 @@ export function FolderPicker({
         },
         ...directories.map((dir) => ({
             id: dir,
-            label: directoryBasename(dir),
+            label: lastPathSegment(dir),
             sublabel: dir,
             mono: true,
             selected: dir === directory,
@@ -114,11 +96,11 @@ export function FolderPicker({
             searchPlaceholder={t("session.filterFolders")}
             emptyText={t("session.treeEmpty")}
             groups={[{ id: "folders", items }]}
-            {...(footerAction === undefined ? {} : { footerAction })}
+            footerAction={footerAction}
             trigger={
                 <button
                     type="button"
-                    className="inline-flex max-w-44 cursor-pointer items-center gap-1 rounded-md px-2 py-1 font-mono text-small text-muted-foreground transition-colors duration-base hover:bg-selected hover:text-foreground"
+                    className="inline-flex max-w-44 cursor-pointer items-center gap-1 rounded-md px-2 py-1 font-mono text-small text-muted-foreground transition-colors duration-base hover:bg-selected hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <span className="min-w-0 truncate">{label}</span>
                     <span aria-hidden="true" className="shrink-0">

@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
+import type { ConversationTurn } from "../active-path";
 import type { AgentItem } from "../agent-item";
 import type { TurnStep } from "../step-details";
-import type { ConversationTurn } from "../tree";
 import { TurnView } from "./TurnView";
 
 const paragraphText =
@@ -42,21 +42,25 @@ const makeStep = (patch: Partial<TurnStep>): TurnStep => ({
     ...patch,
 });
 
-it("renders TurnView summaries, step variants, streaming, aborted, and empty reply branches", async () => {
+it("renders TurnView summaries, step variants, settled actions, streaming, aborted, and empty reply branches", async () => {
     const user = userEvent.setup();
     const onInspectStep = vi.fn<(step: TurnStep) => void>();
     const onInspectCode = vi.fn<(code: string, language: string) => void>();
+    const onRegenerate =
+        vi.fn<(turn: ConversationTurn, reply: AgentItem) => void>();
 
     const multiToolTurn: ConversationTurn = {
         id: "t1",
-        userMessage: baseItem("u1", "user", { content: "Check project" }),
-        assistantSteps: [],
+        userMessage: baseItem("u1", "user", {
+            content: "Check project",
+            createdAtMs: 1000,
+        }),
         finalReply: baseItem("a1", "assistant", {
             content: "All done",
             status: "done",
+            model: "gpt-5",
+            createdAtMs: 3400,
         }),
-        terminalId: "a1",
-        isStreaming: false,
         steps: [
             makeStep({
                 id: "s-think-empty",
@@ -119,9 +123,15 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
             activePaneStepId="s-read"
             onInspectStep={onInspectStep}
             onInspectCode={onInspectCode}
+            onRegenerate={onRegenerate}
         />,
     );
-
+    expect(screen.getByText("gpt-5 · 2.4s")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Regenerate" }));
+    expect(onRegenerate).toHaveBeenCalledWith(
+        multiToolTurn,
+        multiToolTurn.finalReply,
+    );
     const summaryBtn = screen.getByRole("button", {
         name: /Thought · read read_file · wrote out\.ts · wrote write_file · ran bash · searched the web · fetched page · custom_tool/u,
     });
@@ -142,13 +152,10 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
                     content: "Aborted turn",
                     createdAtMs: new Date(2026, 9, 31, 14, 5).getTime(),
                 }),
-                assistantSteps: [],
                 finalReply: baseItem("a2", "assistant", {
                     content: "",
                     status: "aborted",
                 }),
-                terminalId: "a2",
-                isStreaming: false,
                 steps: [
                     makeStep({
                         id: "s-think-run",
@@ -179,13 +186,10 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
             turn={{
                 id: "t3",
                 userMessage: baseItem("u3", "user", { content: "Fallback" }),
-                assistantSteps: [],
                 finalReply: baseItem("a3", "assistant", {
                     content: "Streaming reply",
                     status: "streaming",
                 }),
-                terminalId: "a3",
-                isStreaming: true,
                 steps: [
                     makeStep({
                         id: "s-only-nameless",
@@ -207,10 +211,7 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
             turn={{
                 id: "t4",
                 userMessage: baseItem("u4", "user", { content: "Steps only" }),
-                assistantSteps: [],
                 finalReply: undefined,
-                terminalId: "u4",
-                isStreaming: false,
                 steps: [
                     makeStep({
                         id: "s-only",
@@ -231,10 +232,7 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
             turn={{
                 id: "t5",
                 userMessage: baseItem("u5", "user", { content: "No reply" }),
-                assistantSteps: [],
                 finalReply: undefined,
-                terminalId: "u5",
-                isStreaming: false,
                 steps: [],
             }}
             activePaneStepId={undefined}
@@ -243,4 +241,25 @@ it("renders TurnView summaries, step variants, streaming, aborted, and empty rep
         />,
     );
     expect(screen.getByText("No reply")).toBeDefined();
+
+    rerender(
+        <TurnView
+            turn={{
+                id: "t6",
+                userMessage: baseItem("u6", "user", {
+                    content: "Empty settled",
+                }),
+                finalReply: baseItem("a6", "assistant", {
+                    content: "",
+                    status: "done",
+                    model: "",
+                }),
+                steps: [],
+            }}
+            activePaneStepId={undefined}
+            onInspectStep={onInspectStep}
+            onInspectCode={onInspectCode}
+        />,
+    );
+    expect(screen.getByText("Empty settled")).toBeDefined();
 });
