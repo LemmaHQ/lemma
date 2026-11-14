@@ -6,21 +6,21 @@ export type StepTimelineRow = {
     id: string;
     verb: string;
     argument: string;
-    plainArgument?: boolean;
-    meta?: string;
-    warn?: boolean;
-    via?: string;
-    active?: boolean;
-    onSelect?: () => void;
+    plainArgument?: boolean | undefined;
+    meta?: string | undefined;
+    warn?: boolean | undefined;
+    via?: string | undefined;
+    active?: boolean | undefined;
+    onSelect?: (() => void) | undefined;
 };
 
-export type StepTimelineProps = {
+type StepTimelineProps = {
     summary: string;
-    outcome?: string;
+    outcome?: string | undefined;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     rows: StepTimelineRow[];
-    className?: string;
+    className?: string | undefined;
 };
 
 /** Collapsible step summary bar expanding into compact tool-execution rows. */

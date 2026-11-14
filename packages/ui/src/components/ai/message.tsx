@@ -22,44 +22,12 @@ const DEFAULT_CONTROLS = {
     code: { copy: true, download: false },
 } as const;
 
-type MessageProps = ComponentProps<"div"> & {
-    from: "user" | "assistant";
-};
-
-/** An assistant message enters with a rising card animation. */
-export function Message({ className, from, ...props }: MessageProps) {
-    return (
-        <div
-            className={cn(
-                "group/message flex w-full max-w-full flex-col gap-2 data-[from=user]:ml-auto data-[from=user]:justify-end",
-                from === "assistant" && "animate-card-in",
-                className,
-            )}
-            data-from={from}
-            {...props}
-        />
-    );
-}
-
-export function MessageContent({ className, ...props }: ComponentProps<"div">) {
-    return (
-        <div
-            className={cn(
-                "flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-reading text-foreground",
-                "group-data-[from=user]/message:ml-auto group-data-[from=user]/message:max-w-[80%] group-data-[from=user]/message:rounded-lg group-data-[from=user]/message:bg-muted group-data-[from=user]/message:px-4 group-data-[from=user]/message:py-2.5",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-/** Action row that stays dimmed until the message is hovered or focused, except on touch screens. */
+/** Action row that stays dimmed until the enclosing turn is hovered or focused, except on touch screens. */
 export function MessageActions({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "stagger-children flex items-center gap-1 text-caption text-subtle-foreground opacity-60 transition-opacity duration-medium ease-enter group-focus-within/message:opacity-100 group-hover/message:opacity-100 pointer-coarse:opacity-100 motion-reduce:opacity-100 motion-reduce:transition-none",
+                "stagger-children flex items-center gap-1 text-caption text-subtle-foreground opacity-60 transition-opacity duration-medium ease-enter group-focus-within/turn:opacity-100 group-hover/turn:opacity-100 pointer-coarse:opacity-100 motion-reduce:opacity-100 motion-reduce:transition-none",
                 className,
             )}
             {...props}
@@ -71,7 +39,7 @@ type MessageActionProps = ComponentProps<typeof Button> & {
     tooltip: string;
 };
 
-export function MessageAction({
+function MessageAction({
     tooltip,
     variant = "ghost",
     size = "icon-sm",
@@ -142,15 +110,18 @@ export function MessageCopyAction({
 /** Calls `onRegenerate`; the icon spins once per click. */
 export function MessageRegenerateAction({
     label,
+    disabled = false,
     onRegenerate,
 }: {
     label: string;
+    disabled?: boolean | undefined;
     onRegenerate: () => void;
 }) {
     const [spins, setSpins] = useState(0);
     return (
         <MessageAction
             tooltip={label}
+            disabled={disabled}
             onClick={() => {
                 setSpins((count) => count + 1);
                 onRegenerate();

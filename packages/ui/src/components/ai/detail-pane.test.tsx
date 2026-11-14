@@ -4,7 +4,7 @@ import { expect, it, vi } from "vitest";
 
 import { DetailPane } from "./detail-pane";
 
-it("renders prose, code, web, and output bodies and triggers close", async () => {
+it("renders prose, highlighted code with copy, web note/hits, and output bodies", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn<() => void>();
 
@@ -35,20 +35,41 @@ it("renders prose, code, web, and output bodies and triggers close", async () =>
             title="app.ts"
             closeLabel="Close"
             onClose={onClose}
-            body={{ kind: "code", code: "line 1\nline 2", language: "ts" }}
+            body={{
+                kind: "code",
+                code: "const a = 1;",
+                language: "ts",
+                copyLabel: "Copy code",
+                copiedLabel: "Copied",
+            }}
         />,
     );
-    expect(screen.getByText("line 1")).toBeDefined();
-    expect(screen.getByText("2")).toBeDefined();
+    expect(await screen.findByText(/const/u)).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Copy code" }));
+    expect(await navigator.clipboard.readText()).toBe("const a = 1;");
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
 
     rerender(
         <DetailPane
-            verb="web"
+            verb="code"
+            title="Code"
+            closeLabel="Close"
+            onClose={onClose}
+            body={{ kind: "code", code: "plain", copyLabel: "Copy code" }}
+        />,
+    );
+    await user.click(screen.getByRole("button", { name: "Copy code" }));
+    expect(screen.getByText("plain")).toBeDefined();
+
+    rerender(
+        <DetailPane
+            verb="search"
             title="Search"
             closeLabel="Close"
             onClose={onClose}
             body={{
                 kind: "web",
+                note: "Top web results",
                 hits: [
                     {
                         id: "h1",
@@ -65,6 +86,7 @@ it("renders prose, code, web, and output bodies and triggers close", async () =>
             }}
         />,
     );
+    expect(screen.getByText("Top web results")).toBeDefined();
     expect(screen.getByRole("link", { name: /Example/u })).toBeDefined();
     expect(screen.getByText("Summary text")).toBeDefined();
 

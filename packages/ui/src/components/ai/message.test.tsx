@@ -5,9 +5,7 @@ import { expect, it, vi } from "vitest";
 import { TooltipProvider } from "#primitives/tooltip";
 
 import {
-    Message,
     MessageActions,
-    MessageContent,
     MessageCopyAction,
     MessageRegenerateAction,
     MessageResponse,
@@ -19,10 +17,8 @@ it("renders an assistant reply as markdown with its actions", async () => {
     const onRegenerate = vi.fn<() => void>();
     render(
         <TooltipProvider>
-            <Message from="assistant">
-                <MessageContent>
-                    <MessageResponse>{"Use **bold** text"}</MessageResponse>
-                </MessageContent>
+            <div className="group/turn">
+                <MessageResponse>{"Use **bold** text"}</MessageResponse>
                 <MessageActions>
                     <MessageCopyAction
                         text="Use **bold** text"
@@ -34,7 +30,7 @@ it("renders an assistant reply as markdown with its actions", async () => {
                         onRegenerate={onRegenerate}
                     />
                 </MessageActions>
-            </Message>
+            </div>
         </TooltipProvider>,
     );
 
@@ -51,13 +47,7 @@ it("renders an assistant reply as markdown with its actions", async () => {
 
 it("streams a reply behind a caret", () => {
     const { container } = render(
-        <Message from="user">
-            <MessageContent>
-                <MessageResponse isAnimating>
-                    {"Partial answer"}
-                </MessageResponse>
-            </MessageContent>
-        </Message>,
+        <MessageResponse isAnimating>{"Partial answer"}</MessageResponse>,
     );
 
     expect(container.querySelector("p")?.textContent).toBe("Partial answer");
@@ -69,19 +59,15 @@ it("adds an open-code button in code block headers and renders completionMark", 
     const onOpenCode = vi.fn<(code: string, language: string) => void>();
 
     const { container } = render(
-        <Message from="assistant">
-            <MessageContent>
-                <MessageResponse
-                    openCodeLabel="Open on right"
-                    onOpenCode={onOpenCode}
-                    completionMark
-                >
-                    {
-                        "Here is `inline` and:\n\n```ts startLine=5\nconst a = 1;\n```\n\nDone."
-                    }
-                </MessageResponse>
-            </MessageContent>
-        </Message>,
+        <MessageResponse
+            openCodeLabel="Open on right"
+            onOpenCode={onOpenCode}
+            completionMark
+        >
+            {
+                "Here is `inline` and:\n\n```ts startLine=5\nconst a = 1;\n```\n\nDone."
+            }
+        </MessageResponse>,
     );
 
     const openButton = await screen.findByRole("button", {
@@ -100,17 +86,13 @@ it("respects disabled code controls in MessageCodeBlock", async () => {
     const onOpenCode = vi.fn<(code: string, language: string) => void>();
 
     render(
-        <Message from="assistant">
-            <MessageContent>
-                <MessageResponse
-                    openCodeLabel="Open on right"
-                    onOpenCode={onOpenCode}
-                    controls={{ code: false }}
-                >
-                    {"```js\nlet x = 2;\n```"}
-                </MessageResponse>
-            </MessageContent>
-        </Message>,
+        <MessageResponse
+            openCodeLabel="Open on right"
+            onOpenCode={onOpenCode}
+            controls={{ code: false }}
+        >
+            {"```js\nlet x = 2;\n```"}
+        </MessageResponse>,
     );
 
     expect(
@@ -122,16 +104,9 @@ it("falls back to default Streamdown code component for mermaid blocks", () => {
     const onOpenCode = vi.fn<(code: string, language: string) => void>();
 
     const { container } = render(
-        <Message from="assistant">
-            <MessageContent>
-                <MessageResponse
-                    openCodeLabel="Open on right"
-                    onOpenCode={onOpenCode}
-                >
-                    {"```mermaid\ngraph TD; A-->B;\n```"}
-                </MessageResponse>
-            </MessageContent>
-        </Message>,
+        <MessageResponse openCodeLabel="Open on right" onOpenCode={onOpenCode}>
+            {"```mermaid\ngraph TD; A-->B;\n```"}
+        </MessageResponse>,
     );
 
     expect(container).toBeDefined();

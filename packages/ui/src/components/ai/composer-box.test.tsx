@@ -4,7 +4,7 @@ import { expect, it, vi } from "vitest";
 
 import { ComposerBox } from "./composer-box";
 
-it("submits on Enter, preserves Shift+Enter and IME composition, and renders dock/running states", async () => {
+it("submits on Enter, preserves Shift+Enter and IME composition, focuses on trigger, and renders dock/running states", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn<(value: string) => void>();
     const onSubmit = vi.fn<() => void>();
@@ -17,6 +17,8 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
             onSubmit={onSubmit}
             placeholder="Ask anything"
             sendLabel="Send"
+            canSend={false}
+            focusTrigger={0}
             dock={<span>Attached file</span>}
             footerStart={<span>Model selector</span>}
         />,
@@ -34,6 +36,7 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
     await user.keyboard("{Enter}");
     expect(onSubmit).not.toHaveBeenCalled();
 
+    sendButton.focus();
     rerender(
         <ComposerBox
             value="Hello"
@@ -41,6 +44,8 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
             onSubmit={onSubmit}
             placeholder="Ask anything"
             sendLabel="Send"
+            canSend
+            focusTrigger={1}
             running={{
                 stepLabel: "Thinking",
                 startedAtMs: Date.now() - 1500,
@@ -49,6 +54,7 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
             }}
         />,
     );
+    expect(document.activeElement).toBe(textarea);
 
     expect(screen.getByText("Thinking")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Stop" }));
@@ -75,9 +81,9 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
             onSubmit={onSubmit}
             placeholder="Ask anything"
             sendLabel="Send"
+            canSend
             running={{
                 stepLabel: "Retrying",
-                startedAtMs: Date.now(),
                 warn: true,
                 stopLabel: "Stop",
                 onStop,
@@ -92,6 +98,8 @@ it("submits on Enter, preserves Shift+Enter and IME composition, and renders doc
             onChange={onChange}
             placeholder="Ask anything"
             sendLabel="Send"
+            disabled
+            canSend
         />,
     );
     expect(screen.getByRole("button", { name: "Send" })).toHaveProperty(

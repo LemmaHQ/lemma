@@ -1,32 +1,111 @@
+import { code } from "@streamdown/code";
+import { useCopyText } from "#hooks/use-copy-text";
+import { DrawerHeadingContext } from "#hooks/use-drawer-heading";
+import { CheckIcon } from "#icons/check";
+import { CopyIcon } from "#icons/copy";
 import { XIcon } from "#icons/x";
 import { cn } from "#lib/cn";
 import { Button } from "#primitives/button";
-import type { ReactNode } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
+import { type ReactNode, useContext, useMemo } from "react";
+import {
+    CodeBlock as StreamdownCodeBlock,
+    StreamdownContext,
+} from "streamdown";
 
-export type DetailPaneWebHit = {
+type DetailPaneWebHit = {
     id: string;
     title: string;
     url: string;
-    snippet?: string;
+    snippet?: string | undefined;
 };
 
 export type DetailPaneBody =
     | { kind: "prose"; content: ReactNode }
-    | { kind: "code"; code: string; language?: string }
-    | { kind: "web"; hits: DetailPaneWebHit[] }
-    | { kind: "output"; content: string; warn?: boolean };
+    | {
+          kind: "code";
+          code: string;
+          language?: string | undefined;
+          copyLabel?: string | undefined;
+          copiedLabel?: string | undefined;
+      }
+    | { kind: "web"; note?: string | undefined; hits: DetailPaneWebHit[] }
+    | { kind: "output"; content: string; warn?: boolean | undefined };
 
 export type DetailPaneProps = {
     verb: string;
     title: string;
-    meta?: string;
+    meta?: string | undefined;
     closeLabel: string;
     onClose: () => void;
     body: DetailPaneBody;
-    className?: string;
+    className?: string | undefined;
 };
 
-/** Slide-in detail pane with a 52px header and typed prose, code, web, or output body. */
+function DetailCodeBody({
+    codeText,
+    language,
+    copyLabel,
+    copiedLabel,
+}: {
+    codeText: string;
+    language: string;
+    copyLabel?: string | undefined;
+    copiedLabel?: string | undefined;
+}) {
+    const { copied, copy } = useCopyText();
+    const baseContext = useContext(StreamdownContext);
+    const contextValue = useMemo(
+        () => ({
+            ...baseContext,
+            plugins: { code },
+            controls: false,
+            lineNumbers: true,
+        }),
+        [baseContext],
+    );
+
+    return (
+        <div data-language={language === "" ? undefined : language}>
+            <StreamdownContext.Provider value={contextValue}>
+                <StreamdownCodeBlock
+                    code={codeText}
+                    language={language}
+                    lineNumbers
+                >
+                    {copyLabel !== undefined && (
+                        <Tooltip>
+                            <TooltipTrigger
+                                render={
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        aria-label={
+                                            copied
+                                                ? (copiedLabel ?? copyLabel)
+                                                : copyLabel
+                                        }
+                                        onClick={() => copy(codeText)}
+                                    />
+                                }
+                            >
+                                {copied ? <CheckIcon /> : <CopyIcon />}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {copied
+                                    ? (copiedLabel ?? copyLabel)
+                                    : copyLabel}
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+                </StreamdownCodeBlock>
+            </StreamdownContext.Provider>
+        </div>
+    );
+}
+
+/** Slide-in detail pane with a 52px header and typed prose, highlighted code, web, or output body. */
 export function DetailPane({
     verb,
     title,
@@ -36,6 +115,8 @@ export function DetailPane({
     body,
     className,
 }: DetailPaneProps) {
+    const headingId = useContext(DrawerHeadingContext);
+
     return (
         <div
             data-slot="detail-pane"
@@ -45,8 +126,18 @@ export function DetailPane({
                 <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-caption font-medium text-muted-foreground">
                     {verb}
                 </span>
-                <h2 className="min-w-0 flex-1 truncate text-body font-medium text-foreground">
-                    {title}
+                <h2
+                    id={headingId}
+                    className="min-w-0 flex-1 truncate text-body font-medium text-foreground"
+                >
+                    <Tooltip>
+                        <TooltipTrigger
+                            render={<span className="block truncate" />}
+                        >
+                            {title}
+                        </TooltipTrigger>
+                        <TooltipContent>{title}</TooltipContent>
+                    </Tooltip>
                 </h2>
                 {meta !== undefined && (
                     <span className="shrink-0 text-caption text-subtle-foreground tabular-nums">
@@ -70,36 +161,20 @@ export function DetailPane({
                     </div>
                 )}
                 {body.kind === "code" && (
-                    <div
-                        data-language={body.language}
-                        className="overflow-x-auto rounded-md border border-border bg-muted py-3 font-mono text-small"
-                    >
-                        {body.code
-                            .split("\n")
-                            .map((text, index) => ({
-                                lineNumber: index + 1,
-                                text,
-                            }))
-                            .map((entry) => (
-                                <div
-                                    key={entry.lineNumber}
-                                    className="flex px-3"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="w-10 shrink-0 pr-3 text-right text-subtle-foreground tabular-nums select-none"
-                                    >
-                                        {entry.lineNumber}
-                                    </span>
-                                    <span className="whitespace-pre text-foreground">
-                                        {entry.text}
-                                    </span>
-                                </div>
-                            ))}
-                    </div>
+                    <DetailCodeBody
+                        codeText={body.code}
+                        language={body.language ?? ""}
+                        copyLabel={body.copyLabel}
+                        copiedLabel={body.copiedLabel}
+                    />
                 )}
                 {body.kind === "web" && (
                     <div className="flex flex-col gap-2">
+                        {body.note !== undefined && (
+                            <p className="text-small text-muted-foreground">
+                                {body.note}
+                            </p>
+                        )}
                         {body.hits.map((hit) => (
                             <a
                                 key={hit.id}

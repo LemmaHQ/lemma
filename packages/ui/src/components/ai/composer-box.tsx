@@ -1,33 +1,41 @@
 import { useStopwatch } from "#hooks/use-stopwatch";
+import { CornerDownLeftIcon } from "#icons/corner-down-left";
 import { cn } from "#lib/cn";
 import { formatDuration } from "#lib/format-duration";
 import { Button } from "#primitives/button";
-import { CornerDownLeftIcon } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useState } from "react";
+import { AnimateIcon } from "@animate-ui/react/icons";
+import {
+    type KeyboardEvent,
+    type ReactNode,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
-export type ComposerRunningState = {
+type ComposerRunningState = {
     stepLabel: string;
-    startedAtMs: number;
-    warn?: boolean;
+    startedAtMs?: number | undefined;
+    warn?: boolean | undefined;
     stopLabel: string;
     onStop: () => void;
 };
 
-export type ComposerBoxProps = {
+type ComposerBoxProps = {
     value: string;
     onChange: (value: string) => void;
-    onSubmit?: () => void;
+    onSubmit?: (() => void) | undefined;
     placeholder: string;
     sendLabel: string;
-    disabled?: boolean;
-    canSend?: boolean;
+    disabled?: boolean | undefined;
+    canSend: boolean;
+    focusTrigger?: number | undefined;
     dock?: ReactNode;
     footerStart?: ReactNode;
-    running?: ComposerRunningState;
-    className?: string;
+    running?: ComposerRunningState | undefined;
+    className?: string | undefined;
 };
 
-/** 680px composer box with optional top dock, collapsible live status bar, and footer actions. */
+/** 680px composer box with optional top dock, collapsible live status bar, auto-growing textarea, and footer actions. */
 export function ComposerBox({
     value,
     onChange,
@@ -36,27 +44,39 @@ export function ComposerBox({
     sendLabel,
     disabled = false,
     canSend,
+    focusTrigger,
     dock,
     footerStart,
     running,
     className,
 }: ComposerBoxProps) {
     const [isComposing, setIsComposing] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const prevFocusTriggerRef = useRef(focusTrigger);
     const elapsed = useStopwatch(running?.startedAtMs);
-    const sendAllowed = (canSend ?? value.trim().length > 0) && !disabled;
+    const sendAllowed = canSend && !disabled;
+
+    useEffect(() => {
+        if (
+            focusTrigger !== undefined &&
+            focusTrigger !== prevFocusTriggerRef.current
+        ) {
+            prevFocusTriggerRef.current = focusTrigger;
+            textareaRef.current?.focus();
+        }
+    }, [focusTrigger]);
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (
-            event.key !== "Enter" ||
-            event.shiftKey ||
-            isComposing ||
-            event.nativeEvent.isComposing
+            event.key === "Enter" &&
+            !event.shiftKey &&
+            !isComposing &&
+            !event.nativeEvent.isComposing
         ) {
-            return;
-        }
-        event.preventDefault();
-        if (sendAllowed) {
-            onSubmit?.();
+            event.preventDefault();
+            if (sendAllowed) {
+                onSubmit?.();
+            }
         }
     };
 
@@ -64,18 +84,24 @@ export function ComposerBox({
         <div
             data-slot="composer-box"
             className={cn(
-                "w-full max-w-170 overflow-hidden rounded-lg border border-input bg-background transition-colors duration-base focus-within:border-foreground",
+                "w-full max-w-170 overflow-hidden rounded-lg border border-input bg-background shadow-raised transition-colors duration-base focus-within:border-foreground",
                 className,
             )}
         >
-            {dock !== undefined && (
-                <div
-                    data-slot="composer-dock"
-                    className="border-b border-border px-3 py-2"
-                >
-                    {dock}
+            <div
+                data-slot="composer-dock"
+                className="grid-collapse"
+                data-open={dock !== undefined}
+                inert={dock === undefined}
+            >
+                <div>
+                    {dock !== undefined && (
+                        <div className="border-b border-border bg-sidebar px-3.5 py-2">
+                            {dock}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
             <div
                 data-slot="composer-running"
                 className="grid-collapse"
@@ -117,33 +143,32 @@ export function ComposerBox({
                 </div>
             </div>
             <textarea
+                ref={textareaRef}
                 value={value}
                 onChange={(event) => onChange(event.currentTarget.value)}
+                onKeyDown={handleKeyDown}
                 onCompositionStart={() => setIsComposing(true)}
                 onCompositionEnd={() => setIsComposing(false)}
-                onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 aria-label={placeholder}
                 disabled={disabled}
-                rows={2}
-                className="block max-h-48 min-h-14 w-full resize-none bg-transparent px-3.5 pt-3 pb-2 text-reading text-foreground outline-none placeholder:text-subtle-foreground disabled:opacity-50"
+                className="block field-sizing-content max-h-48 min-h-14 w-full resize-none bg-transparent px-3.5 pt-3 pb-1.5 text-reading text-foreground outline-none placeholder:text-subtle-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
-            <div
-                data-slot="composer-foot"
-                className="flex items-center justify-between gap-2 px-3 pb-2.5"
-            >
-                <div className="flex min-w-0 items-center gap-1">
+            <div className="flex items-center justify-between gap-2 px-2.5 pb-2">
+                <div className="flex min-w-0 flex-1 items-center gap-1">
                     {footerStart}
                 </div>
-                <Button
-                    type="button"
-                    size="sm"
-                    disabled={!sendAllowed || onSubmit === undefined}
-                    {...(onSubmit === undefined ? {} : { onClick: onSubmit })}
-                >
-                    <CornerDownLeftIcon aria-hidden="true" />
-                    <span>{sendLabel}</span>
-                </Button>
+                <AnimateIcon animateOnHover asChild>
+                    <Button
+                        type="button"
+                        size="icon-sm"
+                        aria-label={sendLabel}
+                        disabled={!sendAllowed}
+                        onClick={() => onSubmit?.()}
+                    >
+                        <CornerDownLeftIcon />
+                    </Button>
+                </AnimateIcon>
             </div>
         </div>
     );
