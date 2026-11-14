@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { formatDuration } from "./format-duration";
+import { formatClockTime, formatDuration } from "./format-duration";
 
 it.each([
     [0, false, "1ms"],
@@ -19,4 +19,10 @@ it.each([
 
 it("formats a finished duration by default", () => {
     expect(formatDuration(250)).toBe("250ms");
+});
+
+it("formats an epoch timestamp as local HH:mm", () => {
+    expect(formatClockTime(new Date(2026, 9, 31, 8, 5).getTime())).toBe(
+        "08:05",
+    );
 });
