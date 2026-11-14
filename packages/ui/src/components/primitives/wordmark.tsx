@@ -1,24 +1,35 @@
 import { cn } from "#lib/cn";
 
-export type WordmarkProps = {
+type WordmarkProps = {
     label: string;
-    className?: string;
+    size?: "default" | "splash" | undefined;
+    className?: string | undefined;
 };
 
-/** Brand wordmark set in NewCM with a trailing brand dot. */
-export function Wordmark({ label, className }: WordmarkProps) {
+/** Brand wordmark set in NewCM (19px sidebar default or 24px splash scale) with a trailing brand dot. */
+export function Wordmark({
+    label,
+    size = "default",
+    className,
+}: WordmarkProps) {
     return (
         <span
             data-slot="wordmark"
             className={cn(
-                "font-brand text-[19px]/6 text-foreground select-none",
+                "font-brand text-foreground select-none",
+                size === "splash" ? "text-wordmark-splash" : "text-wordmark",
                 className,
             )}
         >
             {label}
             <span
                 aria-hidden="true"
-                className="ml-0.5 inline-block size-[5px] rounded-full bg-brand align-[0.72em]"
+                className={cn(
+                    "ml-0.5 inline-block rounded-full bg-brand",
+                    size === "splash"
+                        ? "relative bottom-3 size-1.5"
+                        : "size-[5px] align-[0.72em]",
+                )}
             />
         </span>
     );

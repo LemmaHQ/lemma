@@ -1,8 +1,7 @@
+import { Wordmark } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 
-import { AppBrand } from "./AppBrand";
-
-/** Shown while the router hydrates; it matches the boot markup in `index.html`, so the first paint and this screen look the same. */
+/** Shown while the router hydrates; its 24px wordmark matches the boot markup in `index.html`. */
 export function SplashScreen() {
     const { t } = useTranslation();
     return (
@@ -10,7 +9,7 @@ export function SplashScreen() {
             aria-label={t("common.loading")}
             className="grid min-h-dvh place-items-center"
         >
-            <AppBrand large />
+            <Wordmark size="splash" label={t("common.appName")} />
         </output>
     );
 }
