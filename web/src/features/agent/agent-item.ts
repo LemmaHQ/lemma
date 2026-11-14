@@ -15,6 +15,7 @@ export interface ToolCallItem {
 
 export interface AgentItem {
     id: string;
+    parentId?: string | undefined;
     role: "user" | "assistant" | "tool";
     content: string;
     thinking: string;
@@ -26,6 +27,8 @@ export interface AgentItem {
     toolIsError?: boolean | undefined;
     thinkingStartedAt?: number | undefined;
     thinkingFinishedAt?: number | undefined;
+    createdAtMs?: number | undefined;
+    label?: string | undefined;
     error?: string | undefined;
 }
 
@@ -52,6 +55,10 @@ export function replyView(
 export function protoToItem(m: Message): AgentItem {
     return {
         id: m.id,
+        parentId:
+            m.parentId === undefined || m.parentId === ""
+                ? undefined
+                : m.parentId,
         role:
             m.role === "user"
                 ? "user"
@@ -75,6 +82,8 @@ export function protoToItem(m: Message): AgentItem {
         })),
         thinkingStartedAt: epochMillis(m.thinkingStartedAt),
         thinkingFinishedAt: epochMillis(m.thinkingFinishedAt),
+        createdAtMs: epochMillis(m.createdAt),
+        label: m.label === undefined || m.label === "" ? undefined : m.label,
         toolCallId: m.toolResult?.toolCallId,
         toolIsError: m.toolResult?.isError,
         error: m.error === "" ? undefined : m.error,
@@ -109,6 +118,43 @@ export function hydrateToolResults(items: AgentItem[]): AgentItem[] {
             }),
         };
     });
+}
+
+/** Walks upward past tool-role messages to the nearest non-tool ancestor id. */
+function resolveNonToolParentId(
+    parentId: string | undefined,
+    byId: ReadonlyMap<string, AgentItem>,
+): string | undefined {
+    const visited = new Set<string>();
+    let current = parentId;
+    while (current !== undefined && !visited.has(current)) {
+        const parent = byId.get(current);
+        if (parent === undefined || parent.role !== "tool") {
+            return current;
+        }
+        visited.add(current);
+        current = parent.parentId;
+    }
+    return undefined;
+}
+
+/** Removes tool-role messages while rewriting each remaining item's parentId past skipped tool chains. */
+export function collapseToolItems(items: AgentItem[]): AgentItem[] {
+    const byId = new Map<string, AgentItem>();
+    for (const item of items) {
+        byId.set(item.id, item);
+    }
+    const result: AgentItem[] = [];
+    for (const item of items) {
+        if (item.role === "tool") {
+            continue;
+        }
+        result.push({
+            ...item,
+            parentId: resolveNonToolParentId(item.parentId, byId),
+        });
+    }
+    return result;
 }
 
 function epochMillis(value: Timestamp | undefined): number | undefined {

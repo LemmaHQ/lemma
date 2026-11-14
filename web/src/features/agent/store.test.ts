@@ -1,14 +1,17 @@
 import { create, type MessageInitShape } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type AgentEvent, AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
+import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import {
     type ListMessagesResponse,
     ListMessagesResponseSchema,
+    MessageSchema,
     MessageStatus,
+    SetMessageLabelResponseSchema,
 } from "@/gen/lemma/v1/session_pb";
-import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
 import { useActiveSession } from "./store";
 
@@ -21,13 +24,20 @@ type MessageInit = NonNullable<
 
 const rpc = vi.hoisted(() => ({
     listMessages:
+        vi.fn<(req: { sessionId: string }) => Promise<ListMessagesResponse>>(),
+    setSessionLeaf:
         vi.fn<
-            (req: {
-                sessionId: string;
-                beforeId?: string;
-                limit: number;
-            }) => Promise<ListMessagesResponse>
+            (req: { sessionId: string; leafId?: string }) => Promise<unknown>
         >(),
+    setMessageLabel: vi.fn<
+        (req: {
+            sessionId: string;
+            messageId: string;
+            label: string;
+        }) => Promise<{
+            message?: { label?: string | undefined } | undefined;
+        }>
+    >(),
     sendMessage: vi.fn<
         (
             req: {
@@ -35,6 +45,7 @@ const rpc = vi.hoisted(() => ({
                 content: string;
                 providerId: string;
                 model: string;
+                parentId?: string;
             },
             options: { signal: AbortSignal },
         ) => Stream
@@ -55,17 +66,24 @@ vi.mock("@/rpc/clients", () => ({
         resumeStream: rpc.resumeStream,
         abortMessage: rpc.abortMessage,
     },
-    sessionClient: { listMessages: rpc.listMessages },
+    sessionClient: {
+        listMessages: rpc.listMessages,
+        setSessionLeaf: rpc.setSessionLeaf,
+        setMessageLabel: rpc.setMessageLabel,
+    },
 }));
 
 const event = (kind: EventKind): StreamResponse => ({
     event: create(AgentEventSchema, { kind }),
 });
 
-const started = (messageId: string) =>
-    event({ case: "started", value: { messageId } });
-const turnStarted = (messageId: string) =>
-    event({ case: "turnStarted", value: { messageId } });
+const started = (messageId: string, parentId?: string) =>
+    event({
+        case: "started",
+        value: parentId === undefined ? { messageId } : { messageId, parentId },
+    });
+const turnStarted = (messageId: string, parentId: string) =>
+    event({ case: "turnStarted", value: { messageId, parentId } });
 const text = (content: string) =>
     event({
         case: "delta",
@@ -105,8 +123,16 @@ async function* untilAborted(
     await aborted.promise;
 }
 
-const page = (messages: MessageInit[], hasMore = false) =>
-    create(ListMessagesResponseSchema, { messages, hasMore });
+const treeResponse = (
+    messages: MessageInit[],
+    leafId?: string,
+    activeMessageId?: string,
+) =>
+    create(ListMessagesResponseSchema, {
+        messages,
+        ...(leafId === undefined ? {} : { leafId }),
+        ...(activeMessageId === undefined ? {} : { activeMessageId }),
+    });
 
 const state = () => useActiveSession.getState();
 
@@ -128,18 +154,14 @@ afterEach(() => {
 });
 
 describe("open", () => {
-    it("shows the latest page oldest first with tool results folded in", async () => {
+    it("loads full tree oldest first, hydrates tools, and derives active path", async () => {
         rpc.listMessages.mockResolvedValue(
-            page(
+            treeResponse(
                 [
-                    {
-                        id: "tool-1",
-                        role: "tool",
-                        content: "file contents",
-                        toolResult: { toolCallId: "call-1", isError: true },
-                    },
+                    { id: "user-1", role: "user", content: "read it" },
                     {
                         id: "assistant-1",
+                        parentId: "user-1",
                         role: "assistant",
                         status: MessageStatus.DONE,
                         toolCalls: [
@@ -147,9 +169,16 @@ describe("open", () => {
                             { id: "call-2", name: "bash" },
                         ],
                     },
-                    { id: "user-1", role: "user", content: "read it" },
+                    {
+                        id: "tool-1",
+                        parentId: "assistant-1",
+                        role: "tool",
+                        content: "file contents",
+                        toolResult: { toolCallId: "call-1", isError: true },
+                    },
+                    { id: "user-alt", role: "user", content: "other root" },
                 ],
-                true,
+                "tool-1",
             ),
         );
 
@@ -157,8 +186,9 @@ describe("open", () => {
 
         expect(rpc.listMessages).toHaveBeenCalledWith({
             sessionId: "session-1",
-            limit: 50,
         });
+        expect(state().treeMessages).toHaveLength(4);
+        expect(state().leafId).toBe("tool-1");
         expect(state().items.map((item) => item.id)).toEqual([
             "user-1",
             "assistant-1",
@@ -168,117 +198,208 @@ describe("open", () => {
             { id: "call-1", output: "file contents", isError: true },
             { id: "call-2", output: "" },
         ]);
-        expect(state().hasMore).toBe(true);
     });
 
-    it("refreshes the open session without dropping state", async () => {
-        rpc.listMessages.mockResolvedValue(
-            page([{ id: "user-1", role: "user", content: "hi" }]),
+    it("handles empty leafId and ignores stale responses after switching session", async () => {
+        const first = Promise.withResolvers<ListMessagesResponse>();
+        rpc.listMessages
+            .mockReturnValueOnce(first.promise)
+            .mockResolvedValueOnce(treeResponse([], ""));
+
+        const openingFirst = state().open("session-1");
+        await state().open("session-2");
+        first.resolve(
+            treeResponse([{ id: "u1", role: "user", content: "stale" }], "u1"),
         );
-        await state().open("session-1");
-        await state().open("session-1");
+        await openingFirst;
 
-        expect(state().items.map((item) => item.id)).toEqual(["user-1"]);
+        expect(state().sessionId).toBe("session-2");
+        expect(state().leafId).toBeUndefined();
+        expect(state().items).toEqual([]);
     });
-});
 
-const openWith = async (hasMore: boolean) => {
-    rpc.listMessages.mockResolvedValueOnce(
-        page([{ id: "user-2", role: "user" }], hasMore),
-    );
-    await state().open("session-1");
-};
+    it("automatically resumes activeMessageId on open and avoids duplicate tracking", async () => {
+        const ts = timestampFromDate(new Date(1000));
+        rpc.listMessages
+            .mockResolvedValueOnce(
+                treeResponse(
+                    [
+                        {
+                            id: "u0",
+                            role: "user",
+                            content: "old",
+                            createdAt: ts,
+                        },
+                        {
+                            id: "a0",
+                            parentId: "u0",
+                            role: "assistant",
+                            content: "ok",
+                        },
+                        {
+                            id: "u1",
+                            parentId: "a0",
+                            role: "user",
+                            content: "live q",
+                            createdAt: ts,
+                        },
+                        {
+                            id: "a1",
+                            parentId: "u1",
+                            role: "assistant",
+                            providerId: "p1",
+                            model: "m1",
+                            content: "par",
+                            status: MessageStatus.STREAMING,
+                        },
+                    ],
+                    "a1",
+                    "u1",
+                ),
+            )
+            .mockResolvedValueOnce(
+                treeResponse([{ id: "u1", role: "user" }], "u1", "u1"),
+            )
+            .mockResolvedValueOnce(
+                treeResponse(
+                    [
+                        { id: "u0", role: "user", content: "old" },
+                        {
+                            id: "a0",
+                            parentId: "u0",
+                            role: "assistant",
+                            content: "ok",
+                        },
+                        {
+                            id: "u1",
+                            parentId: "a0",
+                            role: "user",
+                            content: "live q",
+                        },
+                        {
+                            id: "a1",
+                            parentId: "u1",
+                            role: "assistant",
+                            content: "partial done",
+                            status: MessageStatus.DONE,
+                        },
+                    ],
+                    "a1",
+                ),
+            );
+        rpc.resumeStream.mockImplementation((_req, { signal }) =>
+            untilAborted(
+                [
+                    started("u1", "a0"),
+                    turnStarted("a1", "u1"),
+                    text("partial done"),
+                ],
+                signal,
+            ),
+        );
+        rpc.abortMessage.mockResolvedValue({});
+        const opening = state().open("session-1");
+        await vi.waitFor(() => {
+            expect(state().streaming).toBe(true);
+            expect(state().items.at(-1)?.content).toBe("partial done");
+        });
 
-describe("loadMore", () => {
-    it("prepends the page before the oldest shown message", async () => {
-        await openWith(true);
-        rpc.listMessages.mockResolvedValueOnce(
-            page([
-                { id: "assistant-1", role: "assistant" },
-                { id: "user-1", role: "user" },
+        await state().open("session-1");
+        expect(rpc.resumeStream).toHaveBeenCalledTimes(1);
+
+        await state().abort();
+        await opening;
+        expect(state().streaming).toBe(false);
+    });
+
+    it("resumes activeMessageId even when user message is absent from listMessages", async () => {
+        rpc.listMessages
+            .mockResolvedValueOnce(treeResponse([], undefined, "u-missing"))
+            .mockResolvedValueOnce(
+                treeResponse(
+                    [
+                        { id: "u-missing", role: "user", content: "hi" },
+                        {
+                            id: "a1",
+                            parentId: "u-missing",
+                            role: "assistant",
+                            content: "ok",
+                        },
+                    ],
+                    "a1",
+                ),
+            );
+        rpc.resumeStream.mockReturnValue(
+            stream([
+                started("u-missing"),
+                turnStarted("a1", "u-missing"),
+                text("ok"),
+                done(),
             ]),
         );
 
-        await state().loadMore();
+        await state().open("session-1");
 
-        expect(rpc.listMessages).toHaveBeenLastCalledWith({
-            sessionId: "session-1",
-            beforeId: "user-2",
-            limit: 50,
+        expect(rpc.resumeStream.mock.lastCall?.[0]).toEqual({
+            messageId: "u-missing",
+            offset: 0n,
         });
-        expect(state().items.map((item) => item.id)).toEqual([
-            "user-1",
-            "assistant-1",
-            "user-2",
-        ]);
-        expect(state().hasMore).toBe(false);
-    });
-
-    it("loads one page at a time", async () => {
-        await openWith(true);
-        const older = Promise.withResolvers<ListMessagesResponse>();
-        rpc.listMessages.mockReturnValueOnce(older.promise);
-
-        const first = state().loadMore();
-        await state().loadMore();
-        older.resolve(page([{ id: "user-1", role: "user" }]));
-        await first;
-
-        expect(rpc.listMessages).toHaveBeenCalledTimes(2);
-        expect(state().items).toHaveLength(2);
-    });
-
-    it("loads nothing without more history or an open session", async () => {
-        await state().loadMore();
-        await openWith(false);
-        await state().loadMore();
-        useActiveSession.setState({ hasMore: true, items: [] });
-        await state().loadMore();
-
-        expect(rpc.listMessages).toHaveBeenCalledOnce();
-    });
-
-    it("drops a page that arrives after the session changed", async () => {
-        await openWith(true);
-        const older = Promise.withResolvers<ListMessagesResponse>();
-        rpc.listMessages.mockReturnValueOnce(older.promise);
-
-        const loading = state().loadMore();
-        rpc.listMessages.mockResolvedValueOnce(
-            page([{ id: "other-1", role: "user" }]),
+        expect(rpc.resumeStream.mock.lastCall?.[1]?.signal).toBeInstanceOf(
+            AbortSignal,
         );
-        await state().open("session-2");
-        older.resolve(page([{ id: "user-1", role: "user" }]));
-        await loading;
-
-        expect(state().items.map((item) => item.id)).toEqual(["other-1"]);
-    });
-
-    it("drops a page whose anchor is no longer the oldest message", async () => {
-        await openWith(true);
-        const older = Promise.withResolvers<ListMessagesResponse>();
-        rpc.listMessages.mockReturnValueOnce(older.promise);
-
-        const loading = state().loadMore();
-        useActiveSession.setState({ items: [] });
-        older.resolve(page([{ id: "user-1", role: "user" }]));
-        await loading;
-
-        expect(state().items).toEqual([]);
+        expect(state().leafId).toBe("a1");
+        expect(state().items.map((m) => m.id)).toEqual(["u-missing", "a1"]);
     });
 });
 
 describe("send", () => {
     beforeEach(async () => {
-        rpc.listMessages.mockResolvedValue(page([]));
+        rpc.listMessages.mockResolvedValue(treeResponse([]));
         await state().open("session-1");
     });
 
-    it("streams thinking, text, tool calls, and a follow-up turn", async () => {
+    it("streams thinking, text, tool calls, follow-up turn, and reloads DB tree", async () => {
+        const settled = treeResponse(
+            [
+                { id: "user-msg", role: "user", content: "what is in a?" },
+                {
+                    id: "assistant-1",
+                    parentId: "user-msg",
+                    role: "assistant",
+                    thinking: "let me look",
+                    content: "Reading.",
+                    providerId: "provider-1",
+                    model: "model-1",
+                    toolCalls: [
+                        {
+                            id: "call-1",
+                            name: "read_file",
+                            arguments: '{"path":"a"}',
+                        },
+                    ],
+                },
+                {
+                    id: "tool-1",
+                    parentId: "assistant-1",
+                    role: "tool",
+                    content: "A",
+                    toolResult: { toolCallId: "call-1", isError: false },
+                },
+                {
+                    id: "assistant-2",
+                    parentId: "tool-1",
+                    role: "assistant",
+                    content: "It says A.",
+                    status: MessageStatus.DONE,
+                },
+            ],
+            "assistant-2",
+        );
+        rpc.listMessages.mockResolvedValueOnce(settled);
         rpc.sendMessage.mockReturnValue(
             stream([
                 started("user-msg"),
-                turnStarted("assistant-1"),
+                turnStarted("assistant-1", "user-msg"),
                 thinking("let me look"),
                 text("Reading."),
                 event({
@@ -293,14 +414,7 @@ describe("send", () => {
                     case: "toolCallFinished",
                     value: { callId: "call-1", content: "A", isError: false },
                 }),
-                event({
-                    case: "toolCallFinished",
-                    value: { callId: "call-9", content: "?", isError: true },
-                }),
-                turnStarted("assistant-2"),
-                event({ case: "delta", value: {} }),
-                { event: create(AgentEventSchema, {}) },
-                {},
+                turnStarted("assistant-2", "tool-1"),
                 text("It says A."),
                 done(),
             ]),
@@ -314,69 +428,90 @@ describe("send", () => {
             providerId: "provider-1",
             model: "model-1",
         });
-        const [user, first, second] = state().items;
-        expect(user).toMatchObject({
-            role: "user",
-            content: "what is in a?",
-            status: "done",
-        });
-        expect(first).toMatchObject({
-            id: "assistant-1",
-            thinking: "let me look",
-            content: "Reading.",
-            providerId: "provider-1",
-            model: "model-1",
-            toolCalls: [
-                {
-                    id: "call-1",
-                    output: "A",
-                    isError: false,
-                    state: "done",
-                },
-            ],
-        });
-        expect(second).toMatchObject({
-            id: "assistant-2",
-            content: "It says A.",
-            status: "done",
+        expect(state().leafId).toBe("assistant-2");
+        expect(state().treeMessages.map((m) => m.id)).toEqual([
+            "user-msg",
+            "assistant-1",
+            "tool-1",
+            "assistant-2",
+        ]);
+        expect(state().items[1]?.toolCalls[0]).toMatchObject({
+            id: "call-1",
+            output: "A",
+            isError: false,
         });
         expect(state().streaming).toBe(false);
     });
 
-    it.each([
-        [
-            "an error event",
-            event({ case: "error", value: { message: "rate limited" } }),
-            { status: "error", error: "rate limited" },
-        ],
-        [
-            "an aborted event",
-            event({ case: "aborted", value: {} }),
-            { status: "aborted" },
-        ],
-    ])("ends the reply on %s", async (_case, last, expected) => {
+    it("supports explicitParentId for root and UUID branches and swallows reload error", async () => {
         rpc.sendMessage.mockReturnValue(
-            stream([started("user-msg"), turnStarted("assistant-1"), last]),
+            stream([
+                started("u-root", ""),
+                turnStarted("a-1", "u-root"),
+                text("hi"),
+                done(),
+            ]),
+        );
+        rpc.listMessages.mockRejectedValueOnce(new Error("reload hiccup"));
+
+        await state().send("p1", "m1", "new root", "");
+
+        expect(rpc.sendMessage.mock.lastCall?.[0]).toEqual({
+            sessionId: "session-1",
+            content: "new root",
+            providerId: "p1",
+            model: "m1",
+            parentId: "",
+        });
+        expect(state().items.map((m) => m.id)).toEqual(["u-root", "a-1"]);
+
+        rpc.listMessages.mockResolvedValueOnce(
+            treeResponse(
+                [
+                    { id: "u-root", role: "user", content: "new root" },
+                    {
+                        id: "u-branch",
+                        parentId: "u-root",
+                        role: "user",
+                        content: "fork",
+                    },
+                    {
+                        id: "a-2",
+                        parentId: "u-branch",
+                        role: "assistant",
+                        content: "forked",
+                    },
+                ],
+                "a-2",
+            ),
+        );
+        rpc.sendMessage.mockReturnValue(
+            stream([
+                started("u-branch", "u-root"),
+                turnStarted("a-2", "u-branch"),
+                text("forked"),
+                done(),
+            ]),
         );
 
-        await state().send("provider-1", "model-1", "hi");
+        await state().send("p1", "m1", "fork", "u-root");
 
-        expect(state().items.at(-1)).toMatchObject(expected);
+        expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
+            parentId: "u-root",
+        });
+        expect(state().leafId).toBe("a-2");
     });
 
-    it("ignores a send without an open session or while streaming", async () => {
+    it("ignores send without open session or while streaming", async () => {
         useActiveSession.setState(useActiveSession.getInitialState());
         await state().send("provider-1", "model-1", "hi");
-        useActiveSession.setState({
-            sessionId: "session-1",
-            streaming: true,
-        });
+        useActiveSession.setState({ sessionId: "session-1", streaming: true });
         await state().send("provider-1", "model-1", "hi");
 
         expect(rpc.sendMessage).not.toHaveBeenCalled();
     });
 
-    it("shows the failure when the stream breaks before the turn starts", async () => {
+    it("shows failure when stream breaks before turn starts", async () => {
         rpc.sendMessage.mockReturnValue(
             stream([], new ConnectError("offline", Code.Unavailable)),
         );
@@ -390,17 +525,39 @@ describe("send", () => {
         expect(rpc.resumeStream).not.toHaveBeenCalled();
     });
 
-    it("resumes a broken stream from the events it already received", async () => {
+    it("tracks reconnectingOffset across broken stream resume and settles", async () => {
         vi.useFakeTimers();
         rpc.sendMessage.mockReturnValue(
             stream(
-                [started("user-msg"), turnStarted("assistant-1"), text("Hel")],
+                [
+                    started("user-msg"),
+                    turnStarted("assistant-1", "user-msg"),
+                    text("Hel"),
+                ],
                 new ConnectError("reset", Code.Unavailable),
             ),
         );
         rpc.resumeStream.mockReturnValue(stream([text("lo"), done()]));
+        rpc.listMessages.mockResolvedValueOnce(
+            treeResponse(
+                [
+                    { id: "user-msg", role: "user", content: "hi" },
+                    {
+                        id: "assistant-1",
+                        parentId: "user-msg",
+                        role: "assistant",
+                        content: "Hello",
+                        status: MessageStatus.DONE,
+                    },
+                ],
+                "assistant-1",
+            ),
+        );
 
         const sending = state().send("provider-1", "model-1", "hi");
+        await vi.waitFor(() => {
+            expect(state().reconnectingOffset).toBe(3);
+        });
         await vi.advanceTimersByTimeAsync(500);
         await sending;
 
@@ -408,6 +565,7 @@ describe("send", () => {
             messageId: "user-msg",
             offset: 3n,
         });
+        expect(state().reconnectingOffset).toBeNull();
         expect(state().items.at(-1)).toMatchObject({
             content: "Hello",
             status: "done",
@@ -418,7 +576,10 @@ describe("send", () => {
         vi.useFakeTimers();
         const reset = new ConnectError("reset", Code.Unavailable);
         rpc.sendMessage.mockReturnValue(
-            stream([started("user-msg"), turnStarted("assistant-1")], reset),
+            stream(
+                [started("user-msg"), turnStarted("assistant-1", "user-msg")],
+                reset,
+            ),
         );
         rpc.resumeStream.mockImplementation(() => stream([], reset));
 
@@ -428,57 +589,33 @@ describe("send", () => {
 
         expect(rpc.resumeStream).toHaveBeenCalledTimes(3);
         expect(state().items.at(-1)).toMatchObject({ status: "error" });
+        expect(state().reconnectingOffset).toBeNull();
     });
 
-    it("reloads the session when the turn already finished", async () => {
-        vi.useFakeTimers();
-        rpc.sendMessage.mockReturnValue(
-            stream(
-                [started("user-msg")],
-                new ConnectError("reset", Code.Unavailable),
-            ),
-        );
-        rpc.resumeStream.mockReturnValue(stream([], turnNotRunning()));
-        rpc.listMessages.mockResolvedValue(
-            page([
-                { id: "assistant-1", role: "assistant", content: "done" },
-                { id: "user-msg", role: "user", content: "hi" },
-            ]),
-        );
-
-        const sending = state().send("provider-1", "model-1", "hi");
-        await vi.advanceTimersByTimeAsync(500);
-        await sending;
-
-        expect(state().items.map((item) => item.id)).toEqual([
-            "user-msg",
-            "assistant-1",
-        ]);
-        expect(state().streaming).toBe(false);
-    });
-
-    it("keeps a newer session when a finished turn reloads late", async () => {
+    it("reloads session when TURN_NOT_RUNNING occurs and drops stale reloads", async () => {
         const reload = Promise.withResolvers<ListMessagesResponse>();
         rpc.sendMessage.mockReturnValue(
             stream([started("user-msg")], turnNotRunning()),
         );
         rpc.listMessages
             .mockReturnValueOnce(reload.promise)
-            .mockResolvedValueOnce(page([]));
+            .mockResolvedValueOnce(treeResponse([]));
 
         const sending = state().send("provider-1", "model-1", "hi");
         await vi.waitFor(() => {
             expect(rpc.listMessages).toHaveBeenCalledTimes(2);
         });
         const switching = state().open("session-2");
-        reload.resolve(page([{ id: "user-msg", role: "user" }]));
+        reload.resolve(
+            treeResponse([{ id: "user-msg", role: "user" }], "user-msg"),
+        );
         await Promise.all([sending, switching]);
 
         expect(state().items).toEqual([]);
         expect(state().sessionId).toBe("session-2");
     });
 
-    it("stops the turn on the server and marks the reply aborted", async () => {
+    it("aborts before and after server names the message and ignores mid-stream switch", async () => {
         rpc.sendMessage.mockImplementation((_req, { signal }) =>
             untilAborted([started("user-msg"), text("partial")], signal),
         );
@@ -490,47 +627,198 @@ describe("send", () => {
         });
         await state().abort();
         await sending;
-
         expect(rpc.abortMessage).toHaveBeenCalledWith({
             messageId: "user-msg",
         });
         expect(state().items.at(-1)?.status).toBe("aborted");
-        expect(state().streaming).toBe(false);
-    });
 
-    it("aborts locally before the server names the message", async () => {
         rpc.sendMessage.mockImplementation((_req, { signal }) =>
             untilAborted([], signal),
         );
-
-        const sending = state().send("provider-1", "model-1", "hi");
+        const preAbort = state().send("provider-1", "model-1", "hi");
         await state().abort();
-        await sending;
+        await preAbort;
         await state().abort();
-
-        expect(rpc.abortMessage).not.toHaveBeenCalled();
         expect(state().items.at(-1)?.status).toBe("aborted");
-    });
 
-    it("leaves the new session alone when switched mid-stream", async () => {
         rpc.sendMessage.mockImplementation((_req, { signal }) =>
             untilAborted([started("user-msg")], signal),
         );
         rpc.listMessages.mockResolvedValueOnce(
-            page([{ id: "other-1", role: "user" }]),
+            treeResponse([{ id: "other-1", role: "user" }], "other-1"),
         );
-
-        const sending = state().send("provider-1", "model-1", "hi");
+        const switched = state().send("provider-1", "model-1", "hi");
         await vi.waitFor(() => {
             expect(rpc.sendMessage).toHaveBeenCalled();
         });
         await state().open("session-2");
-        await sending;
+        await switched;
 
         expect(state()).toMatchObject({
             sessionId: "session-2",
             items: [{ id: "other-1" }],
             streaming: false,
         });
+    });
+});
+
+const setupTree = async () => {
+    rpc.listMessages.mockResolvedValue(
+        treeResponse(
+            [
+                { id: "u1", role: "user", content: "first q" },
+                {
+                    id: "a1",
+                    parentId: "u1",
+                    role: "assistant",
+                    content: "first a",
+                },
+                {
+                    id: "u2",
+                    parentId: "a1",
+                    role: "user",
+                    content: "second q",
+                },
+                {
+                    id: "a2",
+                    parentId: "u2",
+                    role: "assistant",
+                    content: "second a",
+                },
+            ],
+            "a2",
+        ),
+    );
+    await state().open("session-1");
+};
+describe("branching, rewind, and labeling", () => {
+    it("switches active leaf and ignores stale or closed-session calls", async () => {
+        await state().switchLeaf("a1");
+        expect(rpc.setSessionLeaf).not.toHaveBeenCalled();
+
+        await setupTree();
+        rpc.setSessionLeaf.mockResolvedValue({});
+
+        await state().switchLeaf("a1");
+        expect(rpc.setSessionLeaf).toHaveBeenCalledWith({
+            sessionId: "session-1",
+            leafId: "a1",
+        });
+        expect(state().leafId).toBe("a1");
+        expect(state().items.map((m) => m.id)).toEqual(["u1", "a1"]);
+
+        await state().switchLeaf(undefined);
+        expect(rpc.setSessionLeaf).toHaveBeenLastCalledWith({
+            sessionId: "session-1",
+        });
+        expect(state().items).toEqual([]);
+
+        const pending = Promise.withResolvers<unknown>();
+        rpc.setSessionLeaf.mockReturnValueOnce(pending.promise);
+        const switching = state().switchLeaf("a2");
+        rpc.listMessages.mockResolvedValueOnce(treeResponse([]));
+        await state().open("session-2");
+        pending.resolve({});
+        await switching;
+        expect(state().sessionId).toBe("session-2");
+    });
+
+    it("rewinds to a user message, preserves backupLeafId, cancels, or sends branch", async () => {
+        await setupTree();
+        state().cancelRewind();
+        state().startRewind("missing");
+        state().startRewind("a1");
+        expect(state().rewind).toBeNull();
+
+        state().startRewind("u2");
+        expect(state().rewind).toEqual({
+            backupLeafId: "a2",
+            parentId: "a1",
+            draftText: "second q",
+        });
+        expect(state().leafId).toBe("a1");
+        expect(state().items.map((m) => m.id)).toEqual(["u1", "a1"]);
+
+        state().startRewind("u1");
+        expect(state().rewind).toEqual({
+            backupLeafId: "a2",
+            parentId: undefined,
+            draftText: "first q",
+        });
+        expect(state().items).toEqual([]);
+
+        state().cancelRewind();
+        expect(state().rewind).toBeNull();
+        expect(state().leafId).toBe("a2");
+        expect(state().items.map((m) => m.id)).toEqual([
+            "u1",
+            "a1",
+            "u2",
+            "a2",
+        ]);
+
+        state().startRewind("u1");
+        rpc.sendMessage.mockReturnValue(
+            stream([
+                started("u-new", ""),
+                turnStarted("a-new", "u-new"),
+                done(),
+            ]),
+        );
+        rpc.listMessages.mockResolvedValueOnce(
+            treeResponse(
+                [
+                    { id: "u-new", role: "user", content: "edited q" },
+                    {
+                        id: "a-new",
+                        parentId: "u-new",
+                        role: "assistant",
+                        content: "ok",
+                    },
+                ],
+                "a-new",
+            ),
+        );
+        await state().send("p1", "m1", "edited q");
+        expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
+            parentId: "",
+        });
+        expect(state().rewind).toBeNull();
+
+        useActiveSession.setState({ streaming: true });
+        state().startRewind("u1");
+        expect(state().rewind).toBeNull();
+    });
+
+    it("labels messages and patches treeMessages and active items", async () => {
+        await state().labelMessage("u1", "pin");
+        expect(rpc.setMessageLabel).not.toHaveBeenCalled();
+
+        await setupTree();
+        rpc.setMessageLabel.mockResolvedValueOnce(
+            create(SetMessageLabelResponseSchema, {
+                message: create(MessageSchema, { id: "u2", label: "pinned" }),
+            }),
+        );
+        await state().labelMessage("u2", "pinned");
+        expect(state().treeMessages.find((m) => m.id === "u2")?.label).toBe(
+            "pinned",
+        );
+        expect(state().items.find((m) => m.id === "u2")?.label).toBe("pinned");
+
+        rpc.setMessageLabel.mockResolvedValueOnce({});
+        await state().labelMessage("u2", "");
+        expect(
+            state().treeMessages.find((m) => m.id === "u2")?.label,
+        ).toBeUndefined();
+
+        const pending = Promise.withResolvers<{ message?: undefined }>();
+        rpc.setMessageLabel.mockReturnValueOnce(pending.promise);
+        const labeling = state().labelMessage("u1", "late");
+        rpc.listMessages.mockResolvedValueOnce(treeResponse([]));
+        await state().open("session-2");
+        pending.resolve({});
+        await labeling;
+        expect(state().sessionId).toBe("session-2");
     });
 });

@@ -4,13 +4,21 @@ import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
 import { type AgentItem, isBlankReply } from "./agent-item";
 
+/** Live execution phase shown while an assistant turn is streaming. */
+export type LiveStep =
+    { kind: "thinking" } | { kind: "tool"; name: string } | null;
+
 /** The slice of active session state the reducer reads and patches. */
 export interface StreamSlice {
     items: AgentItem[];
+    currentStep: LiveStep;
+    reconnectingOffset: number | null;
 }
 
 /** Applies a patch computed from the current slice. */
-export type StreamSet = (fn: (s: StreamSlice) => Partial<StreamSlice>) => void;
+export type StreamSet = (
+    fn: (s: StreamSlice) => Partial<StreamSlice> & { items: AgentItem[] },
+) => void;
 
 /** Reads the current slice. */
 export type StreamGet = () => StreamSlice;
@@ -28,18 +36,37 @@ export function createStreamReducer(
     providerId: string,
     model: string,
     initialId: string,
-    onStarted: (messageId: string) => void,
+    onStarted: (messageId: string, parentId?: string) => void,
+    userPlaceholderId?: string,
+    onTurnStarted?: (messageId: string) => void,
 ): StreamReducer {
     let currentId = initialId;
+    let currentUserId = userPlaceholderId;
 
-    const patchCurrent = (fn: (it: AgentItem) => AgentItem) => {
-        set((s) => ({
-            items: s.items.map((it) => (it.id === currentId ? fn(it) : it)),
-        }));
+    const patchCurrent = (
+        fn: (it: AgentItem) => AgentItem,
+        extra: (it: AgentItem) => Partial<StreamSlice>,
+    ) => {
+        set((s) => {
+            let sliceExtra: Partial<StreamSlice> = {};
+            const items = s.items.map((it) => {
+                if (it.id !== currentId) {
+                    return it;
+                }
+                const next = fn(it);
+                sliceExtra = extra(next);
+                return next;
+            });
+            return { items, ...sliceExtra };
+        });
     };
 
     const updateCurrent = (patch: Partial<AgentItem>) => {
-        patchCurrent((it) => ({ ...it, ...patch }));
+        patchCurrent(
+            (it) => ({ ...it, ...patch }),
+            (next) =>
+                next.status === "streaming" ? {} : { currentStep: null },
+        );
     };
 
     const finishReply = (
@@ -47,30 +74,67 @@ export function createStreamReducer(
         status: AgentItem["status"],
         patch: Partial<AgentItem> = {},
     ) => {
-        patchCurrent((it) => ({
-            ...it,
-            status,
-            ...patch,
-            thinkingFinishedAt: closedThinkingAt(it, at),
-        }));
+        patchCurrent(
+            (it) => ({
+                ...it,
+                status,
+                ...patch,
+                thinkingFinishedAt: closedThinkingAt(it, at),
+            }),
+            () => ({ currentStep: null }),
+        );
     };
 
-    const startTurn = (messageId: string) => {
+    const startUser = (messageId: string, rawParentId: string | undefined) => {
+        const parentId =
+            rawParentId === undefined || rawParentId === ""
+                ? undefined
+                : rawParentId;
+        if (currentUserId !== undefined) {
+            const prevUserId = currentUserId;
+            currentUserId = messageId;
+            set((s) => ({
+                items: s.items.map((it) => {
+                    if (it.id === prevUserId) {
+                        return { ...it, id: messageId, parentId };
+                    }
+                    if (it.parentId === prevUserId) {
+                        return { ...it, parentId: messageId };
+                    }
+                    return it;
+                }),
+            }));
+        }
+        onStarted(messageId, parentId);
+    };
+
+    const startTurn = (messageId: string, rawParentId: string) => {
+        const parentId = rawParentId === "" ? undefined : rawParentId;
         const current = get().items.find((it) => it.id === currentId);
         if (
             current !== undefined &&
             current.role === "assistant" &&
             isBlankReply(current)
         ) {
-            updateCurrent({ id: messageId });
+            set((s) => ({
+                currentStep: null,
+                items: s.items.map((it) =>
+                    it.id === currentId
+                        ? { ...it, id: messageId, parentId }
+                        : it,
+                ),
+            }));
             currentId = messageId;
+            onTurnStarted?.(messageId);
             return;
         }
         set((s) => ({
+            currentStep: null,
             items: [
                 ...s.items,
                 {
                     id: messageId,
+                    parentId,
                     role: "assistant",
                     content: "",
                     thinking: "",
@@ -82,6 +146,7 @@ export function createStreamReducer(
             ],
         }));
         currentId = messageId;
+        onTurnStarted?.(messageId);
     };
 
     const applyEvent = (event?: AgentEvent) => {
@@ -96,62 +161,86 @@ export function createStreamReducer(
                 : timestampDate(occurredAt).getTime();
         switch (kind.case) {
             case "started":
-                onStarted(kind.value.messageId);
+                startUser(kind.value.messageId, kind.value.parentId);
                 break;
             case "turnStarted":
-                startTurn(kind.value.messageId);
+                startTurn(kind.value.messageId, kind.value.parentId);
                 break;
             case "delta": {
                 const part = kind.value.part;
                 if (part.case === "text") {
-                    patchCurrent((it) => ({
-                        ...it,
-                        content: it.content + part.value.content,
-                        thinkingFinishedAt: closedThinkingAt(it, at),
-                    }));
+                    patchCurrent(
+                        (it) => ({
+                            ...it,
+                            content: it.content + part.value.content,
+                            thinkingFinishedAt: closedThinkingAt(it, at),
+                        }),
+                        () => ({ currentStep: null }),
+                    );
                 } else if (part.case === "thinking") {
-                    patchCurrent((it) => ({
-                        ...it,
-                        thinking: it.thinking + part.value.content,
-                        thinkingStartedAt: it.thinkingStartedAt ?? at,
-                    }));
+                    patchCurrent(
+                        (it) => ({
+                            ...it,
+                            thinking: it.thinking + part.value.content,
+                            thinkingStartedAt: it.thinkingStartedAt ?? at,
+                        }),
+                        () => ({ currentStep: { kind: "thinking" } }),
+                    );
                 }
                 break;
             }
             case "toolCallStarted":
-                patchCurrent((it) => ({
-                    ...it,
-                    thinkingFinishedAt: closedThinkingAt(it, at),
-                    toolCalls: [
-                        ...it.toolCalls,
-                        {
-                            id: kind.value.callId,
-                            name: kind.value.name,
-                            arguments: kind.value.arguments,
-                            output: "",
-                            isError: false,
-                            state: "running",
-                            startedAt: at,
-                        },
-                    ],
-                }));
+                patchCurrent(
+                    (it) => ({
+                        ...it,
+                        thinkingFinishedAt: closedThinkingAt(it, at),
+                        toolCalls: [
+                            ...it.toolCalls,
+                            {
+                                id: kind.value.callId,
+                                name: kind.value.name,
+                                arguments: kind.value.arguments,
+                                output: "",
+                                isError: false,
+                                state: "running",
+                                startedAt: at,
+                            },
+                        ],
+                    }),
+                    () => ({
+                        currentStep: { kind: "tool", name: kind.value.name },
+                    }),
+                );
                 break;
             case "toolCallFinished": {
                 const { callId, content, isError } = kind.value;
-                patchCurrent((it) => ({
-                    ...it,
-                    toolCalls: it.toolCalls.map((tc) =>
-                        tc.id === callId
-                            ? {
-                                  ...tc,
-                                  output: content,
-                                  isError,
-                                  state: "done",
-                                  finishedAt: at,
-                              }
-                            : tc,
-                    ),
-                }));
+                patchCurrent(
+                    (it) => ({
+                        ...it,
+                        toolCalls: it.toolCalls.map((tc) =>
+                            tc.id === callId
+                                ? {
+                                      ...tc,
+                                      output: content,
+                                      isError,
+                                      state: "done",
+                                      finishedAt: at,
+                                  }
+                                : tc,
+                        ),
+                    }),
+                    (next) => {
+                        const running = next.toolCalls.find(
+                            (tc) => tc.state === "running",
+                        );
+                        return {
+                            currentStep:
+                                running === undefined
+                                    ? null
+                                    : { kind: "tool", name: running.name },
+                        };
+                    },
+                );
                 break;
             }
             case "done":

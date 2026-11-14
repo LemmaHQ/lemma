@@ -16,9 +16,12 @@ const reasonKeys: Partial<Record<ErrorReason, ParseKeys>> = {
     [ErrorReason.TITLE_REQUIRED]: "errors.titleRequired",
     [ErrorReason.SESSION_NOT_FOUND]: "errors.sessionNotFound",
     [ErrorReason.DIRECTORY_NOT_FOUND]: "errors.directoryNotFound",
+    [ErrorReason.MESSAGE_NOT_FOUND]: "errors.messageNotFound",
+    [ErrorReason.INVALID_BRANCH_POINT]: "errors.invalidBranchPoint",
     [ErrorReason.CONTENT_REQUIRED]: "errors.contentRequired",
     [ErrorReason.MODEL_REQUIRED]: "errors.modelRequired",
     [ErrorReason.TURN_NOT_RUNNING]: "errors.turnNotRunning",
+    [ErrorReason.SESSION_BUSY]: "errors.sessionBusy",
 } satisfies Record<ErrorReason, ParseKeys>;
 
 const codeKeys: Partial<Record<Code, ParseKeys>> = {

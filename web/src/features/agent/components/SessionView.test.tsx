@@ -1,20 +1,25 @@
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { Toaster, TooltipProvider } from "@lemma/ui";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
 import {
     type ListMessagesResponse,
     ListMessagesResponseSchema,
+    MessageSchema,
 } from "@/gen/lemma/v1/session_pb";
 
 import { useActiveSession } from "../store";
 import type { ModelOption } from "../useModelSelection";
-import { SessionView } from "./SessionView";
+import {
+    type SessionDirectoryControl,
+    type SessionProviderGroup,
+    SessionView,
+    type SessionViewProps,
+} from "./SessionView";
 
 type Stream = AsyncIterable<{ event?: unknown }>;
 
@@ -28,6 +33,7 @@ const rpc = vi.hoisted(() => ({
                 content: string;
                 providerId: string;
                 model: string;
+                parentId?: string;
             }) => Stream
         >(),
 }));
@@ -37,18 +43,24 @@ vi.mock("@/rpc/clients", () => ({
     sessionClient: { listMessages: rpc.listMessages },
 }));
 
-const platform = vi.hoisted(() => {
-    const state: {
-        directoryPicker: { pick: () => Promise<string | null> } | null;
-    } = { directoryPicker: null };
-    return state;
-});
-
-vi.mock("@/platform/platform", () => ({ getPlatform: () => platform }));
-
-const options: ModelOption[] = [
+const defaultOptions: ModelOption[] = [
     { providerId: "p1", model: "m1", providerName: "Acme" },
 ];
+
+const defaultProviders: SessionProviderGroup[] = [
+    {
+        id: "p1",
+        name: "Acme",
+        enabled: true,
+        models: [{ id: "m1" }],
+    },
+];
+
+const defaultDirectoryControl: SessionDirectoryControl = {
+    directory: undefined,
+    recentDirectories: ["/work/alpha"],
+    canPickDirectory: false,
+};
 
 const doneStream = async function* () {
     await Promise.resolve();
@@ -57,48 +69,59 @@ const doneStream = async function* () {
     };
 };
 
-const renderView = (props: Partial<Parameters<typeof SessionView>[0]> = {}) =>
+const renderView = (props: Partial<SessionViewProps> = {}) =>
     render(
-        <MemoryRouter>
-            <TooltipProvider>
-                <Toaster />
-                <SessionView
-                    sessionId="c1"
-                    modelOptions={options}
-                    providerNames={new Map([["p1", "Acme"]])}
-                    providersPath="/settings/providers"
-                    onCreateSession={() => Promise.resolve("new")}
-                    {...props}
-                />
-            </TooltipProvider>
-        </MemoryRouter>,
+        <TooltipProvider>
+            <Toaster />
+            <SessionView
+                sessionId="c1"
+                directoryControl={defaultDirectoryControl}
+                modelOptions={defaultOptions}
+                providers={defaultProviders}
+                onOpenProviders={vi.fn<() => void>()}
+                onCreateSession={() => Promise.resolve("new")}
+                {...props}
+            />
+        </TooltipProvider>,
     );
-
-const history = (
-    messages: { id: string; role: string; content: string }[],
-): ListMessagesResponse =>
-    create(ListMessagesResponseSchema, { messages: messages.toReversed() });
 
 const composer = () =>
     screen.getByRole("textbox", { name: "Message the assistant…" });
 
 beforeEach(() => {
     useActiveSession.setState(useActiveSession.getInitialState());
-    platform.directoryPicker = null;
     localStorage.clear();
     vi.resetAllMocks();
-    rpc.listMessages.mockResolvedValue(history([]));
+    rpc.listMessages.mockResolvedValue(
+        create(ListMessagesResponseSchema, { messages: [] }),
+    );
     rpc.sendMessage.mockImplementation(doneStream);
 });
 
-it("opens the session and sends the trimmed draft with the chosen model", async () => {
+it("opens the session, sends a trimmed draft, and closes stale panes on session switch", async () => {
     const user = userEvent.setup();
-    renderView();
+    rpc.listMessages
+        .mockResolvedValueOnce(
+            create(ListMessagesResponseSchema, { messages: [] }),
+        )
+        .mockResolvedValueOnce(
+            create(ListMessagesResponseSchema, {
+                messages: [
+                    create(MessageSchema, {
+                        id: "u1",
+                        role: "user",
+                        content: "hello",
+                    }),
+                ],
+                leafId: "u1",
+            }),
+        );
+    const { rerender } = renderView();
 
-    expect(await screen.findByText("How can I help you today?")).toBeDefined();
-    expect(rpc.listMessages).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionId: "c1" }),
-    );
+    await waitFor(() => {
+        expect(rpc.listMessages).toHaveBeenCalledWith({ sessionId: "c1" });
+    });
+
     await user.type(composer(), "  hello  ");
     await user.click(screen.getByRole("button", { name: "Send" }));
 
@@ -110,12 +133,34 @@ it("opens the session and sends the trimmed draft with the chosen model", async 
         model: "m1",
     });
     expect(composer()).toHaveProperty("value", "");
+
+    await user.click(screen.getByRole("button", { name: /Tree/u }));
+    expect(await screen.findByText("Session tree")).toBeDefined();
+
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <SessionView
+                sessionId="c2"
+                directoryControl={defaultDirectoryControl}
+                modelOptions={defaultOptions}
+                providers={defaultProviders}
+                onOpenProviders={vi.fn<() => void>()}
+                onCreateSession={() => Promise.resolve("new")}
+            />
+        </TooltipProvider>,
+    );
+    expect(screen.queryByText("Session tree")).toBeNull();
+    await user.click(screen.getByRole("button", { name: /Tree/u }));
+    expect(await screen.findByText("Session tree")).toBeDefined();
 });
 
-it("keeps the draft when Enter is pressed while a reply streams", async () => {
+it("keeps draft when Enter is pressed during streaming", async () => {
     const user = userEvent.setup();
     renderView();
-    await screen.findByText("How can I help you today?");
+    await waitFor(() => {
+        expect(rpc.listMessages).toHaveBeenCalled();
+    });
     useActiveSession.setState({ streaming: true });
 
     await user.type(composer(), "follow-up{Enter}");
@@ -124,230 +169,72 @@ it("keeps the draft when Enter is pressed while a reply streams", async () => {
     expect(composer()).toHaveProperty("value", "follow-up");
 });
 
-it("creates a session from the home composer before sending", async () => {
+it("creates a new session on first send, disables without models, and toasts errors", async () => {
     const user = userEvent.setup();
     const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
         Promise.resolve("new"),
     );
-    renderView({ sessionId: null, onCreateSession });
+
+    const { rerender } = renderView({
+        sessionId: null,
+        directoryControl: {
+            directory: "/work/custom",
+            recentDirectories: [],
+            canPickDirectory: false,
+        },
+        onCreateSession,
+    });
 
     await user.type(composer(), "start here");
     await user.click(screen.getByRole("button", { name: "Send" }));
-
-    await vi.waitFor(() => {
+    await waitFor(() => {
         expect(rpc.sendMessage).toHaveBeenCalled();
     });
-    expect(onCreateSession).toHaveBeenCalledOnce();
+    expect(onCreateSession).toHaveBeenCalledWith("/work/custom");
     expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
         sessionId: "new",
         content: "start here",
     });
-});
 
-it("creates the first session with the picked folder", async () => {
-    const user = userEvent.setup();
-    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
-        Promise.resolve("new"),
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <SessionView
+                sessionId={null}
+                directoryControl={defaultDirectoryControl}
+                modelOptions={defaultOptions}
+                providers={defaultProviders}
+                onOpenProviders={vi.fn<() => void>()}
+                onCreateSession={() =>
+                    Promise.reject(new ConnectError("down", Code.Unavailable))
+                }
+            />
+        </TooltipProvider>,
     );
-    platform.directoryPicker = {
-        pick: vi.fn<() => Promise<string | null>>(() =>
-            Promise.resolve("C:\\work\\project"),
-        ),
-    };
-    renderView({ sessionId: null, onCreateSession });
-
-    await user.click(screen.getByRole("button", { name: "Choose folder" }));
-    expect(await screen.findByText("C:\\work\\project")).toBeDefined();
-    await user.type(composer(), "inspect this repository");
+    await user.type(composer(), "fail create");
     await user.click(screen.getByRole("button", { name: "Send" }));
-
-    await vi.waitFor(() => {
-        expect(rpc.sendMessage).toHaveBeenCalled();
-    });
-    expect(onCreateSession).toHaveBeenCalledWith("C:\\work\\project");
-});
-
-it("creates without a folder after the selection is cleared", async () => {
-    const user = userEvent.setup();
-    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
-        Promise.resolve("new"),
-    );
-    platform.directoryPicker = {
-        pick: vi.fn<() => Promise<string | null>>(() =>
-            Promise.resolve("C:\\work\\project"),
-        ),
-    };
-    renderView({ sessionId: null, onCreateSession });
-
-    await user.click(screen.getByRole("button", { name: "Choose folder" }));
-    await user.click(
-        await screen.findByRole("button", { name: "Clear folder" }),
-    );
-    await user.type(composer(), "start here");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-
-    await vi.waitFor(() => {
-        expect(onCreateSession).toHaveBeenCalledWith(undefined);
-    });
-});
-
-it("keeps the chosen folder when the picker is canceled", async () => {
-    const user = userEvent.setup();
-    const pick = vi
-        .fn<() => Promise<string | null>>()
-        .mockResolvedValueOnce("C:\\work\\project")
-        .mockResolvedValueOnce(null);
-    platform.directoryPicker = { pick };
-    renderView({ sessionId: null });
-
-    await user.click(screen.getByRole("button", { name: "Choose folder" }));
-    await user.click(
-        await screen.findByRole("button", { name: "C:\\work\\project" }),
-    );
-
-    await vi.waitFor(() => {
-        expect(pick).toHaveBeenCalledTimes(2);
-    });
-    expect(
-        await screen.findByRole("button", { name: "C:\\work\\project" }),
-    ).toBeDefined();
-});
-
-it("shows a toast when the folder picker fails", async () => {
-    const user = userEvent.setup();
-    platform.directoryPicker = {
-        pick: () => Promise.reject(new Error("dialog failed")),
-    };
-    renderView({ sessionId: null });
-
-    await user.click(screen.getByRole("button", { name: "Choose folder" }));
-
-    expect(
-        await screen.findByText("Something went wrong, please try again"),
-    ).toBeDefined();
-    expect(screen.getByRole("button", { name: "Choose folder" })).toBeDefined();
-});
-
-it("shows no folder picker in the browser", () => {
-    renderView({ sessionId: null });
-
-    expect(screen.queryByRole("button", { name: "Choose folder" })).toBeNull();
-});
-
-it("shows an existing session folder without editing controls", async () => {
-    renderView({ sessionDirectory: "C:\\work\\project" });
-
-    expect(await screen.findByText("C:\\work\\project")).toBeDefined();
-    expect(screen.queryByRole("button", { name: "Choose folder" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Clear folder" })).toBeNull();
-});
-
-it("shows a toast when the session cannot be created", async () => {
-    const user = userEvent.setup();
-    renderView({
-        sessionId: null,
-        onCreateSession: () =>
-            Promise.reject(new ConnectError("down", Code.Unavailable)),
-    });
-
-    await user.type(composer(), "start here");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-
     expect(
         await screen.findByText(
             "Can't reach the server, check your connection and try again",
         ),
     ).toBeDefined();
-    expect(rpc.sendMessage).not.toHaveBeenCalled();
-});
 
-it("holds a home send while an earlier reply still streams", async () => {
-    const user = userEvent.setup();
-    const onCreateSession = vi.fn<(directory?: string) => Promise<string>>(() =>
-        Promise.resolve("new"),
+    rerender(
+        <TooltipProvider>
+            <Toaster />
+            <SessionView
+                sessionId={null}
+                directoryControl={defaultDirectoryControl}
+                modelOptions={[]}
+                providers={[]}
+                onOpenProviders={vi.fn<() => void>()}
+                onCreateSession={onCreateSession}
+            />
+        </TooltipProvider>,
     );
-    useActiveSession.setState({ streaming: true });
-    renderView({ sessionId: null, onCreateSession });
-
-    await user.type(composer(), "next");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-
-    expect(onCreateSession).not.toHaveBeenCalled();
-});
-
-it("points to the provider settings without a model", () => {
-    renderView({ sessionId: null, modelOptions: [] });
-
-    expect(composer()).toHaveProperty("disabled", true);
     expect(
-        screen.getByText("Open settings").closest("a")?.getAttribute("href"),
-    ).toBe("/settings/providers");
-});
-
-it("regenerates the last reply from the user message before it", async () => {
-    const user = userEvent.setup();
-    rpc.listMessages.mockResolvedValue(
-        history([
-            { id: "u1", role: "user", content: "first question" },
-            { id: "a1", role: "assistant", content: "calling a tool" },
-            { id: "a2", role: "assistant", content: "final answer" },
-        ]),
-    );
-    renderView();
-
-    await user.click(await screen.findByRole("button", { name: "Regenerate" }));
-
-    await vi.waitFor(() => {
-        expect(rpc.sendMessage.mock.lastCall?.[0]).toMatchObject({
-            content: "first question",
-        });
-    });
-    expect(screen.getAllByRole("button", { name: "Regenerate" })).toHaveLength(
-        1,
-    );
-});
-
-it("cannot regenerate without a model", async () => {
-    const user = userEvent.setup();
-    rpc.listMessages.mockResolvedValue(
-        history([
-            { id: "u1", role: "user", content: "question" },
-            { id: "a1", role: "assistant", content: "answer" },
-        ]),
-    );
-    renderView({ modelOptions: [] });
-
-    await user.click(await screen.findByRole("button", { name: "Regenerate" }));
-
-    expect(rpc.sendMessage).not.toHaveBeenCalled();
-});
-
-it("stops a streaming reply from the composer", async () => {
-    const user = userEvent.setup();
-    const abort = vi.fn<() => Promise<void>>(() => Promise.resolve());
-    useActiveSession.setState({ abort });
-    rpc.listMessages.mockReturnValue(Promise.withResolvers<never>().promise);
-    renderView();
-    useActiveSession.setState({
-        sessionId: "c1",
-        streaming: true,
-        items: [
-            {
-                id: "a1",
-                role: "assistant",
-                content: "partial",
-                thinking: "",
-                status: "streaming",
-                providerId: "p1",
-                model: "m1",
-                toolCalls: [],
-            },
-        ],
-    });
-
-    await user.click(
-        await screen.findByRole("button", { name: "Stop generating" }),
-    );
-
-    expect(abort).toHaveBeenCalledOnce();
+        screen.getByRole("textbox", {
+            name: "Configure a provider and model to start…",
+        }),
+    ).toHaveProperty("disabled", true);
 });

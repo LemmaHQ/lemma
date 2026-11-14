@@ -17,6 +17,9 @@ function withReason(reason: number): ConnectError {
 it.each([
     [ErrorReason.PROVIDER_NOT_FOUND, "errors.providerNotFound"],
     [ErrorReason.DIRECTORY_NOT_FOUND, "errors.directoryNotFound"],
+    [ErrorReason.MESSAGE_NOT_FOUND, "errors.messageNotFound"],
+    [ErrorReason.INVALID_BRANCH_POINT, "errors.invalidBranchPoint"],
+    [ErrorReason.SESSION_BUSY, "errors.sessionBusy"],
 ])("maps app error reason %s to i18n key", (reason, key) => {
     expect(errorText(withReason(reason), t)).toBe(key);
 });

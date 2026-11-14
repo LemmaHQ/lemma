@@ -1,36 +1,60 @@
-import { toast } from "@lemma/ui";
+import { ComposerBox, toast } from "@lemma/ui";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { errorText } from "@/i18n/error-text";
 
 import { useActiveSession } from "../store";
-import { useModelSelection, type ModelOption } from "../useModelSelection";
-import { HomeView } from "./HomeView";
-import { MessageComposer } from "./MessageComposer";
-import { MessageList } from "./MessageList";
+import {
+    type ModelOption,
+    type ModelSelection,
+    useModelSelection,
+} from "../useModelSelection";
+import { ActiveSessionView } from "./ActiveSessionView";
+import { FolderPicker } from "./FolderPicker";
+import { ModelPickerPopover } from "./ModelPickerPopover";
 
-/** Active session or new-session composer; the page supplies the models, creates sessions, and names the path of the provider settings. */
+/** Provider and its enabled model ids displayed in the model picker. */
+export interface SessionProviderGroup {
+    id: string;
+    name: string;
+    enabled: boolean;
+    models: { id: string }[];
+}
+
+/** Workspace directory selection state and callbacks for the composer footer. */
+export interface SessionDirectoryControl {
+    directory: string | undefined;
+    recentDirectories: string[];
+    canPickDirectory: boolean;
+    onSelectDirectory?: (dir: string | undefined) => void;
+    onPickDirectory?: () => Promise<string | undefined>;
+}
+
+/** Props for rendering either the blank new-session stage or an active branched session. */
+export interface SessionViewProps {
+    sessionId: string | null;
+    directoryControl: SessionDirectoryControl;
+    modelOptions: ModelOption[];
+    providers: SessionProviderGroup[];
+    onOpenProviders: () => void;
+    onCreateSession: (directory?: string) => Promise<string>;
+}
+
+/** New-session composer view or active conversation stage with step inspection and branch tree. */
 export function SessionView({
     sessionId,
-    sessionDirectory,
+    directoryControl,
     modelOptions,
-    providerNames,
-    providersPath,
+    providers,
+    onOpenProviders,
     onCreateSession,
-}: {
-    sessionId: string | null;
-    sessionDirectory?: string | undefined;
-    modelOptions: ModelOption[];
-    providerNames: Map<string, string>;
-    providersPath: string;
-    onCreateSession: (directory?: string) => Promise<string>;
-}) {
+}: SessionViewProps) {
     const { t } = useTranslation();
     const session = useActiveSession();
-    const [draft, setDraft] = useState("");
-    const [directory, setDirectory] = useState<string | null>(null);
     const { model, selectModel } = useModelSelection(modelOptions);
+    const [draft, setDraft] = useState("");
+    const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
     const openSession = useActiveSession((s) => s.open);
     useEffect(() => {
@@ -39,79 +63,77 @@ export function SessionView({
         }
     }, [sessionId, openSession]);
 
-    const sendText = async (text: string) => {
-        if (session.streaming || model === null) {
-            return;
-        }
-        try {
-            let cid = sessionId;
-            if (cid === null) {
-                cid = await onCreateSession(directory ?? undefined);
-                await session.open(cid);
-            }
-            await session.send(model.providerId, model.model, text);
-        } catch (e) {
-            toast.error(errorText(e, t));
-        }
-    };
-
-    const handleSend = () => {
+    const submitFor = (selected: ModelSelection) => () => {
+        const text = draft.trim();
         setDraft("");
-        void sendText(draft.trim());
-    };
-
-    const handleStop = () => {
-        void session.abort();
-    };
-
-    const handleRegenerate = (messageId: string) => {
-        if (session.streaming || model === null) {
-            return;
-        }
-        const idx = session.items.findIndex((m) => m.id === messageId);
-        for (let i = idx - 1; i >= 0; i--) {
-            const prev = session.items[i];
-            if (prev !== undefined && prev.role === "user") {
-                void session.send(model.providerId, model.model, prev.content);
-                return;
+        void (async () => {
+            try {
+                let cid = sessionId;
+                if (cid === null) {
+                    cid = await onCreateSession(directoryControl.directory);
+                    await session.open(cid);
+                }
+                await session.send(selected.providerId, selected.model, text);
+            } catch (error) {
+                toast.error(errorText(error, t));
             }
-        }
+        })();
     };
-
-    return sessionId === null ? (
-        <HomeView
-            onSubmit={(text) => void sendText(text)}
-            directory={directory}
-            onDirectoryChange={setDirectory}
-            model={model}
-            modelOptions={modelOptions}
-            onModelChange={selectModel}
-            providersPath={providersPath}
-        />
-    ) : (
+    const handleSubmit = model === null ? undefined : submitFor(model);
+    const sharedFooter = (
         <>
-            <MessageList
-                items={session.items}
-                sessionId={session.sessionId}
-                hasMore={session.hasMore}
-                providerNameById={providerNames}
-                onLoadMore={session.loadMore}
-                onRegenerate={handleRegenerate}
+            <FolderPicker
+                editable={sessionId === null}
+                directoryControl={directoryControl}
             />
-            <div className="mx-auto w-full max-w-3xl px-4 pb-6 md:px-6">
-                <MessageComposer
-                    value={draft}
-                    directory={sessionDirectory ?? null}
-                    onChange={setDraft}
-                    onSend={handleSend}
-                    onStop={handleStop}
-                    streaming={session.streaming}
-                    model={model}
-                    modelOptions={modelOptions}
-                    onModelChange={selectModel}
-                    providersPath={providersPath}
-                />
-            </div>
+            <ModelPickerPopover
+                open={modelPickerOpen}
+                onOpenChange={setModelPickerOpen}
+                model={model}
+                providers={providers}
+                onSelectModel={selectModel}
+                onOpenProviders={onOpenProviders}
+            />
         </>
+    );
+
+    if (sessionId === null) {
+        return (
+            <div className="flex min-h-0 flex-1 flex-col bg-background">
+                <div className="flex-1" />
+                <div className="shrink-0 px-4 pb-4 md:px-6">
+                    <div className="mx-auto w-full max-w-170">
+                        <ComposerBox
+                            value={draft}
+                            onChange={setDraft}
+                            {...(handleSubmit === undefined
+                                ? {}
+                                : { onSubmit: handleSubmit })}
+                            placeholder={
+                                model === null
+                                    ? t("session.noModelPlaceholder")
+                                    : t("session.inputPlaceholder")
+                            }
+                            sendLabel={t("session.send")}
+                            disabled={model === null}
+                            canSend={!session.streaming && draft.trim() !== ""}
+                            footerStart={sharedFooter}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <ActiveSessionView
+            sessionId={sessionId}
+            draft={draft}
+            onDraftChange={setDraft}
+            {...(handleSubmit === undefined ? {} : { onSubmit: handleSubmit })}
+            model={model}
+            sharedFooter={sharedFooter}
+            onOpenModelPicker={() => setModelPickerOpen(true)}
+        />
     );
 }

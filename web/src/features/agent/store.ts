@@ -1,198 +1,289 @@
 import { create } from "zustand";
 
-import { agentClient, sessionClient } from "@/rpc/clients";
-import type { ListMessagesResponse } from "@/gen/lemma/v1/session_pb";
 import { i18n } from "@/i18n";
 import { errorText } from "@/i18n/error-text";
+import { agentClient, sessionClient } from "@/rpc/clients";
 
 import { type AgentItem, hydrateToolResults, protoToItem } from "./agent-item";
-import { createStreamReducer } from "./stream-reducer";
-import { runTurn, type Turn } from "./turn-stream";
+import type { LiveStep } from "./stream-reducer";
+import { resolveActivePath } from "./tree";
+import {
+    EMPTY_SESSION_SLICE,
+    nonEmptyId,
+    type PreparedTurn,
+    prepareNewTurn,
+    prepareResumedTurn,
+} from "./turn-prep";
+import { runSessionTurn, type Turn } from "./turn-stream";
+
+/** Pending rewind state while editing/branching from an earlier user question. */
+export interface RewindState {
+    backupLeafId: string | undefined;
+    parentId: string | undefined;
+    draftText: string;
+}
 
 interface ActiveSessionState {
     sessionId: string | null;
+    treeMessages: AgentItem[];
+    leafId: string | undefined;
     items: AgentItem[];
     streaming: boolean;
-    hasMore: boolean;
+    turnStartedAtMs: number | null;
+    currentStep: LiveStep;
+    reconnectingOffset: number | null;
+    rewind: RewindState | null;
     open: (sessionId: string) => Promise<void>;
-    loadMore: () => Promise<void>;
-    send: (providerId: string, model: string, content: string) => Promise<void>;
+    send: (
+        providerId: string,
+        model: string,
+        content: string,
+        explicitParentId?: string,
+    ) => Promise<void>;
     abort: () => Promise<void>;
+    switchLeaf: (leafId: string | undefined) => Promise<void>;
+    startRewind: (userMessageId: string) => void;
+    cancelRewind: () => void;
+    labelMessage: (messageId: string, label: string) => Promise<void>;
 }
 
 let turn: Turn | null = null;
-let loadingMore = false;
 
-const PAGE_SIZE = 50;
-
-function fetchPage(
-    sessionId: string,
-    beforeId?: string,
-): Promise<ListMessagesResponse> {
-    return sessionClient.listMessages({
-        sessionId,
-        ...(beforeId === undefined ? {} : { beforeId }),
-        limit: PAGE_SIZE,
-    });
-}
-
-function pageState(
-    page: ListMessagesResponse,
-    newer: AgentItem[] = [],
-): Pick<ActiveSessionState, "items" | "hasMore"> {
-    const older = page.messages.map(protoToItem).toReversed();
-    return {
-        items: hydrateToolResults([...older, ...newer]),
-        hasMore: page.hasMore,
-    };
-}
-
-export const useActiveSession = create<ActiveSessionState>()((set, get) => ({
-    sessionId: null,
-    items: [],
-    streaming: false,
-    hasMore: false,
-
-    open: async (sessionId) => {
-        if (get().sessionId !== sessionId) {
-            turn?.controller.abort();
-            turn = null;
-            set({ sessionId, streaming: false });
-        }
-        set({ sessionId, ...pageState(await fetchPage(sessionId)) });
-    },
-
-    loadMore: async () => {
-        const { sessionId, items, hasMore } = get();
-        const first = items.at(0);
-        if (
-            loadingMore ||
-            sessionId === null ||
-            !hasMore ||
-            first === undefined
-        ) {
-            return;
-        }
-        loadingMore = true;
-        try {
-            const page = await fetchPage(sessionId, first.id);
-            set((s) => {
-                if (
-                    s.sessionId !== sessionId ||
-                    s.items.at(0)?.id !== first.id
-                ) {
-                    return {};
-                }
-                return pageState(page, s.items);
-            });
-        } finally {
-            loadingMore = false;
-        }
-    },
-
-    send: async (providerId, model, content) => {
-        const { sessionId, streaming } = get();
-        if (sessionId === null || streaming) {
-            return;
-        }
-
-        const clientMsgId = crypto.randomUUID();
-        const aiTempId = `${clientMsgId}:ai`;
-        const own: Turn = {
-            controller: new AbortController(),
-            messageId: null,
-            userAborted: false,
-        };
+export const useActiveSession = create<ActiveSessionState>()((set, get) => {
+    const launchTurn = async (
+        sessionId: string,
+        own: Turn,
+        prepared: PreparedTurn,
+        openStream: Parameters<typeof runSessionTurn>[0]["openStream"],
+    ) => {
         turn = own;
-        const { signal } = own.controller;
-
-        const reducer = createStreamReducer(
-            set,
-            get,
-            providerId,
-            model,
-            aiTempId,
-            (messageId) => {
-                own.messageId = messageId;
+        set({ ...prepared.patch, rewind: null });
+        await runSessionTurn({
+            own,
+            prepared,
+            isCurrent: () => turn === own,
+            getSlice: () => get(),
+            patchStore: (fn) => set((s) => fn(s)),
+            openStream,
+            reload: async () => {
+                const res = await sessionClient.listMessages({ sessionId });
+                if (turn !== own || get().sessionId !== sessionId) {
+                    return;
+                }
+                const treeMessages = hydrateToolResults(
+                    res.messages.map(protoToItem),
+                );
+                const leafId = nonEmptyId(res.leafId);
+                set({
+                    treeMessages,
+                    leafId,
+                    items: resolveActivePath(treeMessages, leafId),
+                });
             },
-        );
+            failedText: (e) => errorText(e, i18n.t),
+            onSettled: () => {
+                turn = null;
+            },
+        });
+    };
 
-        set((s) => ({
-            streaming: true,
-            items: [
-                ...s.items,
-                {
-                    id: clientMsgId,
-                    role: "user",
-                    content,
-                    thinking: "",
-                    status: "done",
-                    providerId: "",
-                    model: "",
-                    toolCalls: [],
-                },
-                {
-                    id: aiTempId,
-                    role: "assistant",
-                    content: "",
-                    thinking: "",
-                    status: "streaming",
-                    providerId,
-                    model,
-                    toolCalls: [],
-                },
-            ],
-        }));
+    return {
+        sessionId: null,
+        ...EMPTY_SESSION_SLICE,
 
-        try {
-            await runTurn(own, {
-                openStream: (received) => {
-                    const resumeId = own.messageId;
-                    if (resumeId !== null) {
-                        return agentClient.resumeStream(
-                            { messageId: resumeId, offset: BigInt(received) },
-                            { signal },
-                        );
-                    }
-                    return agentClient.sendMessage(
+        open: async (sessionId) => {
+            if (get().sessionId !== sessionId) {
+                turn?.controller.abort();
+                turn = null;
+                set({ sessionId, ...EMPTY_SESSION_SLICE });
+            }
+            const res = await sessionClient.listMessages({ sessionId });
+            if (get().sessionId !== sessionId) {
+                return;
+            }
+            const treeMessages = hydrateToolResults(
+                res.messages.map(protoToItem),
+            );
+            const leafId = nonEmptyId(res.leafId);
+            const activeMessageId = nonEmptyId(res.activeMessageId);
+            if (activeMessageId === undefined) {
+                set({
+                    sessionId,
+                    treeMessages,
+                    leafId,
+                    items: resolveActivePath(treeMessages, leafId),
+                    rewind: null,
+                });
+                return;
+            }
+            if (turn?.messageId === activeMessageId) {
+                return;
+            }
+            const prepared = prepareResumedTurn(treeMessages, activeMessageId);
+            await launchTurn(
+                sessionId,
+                {
+                    controller: new AbortController(),
+                    messageId: activeMessageId,
+                    userAborted: false,
+                },
+                prepared,
+                (received, signal) =>
+                    agentClient.resumeStream(
                         {
-                            sessionId,
-                            content,
-                            providerId,
-                            model,
+                            messageId: activeMessageId,
+                            offset: BigInt(received),
                         },
                         { signal },
-                    );
-                },
-                applyEvent: reducer.applyEvent,
-                updateCurrent: reducer.updateCurrent,
-                reload: async () => {
-                    const page = pageState(await fetchPage(sessionId));
-                    if (turn === own) {
-                        set(page);
-                    }
-                },
-                failedText: (e) => errorText(e, i18n.t),
-            });
-        } finally {
-            if (turn === own) {
-                turn = null;
-                set({ streaming: false });
-            }
-        }
-    },
+                    ),
+            );
+        },
 
-    abort: async () => {
-        const current = turn;
-        if (current === null) {
-            return;
-        }
-        current.userAborted = true;
-        if (current.messageId !== null) {
-            await agentClient
-                .abortMessage({ messageId: current.messageId })
-                .catch(() => {});
-        }
-        current.controller.abort();
-    },
-}));
+        send: async (providerId, model, content, explicitParentId) => {
+            const { sessionId, streaming, rewind, leafId, treeMessages } =
+                get();
+            if (sessionId === null || streaming) {
+                return;
+            }
+            const hasExplicitParent =
+                explicitParentId !== undefined || rewind !== null;
+            const requestParentId = explicitParentId ?? rewind?.parentId ?? "";
+            const targetParentId =
+                explicitParentId === undefined
+                    ? rewind === null
+                        ? leafId
+                        : rewind.parentId
+                    : nonEmptyId(explicitParentId);
+            const prepared = prepareNewTurn(
+                treeMessages,
+                targetParentId,
+                providerId,
+                model,
+                content,
+            );
+            const own: Turn = {
+                controller: new AbortController(),
+                messageId: null,
+                userAborted: false,
+            };
+            await launchTurn(sessionId, own, prepared, (received, signal) => {
+                const resumeId = own.messageId;
+                if (resumeId !== null) {
+                    return agentClient.resumeStream(
+                        { messageId: resumeId, offset: BigInt(received) },
+                        { signal },
+                    );
+                }
+                return agentClient.sendMessage(
+                    {
+                        sessionId,
+                        content,
+                        providerId,
+                        model,
+                        ...(hasExplicitParent
+                            ? { parentId: requestParentId }
+                            : {}),
+                    },
+                    { signal },
+                );
+            });
+        },
+
+        abort: async () => {
+            const current = turn;
+            if (current === null) {
+                return;
+            }
+            current.userAborted = true;
+            if (current.messageId !== null) {
+                await agentClient
+                    .abortMessage({ messageId: current.messageId })
+                    .catch(() => {});
+            }
+            current.controller.abort();
+        },
+
+        switchLeaf: async (leafId) => {
+            const { sessionId } = get();
+            if (sessionId === null) {
+                return;
+            }
+            await sessionClient.setSessionLeaf({
+                sessionId,
+                ...(leafId === undefined ? {} : { leafId }),
+            });
+            if (get().sessionId !== sessionId) {
+                return;
+            }
+            set((s) => ({
+                leafId,
+                items: resolveActivePath(s.treeMessages, leafId),
+                rewind: null,
+            }));
+        },
+
+        startRewind: (userMessageId) => {
+            const { streaming, treeMessages, rewind, leafId } = get();
+            if (streaming) {
+                return;
+            }
+            const userMessage = treeMessages.find(
+                (item) => item.id === userMessageId && item.role === "user",
+            );
+            if (userMessage === undefined) {
+                return;
+            }
+            set({
+                rewind: {
+                    backupLeafId:
+                        rewind === null ? leafId : rewind.backupLeafId,
+                    parentId: userMessage.parentId,
+                    draftText: userMessage.content,
+                },
+                leafId: userMessage.parentId,
+                items: resolveActivePath(treeMessages, userMessage.parentId),
+            });
+        },
+
+        cancelRewind: () => {
+            const { rewind, treeMessages } = get();
+            if (rewind === null) {
+                return;
+            }
+            set({
+                leafId: rewind.backupLeafId,
+                items: resolveActivePath(treeMessages, rewind.backupLeafId),
+                rewind: null,
+            });
+        },
+
+        labelMessage: async (messageId, label) => {
+            const { sessionId } = get();
+            if (sessionId === null) {
+                return;
+            }
+            const res = await sessionClient.setMessageLabel({
+                sessionId,
+                messageId,
+                label,
+            });
+            if (get().sessionId !== sessionId) {
+                return;
+            }
+            const nextLabel = nonEmptyId(
+                res.message === undefined ? label : res.message.label,
+            );
+            set((s) => {
+                const treeMessages = s.treeMessages.map((item) =>
+                    item.id === messageId
+                        ? { ...item, label: nextLabel }
+                        : item,
+                );
+                return {
+                    treeMessages,
+                    items: resolveActivePath(treeMessages, s.leafId),
+                };
+            });
+        },
+    };
+});
