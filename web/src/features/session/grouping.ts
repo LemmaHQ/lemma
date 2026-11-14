@@ -1,3 +1,5 @@
+import { formatClockTime } from "@lemma/ui";
+
 export interface SessionSummary {
     id: string;
     title: string;
@@ -81,7 +83,7 @@ export function formatSessionTime(
         date.getMonth() === now.getMonth() &&
         date.getDate() === now.getDate();
     if (sameDay) {
-        return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+        return formatClockTime(updatedAtMs);
     }
     const monthDay = `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
     return sameYear ? monthDay : `${date.getFullYear()}-${monthDay}`;

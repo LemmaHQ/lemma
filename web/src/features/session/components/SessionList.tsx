@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 import { errorText } from "@/i18n/error-text";
 
 import type { SessionSummary } from "../grouping";
-import { useSessions } from "../useSessions";
+import { useSessionStore } from "../store";
 import { SessionGroups } from "./SessionGroups";
 
 export interface SessionListProps {
@@ -32,6 +32,7 @@ export interface SessionListProps {
     isNewSessionView?: boolean | undefined;
     onSelectSession: (id: string) => void;
     onNewInDirectory?: ((directory: string | undefined) => void) | undefined;
+    onSessionDeleted?: ((id: string) => void) | undefined;
 }
 function selectInput(el: HTMLInputElement | null) {
     el?.focus();
@@ -96,9 +97,9 @@ export function SessionList({
     isNewSessionView = false,
     onSelectSession,
     onNewInDirectory,
+    onSessionDeleted,
 }: SessionListProps) {
     const { t } = useTranslation();
-    const sessions = useSessions();
     const [pendingRename, setPendingRename] = useState<SessionSummary | null>(
         null,
     );
@@ -115,17 +116,10 @@ export function SessionList({
     return (
         <>
             <SessionGroups
-                sessions={sessions.list}
-                loaded={sessions.loaded}
                 activeSessionId={activeSessionId}
                 activeNewDirectory={activeNewDirectory}
                 isNewSessionView={isNewSessionView}
-                unseenDoneIds={sessions.unseenDoneIds}
-                erroredIds={sessions.erroredIds}
-                onOpenSession={(id) => {
-                    sessions.markSeen(id);
-                    onSelectSession(id);
-                }}
+                onOpenSession={onSelectSession}
                 onNewInDirectory={onNewInDirectory}
                 onRequestRename={setPendingRename}
                 onDeleteSession={setPendingDeleteId}
@@ -136,7 +130,9 @@ export function SessionList({
                     session={pendingRename}
                     onClose={() => setPendingRename(null)}
                     onConfirm={(id, title) =>
-                        void runAction(() => sessions.rename(id, title))
+                        void runAction(() =>
+                            useSessionStore.getState().rename(id, title),
+                        )
                     }
                 />
             )}
@@ -163,10 +159,14 @@ export function SessionList({
                             variant="destructive"
                             onClick={() => {
                                 if (pendingDeleteId !== null) {
+                                    const deletingId = pendingDeleteId;
                                     setPendingDeleteId(null);
-                                    void runAction(() =>
-                                        sessions.delete(pendingDeleteId),
-                                    );
+                                    void runAction(async () => {
+                                        await useSessionStore
+                                            .getState()
+                                            .delete(deletingId);
+                                        onSessionDeleted?.(deletingId);
+                                    });
                                 }
                             }}
                         >

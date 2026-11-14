@@ -46,12 +46,7 @@ const renderList = (props: Partial<SessionListProps> = {}) =>
     render(
         <TooltipProvider>
             <Toaster />
-            <SidebarProvider
-                open
-                onOpenChange={() => {}}
-                width={null}
-                onWidthChange={() => {}}
-            >
+            <SidebarProvider open onOpenChange={() => {}}>
                 <SessionList
                     activeSessionId="c1"
                     onSelectSession={vi.fn<(id: string) => void>()}
@@ -213,7 +208,7 @@ it("renders live, error, unseen-done, and hover-time trailing indicators", async
 
     expect(rowOf("Live")?.querySelector(".live-dot")).not.toBeNull();
     expect(
-        rowOf("Errored")?.querySelector(".border-completion"),
+        rowOf("Errored")?.querySelector('[data-slot="session-error-dot"]'),
     ).not.toBeNull();
     expect(rowOf("Unseen")?.querySelector(".bg-completion")).not.toBeNull();
     expect(rowOf("ActiveDone")?.querySelector(".bg-completion")).toBeNull();

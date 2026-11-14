@@ -19,8 +19,11 @@ import { SETTINGS_GROUPS } from "./settings-pages";
 /** Settings pages in the sidebar, grouped with enabled counts for providers and web backends. */
 export function SettingsNav() {
     const { t } = useTranslation();
-    const providers = useProviders();
-    const webProviders = useWebProviders();
+    const providers = useProviders((s) => ({ loaded: s.loaded, list: s.list }));
+    const webProviders = useWebProviders((s) => ({
+        loaded: s.loaded,
+        list: s.list,
+    }));
 
     const countFor = (segment: SettingsSegment): number | undefined => {
         switch (segment) {

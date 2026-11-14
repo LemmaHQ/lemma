@@ -52,7 +52,7 @@ function SessionActions({ children }: { children: ReactNode }) {
                 </AnimateIcon>
                 <TooltipContent>{t("session.actions")}</TooltipContent>
             </Tooltip>
-            <DropdownMenuContent side="right" align="start">
+            <DropdownMenuContent align="end" sideOffset={4}>
                 {children}
             </DropdownMenuContent>
         </DropdownMenu>
@@ -79,7 +79,8 @@ function TrailingIndicator({
         return (
             <span
                 aria-hidden="true"
-                className="size-1.5 shrink-0 rounded-none border border-completion"
+                data-slot="session-error-dot"
+                className="size-1.5 shrink-0 rounded-full bg-destructive"
             />
         );
     }
@@ -95,13 +96,13 @@ function TrailingIndicator({
         return null;
     }
     return (
-        <span className="hidden shrink-0 text-caption text-subtle-foreground tabular-nums group-focus-within/menu-item:inline group-hover/menu-item:inline">
+        <span className="hidden shrink-0 text-caption text-subtle-foreground tabular-nums group-focus-within/menu-item:inline group-hover/menu-item:inline pointer-coarse:inline">
             {timeText}
         </span>
     );
 }
 
-/** Single session row with trailing live/error/unseen indicator, hover time, and actions menu. */
+/** Single session row with trailing live/error/unseen indicator, hover time, tooltip, and actions menu. */
 export function SessionItem({
     session,
     active,
@@ -113,26 +114,33 @@ export function SessionItem({
 }: SessionItemProps) {
     const { t } = useTranslation();
     const timeText = formatSessionTime(session.updatedAtMs);
+    const titleLabel =
+        session.title === "" ? t("sidebar.newSession") : session.title;
 
     return (
         <SidebarMenuItem>
-            <SidebarMenuButton
-                isActive={active}
-                onClick={() => onOpen(session.id)}
-            >
-                <span className="min-w-0 flex-1 truncate">
-                    {session.title === ""
-                        ? t("sidebar.newSession")
-                        : session.title}
-                </span>
-                <TrailingIndicator
-                    active={active}
-                    activeMessageId={session.activeMessageId}
-                    errored={errored}
-                    unseenDone={unseenDone}
-                    timeText={timeText}
-                />
-            </SidebarMenuButton>
+            <Tooltip>
+                <TooltipTrigger
+                    render={
+                        <SidebarMenuButton
+                            isActive={active}
+                            onClick={() => onOpen(session.id)}
+                        />
+                    }
+                >
+                    <span className="min-w-0 flex-1 truncate">
+                        {titleLabel}
+                    </span>
+                    <TrailingIndicator
+                        active={active}
+                        activeMessageId={session.activeMessageId}
+                        errored={errored}
+                        unseenDone={unseenDone}
+                        timeText={timeText}
+                    />
+                </TooltipTrigger>
+                <TooltipContent side="right">{titleLabel}</TooltipContent>
+            </Tooltip>
             <SessionActions>
                 <AnimateIcon animateOnHover asChild>
                     <DropdownMenuItem onClick={() => onRequestRename(session)}>

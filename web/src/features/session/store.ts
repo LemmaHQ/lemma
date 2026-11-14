@@ -6,7 +6,7 @@ import { sessionClient } from "@/rpc/clients";
 
 import type { SessionSummary } from "./grouping";
 
-interface SessionState {
+export interface SessionState {
     list: SessionSummary[];
     loaded: boolean;
     unseenDoneIds: Set<string>;

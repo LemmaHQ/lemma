@@ -13,6 +13,7 @@ import { ViewTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
 
+import { clearSessionDraft } from "@/features/agent";
 import { SessionList, type SessionDirectoryState } from "@/features/session";
 
 import { AppBrand } from "../AppBrand";
@@ -67,6 +68,7 @@ export function SessionSidebar({
                                 setOpenMobile(false);
                                 void navigate(paths.home);
                             }}
+                            onSessionDeleted={clearSessionDraft}
                         />
                     </div>
                 </ViewTransition>

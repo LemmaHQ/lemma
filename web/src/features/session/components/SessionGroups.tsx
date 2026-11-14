@@ -14,7 +14,7 @@ import {
     TooltipTrigger,
     useSidebar,
 } from "@lemma/ui";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -23,16 +23,13 @@ import {
     type SessionSummary,
     visibleDirectorySessions,
 } from "../grouping";
+import { useSessions } from "../useSessions";
 import { SessionItem } from "./SessionItem";
 
 interface SessionGroupsProps {
-    sessions: SessionSummary[];
-    loaded: boolean;
     activeSessionId?: string | undefined;
     activeNewDirectory?: string | undefined;
     isNewSessionView: boolean;
-    unseenDoneIds: Set<string>;
-    erroredIds: Set<string>;
     onOpenSession: (id: string) => void;
     onNewInDirectory?: ((directory: string | undefined) => void) | undefined;
     onRequestRename: (session: SessionSummary) => void;
@@ -59,12 +56,14 @@ function toggleSet(
 function DirectoryToggle({
     directory,
     label,
+    panelId,
     collapsed,
     highlighted,
     onToggle,
 }: {
     directory: string;
     label: string;
+    panelId: string;
     collapsed: boolean;
     highlighted: boolean;
     onToggle: () => void;
@@ -73,6 +72,7 @@ function DirectoryToggle({
         <button
             type="button"
             aria-expanded={!collapsed}
+            aria-controls={panelId}
             onClick={onToggle}
             className={cn(
                 "flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-sm text-left text-caption ring-sidebar-ring outline-hidden hover:text-foreground focus-visible:ring-2",
@@ -107,20 +107,30 @@ function DirectoryToggle({
 
 /** Session groups by directory; skeleton rows until the first load ends. */
 export function SessionGroups({
-    sessions,
-    loaded,
     activeSessionId,
     activeNewDirectory,
     isNewSessionView,
-    unseenDoneIds,
-    erroredIds,
     onOpenSession,
     onNewInDirectory,
     onRequestRename,
     onDeleteSession,
 }: SessionGroupsProps) {
     const { t } = useTranslation();
+    const idPrefix = useId();
     const { setOpenMobile } = useSidebar();
+    const {
+        list: sessions,
+        loaded,
+        unseenDoneIds,
+        erroredIds,
+        markSeen,
+    } = useSessions((s) => ({
+        list: s.list,
+        loaded: s.loaded,
+        unseenDoneIds: s.unseenDoneIds,
+        erroredIds: s.erroredIds,
+        markSeen: s.markSeen,
+    }));
     const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(
         () => new Set(),
     );
@@ -149,7 +159,8 @@ export function SessionGroups({
 
     return (
         <>
-            {groups.map((group) => {
+            {groups.map((group, groupIndex) => {
+                const panelId = `${idPrefix}-${groupIndex}`;
                 const collapsed = collapsedDirs.has(group.directory);
                 const expanded = expandedDirs.has(group.directory);
                 const { visible, hiddenCount } = visibleDirectorySessions(
@@ -170,6 +181,7 @@ export function SessionGroups({
                             <DirectoryToggle
                                 directory={group.directory}
                                 label={label}
+                                panelId={panelId}
                                 collapsed={collapsed}
                                 highlighted={highlighted}
                                 onToggle={() =>
@@ -195,7 +207,7 @@ export function SessionGroups({
                                                                 : group.directory,
                                                         )
                                                     }
-                                                    className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground opacity-100 ring-sidebar-ring outline-hidden transition-opacity duration-base group-focus-within/dir:opacity-100 group-hover/dir:opacity-100 hover:bg-sidebar-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 md:opacity-0"
+                                                    className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground opacity-100 ring-sidebar-ring outline-hidden transition-opacity duration-base group-focus-within/dir:opacity-100 group-hover/dir:opacity-100 hover:bg-sidebar-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 md:opacity-0"
                                                 />
                                             }
                                         >
@@ -211,6 +223,7 @@ export function SessionGroups({
                             )}
                         </div>
                         <div
+                            id={panelId}
                             className="grid-collapse"
                             data-open={!collapsed}
                             inert={collapsed}
@@ -226,13 +239,18 @@ export function SessionGroups({
                                                     session.id ===
                                                     activeSessionId
                                                 }
-                                                unseenDone={unseenDoneIds.has(
-                                                    session.id,
-                                                )}
+                                                unseenDone={
+                                                    session.id !==
+                                                        activeSessionId &&
+                                                    unseenDoneIds.has(
+                                                        session.id,
+                                                    )
+                                                }
                                                 errored={erroredIds.has(
                                                     session.id,
                                                 )}
                                                 onOpen={(id) => {
+                                                    markSeen(id);
                                                     setOpenMobile(false);
                                                     onOpenSession(id);
                                                 }}

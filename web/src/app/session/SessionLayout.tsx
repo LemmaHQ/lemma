@@ -1,7 +1,8 @@
+import { isShortcutIgnored } from "@lemma/ui";
 import { useEffect } from "react";
 import { Outlet, useNavigate, useParams } from "react-router";
 
-import { useSessionDirectory, useSessionStore } from "@/features/session";
+import { useSessionDirectory } from "@/features/session";
 
 import { paths } from "../route-paths";
 import { ShellFrame } from "../shell/ShellFrame";
@@ -16,6 +17,7 @@ export function SessionLayout() {
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
+                !isShortcutIgnored(event) &&
                 (event.ctrlKey || event.metaKey) &&
                 !event.shiftKey &&
                 !event.altKey &&
@@ -28,12 +30,6 @@ export function SessionLayout() {
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [navigate]);
-
-    useEffect(() => {
-        if (activeId !== null) {
-            useSessionStore.getState().markSeen(activeId);
-        }
-    }, [activeId]);
 
     return (
         <ShellFrame
