@@ -6,13 +6,13 @@ export type TreePaneRow = {
     id: string;
     kind: "question" | "answer";
     title: string;
-    label?: string;
-    meta?: string;
+    label?: string | undefined;
+    meta?: string | undefined;
     rails: TreeRailSegment[];
-    hasTopSpine?: boolean;
-    hasBottomSpine?: boolean;
-    onPath?: boolean;
-    isLeaf?: boolean;
+    hasTopSpine: boolean;
+    hasBottomSpine: boolean;
+    onPath: boolean;
+    isLeaf: boolean;
 };
 
 export type TreePaneRowLabels = {
@@ -42,31 +42,29 @@ function TreeRowRail({ row }: { row: TreePaneRow }) {
                 </span>
             ))}
             <span className="relative flex w-4 shrink-0 items-center justify-center self-stretch">
-                {row.hasTopSpine === true && (
+                {row.hasTopSpine && (
                     <span
                         className={cn(
                             "absolute top-0 bottom-1/2 left-1/2 w-px -translate-x-1/2",
-                            row.onPath === true ? "bg-brand" : "bg-border",
+                            row.onPath ? "bg-brand" : "bg-border",
                         )}
                     />
                 )}
-                {row.hasBottomSpine === true && (
+                {row.hasBottomSpine && (
                     <span
                         className={cn(
                             "absolute top-1/2 bottom-0 left-1/2 w-px -translate-x-1/2",
-                            row.onPath === true ? "bg-brand" : "bg-border",
+                            row.onPath ? "bg-brand" : "bg-border",
                         )}
                     />
                 )}
-                {row.isLeaf === true ? (
+                {row.isLeaf ? (
                     <span className="relative z-10 size-[7px] bg-completion" />
                 ) : (
                     <span
                         className={cn(
                             "relative z-10 size-1.5 rounded-full",
-                            row.onPath === true
-                                ? "bg-brand"
-                                : "bg-muted-foreground",
+                            row.onPath ? "bg-brand" : "bg-muted-foreground",
                         )}
                     />
                 )}
@@ -82,7 +80,6 @@ export function TreePaneRowView({
     isEditing,
     draft,
     labels,
-    onHover,
     onSelect,
     onStartEdit,
     onDraftChange,
@@ -94,9 +91,8 @@ export function TreePaneRowView({
     isEditing: boolean;
     draft: string;
     labels: TreePaneRowLabels;
-    onHover: () => void;
     onSelect: () => void;
-    onStartEdit?: () => void;
+    onStartEdit?: (() => void) | undefined;
     onDraftChange: (value: string) => void;
     onCommitEdit: () => void;
     onCancelEdit: () => void;
@@ -106,7 +102,6 @@ export function TreePaneRowView({
     return (
         <div
             data-active={active ? "" : undefined}
-            onMouseEnter={onHover}
             className="group flex min-h-8 items-center gap-2 rounded-md px-2 transition-colors duration-base hover:bg-accent data-active:bg-accent"
         >
             <TreeRowRail row={row} />
@@ -118,7 +113,7 @@ export function TreePaneRowView({
                 <span
                     className={cn(
                         "min-w-0 flex-1 truncate text-small",
-                        row.onPath === true
+                        row.onPath
                             ? "font-medium text-foreground"
                             : "text-muted-foreground",
                     )}

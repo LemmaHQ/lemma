@@ -9,6 +9,7 @@ import {
 } from "./session-tree-pane";
 
 const LABELS: SessionTreePaneLabels = {
+    verb: "tree",
     title: "Session tree",
     hint: "↑↓ · Enter",
     pathsLabel: "2 paths",
@@ -31,8 +32,10 @@ const ROWS: TreePaneRow[] = [
         label: "main",
         meta: "14:00",
         rails: [],
+        hasTopSpine: false,
         hasBottomSpine: true,
         onPath: true,
+        isLeaf: false,
     },
     {
         id: "n2",
@@ -40,6 +43,8 @@ const ROWS: TreePaneRow[] = [
         title: "Summary of crates",
         rails: ["tee"],
         hasTopSpine: true,
+        hasBottomSpine: false,
+        onPath: false,
         isLeaf: true,
     },
     {
@@ -49,10 +54,12 @@ const ROWS: TreePaneRow[] = [
         rails: ["bar", "empty"],
         hasTopSpine: true,
         hasBottomSpine: true,
+        onPath: false,
+        isLeaf: false,
     },
 ];
 
-it("filters, navigates with keyboard, selects rows, and saves or cancels inline labels", async () => {
+it("filters, links combobox aria-activedescendant, selects rows, and saves or cancels inline labels", async () => {
     const user = userEvent.setup();
     const onSelectRow = vi.fn<(id: string) => void>();
     const onSaveLabel = vi.fn<(id: string, label: string) => void>();
@@ -68,17 +75,16 @@ it("filters, navigates with keyboard, selects rows, and saves or cancels inline 
         />,
     );
 
+    expect(screen.getByText("tree")).toBeDefined();
     expect(screen.getByText("Session tree")).toBeDefined();
     expect(screen.getByText("2 paths")).toBeDefined();
 
     const search = screen.getByRole("searchbox", { name: "Search tree" });
+    expect(search.getAttribute("aria-controls")).not.toBeNull();
     await user.click(search);
     await user.keyboard("{ArrowDown}{ArrowUp}{ArrowUp}{Enter}");
     expect(onSelectRow).toHaveBeenCalledWith("n3");
 
-    await user.hover(
-        screen.getByRole("button", { name: /Summary of crates/u }),
-    );
     await user.click(screen.getByRole("button", { name: "Questions" }));
     expect(screen.queryByText("Summary of crates")).toBeNull();
 
@@ -128,7 +134,9 @@ it("renders read-only when onSaveLabel is omitted", () => {
                     title: "On-path answer",
                     rails: [],
                     hasTopSpine: true,
+                    hasBottomSpine: true,
                     onPath: true,
+                    isLeaf: false,
                 },
             ]}
             labels={LABELS}

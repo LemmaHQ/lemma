@@ -1,19 +1,22 @@
 import { type TreePaneRow, TreePaneRowView } from "#ai/tree-pane-row";
+import { DrawerHeadingContext } from "#hooks/use-drawer-heading";
 import { SearchIcon } from "#icons/search";
 import { XIcon } from "#icons/x";
 import { cn } from "#lib/cn";
 import { Button } from "#primitives/button";
-import { type KeyboardEvent, useMemo, useState } from "react";
+import {
+    type KeyboardEvent,
+    useContext,
+    useId,
+    useMemo,
+    useState,
+} from "react";
+export type { TreePaneRow, TreeRailSegment } from "#ai/tree-pane-row";
 
-export type {
-    TreePaneRow,
-    TreePaneRowLabels,
-    TreeRailSegment,
-} from "#ai/tree-pane-row";
-
-export type TreePaneFilter = "all" | "questions" | "labeled";
+type TreePaneFilter = "all" | "questions" | "labeled";
 
 export type SessionTreePaneLabels = {
+    verb: string;
     title: string;
     hint: string;
     pathsLabel: string;
@@ -28,16 +31,16 @@ export type SessionTreePaneLabels = {
     labelPlaceholder: string;
 };
 
-export type SessionTreePaneProps = {
+type SessionTreePaneProps = {
     rows: TreePaneRow[];
     labels: SessionTreePaneLabels;
     onSelectRow: (id: string) => void;
-    onSaveLabel?: (id: string, label: string) => void;
+    onSaveLabel?: ((id: string, label: string) => void) | undefined;
     onClose: () => void;
-    className?: string;
+    className?: string | undefined;
 };
 
-/** Session branch tree drawer with search, filter pills, fork rail geometry, and inline labeling. */
+/** Session branch tree drawer with 52px header, combobox search, filter pills, fork rail geometry, and inline labeling. */
 export function SessionTreePane({
     rows,
     labels,
@@ -46,6 +49,8 @@ export function SessionTreePane({
     onClose,
     className,
 }: SessionTreePaneProps) {
+    const headingId = useContext(DrawerHeadingContext);
+    const listboxId = useId();
     const [query, setQuery] = useState("");
     const [filter, setFilter] = useState<TreePaneFilter>("all");
     const [cursor, setCursor] = useState(0);
@@ -78,7 +83,7 @@ export function SessionTreePane({
         visibleRows.length === 0
             ? -1
             : Math.min(cursor, visibleRows.length - 1);
-
+    const activeRow = safeCursor >= 0 ? visibleRows[safeCursor] : undefined;
     const handleNavigationKeyDown = (
         event: KeyboardEvent<HTMLInputElement>,
     ) => {
@@ -91,12 +96,9 @@ export function SessionTreePane({
                 (current) =>
                     (current - 1 + visibleRows.length) % visibleRows.length,
             );
-        } else if (event.key === "Enter") {
-            const target = visibleRows[safeCursor];
-            if (target !== undefined) {
-                event.preventDefault();
-                onSelectRow(target.id);
-            }
+        } else if (event.key === "Enter" && activeRow !== undefined) {
+            event.preventDefault();
+            onSelectRow(activeRow.id);
         }
     };
 
@@ -111,14 +113,20 @@ export function SessionTreePane({
             data-slot="session-tree-pane"
             className={cn("flex min-h-0 flex-1 flex-col", className)}
         >
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
-                <h2 className="min-w-0 truncate text-title text-foreground">
+            <header className="flex h-13 shrink-0 items-center gap-3 border-b border-border px-4">
+                <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-caption font-medium text-muted-foreground">
+                    {labels.verb}
+                </span>
+                <h2
+                    id={headingId}
+                    className="min-w-0 truncate text-body font-medium text-foreground"
+                >
                     {labels.title}
                 </h2>
-                <span className="truncate text-caption text-subtle-foreground">
+                <span className="min-w-0 flex-1 truncate text-caption text-subtle-foreground">
                     {labels.hint}
                 </span>
-                <span className="ml-auto shrink-0 text-caption text-muted-foreground tabular-nums">
+                <span className="shrink-0 text-caption text-muted-foreground tabular-nums">
                     {labels.pathsLabel}
                 </span>
                 <Button
@@ -139,6 +147,7 @@ export function SessionTreePane({
                     />
                     <input
                         type="search"
+                        aria-controls={listboxId}
                         value={query}
                         onKeyDown={handleNavigationKeyDown}
                         onChange={(event) => {
@@ -175,7 +184,7 @@ export function SessionTreePane({
                     })}
                 </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <div id={listboxId} className="min-h-0 flex-1 overflow-y-auto p-2">
                 {visibleRows.length === 0 ? (
                     <div className="px-2 py-8 text-center text-small text-muted-foreground">
                         {labels.emptyText}
@@ -189,16 +198,15 @@ export function SessionTreePane({
                             isEditing={editingId === row.id}
                             draft={draft}
                             labels={labels}
-                            onHover={() => setCursor(index)}
                             onSelect={() => onSelectRow(row.id)}
-                            {...(onSaveLabel === undefined
-                                ? {}
-                                : {
-                                      onStartEdit: () => {
+                            onStartEdit={
+                                onSaveLabel === undefined
+                                    ? undefined
+                                    : () => {
                                           setEditingId(row.id);
                                           setDraft(row.label ?? "");
-                                      },
-                                  })}
+                                      }
+                            }
                             onDraftChange={setDraft}
                             onCommitEdit={() => {
                                 onSaveLabel?.(row.id, draft.trim());

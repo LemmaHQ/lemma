@@ -1,12 +1,12 @@
 import { cn } from "#lib/cn";
 import type { ReactNode } from "react";
 
-export type TurnCardProps = {
+type TurnCardProps = {
     turnId: string;
     question: ReactNode;
-    timeLabel?: string;
+    timeLabel?: string | undefined;
     children?: ReactNode;
-    className?: string;
+    className?: string | undefined;
 };
 
 /** Conversation turn with a sticky question banner and optional hover timestamp. */
