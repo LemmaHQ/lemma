@@ -97,6 +97,15 @@ const invalidCases: InvalidCase[] = [
         error: "fixture.yaml: common.save.platforms: has an invalid platform",
     },
     {
+        name: "rejects desktop as an unknown platform",
+        source: {
+            common: {
+                save: { en: "Save", zh: "保存", platforms: ["desktop"] },
+            },
+        },
+        error: "fixture.yaml: common.save.platforms: has an invalid platform",
+    },
+    {
         name: "rejects non-string text without a plural selector",
         source: { common: { save: { en: { other: "Save" }, zh: "保存" } } },
         error: "fixture.yaml: common.save.en: must be a string",
@@ -215,3 +224,14 @@ for (const { name, source, error } of invalidCases) {
         });
     });
 }
+
+void test("defaults omitted platforms to web and android", () => {
+    const entries = readI18nSource(
+        { common: { save: { en: "Save", zh: "保存" } } },
+        "fixture.yaml",
+    );
+    assert.deepEqual(
+        entries.map((entry) => entry.platforms),
+        [["web", "android"]],
+    );
+});

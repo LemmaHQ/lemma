@@ -23,7 +23,7 @@ An entry accepts these fields:
 | --- | --- | --- |
 | `en`, `zh` | Yes | English and Chinese text, or plural-form maps when `plural` is present. |
 | `params` | No | Named parameters with type `string` or `number`. Text references a parameter as `{name}`. |
-| `platforms` | No | A list containing `web`, `android`, or `desktop`. Omit it to include all three. |
+| `platforms` | No | A list containing `web` or `android`. Omit it to include both. |
 | `plural` | No | The name of a `number` parameter declared in `params`; it selects the plural form. |
 
 Every placeholder must name a declared parameter. Every declared parameter must occur in each language's only form or plural `other` form. English plurals require `one` and `other`; Chinese plurals require `other`.

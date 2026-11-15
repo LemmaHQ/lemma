@@ -23,7 +23,7 @@ sidebar:
 | --- | --- | --- |
 | `en`、`zh` | 是 | 英文与中文文案；存在 `plural` 时，值为复数形式 map。 |
 | `params` | 否 | 命名参数，类型为 `string` 或 `number`。文案以 `{name}` 引用参数。 |
-| `platforms` | 否 | 由 `web`、`android` 或 `desktop` 组成的列表。省略表示适用于全部三个平台。 |
+| `platforms` | 否 | 由 `web` 或 `android` 组成的列表。省略表示适用于两个平台。 |
 | `plural` | 否 | `params` 中已声明的 `number` 参数名，用于选择复数形式。 |
 
 每个 `{name}` 都必须引用已声明的参数。每个已声明的参数都必须出现在各语言唯一的形式或复数 `other` 形式中。英文复数要求 `one` 与 `other`；中文复数要求 `other`。
