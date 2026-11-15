@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 
 import { MakerDeb } from "@electron-forge/maker-deb";
@@ -12,12 +11,8 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 import { addonFile } from "./src/engine-addon";
 
-const engineAddonPath = (): string => {
-    const name = addonFile();
-    const bin = path.join(__dirname, "bin", name);
-    if (fs.existsSync(bin)) return bin;
-    return path.join(__dirname, "..", "target", "release", name);
-};
+const engineAddonPath = (): string =>
+    path.join(__dirname, "..", "target", "release", addonFile());
 
 const config: ForgeConfig = {
     packagerConfig: {

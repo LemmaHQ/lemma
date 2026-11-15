@@ -11,7 +11,6 @@
         "start": "electron-forge start",
         "package": "electron-forge package",
         "make": "electron-forge make",
-        "publish": "electron-forge publish",
         "gen:tokens": "node ../scripts/design-token/gen-tokens.ts",
         "prelint": "npm run gen:tokens",
         "lint": "oxlint",
