@@ -4,8 +4,7 @@ use axum::Router;
 
 use crate::app_state::AppState;
 
-/// Mounts each Connect service under its `/lemma.v1.<Service>/` path.
-pub fn router(state: AppState) -> Router {
+pub(crate) fn router(state: AppState) -> Router {
     let agent = connectrpc::Router::new()
         .add_service(Arc::new(state.agent))
         .into_axum_service();

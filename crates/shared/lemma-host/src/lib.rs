@@ -21,5 +21,4 @@ pub use in_process_transport::{InProcessTransport, ResponseHead};
 pub use in_process_transport_error::InProcessTransportError;
 pub use local_engine::LocalEngine;
 pub use local_engine_error::LocalEngineError;
-pub use router::router;
 pub use secrets::Secrets;

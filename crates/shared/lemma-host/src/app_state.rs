@@ -16,16 +16,15 @@ type HostConnector = HttpConnector<ReqwestTransport>;
 
 /// The Connect services wired over one database.
 #[derive(Debug)]
-pub struct AppState {
+pub(crate) struct AppState {
     pub(crate) providers: ProviderRpc<HostConnector>,
     pub(crate) sessions: SessionRpc<HostConnector>,
     pub(crate) agent: AgentRpc<HostConnector>,
 }
 
 impl AppState {
-    /// Wires the services over `db` and `workspaces_dir`.
     #[must_use]
-    pub fn new(db: SqlitePool, secrets: &Secrets, workspaces_dir: PathBuf) -> Self {
+    pub(crate) fn new(db: SqlitePool, secrets: &Secrets, workspaces_dir: PathBuf) -> Self {
         let transport = ReqwestTransport::new();
         let connector = HttpConnector::new(transport.clone());
         let provider_service = Arc::new(ProviderService::new(
