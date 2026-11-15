@@ -4,7 +4,7 @@ use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
 use lemma_model::ModelError;
 
 use crate::error;
-use crate::sse::SseParser;
+use crate::sse::{SseEvent, SseParser};
 
 use super::event::{self, ContentBlockStart, Delta, Event, RawUsage};
 
@@ -13,7 +13,6 @@ pub(super) struct Parser {
     pub(super) output: Option<i64>,
     pub(super) stop: StopReason,
     pub(super) block: Block,
-    pub(super) signature: String,
 }
 
 pub(super) enum Block {
@@ -47,16 +46,15 @@ impl Parser {
         }
     }
 
-    fn block_start(&mut self, block: ContentBlockStart) -> Vec<StreamEvent> {
+    fn block_start(&mut self, block: ContentBlockStart) -> Vec<SseEvent> {
         match block.kind.as_str() {
             "text" => {
                 self.block = Block::Text;
-                vec![StreamEvent::TextStart]
+                vec![StreamEvent::TextStart.into()]
             }
             "thinking" => {
                 self.block = Block::Thinking;
-                self.signature.clear();
-                vec![StreamEvent::ThinkingStart]
+                vec![StreamEvent::ThinkingStart.into()]
             }
             "tool_use" => {
                 let id = block.id.unwrap_or_default();
@@ -66,28 +64,31 @@ impl Parser {
                     name: name.clone(),
                     args: String::new(),
                 };
-                vec![StreamEvent::ToolCallStart { id, name }]
+                vec![StreamEvent::ToolCallStart { id, name }.into()]
             }
             _ => Vec::new(),
         }
     }
 
-    fn block_delta(&mut self, delta: Delta) -> Vec<StreamEvent> {
+    fn block_delta(&mut self, delta: Delta) -> Vec<SseEvent> {
         match delta.kind.as_deref() {
-            Some("text_delta") => match delta.text.filter(|t| !t.is_empty()) {
-                Some(text) => vec![StreamEvent::TextDelta { delta: text }],
-                None => Vec::new(),
-            },
-            Some("thinking_delta") => match delta.thinking.filter(|t| !t.is_empty()) {
-                Some(thinking) => vec![StreamEvent::ThinkingDelta { delta: thinking }],
-                None => Vec::new(),
-            },
-            Some("signature_delta") => {
-                if let Some(signature) = delta.signature {
-                    self.signature.push_str(&signature);
-                }
-                Vec::new()
-            }
+            Some("text_delta") => delta
+                .text
+                .filter(|t| !t.is_empty())
+                .into_iter()
+                .map(|delta| StreamEvent::TextDelta { delta }.into())
+                .collect(),
+            Some("thinking_delta") => delta
+                .thinking
+                .filter(|t| !t.is_empty())
+                .into_iter()
+                .map(|delta| StreamEvent::ThinkingDelta { delta }.into())
+                .collect(),
+            Some("signature_delta") => delta
+                .signature
+                .into_iter()
+                .map(SseEvent::ThinkingSignature)
+                .collect(),
             Some("input_json_delta") => {
                 let Some(fragment) = delta.partial_json.filter(|t| !t.is_empty()) else {
                     return Vec::new();
@@ -95,7 +96,7 @@ impl Parser {
                 match &mut self.block {
                     Block::Tool { args, .. } => {
                         args.push_str(&fragment);
-                        vec![StreamEvent::ToolCallDelta { delta: fragment }]
+                        vec![StreamEvent::ToolCallDelta { delta: fragment }.into()]
                     }
                     _ => Vec::new(),
                 }
@@ -104,30 +105,26 @@ impl Parser {
         }
     }
 
-    fn block_stop(&mut self) -> Vec<StreamEvent> {
+    fn block_stop(&mut self) -> Vec<SseEvent> {
         let block = mem::replace(&mut self.block, Block::None);
         match block {
-            Block::Text => vec![StreamEvent::TextEnd],
-            Block::Thinking => {
-                let signature = if self.signature.is_empty() {
-                    None
-                } else {
-                    Some(mem::take(&mut self.signature))
-                };
-                vec![StreamEvent::ThinkingEnd { signature }]
-            }
+            Block::Text => vec![StreamEvent::TextEnd.into()],
+            Block::Thinking => vec![StreamEvent::ThinkingEnd { signature: None }.into()],
             Block::Tool { id, name, args } => {
                 let arguments =
                     serde_json::from_str(&args).unwrap_or(serde_json::Value::String(args));
-                vec![StreamEvent::ToolCallEnd {
-                    call: ToolCall {
-                        id,
-                        name,
-                        arguments,
-                        started_at: None,
-                        finished_at: None,
-                    },
-                }]
+                vec![
+                    StreamEvent::ToolCallEnd {
+                        call: ToolCall {
+                            id,
+                            name,
+                            arguments,
+                            started_at: None,
+                            finished_at: None,
+                        },
+                    }
+                    .into(),
+                ]
             }
             Block::None => Vec::new(),
         }
@@ -135,7 +132,7 @@ impl Parser {
 }
 
 impl SseParser for Parser {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
+    fn parse_line(&mut self, data: &str) -> Result<Vec<SseEvent>, ModelError> {
         let event: Event =
             serde_json::from_str(data).map_err(|e| error::protocol(format!("bad event: {e}")))?;
         match event.kind.as_str() {
@@ -163,10 +160,13 @@ impl SseParser for Parser {
                 }
                 Ok(Vec::new())
             }
-            "message_stop" => Ok(vec![StreamEvent::Done {
-                stop_reason: self.stop,
-                usage: self.usage(),
-            }]),
+            "message_stop" => Ok(vec![
+                StreamEvent::Done {
+                    stop_reason: self.stop,
+                    usage: self.usage(),
+                }
+                .into(),
+            ]),
             "error" => Err(error::protocol(format!(
                 "anthropic error: {}",
                 event.error.map(|e| e.message).unwrap_or_default()

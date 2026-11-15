@@ -2,14 +2,13 @@ use lemma_core::{StopReason, StreamEvent, ToolCall, Usage};
 use lemma_model::ModelError;
 
 use crate::error;
-use crate::sse::SseParser;
+use crate::sse::{SseEvent, SseParser};
 
 use super::stream_chunk::{self, RawToolCall, RawUsage, StreamChunk};
 
 pub(super) struct Parser {
     pub(super) usage: Option<RawUsage>,
     pub(super) stop: StopReason,
-    pub(super) thinking_open: bool,
     pub(super) tools: Vec<ToolAcc>,
 }
 
@@ -30,14 +29,7 @@ impl Parser {
         })
     }
 
-    fn close_thinking(&mut self, events: &mut Vec<StreamEvent>) {
-        if self.thinking_open {
-            self.thinking_open = false;
-            events.push(StreamEvent::ThinkingEnd { signature: None });
-        }
-    }
-
-    fn end_tool(acc: &mut ToolAcc) -> StreamEvent {
+    fn end_tool(acc: &mut ToolAcc) -> SseEvent {
         acc.ended = true;
         let arguments = serde_json::from_str(&acc.args)
             .unwrap_or_else(|_| serde_json::Value::String(acc.args.clone()));
@@ -50,9 +42,10 @@ impl Parser {
                 finished_at: None,
             },
         }
+        .into()
     }
 
-    fn end_pending_tools(&mut self, events: &mut Vec<StreamEvent>) {
+    fn end_pending_tools(&mut self, events: &mut Vec<SseEvent>) {
         for acc in &mut self.tools {
             if acc.started && !acc.ended {
                 events.push(Self::end_tool(acc));
@@ -64,7 +57,7 @@ impl Parser {
         self.tools.iter().any(|acc| acc.started)
     }
 
-    fn tool_events(&mut self, calls: Vec<RawToolCall>, events: &mut Vec<StreamEvent>) {
+    fn tool_events(&mut self, calls: Vec<RawToolCall>, events: &mut Vec<SseEvent>) {
         for call in calls {
             let index = call.index.unwrap_or(0);
             if self.tools.len() <= index {
@@ -88,14 +81,13 @@ impl Parser {
                 acc.started = true;
                 let id = acc.id.clone();
                 let name = acc.name.clone();
-                self.close_thinking(events);
-                events.push(StreamEvent::ToolCallStart { id, name });
+                events.push(StreamEvent::ToolCallStart { id, name }.into());
             }
             let acc = &mut self.tools[index];
             if let Some(fragment) = fragment {
                 acc.args.push_str(&fragment);
                 if acc.started {
-                    events.push(StreamEvent::ToolCallDelta { delta: fragment });
+                    events.push(StreamEvent::ToolCallDelta { delta: fragment }.into());
                 }
             }
         }
@@ -103,18 +95,20 @@ impl Parser {
 }
 
 impl SseParser for Parser {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError> {
+    fn parse_line(&mut self, data: &str) -> Result<Vec<SseEvent>, ModelError> {
         if data == "[DONE]" {
             let mut events = Vec::new();
             if self.stop == StopReason::Stop && self.has_started_tools() {
                 self.stop = StopReason::ToolUse;
             }
-            self.close_thinking(&mut events);
             self.end_pending_tools(&mut events);
-            events.push(StreamEvent::Done {
-                stop_reason: self.stop,
-                usage: self.usage(),
-            });
+            events.push(
+                StreamEvent::Done {
+                    stop_reason: self.stop,
+                    usage: self.usage(),
+                }
+                .into(),
+            );
             return Ok(events);
         }
         let chunk: StreamChunk =
@@ -127,7 +121,6 @@ impl SseParser for Parser {
         if let Some(reason) = choice.as_ref().and_then(|c| c.finish_reason.as_deref()) {
             self.stop = stream_chunk::map_finish_reason(reason);
             if reason == "tool_calls" {
-                self.close_thinking(&mut events);
                 self.end_pending_tools(&mut events);
             }
         }
@@ -137,16 +130,11 @@ impl SseParser for Parser {
                 .or(delta.reasoning)
                 .filter(|t| !t.is_empty());
             if let Some(reasoning) = reasoning {
-                if !self.thinking_open {
-                    self.thinking_open = true;
-                    events.push(StreamEvent::ThinkingStart);
-                }
-                events.push(StreamEvent::ThinkingDelta { delta: reasoning });
+                events.push(StreamEvent::ThinkingDelta { delta: reasoning }.into());
             }
             let content = delta.content.filter(|t| !t.is_empty());
             if let Some(content) = content {
-                self.close_thinking(&mut events);
-                events.push(StreamEvent::TextDelta { delta: content });
+                events.push(StreamEvent::TextDelta { delta: content }.into());
             }
             self.tool_events(delta.tool_calls, &mut events);
         }
@@ -165,9 +153,8 @@ impl SseParser for Parser {
         }
     }
 
-    fn flush(&mut self) -> Vec<StreamEvent> {
+    fn flush(&mut self) -> Vec<SseEvent> {
         let mut events = Vec::new();
-        self.close_thinking(&mut events);
         self.end_pending_tools(&mut events);
         events
     }

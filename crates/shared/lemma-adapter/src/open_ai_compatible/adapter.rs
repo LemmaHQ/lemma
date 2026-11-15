@@ -68,7 +68,6 @@ impl<T: HttpTransport> Adapter for OpenAiCompatible<T> {
             Parser {
                 usage: None,
                 stop: StopReason::Stop,
-                thinking_open: false,
                 tools: Vec::new(),
             },
         ))

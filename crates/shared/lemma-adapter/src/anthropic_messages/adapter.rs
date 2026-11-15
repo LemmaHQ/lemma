@@ -66,7 +66,6 @@ impl<T: HttpTransport> Adapter for AnthropicMessages<T> {
                 output: None,
                 stop: StopReason::Stop,
                 block: Block::None,
-                signature: String::new(),
             },
         ))
     }

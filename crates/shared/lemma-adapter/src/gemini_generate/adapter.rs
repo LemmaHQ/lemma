@@ -56,8 +56,6 @@ impl<T: HttpTransport> Adapter for GeminiGenerate<T> {
             Parser {
                 usage: None,
                 stop: StopReason::Stop,
-                thinking_open: false,
-                signature: None,
                 next_call: 0,
                 called_tool: false,
             },

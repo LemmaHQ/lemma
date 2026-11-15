@@ -1,11 +1,14 @@
 //! SSE line decoding shared by the adapters.
 //!
 //! Beyond turning `data:` payloads into parser events, this layer
-//! synthesizes the canonical block lifecycle: the first `TextDelta` is
-//! preceded by `TextStart`, and an open text block is closed with `TextEnd`
-//! before the terminal `Done`. `Done` is emitted exactly once, at the
-//! terminal event or at EOF.
+//! synthesizes the canonical block lifecycle: `TextDelta` opens a text block
+//! with `TextStart`, `ThinkingDelta` opens a thinking block with
+//! `ThinkingStart` (collecting any emitted signature fragments), an open
+//! block closes before a different block kind starts, and any open block
+//! closes ahead of the terminal `Done`. `Done` is emitted exactly once, at
+//! the terminal event or at EOF.
 
+use std::mem;
 use std::pin::Pin;
 
 use futures::{Stream, StreamExt, stream};
@@ -14,15 +17,27 @@ use lemma_model::{BoxEventStream, ModelError};
 
 use crate::http_transport::ByteStream;
 
+/// Output produced by an [`SseParser`]: either a stream event or a signature
+/// fragment attached to the current thinking block.
+pub(crate) enum SseEvent {
+    Stream(StreamEvent),
+    ThinkingSignature(String),
+}
+
+impl From<StreamEvent> for SseEvent {
+    fn from(event: StreamEvent) -> Self {
+        Self::Stream(event)
+    }
+}
+
 /// Parses a provider's SSE `data:` payloads into canonical events.
 pub(crate) trait SseParser: Send + 'static {
-    fn parse_line(&mut self, data: &str) -> Result<Vec<StreamEvent>, ModelError>;
+    fn parse_line(&mut self, data: &str) -> Result<Vec<SseEvent>, ModelError>;
     /// Flushes pending state when the stream reaches EOF directly;
     /// extracts token usage from APIs providing usage metrics on the last chunk.
     fn on_eof(&mut self) -> Option<Usage>;
-    /// Events emitted at stream closure, closing open blocks ahead of the synthesized
-    /// `Done`.
-    fn flush(&mut self) -> Vec<StreamEvent> {
+    /// Events emitted at stream closure, ahead of the synthesized `Done`.
+    fn flush(&mut self) -> Vec<SseEvent> {
         Vec::new()
     }
     /// Stop reason reported for the EOF-synthesized `Done`; APIs with a
@@ -65,6 +80,8 @@ struct State {
     lines: ByteLines,
     parser: Box<dyn SseParser>,
     text_open: bool,
+    thinking_open: bool,
+    thinking_signature: String,
     done_seen: bool,
 }
 
@@ -74,35 +91,74 @@ impl State {
             lines: lines(bytes),
             parser: Box::new(parser),
             text_open: false,
+            thinking_open: false,
+            thinking_signature: String::new(),
             done_seen: false,
         }
     }
 
-    /// Queues events, wrapping text deltas in the canonical block
-    /// lifecycle. Parsers may also drive the lifecycle explicitly with
-    /// their own `TextStart`/`TextEnd`; an open text block is closed
-    /// before a thinking or tool-call block starts and before `Done`.
-    fn wrap(&mut self, events: Vec<StreamEvent>) -> Vec<StreamEvent> {
+    fn close_text(&mut self, out: &mut Vec<StreamEvent>) {
+        if self.text_open {
+            self.text_open = false;
+            out.push(StreamEvent::TextEnd);
+        }
+    }
+
+    fn close_thinking(&mut self, out: &mut Vec<StreamEvent>) {
+        if self.thinking_open {
+            self.thinking_open = false;
+            let signature = (!self.thinking_signature.is_empty())
+                .then(|| mem::take(&mut self.thinking_signature));
+            out.push(StreamEvent::ThinkingEnd { signature });
+        }
+    }
+
+    fn wrap(&mut self, events: Vec<SseEvent>) -> Vec<StreamEvent> {
         let mut out = Vec::with_capacity(events.len() + 2);
-        for event in events {
+        for item in events {
+            let event = match item {
+                SseEvent::ThinkingSignature(signature) => {
+                    self.thinking_signature.push_str(&signature);
+                    continue;
+                }
+                SseEvent::Stream(event) => event,
+            };
             match &event {
-                StreamEvent::TextStart => self.text_open = true,
+                StreamEvent::TextStart => {
+                    self.close_thinking(&mut out);
+                    self.thinking_signature.clear();
+                    self.text_open = true;
+                }
                 StreamEvent::TextEnd => self.text_open = false,
                 StreamEvent::TextDelta { .. } if !self.text_open => {
+                    self.close_thinking(&mut out);
+                    self.thinking_signature.clear();
                     self.text_open = true;
                     out.push(StreamEvent::TextStart);
                 }
-                StreamEvent::ThinkingStart | StreamEvent::ToolCallStart { .. }
-                    if self.text_open =>
-                {
-                    self.text_open = false;
-                    out.push(StreamEvent::TextEnd);
+                StreamEvent::ThinkingStart => {
+                    self.close_text(&mut out);
+                    self.thinking_open = true;
+                    self.thinking_signature.clear();
+                }
+                StreamEvent::ThinkingEnd { .. } => {
+                    self.close_thinking(&mut out);
+                    continue;
+                }
+                StreamEvent::ThinkingDelta { .. } if !self.thinking_open => {
+                    self.close_text(&mut out);
+                    self.thinking_open = true;
+                    out.push(StreamEvent::ThinkingStart);
+                }
+                StreamEvent::ToolCallStart { .. } => {
+                    self.close_text(&mut out);
+                    self.close_thinking(&mut out);
+                    self.thinking_signature.clear();
                 }
                 StreamEvent::Done { .. } => {
-                    if self.text_open {
-                        self.text_open = false;
-                        out.push(StreamEvent::TextEnd);
-                    }
+                    self.close_text(&mut out);
+                    self.close_thinking(&mut out);
+                    self.thinking_signature.clear();
                     self.done_seen = true;
                 }
                 _ => {}
@@ -143,7 +199,7 @@ pub(crate) fn events_from_sse(bytes: ByteStream, parser: impl SseParser) -> BoxE
                         let usage = state.parser.on_eof();
                         let stop_reason = state.parser.on_stop_reason();
                         let mut events = state.parser.flush();
-                        events.push(StreamEvent::Done { stop_reason, usage });
+                        events.push(StreamEvent::Done { stop_reason, usage }.into());
                         pending = state.wrap(events).into_iter();
                     }
                 }
