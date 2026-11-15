@@ -1,7 +1,7 @@
-import type {
-    EngineHeader,
-    EngineRequest,
-    EngineResponse,
+import {
+    type EngineRequest,
+    type EngineResponse,
+    isEngineRequest,
 } from "./desktop-bridge";
 
 /** The addon's engine, as far as a port needs it. */
@@ -26,36 +26,6 @@ export interface EnginePort {
     postMessage(message: EngineResponse): void;
     start(): void;
 }
-
-const isHeader = (value: unknown): value is EngineHeader =>
-    Array.isArray(value) &&
-    value.length === 2 &&
-    typeof value[0] === "string" &&
-    typeof value[1] === "string";
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === "object" && value !== null;
-
-const isString = (value: unknown): value is string => typeof value === "string";
-
-const isHeaders = (value: unknown): value is EngineHeader[] =>
-    Array.isArray(value) && value.every(isHeader);
-
-const isEngineRequest = (value: unknown): value is EngineRequest => {
-    if (!isRecord(value) || typeof value.id !== "number") {
-        return false;
-    }
-    if (value.type === "cancel") {
-        return true;
-    }
-    return (
-        value.type === "request" &&
-        isString(value.method) &&
-        isString(value.path) &&
-        isHeaders(value.headers) &&
-        value.body instanceof Uint8Array
-    );
-};
 
 const errorText = (err: unknown): string =>
     err instanceof Error ? err.message : String(err);

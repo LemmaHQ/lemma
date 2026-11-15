@@ -15,6 +15,7 @@ interface Harness {
     fetch: typeof globalThis.fetch;
     requests: EngineRequest[];
     respond(message: EngineResponse): void;
+    deliver(message: unknown): void;
     exit(detail: string): void;
     nextRequest(): Promise<EngineRequest>;
 }
@@ -36,6 +37,9 @@ const harness = (): Harness => {
         }),
         requests,
         respond: (message) => {
+            engine.postMessage(message, []);
+        },
+        deliver: (message) => {
             engine.postMessage(message, []);
         },
         exit: (detail) => {
@@ -192,6 +196,21 @@ describe("createEngineFetch", () => {
             "request",
             "request",
         ]);
+    });
+
+    it("ignores malformed messages on the engine port", async () => {
+        const h = harness();
+        const response = post(h.fetch);
+        await h.nextRequest();
+
+        h.deliver(null);
+        h.deliver({ type: "head", id: 1, status: "200", headers: [] });
+        h.deliver({ type: "chunk", id: 1, data: "bad" });
+        h.deliver({ type: "unknown", id: 1 });
+        h.respond({ type: "head", id: 1, status: 204, headers: [] });
+        h.respond({ type: "end", id: 1 });
+
+        expect((await response).status).toBe(204);
     });
 });
 

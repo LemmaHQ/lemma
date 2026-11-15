@@ -9,7 +9,7 @@ import {
 import path from "node:path";
 
 import { addonFile } from "./engine-addon";
-import type { HostCommand, HostEvent } from "./engine-host-protocol";
+import { type HostCommand, isHostEvent } from "./engine-host-protocol";
 
 const READY_TIMEOUT_MS = 10_000;
 const STOP_GRACE_MS = 3_000;

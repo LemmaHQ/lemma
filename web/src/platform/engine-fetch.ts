@@ -1,7 +1,8 @@
-import type {
-    DesktopBridge,
-    EngineRequest,
-    EngineResponse,
+import {
+    type DesktopBridge,
+    type EngineRequest,
+    type EngineResponse,
+    isEngineResponse,
 } from "../../../desktop/src/desktop-bridge";
 
 /** Base URL of the desktop engine; its requests never reach the network. */
@@ -123,12 +124,12 @@ export function createEngineFetch(
 
     const listen = async (): Promise<void> => {
         const port = await connection.port;
-        port.addEventListener(
-            "message",
-            (event: MessageEvent<EngineResponse>) => {
-                receive(port, event.data);
-            },
-        );
+        port.addEventListener("message", (event: MessageEvent<unknown>) => {
+            if (!isEngineResponse(event.data)) {
+                return;
+            }
+            receive(port, event.data);
+        });
         port.start();
     };
     const failOnExit = async (): Promise<void> => {

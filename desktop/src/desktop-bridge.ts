@@ -55,3 +55,57 @@ export type EngineResponse =
     | { type: "chunk"; id: number; data: Uint8Array }
     | { type: "end"; id: number }
     | { type: "error"; id: number; reason: string };
+
+const isHeader = (value: unknown): value is EngineHeader =>
+    Array.isArray(value) &&
+    value.length === 2 &&
+    typeof value[0] === "string" &&
+    typeof value[1] === "string";
+
+const isHeaders = (value: unknown): value is EngineHeader[] =>
+    Array.isArray(value) && value.every(isHeader);
+
+const hasEnvelope = (
+    value: unknown,
+): value is { id: number; type: unknown } & Record<string, unknown> =>
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "number" &&
+    "type" in value;
+
+/** Returns whether `value` is a valid {@link EngineRequest}. */
+export const isEngineRequest = (value: unknown): value is EngineRequest => {
+    if (!hasEnvelope(value)) {
+        return false;
+    }
+    if (value.type === "cancel") {
+        return true;
+    }
+    return (
+        value.type === "request" &&
+        typeof value.method === "string" &&
+        typeof value.path === "string" &&
+        isHeaders(value.headers) &&
+        value.body instanceof Uint8Array
+    );
+};
+
+/** Returns whether `value` is a valid {@link EngineResponse}. */
+export const isEngineResponse = (value: unknown): value is EngineResponse => {
+    if (!hasEnvelope(value)) {
+        return false;
+    }
+    switch (value.type) {
+        case "head":
+            return typeof value.status === "number" && isHeaders(value.headers);
+        case "chunk":
+            return value.data instanceof Uint8Array;
+        case "end":
+            return true;
+        case "error":
+            return typeof value.reason === "string";
+        default:
+            return false;
+    }
+};

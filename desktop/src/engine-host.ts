@@ -1,15 +1,9 @@
-import type { HostCommand, HostEvent } from "./engine-host-protocol";
+import { isHostCommand, type HostEvent } from "./engine-host-protocol";
 import { serveEnginePort, type PortEngine } from "./serve-engine-port";
 
 interface Addon {
     open(dataDir: string): Promise<PortEngine & { close(): Promise<void> }>;
 }
-
-const isHostCommand = (value: unknown): value is HostCommand =>
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    (value.type === "connect" || value.type === "stop");
 
 const [addonPath, dataDir] = process.argv.slice(2);
 const parent = process.parentPort;
