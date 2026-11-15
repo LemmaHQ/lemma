@@ -13,6 +13,6 @@ pub use provider_model::ProviderModel;
 pub use provider_service::{
     CreateCustomInput, CustomProviderView, PredefinedProviderView, ProviderBinding,
     ProviderService, ProviderView, UpdateCustomInput, UpdatePredefinedInput, UpdateWebInput,
-    WebBackend, WebFunction, WebProviderView,
+    WebBackend, WebFunction, WebProviderView, WebSearchBackend,
 };
-pub use web_provider_kind::WebProviderKind;
+pub use web_provider_kind::{WebProviderKind, WebSearchKind};

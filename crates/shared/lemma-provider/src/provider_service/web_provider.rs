@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::web_provider_kind::WebProviderKind;
+use crate::web_provider_kind::{WebProviderKind, WebSearchKind};
 
 /// The web operation whose backend fallback order is being selected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,5 +47,16 @@ pub struct WebBackend {
     /// API base URL; empty for native fetch.
     pub base_url: String,
     /// Plaintext API key; empty for native fetch.
+    pub api_key: String,
+}
+
+/// An enabled web search backend with its connection details opened for use.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WebSearchBackend {
+    /// Backend implementation.
+    pub kind: WebSearchKind,
+    /// API base URL.
+    pub base_url: String,
+    /// Plaintext API key.
     pub api_key: String,
 }

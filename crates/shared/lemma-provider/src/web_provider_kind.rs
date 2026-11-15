@@ -12,6 +12,15 @@ pub enum WebProviderKind {
     DeepSeek,
 }
 
+/// Built-in web search backend implementations.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum WebSearchKind {
+    /// Exa search API.
+    Exa,
+    /// DeepSeek search API.
+    DeepSeek,
+}
+
 impl WebProviderKind {
     pub(crate) fn as_str(self) -> &'static str {
         match self {

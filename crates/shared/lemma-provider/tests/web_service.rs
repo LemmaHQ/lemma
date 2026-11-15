@@ -8,6 +8,7 @@ use uuid::Uuid;
 use lemma_model::{Adapter, BoxEventStream, Connector, Endpoint, ModelError, ModelRequest};
 use lemma_provider::{
     ProviderError, ProviderService, UpdateWebInput, WebFunction, WebProviderKind, WebProviderView,
+    WebSearchKind,
 };
 
 #[derive(Debug)]
@@ -72,8 +73,8 @@ async fn web_providers_are_seeded_once() -> Result<(), Box<dyn Error>> {
 
     let first = providers.list_web().await?;
     let second = providers.list_web().await?;
-    let search = providers.web_backends(WebFunction::Search).await?;
-    let fetch = providers.web_backends(WebFunction::Fetch).await?;
+    let search = providers.web_search_backends().await?;
+    let fetch = providers.web_fetch_backends().await?;
 
     assert_eq!(second, first, "idempotent seed");
     assert_eq!(
@@ -233,23 +234,23 @@ async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box
     let listed = providers.list_web().await?;
     let native = view(&listed, WebProviderKind::Native)?;
 
-    let initial_search = providers.web_backends(WebFunction::Search).await?;
-    let initial_fetch = providers.web_backends(WebFunction::Fetch).await?;
+    let initial_search = providers.web_search_backends().await?;
+    let initial_fetch = providers.web_fetch_backends().await?;
     let search_order = providers
         .set_web_order(WebFunction::Search, &[deepseek.id, exa.id])
         .await?;
     let fetch_order = providers
         .set_web_order(WebFunction::Fetch, &[deepseek.id, exa.id, native.id])
         .await?;
-    let search = providers.web_backends(WebFunction::Search).await?;
-    let fetch = providers.web_backends(WebFunction::Fetch).await?;
+    let search = providers.web_search_backends().await?;
+    let fetch = providers.web_fetch_backends().await?;
 
     assert_eq!(
         initial_search
             .iter()
             .map(|backend| backend.kind)
             .collect::<Vec<_>>(),
-        [WebProviderKind::Exa, WebProviderKind::DeepSeek],
+        [WebSearchKind::Exa, WebSearchKind::DeepSeek],
         "initial search backend order"
     );
     assert_eq!(
@@ -294,7 +295,7 @@ async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box
             .iter()
             .map(|backend| backend.kind)
             .collect::<Vec<_>>(),
-        [WebProviderKind::DeepSeek, WebProviderKind::Exa],
+        [WebSearchKind::DeepSeek, WebSearchKind::Exa],
         "updated search backend order"
     );
     assert_eq!(
@@ -370,14 +371,11 @@ async fn web_orders_validate_exact_sets_and_resolve_backends() -> Result<(), Box
         )
         .await?;
     assert!(
-        providers
-            .web_backends(WebFunction::Search)
-            .await?
-            .is_empty(),
+        providers.web_search_backends().await?.is_empty(),
         "no enabled search backends"
     );
     assert!(
-        providers.web_backends(WebFunction::Fetch).await?.is_empty(),
+        providers.web_fetch_backends().await?.is_empty(),
         "no enabled fetch backends"
     );
     Ok(())
@@ -425,7 +423,7 @@ async fn web_key_races_and_open_failures_never_return_invalid_backends()
 
     enable(&providers, WebProviderKind::Exa, "sk-exa").await?;
     let rotated = ProviderService::new(db.clone(), "rotated", NoConnector);
-    let opened = rotated.web_backends(WebFunction::Search).await;
+    let opened = rotated.web_search_backends().await;
     let listed_rotated = rotated.list_web().await;
     sqlx::query("UPDATE web_providers SET api_key = 'not sealed' WHERE kind = 'exa'")
         .execute(&db)
@@ -455,13 +453,15 @@ async fn web_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
     let listed = providers.list_web().await;
     let updated = providers.update_web(id, UpdateWebInput::default()).await;
     let ordered = providers.set_web_order(WebFunction::Search, &[]).await;
-    let backends = providers.web_backends(WebFunction::Fetch).await;
+    let search_backends = providers.web_search_backends().await;
+    let fetch_backends = providers.web_fetch_backends().await;
 
     for result in [
         listed.err().map(|error| error.to_string()),
         updated.err().map(|error| error.to_string()),
         ordered.err().map(|error| error.to_string()),
-        backends.err().map(|error| error.to_string()),
+        search_backends.err().map(|error| error.to_string()),
+        fetch_backends.err().map(|error| error.to_string()),
     ] {
         assert!(
             result.is_some_and(|error| error.starts_with("store:")),

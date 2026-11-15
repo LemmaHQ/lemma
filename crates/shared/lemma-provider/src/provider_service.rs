@@ -17,5 +17,7 @@ pub use self::provider_binding::ProviderBinding;
 pub use self::provider_view::{CustomProviderView, PredefinedProviderView, ProviderView};
 pub use self::providers::ProviderService;
 pub use self::update_input::{UpdateCustomInput, UpdatePredefinedInput};
-pub use self::web_provider::{UpdateWebInput, WebBackend, WebFunction, WebProviderView};
+pub use self::web_provider::{
+    UpdateWebInput, WebBackend, WebFunction, WebProviderView, WebSearchBackend,
+};
 pub use crate::provider_model::ProviderModel;

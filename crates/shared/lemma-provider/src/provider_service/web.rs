@@ -6,10 +6,12 @@ use uuid::Uuid;
 use lemma_model::Connector;
 
 use crate::provider_error::ProviderError;
-use crate::web_provider_kind::WebProviderKind;
+use crate::web_provider_kind::{WebProviderKind, WebSearchKind};
 
 use super::providers::ProviderService;
-use super::web_provider::{UpdateWebInput, WebBackend, WebFunction, WebProviderView};
+use super::web_provider::{
+    UpdateWebInput, WebBackend, WebFunction, WebProviderView, WebSearchBackend,
+};
 
 type WebTuple = (Uuid, String, String, bool, i32, i32);
 
@@ -178,51 +180,59 @@ impl<C: Connector> ProviderService<C> {
         self.list_web().await
     }
 
-    /// Resolves enabled backends in fallback order, excluding keyless accounts.
+    /// Resolves enabled web search backends in fallback order, excluding
+    /// keyless accounts and native fetch.
     ///
     /// # Errors
     ///
     /// [`ProviderError::Crypto`] when a stored key cannot be opened and
     /// [`ProviderError::Store`] when the database fails.
-    pub async fn web_backends(
-        &self,
-        function: WebFunction,
-    ) -> Result<Vec<WebBackend>, ProviderError> {
+    pub async fn web_search_backends(&self) -> Result<Vec<WebSearchBackend>, ProviderError> {
         self.insert_missing_web().await?;
-        let sql = match function {
-            WebFunction::Search => {
-                "SELECT id, kind, api_key, enabled, search_rank, fetch_rank
-                 FROM web_providers
-                 WHERE enabled = 1 AND api_key != '' AND kind != 'native'
-                 ORDER BY search_rank ASC"
+        let mut rows = self.web_rows().await?;
+        rows.sort_by_key(|row| (row.search_rank, row.kind));
+        let mut backends = Vec::new();
+        for row in rows {
+            let kind = match row.kind {
+                WebProviderKind::Native => continue,
+                WebProviderKind::Exa => WebSearchKind::Exa,
+                WebProviderKind::DeepSeek => WebSearchKind::DeepSeek,
+            };
+            if !row.enabled || row.api_key.is_empty() {
+                continue;
             }
-            WebFunction::Fetch => {
-                "SELECT id, kind, api_key, enabled, search_rank, fetch_rank
-                 FROM web_providers
-                 WHERE enabled = 1 AND (kind = 'native' OR api_key != '')
-                 ORDER BY fetch_rank ASC"
+            backends.push(WebSearchBackend {
+                kind,
+                base_url: row.kind.base_url().to_owned(),
+                api_key: self.open_web_key(&row)?,
+            });
+        }
+        Ok(backends)
+    }
+
+    /// Resolves enabled web fetch backends in fallback order, excluding
+    /// keyless accounts.
+    ///
+    /// # Errors
+    ///
+    /// [`ProviderError::Crypto`] when a stored key cannot be opened and
+    /// [`ProviderError::Store`] when the database fails.
+    pub async fn web_fetch_backends(&self) -> Result<Vec<WebBackend>, ProviderError> {
+        self.insert_missing_web().await?;
+        let mut rows = self.web_rows().await?;
+        rows.sort_by_key(|row| (row.fetch_rank, row.kind));
+        let mut backends = Vec::new();
+        for row in rows {
+            if !row.enabled || (row.kind != WebProviderKind::Native && row.api_key.is_empty()) {
+                continue;
             }
-        };
-        let tuples = sqlx::query_as::<_, WebTuple>(sql)
-            .fetch_all(&self.db)
-            .await?;
-        let mut rows: Vec<WebRow> = tuples
-            .into_iter()
-            .map(web_row_from_tuple)
-            .collect::<Result<_, _>>()?;
-        rows.sort_by_key(|row| match function {
-            WebFunction::Search => (row.search_rank, row.kind),
-            WebFunction::Fetch => (row.fetch_rank, row.kind),
-        });
-        rows.iter()
-            .map(|row| {
-                Ok(WebBackend {
-                    kind: row.kind,
-                    base_url: row.kind.base_url().to_owned(),
-                    api_key: self.open_web_key(row)?,
-                })
-            })
-            .collect()
+            backends.push(WebBackend {
+                kind: row.kind,
+                base_url: row.kind.base_url().to_owned(),
+                api_key: self.open_web_key(&row)?,
+            });
+        }
+        Ok(backends)
     }
 
     async fn insert_missing_web(&self) -> Result<(), ProviderError> {
