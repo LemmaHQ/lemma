@@ -3,9 +3,8 @@
 
 use std::path::Path;
 
-use lemma_host::{InProcessTransport, LocalEngine};
+use lemma_host::InProcessEngine;
 use thiserror::Error;
-use tokio::sync::Mutex;
 
 uniffi::setup_scaffolding!();
 
@@ -46,8 +45,7 @@ pub struct ResponseHead {
 /// The open local engine.
 #[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
-    transport: InProcessTransport,
-    local: Mutex<Option<LocalEngine>>,
+    engine: InProcessEngine,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -59,13 +57,10 @@ impl LemmaEngine {
     /// [`EngineError::Open`] naming the startup step that failed.
     #[uniffi::constructor]
     pub async fn open(data_dir: String) -> Result<Self, EngineError> {
-        let local = LocalEngine::open(Path::new(&data_dir))
+        InProcessEngine::open(Path::new(&data_dir))
             .await
-            .map_err(|e| EngineError::Open(e.to_string()))?;
-        Ok(Self {
-            transport: InProcessTransport::new(local.router()),
-            local: Mutex::new(Some(local)),
-        })
+            .map(|engine| Self { engine })
+            .map_err(|e| EngineError::Open(e.to_string()))
     }
 
     /// Sends one request to the engine and opens its response body.
@@ -85,7 +80,7 @@ impl LemmaEngine {
             .map(|header| (header.name, header.value))
             .collect();
         let head = self
-            .transport
+            .engine
             .request(&method, &path, &headers, body)
             .await
             .map_err(|e| EngineError::Transport(e.to_string()))?;
@@ -107,23 +102,20 @@ impl LemmaEngine {
     /// [`EngineError::Transport`] for an unknown body id, or a body that
     /// failed while streaming.
     pub async fn read(&self, body: u32) -> Result<Option<Vec<u8>>, EngineError> {
-        self.transport
+        self.engine
             .read(body)
             .await
-            .map(|chunk| chunk.map(Vec::from))
             .map_err(|e| EngineError::Transport(e.to_string()))
     }
 
     /// Closes a response body before its end.
     pub fn cancel(&self, body: u32) {
-        self.transport.cancel(body);
+        self.engine.cancel(body);
     }
 
     /// Closes the engine's database; call it once no request is in flight.
     /// Requests after it fail, and a second call does nothing.
     pub async fn shutdown(&self) {
-        if let Some(local) = self.local.lock().await.take() {
-            local.close().await;
-        }
+        self.engine.close().await;
     }
 }

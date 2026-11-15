@@ -4,11 +4,10 @@
 
 use std::path::Path;
 
-use lemma_host::{InProcessTransport, LocalEngine};
+use lemma_host::InProcessEngine;
 use napi::bindgen_prelude::Buffer;
 use napi::{Error, Result};
 use napi_derive::napi;
-use tokio::sync::Mutex;
 
 /// One HTTP header.
 #[napi(object)]
@@ -37,24 +36,20 @@ pub struct ResponseHead {
 #[napi]
 #[derive(Debug)]
 pub struct Engine {
-    transport: InProcessTransport,
-    local: Mutex<Option<LocalEngine>>,
+    engine: InProcessEngine,
 }
 
 /// Opens the local engine over `data_dir`.
 ///
 /// # Errors
 ///
-/// The startup step that failed, from [`LocalEngine::open`].
+/// The startup step that failed, from [`InProcessEngine::open`].
 #[napi]
 pub async fn open(data_dir: String) -> Result<Engine> {
-    let local = LocalEngine::open(Path::new(&data_dir))
+    InProcessEngine::open(Path::new(&data_dir))
         .await
-        .map_err(|e| Error::from_reason(e.to_string()))?;
-    Ok(Engine {
-        transport: InProcessTransport::new(local.router()),
-        local: Mutex::new(Some(local)),
-    })
+        .map(|engine| Engine { engine })
+        .map_err(|e| Error::from_reason(e.to_string()))
 }
 
 #[napi]
@@ -77,7 +72,7 @@ impl Engine {
             .map(|header| (header.name, header.value))
             .collect();
         let head = self
-            .transport
+            .engine
             .request(&method, &path, &headers, body.to_vec())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -99,24 +94,22 @@ impl Engine {
     /// An unknown body id, or a body that failed while streaming.
     #[napi]
     pub async fn read(&self, body: u32) -> Result<Option<Buffer>> {
-        self.transport
+        self.engine
             .read(body)
             .await
-            .map(|chunk| chunk.map(|bytes| Buffer::from(Vec::from(bytes))))
+            .map(|chunk| chunk.map(Buffer::from))
             .map_err(|e| Error::from_reason(e.to_string()))
     }
 
     /// Closes a response body before its end.
     #[napi]
     pub fn cancel(&self, body: u32) {
-        self.transport.cancel(body);
+        self.engine.cancel(body);
     }
 
     /// Closes the engine's database; call it once no request is in flight.
     #[napi]
     pub async fn close(&self) {
-        if let Some(local) = self.local.lock().await.take() {
-            local.close().await;
-        }
+        self.engine.close().await;
     }
 }

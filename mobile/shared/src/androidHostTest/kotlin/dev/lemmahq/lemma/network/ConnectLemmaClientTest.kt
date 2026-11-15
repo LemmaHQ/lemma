@@ -68,7 +68,7 @@ class ConnectLemmaClientTest {
     @AfterTest
     fun tearDown() {
         release.countDown()
-        runBlocking { engines.forEach { it.shutdown() } }
+        runBlocking { engines.forEach { it.close() } }
         vendor.close()
     }
 

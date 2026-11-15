@@ -5,6 +5,7 @@
 mod agent_event;
 mod agent_rpc;
 mod app_state;
+mod in_process_engine;
 mod in_process_transport;
 mod in_process_transport_error;
 mod local_engine;
@@ -16,7 +17,7 @@ mod router;
 mod secrets;
 mod session_rpc;
 
-pub use app_state::AppState;
+pub use in_process_engine::InProcessEngine;
 pub use in_process_transport::{InProcessTransport, ResponseHead};
 pub use in_process_transport_error::InProcessTransportError;
 pub use local_engine::LocalEngine;

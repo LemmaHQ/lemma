@@ -31,7 +31,7 @@ class LocalEngineTest {
 
     @AfterTest
     fun tearDown() {
-        runBlocking { engine.shutdown() }
+        runBlocking { engine.close() }
     }
 
     @Test
