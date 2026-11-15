@@ -36,18 +36,6 @@ detekt {
     config.setFrom(rootProject.file("mobile/detekt.yml"))
 }
 
-afterEvaluate {
-    for (variant in listOf("Debug", "Release")) {
-        tasks.named<dev.detekt.gradle.Detekt>("detekt$variant") {
-            classpath.from(
-                tasks.named<JavaCompile>("compile${variant}JavaWithJavac").flatMap {
-                    it.destinationDirectory
-                }
-            )
-        }
-    }
-}
-
 kover {
     currentProject {
         instrumentation {
@@ -62,7 +50,7 @@ kover {
                     "dev.lemmahq.lemma.uniffi",
                     "lemma.mobile.shared.generated.resources",
                 )
-                classes("dev.lemmahq.lemma.BuildConfig", "dev.lemmahq.lemma.theme.LemmaPalette")
+                classes("dev.lemmahq.lemma.theme.LemmaPalette")
                 annotatedBy("kotlinx.serialization.Serializable")
             }
         }
@@ -174,7 +162,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
-        buildConfig = true
         compose = true
     }
     testOptions {

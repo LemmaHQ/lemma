@@ -114,8 +114,6 @@ kotlin {
             kotlin.srcDir(generateProtoBindings)
             kotlin.srcDir("build/generated/source/uniffi")
             dependencies {
-                implementation(libs.compose.uiToolingPreview)
-                implementation(libs.compose.uiTooling)
                 implementation(libs.connect.kotlin)
                 implementation(libs.connect.kotlin.okhttp)
                 implementation(libs.connect.kotlin.javalite.ext)
@@ -134,7 +132,6 @@ kotlin {
                 implementation(libs.compose.material3)
                 implementation(libs.compose.ui)
                 implementation(libs.compose.components.resources)
-                implementation(libs.compose.uiToolingPreview)
                 implementation(libs.androidx.lifecycle.viewmodel.compose)
                 implementation(libs.androidx.navigation.compose)
                 implementation(libs.kotlinx.serialization.core)
@@ -163,7 +160,6 @@ kotlin {
 }
 
 dependencies {
-    androidRuntimeClasspath(libs.compose.uiTooling)
     detektPlugins(libs.compose.rules.detekt)
 }
 
