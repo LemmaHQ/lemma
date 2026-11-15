@@ -3,23 +3,24 @@ import { useShallow } from "zustand/react/shallow";
 
 import { type ActiveSessionState, useActiveSessionStore } from "./store";
 
-export type ActiveSessionViewSlice = Pick<
-    ActiveSessionState,
-    | "treeMessages"
-    | "leafId"
-    | "items"
-    | "streaming"
-    | "turnStartedAtMs"
-    | "currentStep"
-    | "reconnectingOffset"
-    | "rewind"
-    | "send"
-    | "abort"
-    | "switchLeaf"
-    | "startRewind"
-    | "cancelRewind"
-    | "labelMessage"
->;
+const selectActiveSession = (s: ActiveSessionState) => ({
+    treeMessages: s.treeMessages,
+    leafId: s.leafId,
+    items: s.items,
+    streaming: s.streaming,
+    turnStartedAtMs: s.turnStartedAtMs,
+    currentStep: s.currentStep,
+    reconnectingOffset: s.reconnectingOffset,
+    rewind: s.rewind,
+    send: s.send,
+    abort: s.abort,
+    switchLeaf: s.switchLeaf,
+    startRewind: s.startRewind,
+    cancelRewind: s.cancelRewind,
+    labelMessage: s.labelMessage,
+});
+
+type ActiveSessionViewSlice = ReturnType<typeof selectActiveSession>;
 
 /** Loads `sessionId` into the active-session store once per session change, excluding `drafts` so keystrokes do not re-render the stage. */
 export function useActiveSession(sessionId: string): ActiveSessionViewSlice {
@@ -30,22 +31,5 @@ export function useActiveSession(sessionId: string): ActiveSessionViewSlice {
         }
     }, [sessionId]);
 
-    return useActiveSessionStore(
-        useShallow((s) => ({
-            treeMessages: s.treeMessages,
-            leafId: s.leafId,
-            items: s.items,
-            streaming: s.streaming,
-            turnStartedAtMs: s.turnStartedAtMs,
-            currentStep: s.currentStep,
-            reconnectingOffset: s.reconnectingOffset,
-            rewind: s.rewind,
-            send: s.send,
-            abort: s.abort,
-            switchLeaf: s.switchLeaf,
-            startRewind: s.startRewind,
-            cancelRewind: s.cancelRewind,
-            labelMessage: s.labelMessage,
-        })),
-    );
+    return useActiveSessionStore(useShallow(selectActiveSession));
 }
