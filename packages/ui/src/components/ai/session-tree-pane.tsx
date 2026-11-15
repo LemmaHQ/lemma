@@ -83,7 +83,7 @@ export function SessionTreePane({
         visibleRows.length === 0
             ? -1
             : Math.min(cursor, visibleRows.length - 1);
-    const activeRow = safeCursor >= 0 ? visibleRows[safeCursor] : undefined;
+    const activeRow = visibleRows[safeCursor];
     const handleNavigationKeyDown = (
         event: KeyboardEvent<HTMLInputElement>,
     ) => {

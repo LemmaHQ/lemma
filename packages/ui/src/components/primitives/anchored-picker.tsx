@@ -99,7 +99,7 @@ export function AnchoredPicker({
         flatItems.length === 0
             ? -1
             : Math.min(activeIndex, flatItems.length - 1);
-    const activeItem = safeIndex >= 0 ? flatItems[safeIndex] : undefined;
+    const activeItem = flatItems[safeIndex];
     const activeOptionId =
         activeItem === undefined ? undefined : `${baseId}-opt-${activeItem.id}`;
 
