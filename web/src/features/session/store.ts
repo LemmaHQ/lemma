@@ -22,15 +22,6 @@ export interface SessionState {
     ) => void;
     markSeen: (id: string) => void;
     setActiveTurn: (id: string, activeMessageId: string | undefined) => void;
-    setLeaf: (
-        sessionId: string,
-        leafId?: string,
-    ) => Promise<SessionSummary | undefined>;
-    setMessageLabel: (
-        sessionId: string,
-        messageId: string,
-        label: string,
-    ) => Promise<string | undefined>;
 }
 
 export const useSessionStore = create<SessionState>()((set) => ({
@@ -116,30 +107,6 @@ export const useSessionStore = create<SessionState>()((set) => ({
                       erroredIds: withoutId(s.erroredIds, id),
                   }),
         }));
-    },
-
-    setLeaf: async (sessionId, leafId) => {
-        const res = await sessionClient.setSessionLeaf({
-            sessionId,
-            ...(leafId === undefined ? {} : { leafId }),
-        });
-        if (res.session === undefined) {
-            return;
-        }
-        const session = toSummary(res.session);
-        set((s) => ({
-            list: s.list.map((c) => (c.id === sessionId ? session : c)),
-        }));
-        return session;
-    },
-
-    setMessageLabel: async (sessionId, messageId, label) => {
-        const res = await sessionClient.setMessageLabel({
-            sessionId,
-            messageId,
-            label,
-        });
-        return res.message?.label;
     },
 }));
 

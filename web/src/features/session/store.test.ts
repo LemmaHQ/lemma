@@ -2,12 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { beforeEach, expect, it, vi } from "vitest";
 
-import {
-    type Message,
-    MessageSchema,
-    type Session,
-    SessionSchema,
-} from "@/gen/lemma/v1/session_pb";
+import { type Session, SessionSchema } from "@/gen/lemma/v1/session_pb";
 
 import { useSessionStore } from "./store";
 import { createSession, refreshSessions } from "./useSessions";
@@ -20,18 +15,6 @@ const rpc = vi.hoisted(() => ({
     renameSession:
         vi.fn<(req: { id: string; title: string }) => Promise<Reply>>(),
     deleteSession: vi.fn<(req: { id: string }) => Promise<object>>(),
-    setSessionLeaf:
-        vi.fn<
-            (req: { sessionId: string; leafId?: string }) => Promise<Reply>
-        >(),
-    setMessageLabel:
-        vi.fn<
-            (req: {
-                sessionId: string;
-                messageId: string;
-                label: string;
-            }) => Promise<{ message?: Message | undefined }>
-        >(),
 }));
 
 vi.mock("@/rpc/clients", () => ({ sessionClient: rpc }));
