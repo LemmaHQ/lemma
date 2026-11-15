@@ -1,7 +1,7 @@
 use chrono::Utc;
 use uuid::Uuid;
 
-use lemma_model::Connector;
+use lemma_model::{ApiFormat, Connector};
 
 use crate::preset::{self, PredefinedProvider};
 use crate::provider_error::ProviderError;
@@ -25,7 +25,7 @@ impl<C: Connector> ProviderService<C> {
                  ON CONFLICT (source, identifier) DO NOTHING",
             )
             .bind(Uuid::new_v4())
-            .bind(provider_row::api_format_str(preset.default_api_format))
+            .bind(preset.default_api_format.as_str())
             .bind(preset.identifier)
             .bind(now)
             .execute(&self.db)
@@ -88,7 +88,7 @@ impl<C: Connector> ProviderService<C> {
         } else {
             input.enabled
         };
-        let api_format = input.default_api_format.map(provider_row::api_format_str);
+        let api_format = input.default_api_format.map(ApiFormat::as_str);
         let missing_error = if enabling_saved_key {
             ProviderError::KeyRequired
         } else {

@@ -852,3 +852,23 @@ async fn set_message_label_sets_trims_clears_and_rejects_foreign_messages()
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn unknown_stored_api_format_fails_as_store_error() -> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
+    let sessions = SessionService::new(db.clone());
+    let session = sessions.create(None).await?;
+    let msg = entry(session.id, None, "hello", at(0));
+    sessions.append_message(msg.clone()).await?;
+    sqlx::query("UPDATE messages SET api_format = 'bogus' WHERE id = ?")
+        .bind(msg.id)
+        .execute(&db)
+        .await?;
+
+    let err = sessions.list_messages(session.id).await.err();
+    assert!(
+        matches!(err, Some(SessionError::Store(_))),
+        "expected store error, got {err:?}"
+    );
+    Ok(())
+}

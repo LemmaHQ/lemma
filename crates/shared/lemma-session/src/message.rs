@@ -88,31 +88,13 @@ impl MessageStatus {
     }
 }
 
-pub(crate) fn api_format_str(format: ApiFormat) -> &'static str {
-    match format {
-        ApiFormat::OpenAiCompatible => "openai",
-        ApiFormat::Anthropic => "anthropic",
-        ApiFormat::Gemini => "gemini",
-    }
-}
-
-pub(crate) fn parse_api_format(raw: &str) -> Result<ApiFormat, SessionError> {
-    match raw {
-        "openai" => Ok(ApiFormat::OpenAiCompatible),
-        "anthropic" => Ok(ApiFormat::Anthropic),
-        "gemini" => Ok(ApiFormat::Gemini),
-        other => Err(SessionError::Store(format!("unknown api format: {other}"))),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
     use lemma_core::{Message as CoreMessage, StopReason};
-    use lemma_model::ApiFormat;
     use uuid::Uuid;
 
-    use super::{Message, MessageBody, MessageStatus, api_format_str, parse_api_format};
+    use super::{Message, MessageBody, MessageStatus};
 
     fn sample(body: CoreMessage) -> Message {
         let now = Utc::now();
@@ -168,22 +150,6 @@ mod tests {
         assert!(
             MessageStatus::parse("bogus").is_err(),
             "unknown status rejected"
-        );
-
-        for format in [
-            ApiFormat::OpenAiCompatible,
-            ApiFormat::Anthropic,
-            ApiFormat::Gemini,
-        ] {
-            assert_eq!(
-                parse_api_format(api_format_str(format)).ok(),
-                Some(format),
-                "api format round-trip"
-            );
-        }
-        assert!(
-            parse_api_format("bogus").is_err(),
-            "unknown api format rejected"
         );
     }
 }

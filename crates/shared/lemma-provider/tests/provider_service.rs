@@ -40,13 +40,8 @@ impl Connector for EndpointConnector {
         if endpoint.base_url.contains("unreachable") {
             return Err(ModelError::new("connection refused".to_owned()));
         }
-        let api_format = match endpoint.api_format {
-            ApiFormat::OpenAiCompatible => "openai",
-            ApiFormat::Anthropic => "anthropic",
-            ApiFormat::Gemini => "gemini",
-        };
         Ok(vec![
-            api_format.to_owned(),
+            endpoint.api_format.as_str().to_owned(),
             endpoint.base_url,
             endpoint.models_path,
             endpoint.api_key,
@@ -766,5 +761,23 @@ async fn concurrent_enable_and_key_clear_never_enable_without_a_key() -> Result<
         .await?;
     assert!(!cleared.enabled, "clearing the key disables the provider");
     assert_eq!(cleared.api_key, "", "key cleared");
+    Ok(())
+}
+
+#[tokio::test]
+async fn unknown_stored_api_format_fails_as_store_error() -> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
+    let providers = service(db.clone());
+    let created = providers.create_custom(new_provider("main")).await?;
+    sqlx::query("UPDATE providers SET api_format = 'bogus' WHERE id = ?")
+        .bind(created.id)
+        .execute(&db)
+        .await?;
+
+    let err = providers.list().await.err();
+    assert!(
+        matches!(err, Some(ProviderError::Store(_))),
+        "expected store error, got {err:?}"
+    );
     Ok(())
 }

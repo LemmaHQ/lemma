@@ -7,7 +7,7 @@ use uuid::Uuid;
 use lemma_core::Message as CoreMessage;
 use lemma_model::ApiFormat;
 
-use crate::message::{self, Message, MessageBody, MessageStatus};
+use crate::message::{Message, MessageBody, MessageStatus};
 use crate::session::Session;
 use crate::session_error::SessionError;
 use crate::tree;
@@ -39,7 +39,7 @@ impl SessionService {
     /// [`SessionError::Store`] when the database fails, including a
     /// session that does not exist.
     pub async fn append_message(&self, entry: Message) -> Result<(), SessionError> {
-        let api_format = entry.api_format.map(message::api_format_str);
+        let api_format = entry.api_format.map(ApiFormat::as_str);
         sqlx::query(
             "INSERT INTO messages (
                  id, session_id, parent_id, body, status, error,
@@ -245,10 +245,15 @@ fn message_from_row(
     ): MessageRow,
 ) -> Result<Message, SessionError> {
     let status = MessageStatus::parse(&status)?;
-    let api_format = api_format
-        .as_deref()
-        .map(message::parse_api_format)
-        .transpose()?;
+    let api_format = match api_format.as_deref() {
+        Some(raw) => {
+            let Some(parsed) = ApiFormat::parse(raw) else {
+                return Err(SessionError::Store(format!("unknown api format: {raw}")));
+            };
+            Some(parsed)
+        }
+        None => None,
+    };
     Ok(Message {
         id,
         session_id,

@@ -153,7 +153,7 @@ impl<C: Connector> ProviderService<C> {
              VALUES (?, ?, 'custom', ?, ?, ?, ?, ?, ?, ?, 1, ?)",
         )
         .bind(id)
-        .bind(provider_row::api_format_str(input.api_format))
+        .bind(input.api_format.as_str())
         .bind(identifier)
         .bind(name)
         .bind(base_url)

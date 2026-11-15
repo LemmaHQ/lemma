@@ -67,9 +67,14 @@ pub(crate) fn from_tuple(
         enabled,
     ): ProviderTuple,
 ) -> Result<ProviderRow, ProviderError> {
+    let Some(api_format) = ApiFormat::parse(&api_format) else {
+        return Err(ProviderError::Store(format!(
+            "unknown api format: {api_format}"
+        )));
+    };
     Ok(ProviderRow {
         id,
-        api_format: parse_api_format(&api_format)?,
+        api_format,
         source: ProviderSource::parse(&source)?,
         identifier,
         name,
@@ -82,28 +87,9 @@ pub(crate) fn from_tuple(
     })
 }
 
-pub(crate) fn api_format_str(format: ApiFormat) -> &'static str {
-    match format {
-        ApiFormat::OpenAiCompatible => "openai",
-        ApiFormat::Anthropic => "anthropic",
-        ApiFormat::Gemini => "gemini",
-    }
-}
-
-pub(crate) fn parse_api_format(raw: &str) -> Result<ApiFormat, ProviderError> {
-    match raw {
-        "openai" => Ok(ApiFormat::OpenAiCompatible),
-        "anthropic" => Ok(ApiFormat::Anthropic),
-        "gemini" => Ok(ApiFormat::Gemini),
-        other => Err(ProviderError::Store(format!("unknown api format: {other}"))),
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use lemma_model::ApiFormat;
-
-    use super::{ProviderSource, api_format_str, parse_api_format};
+    use super::ProviderSource;
 
     #[test]
     fn provider_wire_encodings_round_trip() {
@@ -114,21 +100,6 @@ mod tests {
         assert!(
             ProviderSource::parse("bogus").is_err(),
             "unknown source rejected"
-        );
-        for format in [
-            ApiFormat::OpenAiCompatible,
-            ApiFormat::Anthropic,
-            ApiFormat::Gemini,
-        ] {
-            assert_eq!(
-                parse_api_format(api_format_str(format)).ok(),
-                Some(format),
-                "api format round-trip"
-            );
-        }
-        assert!(
-            parse_api_format("bogus").is_err(),
-            "unknown api format rejected"
         );
     }
 }
