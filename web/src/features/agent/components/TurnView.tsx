@@ -1,5 +1,6 @@
 import {
     cn,
+    formatClockTime,
     formatDuration,
     MessageActions,
     MessageCopyAction,
@@ -15,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import type { ConversationTurn } from "../active-path";
 import type { AgentItem } from "../agent-item";
-import { formatClockTime, stepVerb, type TurnStep } from "../step-details";
+import { stepVerb, type TurnStep } from "../step-details";
 import { lastPathSegment } from "../tool-output";
 
 interface TurnViewProps {

@@ -131,5 +131,3 @@ export function stepVerb(step: TurnStep, t: TFunction): string {
             return step.toolName ?? "";
     }
 }
-
-export { formatClockTime } from "@lemma/ui";
