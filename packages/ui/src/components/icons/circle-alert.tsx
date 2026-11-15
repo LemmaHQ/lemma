@@ -79,9 +79,4 @@ function CircleAlert(props: CircleAlertProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    CircleAlert,
-    CircleAlert as CircleAlertIcon,
-    type CircleAlertProps,
-    type CircleAlertProps as CircleAlertIconProps,
-};
+export { CircleAlert as CircleAlertIcon };

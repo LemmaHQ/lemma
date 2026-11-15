@@ -98,9 +98,4 @@ function RefreshCw(props: RefreshCwProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    RefreshCw,
-    RefreshCw as RefreshCwIcon,
-    type RefreshCwProps,
-    type RefreshCwProps as RefreshCwIconProps,
-};
+export { RefreshCw as RefreshCwIcon };

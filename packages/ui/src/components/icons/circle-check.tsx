@@ -72,9 +72,4 @@ function CircleCheck(props: CircleCheckProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    CircleCheck,
-    CircleCheck as CircleCheckIcon,
-    type CircleCheckProps,
-    type CircleCheckProps as CircleCheckIconProps,
-};
+export { CircleCheck as CircleCheckIcon };

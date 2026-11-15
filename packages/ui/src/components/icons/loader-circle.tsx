@@ -63,9 +63,4 @@ function LoaderCircle(props: LoaderCircleProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    LoaderCircle,
-    LoaderCircle as LoaderCircleIcon,
-    type LoaderCircleProps,
-    type LoaderCircleProps as LoaderCircleIconProps,
-};
+export { LoaderCircle as LoaderCircleIcon };

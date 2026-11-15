@@ -58,9 +58,4 @@ function EyeOff(props: EyeOffProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    EyeOff,
-    EyeOff as EyeOffIcon,
-    type EyeOffProps,
-    type EyeOffProps as EyeOffIconProps,
-};
+export { EyeOff as EyeOffIcon };

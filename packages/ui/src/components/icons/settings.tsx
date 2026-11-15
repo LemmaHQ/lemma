@@ -87,9 +87,4 @@ function Settings(props: SettingsProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    Settings,
-    Settings as SettingsIcon,
-    type SettingsProps as SettingsIconProps,
-    type SettingsProps,
-};
+export { Settings as SettingsIcon };

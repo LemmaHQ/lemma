@@ -68,9 +68,4 @@ function ChevronUp(props: ChevronUpProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    ChevronUp,
-    ChevronUp as ChevronUpIcon,
-    type ChevronUpProps,
-    type ChevronUpProps as ChevronUpIconProps,
-};
+export { ChevronUp as ChevronUpIcon };

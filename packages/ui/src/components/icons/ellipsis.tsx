@@ -184,9 +184,4 @@ function Ellipsis(props: EllipsisProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    Ellipsis,
-    Ellipsis as EllipsisIcon,
-    type EllipsisProps,
-    type EllipsisProps as EllipsisIconProps,
-};
+export { Ellipsis as EllipsisIcon };

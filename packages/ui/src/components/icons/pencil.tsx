@@ -65,9 +65,4 @@ function Pencil(props: PencilProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    Pencil,
-    Pencil as PencilIcon,
-    type PencilProps,
-    type PencilProps as PencilIconProps,
-};
+export { Pencil as PencilIcon };

@@ -55,9 +55,4 @@ function CornerDownLeft(props: CornerDownLeftProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    CornerDownLeft,
-    CornerDownLeft as CornerDownLeftIcon,
-    type CornerDownLeftProps,
-    type CornerDownLeftProps as CornerDownLeftIconProps,
-};
+export { CornerDownLeft as CornerDownLeftIcon };

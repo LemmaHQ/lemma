@@ -70,9 +70,4 @@ function Info(props: InfoProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    Info,
-    Info as InfoIcon,
-    type InfoProps,
-    type InfoProps as InfoIconProps,
-};
+export { Info as InfoIcon };

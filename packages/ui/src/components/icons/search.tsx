@@ -85,9 +85,4 @@ function Search(props: SearchProps) {
     return <IconWrapper icon={IconComponent} {...props} />;
 }
 
-export {
-    Search,
-    Search as SearchIcon,
-    type SearchProps,
-    type SearchProps as SearchIconProps,
-};
+export { Search as SearchIcon };
