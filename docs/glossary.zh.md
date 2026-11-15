@@ -33,7 +33,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 - **provider 标识符（provider identifier）** — provider 的机器名：非空 ASCII，创建后不可修改，在自定义 provider 中唯一。预定义 provider 的标识符指明其定义，例如 `deepseek`。
 - **模型特性（model feature）** — 模型的一项属性，它改变发给该模型的请求。工具调用是唯一的特性：关闭工具调用的模型收不到工具定义，也收不到此前的工具调用与工具结果。
 - **端点（endpoint）** — 一个 `Endpoint`：`ProviderService::bind` 在绑定适配器之前打开的一种 API 格式，及其 base URL、路径覆盖与明文 API key。
-- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应 API 格式的适配器，并以 `ModelAdapter` 变体的形式返回。
+- **适配器（adapter）** — 绑定到一个端点的 `lemma_model::Adapter` trait 实现：`OpenAiCompatible`、`AnthropicMessages` 或 `GeminiGenerate`。它把 `ModelRequest` 转换为厂商的线路格式，并把厂商的流转换为流事件。`HttpConnector` 把端点绑定到对应 API 格式的适配器，并返回 `ModelAdapter`。
 - **模型列表（model list）** — 自定义 provider 的端点报告的模型 id，由 `Connector::list_models` 实时获取。自定义 provider 行另行保存自己的模型记录：每个模型 id 及其特性。
 
 ## 工具

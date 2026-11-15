@@ -4,4 +4,4 @@ mod adapter;
 mod chunk;
 mod parser;
 
-pub use adapter::GeminiGenerate;
+pub(crate) use adapter::GeminiGenerate;

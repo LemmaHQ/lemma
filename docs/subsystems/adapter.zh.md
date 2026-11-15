@@ -21,7 +21,7 @@
 
 ## 实现：`lemma-adapter`
 
-`HttpConnector` 按 API 格式把 endpoint 绑定到一个适配器，并以 `ModelAdapter` 变体的形式返回。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
+`HttpConnector` 按 API 格式把 endpoint 绑定到一个适配器，并返回 `ModelAdapter`。所有适配器都通过同一个注入的 `HttpTransport` 发送 HTTP；各宿主使用的实现都是 `ReqwestTransport`。
 
 | API 格式 | 适配器 | 默认请求 | 凭据 |
 | --- | --- | --- | --- |

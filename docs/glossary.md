@@ -33,7 +33,7 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 - **provider identifier** — a provider's machine name: non-empty ASCII, immutable after creation, and unique among custom providers. A predefined provider's identifier names its definition, such as `deepseek`.
 - **model feature** — a property of a model that changes the requests sent to it. Tool calling is the only feature: a model with tool calling off receives no tool definitions and no earlier tool calls or tool results.
 - **endpoint** — an `Endpoint`: one API format with its base URL, path overrides, and plaintext API key, as `ProviderService::bind` opens them before binding the adapter.
-- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its API format and returns it as a `ModelAdapter` variant.
+- **adapter** — an implementation of the `lemma_model::Adapter` trait bound to one endpoint: `OpenAiCompatible`, `AnthropicMessages`, or `GeminiGenerate`. It translates a `ModelRequest` into the vendor's wire format and the vendor's stream into stream events. `HttpConnector` binds an endpoint to the adapter for its API format and returns it as a `ModelAdapter`.
 - **model list** — the model ids a custom provider's endpoint reports, fetched live by `Connector::list_models`. A custom provider row stores its own model records: each model id with its features.
 
 ## Tools

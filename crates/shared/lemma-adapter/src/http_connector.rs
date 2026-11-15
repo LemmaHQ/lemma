@@ -28,12 +28,12 @@ impl<T: HttpTransport> Connector for HttpConnector<T> {
         let transport = self.transport.clone();
         match endpoint.api_format {
             ApiFormat::OpenAiCompatible => {
-                ModelAdapter::OpenAi(OpenAiCompatible::new(transport, endpoint))
+                ModelAdapter::open_ai(OpenAiCompatible::new(transport, endpoint))
             }
             ApiFormat::Anthropic => {
-                ModelAdapter::Anthropic(AnthropicMessages::new(transport, endpoint))
+                ModelAdapter::anthropic(AnthropicMessages::new(transport, endpoint))
             }
-            ApiFormat::Gemini => ModelAdapter::Gemini(GeminiGenerate::new(transport, endpoint)),
+            ApiFormat::Gemini => ModelAdapter::gemini(GeminiGenerate::new(transport, endpoint)),
         }
     }
 

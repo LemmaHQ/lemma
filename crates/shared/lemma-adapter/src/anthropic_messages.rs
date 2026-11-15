@@ -4,4 +4,4 @@ mod adapter;
 mod event;
 mod parser;
 
-pub use adapter::AnthropicMessages;
+pub(crate) use adapter::AnthropicMessages;

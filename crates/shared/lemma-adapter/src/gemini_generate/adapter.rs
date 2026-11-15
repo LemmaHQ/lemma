@@ -11,14 +11,13 @@ use super::parser::Parser;
 /// `x-goog-api-key` header. Usage metrics accompany the terminal chunk and
 /// flush at EOF.
 #[derive(Debug)]
-pub struct GeminiGenerate<T> {
+pub(crate) struct GeminiGenerate<T> {
     transport: T,
     endpoint: Endpoint,
 }
 
 impl<T: HttpTransport> GeminiGenerate<T> {
-    /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: T, endpoint: Endpoint) -> Self {
+    pub(crate) fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,

@@ -4,4 +4,4 @@ mod adapter;
 mod parser;
 mod stream_chunk;
 
-pub use adapter::OpenAiCompatible;
+pub(crate) use adapter::OpenAiCompatible;

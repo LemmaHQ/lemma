@@ -12,14 +12,13 @@ const MAX_TOKENS: u32 = 8192;
 /// Streams via `POST <base_url>/v1/messages`, or the endpoint's `api_path`
 /// in place of the path, with an `x-api-key` header.
 #[derive(Debug)]
-pub struct AnthropicMessages<T> {
+pub(crate) struct AnthropicMessages<T> {
     transport: T,
     endpoint: Endpoint,
 }
 
 impl<T: HttpTransport> AnthropicMessages<T> {
-    /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: T, endpoint: Endpoint) -> Self {
+    pub(crate) fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,

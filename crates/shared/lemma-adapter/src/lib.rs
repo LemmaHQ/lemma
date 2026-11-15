@@ -21,10 +21,7 @@ mod request;
 mod sse;
 mod web;
 
-pub use anthropic_messages::AnthropicMessages;
-pub use gemini_generate::GeminiGenerate;
 pub use http_connector::HttpConnector;
 pub use http_transport::{ByteStream, HttpTransport, ReqwestTransport};
 pub use model_adapter::ModelAdapter;
-pub use open_ai_compatible::OpenAiCompatible;
 pub use web::{DeepSeekWebBackend, ExaWebBackend, NativeWebBackend};

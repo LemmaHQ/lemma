@@ -9,14 +9,13 @@ use super::parser::Parser;
 /// Streams via `POST <base_url>/chat/completions`, or the endpoint's
 /// `api_path` in place of the path, with a bearer token.
 #[derive(Debug)]
-pub struct OpenAiCompatible<T> {
+pub(crate) struct OpenAiCompatible<T> {
     transport: T,
     endpoint: Endpoint,
 }
 
 impl<T: HttpTransport> OpenAiCompatible<T> {
-    /// Creates the adapter for `endpoint` over `transport`.
-    pub fn new(transport: T, endpoint: Endpoint) -> Self {
+    pub(crate) fn new(transport: T, endpoint: Endpoint) -> Self {
         Self {
             transport,
             endpoint,

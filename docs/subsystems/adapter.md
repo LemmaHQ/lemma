@@ -21,7 +21,7 @@ The adapter subsystem turns one model request into a stream of vendor-independen
 
 ## Implementation: `lemma-adapter`
 
-`HttpConnector` binds an endpoint to one adapter by API format and returns it as a `ModelAdapter` variant. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
+`HttpConnector` binds an endpoint to one adapter by API format and returns it as a `ModelAdapter`. All adapters send HTTP through one injected `HttpTransport`; `ReqwestTransport` is the implementation every host uses.
 
 | API format | Adapter | Default request | Credentials |
 | --- | --- | --- | --- |
