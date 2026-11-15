@@ -1,5 +1,5 @@
 name: Setup mobile toolchain
-description: Install the tools the Android build runs.
+description: Install the tools and script dependencies the Android build runs.
 
 runs:
   using: composite
@@ -21,3 +21,7 @@ runs:
       uses: jdx/mise-action@v4
       with:
         install_args: java node buf protobuf just cargo:cargo-ndk
+
+    - name: Install script dependencies
+      shell: bash
+      run: npm ci --workspaces=false
