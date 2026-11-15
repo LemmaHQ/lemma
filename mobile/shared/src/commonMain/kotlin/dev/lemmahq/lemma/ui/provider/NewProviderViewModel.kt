@@ -47,7 +47,7 @@ internal class NewProviderViewModel(
 
     /** Whether a base URL is filled in that is not an HTTP or HTTPS URL. */
     val baseUrlInvalid: Boolean
-        get() = baseUrl.isNotBlank() && !isBaseUrlValid(baseUrl)
+        get() = isBaseUrlInvalid(baseUrl)
 
     fun save() {
         if (saving || baseUrlInvalid) return

@@ -7,6 +7,10 @@ private val BASE_URL_PATTERN = Regex("""^https?://\S+$""")
 /** Whether [baseUrl] names an HTTP or HTTPS endpoint. */
 internal fun isBaseUrlValid(baseUrl: String): Boolean = BASE_URL_PATTERN.matches(baseUrl.trim())
 
+/** Whether [baseUrl] is filled in but is not an HTTP or HTTPS endpoint. */
+internal fun isBaseUrlInvalid(baseUrl: String): Boolean =
+    baseUrl.isNotBlank() && !isBaseUrlValid(baseUrl)
+
 /**
  * The example base URL and the default request path a provider of one API format shows as hints.
  */

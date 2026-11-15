@@ -51,7 +51,7 @@ internal fun ProviderConnectionFields(
             label = stringResource(Res.string.provider_base_url),
             description = stringResource(Res.string.provider_base_url_desc),
             error =
-                if (baseUrl.isNotBlank() && !isBaseUrlValid(baseUrl)) {
+                if (isBaseUrlInvalid(baseUrl)) {
                     stringResource(Res.string.provider_base_url_invalid)
                 } else {
                     null

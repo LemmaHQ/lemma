@@ -18,13 +18,12 @@ import kotlinx.coroutines.launch
 /** Edits one custom provider, saving connection fields together and other changes immediately. */
 internal class ProviderDetailViewModel(
     private val client: LemmaClient,
-    provider: ClientProvider,
+    initial: ClientProvider,
     private val onChange: (ClientProvider) -> Unit,
     private val onDelete: (String) -> Unit,
 ) : ViewModel() {
-    private var checked by mutableStateOf<Pair<String, CheckResult>?>(null)
 
-    var provider by mutableStateOf(provider)
+    var provider by mutableStateOf(initial)
         private set
 
     val custom: ClientCustomProvider
@@ -65,13 +64,16 @@ internal class ProviderDetailViewModel(
     val nameChanged: Boolean
         get() = draftName()?.let { it != custom.name } ?: false
 
+    private val check =
+        ProviderCheck(client, viewModelScope, { provider }, { pickedCheckModel }, { !dirty }) {
+            listOf(!dirty, provider.apiKey, custom.baseUrl, custom.apiPath).joinToString("\n")
+        }
+
     val checkModel: String?
-        get() =
-            pickedCheckModel?.takeIf { picked -> custom.models.any { it.id == picked } }
-                ?: custom.models.firstOrNull()?.id
+        get() = check.model
 
     val checkResult: CheckResult?
-        get() = checked?.takeIf { it.first == checkKey() }?.second
+        get() = check.result
 
     fun save() {
         if (!dirty || !baseUrlValid || saving) return
@@ -80,7 +82,7 @@ internal class ProviderDetailViewModel(
         viewModelScope.launch {
             try {
                 show(client.updateCustomProvider(provider.id, connectionPatch()))
-                checked = null
+                check.clear()
                 discardEdits()
             } catch (e: ServiceException) {
                 error = errorText(e.failure)
@@ -99,8 +101,17 @@ internal class ProviderDetailViewModel(
 
     fun setEnabled(enabled: Boolean) {
         val previous = provider.enabled
-        show(provider.copy(enabled = enabled))
-        send(ClientCustomProviderPatch(enabled = enabled)) { it.copy(enabled = previous) }
+        viewModelScope.runOptimistic(
+            apply = { show(provider.copy(enabled = enabled)) },
+            commit = {
+                client.updateCustomProvider(
+                    provider.id,
+                    ClientCustomProviderPatch(enabled = enabled),
+                )
+            },
+            revert = { show(provider.copy(enabled = previous)) },
+            onError = { error = it },
+        )
     }
 
     fun openSettings() {
@@ -186,47 +197,23 @@ internal class ProviderDetailViewModel(
         fetched = null
     }
 
-    fun check() {
-        if (dirty) return
-        val model = checkModel ?: return
-        val key = checkKey()
-        checked = key to CheckResult.Checking
-        viewModelScope.launch {
-            val result =
-                try {
-                    val failure = client.checkProvider(provider.id, model)
-                    if (failure.isEmpty()) CheckResult.Passed
-                    else CheckResult.Failed(UiText.Raw(failure))
-                } catch (e: ServiceException) {
-                    CheckResult.Failed(errorText(e.failure))
-                }
-            if (checked == key to CheckResult.Checking) checked = key to result
-        }
-    }
+    fun check() = check.run()
 
     private fun setModels(models: List<ClientModel>) {
         val previous = custom.models
-        show(provider.copy(source = custom.copy(models = models)))
-        send(ClientCustomProviderPatch(models = models)) { current ->
-            current.copy(source = custom.copy(models = previous))
-        }
+        viewModelScope.runOptimistic(
+            apply = { show(provider.copy(source = custom.copy(models = models))) },
+            commit = {
+                client.updateCustomProvider(provider.id, ClientCustomProviderPatch(models = models))
+            },
+            revert = { show(provider.copy(source = custom.copy(models = previous))) },
+            onError = { error = it },
+        )
     }
 
     private fun show(changed: ClientProvider) {
         provider = changed
         onChange(changed)
-    }
-
-    private fun send(patch: ClientCustomProviderPatch, revert: (ClientProvider) -> ClientProvider) {
-        error = null
-        viewModelScope.launch {
-            try {
-                client.updateCustomProvider(provider.id, patch)
-            } catch (e: ServiceException) {
-                show(revert(provider))
-                error = errorText(e.failure)
-            }
-        }
     }
 
     private fun connectionPatch(): ClientCustomProviderPatch =
@@ -237,8 +224,4 @@ internal class ProviderDetailViewModel(
         )
 
     private fun draftName(): String? = nameDraft?.let { it.trim().ifEmpty { custom.identifier } }
-
-    private fun checkKey(): String =
-        listOf(dirty, provider.apiKey, custom.baseUrl, custom.apiPath, checkModel)
-            .joinToString("\n")
 }

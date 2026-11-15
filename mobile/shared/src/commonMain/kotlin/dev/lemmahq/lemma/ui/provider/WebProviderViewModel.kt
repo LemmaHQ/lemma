@@ -88,16 +88,14 @@ internal class WebProviderViewModel(private val client: LemmaClient) : ViewModel
         if (enabled && provider.kind != ClientWebProviderKind.Native && provider.apiKey.isBlank()) {
             return
         }
-        store(provider.copy(enabled = enabled))
-        error = null
-        viewModelScope.launch {
-            try {
+        viewModelScope.runOptimistic(
+            apply = { store(provider.copy(enabled = enabled)) },
+            commit = {
                 store(client.updateWebProvider(id, ClientWebProviderPatch(enabled = enabled)))
-            } catch (e: ServiceException) {
-                store(provider)
-                error = errorText(e.failure)
-            }
-        }
+            },
+            revert = { store(provider) },
+            onError = { error = it },
+        )
     }
 
     fun move(function: ClientWebFunction, id: String, direction: Int) {

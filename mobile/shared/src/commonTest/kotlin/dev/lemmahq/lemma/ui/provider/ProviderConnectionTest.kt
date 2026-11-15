@@ -3,6 +3,8 @@ package dev.lemmahq.lemma.ui.provider
 import dev.lemmahq.lemma.client.ApiFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ProviderConnectionTest {
 
@@ -16,5 +18,18 @@ class ProviderConnectionTest {
             ),
             ApiFormat.entries.map { connectionPlaceholders(it) },
         )
+    }
+
+    @Test
+    fun baseUrlValidationAllowsHttpAndHttpsAndFlagsOnlyNonBlankInvalidValues() {
+        assertFalse(isBaseUrlValid(""))
+        assertFalse(isBaseUrlValid("api.example.com"))
+        assertTrue(isBaseUrlValid(" http://localhost:8080/v1 "))
+        assertTrue(isBaseUrlValid("https://api.example.com"))
+
+        assertFalse(isBaseUrlInvalid(""))
+        assertFalse(isBaseUrlInvalid("   "))
+        assertTrue(isBaseUrlInvalid("ftp://files.example.com"))
+        assertFalse(isBaseUrlInvalid("https://api.example.com"))
     }
 }
