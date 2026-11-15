@@ -687,8 +687,14 @@ async fn busy_session_rejects_second_turn_and_failed_start_releases_claim()
         .id;
     let session_id = sessions.create(None).await?.id;
     let agent: Agent<_> = Agent::new(sessions, providers, workspaces.0.clone(), None);
+    let active = agent.active_turns();
 
     assert_eq!(agent.active_turn(session_id), None, "idle before start");
+    assert_eq!(
+        active.active_turn(session_id),
+        None,
+        "handle idle before start"
+    );
 
     let failed = agent
         .start(TurnRequest {
@@ -732,6 +738,11 @@ async fn busy_session_rejects_second_turn_and_failed_start_releases_claim()
         Some(user_message_id),
         "active turn tracks running user message"
     );
+    assert_eq!(
+        active.active_turn(session_id),
+        Some(user_message_id),
+        "handle tracks running user message"
+    );
 
     let busy = agent
         .start(TurnRequest {
@@ -753,6 +764,11 @@ async fn busy_session_rejects_second_turn_and_failed_start_releases_claim()
         agent.active_turn(session_id),
         None,
         "turn completion clears active turn"
+    );
+    assert_eq!(
+        active.active_turn(session_id),
+        None,
+        "handle clears after completion"
     );
 
     let mut second = Box::pin(

@@ -1,15 +1,12 @@
 use std::path::Path;
-use std::sync::Arc;
 
 use buffa::MessageField;
 use buffa_types::google::protobuf::Timestamp;
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use uuid::Uuid;
 
-use crate::parse_id::parse_id;
-use lemma_agent::Agent;
+use lemma_agent::ActiveTurns;
 use lemma_core::ContentBlock;
-use lemma_model::Connector;
 use lemma_proto::lemma::v1;
 use lemma_proto::lemma::v1::{
     CreateSessionRequest, CreateSessionResponse, DeleteSessionRequest, DeleteSessionResponse,
@@ -23,16 +20,21 @@ use lemma_session::{
     SessionError, SessionService,
 };
 
+use crate::parse_id::parse_id;
+
 #[derive(Debug)]
-pub(crate) struct SessionRpc<C> {
+pub(crate) struct SessionRpc {
     domain: SessionService,
-    agent: Arc<Agent<C>>,
+    active_turns: ActiveTurns,
 }
 
-impl<C: Connector> SessionRpc<C> {
+impl SessionRpc {
     #[must_use]
-    pub(crate) fn new(domain: SessionService, agent: Arc<Agent<C>>) -> Self {
-        Self { domain, agent }
+    pub(crate) fn new(domain: SessionService, active_turns: ActiveTurns) -> Self {
+        Self {
+            domain,
+            active_turns,
+        }
     }
 }
 
@@ -135,7 +137,7 @@ fn map_domain(e: SessionError) -> ConnectError {
 }
 
 #[allow(refining_impl_trait)]
-impl<C: Connector> v1::SessionService for SessionRpc<C> {
+impl v1::SessionService for SessionRpc {
     async fn list_sessions(
         &self,
         _ctx: RequestContext,
@@ -145,7 +147,7 @@ impl<C: Connector> v1::SessionService for SessionRpc<C> {
         Response::ok(ListSessionsResponse {
             sessions: list
                 .iter()
-                .map(|c| session_to_proto(c, self.agent.active_turn(c.id)))
+                .map(|c| session_to_proto(c, self.active_turns.active_turn(c.id)))
                 .collect(),
             ..Default::default()
         })
@@ -159,7 +161,7 @@ impl<C: Connector> v1::SessionService for SessionRpc<C> {
         let directory = request.directory.map(Path::new);
         let c = self.domain.create(directory).await.map_err(map_domain)?;
         Response::ok(CreateSessionResponse {
-            session: session_to_proto(&c, self.agent.active_turn(c.id)).into(),
+            session: session_to_proto(&c, self.active_turns.active_turn(c.id)).into(),
             ..Default::default()
         })
     }
@@ -176,7 +178,7 @@ impl<C: Connector> v1::SessionService for SessionRpc<C> {
             .await
             .map_err(map_domain)?;
         Response::ok(RenameSessionResponse {
-            session: session_to_proto(&c, self.agent.active_turn(c.id)).into(),
+            session: session_to_proto(&c, self.active_turns.active_turn(c.id)).into(),
             ..Default::default()
         })
     }
@@ -195,7 +197,10 @@ impl<C: Connector> v1::SessionService for SessionRpc<C> {
         Response::ok(ListMessagesResponse {
             messages: tree.messages.iter().map(message_to_proto).collect(),
             leaf_id: tree.leaf_id.map(|id| id.to_string()),
-            active_message_id: self.agent.active_turn(session_id).map(|id| id.to_string()),
+            active_message_id: self
+                .active_turns
+                .active_turn(session_id)
+                .map(|id| id.to_string()),
             ..Default::default()
         })
     }
@@ -206,7 +211,7 @@ impl<C: Connector> v1::SessionService for SessionRpc<C> {
         request: ServiceRequest<'_, SetSessionLeafRequest>,
     ) -> ServiceResult<SetSessionLeafResponse> {
         let session_id = parse_id(request.session_id)?;
-        if self.agent.active_turn(session_id).is_some() {
+        if self.active_turns.active_turn(session_id).is_some() {
             return Err(lemma_proto::app_error(ErrorReason::SessionBusy));
         }
         let leaf_id = match request.leaf_id {

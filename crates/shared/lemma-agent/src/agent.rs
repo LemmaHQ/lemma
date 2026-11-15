@@ -16,6 +16,7 @@ use lemma_tool::{BashTool, CancelToken, LocalExecEnv, ReadFileTool, ToolRegistry
 use tokio::fs;
 use uuid::Uuid;
 
+use crate::active_turns::ActiveTurns;
 use crate::agent_error::AgentError;
 use crate::running_turns::RunningTurns;
 use crate::web_tools;
@@ -180,6 +181,12 @@ impl<C: Connector, T: HttpTransport + Debug> Agent<C, T> {
     #[must_use]
     pub fn active_turn(&self, session_id: Uuid) -> Option<Uuid> {
         self.running.active_turn(session_id)
+    }
+
+    /// Non-generic handle for querying which turn is running on a session.
+    #[must_use]
+    pub fn active_turns(&self) -> ActiveTurns {
+        ActiveTurns::new(Arc::clone(&self.running))
     }
 }
 
