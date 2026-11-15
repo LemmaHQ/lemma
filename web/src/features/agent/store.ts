@@ -62,6 +62,40 @@ export const useActiveSessionStore = create<ActiveSessionState>()((
     set,
     get,
 ) => {
+    const hydrateSession = async (
+        sessionId: string,
+        isCurrent?: () => boolean,
+    ) => {
+        const res = await sessionClient.listMessages({ sessionId });
+        if (
+            (isCurrent !== undefined && !isCurrent()) ||
+            get().sessionId !== sessionId
+        ) {
+            return null;
+        }
+        const treeMessages = hydrateToolResults(res.messages.map(protoToItem));
+        const leafId = nonEmptyId(res.leafId);
+        const items = resolveActivePath(treeMessages, leafId);
+        if (isCurrent !== undefined) {
+            set({ treeMessages, leafId, items });
+            return null;
+        }
+        const activeMessageId = nonEmptyId(res.activeMessageId);
+        setSessionActiveTurn(sessionId, activeMessageId);
+        if (activeMessageId !== undefined) {
+            return { treeMessages, activeMessageId };
+        }
+        set({
+            sessionId,
+            loadedSessionId: sessionId,
+            treeMessages,
+            leafId,
+            items,
+            rewind: null,
+        });
+        return null;
+    };
+
     const runner = createActiveTurnRunner({
         getSlice: () => get(),
         patchStore: (p) => set(typeof p === "function" ? (s) => p(s) : p),
@@ -74,19 +108,7 @@ export const useActiveSessionStore = create<ActiveSessionState>()((
             agentClient.resumeStream({ messageId, offset }, { signal }),
         abortMessage: (messageId) => agentClient.abortMessage({ messageId }),
         reload: async (sessionId, isCurrent) => {
-            const res = await sessionClient.listMessages({ sessionId });
-            if (!isCurrent() || get().sessionId !== sessionId) {
-                return;
-            }
-            const treeMessages = hydrateToolResults(
-                res.messages.map(protoToItem),
-            );
-            const leafId = nonEmptyId(res.leafId);
-            set({
-                treeMessages,
-                leafId,
-                items: resolveActivePath(treeMessages, leafId),
-            });
+            await hydrateSession(sessionId, isCurrent);
         },
         failedText: (cause) => errorText(cause, i18n.t),
         onUserMessageStarted: setSessionActiveTurn,
@@ -133,33 +155,12 @@ export const useActiveSessionStore = create<ActiveSessionState>()((
                     ...EMPTY_SESSION_SLICE,
                 });
             }
-            const res = await sessionClient.listMessages({ sessionId });
-            if (get().sessionId !== sessionId) {
-                return;
-            }
-            const treeMessages = hydrateToolResults(
-                res.messages.map(protoToItem),
-            );
-            const leafId = nonEmptyId(res.leafId);
-            const activeMessageId = nonEmptyId(res.activeMessageId);
-            setSessionActiveTurn(sessionId, activeMessageId);
-            if (activeMessageId === undefined) {
-                set({
-                    sessionId,
-                    loadedSessionId: sessionId,
-                    treeMessages,
-                    leafId,
-                    items: resolveActivePath(treeMessages, leafId),
-                    rewind: null,
-                });
-                return;
-            }
-            if (!runner.isCurrentMessage(activeMessageId)) {
-                await runner.resume({
-                    sessionId,
-                    treeMessages,
-                    activeMessageId,
-                });
+            const active = await hydrateSession(sessionId);
+            if (
+                active !== null &&
+                !runner.isCurrentMessage(active.activeMessageId)
+            ) {
+                await runner.resume({ sessionId, ...active });
             }
         },
         send: async (providerId, model, content, explicitParentId) => {
