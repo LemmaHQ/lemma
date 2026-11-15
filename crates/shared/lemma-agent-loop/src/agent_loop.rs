@@ -137,8 +137,10 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
                 messages,
                 tools: tool_specs.clone(),
             };
-            let mut outcome = stream::run_stream(&self.adapter, req, observer, cancel).await;
-            let calls_tools = tool_calling
+            let has_tools = tool_calling && self.tools.is_some();
+            let mut outcome =
+                stream::run_stream(&self.adapter, req, has_tools, observer, cancel).await;
+            let calls_tools = has_tools
                 && outcome.stop_reason == StopReason::ToolUse
                 && outcome
                     .blocks
@@ -149,9 +151,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
             } else {
                 None
             };
-            if tool_runtime.is_none() {
-                outcome.finish_thinking(outcome.ended_at);
-            }
             self.sessions
                 .update_message(assistant_id, persist::settle(&outcome))
                 .await?;

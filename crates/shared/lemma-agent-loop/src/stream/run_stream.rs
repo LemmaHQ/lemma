@@ -1,5 +1,5 @@
 use chrono::Utc;
-use lemma_core::StopReason;
+use lemma_core::{ContentBlock, StopReason};
 use lemma_model::{Adapter, BoxEventStream, ModelError, ModelRequest};
 use lemma_tool::CancelToken;
 
@@ -28,6 +28,7 @@ async fn drain<O: Fn(TurnEvent)>(
 pub(crate) async fn run_stream<A: Adapter, O: Fn(TurnEvent)>(
     adapter: &A,
     req: ModelRequest,
+    has_tools: bool,
     observer: &O,
     cancel: &CancelToken,
 ) -> StepOutcome {
@@ -51,19 +52,27 @@ pub(crate) async fn run_stream<A: Adapter, O: Fn(TurnEvent)>(
         () = cancel.cancelled() => StepEnd::Aborted,
     };
     let ended_at = acc.ended_at.unwrap_or_else(Utc::now);
-    if !matches!(end, StepEnd::Completed) || acc.stop_reason != StopReason::ToolUse {
-        acc.finish_thinking(ended_at);
-    }
     acc.close_open(None);
     let stop_reason = match end {
         StepEnd::Aborted => StopReason::Aborted,
         StepEnd::Completed | StepEnd::Failed(_) => acc.stop_reason,
     };
-    StepOutcome {
+    let mut outcome = StepOutcome {
         blocks: acc.blocks,
         stop_reason,
         usage: acc.usage,
         end,
         ended_at,
+    };
+    let calls_tools = matches!(outcome.end, StepEnd::Completed)
+        && has_tools
+        && outcome.stop_reason == StopReason::ToolUse
+        && outcome
+            .blocks
+            .iter()
+            .any(|block| matches!(block, ContentBlock::ToolCall(_)));
+    if !calls_tools {
+        outcome.finish_thinking(ended_at);
     }
+    outcome
 }
