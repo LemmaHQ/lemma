@@ -54,7 +54,8 @@ message Message {
   string model = 6;
   MessageStatus status = 7;
   google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
+  reserved 9;
+  reserved "updated_at";
   // Full chain-of-thought text concatenated from thinking blocks when produced by the model.
   string thinking = 11;
   // Error description populated when status is set to error.

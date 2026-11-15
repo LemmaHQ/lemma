@@ -115,7 +115,6 @@ fn message_to_proto(m: &DomainMessage) -> Message {
         error: m.error.clone().unwrap_or_default(),
         label: m.label.clone(),
         created_at: Timestamp::from(m.created_at).into(),
-        updated_at: Timestamp::from(m.updated_at).into(),
         ..Default::default()
     }
 }
