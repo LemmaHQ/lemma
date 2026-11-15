@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { addonFile } from "./engine-addon";
-import { connect, onExit, start, stop } from "./engine";
+import { createEngineProcess, type EngineProcess } from "./engine";
 
 type FakeUtility = EventEmitter & {
     postMessage: ReturnType<
@@ -54,10 +54,12 @@ const fakeWindow = () => ({
 const READY = { type: "ready" };
 
 let proc: FakeUtility;
+let engine: EngineProcess;
 
 beforeEach(() => {
     proc = fakeUtility();
     mocks.fork.mockReset().mockReturnValue(proc);
+    engine = createEngineProcess();
 });
 
 afterEach(() => {
@@ -69,7 +71,7 @@ afterEach(() => {
 
 it("forks the engine host with the addon of the selected profile and userData", async () => {
     process.env.LEMMA_ENGINE_PROFILE = "release";
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
 
@@ -86,7 +88,7 @@ it("loads the addon from the resources directory when packaged", async () => {
         value: "/resources",
         configurable: true,
     });
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
     mocks.app.isPackaged = false;
@@ -99,7 +101,7 @@ it("loads the addon from the resources directory when packaged", async () => {
 });
 
 it("rejects and kills the engine when it fails to open", async () => {
-    const started = start();
+    const started = engine.start();
     proc.emit("message", { type: "failed", reason: "open lemma.db: locked" });
 
     await expect(started).rejects.toThrow("open lemma.db: locked");
@@ -109,7 +111,7 @@ it("rejects and kills the engine when it fails to open", async () => {
 it("logs and ignores malformed messages while waiting for readiness", async () => {
     vi.useFakeTimers();
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const started = start();
+    const started = engine.start();
     proc.emit("message", "ready");
     proc.emit("message", { type: "failed" });
     vi.advanceTimersByTime(10_000);
@@ -122,7 +124,7 @@ it("logs and ignores malformed messages while waiting for readiness", async () =
 });
 
 it("rejects when the engine exits before announcing readiness", async () => {
-    const started = start();
+    const started = engine.start();
     proc.emit("exit", 3);
 
     await expect(started).rejects.toThrow(
@@ -131,20 +133,20 @@ it("rejects when the engine exits before announcing readiness", async () => {
 });
 
 it("refuses a second start while the engine runs", async () => {
-    const first = start();
+    const first = engine.start();
     proc.emit("message", READY);
     await first;
 
-    await expect(start()).rejects.toThrow("engine already running");
+    await expect(engine.start()).rejects.toThrow("engine already running");
 });
 
 it("hands one end of a new channel to the engine and the other to the window", async () => {
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
     const target = fakeWindow();
 
-    connect(target);
+    engine.connect(target);
 
     expect(proc.postMessage).toHaveBeenCalledWith({ type: "connect" }, [
         { name: "engine end" },
@@ -156,18 +158,18 @@ it("hands one end of a new channel to the engine and the other to the window", a
 
 it("tells a window that connects after a crash that the engine stopped", async () => {
     const supersededExit = vi.fn<(detail: string) => void>();
-    onExit(supersededExit);
+    engine.onExit(supersededExit);
     const exits: string[] = [];
-    onExit((detail) => {
+    engine.onExit((detail) => {
         exits.push(detail);
     });
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
     proc.emit("exit", 9);
     const target = fakeWindow();
 
-    connect(target);
+    engine.connect(target);
 
     expect(exits).toEqual(["the local engine exited with code 9"]);
     expect(supersededExit).not.toHaveBeenCalled();
@@ -183,14 +185,14 @@ it("tells a window that connects after a crash that the engine stopped", async (
 
 it("asks the engine to stop and does not report the exit as a crash", async () => {
     const exits: string[] = [];
-    onExit((detail) => {
+    engine.onExit((detail) => {
         exits.push(detail);
     });
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
 
-    const stopped = stop();
+    const stopped = engine.stop();
     expect(proc.postMessage).toHaveBeenCalledWith({ type: "stop" }, []);
     proc.emit("exit", 0);
     await stopped;
@@ -200,12 +202,12 @@ it("asks the engine to stop and does not report the exit as a crash", async () =
 });
 
 it("kills the engine when it outlives the 3s stop grace period", async () => {
-    const started = start();
+    const started = engine.start();
     proc.emit("message", READY);
     await started;
     vi.useFakeTimers();
 
-    const stopped = stop();
+    const stopped = engine.stop();
     await vi.advanceTimersByTimeAsync(3000);
     await stopped;
 
@@ -213,8 +215,22 @@ it("kills the engine when it outlives the 3s stop grace period", async () => {
 });
 
 it("returns at once when asked to stop an engine that is not running", async () => {
-    await stop();
+    await engine.stop();
 
     expect(mocks.fork).not.toHaveBeenCalled();
     expect(proc.postMessage).not.toHaveBeenCalled();
+});
+
+it("tells a window that connects before the engine is ready that it is not running", () => {
+    const started = engine.start();
+    const target = fakeWindow();
+
+    engine.connect(target);
+
+    expect(target.send).toHaveBeenCalledWith(
+        "engine-exit",
+        "the local engine is not running",
+    );
+    proc.emit("exit", 0);
+    return expect(started).rejects.toThrow("exited before ready");
 });

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, type WebContents } from "electron";
 import started from "electron-squirrel-startup";
 import { registerAppScheme, serveApp } from "./app-protocol";
-import * as engine from "./engine";
+import { createEngineProcess } from "./engine";
 import {
     createWindow,
     isTitleBarState,
@@ -22,9 +22,9 @@ if (debugPort !== undefined && debugPort !== "") {
 
 registerAppScheme();
 
+const engine = createEngineProcess();
 let mainWindow: BrowserWindow | null = null;
 let engineStopping = false;
-
 ipcMain.on("set-titlebar", (_event, state: unknown) => {
     if (!isTitleBarState(state)) {
         console.error("titlebar state rejected:", state);
