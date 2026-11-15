@@ -1,5 +1,6 @@
 package dev.lemmahq.lemma.ui.provider
 
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.FakeLemmaClient
@@ -116,17 +117,20 @@ class PredefinedProviderDetailViewModelTest {
     fun defaultFormatUsesTheServedOptionsAndPersistsImmediately() = runTest {
         val viewModel = viewModel(stored.copy(apiKey = "sk-saved"))
 
-        assertEquals(listOf("anthropic", "openai"), viewModel.predefined.apiFormats)
-        viewModel.setDefaultApiFormat("openai")
+        assertEquals(
+            listOf(ApiFormat.Anthropic, ApiFormat.OpenAi),
+            viewModel.predefined.apiFormats,
+        )
+        viewModel.setDefaultApiFormat(ApiFormat.OpenAi)
         advanceUntilIdle()
 
-        assertEquals("openai", viewModel.predefined.defaultApiFormat)
+        assertEquals(ApiFormat.OpenAi, viewModel.predefined.defaultApiFormat)
         assertEquals(
             listOf(
                 Call(
                     "updatePredefinedProvider",
                     "deepseek",
-                    ClientPredefinedProviderPatch(defaultApiFormat = "openai"),
+                    ClientPredefinedProviderPatch(defaultApiFormat = ApiFormat.OpenAi),
                 )
             ),
             client.calls,
@@ -140,9 +144,9 @@ class PredefinedProviderDetailViewModelTest {
         }
         val viewModel = viewModel(stored.copy(apiKey = "sk-saved", enabled = true))
 
-        viewModel.setDefaultApiFormat("openai")
+        viewModel.setDefaultApiFormat(ApiFormat.OpenAi)
         advanceUntilIdle()
-        assertEquals("anthropic", viewModel.predefined.defaultApiFormat)
+        assertEquals(ApiFormat.Anthropic, viewModel.predefined.defaultApiFormat)
         assertEquals(errorText(ServiceFailure.Network), viewModel.error)
 
         viewModel.setEnabled(false)

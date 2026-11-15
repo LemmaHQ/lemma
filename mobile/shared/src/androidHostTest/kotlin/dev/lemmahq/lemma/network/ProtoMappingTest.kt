@@ -1,7 +1,7 @@
 package dev.lemmahq.lemma.network
 
 import com.google.protobuf.Timestamp
-import dev.lemmahq.gen.lemma.v1.ApiFormat
+import dev.lemmahq.gen.lemma.v1.ApiFormat as ProtoApiFormat
 import dev.lemmahq.gen.lemma.v1.MessageStatus as ProtoMessageStatus
 import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.gen.lemma.v1.agentAborted
@@ -25,6 +25,7 @@ import dev.lemmahq.gen.lemma.v1.toolCallStarted
 import dev.lemmahq.gen.lemma.v1.toolResultMeta
 import dev.lemmahq.gen.lemma.v1.webProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientModel
@@ -46,17 +47,17 @@ class ProtoMappingTest {
 
     @Test
     fun providerSourcesMapFormatsAndModelFeatures() {
-        val formats = listOf("openai", "anthropic", "gemini")
+        val formats = ApiFormat.entries
 
         assertEquals(
             formats,
             formats.map { format ->
                 val mapped = provider {
-                    apiKey = if (format == "openai") "sk-test" else ""
-                    custom = customProvider { apiFormat = apiFormat(format) }
+                    apiKey = if (format == ApiFormat.OpenAi) "sk-test" else ""
+                    custom = customProvider { apiFormat = format.toProto() }
                 }
                     .toClient()
-                assertEquals(if (format == "openai") "sk-test" else "", mapped.apiKey)
+                assertEquals(if (format == ApiFormat.OpenAi) "sk-test" else "", mapped.apiKey)
                 (mapped.source as ClientCustomProvider).apiFormat
             },
         )
@@ -65,9 +66,9 @@ class ProtoMappingTest {
                 predefined = predefinedProvider {
                     identifier = "deepseek"
                     name = "DeepSeek"
-                    apiFormats += ApiFormat.API_FORMAT_ANTHROPIC
-                    apiFormats += ApiFormat.API_FORMAT_OPENAI
-                    defaultApiFormat = ApiFormat.API_FORMAT_ANTHROPIC
+                    apiFormats += ProtoApiFormat.API_FORMAT_ANTHROPIC
+                    apiFormats += ProtoApiFormat.API_FORMAT_OPENAI
+                    defaultApiFormat = ProtoApiFormat.API_FORMAT_ANTHROPIC
                     models += model {
                         id = "deepseek-flash"
                         toolCalling = true
@@ -77,17 +78,16 @@ class ProtoMappingTest {
             }
                 .toClient()
                 .source as ClientPredefinedProvider
-        assertEquals(listOf("anthropic", "openai"), predefined.apiFormats)
-        assertEquals("anthropic", predefined.defaultApiFormat)
+        assertEquals(listOf(ApiFormat.Anthropic, ApiFormat.OpenAi), predefined.apiFormats)
+        assertEquals(ApiFormat.Anthropic, predefined.defaultApiFormat)
         assertEquals(
             listOf(ClientModel("deepseek-flash", true), ClientModel("deepseek-v4-pro", false)),
             predefined.models,
         )
 
-        assertFailsWith<IllegalArgumentException> { apiFormat("cohere") }
         assertFailsWith<IllegalArgumentException> {
             provider {
-                custom = customProvider { apiFormat = ApiFormat.API_FORMAT_UNSPECIFIED }
+                custom = customProvider { apiFormat = ProtoApiFormat.API_FORMAT_UNSPECIFIED }
             }
                 .toClient()
         }

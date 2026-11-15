@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.test.espresso.Espresso
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
 import dev.lemmahq.lemma.client.ClientPredefinedProvider
@@ -254,7 +255,7 @@ class ProviderPagesTest {
         compose.onNodeWithText("Gemini").assertDoesNotExist()
         compose.onNodeWithText("Models and their features ship with Lemma.").performScrollTo()
         compose.onNodeWithText("OpenAI").performScrollTo().performClick()
-        assertEquals("openai", stored.single().predefined.defaultApiFormat)
+        assertEquals(ApiFormat.OpenAi, stored.single().predefined.defaultApiFormat)
 
         compose.onAllNodes(hasSetTextAction())[0].performTextInput("sk-draft")
         compose.onNodeWithContentDescription("Back").performClick()

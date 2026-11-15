@@ -2,7 +2,7 @@ package dev.lemmahq.lemma.client
 
 /** Input for creating a custom provider; `identifier` and `apiFormat` are immutable afterwards. */
 data class ClientCustomProviderInput(
-    val apiFormat: String,
+    val apiFormat: ApiFormat,
     val identifier: String,
     val name: String,
     val baseUrl: String,

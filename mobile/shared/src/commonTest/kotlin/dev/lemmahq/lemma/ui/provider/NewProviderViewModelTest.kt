@@ -1,5 +1,6 @@
 package dev.lemmahq.lemma.ui.provider
 
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.FakeLemmaClient
@@ -78,7 +79,7 @@ class NewProviderViewModelTest {
         val stored = sampleProvider("proxy")
         client.onCreateCustomProvider = { stored }
         val viewModel = viewModel()
-        viewModel.apiFormat = "anthropic"
+        viewModel.apiFormat = ApiFormat.Anthropic
         viewModel.identifier = " my proxy "
         viewModel.name = "  "
         viewModel.apiKey = " sk-1 "
@@ -90,7 +91,7 @@ class NewProviderViewModelTest {
 
         val input =
             ClientCustomProviderInput(
-                apiFormat = "anthropic",
+                apiFormat = ApiFormat.Anthropic,
                 identifier = "my proxy",
                 name = "my proxy",
                 baseUrl = "https://api.example.com",
@@ -115,7 +116,7 @@ class NewProviderViewModelTest {
 
         val input =
             ClientCustomProviderInput(
-                apiFormat = "openai",
+                apiFormat = ApiFormat.OpenAi,
                 identifier = "proxy",
                 name = "Proxy",
                 baseUrl = "https://api.example.com",

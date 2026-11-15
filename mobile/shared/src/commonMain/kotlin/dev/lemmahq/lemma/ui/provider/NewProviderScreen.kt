@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
@@ -55,7 +56,7 @@ internal fun NewProviderScreen(
             ) {
                 ApiFormatPicker(
                     apiFormat = viewModel.apiFormat,
-                    options = API_FORMATS,
+                    options = ApiFormat.entries,
                     onSelect = { viewModel.apiFormat = it },
                 )
             }

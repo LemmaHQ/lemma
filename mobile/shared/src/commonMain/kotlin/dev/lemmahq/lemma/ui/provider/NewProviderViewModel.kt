@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientProvider
 import dev.lemmahq.lemma.client.LemmaClient
@@ -27,7 +28,7 @@ internal class NewProviderViewModel(
     private val onCreate: (ClientProvider) -> Unit,
 ) : ViewModel() {
 
-    var apiFormat by mutableStateOf(API_FORMATS.first())
+    var apiFormat by mutableStateOf(ApiFormat.OpenAi)
     var identifier by mutableStateOf("")
     var name by mutableStateOf("")
     var apiKey by mutableStateOf("")

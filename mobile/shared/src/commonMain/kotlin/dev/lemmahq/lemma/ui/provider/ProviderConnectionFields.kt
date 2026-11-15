@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaPasswordField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
@@ -25,7 +26,7 @@ import org.jetbrains.compose.resources.stringResource
 /** The API key, base URL, and request path fields of a provider of [apiFormat]. */
 @Composable
 internal fun ProviderConnectionFields(
-    apiFormat: String,
+    apiFormat: ApiFormat,
     apiKey: String,
     onApiKeyChange: (String) -> Unit,
     baseUrl: String,
@@ -67,7 +68,7 @@ internal fun ProviderConnectionFields(
             label = stringResource(Res.string.provider_api_path),
             description =
                 stringResource(
-                    if (apiFormat == "gemini") Res.string.provider_api_path_desc_gemini
+                    if (apiFormat == ApiFormat.Gemini) Res.string.provider_api_path_desc_gemini
                     else Res.string.provider_api_path_desc
                 ),
         ) {

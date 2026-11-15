@@ -1,6 +1,6 @@
 package dev.lemmahq.lemma.ui.provider
 
-internal val API_FORMATS = listOf("openai", "anthropic", "gemini")
+import dev.lemmahq.lemma.client.ApiFormat
 
 private val BASE_URL_PATTERN = Regex("""^https?://\S+$""")
 
@@ -12,9 +12,11 @@ internal fun isBaseUrlValid(baseUrl: String): Boolean = BASE_URL_PATTERN.matches
  */
 internal data class ConnectionPlaceholders(val baseUrl: String, val apiPath: String)
 
-internal fun connectionPlaceholders(apiFormat: String): ConnectionPlaceholders =
+internal fun connectionPlaceholders(apiFormat: ApiFormat): ConnectionPlaceholders =
     when (apiFormat) {
-        "anthropic" -> ConnectionPlaceholders("https://api.example.com", "/v1/messages")
-        "gemini" -> ConnectionPlaceholders("https://api.example.com", "/v1beta/models/{model}:…")
-        else -> ConnectionPlaceholders("https://api.example.com/v1", "/chat/completions")
+        ApiFormat.OpenAi ->
+            ConnectionPlaceholders("https://api.example.com/v1", "/chat/completions")
+        ApiFormat.Anthropic -> ConnectionPlaceholders("https://api.example.com", "/v1/messages")
+        ApiFormat.Gemini ->
+            ConnectionPlaceholders("https://api.example.com", "/v1beta/models/{model}:…")
     }

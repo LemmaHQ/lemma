@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.theme.LemmaTheme
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_format_anthropic
@@ -23,19 +24,12 @@ import lemma.mobile.shared.generated.resources.provider_api_format_gemini
 import lemma.mobile.shared.generated.resources.provider_api_format_openai
 import org.jetbrains.compose.resources.stringResource
 
-private val API_FORMAT_NAMES =
-    mapOf(
-        "openai" to Res.string.provider_api_format_openai,
-        "anthropic" to Res.string.provider_api_format_anthropic,
-        "gemini" to Res.string.provider_api_format_gemini,
-    )
-
 /** Chips choosing one of [options], or displaying the immutable format when [enabled] is false. */
 @Composable
 internal fun ApiFormatPicker(
-    apiFormat: String,
-    options: List<String>,
-    onSelect: (String) -> Unit,
+    apiFormat: ApiFormat,
+    options: List<ApiFormat>,
+    onSelect: (ApiFormat) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
@@ -62,7 +56,7 @@ internal fun ApiFormatPicker(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(API_FORMAT_NAMES.getValue(option)),
+                    text = option.label(),
                     style = LemmaTheme.typography.bodyMedium,
                     color = if (selected) Color.White else LemmaTheme.colors.textSecondary,
                 )
@@ -70,3 +64,13 @@ internal fun ApiFormatPicker(
         }
     }
 }
+
+@Composable
+private fun ApiFormat.label(): String =
+    stringResource(
+        when (this) {
+            ApiFormat.OpenAi -> Res.string.provider_api_format_openai
+            ApiFormat.Anthropic -> Res.string.provider_api_format_anthropic
+            ApiFormat.Gemini -> Res.string.provider_api_format_gemini
+        }
+    )

@@ -3,7 +3,7 @@ package dev.lemmahq.lemma.network
 import com.google.protobuf.Timestamp
 import dev.lemmahq.gen.lemma.v1.AgentDelta
 import dev.lemmahq.gen.lemma.v1.AgentEvent
-import dev.lemmahq.gen.lemma.v1.ApiFormat
+import dev.lemmahq.gen.lemma.v1.ApiFormat as ProtoApiFormat
 import dev.lemmahq.gen.lemma.v1.Message
 import dev.lemmahq.gen.lemma.v1.MessageStatus as ProtoMessageStatus
 import dev.lemmahq.gen.lemma.v1.Model
@@ -12,6 +12,7 @@ import dev.lemmahq.gen.lemma.v1.Session
 import dev.lemmahq.gen.lemma.v1.ToolCall
 import dev.lemmahq.gen.lemma.v1.WebProvider
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientModel
@@ -37,15 +38,15 @@ internal fun Provider.toClient(): ClientProvider =
                     ClientPredefinedProvider(
                         identifier = predefined.identifier,
                         name = predefined.name,
-                        apiFormats = predefined.apiFormatsList.map { it.toClientFormat() },
-                        defaultApiFormat = predefined.defaultApiFormat.toClientFormat(),
+                        apiFormats = predefined.apiFormatsList.map { it.toClient() },
+                        defaultApiFormat = predefined.defaultApiFormat.toClient(),
                         models = predefined.modelsList.map { it.toClient() },
                     )
                 hasCustom() ->
                     ClientCustomProvider(
                         identifier = custom.identifier,
                         name = custom.name,
-                        apiFormat = custom.apiFormat.toClientFormat(),
+                        apiFormat = custom.apiFormat.toClient(),
                         baseUrl = custom.baseUrl,
                         apiPath = custom.apiPath,
                         modelsPath = custom.modelsPath,
@@ -66,12 +67,11 @@ internal fun WebProvider.toClient(): ClientWebProvider =
         fetchRank = fetchRank,
     )
 
-internal fun apiFormat(format: String): ApiFormat =
-    when (format) {
-        "openai" -> ApiFormat.API_FORMAT_OPENAI
-        "anthropic" -> ApiFormat.API_FORMAT_ANTHROPIC
-        "gemini" -> ApiFormat.API_FORMAT_GEMINI
-        else -> throw IllegalArgumentException("Unknown API format: $format")
+internal fun ApiFormat.toProto(): ProtoApiFormat =
+    when (this) {
+        ApiFormat.OpenAi -> ProtoApiFormat.API_FORMAT_OPENAI
+        ApiFormat.Anthropic -> ProtoApiFormat.API_FORMAT_ANTHROPIC
+        ApiFormat.Gemini -> ProtoApiFormat.API_FORMAT_GEMINI
     }
 
 internal fun ClientModel.toProto(): Model =
@@ -136,13 +136,13 @@ internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {
     }
 }
 
-private fun ApiFormat.toClientFormat(): String =
+private fun ProtoApiFormat.toClient(): ApiFormat =
     when (this) {
-        ApiFormat.API_FORMAT_OPENAI -> "openai"
-        ApiFormat.API_FORMAT_ANTHROPIC -> "anthropic"
-        ApiFormat.API_FORMAT_GEMINI -> "gemini"
-        ApiFormat.API_FORMAT_UNSPECIFIED,
-        ApiFormat.UNRECOGNIZED -> throw IllegalArgumentException("Unknown API format: $this")
+        ProtoApiFormat.API_FORMAT_OPENAI -> ApiFormat.OpenAi
+        ProtoApiFormat.API_FORMAT_ANTHROPIC -> ApiFormat.Anthropic
+        ProtoApiFormat.API_FORMAT_GEMINI -> ApiFormat.Gemini
+        ProtoApiFormat.API_FORMAT_UNSPECIFIED,
+        ProtoApiFormat.UNRECOGNIZED -> throw IllegalArgumentException("Unknown API format: $this")
     }
 
 private fun WebProvider.Kind.toClient(): ClientWebProviderKind =

@@ -11,8 +11,8 @@ sealed interface ClientProviderSource {
 data class ClientPredefinedProvider(
     override val identifier: String,
     override val name: String,
-    val apiFormats: List<String>,
-    val defaultApiFormat: String,
+    val apiFormats: List<ApiFormat>,
+    val defaultApiFormat: ApiFormat,
     override val models: List<ClientModel>,
 ) : ClientProviderSource
 
@@ -20,7 +20,7 @@ data class ClientPredefinedProvider(
 data class ClientCustomProvider(
     override val identifier: String,
     override val name: String,
-    val apiFormat: String,
+    val apiFormat: ApiFormat,
     val baseUrl: String,
     val apiPath: String,
     val modelsPath: String,

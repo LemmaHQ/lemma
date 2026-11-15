@@ -4,5 +4,5 @@ package dev.lemmahq.lemma.client
 data class ClientPredefinedProviderPatch(
     val apiKey: String? = null,
     val enabled: Boolean? = null,
-    val defaultApiFormat: String? = null,
+    val defaultApiFormat: ApiFormat? = null,
 )

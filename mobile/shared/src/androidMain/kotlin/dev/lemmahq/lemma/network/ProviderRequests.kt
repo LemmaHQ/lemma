@@ -22,7 +22,7 @@ import dev.lemmahq.lemma.client.ClientWebProviderPatch
 internal fun customProviderCreateRequest(
     input: ClientCustomProviderInput
 ): CreateCustomProviderRequest = createCustomProviderRequest {
-    apiFormat = apiFormat(input.apiFormat)
+    apiFormat = input.apiFormat.toProto()
     identifier = input.identifier
     name = input.name
     baseUrl = input.baseUrl
@@ -55,7 +55,7 @@ internal fun predefinedProviderUpdateRequest(
     this.id = id
     patch.apiKey?.let { apiKey = it }
     patch.enabled?.let { enabled = it }
-    patch.defaultApiFormat?.let { defaultApiFormat = apiFormat(it) }
+    patch.defaultApiFormat?.let { defaultApiFormat = it.toProto() }
 }
 
 internal fun webProviderUpdateRequest(

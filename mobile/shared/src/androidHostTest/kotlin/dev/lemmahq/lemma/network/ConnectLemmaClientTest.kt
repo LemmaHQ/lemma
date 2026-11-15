@@ -1,6 +1,7 @@
 package dev.lemmahq.lemma.network
 
 import dev.lemmahq.lemma.client.AgentStreamEvent
+import dev.lemmahq.lemma.client.ApiFormat
 import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
@@ -111,7 +112,7 @@ class ConnectLemmaClientTest {
                     ClientCustomProvider(
                         identifier = "vendor",
                         name = "Vendor",
-                        apiFormat = "openai",
+                        apiFormat = ApiFormat.OpenAi,
                         baseUrl = vendorUrl,
                         apiPath = "",
                         modelsPath = "",
@@ -149,8 +150,8 @@ class ConnectLemmaClientTest {
 
         assertEquals("deepseek", predefined.identifier)
         assertEquals("DeepSeek", predefined.name)
-        assertEquals(listOf("anthropic", "openai"), predefined.apiFormats)
-        assertEquals("anthropic", predefined.defaultApiFormat)
+        assertEquals(listOf(ApiFormat.Anthropic, ApiFormat.OpenAi), predefined.apiFormats)
+        assertEquals(ApiFormat.Anthropic, predefined.defaultApiFormat)
         assertEquals(
             listOf("deepseek-flash", "deepseek-v4-pro"),
             predefined.models.map { it.id },
@@ -173,21 +174,21 @@ class ConnectLemmaClientTest {
                 ClientPredefinedProviderPatch(
                     apiKey = "sk-deepseek",
                     enabled = true,
-                    defaultApiFormat = "openai",
+                    defaultApiFormat = ApiFormat.OpenAi,
                 ),
             )
 
         assertEquals("sk-deepseek", updated.apiKey)
         assertTrue(updated.enabled)
         assertEquals(
-            "openai",
+            ApiFormat.OpenAi,
             (updated.source as ClientPredefinedProvider).defaultApiFormat,
         )
         val invalid =
             assertFailsWith<ServiceException> {
                 client.updatePredefinedProvider(
                     initial.id,
-                    ClientPredefinedProviderPatch(defaultApiFormat = "gemini"),
+                    ClientPredefinedProviderPatch(defaultApiFormat = ApiFormat.Gemini),
                 )
             }
         assertEquals(ServiceFailure.ApiFormatInvalid, invalid.failure)
@@ -469,7 +470,7 @@ class ConnectLemmaClientTest {
 
     private fun vendorInput(vararg models: String) =
         ClientCustomProviderInput(
-            apiFormat = "openai",
+            apiFormat = ApiFormat.OpenAi,
             identifier = "vendor",
             name = "Vendor",
             baseUrl = vendorUrl,

@@ -16,7 +16,7 @@ fun sampleProvider(
             ClientCustomProvider(
                 identifier = id,
                 name = name,
-                apiFormat = "openai",
+                apiFormat = ApiFormat.OpenAi,
                 baseUrl = "https://api.example.com/v1",
                 apiPath = "",
                 modelsPath = "",
@@ -39,8 +39,8 @@ fun samplePredefinedProvider(
             ClientPredefinedProvider(
                 identifier = id,
                 name = id,
-                apiFormats = listOf("anthropic", "openai"),
-                defaultApiFormat = "anthropic",
+                apiFormats = listOf(ApiFormat.Anthropic, ApiFormat.OpenAi),
+                defaultApiFormat = ApiFormat.Anthropic,
                 models = models.map { ClientModel(it, toolCalling = true) },
             ),
     )

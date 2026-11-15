@@ -1,15 +1,20 @@
 package dev.lemmahq.lemma.ui.provider
 
+import dev.lemmahq.lemma.client.ApiFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ProviderConnectionTest {
 
     @Test
-    fun eachApiFormatHintsItsOwnRequestPath() {
+    fun eachApiFormatHintsItsOwnBaseUrlAndRequestPath() {
         assertEquals(
-            listOf("/chat/completions", "/v1/messages", "/v1beta/models/{model}:…"),
-            API_FORMATS.map { connectionPlaceholders(it).apiPath },
+            listOf(
+                ConnectionPlaceholders("https://api.example.com/v1", "/chat/completions"),
+                ConnectionPlaceholders("https://api.example.com", "/v1/messages"),
+                ConnectionPlaceholders("https://api.example.com", "/v1beta/models/{model}:…"),
+            ),
+            ApiFormat.entries.map { connectionPlaceholders(it) },
         )
     }
 }
