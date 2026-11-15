@@ -6,7 +6,7 @@ import {
     type WebProvider as WebProviderProto,
 } from "@/gen/lemma/v1/provider_pb";
 import { providerClient } from "@/rpc/clients";
-
+import { singleFlight } from "@/store/loaded-hook";
 export type WebProviderKind = "native" | "exa" | "deepseek";
 export type WebFunction = "search" | "fetch";
 
@@ -37,10 +37,10 @@ export const useWebProviderStore = create<WebProviderState>()((set) => ({
     list: [],
     loaded: false,
 
-    refresh: async () => {
+    refresh: singleFlight(async () => {
         const res = await providerClient.listWebProviders({});
         set({ list: res.providers.map(toWebProvider), loaded: true });
-    },
+    }),
 
     update: async (id, patch) => {
         const res = await providerClient.updateWebProvider({ id, ...patch });

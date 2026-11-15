@@ -30,3 +30,17 @@ export function createLoadedHook<
     }
     return useLoaded;
 }
+
+/** Deduplicates concurrent invocations of `task`, sharing the in-flight promise until it settles. */
+export function singleFlight(task: () => Promise<void>): () => Promise<void> {
+    let pending: Promise<void> | null = null;
+    return () => {
+        if (pending !== null) {
+            return pending;
+        }
+        pending = task().finally(() => {
+            pending = null;
+        });
+        return pending;
+    };
+}

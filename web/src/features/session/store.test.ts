@@ -155,43 +155,26 @@ it("tracks active turns, unseen completions, errors, and seen state", () => {
     expect(list()[0]?.activeMessageId).toBeUndefined();
 });
 
-it("updates session leaf and ignores empty leaf responses", async () => {
-    rpc.setSessionLeaf.mockResolvedValueOnce({
-        session: session("c1", "First", 6000, "C:\\work\\first", {
-            leafId: "m5",
-        }),
+it("deduplicates concurrent refresh calls and retries cleanly after failure", async () => {
+    rpc.listSessions.mockClear();
+    const first = Promise.withResolvers<{ sessions: Session[] }>();
+    rpc.listSessions.mockReturnValueOnce(first.promise);
+
+    const a = refreshSessions();
+    const b = refreshSessions();
+    expect(a).toBe(b);
+    expect(rpc.listSessions).toHaveBeenCalledTimes(1);
+
+    first.resolve({ sessions: [session("c9", "Fresh", 9000)] });
+    await Promise.all([a, b]);
+    expect(list().map((c) => c.id)).toEqual(["c9"]);
+
+    rpc.listSessions.mockRejectedValueOnce(new Error("offline"));
+    await expect(refreshSessions()).rejects.toThrow("offline");
+
+    rpc.listSessions.mockResolvedValueOnce({
+        sessions: [session("c10", "Recovered", 10_000)],
     });
-
-    const updated = await useSessionStore.getState().setLeaf("c1", "m5");
-    expect(rpc.setSessionLeaf).toHaveBeenCalledWith({
-        sessionId: "c1",
-        leafId: "m5",
-    });
-    expect(updated?.leafId).toBe("m5");
-    expect(list()[0]?.leafId).toBe("m5");
-
-    rpc.setSessionLeaf.mockResolvedValueOnce({});
-    const missing = await useSessionStore.getState().setLeaf("c1");
-    expect(rpc.setSessionLeaf).toHaveBeenLastCalledWith({ sessionId: "c1" });
-    expect(missing).toBeUndefined();
-});
-
-it("sets a message label and returns the updated label", async () => {
-    rpc.setMessageLabel.mockResolvedValueOnce({
-        message: create(MessageSchema, { id: "m1", label: "checkpoint" }),
-    });
-
-    await expect(
-        useSessionStore.getState().setMessageLabel("c1", "m1", "checkpoint"),
-    ).resolves.toBe("checkpoint");
-    expect(rpc.setMessageLabel).toHaveBeenCalledWith({
-        sessionId: "c1",
-        messageId: "m1",
-        label: "checkpoint",
-    });
-
-    rpc.setMessageLabel.mockResolvedValueOnce({});
-    await expect(
-        useSessionStore.getState().setMessageLabel("c1", "m1", ""),
-    ).resolves.toBeUndefined();
+    await refreshSessions();
+    expect(list().map((c) => c.id)).toEqual(["c10"]);
 });

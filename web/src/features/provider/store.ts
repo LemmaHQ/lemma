@@ -5,9 +5,9 @@ import {
     type Provider as ProviderProto,
 } from "@/gen/lemma/v1/provider_pb";
 import { providerClient } from "@/rpc/clients";
+import { singleFlight } from "@/store/loaded-hook";
 
 import type { ApiFormat } from "./api-format";
-
 export interface Model {
     id: string;
     toolCalling: boolean;
@@ -91,10 +91,10 @@ export const useProviderStore = create<ProviderState>()((set) => ({
     list: [],
     loaded: false,
 
-    refresh: async () => {
+    refresh: singleFlight(async () => {
         const res = await providerClient.listProviders({});
         set({ list: res.providers.map(toProvider), loaded: true });
-    },
+    }),
 
     create: async (input) => {
         const res = await providerClient.createCustomProvider({

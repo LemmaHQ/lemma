@@ -3,9 +3,9 @@ import { create } from "zustand";
 
 import type { Session } from "@/gen/lemma/v1/session_pb";
 import { sessionClient } from "@/rpc/clients";
+import { singleFlight } from "@/store/loaded-hook";
 
 import type { SessionSummary } from "./grouping";
-
 export interface SessionState {
     list: SessionSummary[];
     loaded: boolean;
@@ -30,10 +30,10 @@ export const useSessionStore = create<SessionState>()((set) => ({
     unseenDoneIds: new Set(),
     erroredIds: new Set(),
 
-    refresh: async () => {
+    refresh: singleFlight(async () => {
         const res = await sessionClient.listSessions({});
         set({ list: res.sessions.map(toSummary), loaded: true });
-    },
+    }),
 
     create: async (directory) => {
         const res = await sessionClient.createSession(
