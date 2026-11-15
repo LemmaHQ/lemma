@@ -51,7 +51,6 @@ export interface ActiveTurnPorts {
 interface LiveTurn {
     controller: AbortController;
     messageId: string | null;
-    userAborted: boolean;
 }
 
 /** Owns the single active turn lifecycle: optimistic prep, stream reduction, reconnection, and abort. */
@@ -184,7 +183,6 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
             const own: LiveTurn = {
                 controller: new AbortController(),
                 messageId: null,
-                userAborted: false,
             };
             await execute(input.sessionId, own, prepared, (n, signal) =>
                 own.messageId === null
@@ -213,7 +211,6 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
             const own: LiveTurn = {
                 controller: new AbortController(),
                 messageId: input.activeMessageId,
-                userAborted: false,
             };
             await execute(input.sessionId, own, prepared, (n, signal) =>
                 ports.resumeStream(input.activeMessageId, BigInt(n), signal),
@@ -224,11 +221,10 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
             if (current === null) {
                 return;
             }
-            current.userAborted = true;
+            current.controller.abort();
             if (current.messageId !== null) {
                 await ports.abortMessage(current.messageId).catch(() => {});
             }
-            current.controller.abort();
         },
     };
 }
@@ -264,7 +260,7 @@ async function consumeWithReconnect(
             clear();
         } catch (cause) {
             clear();
-            if (turn.userAborted || turn.controller.signal.aborted) {
+            if (turn.controller.signal.aborted) {
                 h.onAborted();
                 return;
             }

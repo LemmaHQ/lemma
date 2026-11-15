@@ -209,13 +209,13 @@ describe("createActiveTurnRunner", () => {
         aborted.resumeStream.mockImplementation(
             (_id, _offset, signal: AbortSignal) => ({
                 async *[Symbol.asyncIterator]() {
-                    yield textEvent();
                     const wait = Promise.withResolvers<never>();
                     signal.addEventListener("abort", () => {
                         wait.reject(
                             new ConnectError("canceled", Code.Canceled),
                         );
                     });
+                    yield textEvent();
                     await wait.promise;
                 },
             }),
