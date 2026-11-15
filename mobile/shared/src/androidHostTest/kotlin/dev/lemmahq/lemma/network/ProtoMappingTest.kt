@@ -175,7 +175,6 @@ class ProtoMappingTest {
         val recorded = message {
             id = "a1"
             parentId = "q1"
-            label = "pinned"
             role = "assistant"
             providerId = "openai"
             model = "gpt-4o"
@@ -214,7 +213,6 @@ class ProtoMappingTest {
                 thinkingStartedAt = AT_MILLIS,
                 thinkingFinishedAt = AT_MILLIS,
                 parentId = "q1",
-                label = "pinned",
             ),
             recorded.toClient(),
         )
@@ -230,15 +228,13 @@ class ProtoMappingTest {
     }
 
     @Test
-    fun aSessionKeepsItsOptionalLeafAndActiveTurn() {
+    fun aSessionMapsItsTitleAndUpdateTime() {
         assertEquals(
-            ClientSession("s1", "Trip", AT_MILLIS, leafId = "a1", activeMessageId = "q2"),
+            ClientSession("s1", "Trip", AT_MILLIS),
             session {
                 id = "s1"
                 title = "Trip"
                 updatedAt = AT
-                leafId = "a1"
-                activeMessageId = "q2"
             }
                 .toClient(),
         )
@@ -257,18 +253,7 @@ class ProtoMappingTest {
         val events =
             listOf(
                 agentEvent { started = agentStarted { messageId = "q1" } },
-                agentEvent {
-                    started = agentStarted {
-                        messageId = "q2"
-                        parentId = "a1"
-                    }
-                },
-                agentEvent {
-                    turnStarted = agentTurnStarted {
-                        messageId = "a1"
-                        parentId = "q1"
-                    }
-                },
+                agentEvent { turnStarted = agentTurnStarted { messageId = "a1" } },
                 agentEvent { delta = agentDelta { text = textDelta { content = "Hi" } } },
                 agentEvent { delta = agentDelta { thinking = thinkingDelta { content = "Hm" } } },
                 agentEvent { delta = agentDelta {} },
@@ -295,8 +280,7 @@ class ProtoMappingTest {
         assertEquals(
             listOf(
                 AgentStreamEvent.Started("q1", AT_MILLIS),
-                AgentStreamEvent.Started("q2", AT_MILLIS, parentId = "a1"),
-                AgentStreamEvent.TurnStarted("a1", AT_MILLIS, parentId = "q1"),
+                AgentStreamEvent.TurnStarted("a1", AT_MILLIS),
                 AgentStreamEvent.TextDelta("Hi", AT_MILLIS),
                 AgentStreamEvent.ThinkingDelta("Hm", AT_MILLIS),
                 AgentStreamEvent.Unknown(AT_MILLIS),

@@ -78,13 +78,7 @@ internal fun ClientModel.toProto(): Model =
     Model.newBuilder().setId(id).setToolCalling(toolCalling).build()
 
 internal fun Session.toClient(): ClientSession =
-    ClientSession(
-        id = id,
-        title = title,
-        updatedAt = updatedAt.epochMillis(),
-        leafId = if (hasLeafId()) leafId else null,
-        activeMessageId = if (hasActiveMessageId()) activeMessageId else null,
-    )
+    ClientSession(id = id, title = title, updatedAt = updatedAt.epochMillis())
 
 internal fun Message.toClient(): ClientMessage =
     ClientMessage(
@@ -104,7 +98,6 @@ internal fun Message.toClient(): ClientMessage =
         thinkingFinishedAt =
             if (hasThinkingFinishedAt()) thinkingFinishedAt.epochMillis() else null,
         parentId = if (hasParentId()) parentId else null,
-        label = if (hasLabel()) label else null,
     )
 
 internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {
@@ -112,17 +105,9 @@ internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {
     val kind: AgentEvent.KindCase = kindCase
     return when (kind) {
         AgentEvent.KindCase.STARTED ->
-            AgentStreamEvent.Started(
-                messageId = started.messageId,
-                occurredAt = at,
-                parentId = if (started.hasParentId()) started.parentId else null,
-            )
+            AgentStreamEvent.Started(messageId = started.messageId, occurredAt = at)
         AgentEvent.KindCase.TURN_STARTED ->
-            AgentStreamEvent.TurnStarted(
-                messageId = turnStarted.messageId,
-                occurredAt = at,
-                parentId = turnStarted.parentId,
-            )
+            AgentStreamEvent.TurnStarted(messageId = turnStarted.messageId, occurredAt = at)
         AgentEvent.KindCase.DELTA ->
             when (delta.partCase) {
                 AgentDelta.PartCase.TEXT -> AgentStreamEvent.TextDelta(delta.text.content, at)

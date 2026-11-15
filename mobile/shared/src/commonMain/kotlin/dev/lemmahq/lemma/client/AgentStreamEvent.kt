@@ -8,18 +8,12 @@ sealed interface AgentStreamEvent {
     val occurredAt: Long?
 
     /** The user message [messageId] has been committed; the turn is known by this id. */
-    data class Started(
-        val messageId: String,
-        override val occurredAt: Long? = null,
-        val parentId: String? = null,
-    ) : AgentStreamEvent
+    data class Started(val messageId: String, override val occurredAt: Long? = null) :
+        AgentStreamEvent
 
     /** A step of the turn began writing the assistant message [messageId]. */
-    data class TurnStarted(
-        val messageId: String,
-        override val occurredAt: Long? = null,
-        val parentId: String = "",
-    ) : AgentStreamEvent
+    data class TurnStarted(val messageId: String, override val occurredAt: Long? = null) :
+        AgentStreamEvent
 
     data class TextDelta(val text: String, override val occurredAt: Long? = null) : AgentStreamEvent
 

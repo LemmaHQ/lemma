@@ -280,8 +280,6 @@ class ConnectLemmaClientTest {
                 .map { it.withoutTime() },
             events.map { it.withoutTime() },
         )
-        assertNull(started.parentId)
-        assertEquals(started.messageId, reply.parentId)
         assertTrue(events.all { it.occurredAt != null })
         assertEquals(reply.messageId, tree.leafId)
         assertNull(tree.activeMessageId)

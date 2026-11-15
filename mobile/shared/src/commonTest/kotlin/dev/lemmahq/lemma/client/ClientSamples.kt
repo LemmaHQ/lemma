@@ -67,6 +67,4 @@ fun sampleSession(
     id: String,
     title: String = id,
     updatedAt: Long = 0,
-    leafId: String? = null,
-    activeMessageId: String? = null,
-): ClientSession = ClientSession(id, title, updatedAt, leafId, activeMessageId)
+): ClientSession = ClientSession(id, title, updatedAt)

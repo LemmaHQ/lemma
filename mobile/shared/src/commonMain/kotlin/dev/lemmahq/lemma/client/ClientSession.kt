@@ -8,6 +8,4 @@ data class ClientSession(
     val id: String,
     val title: String,
     val updatedAt: Long,
-    val leafId: String? = null,
-    val activeMessageId: String? = null,
 )
