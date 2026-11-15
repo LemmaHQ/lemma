@@ -774,10 +774,17 @@ async fn unknown_stored_api_format_fails_as_store_error() -> Result<(), Box<dyn 
         .execute(&db)
         .await?;
 
-    let err = providers.list().await.err();
-    assert!(
-        matches!(err, Some(ProviderError::Store(_))),
-        "expected store error, got {err:?}"
-    );
+    let listed = providers.list().await.err();
+    let bound = providers.bind(created.id, "model-a", None).await.err();
+    let updated = providers
+        .update_custom(created.id, UpdateCustomInput::default())
+        .await
+        .err();
+    for (call, err) in [("list", listed), ("bind", bound), ("update", updated)] {
+        assert!(
+            matches!(err, Some(ProviderError::Store(_))),
+            "{call}: expected store error, got {err:?}"
+        );
+    }
     Ok(())
 }

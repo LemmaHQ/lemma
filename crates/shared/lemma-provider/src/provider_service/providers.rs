@@ -203,11 +203,10 @@ impl<C: Connector> ProviderService<C> {
         let base_url = input
             .base_url
             .map(|s| s.trim().trim_end_matches('/').to_owned());
-        let api_key = input
-            .api_key
-            .as_deref()
-            .map(|key| self.seal_key(key))
-            .transpose()?;
+        let api_key = match input.api_key.as_deref() {
+            Some(key) => Some(self.seal_key(key)?),
+            None => None,
+        };
         let api_path = input.api_path.map(|s| s.trim().to_owned());
         let models_path = input.models_path.map(|s| s.trim().to_owned());
         let models = input.models.map(Json);

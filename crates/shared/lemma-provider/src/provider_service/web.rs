@@ -94,11 +94,10 @@ impl<C: Connector> ProviderService<C> {
         let enabling_saved_key = input.enabled == Some(true)
             && input.api_key.is_none()
             && row.kind != WebProviderKind::Native;
-        let api_key = input
-            .api_key
-            .as_deref()
-            .map(|key| self.seal_key(key))
-            .transpose()?;
+        let api_key = match input.api_key.as_deref() {
+            Some(key) => Some(self.seal_key(key)?),
+            None => None,
+        };
         let enabled = if clearing_key {
             Some(false)
         } else {
@@ -117,10 +116,8 @@ impl<C: Connector> ProviderService<C> {
             .bind(id)
             .fetch_optional(&self.db)
             .await?
-            .map(web_row_from_tuple)
-            .transpose()?
             .ok_or(ProviderError::KeyRequired)?;
-            return self.web_view(&updated);
+            return self.web_view(&web_row_from_tuple(updated)?);
         }
         let updated = sqlx::query_as::<_, WebTuple>(
             "UPDATE web_providers
@@ -134,10 +131,8 @@ impl<C: Connector> ProviderService<C> {
         .bind(id)
         .fetch_optional(&self.db)
         .await?
-        .map(web_row_from_tuple)
-        .transpose()?
         .ok_or(ProviderError::NotFound)?;
-        self.web_view(&updated)
+        self.web_view(&web_row_from_tuple(updated)?)
     }
 
     /// Replaces the complete fallback order for a web function.

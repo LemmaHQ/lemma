@@ -194,6 +194,12 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
             &json!({ "id": id, "defaultApiFormat": "API_FORMAT_GEMINI" }),
         )
         .await?;
+    let unspecified = engine
+        .call(
+            UPDATE_PREDEFINED,
+            &json!({ "id": id, "defaultApiFormat": "API_FORMAT_UNSPECIFIED" }),
+        )
+        .await?;
     let fetched = engine.call(FETCH, &json!({ "id": id })).await?;
     let deleted = engine.call(DELETE, &json!({ "id": id })).await?;
     assert_reason(&without_key, ErrorReason::ProviderKeyRequired);
@@ -208,6 +214,7 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
         "API_FORMAT_OPENAI"
     );
     assert_reason(&invalid, ErrorReason::ApiFormatInvalid);
+    assert_reason(&unspecified, ErrorReason::ApiFormatInvalid);
     assert_reason(&fetched, ErrorReason::ProviderNotFound);
     assert_reason(&deleted, ErrorReason::ProviderNotFound);
     engine.close().await;

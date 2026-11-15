@@ -175,6 +175,11 @@ async fn exa_search_applies_defaults_and_normalizes_highlights() -> Result<(), B
         backend.fallback_args(&json!({"query": "lemma", "count": 4, "need_content": true})),
         json!({"query": "lemma", "numResults": 4})
     );
+    assert_eq!(
+        backend.fallback_args(&json!({"query": "lemma"})),
+        json!({"query": "lemma"}),
+        "no count to translate"
+    );
 
     let result = backend.search(json!({"query": "lemma"})).await?;
 
@@ -217,6 +222,11 @@ async fn deepseek_search_forwards_its_full_parameters() -> Result<(), Box<dyn Er
     assert_eq!(
         backend.fallback_args(&json!({"query": "lemma", "numResults": 7, "contents": {}})),
         json!({"query": "lemma", "count": 7})
+    );
+    assert_eq!(
+        backend.fallback_args(&json!({"query": "lemma"})),
+        json!({"query": "lemma"}),
+        "no numResults to translate"
     );
     let args = json!({
         "query": "lemma",

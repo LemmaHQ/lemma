@@ -78,11 +78,10 @@ impl<C: Connector> ProviderService<C> {
         }
         let clearing_key = input.api_key.as_deref() == Some("");
         let enabling_saved_key = input.enabled == Some(true) && input.api_key.is_none();
-        let api_key = input
-            .api_key
-            .as_deref()
-            .map(|key| self.seal_key(key))
-            .transpose()?;
+        let api_key = match input.api_key.as_deref() {
+            Some(key) => Some(self.seal_key(key)?),
+            None => None,
+        };
         let enabled = if clearing_key {
             Some(false)
         } else {
@@ -110,9 +109,8 @@ impl<C: Connector> ProviderService<C> {
         .bind(enabling_saved_key)
         .fetch_optional(&self.db)
         .await?
-        .map(provider_row::from_tuple)
-        .transpose()?
         .ok_or(missing_error)?;
+        let updated = provider_row::from_tuple(updated)?;
         self.predefined_view(&updated, preset)
     }
 

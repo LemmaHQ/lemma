@@ -470,3 +470,22 @@ async fn web_methods_report_database_failures() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn an_unknown_stored_kind_fails_an_update_as_store_error() -> Result<(), Box<dyn Error>> {
+    let db = lemma_db::in_memory().await?;
+    let providers = service(db.clone());
+    let id = view(&providers.list_web().await?, WebProviderKind::Exa)?.id;
+    sqlx::query("UPDATE web_providers SET kind = 'bogus' WHERE id = ?")
+        .bind(id)
+        .execute(&db)
+        .await?;
+
+    let updated = providers.update_web(id, UpdateWebInput::default()).await;
+
+    assert!(
+        matches!(updated, Err(ProviderError::Store(_))),
+        "unknown kind: {updated:?}"
+    );
+    Ok(())
+}
