@@ -65,7 +65,7 @@
         "@vitest/coverage-v8": "^5.0.5",
         "happy-dom": "^21.0.4",
         "oxlint-tailwindcss": "^1.17.1",
-        "prettier": "^3.9.10",
+        "prettier": "^3.10.1",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "tailwindcss": "^4.3.3",
         "typescript": "^7.0.2",
