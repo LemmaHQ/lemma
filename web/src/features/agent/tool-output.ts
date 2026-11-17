@@ -1,4 +1,4 @@
-import type { ToolCallItem } from "./agent-item";
+import type { UiToolCall } from "./ui-message";
 
 /** A single web search hit rendered inside a web detail payload. */
 export interface WebHit {
@@ -68,7 +68,7 @@ export function lastPathSegment(path: string): string {
 }
 /** Formats a completed tool call's output and provider metadata into a DetailPayload. */
 export function parseToolOutput(
-    call: ToolCallItem,
+    call: UiToolCall,
     argument: string,
 ): { via?: string | undefined; detail: DetailPayload } {
     if (call.isError || call.state === "running") {

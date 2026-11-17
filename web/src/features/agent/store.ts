@@ -14,7 +14,7 @@ import {
     type TurnStoreSlice,
 } from "./active-path";
 import { createActiveTurnRunner } from "./active-turn";
-import { hydrateToolResults, protoToItem } from "./agent-item";
+import { hydrateToolResults, toUiMessage } from "./ui-message";
 
 /** Pending rewind state while editing/branching from an earlier user question. */
 export interface RewindState {
@@ -73,7 +73,7 @@ export const useActiveSessionStore = create<ActiveSessionState>()((
         ) {
             return null;
         }
-        const treeMessages = hydrateToolResults(res.messages.map(protoToItem));
+        const treeMessages = hydrateToolResults(res.messages.map(toUiMessage));
         const leafId = nonEmptyId(res.leafId);
         const items = resolveActivePath(treeMessages, leafId);
         if (isCurrent !== undefined) {

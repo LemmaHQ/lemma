@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
 import type { ConversationTurn } from "../active-path";
-import type { AgentItem } from "../agent-item";
 import type { TurnStep } from "../step-details";
+import type { UiMessage } from "../ui-message";
 import { TurnView } from "./TurnView";
 
 const paragraphText =
@@ -14,9 +14,9 @@ const paragraphText =
 
 const baseItem = (
     id: string,
-    role: AgentItem["role"],
-    patch: Partial<AgentItem> = {},
-): AgentItem => ({
+    role: UiMessage["role"],
+    patch: Partial<UiMessage> = {},
+): UiMessage => ({
     id,
     role,
     content: "",
@@ -47,7 +47,7 @@ it("renders TurnView summaries, step variants, settled actions, streaming, abort
     const onInspectStep = vi.fn<(step: TurnStep) => void>();
     const onInspectCode = vi.fn<(code: string, language: string) => void>();
     const onRegenerate =
-        vi.fn<(turn: ConversationTurn, reply: AgentItem) => void>();
+        vi.fn<(turn: ConversationTurn, reply: UiMessage) => void>();
 
     const multiToolTurn: ConversationTurn = {
         id: "t1",

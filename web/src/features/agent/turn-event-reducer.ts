@@ -2,36 +2,36 @@ import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
-import { type AgentItem, isBlankReply } from "./agent-item";
+import { type UiMessage, isBlankReply } from "./ui-message";
 
 /** Live execution phase shown while an assistant turn is streaming. */
 export type LiveStep =
     { kind: "thinking" } | { kind: "tool"; name: string } | null;
 
 /** The slice of active session state the reducer reads and patches. */
-export interface StreamSlice {
-    items: AgentItem[];
+export interface TurnEventSlice {
+    items: UiMessage[];
     currentStep: LiveStep;
     reconnectingOffset: number | null;
 }
 
 /** Applies a patch computed from the current slice. */
-export type StreamSet = (
-    fn: (s: StreamSlice) => Partial<StreamSlice> & { items: AgentItem[] },
+export type TurnEventSet = (
+    fn: (s: TurnEventSlice) => Partial<TurnEventSlice> & { items: UiMessage[] },
 ) => void;
 
 /** Reads the current slice. */
-export type StreamGet = () => StreamSlice;
+export type TurnEventGet = () => TurnEventSlice;
 
-/** Applies one send's stream events to the session items. */
-export interface StreamReducer {
+/** Applies one send's turn events to the session items. */
+export interface TurnEventReducer {
     applyEvent: (event?: AgentEvent) => void;
-    updateCurrent: (patch: Partial<AgentItem>) => void;
+    updateCurrent: (patch: Partial<UiMessage>) => void;
 }
 
-export interface StreamReducerOptions {
-    set: StreamSet;
-    get: StreamGet;
+export interface TurnEventReducerOptions {
+    set: TurnEventSet;
+    get: TurnEventGet;
     providerId: string;
     model: string;
     initialId: string;
@@ -41,7 +41,7 @@ export interface StreamReducerOptions {
 }
 
 /** Creates the reducer for one send call, tracking its current item. */
-export function createStreamReducer({
+export function createTurnEventReducer({
     set,
     get,
     providerId,
@@ -50,16 +50,16 @@ export function createStreamReducer({
     userPlaceholderId,
     onStarted,
     onTurnStarted,
-}: StreamReducerOptions): StreamReducer {
+}: TurnEventReducerOptions): TurnEventReducer {
     let currentId = initialId;
     let currentUserId = userPlaceholderId;
 
     const patchCurrent = (
-        fn: (it: AgentItem) => AgentItem,
-        extra: (it: AgentItem) => Partial<StreamSlice>,
+        fn: (it: UiMessage) => UiMessage,
+        extra: (it: UiMessage) => Partial<TurnEventSlice>,
     ) => {
         set((s) => {
-            let sliceExtra: Partial<StreamSlice> = {};
+            let sliceExtra: Partial<TurnEventSlice> = {};
             const items = s.items.map((it) => {
                 if (it.id !== currentId) {
                     return it;
@@ -72,7 +72,7 @@ export function createStreamReducer({
         });
     };
 
-    const updateCurrent = (patch: Partial<AgentItem>) => {
+    const updateCurrent = (patch: Partial<UiMessage>) => {
         patchCurrent(
             (it) => ({ ...it, ...patch }),
             (next) =>
@@ -82,8 +82,8 @@ export function createStreamReducer({
 
     const finishReply = (
         at: number | undefined,
-        status: AgentItem["status"],
-        patch: Partial<AgentItem> = {},
+        status: UiMessage["status"],
+        patch: Partial<UiMessage> = {},
     ) => {
         patchCurrent(
             (it) => ({
@@ -277,7 +277,7 @@ export function createStreamReducer({
 }
 
 function closedThinkingAt(
-    item: AgentItem,
+    item: UiMessage,
     at: number | undefined,
 ): number | undefined {
     return item.thinkingStartedAt === undefined

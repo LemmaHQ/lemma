@@ -46,7 +46,7 @@ pub(crate) async fn run(&self, call: &ToolCall) -> ToolOutcome {
 
 ## TypeScript: early return inside a map, `??` for a default
 
-From `web/src/features/agent/agent-item.ts`.
+From `web/src/features/agent/ui-message.ts`.
 
 Before: a mutable copy, a nested `if`, and a ternary that restates `??`.
 
@@ -85,7 +85,7 @@ toolCalls: entry.toolCalls.map((tc) => {
 }),
 ```
 
-The inner `res.content !== undefined` check in "before" guarded a state the type already excludes: `AgentItem.content` is a `string`. Confirm such a fact in the type definition before deleting a check.
+The inner `res.content !== undefined` check in "before" guarded a state the type already excludes: `UiMessage.content` is a `string`. Confirm such a fact in the type definition before deleting a check.
 
 ## Kotlin: elvis and scope functions over null branches
 

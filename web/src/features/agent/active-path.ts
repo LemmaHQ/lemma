@@ -1,10 +1,10 @@
-import type { AgentItem } from "./agent-item";
 import { buildTurnSteps, type TurnStep } from "./step-details";
-import type { StreamSlice } from "./stream-reducer";
+import type { TurnEventSlice } from "./turn-event-reducer";
+import type { UiMessage } from "./ui-message";
 
 /** Store slice fields updated during a live turn. */
-export interface TurnStoreSlice extends StreamSlice {
-    treeMessages: AgentItem[];
+export interface TurnStoreSlice extends TurnEventSlice {
+    treeMessages: UiMessage[];
     leafId: string | undefined;
     streaming: boolean;
     turnStartedAtMs: number | null;
@@ -16,7 +16,7 @@ export interface PreparedTurn {
     model: string;
     aiTempId: string;
     userPlaceholderId: string;
-    preTree: AgentItem[];
+    preTree: UiMessage[];
     baseCount: number;
     patch: TurnStoreSlice;
 }
@@ -24,8 +24,8 @@ export interface PreparedTurn {
 /** One user question grouped with its assistant steps along the active path. */
 export interface ConversationTurn {
     id: string;
-    userMessage: AgentItem;
-    finalReply: AgentItem | undefined;
+    userMessage: UiMessage;
+    finalReply: UiMessage | undefined;
     steps: TurnStep[];
 }
 
@@ -48,15 +48,15 @@ export function nonEmptyId(value: string | undefined): string | undefined {
 
 /** Resolves the active branch path from root to effectiveLeafId in oldest-first order. */
 export function resolveActivePath(
-    allMessages: AgentItem[],
+    allMessages: UiMessage[],
     effectiveLeafId: string | undefined,
-): AgentItem[] {
+): UiMessage[] {
     if (effectiveLeafId === undefined) {
         return [];
     }
     const byId = new Map(allMessages.map((item) => [item.id, item]));
     const visited = new Set<string>();
-    const reversed: AgentItem[] = [];
+    const reversed: UiMessage[] = [];
     let cursor: string | undefined = effectiveLeafId;
     while (cursor !== undefined && !visited.has(cursor)) {
         const current = byId.get(cursor);
@@ -71,10 +71,10 @@ export function resolveActivePath(
 }
 
 /** Groups an active path into conversation turns. */
-export function groupTurns(activePath: AgentItem[]): ConversationTurn[] {
+export function groupTurns(activePath: UiMessage[]): ConversationTurn[] {
     const turns: ConversationTurn[] = [];
-    let currentUser: AgentItem | null = null;
-    let currentItems: AgentItem[] = [];
+    let currentUser: UiMessage | null = null;
+    let currentItems: UiMessage[] = [];
     const flush = () => {
         if (currentUser === null) {
             return;
@@ -104,7 +104,7 @@ export function groupTurns(activePath: AgentItem[]): ConversationTurn[] {
 
 /** Prepares initial optimistic state for a new outgoing user turn. */
 export function prepareNewTurn(
-    treeMessages: AgentItem[],
+    treeMessages: UiMessage[],
     targetParentId: string | undefined,
     providerId: string,
     model: string,
@@ -129,7 +129,7 @@ export function prepareNewTurn(
 
 /** Prepares initial live-turn state when resuming an active message after open. */
 export function prepareResumedTurn(
-    treeMessages: AgentItem[],
+    treeMessages: UiMessage[],
     activeMessageId: string,
 ): PreparedTurn {
     const activeUser = treeMessages.find((m) => m.id === activeMessageId);
@@ -148,15 +148,15 @@ export function prepareResumedTurn(
 }
 
 function buildPreparedTurn(
-    preTree: AgentItem[],
-    basePath: AgentItem[],
-    userEntry: AgentItem,
+    preTree: UiMessage[],
+    basePath: UiMessage[],
+    userEntry: UiMessage,
     providerId: string,
     model: string,
     turnStartedAtMs: number,
 ): PreparedTurn {
     const aiTempId = `${userEntry.id}:ai`;
-    const aiEntry: AgentItem = {
+    const aiEntry: UiMessage = {
         id: aiTempId,
         parentId: userEntry.id,
         role: "assistant",
@@ -192,7 +192,7 @@ function makeUser(
     parentId: string | undefined,
     content: string,
     createdAtMs?: number,
-): AgentItem {
+): UiMessage {
     return {
         id,
         parentId,
@@ -207,7 +207,7 @@ function makeUser(
     };
 }
 
-function removeSubtree(items: AgentItem[], rootId: string): AgentItem[] {
+function removeSubtree(items: UiMessage[], rootId: string): UiMessage[] {
     const removed = new Set<string>([rootId]);
     let changed = true;
     while (changed) {

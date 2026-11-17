@@ -7,7 +7,7 @@ import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
 import { EMPTY_SESSION_SLICE, type TurnStoreSlice } from "./active-path";
 import { createActiveTurnRunner } from "./active-turn";
-import type { AgentItem } from "./agent-item";
+import type { UiMessage } from "./ui-message";
 
 async function* stream(
     events: { event?: AgentEvent | undefined }[],
@@ -164,7 +164,7 @@ describe("createActiveTurnRunner", () => {
 
     it("handles TURN_NOT_RUNNING reload, max-resume exhaustion, abort, and cancel", async () => {
         vi.useFakeTimers();
-        const u1: AgentItem = {
+        const u1: UiMessage = {
             id: "u1",
             role: "user",
             content: "q",

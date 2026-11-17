@@ -2,7 +2,7 @@ import { type Timestamp, timestampDate } from "@bufbuild/protobuf/wkt";
 
 import { type Message, MessageStatus } from "@/gen/lemma/v1/session_pb";
 
-export interface ToolCallItem {
+export interface UiToolCall {
     id: string;
     name: string;
     arguments: string;
@@ -13,7 +13,7 @@ export interface ToolCallItem {
     finishedAt?: number | undefined;
 }
 
-export interface AgentItem {
+export interface UiMessage {
     id: string;
     parentId?: string | undefined;
     role: "user" | "assistant" | "tool";
@@ -22,7 +22,7 @@ export interface AgentItem {
     status: "streaming" | "done" | "aborted" | "error";
     providerId: string;
     model: string;
-    toolCalls: ToolCallItem[];
+    toolCalls: UiToolCall[];
     toolCallId?: string | undefined;
     toolIsError?: boolean | undefined;
     thinkingStartedAt?: number | undefined;
@@ -33,7 +33,7 @@ export interface AgentItem {
 }
 
 /** True when an assistant reply has produced no reasoning, text, or tool call. */
-export function isBlankReply(item: AgentItem): boolean {
+export function isBlankReply(item: UiMessage): boolean {
     return (
         item.content === "" &&
         item.thinking === "" &&
@@ -41,8 +41,8 @@ export function isBlankReply(item: AgentItem): boolean {
     );
 }
 
-/** Maps a stored message to its display item. */
-export function protoToItem(m: Message): AgentItem {
+/** Maps a stored message to its UI message. */
+export function toUiMessage(m: Message): UiMessage {
     return {
         id: m.id,
         parentId:
@@ -81,8 +81,8 @@ export function protoToItem(m: Message): AgentItem {
 }
 
 /** Folds tool-result messages into the assistant items that called them. */
-export function hydrateToolResults(items: AgentItem[]): AgentItem[] {
-    const resultByCallId = new Map<string, AgentItem>();
+export function hydrateToolResults(items: UiMessage[]): UiMessage[] {
+    const resultByCallId = new Map<string, UiMessage>();
     for (const entry of items) {
         if (entry.role === "tool" && entry.toolCallId !== undefined) {
             resultByCallId.set(entry.toolCallId, entry);
@@ -114,7 +114,7 @@ function epochMillis(value: Timestamp | undefined): number | undefined {
     return value === undefined ? undefined : timestampDate(value).getTime();
 }
 
-function statusFromProto(s: MessageStatus): AgentItem["status"] {
+function statusFromProto(s: MessageStatus): UiMessage["status"] {
     switch (s) {
         case MessageStatus.STREAMING:
             return "streaming";

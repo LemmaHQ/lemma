@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { ToolCallItem } from "./agent-item";
 import {
     lastPathSegment,
     nonEmptyString,
     parseJsonObject,
     parseToolOutput,
 } from "./tool-output";
+import type { UiToolCall } from "./ui-message";
 
-const call = (name: string, output: string, isError = false): ToolCallItem => ({
+const call = (name: string, output: string, isError = false): UiToolCall => ({
     id: "c1",
     name,
     arguments: "{}",

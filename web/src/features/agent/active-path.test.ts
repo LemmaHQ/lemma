@@ -8,13 +8,13 @@ import {
     prepareResumedTurn,
     resolveActivePath,
 } from "./active-path";
-import type { AgentItem } from "./agent-item";
+import type { UiMessage } from "./ui-message";
 
 const msg = (
     id: string,
-    role: AgentItem["role"],
-    patch: Partial<AgentItem> = {},
-): AgentItem => ({
+    role: UiMessage["role"],
+    patch: Partial<UiMessage> = {},
+): UiMessage => ({
     id,
     role,
     content: "",

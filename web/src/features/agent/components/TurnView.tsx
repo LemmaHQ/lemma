@@ -15,9 +15,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ConversationTurn } from "../active-path";
-import type { AgentItem } from "../agent-item";
 import { stepVerb, type TurnStep } from "../step-details";
 import { lastPathSegment } from "../tool-output";
+import type { UiMessage } from "../ui-message";
 
 interface TurnViewProps {
     turn: ConversationTurn;
@@ -26,7 +26,7 @@ interface TurnViewProps {
     onInspectStep: (step: TurnStep) => void;
     onInspectCode: (code: string, language: string) => void;
     onRegenerate?:
-        ((turn: ConversationTurn, reply: AgentItem) => void) | undefined;
+        ((turn: ConversationTurn, reply: UiMessage) => void) | undefined;
 }
 
 function summarizeToolStep(step: TurnStep, t: TFunction): string {
@@ -211,7 +211,7 @@ export function TurnView({
 
 function turnFooterMeta(
     turn: ConversationTurn,
-    reply: AgentItem,
+    reply: UiMessage,
 ): string | undefined {
     const startMs = turn.userMessage.createdAtMs;
     const endMs = reply.thinkingFinishedAt ?? reply.createdAtMs;

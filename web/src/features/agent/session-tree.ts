@@ -4,8 +4,8 @@ import {
     type TreeRailSegment,
 } from "@lemma/ui";
 
-import type { AgentItem } from "./agent-item";
 import { resolveActivePath } from "./active-path";
+import type { UiMessage } from "./ui-message";
 
 interface TreeNode {
     id: string;
@@ -19,14 +19,14 @@ interface TreeNode {
 }
 
 interface BuildContext {
-    childrenByParent: ReadonlyMap<string | undefined, AgentItem[]>;
+    childrenByParent: ReadonlyMap<string | undefined, UiMessage[]>;
     activeAncestors: ReadonlySet<string>;
     visited: Set<string>;
 }
 
 /** Builds the collapsed, active-first, rail-annotated rows for `SessionTreePane`. */
 export function buildSessionTree(
-    allMessages: AgentItem[],
+    allMessages: UiMessage[],
     activeLeafId: string | undefined,
 ): { rows: TreePaneRow[]; pathCount: number } {
     if (allMessages.length === 0) {
@@ -93,11 +93,11 @@ export function buildSessionTree(
 }
 
 function buildCollapsedRoots(
-    allMessages: AgentItem[],
+    allMessages: UiMessage[],
     activeAncestors: ReadonlySet<string>,
 ): TreeNode[] {
     const byId = new Map(allMessages.map((item) => [item.id, item]));
-    const childrenByParent = new Map<string | undefined, AgentItem[]>();
+    const childrenByParent = new Map<string | undefined, UiMessage[]>();
     for (const item of allMessages) {
         const key =
             item.parentId !== undefined && byId.has(item.parentId)
@@ -134,7 +134,7 @@ function buildChildren(
         .toSorted((a, b) => (a.onPath === b.onPath ? 0 : a.onPath ? -1 : 1));
 }
 
-function buildLogicalNode(rawItem: AgentItem, ctx: BuildContext): TreeNode {
+function buildLogicalNode(rawItem: UiMessage, ctx: BuildContext): TreeNode {
     ctx.visited.add(rawItem.id);
     if (rawItem.role === "user") {
         const children = buildChildren(rawItem.id, ctx);
@@ -152,7 +152,7 @@ function buildLogicalNode(rawItem: AgentItem, ctx: BuildContext): TreeNode {
             children,
         };
     }
-    const chain: AgentItem[] = [rawItem];
+    const chain: UiMessage[] = [rawItem];
     let tail = rawItem;
     while (true) {
         const nextList = (ctx.childrenByParent.get(tail.id) ?? []).filter(

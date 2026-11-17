@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { AgentItem, ToolCallItem } from "./agent-item";
 import { buildTurnSteps, formatToolArgument } from "./step-details";
+import type { UiMessage, UiToolCall } from "./ui-message";
 
-const assistant = (id: string, patch: Partial<AgentItem> = {}): AgentItem => ({
+const assistant = (id: string, patch: Partial<UiMessage> = {}): UiMessage => ({
     id,
     role: "assistant",
     content: "",
@@ -18,8 +18,8 @@ const assistant = (id: string, patch: Partial<AgentItem> = {}): AgentItem => ({
 const toolCall = (
     id: string,
     name: string,
-    patch: Partial<ToolCallItem> = {},
-): ToolCallItem => ({
+    patch: Partial<UiToolCall> = {},
+): UiToolCall => ({
     id,
     name,
     arguments: "{}",

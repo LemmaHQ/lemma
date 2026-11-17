@@ -8,8 +8,8 @@ import {
     prepareResumedTurn,
     type TurnStoreSlice,
 } from "./active-path";
-import type { AgentItem } from "./agent-item";
-import { createStreamReducer } from "./stream-reducer";
+import { createTurnEventReducer } from "./turn-event-reducer";
+import type { UiMessage } from "./ui-message";
 
 const MAX_RESUME = 3;
 
@@ -70,7 +70,7 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
         const isCurrent = () => active === own;
         ports.patchStore({ ...prepared.patch, rewind: null });
 
-        const reducer = createStreamReducer({
+        const reducer = createTurnEventReducer({
             set: (fn) => {
                 if (!isCurrent()) {
                     return;
@@ -166,7 +166,7 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
         },
         send: async (input: {
             sessionId: string;
-            treeMessages: AgentItem[];
+            treeMessages: UiMessage[];
             targetParentId: string | undefined;
             requestParentId: string | undefined;
             providerId: string;
@@ -201,7 +201,7 @@ export function createActiveTurnRunner(ports: ActiveTurnPorts) {
         },
         resume: async (input: {
             sessionId: string;
-            treeMessages: AgentItem[];
+            treeMessages: UiMessage[];
             activeMessageId: string;
         }): Promise<void> => {
             const prepared = prepareResumedTurn(

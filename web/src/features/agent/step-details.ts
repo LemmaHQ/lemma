@@ -1,12 +1,12 @@
 import type { TFunction } from "i18next";
 
-import type { AgentItem } from "./agent-item";
 import {
     type DetailPayload,
     nonEmptyString,
     parseJsonObject,
     parseToolOutput,
 } from "./tool-output";
+import type { UiMessage } from "./ui-message";
 
 export type { DetailPayload };
 
@@ -46,7 +46,7 @@ export function formatToolArgument(name: string, rawArgs: string): string {
 }
 
 /** Builds structured timeline steps and detail payloads across all assistant items of a turn. */
-export function buildTurnSteps(assistantSteps: AgentItem[]): TurnStep[] {
+export function buildTurnSteps(assistantSteps: UiMessage[]): TurnStep[] {
     const toolFlat = assistantSteps.flatMap((step) => step.toolCalls);
     const finalStatus = assistantSteps.at(-1)?.status;
     const steps: TurnStep[] = [];
@@ -86,7 +86,7 @@ export function buildTurnSteps(assistantSteps: AgentItem[]): TurnStep[] {
     return steps;
 }
 
-function thinkingStep(item: AgentItem): TurnStep {
+function thinkingStep(item: UiMessage): TurnStep {
     const argument =
         item.thinking
             .split("\n")

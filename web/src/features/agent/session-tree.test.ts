@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import type { AgentItem } from "./agent-item";
 import { buildSessionTree } from "./session-tree";
+import type { UiMessage } from "./ui-message";
 
 const msg = (
     id: string,
-    role: AgentItem["role"],
-    patch: Partial<AgentItem> = {},
-): AgentItem => ({
+    role: UiMessage["role"],
+    patch: Partial<UiMessage> = {},
+): UiMessage => ({
     id,
     role,
     content: "",

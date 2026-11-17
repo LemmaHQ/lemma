@@ -5,14 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentEventSchema, type AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
 import {
-    createStreamReducer,
+    createTurnEventReducer,
     type LiveStep,
-    type StreamSet,
-    type StreamSlice,
-} from "./stream-reducer";
+    type TurnEventSet,
+    type TurnEventSlice,
+} from "./turn-event-reducer";
 
 function harness(withUser = false) {
-    const state: StreamSlice = {
+    const state: TurnEventSlice = {
         items: [
             ...(withUser
                 ? [
@@ -46,7 +46,7 @@ function harness(withUser = false) {
     };
     const onStarted = vi.fn<(messageId: string, parentId?: string) => void>();
     const onTurnStarted = vi.fn<(messageId: string) => void>();
-    const set: StreamSet = (fn) => {
+    const set: TurnEventSet = (fn) => {
         const patch = fn(state);
         state.items = patch.items ?? state.items;
         if (patch.currentStep !== undefined) {
@@ -56,7 +56,7 @@ function harness(withUser = false) {
             state.reconnectingOffset = patch.reconnectingOffset;
         }
     };
-    const reducer = createStreamReducer({
+    const reducer = createTurnEventReducer({
         set,
         get: () => state,
         providerId: "provider-1",

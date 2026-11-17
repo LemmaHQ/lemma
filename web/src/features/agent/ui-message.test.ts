@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 
 import { MessageSchema, MessageStatus } from "@/gen/lemma/v1/session_pb";
 
-import { hydrateToolResults, isBlankReply, protoToItem } from "./agent-item";
+import { hydrateToolResults, isBlankReply, toUiMessage } from "./ui-message";
 
 const startedMs = Date.parse("2026-10-29T10:00:00.000Z");
 const finishedMs = Date.parse("2026-10-29T10:00:02.500Z");
@@ -12,7 +12,7 @@ const startedAt = timestampFromDate(new Date(startedMs));
 const finishedAt = timestampFromDate(new Date(finishedMs));
 
 it("maps stored thinking and tool timestamps to epoch milliseconds", () => {
-    const item = protoToItem(
+    const item = toUiMessage(
         create(MessageSchema, {
             id: "assistant-1",
             role: "assistant",
@@ -78,14 +78,14 @@ it("hydrates a newer page's tool result into an older page's call", () => {
 });
 
 it("keeps timestamps absent for legacy rows and through result hydration", () => {
-    const legacy = protoToItem(
+    const legacy = toUiMessage(
         create(MessageSchema, {
             id: "assistant-1",
             role: "assistant",
             toolCalls: [{ id: "call-1", name: "read_file", arguments: "{}" }],
         }),
     );
-    const result = protoToItem(
+    const result = toUiMessage(
         create(MessageSchema, {
             id: "tool-1",
             role: "tool",
@@ -112,7 +112,7 @@ it.each([
 ] as const)(
     "maps stored status %s with error %j",
     (status, error, expectedStatus, expectedError) => {
-        const item = protoToItem(
+        const item = toUiMessage(
             create(MessageSchema, { id: "assistant-1", status, error }),
         );
 
@@ -121,8 +121,8 @@ it.each([
     },
 );
 
-it("maps parentId, label, and createdAtMs in protoToItem", () => {
-    const user = protoToItem(
+it("maps parentId, label, and createdAtMs in toUiMessage", () => {
+    const user = toUiMessage(
         create(MessageSchema, {
             id: "user-1",
             parentId: "root-0",
@@ -132,7 +132,7 @@ it("maps parentId, label, and createdAtMs in protoToItem", () => {
             label: "checkpoint",
         }),
     );
-    const cleared = protoToItem(
+    const cleared = toUiMessage(
         create(MessageSchema, {
             id: "user-2",
             parentId: "",
@@ -154,7 +154,7 @@ it("maps parentId, label, and createdAtMs in protoToItem", () => {
 });
 
 it("computes isBlankReply for blank and non-blank replies", () => {
-    const blank = protoToItem(
+    const blank = toUiMessage(
         create(MessageSchema, {
             id: "a-1",
             role: "assistant",
@@ -168,14 +168,14 @@ it("computes isBlankReply for blank and non-blank replies", () => {
 });
 
 it("ignores tool items without toolCallId and leaves unmatched calls untouched", () => {
-    const assistant = protoToItem(
+    const assistant = toUiMessage(
         create(MessageSchema, {
             id: "a-1",
             role: "assistant",
             toolCalls: [{ id: "call-1", name: "read_file", arguments: "{}" }],
         }),
     );
-    const orphanTool = protoToItem(
+    const orphanTool = toUiMessage(
         create(MessageSchema, { id: "t-0", role: "tool", content: "ignored" }),
     );
     const [hydrated] = hydrateToolResults([assistant, orphanTool]);
