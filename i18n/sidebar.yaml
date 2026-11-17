@@ -20,11 +20,11 @@ sidebar:
       other: "{count} more"
     zh:
       other: "还有 {count} 个"
-  newInFolder:
+  newInDirectory:
     platforms: [web]
-    params: { folder: string }
-    en: "New session in {folder}"
-    zh: "在 {folder} 中新建会话"
+    params: { directory: string }
+    en: "New session in {directory}"
+    zh: "在 {directory} 中新建会话"
   collapse:
     platforms: [web]
     en: "Collapse sidebar"

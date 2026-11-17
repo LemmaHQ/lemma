@@ -20,14 +20,14 @@ export interface SessionDirectoryControl {
     onPickDirectory?: (() => Promise<string | undefined>) | undefined;
 }
 
-interface SessionFolderPickerProps {
+interface SessionDirectoryPickerProps {
     directoryControl: SessionDirectoryControl;
 }
 
-/** Interactive workspace folder picker popover for the new-session composer. */
-export function SessionFolderPicker({
+/** Interactive session directory picker popover for the new-session composer. */
+export function SessionDirectoryPicker({
     directoryControl,
-}: SessionFolderPickerProps) {
+}: SessionDirectoryPickerProps) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const {
@@ -72,7 +72,7 @@ export function SessionFolderPicker({
     const footerAction =
         canPickDirectory && onPickDirectory !== undefined
             ? {
-                  label: t("session.chooseOtherFolder"),
+                  label: t("session.chooseOtherDirectory"),
                   onSelect: () => {
                       void (async () => {
                           try {
@@ -93,9 +93,9 @@ export function SessionFolderPicker({
             open={open}
             onOpenChange={setOpen}
             side="top"
-            searchPlaceholder={t("session.filterFolders")}
+            searchPlaceholder={t("session.filterDirectories")}
             emptyText={t("session.treeEmpty")}
-            groups={[{ id: "folders", items }]}
+            groups={[{ id: "directories", items }]}
             footerAction={footerAction}
             trigger={
                 <button

@@ -25,7 +25,7 @@ interface SessionComposerProps {
     onModelPickerOpenChange: (open: boolean) => void;
     onSelectModel: (selection: ModelSelection) => void;
     onOpenProviders: () => void;
-    folderSlot: ReactNode;
+    directorySlot: ReactNode;
     trailingFooter?: ReactNode;
     dock?: ReactNode;
     running?: ComponentProps<typeof ComposerBox>["running"];
@@ -43,7 +43,7 @@ export function SessionComposer({
     onModelPickerOpenChange,
     onSelectModel,
     onOpenProviders,
-    folderSlot,
+    directorySlot,
     trailingFooter,
     dock,
     running,
@@ -75,7 +75,7 @@ export function SessionComposer({
             running={running}
             footerStart={
                 <>
-                    {folderSlot}
+                    {directorySlot}
                     <ModelPickerPopover
                         open={modelPickerOpen}
                         onOpenChange={onModelPickerOpenChange}

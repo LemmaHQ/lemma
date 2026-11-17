@@ -113,7 +113,7 @@ it("shows placeholders, then sessions grouped by directory with active markers",
     ).toBeUndefined();
 });
 
-it("highlights the active new-session directory header and starts new sessions in folders", async () => {
+it("highlights the active new-session directory header and starts new sessions in directories", async () => {
     const user = userEvent.setup();
     const onNewInDirectory = vi.fn<(dir: string | undefined) => void>();
     renderList({

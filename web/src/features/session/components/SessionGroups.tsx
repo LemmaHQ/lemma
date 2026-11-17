@@ -196,8 +196,8 @@ export function SessionGroups({
                                                 <button
                                                     type="button"
                                                     aria-label={t(
-                                                        "sidebar.newInFolder",
-                                                        { folder: label },
+                                                        "sidebar.newInDirectory",
+                                                        { directory: label },
                                                     )}
                                                     onClick={() =>
                                                         onNewInDirectory(
@@ -215,8 +215,8 @@ export function SessionGroups({
                                         </TooltipTrigger>
                                     </AnimateIcon>
                                     <TooltipContent>
-                                        {t("sidebar.newInFolder", {
-                                            folder: label,
+                                        {t("sidebar.newInDirectory", {
+                                            directory: label,
                                         })}
                                     </TooltipContent>
                                 </Tooltip>

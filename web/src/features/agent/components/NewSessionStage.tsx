@@ -9,8 +9,8 @@ import { type ModelOption, useModelSelection } from "../useModelSelection";
 import { SessionComposer, type SessionProviderGroup } from "./SessionComposer";
 import {
     type SessionDirectoryControl,
-    SessionFolderPicker,
-} from "./SessionFolderPicker";
+    SessionDirectoryPicker,
+} from "./SessionDirectoryPicker";
 
 export interface NewSessionStageProps {
     directoryControl: SessionDirectoryControl;
@@ -69,8 +69,8 @@ export function NewSessionStage({
                         onModelPickerOpenChange={setModelPickerOpen}
                         onSelectModel={selectModel}
                         onOpenProviders={onOpenProviders}
-                        folderSlot={
-                            <SessionFolderPicker
+                        directorySlot={
+                            <SessionDirectoryPicker
                                 directoryControl={directoryControl}
                             />
                         }

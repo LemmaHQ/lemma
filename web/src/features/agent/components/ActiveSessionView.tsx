@@ -10,7 +10,7 @@ import { useActiveSession } from "../useActiveSession";
 import { type ModelOption, useModelSelection } from "../useModelSelection";
 import { ComposerDock, type ComposerDockState } from "./ComposerDock";
 import { SessionComposer, type SessionProviderGroup } from "./SessionComposer";
-import { SessionFolderBadge } from "./SessionFolderBadge";
+import { SessionDirectoryBadge } from "./SessionDirectoryBadge";
 import { type ActiveRightPane, SessionRightPane } from "./SessionRightPane";
 import { TurnView } from "./TurnView";
 
@@ -222,9 +222,9 @@ export function ActiveSessionView({
                         )
                     }
                     running={running}
-                    folderSlot={
+                    directorySlot={
                         directory === undefined ? null : (
-                            <SessionFolderBadge directory={directory} />
+                            <SessionDirectoryBadge directory={directory} />
                         )
                     }
                     trailingFooter={

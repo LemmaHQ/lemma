@@ -3,10 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
-import { SessionFolderBadge } from "./SessionFolderBadge";
-import { SessionFolderPicker } from "./SessionFolderPicker";
+import { SessionDirectoryBadge } from "./SessionDirectoryBadge";
+import { SessionDirectoryPicker } from "./SessionDirectoryPicker";
 
-it("renders SessionFolderBadge and handles SessionFolderPicker selection and errors", async () => {
+it("renders SessionDirectoryBadge and handles SessionDirectoryPicker selection and errors", async () => {
     const user = userEvent.setup();
     const onSelectDirectory = vi.fn<(dir: string | undefined) => void>();
     const onPickDirectory = vi
@@ -18,7 +18,7 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
     const { rerender } = render(
         <TooltipProvider>
             <Toaster />
-            <SessionFolderBadge directory="C:\\work\\project" />
+            <SessionDirectoryBadge directory="C:\\work\\project" />
         </TooltipProvider>,
     );
     expect(screen.getByText("project")).toBeDefined();
@@ -26,7 +26,7 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
     rerender(
         <TooltipProvider>
             <Toaster />
-            <SessionFolderPicker
+            <SessionDirectoryPicker
                 directoryControl={{
                     directory: undefined,
                     recentDirectories: ["/work/alpha"],
@@ -44,7 +44,9 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
 
     await user.click(screen.getByRole("button", { name: "Default workspace" }));
     await user.click(
-        await screen.findByRole("button", { name: "Choose another folder…" }),
+        await screen.findByRole("button", {
+            name: "Choose another directory…",
+        }),
     );
     await waitFor(() => {
         expect(onSelectDirectory).toHaveBeenCalledWith("C:\\work\\picked");
@@ -52,7 +54,9 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
 
     await user.click(screen.getByRole("button", { name: "Default workspace" }));
     await user.click(
-        await screen.findByRole("button", { name: "Choose another folder…" }),
+        await screen.findByRole("button", {
+            name: "Choose another directory…",
+        }),
     );
     await waitFor(() => {
         expect(onPickDirectory).toHaveBeenCalledTimes(2);
@@ -61,7 +65,9 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
 
     await user.click(screen.getByRole("button", { name: "Default workspace" }));
     await user.click(
-        await screen.findByRole("button", { name: "Choose another folder…" }),
+        await screen.findByRole("button", {
+            name: "Choose another directory…",
+        }),
     );
     expect(
         await screen.findByText("Something went wrong, please try again"),
@@ -70,7 +76,7 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
     rerender(
         <TooltipProvider>
             <Toaster />
-            <SessionFolderPicker
+            <SessionDirectoryPicker
                 directoryControl={{
                     directory: "/work/custom",
                     recentDirectories: [],
@@ -82,7 +88,7 @@ it("renders SessionFolderBadge and handles SessionFolderPicker selection and err
     );
     await user.click(screen.getByRole("button", { name: "custom" }));
     expect(
-        screen.queryByRole("button", { name: "Choose another folder…" }),
+        screen.queryByRole("button", { name: "Choose another directory…" }),
     ).toBeNull();
     await user.click(
         await screen.findByRole("option", { name: "Default workspace" }),

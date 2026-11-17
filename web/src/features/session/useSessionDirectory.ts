@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-import { type StoredCodec, useStoredValue } from "@/features/preferences";
 import { getPlatform } from "@/platform/platform";
+import { type StoredCodec, useStoredValue } from "@/store/useStoredValue";
 
 import type { SessionSummary } from "./grouping";
 import { useSessionStore } from "./store";
@@ -70,7 +70,7 @@ function mergeRecentDirectories(
     return merged;
 }
 
-/** Bound directory for session `id`, or shared New Session directory selection with recent-folder history. */
+/** Bound directory for session `id`, or shared New Session directory selection with recent-directory history. */
 export function useSessionDirectory(
     id: string | null = null,
 ): SessionDirectoryState {

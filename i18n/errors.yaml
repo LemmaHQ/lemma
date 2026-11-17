@@ -13,8 +13,8 @@ errors:
     zh: "消息内容不能为空"
   directoryNotFound:
     platforms: [web, android]
-    en: "This folder doesn't exist"
-    zh: "该文件夹不存在"
+    en: "This directory doesn't exist"
+    zh: "该目录不存在"
   engineFailed:
     platforms: [android]
     en: "The local engine could not start."

@@ -3,18 +3,18 @@ session:
     platforms: [web, android]
     en: "More actions"
     zh: "更多操作"
-  chooseFolder:
+  chooseDirectory:
     platforms: [web]
-    en: "Choose folder"
-    zh: "选择文件夹"
-  chooseOtherFolder:
+    en: "Choose directory"
+    zh: "选择目录"
+  chooseOtherDirectory:
     platforms: [web]
-    en: "Choose another folder…"
+    en: "Choose another directory…"
     zh: "选择其他目录…"
-  clearFolder:
+  clearDirectory:
     platforms: [web]
-    en: "Clear folder"
-    zh: "取消选择文件夹"
+    en: "Clear directory"
+    zh: "取消选择目录"
   codeTitle:
     platforms: [web]
     en: "Code"
@@ -33,8 +33,8 @@ session:
     zh: "彻底删除该会话？"
   directoryLabel:
     platforms: [web]
-    en: "Session folder"
-    zh: "会话文件夹"
+    en: "Session directory"
+    zh: "会话目录"
   earlier:
     platforms: [web, android]
     en: "Earlier"
@@ -43,9 +43,9 @@ session:
     platforms: [web, android]
     en: "How can I help you today?"
     zh: "今天想聊点什么？"
-  filterFolders:
+  filterDirectories:
     platforms: [web]
-    en: "Filter folders…"
+    en: "Filter directories…"
     zh: "筛选目录…"
   filterModels:
     platforms: [web]

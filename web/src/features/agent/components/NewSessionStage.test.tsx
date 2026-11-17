@@ -15,7 +15,7 @@ import { useActiveSessionStore } from "../store";
 import type { ModelOption } from "../useModelSelection";
 import { NewSessionStage, type NewSessionStageProps } from "./NewSessionStage";
 import type { SessionProviderGroup } from "./SessionComposer";
-import type { SessionDirectoryControl } from "./SessionFolderPicker";
+import type { SessionDirectoryControl } from "./SessionDirectoryPicker";
 
 const rpc = vi.hoisted(() => ({
     listMessages:

@@ -2,12 +2,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@lemma/ui";
 
 import { lastPathSegment } from "../tool-output";
 
-interface SessionFolderBadgeProps {
+interface SessionDirectoryBadgeProps {
     directory: string;
 }
 
-/** Read-only workspace folder badge shown in the composer footer of a bound session. */
-export function SessionFolderBadge({ directory }: SessionFolderBadgeProps) {
+/** Read-only session directory badge shown in the composer footer of a bound session. */
+export function SessionDirectoryBadge({
+    directory,
+}: SessionDirectoryBadgeProps) {
     return (
         <Tooltip>
             <TooltipTrigger
