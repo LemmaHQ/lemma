@@ -36,7 +36,6 @@ dotenvy = "0.15.7"
 dunce = "1.0.5"
 futures = "0.3.34"
 hex = "0.4.3"
-http = "1.5.0"
 jni = "0.22.4"
 lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }

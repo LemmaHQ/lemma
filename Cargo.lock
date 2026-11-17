@@ -1822,7 +1822,6 @@ name = "lemma-tool"
 version = "0.1.0"
 dependencies = [
  "dunce",
- "futures",
  "lemma-core",
  "libc",
  "serde",
