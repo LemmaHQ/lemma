@@ -25,7 +25,7 @@ const THEME_BOOT_SCRIPT = `(() => {
 const TOKENS_PATH = fileURLToPath(
     new URL("../design/tokens.json", import.meta.url),
 );
-const { themes } = readThemes(readTokenFile(TOKENS_PATH), TOKENS_PATH);
+const themes = readThemes(readTokenFile(TOKENS_PATH), TOKENS_PATH);
 
 const BOOT_STYLE = `body { margin: 0; }
 html { background: ${themes.light.get("background")}; color: ${themes.light.get("foreground")}; }

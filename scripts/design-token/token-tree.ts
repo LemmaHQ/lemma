@@ -34,3 +34,36 @@ export function readTokenValues(
     }
     return values;
 }
+
+/** Reads a `{ "value": <non-negative number>, "unit": <unit> }` dimension or duration; throws naming `label` otherwise. */
+export function readAmount(
+    value: unknown,
+    label: string,
+    unit: string,
+): number {
+    const isObject = typeof value === "object" && value !== null;
+    const amount: unknown = isObject
+        ? Reflect.get(value, "value")
+        : undefined;
+    const valueUnit: unknown = isObject
+        ? Reflect.get(value, "unit")
+        : undefined;
+    if (typeof amount !== "number" || amount < 0 || valueUnit !== unit) {
+        throw new Error(
+            `${label} must be { "value": <non-negative number>, "unit": "${unit}" }`,
+        );
+    }
+    return amount;
+}
+
+export function readAmounts(
+    group: object,
+    label: string,
+    unit: string,
+): Map<string, number> {
+    const amounts = new Map<string, number>();
+    for (const [name, value] of readTokenValues(group, label)) {
+        amounts.set(name, readAmount(value, `${label}.${name}`, unit));
+    }
+    return amounts;
+}

@@ -4,15 +4,16 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`design/` holds the colors, corner radii, and motion values of the three clients. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, and the motion durations and easings, and the generator [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) writes them into the web theme, the desktop window colors, and the Android palette.
+`design/` holds the colors, corner radii, type scale, and motion values of the three clients. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, the type styles, and the motion durations and easings, and the generator [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) writes them into the web theme, the desktop window colors, and the Android theme.
 
 ## Token file
 
-`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has five groups:
+`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has six groups:
 
-- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, transparent, a neutral gray ramp, blue, rose, red, green, and amber steps, and alpha tiers of red, black, and white. Palette names describe the color, not its use.
+- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, a neutral gray ramp, blue, rose, red, green, and amber steps, and alpha tiers of red and black. Palette names describe the color, not its use.
 - `light` and `dark` hold the same color roles, each referencing a palette entry such as `{palette.gray.925}`.
 - `radius` holds `dimension` tokens as `{ "value": <pixels>, "unit": "px" }`: `sm`, `md`, and `lg`.
+- `typography` holds one `typography` token per type style: `caption`, `small`, `body`, `reading`, `title`, `display`, `wordmark`, and `wordmark-splash`. Each `$value` sets `fontSize` and `lineHeight` as `{ "value": <pixels>, "unit": "px" }` and an optional numeric `fontWeight`; a style without `fontWeight` keeps the inherited weight. `lineHeight` is a pixel dimension rather than the format's unitless multiplier. Font families stay with each client.
 - `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`.
 
 The color roles fall into five families:
@@ -29,13 +30,13 @@ Every text role, `primary`, and the text status roles (`destructive`, `success`,
 
 The generator writes three files, all ignored by Git:
 
-| File                                                            | Content                                                                                                                                                                                                                           | Consumer                                                            |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `packages/ui/src/styles/tokens.gen.css`                         | A Tailwind `@theme` block with one `--radius-*` variable per radius token, one CSS variable per motion token in `:root`, and one per color role in `:root, [data-theme-preview="light"]` and `.dark, [data-theme-preview="dark"]` | `packages/ui/src/styles/tokens.css` imports it                      |
-| `desktop/src/gen/theme-colors.ts`                               | The background, sidebar, and foreground of each theme                                                                                                                                                                             | `desktop/src/main-window.ts` colors the titlebar and window from it |
-| `mobile/shared/build/generated/source/tokens/…/LemmaPalette.kt` | Each palette entry as a Compose `Color`                                                                                                                                                                                           | `theme/LemmaColorScheme.kt` maps it onto the app's color roles      |
+| File                                                           | Content                                                                                                                                                                                                                                                                                                                        | Consumer                                                            |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `packages/ui/src/styles/tokens.gen.css`                        | A Tailwind `@theme` block with one `--radius-*` variable per radius token and `--text-*` size, line-height, and font-weight variables per type style in `rem` at 16 px, one CSS variable per motion token in `:root`, and one per color role in `:root, [data-theme-preview="light"]` and `.dark, [data-theme-preview="dark"]` | `packages/ui/src/styles/tokens.css` imports it                      |
+| `desktop/src/gen/theme-colors.ts`                              | The background, sidebar, and foreground of each theme                                                                                                                                                                                                                                                                          | `desktop/src/main-window.ts` colors the titlebar and window from it |
+| `mobile/shared/build/generated/source/tokens/…/LemmaTokens.kt` | `LemmaColorScheme` with one Compose `Color` per color role and its light and dark values, `LemmaTypography` with one `TextStyle` per type style in `sp`, and `LemmaShapes` with one `RoundedCornerShape` per radius in `dp`                                                                                                    | `theme/Theme.kt` provides them through `LemmaTheme`                 |
 
-The Android app reads only the palette, and only the web theme reads the radius and motion tokens. Each consumer runs the generator before reading the output:
+The web theme and the Android app read every color role, type style, and radius; only the web theme reads the motion tokens. Each consumer runs the generator before reading the output:
 
 - The web npm scripts run it before `dev`, `build`, `build:desktop`, `lint`, `test`, `test:cov`, `format`, and `format:check`; the `@lemma/ui` npm scripts run it before `lint`.
 - The desktop npm scripts run it before `lint`, `test`, and `test:cov`; the desktop `build` runs the web `build:desktop` first.
@@ -47,11 +48,12 @@ The Android app reads only the palette, and only the web theme reads the radius 
 
 The generator exits with an error, writing nothing, when:
 
-- `tokens.json` lacks the `palette`, `light`, `dark`, `radius`, or `motion` group, or `motion` lacks `duration` or `easing`;
+- `tokens.json` lacks the `palette`, `light`, `dark`, `radius`, `typography`, or `motion` group, or `motion` lacks `duration` or `easing`;
 - a palette entry is neither a group nor a `#rrggbb` or `#rrggbbaa` color;
 - a theme role does not reference an existing palette entry;
 - `light` and `dark` define different roles, or lack `background`, `sidebar`, or `foreground`;
 - a radius is not a non-negative number of pixels;
+- a type style lacks a non-negative pixel `fontSize` or `lineHeight`, has a `fontWeight` that is not an integer from 1 to 1000, or sets another property;
 - a duration is not a non-negative number of milliseconds, or an easing is not four numbers with `x1` and `x2` between 0 and 1.
 
 Spec CI runs it on every change under `design/` or `scripts/design-token/`, and the Web and Desktop CI workflows run on those changes too.

@@ -37,7 +37,7 @@
 
 ## 样式
 
-组件与功能代码通过主题的工具类书写样式。颜色角色与圆角来自 [design/tokens.json](../../design/README.zh.md)；`src/styles/tokens.css` 增加字体角色、字体栈与阴影，并把它们统一映射到 Tailwind。lint 拒绝 Tailwind 的字号刻度、`rounded-xl` 及以上的圆角与任意值圆角，因此每个元素都取自下面的刻度。
+组件与功能代码通过主题的工具类书写样式。颜色角色、圆角与字体角色来自 [design/tokens.json](../../design/README.zh.md)；`src/styles/tokens.css` 增加字体栈与阴影，并把它们统一映射到 Tailwind。lint 拒绝 Tailwind 的字号刻度、`rounded-xl` 及以上的圆角与任意值圆角，因此每个元素都取自下面的刻度。
 
 | 字体角色               | 字号 / 行高          | 用途                                                |
 | ---------------------- | -------------------- | --------------------------------------------------- |
@@ -116,4 +116,4 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 
 ## 添加组件
 
-在 `packages/ui/` 中运行 `npx shadcn add <name>`，CLI 把文件写入 `src/components/primitives/`。让新文件符合上述规则：从 `#lib/cn` 导入 `cn`，删除 `"use client"`，删掉 Lemma 不用的部分，把其中的文字改为属性，把色板颜色换成主题角色，并把字号与圆角换成[样式](#样式)中的刻度。在同一目录运行 `npx shadcn add @animate-ui/icons-lucide-<name>` 添加 Animate UI Lucide 图标，并把生成的文件移入 `src/components/icons/`。与桌面端和 Android 共用的颜色、圆角与动效值放入 [`design/tokens.json`](../../design/README.zh.md)，随后运行 `just design-gen`；只有 Web 使用的 token 放入 `src/styles/tokens.css`。然后在 `src/index.ts` 中显式导出被消费的符号，并把该模块加入上面的目录。已有组件通过直接编辑来修改；CLI 不再覆盖它们。
+在 `packages/ui/` 中运行 `npx shadcn add <name>`，CLI 把文件写入 `src/components/primitives/`。让新文件符合上述规则：从 `#lib/cn` 导入 `cn`，删除 `"use client"`，删掉 Lemma 不用的部分，把其中的文字改为属性，把色板颜色换成主题角色，并把字号与圆角换成[样式](#样式)中的刻度。在同一目录运行 `npx shadcn add @animate-ui/icons-lucide-<name>` 添加 Animate UI Lucide 图标，并把生成的文件移入 `src/components/icons/`。与桌面端和 Android 共用的颜色、圆角、字号与动效值放入 [`design/tokens.json`](../../design/README.zh.md)，随后运行 `just design-gen`；只有 Web 使用的 token 放入 `src/styles/tokens.css`。然后在 `src/index.ts` 中显式导出被消费的符号，并把该模块加入上面的目录。已有组件通过直接编辑来修改；CLI 不再覆盖它们。

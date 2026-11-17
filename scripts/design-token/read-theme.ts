@@ -6,11 +6,6 @@ export const WINDOW_ROLES = ["background", "sidebar", "foreground"] as const;
 export type ThemeName = (typeof THEMES)[number];
 export type Theme = Map<string, string>;
 
-export interface Color {
-    name: string[];
-    hex: string;
-}
-
 const HEX_COLOR = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/iu;
 const PALETTE_REFERENCE = /^\{palette\.(.+)\}$/u;
 
@@ -18,28 +13,25 @@ const PALETTE_REFERENCE = /^\{palette\.(.+)\}$/u;
 export function readThemes(
     tokens: object,
     tokensPath: string,
-): { colors: Color[]; themes: Record<ThemeName, Theme> } {
-    const colors = collectColors(
+): Record<ThemeName, Theme> {
+    const palette = collectColors(
         readGroup(tokens, "palette", tokensPath),
         [],
-        [],
-    );
-    const palette = new Map(
-        colors.map(({ name, hex }) => [name.join("."), hex]),
+        new Map(),
     );
     const themes = {
         light: resolveTheme(readGroup(tokens, "light", tokensPath), "light", palette),
         dark: resolveTheme(readGroup(tokens, "dark", tokensPath), "dark", palette),
     };
     checkThemesMatch(themes.light, themes.dark);
-    return { colors, themes };
+    return themes;
 }
 
 function collectColors(
     group: object,
     prefix: string[],
-    colors: Color[],
-): Color[] {
+    colors: Map<string, string>,
+): Map<string, string> {
     for (const key of tokenKeys(group)) {
         const name = [...prefix, key];
         const node: unknown = Reflect.get(group, key);
@@ -56,7 +48,7 @@ function collectColors(
                 `${name.join(".")} must be a #rrggbb or #rrggbbaa color`,
             );
         }
-        colors.push({ name, hex });
+        colors.set(name.join("."), hex);
     }
     return colors;
 }

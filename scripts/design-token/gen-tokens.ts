@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR } from "../shared/repository.ts";
-import { readMotion, readRadii } from "./read-motion.ts";
+import { readMotion } from "./read-motion.ts";
+import { readRadii } from "./read-radius.ts";
 import { readThemes } from "./read-theme.ts";
+import { readTypography } from "./read-typography.ts";
 import { readTokenFile } from "./token-tree.ts";
 import {
     generateAndroidKt,
@@ -18,18 +20,19 @@ const UI_CSS_PATH = path.join(
 const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/theme-colors.ts");
 const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
-    "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaPalette.kt",
+    "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaTokens.kt",
 );
 
 function main(): void {
     const tokens = readTokenFile(TOKENS_PATH);
-    const { colors, themes } = readThemes(tokens, TOKENS_PATH);
+    const themes = readThemes(tokens, TOKENS_PATH);
     const motion = readMotion(tokens, TOKENS_PATH);
     const radii = readRadii(tokens, TOKENS_PATH);
+    const typography = readTypography(tokens, TOKENS_PATH);
     const outputs: [string, string][] = [
-        [UI_CSS_PATH, generateWebCss(themes, motion, radii)],
+        [UI_CSS_PATH, generateWebCss(themes, motion, radii, typography)],
         [DESKTOP_TS_PATH, generateDesktopTs(themes)],
-        [ANDROID_KT_PATH, generateAndroidKt(colors)],
+        [ANDROID_KT_PATH, generateAndroidKt(themes, typography, radii)],
     ];
     for (const [file, content] of outputs) {
         fs.mkdirSync(path.dirname(file), { recursive: true });

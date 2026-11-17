@@ -28,7 +28,7 @@
 | Crate 与 package README                                                         | 单个 crate 的契约：配置、语义、限制、扩展点                                                           | 对文档注释的复述、其他 crate 的事务                                                                       |
 | [development.md](development.zh.md)                                             | 环境搭建、日常工作流与 CI 概览                                                                        | 运行时与版本选择的理由（→ commit message）、会与 `justfile` 脱节的逐项检查列表                            |
 | [testing.md](testing.zh.md)                                                     | 测试分层：各层覆盖什么、测试放在哪里、如何运行                                                        | 单个测试的走查、归属于某个 crate 或 package 的 fixture 细节                                               |
-| [design/README.md](../design/README.zh.md) 与 `tokens.json`                     | 三端客户端的颜色、圆角与动效取值及其格式；生成器的输出与检查                                          | 字体角色、阴影级别与 Tailwind 映射（→ [packages/ui/README.md](../packages/ui/README.zh.md#样式)）         |
+| [design/README.md](../design/README.zh.md) 与 `tokens.json`                     | 三端客户端的颜色、圆角、字号刻度与动效取值及其格式；生成器的输出与检查                                | 字体角色的用途、阴影级别与 Tailwind 映射（→ [packages/ui/README.md](../packages/ui/README.zh.md#样式)）   |
 | Skill（`.agents/skills/`）                                                      | 可复用的工作流与专项决策标准，包括各语言的代码风格                                                    | 产品与运行时契约（→ 文档或源码）                                                                          |
 
 归属规则：决策理由 → commit message；类型定义 → subsystems；术语定义 → glossary；crate 契约 → README；代码风格与工作流 → skill；常驻规则 → 根 `AGENTS.md`。

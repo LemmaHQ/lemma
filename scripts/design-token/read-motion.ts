@@ -1,4 +1,4 @@
-import { readGroup, readTokenValues } from "./token-tree.ts";
+import { readAmounts, readGroup, readTokenValues } from "./token-tree.ts";
 
 export interface Motion {
     durations: Map<string, number>;
@@ -15,37 +15,6 @@ export function readMotion(tokens: object, tokensPath: string): Motion {
         ),
         easings: readEasings(readGroup(motion, "easing", "motion")),
     };
-}
-
-export function readRadii(
-    tokens: object,
-    tokensPath: string,
-): Map<string, number> {
-    return readAmounts(readGroup(tokens, "radius", tokensPath), "radius", "px");
-}
-
-function readAmounts(
-    group: object,
-    label: string,
-    unit: string,
-): Map<string, number> {
-    const amounts = new Map<string, number>();
-    for (const [name, value] of readTokenValues(group, label)) {
-        const isObject = typeof value === "object" && value !== null;
-        const amount: unknown = isObject
-            ? Reflect.get(value, "value")
-            : undefined;
-        const valueUnit: unknown = isObject
-            ? Reflect.get(value, "unit")
-            : undefined;
-        if (typeof amount !== "number" || amount < 0 || valueUnit !== unit) {
-            throw new Error(
-                `${label}.${name} must be { "value": <non-negative number>, "unit": "${unit}" }`,
-            );
-        }
-        amounts.set(name, amount);
-    }
-    return amounts;
 }
 
 function isCubicBezier(value: unknown): value is number[] {
