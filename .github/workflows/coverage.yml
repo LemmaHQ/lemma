@@ -22,6 +22,8 @@ jobs:
   rust:
     name: Rust
     runs-on: ubuntu-latest
+    env:
+      MBX_DISABLE: "1"
     steps:
       - uses: actions/checkout@v7
 
@@ -39,7 +41,7 @@ jobs:
       - name: Setup mise tools
         uses: jdx/mise-action@v4
         with:
-          install_args: node buf protobuf cargo:cargo-nextest cargo:cargo-llvm-cov just
+          install_args: node buf protobuf cargo:cargo-nextest cargo:cargo-llvm-cov just mr-boxington
 
       - name: Cache npm
         uses: actions/cache@v6

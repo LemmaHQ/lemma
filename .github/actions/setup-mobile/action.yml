@@ -8,9 +8,6 @@ runs:
       shell: bash
       run: rustup toolchain install
 
-    - name: Rust cache
-      uses: Swatinem/rust-cache@v2
-
     - name: Install cargo-binstall
       uses: jdx/mise-action@v4
       with:
@@ -19,7 +16,12 @@ runs:
     - name: Setup mise tools
       uses: jdx/mise-action@v4
       with:
-        install_args: java node buf protobuf just cargo:cargo-ndk
+        install_args: java node buf protobuf just cargo:cargo-ndk mr-boxington
+
+    - name: Rust cache
+      uses: jdx/mr-boxington-action@v1
+      with:
+        cache-key-suffix: ${{ github.job }}
 
     - name: Install script dependencies
       shell: bash

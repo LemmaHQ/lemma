@@ -9,11 +9,11 @@
   en: 5207d17725c07a27
   zh: bbb030802b1260c5
 /development/setup-tutorial/prerequisites:
-  en: 4c7084a13416482a
-  zh: 8ac1366cdc58956d
+  en: b5ced5098adee74d
+  zh: 828b857e430fb85f
 /development/setup-tutorial/windows:
-  en: 99e7e724136db905
-  zh: 032d8fe103cbf4e5
+  en: da53d06ba8617ef7
+  zh: 740f8c0cbae15063
 /development/setup-tutorial/first-time-setup:
   en: 5cf257d6c89a50c3
   zh: 0cea3f0b08ee5a19
@@ -32,9 +32,12 @@
 /development/reference/environment-variables:
   en: c731d191241dc48b
   zh: de7350032dc42a35
+/development/reference/build-cache:
+  en: 9e30524bfa91adbb
+  zh: b7cdd896ec93412b
 /development/reference/ci-workflows:
-  en: 404208ecb92a9308
-  zh: c6a7ee4a9df358d7
+  en: 4ffa5f0a678e0671
+  zh: be82f80c2e62213b
 /development/reference/daily-commands:
   en: beaf5dfb8765b16c
   zh: 7ae2b8e60e080694

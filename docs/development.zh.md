@@ -8,13 +8,15 @@
 
 ### 前置条件
 
-- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell 与 CI 读取同一份版本。
+- [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc、mbx，以及 cargo 工具 `cargo-binstall`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell 与 CI 读取同一份版本，Cargo 经由 mbx 运行（[构建缓存](#构建缓存)）。
 - 通过 rustup 安装 Rust。[rust-toolchain.toml](../rust-toolchain.toml) 固定 Rust 版本、`rustfmt`、`clippy` 与 `llvm-tools-preview` 组件，以及四个 Android target；每个新版本发布后，Dependabot 会开一个 pull request。Rust 构建需要 `PATH` 上有 `protoc`，用来编译 `proto/`。
 - 仅 Android 需要：Android SDK（通过 `ANDROID_HOME` 或 `local.properties` 中的 `sdk.dir` 找到），并在 `<sdk>/ndk/` 下安装 NDK。Gradle 使用其中最新的 NDK。
 
 ### Windows
 
 原生 Windows 是主要开发环境。just 用 `sh` 运行每个 recipe，因此 `PATH` 上必须有 POSIX `sh`；Git for Windows 在其 `bin` 目录中提供了它。这样 `./gradlew` 等 recipe 可以原样运行，本教程中的命令也可以在 PowerShell 中运行。
+
+mbx 会把 `target/` 换成一个链接，而 Windows 只在 Developer Mode 下创建这种链接；没有 Developer Mode 时，Cargo 在普通的 `target/` 目录中构建（[mbx 在 Windows 上的说明](https://mr-boxington.jdx.dev/installation#windows)）。执行过 `mise activate` 的 shell 会找到 mise 的 `cargo` wrapper。编辑器、Android Studio 与编程 agent 只有在用户 `Path` 中 `%LOCALAPPDATA%\mise\command-wrappers\bin` 排在 `%USERPROFILE%\.cargo\bin` 之前时才会找到它；修改 `Path` 后需要重启它们。
 
 ### 首次搭建
 
@@ -63,11 +65,22 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 `lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
 
+### 构建缓存
+
+[mbx](https://mr-boxington.jdx.dev/) 缓存编译产物，并在 worktree 之间与 CI 运行之间复用。[mise.toml](../mise.toml) 中的 `[wrappers.cargo]` 让 `PATH` 上的 `cargo` 命令经由 mbx 运行，因此 `just` recipe 与调用 Cargo 的 Gradle 任务也会使用它。mbx 恢复输入与缓存结果一致的编译，其余照常编译；直接调用 `~/.cargo/bin/cargo` 会绕过 mbx。
+
+- `target` 是指向 mbx 缓存目录的链接，该目录在 Windows 上是 `%LOCALAPPDATA%\mbx`。`cargo check` 与 `cargo clippy` 在 `target/check/` 中构建，因此可以与构建或测试同时运行。
+- mbx 删除已删除 worktree 的 target，并把其余 target 控制在磁盘预算内，预算用 `mbx settings` 修改（[托管的 target 目录](https://mr-boxington.jdx.dev/managed-targets)）。
+- 经由 mbx 运行的构建以 `mbx[cache]:` 汇总行结束。`mbx doctor` 检查 Rust toolchain 与缓存目录；即使 mise wrapper 正让 Cargo 经由 mbx 运行，它的 `setup` 项仍会警告 Cargo shim 未安装。
+- `mbx explain --last` 解释上一次构建的缓存结果，`MBX_DISABLE=1` 让单条命令不经过 mbx 运行。
+
 ### CI 工作流
 
 [.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。Rust CI 与 Mobile CI 的路径过滤还包含 `rust-toolchain.toml`，因此 Rust 版本升级会触发它们。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe，运行 Cargo 的 job 用 `rustup toolchain install` 安装固定的 Rust 版本。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
+
+CI 中的 Cargo 同样经由 mbx 运行。Rust 的 clippy 与测试 job 以及 setup-mobile 用 [jdx/mr-boxington-action](https://github.com/jdx/mr-boxington-action) 恢复并保存 `target/` 与 Cargo 的下载内容：推送到 `main` 时保存一条缓存，pull request 只恢复、不保存。Rust 覆盖率 job 设置 `MBX_DISABLE`，并用 `Swatinem/rust-cache` 缓存。
 
 Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖，以及 Rust toolchain。
 
