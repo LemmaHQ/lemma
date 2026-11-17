@@ -266,7 +266,7 @@ class ConnectLemmaClientTest {
 
         assertEquals(ClientMessageTree(emptyList()), client.listMessages(session.id))
 
-        val events = client.sendMessage(session.id, "hi", provider.id, "answer").toList()
+        val events = client.sendMessage(session.id, "hi", provider.id, "answer", null).toList()
         val tree = client.listMessages(session.id)
 
         val started = events.first() as AgentStreamEvent.Started
@@ -296,9 +296,34 @@ class ConnectLemmaClientTest {
                     parentId = started.messageId,
                 ),
             ),
-            tree.messages,
+            tree.messages.map { it.copy(createdAt = null) },
         )
+        assertTrue(tree.messages.all { it.createdAt != null })
         assertEquals(tree.messages, activePath(tree))
+    }
+
+    @Test
+    fun aTurnSentAtTheRootBranchesAndTheLeafAndLabelsMove() = runTest {
+        val client = client()
+        val provider = client.createCustomProvider(vendorInput("answer"))
+        val session = client.createSession()
+        val first = client.sendMessage(session.id, "hi", provider.id, "answer", null).toList()
+        val branch = client.sendMessage(session.id, "hi", provider.id, "answer", "").toList()
+        val firstReply = (first[1] as AgentStreamEvent.TurnStarted).messageId
+        val branchUser = (branch.first() as AgentStreamEvent.Started).messageId
+        val tree = client.listMessages(session.id)
+
+        assertEquals(
+            listOf(null, null),
+            tree.messages.filter { it.role == "user" }.map { it.parentId },
+        )
+        assertEquals(branchUser, activePath(tree).first().id)
+        val moved = client.setSessionLeaf(session.id, firstReply)
+        assertEquals(session.id to firstReply, moved.id to moved.leafId)
+        assertEquals(firstReply, client.listMessages(session.id).leafId)
+        assertEquals("Plan", client.setMessageLabel(session.id, branchUser, "Plan").label)
+        assertNull(client.setMessageLabel(session.id, branchUser, null).label)
+        assertNull(client.setSessionLeaf(session.id, null).leafId)
     }
 
     @Test
@@ -307,7 +332,8 @@ class ConnectLemmaClientTest {
         val provider = client.createCustomProvider(vendorInput("tool"))
         val session = client.createSession()
 
-        val events = client.sendMessage(session.id, "save a note", provider.id, "tool").toList()
+        val events =
+            client.sendMessage(session.id, "save a note", provider.id, "tool", null).toList()
         val tree = client.listMessages(session.id)
         val messages = tree.messages
 
@@ -353,7 +379,7 @@ class ConnectLemmaClientTest {
         val provider = client.createCustomProvider(vendorInput("hang"))
         val session = client.createSession()
         val started =
-            client.sendMessage(session.id, "hi", provider.id, "hang").first()
+            client.sendMessage(session.id, "hi", provider.id, "hang", null).first()
                 as AgentStreamEvent.Started
         assertEquals(started.messageId, client.listMessages(session.id).activeMessageId)
 
@@ -436,7 +462,7 @@ class ConnectLemmaClientTest {
         val provider = client.createCustomProvider(vendorInput("broken"))
         val session = client.createSession()
 
-        val events = client.sendMessage(session.id, "hi", provider.id, "broken").toList()
+        val events = client.sendMessage(session.id, "hi", provider.id, "broken", null).toList()
 
         assertEquals(AgentStreamEvent.Error("upstream 500: boom"), events.last().withoutTime())
     }
@@ -449,7 +475,7 @@ class ConnectLemmaClientTest {
 
         val events =
             client
-                .sendMessage(session.id, "hi", provider.id, "hang")
+                .sendMessage(session.id, "hi", provider.id, "hang", null)
                 .onEach { event ->
                     if (event is AgentStreamEvent.Started) {
                         assertTrue(

@@ -2,8 +2,13 @@ package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,16 +27,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.theme.DISABLED_ALPHA
 import dev.lemmahq.lemma.theme.LemmaTheme
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.icon_arrow_up
-import lemma.mobile.shared.generated.resources.icon_square
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * A message field with a round button that sends the text, or stops the reply while [isStreaming];
- * [focusRequester] moves the keyboard focus into the field.
+ * A box of [header] sections above a message field and a footer row of [footer] controls with a
+ * round button that sends the text while [canSend]; [focusRequester] moves the keyboard focus into
+ * the field.
  */
 @Composable
 fun LemmaInput(
@@ -39,24 +44,23 @@ fun LemmaInput(
     onValueChange: (String) -> Unit,
     placeholder: String,
     sendDescription: String,
+    canSend: Boolean,
     onSend: () -> Unit,
     focusRequester: FocusRequester,
+    header: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
-    isStreaming: Boolean = false,
-    stopDescription: String = "",
-    onStop: () -> Unit = {},
+    footer: @Composable RowScope.() -> Unit,
 ) {
-    Row(
+    Column(
         modifier =
             modifier
                 .fillMaxWidth()
                 .clip(LemmaTheme.shapes.lg)
                 .background(LemmaTheme.colors.background)
                 .border(1.dp, LemmaTheme.colors.input, LemmaTheme.shapes.lg)
-                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f).padding(vertical = 12.dp)) {
+        header()
+        Box(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp)) {
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
@@ -74,29 +78,24 @@ fun LemmaInput(
                 modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             )
         }
-        if (isStreaming) {
-            RoundButton(Res.drawable.icon_square, stopDescription, enabled = true, onClick = onStop)
-        } else {
-            RoundButton(
-                Res.drawable.icon_arrow_up,
-                sendDescription,
-                enabled = value.isNotBlank(),
-                onClick = onSend,
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            footer()
+            Spacer(modifier = Modifier.weight(1f))
+            SendButton(description = sendDescription, enabled = canSend, onClick = onSend)
         }
     }
 }
 
 @Composable
-private fun RoundButton(
-    icon: DrawableResource,
-    description: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
+private fun SendButton(description: String, enabled: Boolean, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         enabled = enabled,
+        modifier = Modifier.alpha(if (enabled) 1f else DISABLED_ALPHA),
         colors =
             IconButtonDefaults.iconButtonColors(
                 containerColor = LemmaTheme.colors.primary,
@@ -107,7 +106,7 @@ private fun RoundButton(
         shape = CircleShape,
     ) {
         Icon(
-            painter = painterResource(icon),
+            painter = painterResource(Res.drawable.icon_arrow_up),
             contentDescription = description,
             modifier = Modifier.size(18.dp),
         )

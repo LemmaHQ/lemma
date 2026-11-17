@@ -15,9 +15,12 @@ import dev.lemmahq.gen.lemma.v1.listWebProvidersRequest
 import dev.lemmahq.gen.lemma.v1.renameSessionRequest
 import dev.lemmahq.gen.lemma.v1.resumeStreamRequest
 import dev.lemmahq.gen.lemma.v1.sendMessageRequest
+import dev.lemmahq.gen.lemma.v1.setMessageLabelRequest
+import dev.lemmahq.gen.lemma.v1.setSessionLeafRequest
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientCustomProviderInput
 import dev.lemmahq.lemma.client.ClientCustomProviderPatch
+import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientMessageTree
 import dev.lemmahq.lemma.client.ClientPredefinedProviderPatch
 import dev.lemmahq.lemma.client.ClientProvider
@@ -146,11 +149,41 @@ class ConnectLemmaClient(private val rpc: LemmaRpcClient) : LemmaClient {
         )
     }
 
+    override suspend fun setSessionLeaf(sessionId: String, leafId: String?): ClientSession = call {
+        rpc.session.setSessionLeaf(
+            setSessionLeafRequest {
+                this.sessionId = sessionId
+                leafId?.let { this.leafId = it }
+            },
+            emptyMap(),
+        )
+    }
+        .session
+        .toClient()
+
+    override suspend fun setMessageLabel(
+        sessionId: String,
+        messageId: String,
+        label: String?,
+    ): ClientMessage = call {
+        rpc.session.setMessageLabel(
+            setMessageLabelRequest {
+                this.sessionId = sessionId
+                this.messageId = messageId
+                this.label = label.orEmpty()
+            },
+            emptyMap(),
+        )
+    }
+        .message
+        .toClient()
+
     override fun sendMessage(
         sessionId: String,
         content: String,
         providerId: String,
         model: String,
+        parentId: String?,
     ): Flow<AgentStreamEvent> = flow {
         val stream = rpc.agent.sendMessage(emptyMap())
         stream.sendAndClose(
@@ -159,6 +192,7 @@ class ConnectLemmaClient(private val rpc: LemmaRpcClient) : LemmaClient {
                 this.content = content
                 this.providerId = providerId
                 this.model = model
+                parentId?.let { this.parentId = it }
             }
         )
         emitEvents(stream.responseChannel()) { it.event }

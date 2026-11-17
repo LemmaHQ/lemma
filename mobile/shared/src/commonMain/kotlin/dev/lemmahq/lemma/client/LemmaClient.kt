@@ -49,15 +49,23 @@ interface LemmaClient {
     /** Lists the session's message tree, oldest first, with its active leaf and running turn. */
     suspend fun listMessages(sessionId: String): ClientMessageTree
 
+    /** Moves the session's active path to end at [leafId]; null rewinds it before the root. */
+    suspend fun setSessionLeaf(sessionId: String, leafId: String?): ClientSession
+
+    /** Sets the bookmark [label] on a session message; null clears it. */
+    suspend fun setMessageLabel(sessionId: String, messageId: String, label: String?): ClientMessage
+
     /**
      * Streams one agent turn from its [AgentStreamEvent.Started] event; the turn keeps running on
-     * the service when the stream breaks.
+     * the service when the stream breaks. The user message goes under [parentId]: null continues
+     * from the active leaf, empty starts a new root branch.
      */
     fun sendMessage(
         sessionId: String,
         content: String,
         providerId: String,
         model: String,
+        parentId: String?,
     ): Flow<AgentStreamEvent>
 
     /**

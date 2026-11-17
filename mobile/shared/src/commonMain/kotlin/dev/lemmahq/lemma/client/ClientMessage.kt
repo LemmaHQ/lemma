@@ -3,7 +3,8 @@ package dev.lemmahq.lemma.client
 /**
  * A stored session message. [role] is `user`, `assistant`, `system`, or `tool`; an assistant
  * message holds its [toolCalls], and a tool message answers one of them in [toolResult]. Instants
- * are epoch milliseconds, null where the service recorded none.
+ * are epoch milliseconds, null where the service recorded none. [label] is the user's bookmark on
+ * this tree node.
  */
 data class ClientMessage(
     val id: String,
@@ -19,4 +20,6 @@ data class ClientMessage(
     val thinkingStartedAt: Long? = null,
     val thinkingFinishedAt: Long? = null,
     val parentId: String? = null,
+    val label: String? = null,
+    val createdAt: Long? = null,
 )

@@ -1,11 +1,13 @@
 package dev.lemmahq.lemma.ui.session
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.client.ClientSession
@@ -33,10 +37,15 @@ import lemma.mobile.shared.generated.resources.session_rename
 import lemma.mobile.shared.generated.resources.sidebar_new_session
 import org.jetbrains.compose.resources.stringResource
 
-/** A drawer row opening [session]; its actions menu renames or deletes it. */
+/**
+ * A drawer row opening [session]; [marker] replaces its [time] when set, and its actions menu
+ * renames or deletes it.
+ */
 @Composable
 internal fun SessionRow(
     session: ClientSession,
+    time: String,
+    marker: SessionMarker?,
     selected: Boolean,
     onSelect: () -> Unit,
     onRename: () -> Unit,
@@ -56,11 +65,22 @@ internal fun SessionRow(
             text = session.title.ifBlank { stringResource(Res.string.sidebar_new_session) },
             style = LemmaTheme.typography.body,
             color =
-                if (selected) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textSecondary,
+                if (selected) LemmaTheme.colors.foreground else LemmaTheme.colors.mutedForeground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        if (marker != null) {
+            SessionMarkerIcon(marker, modifier = Modifier.padding(start = 8.dp))
+        } else if (time.isNotEmpty()) {
+            Text(
+                text = time,
+                style = LemmaTheme.typography.caption,
+                color = LemmaTheme.colors.subtleForeground,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
         Box {
             LemmaIconButton(
                 icon = Res.drawable.icon_ellipsis,
@@ -89,4 +109,24 @@ internal fun SessionRow(
             }
         }
     }
+}
+
+/** The 6 dp [marker] with its description for screen readers. */
+@Composable
+private fun SessionMarkerIcon(marker: SessionMarker, modifier: Modifier = Modifier) {
+    val description = stringResource(marker.description)
+    val color = marker.color(LemmaTheme.colors)
+    Box(
+        modifier =
+            modifier
+                .semantics { contentDescription = description }
+                .size(6.dp)
+                .then(
+                    if (marker.outlined) {
+                        Modifier.border(1.dp, color, marker.shape)
+                    } else {
+                        Modifier.background(color, marker.shape)
+                    }
+                )
+    )
 }

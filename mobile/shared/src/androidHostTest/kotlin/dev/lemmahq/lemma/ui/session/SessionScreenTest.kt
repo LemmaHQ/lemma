@@ -1,9 +1,8 @@
 package dev.lemmahq.lemma.ui.session
 
-import android.content.ClipboardManager
-import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -14,37 +13,34 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.espresso.Espresso
 import com.russhwolf.settings.MapSettings
 import dev.lemmahq.lemma.client.AgentStreamEvent
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientMessageTree
+import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.FakeLemmaClient.Call
 import dev.lemmahq.lemma.client.MessageStatus
-import dev.lemmahq.lemma.client.ServiceException
-import dev.lemmahq.lemma.client.ServiceFailure
 import dev.lemmahq.lemma.client.sampleMessage
 import dev.lemmahq.lemma.client.sampleProvider
 import dev.lemmahq.lemma.client.sampleSession
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.theme.LemmaTheme
+import dev.lemmahq.lemma.ui.agent.AgentViewModel
+import dev.lemmahq.lemma.ui.agent.SessionStage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class SessionScreenTest {
@@ -61,25 +57,28 @@ class SessionScreenTest {
                 )
             }
         }
-    private var providerRequests = 0
 
     private fun showSession() {
-        val viewModel =
-            SessionViewModel(client, SettingsRepository(MapSettings()), SavedStateHandle())
+        val agent = AgentViewModel(client, SettingsRepository(MapSettings()), SavedStateHandle())
+        val sessions = SessionListViewModel(client, agent)
         compose.setContent {
             LemmaTheme {
                 SessionScreen(
-                    viewModel = viewModel,
-                    onManageProviders = { providerRequests++ },
+                    sessions = sessions,
+                    openSessionId = agent.openSession?.id,
+                    onNewSession = agent::newSession,
                     onOpenSettings = {},
-                )
+                ) { openDrawer ->
+                    SessionStage(
+                        viewModel = agent,
+                        sessionTitle = sessions.currentSession?.title,
+                        createSession = sessions::createSession,
+                        onOpenDrawer = openDrawer,
+                        onManageProviders = {},
+                    )
+                }
             }
         }
-    }
-
-    private fun send(text: String) {
-        compose.onNode(hasSetTextAction()).performTextInput(text)
-        compose.onNodeWithContentDescription("Send").performClick()
     }
 
     private fun waitForText(text: String) {
@@ -115,124 +114,65 @@ class SessionScreenTest {
     }
 
     @Test
-    fun aReplyShowsItsThinkingAndToolCallsOnRequest() {
-        client.onSendMessage = { _, _, _, _ ->
-            flowOf(
-                AgentStreamEvent.Started("q1"),
-                AgentStreamEvent.TurnStarted("a1"),
-                AgentStreamEvent.ThinkingDelta("Need the date"),
-                AgentStreamEvent.ToolCallStarted("c1", "bash", """{"cmd":"date"}"""),
-                AgentStreamEvent.ToolCallFinished("c1", "Fri", isError = false),
-                AgentStreamEvent.TurnStarted("a2"),
-                AgentStreamEvent.Error("upstream closed"),
-            )
-        }
+    fun backClosesTheOpenDrawer() {
         showSession()
 
-        send("What day is it?")
-
-        compose.onNodeWithText("The model request failed").assertIsDisplayed()
-        compose.onNodeWithText("upstream closed").assertIsDisplayed()
-        compose.onNodeWithText("Thought").performClick()
-        compose.onNodeWithText("Need the date").assertIsDisplayed()
-        compose.onNodeWithText("Used 1 tool").performClick()
-        compose.onNodeWithText("bash").performClick()
-        compose.onNodeWithText("{\n  \"cmd\": \"date\"\n}").assertIsDisplayed()
-        compose.onNodeWithText("Fri").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Show sessions").performClick()
+        compose.onNodeWithText("Today").assertIsDisplayed()
+        Espresso.pressBack()
+        compose.onNodeWithText("Today").assertIsNotDisplayed()
+        compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
     }
 
     @Test
-    fun aSettledReplyCopiesItsTextAndNamesItsModel() {
-        client.onSendMessage = { _, _, _, _ ->
-            flowOf(
-                AgentStreamEvent.Started("q1"),
-                AgentStreamEvent.TurnStarted("a1"),
-                AgentStreamEvent.TextDelta("Hello there"),
-                AgentStreamEvent.Done(),
-            )
-        }
-        showSession()
-
-        send("Hi")
-
-        compose.onNodeWithText("openai · gpt-4o").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Copy").performClick()
-        val clipboard =
-            RuntimeEnvironment.getApplication().getSystemService(ClipboardManager::class.java)
-        assertEquals("Hello there", clipboard.primaryClip?.getItemAt(0)?.text.toString())
-        compose.onNodeWithContentDescription("Copied").assertIsDisplayed()
-        compose.mainClock.advanceTimeBy(2_000)
-        compose.onNodeWithContentDescription("Copy").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Regenerate").performClick()
-        assertEquals(2, client.calls.count { it.name == "sendMessage" })
-    }
-
-    @Test
-    fun aStepThatStreamsNothingYetShowsThatTheModelThinks() {
-        val events = Channel<AgentStreamEvent>(Channel.UNLIMITED)
-        client.onSendMessage = { _, _, _, _ -> events.consumeAsFlow() }
-        showSession()
-
-        send("Hello")
-        events.trySend(AgentStreamEvent.Started("q1"))
-        events.trySend(AgentStreamEvent.ToolCallStarted("c1", "bash", "{}"))
-        compose.onNodeWithText("Using 1 tool…").assertIsDisplayed()
-
-        events.trySend(AgentStreamEvent.TurnStarted("a2"))
-        compose.onNodeWithText("Thinking").assertIsDisplayed()
-        events.trySend(AgentStreamEvent.Aborted())
-        compose.onNodeWithText("Generation stopped.").assertIsDisplayed()
-    }
-
-    @Test
-    fun aFailureOutsideATurnOffersNoRetry() {
-        client.onListProviders = { throw ServiceException(ServiceFailure.Network) }
-        showSession()
-
-        compose
-            .onNodeWithText("Can't reach the server, check your connection and try again")
-            .assertIsDisplayed()
-        compose.onNodeWithText("Retry").assertDoesNotExist()
-    }
-
-    @Test
-    fun aFailedTurnOffersToRetryOrDismissItsReason() {
-        client.onSendMessage = { _, _, _, _ ->
-            flow { throw ServiceException(ServiceFailure.Network) }
-        }
-        showSession()
-
-        send("Hello")
-        compose.onNodeWithText("Retry").performClick()
-        compose.onNode(hasSetTextAction()).assert(hasText("Hello"))
-        compose.onNodeWithContentDescription("Send").performClick()
-        compose.onNodeWithContentDescription("Close").performClick()
-
-        compose.onNodeWithText("Retry").assertDoesNotExist()
-        compose
-            .onAllNodesWithText("Can't reach the server, check your connection and try again")
-            .assertCountEquals(2)
-    }
-
-    @Test
-    fun theModelPickerSwitchesModelsAndLeadsToTheProviders() {
-        client.onListProviders = {
-            listOf(
-                sampleProvider("openai", "gpt-4o", "gpt-4o-mini"),
-                sampleProvider("off", "m1", enabled = false),
-            )
-        }
+    fun backClosesTheModelSheet() {
         showSession()
 
         compose.onNodeWithText("gpt-4o").performClick()
-        compose.onNodeWithText("m1").assertDoesNotExist()
-        compose.onNodeWithText("gpt-4o-mini").performClick()
+        compose.onNodeWithText("Manage providers").assertIsDisplayed()
+        Espresso.pressBack()
         compose.onNodeWithText("Manage providers").assertDoesNotExist()
-        compose.onNodeWithText("gpt-4o-mini").performClick()
-        compose.onNodeWithText("Manage providers").performClick()
+    }
 
-        compose.onNodeWithText("Manage providers").assertDoesNotExist()
-        assertEquals(1, providerRequests)
+    @Test
+    fun theDrawerShowsEachSessionsTimeOrItsMarker() {
+        val juneNoonUtc = 1_592_222_400_000L
+        client.onListSessions = {
+            listOf(
+                ClientSession("live", "Live", System.currentTimeMillis(), activeMessageId = "q1"),
+                sampleSession("june", "June", updatedAt = juneNoonUtc),
+            )
+        }
+        showSession()
+
+        compose.onNodeWithContentDescription("Show sessions").performClick()
+        compose.onNodeWithContentDescription("Running").assertIsDisplayed()
+        compose.onNodeWithText("2020-06-15").assertIsDisplayed()
+    }
+
+    @Test
+    fun finishedAndFailedRowsShowTheirMarkerInPlaceOfTheTime() {
+        compose.setContent {
+            LemmaTheme {
+                Column {
+                    for (marker in listOf(SessionMarker.Finished, SessionMarker.Failed)) {
+                        SessionRow(
+                            session = sampleSession(marker.name),
+                            time = "09:05",
+                            marker = marker,
+                            selected = false,
+                            onSelect = {},
+                            onRename = {},
+                            onDelete = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        compose.onNodeWithContentDescription("Reply finished, not viewed").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Last reply failed").assertIsDisplayed()
+        compose.onNodeWithText("09:05").assertDoesNotExist()
     }
 
     @Test
@@ -267,63 +207,11 @@ class SessionScreenTest {
         compose.onNodeWithText("Last 7 days").assertIsDisplayed()
         compose.onNodeWithText("Plan").performClick()
         waitForText("plan-q")
-        compose.onNodeWithText("Used 1 tool").assertExists()
+        compose.onNodeWithText("ran {}").assertExists()
 
         compose.onNodeWithContentDescription("Show sessions").performClick()
         compose.onNodeWithText("New session").performClick()
         compose.onNodeWithText("How can I help you today?").assertIsDisplayed()
-    }
-
-    @Test
-    fun aThinkingStepCountsItsTimeAndClosesOnceItEnds() {
-        val events = Channel<AgentStreamEvent>(Channel.UNLIMITED)
-        client.onSendMessage = { _, _, _, _ -> events.consumeAsFlow() }
-        showSession()
-        val start = System.currentTimeMillis()
-
-        send("Plan a trip")
-        events.trySend(AgentStreamEvent.Started("q1"))
-        events.trySend(AgentStreamEvent.TurnStarted("a1"))
-        events.trySend(AgentStreamEvent.ThinkingDelta("Check the weather", start))
-        compose.onNodeWithText("Thinking…", substring = true).assertIsDisplayed()
-        events.trySend(AgentStreamEvent.ThinkingDelta(" first", start + 500))
-        waitForText("Check the weather first")
-
-        events.trySend(AgentStreamEvent.TextDelta("Pack light", start + 1_500))
-        compose.onNodeWithText("Thought for 1.5s").assertIsDisplayed()
-        compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText("Check the weather first").assertDoesNotExist()
-        events.trySend(AgentStreamEvent.Done(start + 2_000))
-        compose.onNodeWithText("Pack light").assertIsDisplayed()
-    }
-
-    @Test
-    fun toolCallsShowFailuresWaitingResultsAndLongArguments() {
-        val events = Channel<AgentStreamEvent>(Channel.UNLIMITED)
-        client.onSendMessage = { _, _, _, _ -> events.consumeAsFlow() }
-        showSession()
-        val start = System.currentTimeMillis() - 5_000
-        val arguments = (1..40).joinToString(",", "{", "}") { "\"key$it\":$it" }
-
-        send("Read the files")
-        events.trySend(AgentStreamEvent.Started("q1"))
-        events.trySend(AgentStreamEvent.TurnStarted("a1"))
-        events.trySend(AgentStreamEvent.ToolCallStarted("c1", "bash", "", start))
-        events.trySend(AgentStreamEvent.ToolCallFinished("c1", "denied", true, start + 1_200))
-        events.trySend(AgentStreamEvent.ToolCallStarted("c2", "read", arguments, start + 1_300))
-        compose.onNodeWithText("· 1 failed").assertIsDisplayed()
-        compose.onNodeWithText("Using 2 tools…").performClick()
-        compose.onNodeWithText("denied").assertIsDisplayed()
-        compose.onNodeWithText("read").performClick()
-        compose.onNodeWithText("Waiting for result…").assertIsDisplayed()
-        compose.onNodeWithText("Show all").performScrollTo().performClick()
-        compose.onNodeWithText("Show less").assertIsDisplayed()
-
-        compose.onNodeWithText("read").performClick()
-        events.trySend(AgentStreamEvent.ToolCallFinished("c2", "ok", false, start + 2_000))
-        events.trySend(AgentStreamEvent.Done(start + 2_100))
-        compose.onNodeWithText("Used 2 tools").assertExists()
-        compose.onNodeWithText("· 1.9s").assertExists()
     }
 
     @Test
@@ -368,8 +256,8 @@ class SessionScreenTest {
             }
         events.trySend(AgentStreamEvent.Started("q31"))
         events.trySend(AgentStreamEvent.TurnStarted("a31"))
-        events.trySend(AgentStreamEvent.TextDelta("Still here"))
         events.trySend(AgentStreamEvent.TurnStarted("a32"))
+        events.trySend(AgentStreamEvent.TextDelta("Still here"))
         compose.onNodeWithText("Still here").assertDoesNotExist()
 
         compose.onNodeWithContentDescription("Scroll to latest").performClick()

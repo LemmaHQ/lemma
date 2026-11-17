@@ -1,5 +1,8 @@
 package dev.lemmahq.lemma.ui.components
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -65,5 +68,32 @@ class LemmaMarkdownTest {
         }
 
         compose.onNodeWithText("./gradlew check", substring = true).assertExists()
+        compose.onNodeWithText("Open").assertDoesNotExist()
+    }
+
+    @Test
+    fun aTableShowsItsHeaderAndEveryRow() {
+        compose.setContent {
+            LemmaMarkdown("| Name | Count |\n| --- | --- |\n| apples | 3 |\n| pears | 12 |\n\nEnd.")
+        }
+        compose.waitUntil { compose.onAllNodesWithText("End.").fetchSemanticsNodes().isNotEmpty() }
+
+        for (cell in listOf("Name", "Count", "apples", "3", "pears", "12")) {
+            compose.onNode(hasTrimmedText(cell)).assertExists()
+        }
+    }
+
+    private fun hasTrimmedText(text: String) =
+        SemanticsMatcher("text trimmed is '$text'") { node ->
+            node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { it.text.trim() == text }
+        }
+
+    @Test
+    fun aQuoteShowsItsParagraphs() {
+        compose.setContent { LemmaMarkdown("> First thought\n>\n> Second thought\n\nEnd.") }
+        compose.waitUntil { compose.onAllNodesWithText("End.").fetchSemanticsNodes().isNotEmpty() }
+
+        compose.onNodeWithText("First thought").assertExists()
+        compose.onNodeWithText("Second thought").assertExists()
     }
 }

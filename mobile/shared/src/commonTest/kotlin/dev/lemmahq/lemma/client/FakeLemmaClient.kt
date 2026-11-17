@@ -53,11 +53,24 @@ class FakeLemmaClient : LemmaClient {
     var onListMessages: suspend (sessionId: String) -> ClientMessageTree = {
         ClientMessageTree(emptyList())
     }
+    var onSetSessionLeaf: suspend (sessionId: String, leafId: String?) -> ClientSession =
+        { sessionId, leafId ->
+            ClientSession(sessionId, "", updatedAt = 0, leafId = leafId)
+        }
+    var onSetMessageLabel:
+        suspend (sessionId: String, messageId: String, label: String?) -> ClientMessage =
+        { _, messageId, label ->
+            ClientMessage(messageId, "user", "", label = label)
+        }
     var onSendMessage:
-        (sessionId: String, content: String, providerId: String, model: String) -> Flow<
-                AgentStreamEvent
-            > =
-        { _, _, _, _ ->
+        (
+            sessionId: String,
+            content: String,
+            providerId: String,
+            model: String,
+            parentId: String?,
+        ) -> Flow<AgentStreamEvent> =
+        { _, _, _, _, _ ->
             flowOf(AgentStreamEvent.Started("message-1"), AgentStreamEvent.Done())
         }
     var onResumeStream: (messageId: String, offset: Long) -> Flow<AgentStreamEvent> = { _, _ ->
@@ -152,14 +165,29 @@ class FakeLemmaClient : LemmaClient {
         return onListMessages(sessionId)
     }
 
+    override suspend fun setSessionLeaf(sessionId: String, leafId: String?): ClientSession {
+        calls += Call("setSessionLeaf", sessionId, leafId)
+        return onSetSessionLeaf(sessionId, leafId)
+    }
+
+    override suspend fun setMessageLabel(
+        sessionId: String,
+        messageId: String,
+        label: String?,
+    ): ClientMessage {
+        calls += Call("setMessageLabel", sessionId, messageId, label)
+        return onSetMessageLabel(sessionId, messageId, label)
+    }
+
     override fun sendMessage(
         sessionId: String,
         content: String,
         providerId: String,
         model: String,
+        parentId: String?,
     ): Flow<AgentStreamEvent> {
-        calls += Call("sendMessage", sessionId, content, providerId, model)
-        return onSendMessage(sessionId, content, providerId, model)
+        calls += Call("sendMessage", sessionId, content, providerId, model, parentId)
+        return onSendMessage(sessionId, content, providerId, model, parentId)
     }
 
     override fun resumeStream(messageId: String, offset: Long): Flow<AgentStreamEvent> {

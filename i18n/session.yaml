@@ -16,7 +16,7 @@ session:
     en: "Clear directory"
     zh: "取消选择目录"
   codeTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Code"
     zh: "代码"
   delete:
@@ -68,6 +68,18 @@ session:
     platforms: [android]
     en: "Sessions"
     zh: "会话"
+  markerFailed:
+    platforms: [android]
+    en: "Last reply failed"
+    zh: "上一轮回复出错"
+  markerFinished:
+    platforms: [android]
+    en: "Reply finished, not viewed"
+    zh: "回复已完成，尚未查看"
+  markerRunning:
+    platforms: [android]
+    en: "Running"
+    zh: "运行中"
   manageProviders:
     platforms: [android]
     en: "Manage providers"
@@ -109,20 +121,20 @@ session:
     en: "Rename"
     zh: "重命名"
   retryWithModel:
-    platforms: [web]
+    platforms: [web, android]
     params: { model: string }
     en: "Retry with {model}"
     zh: "使用 {model} 重试"
   rewindBanner:
-    platforms: [web]
+    platforms: [web, android]
     en: "Rewound before question · sending starts a new branch (original kept)"
     zh: "已回退到分叉前 · 修改后发送将生成新分支（原分支保留）"
   rewindRestore:
-    platforms: [web]
+    platforms: [web, android]
     en: "Restore branch"
     zh: "恢复原分支"
   switchModelRetry:
-    platforms: [web]
+    platforms: [web, android]
     en: "Switch model"
     zh: "切换模型"
   scrollToBottom:
@@ -150,11 +162,11 @@ session:
     en: "Yesterday"
     zh: "昨天"
   treeAddLabel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Label"
     zh: "标签"
   treeButton:
-    platforms: [web]
+    platforms: [web, android]
     plural: count
     params: { count: number }
     en:
@@ -163,31 +175,35 @@ session:
     zh:
       other: "会话树 · {count} 条路径"
   treeEditLabel:
-    platforms: [web]
+    platforms: [web, android]
     en: "Edit label"
     zh: "改标签"
   treeEmpty:
-    platforms: [web]
+    platforms: [web, android]
     en: "No matching messages."
     zh: "没有匹配的节点"
   treeFilterAll:
-    platforms: [web]
+    platforms: [web, android]
     en: "All"
     zh: "全部"
   treeFilterLabeled:
-    platforms: [web]
+    platforms: [web, android]
     en: "Labeled"
     zh: "已加标签"
   treeFilterQuestions:
-    platforms: [web]
+    platforms: [web, android]
     en: "Questions"
     zh: "只看提问"
   treeHint:
     platforms: [web]
     en: "Click question to branch · click reply to switch path"
     zh: "点提问回退重问 · 点回复切路径"
+  treeHintTouch:
+    platforms: [android]
+    en: "Tap a question to branch · tap a reply to switch path · long-press to label"
+    zh: "点提问回退重问 · 点回复切路径 · 长按加标签"
   treeLabelPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Label…"
     zh: "标签…"
   treePaths:
@@ -200,11 +216,11 @@ session:
     zh:
       other: "{count} 条路径"
   treeSearchPlaceholder:
-    platforms: [web]
+    platforms: [web, android]
     en: "Search tree…"
     zh: "搜索会话树…"
   treeTitle:
-    platforms: [web]
+    platforms: [web, android]
     en: "Session tree"
     zh: "会话树"
   treeVerb:

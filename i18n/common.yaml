@@ -12,7 +12,7 @@ common:
     en: "Cancel"
     zh: "取消"
   close:
-    platforms: [web, android]
+    platforms: [web]
     en: "Close"
     zh: "关闭"
   copied:
@@ -35,6 +35,10 @@ common:
     platforms: [web]
     en: "Loading…"
     zh: "加载中…"
+  open:
+    platforms: [android]
+    en: "Open"
+    zh: "打开"
   retry:
     platforms: [android]
     en: "Retry"

@@ -52,6 +52,14 @@ class SessionGroupsTest {
 
         assertEquals(listOf(SessionPeriod.Today), groups.map { it.period })
     }
+
+    @Test
+    fun sessionTimesShortenByHowRecentTheyAre() {
+        assertEquals("09:05", formatSessionTime(at(6, 9, 5), today, shanghai))
+        assertEquals("11-05", formatSessionTime(at(5, 23), today, shanghai))
+        assertEquals("2025-11-06", formatSessionTime(at(6, 8).minusDays(365), today, shanghai))
+        assertEquals("", formatSessionTime(0, today, shanghai))
+    }
 }
 
 private fun Long.minusDays(days: Int): Long = this - days * 24L * 60 * 60 * 1000

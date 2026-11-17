@@ -3,9 +3,30 @@ package dev.lemmahq.lemma.ui.session
 import dev.lemmahq.lemma.client.ClientSession
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
+import kotlinx.datetime.format
+import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+
+private val clockFormat = LocalDateTime.Format {
+    hour()
+    char(':')
+    minute()
+}
+private val monthDayFormat = LocalDateTime.Format {
+    monthNumber()
+    char('-')
+    day()
+}
+private val dateFormat = LocalDateTime.Format {
+    year()
+    char('-')
+    monthNumber()
+    char('-')
+    day()
+}
 
 /** How long ago a session was last updated, by calendar day. */
 internal enum class SessionPeriod {
@@ -42,4 +63,20 @@ internal fun groupSessions(
     return SessionPeriod.entries.mapNotNull { period ->
         byPeriod[period]?.let { SessionGroup(period, it) }
     }
+}
+
+/**
+ * The compact time in [timeZone] of [updatedAt], an epoch millisecond: `HH:mm` on [today], `MM-DD`
+ * in its year, else `YYYY-MM-DD`; empty when [updatedAt] is unset.
+ */
+internal fun formatSessionTime(updatedAt: Long, today: LocalDate, timeZone: TimeZone): String {
+    if (updatedAt <= 0) return ""
+    val time = Instant.fromEpochMilliseconds(updatedAt).toLocalDateTime(timeZone)
+    val format =
+        when {
+            time.date == today -> clockFormat
+            time.year == today.year -> monthDayFormat
+            else -> dateFormat
+        }
+    return time.format(format)
 }

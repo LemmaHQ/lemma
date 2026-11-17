@@ -19,7 +19,8 @@
 
 - 根包存放承载导航的 `App` 及其 `AppViewModel`。
 - `client/` 存放 `LemmaClient` 与 `Connector` 接口及其类型；`network/` 基于 Connect 实现它们；`data/` 存放 `SettingsRepository` 以及偏好与模型选择类型。
-- `ui/<功能>/` 存放每个功能的 ViewModel、界面及其私有 Composable；`ui/components/` 存放共用的 `Lemma*` 组件；`theme/` 存放颜色、字体与形状。
+- `ui/<功能>/` 存放每个功能的 ViewModel、界面及其私有 Composable，与 web 端同名功能对应：`ui/agent/` 是打开的会话（`AgentViewModel`、`SessionStage`、消息、输入框、模型选择器、完整显示回复中代码块的代码面板，以及切换分支、回退到提问并给消息加标签的会话树面板），`ui/session/` 是会话列表（`SessionListViewModel`、抽屉，以及承载会话舞台的 `SessionScreen` 外壳），`ui/provider/` 是 AI 服务商，`ui/webprovider/` 是网络服务商，`ui/preferences/` 是外观，`ui/settings/` 是设置菜单。功能之间互不导入，唯一例外是 `ui/session/` 驱动 `ui/agent/`：其外壳承载会话舞台，其列表在那里打开与关闭会话、显示自身的失败，并根据 agent 的 `turns` 标记运行中、已完成与出错的回合。Android 会话列表按时间分组，因为 Android 会话没有会话目录；web 端则按目录分组。
+- `ui/components/` 存放共用的 `Lemma*` 组件和多个功能共用的部件（`SaveBar`、`ProviderEnabledRow`、`ProviderErrorText`、`runOptimistic`）；`theme/` 存放 `LemmaTheme`，由它提供生成的颜色、字体与形状。
 - `i18n/` 存放 `UiText` 与 `errorText`；面向用户的文本来自 [i18n/](../i18n/README.zh.md) 的平台中立源文件，由生成器写入被 Git 忽略的 `composeResources/values/strings.xml` 与 `values-zh/strings.xml`。
 - `commonMain` 不使用仅限 JVM 的库：Connect、OkHttp 与引擎放在 `androidMain` 下对应的包或 `engine/` 中。
 

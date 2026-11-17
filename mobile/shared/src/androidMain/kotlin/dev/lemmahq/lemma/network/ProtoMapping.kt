@@ -78,7 +78,14 @@ internal fun ClientModel.toProto(): Model =
     Model.newBuilder().setId(id).setToolCalling(toolCalling).build()
 
 internal fun Session.toClient(): ClientSession =
-    ClientSession(id = id, title = title, updatedAt = updatedAt.epochMillis())
+    ClientSession(
+        id = id,
+        title = title,
+        updatedAt = updatedAt.epochMillis(),
+        leafId = if (hasLeafId()) leafId else null,
+        directory = if (hasDirectory()) directory else null,
+        activeMessageId = if (hasActiveMessageId()) activeMessageId else null,
+    )
 
 internal fun Message.toClient(): ClientMessage =
     ClientMessage(
@@ -98,6 +105,8 @@ internal fun Message.toClient(): ClientMessage =
         thinkingFinishedAt =
             if (hasThinkingFinishedAt()) thinkingFinishedAt.epochMillis() else null,
         parentId = if (hasParentId()) parentId else null,
+        label = label.ifBlank { null },
+        createdAt = if (hasCreatedAt()) createdAt.epochMillis() else null,
     )
 
 internal fun AgentEvent.toStreamEvent(): AgentStreamEvent {

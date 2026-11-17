@@ -1,75 +1,68 @@
 package dev.lemmahq.lemma.ui.session
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.dp
-import dev.lemmahq.lemma.theme.LemmaTheme
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.launch
-import lemma.mobile.shared.generated.resources.Res
-import lemma.mobile.shared.generated.resources.common_app_name
-import lemma.mobile.shared.generated.resources.session_select_model
-import lemma.mobile.shared.generated.resources.sidebar_new_session
-import org.jetbrains.compose.resources.stringResource
 
+/**
+ * The session list of [sessions] in a drawer beside [content], which shows the open session and
+ * receives the action that opens the drawer; [sessions] opens the session a row selects. A back
+ * press closes the open drawer before it leaves the screen.
+ */
 @Composable
 internal fun SessionScreen(
-    viewModel: SessionViewModel,
-    onManageProviders: () -> Unit,
+    sessions: SessionListViewModel,
+    openSessionId: String?,
+    onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    content: @Composable (openDrawer: () -> Unit) -> Unit,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val composerFocus = remember { FocusRequester() }
-    var showModelPicker by rememberSaveable { mutableStateOf(false) }
 
-    SideEffect(Unit) { viewModel.loadProviders() }
-
-    LaunchedEffect(drawerState, viewModel) {
+    LaunchedEffect(drawerState, sessions) {
         snapshotFlow { drawerState.currentValue }
             .collect { value ->
                 if (value == DrawerValue.Open) {
-                    viewModel.refreshSessions()
+                    sessions.refreshSessions()
                 }
             }
     }
 
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = drawerState.isOpen,
+        onBackCompleted = { scope.launch { drawerState.close() } },
+    )
+
     ModalNavigationDrawer(
         drawerState = drawerState,
+        modifier = modifier,
         drawerContent = {
             SessionDrawer(
-                sessions = viewModel.sessions,
-                currentSessionId = viewModel.openSession?.id,
+                sessions = sessions.sessions,
+                currentSessionId = openSessionId,
+                markerOf = sessions::markerOf,
                 onNewSession = {
                     scope.launch { drawerState.close() }
-                    viewModel.newSession()
+                    onNewSession()
                 },
                 onSelectSession = { session ->
                     scope.launch { drawerState.close() }
-                    viewModel.selectSession(session)
+                    sessions.selectSession(session)
                 },
-                onRenameSession = viewModel::renameSession,
-                onDeleteSession = viewModel::deleteSession,
+                onRenameSession = sessions::renameSession,
+                onDeleteSession = sessions::deleteSession,
                 onOpenSettings = {
                     scope.launch { drawerState.close() }
                     onOpenSettings()
@@ -77,71 +70,6 @@ internal fun SessionScreen(
             )
         },
     ) {
-        Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
-            SessionTopBar(
-                title =
-                    if (viewModel.openSession == null) {
-                        stringResource(Res.string.common_app_name)
-                    } else {
-                        viewModel.currentSession?.title?.takeIf { it.isNotBlank() }
-                            ?: stringResource(Res.string.sidebar_new_session)
-                    },
-                modelLabel =
-                    if (viewModel.providers.any { it.enabled }) {
-                        viewModel.selection?.model
-                            ?: stringResource(Res.string.session_select_model)
-                    } else {
-                        null
-                    },
-                onOpenDrawer = { scope.launch { drawerState.open() } },
-                onOpenModelPicker = { showModelPicker = true },
-            )
-            Box(
-                modifier =
-                    Modifier.fillMaxWidth().height(1.dp).background(LemmaTheme.colors.separator)
-            )
-            key(viewModel.openSession?.id) {
-                MessageList(
-                    messages = viewModel.messages,
-                    providers = viewModel.providers,
-                    canRegenerate = !viewModel.turnRunning,
-                    onRegenerate = viewModel::regenerate,
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                )
-            }
-            viewModel.error?.let { error ->
-                ErrorBanner(
-                    message = error.text(),
-                    showRetry = viewModel.retryText != null && !viewModel.turnRunning,
-                    onRetry = viewModel::retry,
-                    onDismiss = viewModel::dismissError,
-                )
-            }
-            MessageComposer(
-                value = viewModel.input,
-                onValueChange = viewModel::changeInput,
-                isStreaming = viewModel.stoppable,
-                onStop = viewModel::stop,
-                onSend = viewModel::send,
-                focusRequester = composerFocus,
-            )
-        }
-    }
-
-    if (showModelPicker) {
-        val closePicker = { showModelPicker = false }
-        ModelPickerDialog(
-            providers = viewModel.providers,
-            selection = viewModel.selection,
-            onSelect = { selection ->
-                viewModel.selectModel(selection)
-                closePicker()
-            },
-            onManageProviders = {
-                closePicker()
-                onManageProviders()
-            },
-            onDismiss = closePicker,
-        )
+        content { scope.launch { drawerState.open() } }
     }
 }

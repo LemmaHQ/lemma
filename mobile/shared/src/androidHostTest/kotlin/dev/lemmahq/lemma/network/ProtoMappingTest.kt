@@ -16,7 +16,6 @@ import dev.lemmahq.gen.lemma.v1.message
 import dev.lemmahq.gen.lemma.v1.model
 import dev.lemmahq.gen.lemma.v1.predefinedProvider
 import dev.lemmahq.gen.lemma.v1.provider
-import dev.lemmahq.gen.lemma.v1.session
 import dev.lemmahq.gen.lemma.v1.textDelta
 import dev.lemmahq.gen.lemma.v1.thinkingDelta
 import dev.lemmahq.gen.lemma.v1.toolCall
@@ -30,7 +29,6 @@ import dev.lemmahq.lemma.client.ClientCustomProvider
 import dev.lemmahq.lemma.client.ClientMessage
 import dev.lemmahq.lemma.client.ClientModel
 import dev.lemmahq.lemma.client.ClientPredefinedProvider
-import dev.lemmahq.lemma.client.ClientSession
 import dev.lemmahq.lemma.client.ClientToolCall
 import dev.lemmahq.lemma.client.ClientToolResult
 import dev.lemmahq.lemma.client.ClientWebProvider
@@ -195,6 +193,7 @@ class ProtoMappingTest {
             }
             thinkingStartedAt = AT
             thinkingFinishedAt = AT
+            createdAt = AT
         }
 
         assertEquals(
@@ -213,6 +212,7 @@ class ProtoMappingTest {
                 thinkingStartedAt = AT_MILLIS,
                 thinkingFinishedAt = AT_MILLIS,
                 parentId = "q1",
+                createdAt = AT_MILLIS,
             ),
             recorded.toClient(),
         )
@@ -222,27 +222,6 @@ class ProtoMappingTest {
                 id = "q1"
                 role = "user"
                 content = "Hi"
-            }
-                .toClient(),
-        )
-    }
-
-    @Test
-    fun aSessionMapsItsTitleAndUpdateTime() {
-        assertEquals(
-            ClientSession("s1", "Trip", AT_MILLIS),
-            session {
-                id = "s1"
-                title = "Trip"
-                updatedAt = AT
-            }
-                .toClient(),
-        )
-        assertEquals(
-            ClientSession("s2", "", AT_MILLIS),
-            session {
-                id = "s2"
-                updatedAt = AT
             }
                 .toClient(),
         )

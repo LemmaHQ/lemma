@@ -31,15 +31,17 @@ import androidx.navigation.compose.rememberNavController
 import dev.lemmahq.lemma.client.Connector
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.theme.LemmaTheme
+import dev.lemmahq.lemma.ui.agent.AgentViewModel
+import dev.lemmahq.lemma.ui.agent.SessionStage
 import dev.lemmahq.lemma.ui.components.LemmaButton
+import dev.lemmahq.lemma.ui.preferences.AppearanceScreen
 import dev.lemmahq.lemma.ui.provider.ProviderGraph
-import dev.lemmahq.lemma.ui.provider.WebProviderScreen
-import dev.lemmahq.lemma.ui.provider.WebProviderViewModel
 import dev.lemmahq.lemma.ui.provider.providerGraph
+import dev.lemmahq.lemma.ui.session.SessionListViewModel
 import dev.lemmahq.lemma.ui.session.SessionScreen
-import dev.lemmahq.lemma.ui.session.SessionViewModel
-import dev.lemmahq.lemma.ui.settings.AppearanceScreen
 import dev.lemmahq.lemma.ui.settings.SettingsScreen
+import dev.lemmahq.lemma.ui.webprovider.WebProviderScreen
+import dev.lemmahq.lemma.ui.webprovider.WebProviderViewModel
 import kotlinx.coroutines.flow.first
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_retry
@@ -98,12 +100,22 @@ private fun NavGraphBuilder.appRoutes(
     }
     composable<SessionRoute> {
         val ready = appViewModel.state as? AppState.Ready ?: return@composable
+        val agent = viewModel { AgentViewModel(ready.client, settings, createSavedStateHandle()) }
+        val sessions = viewModel { SessionListViewModel(ready.client, agent) }
         SessionScreen(
-            viewModel =
-                viewModel { SessionViewModel(ready.client, settings, createSavedStateHandle()) },
-            onManageProviders = { navController.navigate(ProviderGraph) },
+            sessions = sessions,
+            openSessionId = agent.openSession?.id,
+            onNewSession = agent::newSession,
             onOpenSettings = { navController.navigate(SettingsRoute) },
-        )
+        ) { openDrawer ->
+            SessionStage(
+                viewModel = agent,
+                sessionTitle = sessions.currentSession?.title,
+                createSession = sessions::createSession,
+                onOpenDrawer = openDrawer,
+                onManageProviders = { navController.navigate(ProviderGraph) },
+            )
+        }
     }
     composable<SettingsRoute> {
         SettingsScreen(

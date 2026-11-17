@@ -43,13 +43,14 @@ import lemma.mobile.shared.generated.resources.sidebar_start_session
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The drawer listing [sessions] by recency, with the new session and settings buttons; deleting a
- * session asks for confirmation first.
+ * The drawer listing [sessions] by recency, each with its time or the marker [markerOf] gives it,
+ * and the new session and settings buttons; deleting a session asks for confirmation first.
  */
 @Composable
 internal fun SessionDrawer(
     sessions: List<ClientSession>,
     currentSessionId: String?,
+    markerOf: (ClientSession) -> SessionMarker?,
     onNewSession: () -> Unit,
     onSelectSession: (ClientSession) -> Unit,
     onRenameSession: (ClientSession, String) -> Unit,
@@ -58,11 +59,9 @@ internal fun SessionDrawer(
 ) {
     var renaming by remember { mutableStateOf<ClientSession?>(null) }
     var deleting by remember { mutableStateOf<ClientSession?>(null) }
-    val groups =
-        remember(sessions) {
-            val timeZone = TimeZone.currentSystemDefault()
-            groupSessions(sessions, Clock.System.todayIn(timeZone), timeZone)
-        }
+    val timeZone = remember { TimeZone.currentSystemDefault() }
+    val today = remember(sessions) { Clock.System.todayIn(timeZone) }
+    val groups = remember(sessions, today) { groupSessions(sessions, today, timeZone) }
     ModalDrawerSheet(
         drawerContainerColor = LemmaTheme.colors.sidebar,
         modifier = Modifier.width(280.dp),
@@ -97,6 +96,8 @@ internal fun SessionDrawer(
                     items(group.sessions, key = { it.id }) { session ->
                         SessionRow(
                             session = session,
+                            time = formatSessionTime(session.updatedAt, today, timeZone),
+                            marker = markerOf(session),
                             selected = session.id == currentSessionId,
                             onSelect = { onSelectSession(session) },
                             onRename = { renaming = session },
