@@ -16,8 +16,8 @@ import { Link, useNavigate } from "react-router";
 import { clearSessionDraft } from "@/features/agent";
 import { SessionList, type SessionDirectoryState } from "@/features/session";
 
-import { AppBrand } from "../AppBrand";
 import { paths, rememberSessionPath, sessionPath } from "../route-paths";
+import { AppBrand } from "../shell/AppBrand";
 import { SidebarToggleButton } from "../shell/SidebarToggleButton";
 import { NewSessionButton } from "./NewSessionButton";
 

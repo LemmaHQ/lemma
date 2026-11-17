@@ -6,7 +6,7 @@ import type { RouteHandle } from "./route-handle";
 import { paths } from "./route-paths";
 import { SETTINGS_PAGES } from "./settings/settings-pages";
 import { AppLayout } from "./shell/AppLayout";
-import { SplashScreen } from "./SplashScreen";
+import { SplashScreen } from "./shell/SplashScreen";
 
 /** The app's routes; every `handle` is a `RouteHandle`. */
 export const router = createBrowserRouter([

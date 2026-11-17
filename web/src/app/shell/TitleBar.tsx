@@ -5,8 +5,8 @@ import type { RouterState } from "react-router";
 
 import { getPlatform } from "@/platform/platform";
 
-import { mergeRouteHandles } from "./route-handle";
-import { router } from "./router";
+import { mergeRouteHandles } from "../route-handle";
+import { router } from "../router";
 
 /** The desktop title bar overlay, painted to match the `titleBar` surface the current route declares; the page background until the first route loads. */
 export function TitleBar() {

@@ -3,10 +3,10 @@ import { RouterProvider } from "react-router/dom";
 
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from "@/features/preferences";
 
-import { AppToaster } from "./AppToaster";
-import { AppTooltipProvider } from "./AppTooltipProvider";
 import { router } from "./router";
-import { TitleBar } from "./TitleBar";
+import { AppToaster } from "./shell/AppToaster";
+import { AppTooltipProvider } from "./shell/AppTooltipProvider";
+import { TitleBar } from "./shell/TitleBar";
 
 export function App() {
     return (

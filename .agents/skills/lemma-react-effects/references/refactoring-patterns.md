@@ -162,7 +162,7 @@ When local state belongs to one entity, choose one behavior:
 
 ## Keep only external-system synchronization
 
-An effect fits when the component must connect to something React does not control. `web/src/app/TitleBar.tsx` sends the resolved theme and the surface the current route declares to the desktop title bar whenever either changes:
+An effect fits when the component must connect to something React does not control. `web/src/app/shell/TitleBar.tsx` sends the resolved theme and the surface the current route declares to the desktop title bar whenever either changes:
 
 ```tsx
 useEffect(() => {

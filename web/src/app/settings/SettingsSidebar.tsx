@@ -7,7 +7,7 @@ import {
 import { ViewTransition } from "react";
 import { useTranslation } from "react-i18next";
 
-import { AppBrand } from "../AppBrand";
+import { AppBrand } from "../shell/AppBrand";
 import { BackHomeButton } from "./BackHomeButton";
 import { SettingsNav } from "./SettingsNav";
 
