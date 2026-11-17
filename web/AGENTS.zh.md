@@ -20,7 +20,7 @@
 
 - 依赖只朝一个方向：`src/platform/` → `src/rpc/` → `src/store/` → `src/features/` → `src/app/`。`src/i18n/` 存放语言文件与 `error-text.ts`，后者把失败的请求转成本地化文字。
 - `src/platform/` 导出浏览器或桌面引擎的 `platform` 适配器；它之外的代码只通过该适配器使用桌面能力。
-- `src/rpc/` 存放传输层、ConnectRPC 客户端，以及读取失败原因 `ErrorReason` 的 `errors.ts`。`src/store/` 存放 `loaded-hook.ts`，为功能列表 store 构造首载与浅比较选择器 hook。
+- `src/rpc/` 存放传输层、ConnectRPC 客户端，以及读取失败原因 `ErrorReason` 的 `errors.ts`。`src/store/` 存放 `loaded-hook.ts`，为功能列表 store 构造首载与浅比较选择器 hook；以及 `useStoredValue.ts`，读写带类型的 `localStorage` 值并通知所有已挂载的读取方。
 - `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
 - `src/app/` 在 `router.tsx` 中存放路由表，在 `route-paths.ts` 中存放路径，并为每个布局路由设一个目录：`session/` 与 `settings/`，各自包含只负责编排功能组件的页面。`shell/` 存放 `AppLayout`、`ShellFrame` 与应用级外框组件：`AppLayout` 持有侧边栏状态，`ShellFrame` 由两个布局填入各自的侧边栏，外框组件为 `TitleBar`、`SplashScreen`、`AppBrand`、`AppToaster` 与 `AppTooltipProvider`。功能组件以属性接收路径，不直接引用路由。
 - oxlint 负责守住边界：在 `src/app/` 与 `src/features/` 中，越过功能 `index.ts` 的导入、在 `store.ts` 之外导入 `src/rpc/` 中 `errors.ts` 以外的模块、导入 `@lemma/ui` 底层的库，都会让 `just web-lint-check` 失败。

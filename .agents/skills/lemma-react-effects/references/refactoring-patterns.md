@@ -191,7 +191,7 @@ useEffect(() => {
 }, [navigate]);
 ```
 
-`TitleBar.tsx` shows the other half of the rule: `surface` reaches the render through `useSyncExternalStore` over `router.subscribe`, `useStoredValue` in `web/src/features/preferences/useStoredValue.ts` does the same for `localStorage` preferences, and `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does the same with a media query, so none copies a subscribed value into state through an effect. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
+`TitleBar.tsx` shows the other half of the rule: `surface` reaches the render through `useSyncExternalStore` over `router.subscribe`, `useStoredValue` in `web/src/store/useStoredValue.ts` does the same for `localStorage` preferences, and `useIsMobile` in `packages/ui/src/hooks/use-mobile.ts` does the same with a media query, so none copies a subscribed value into state through an effect. Keep setup and cleanup symmetric, and keep data derivation out of the integration effect.
 
 ## Prefer conditional mounting for integrations
 
