@@ -21,6 +21,9 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaPasswordField
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
+import dev.lemmahq.lemma.ui.components.ProviderEnabledRow
+import dev.lemmahq.lemma.ui.components.ProviderErrorText
+import dev.lemmahq.lemma.ui.components.SaveBar
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
@@ -87,7 +90,7 @@ internal fun PredefinedProviderDetailScreen(
                     onSelect = viewModel::setDefaultApiFormat,
                 )
             }
-            ConnectionCheckField(
+            ConnectionCheck(
                 models = predefined.models.map { it.id },
                 model = viewModel.checkModel,
                 result = viewModel.checkResult,

@@ -41,7 +41,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** The editable models of a custom provider and their tool-calling feature. */
 @Composable
-internal fun ModelListSection(
+internal fun ModelList(
     models: List<ClientModel>,
     fetching: Boolean,
     fetchEnabled: Boolean,
@@ -64,8 +64,8 @@ internal fun ModelListSection(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(Res.string.provider_model_list),
-                style = LemmaTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = LemmaTheme.colors.textPrimary,
+                style = LemmaTheme.typography.body.copy(fontWeight = FontWeight.Medium),
+                color = LemmaTheme.colors.foreground,
                 modifier = Modifier.weight(1f),
             )
             LemmaButton(
@@ -84,8 +84,8 @@ internal fun ModelListSection(
         }
         Text(
             text = stringResource(Res.string.provider_tool_calling_desc),
-            style = LemmaTheme.typography.labelSmall,
-            color = LemmaTheme.colors.textTertiary,
+            style = LemmaTheme.typography.caption,
+            color = LemmaTheme.colors.subtleForeground,
             modifier = Modifier.padding(top = 4.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -123,8 +123,8 @@ internal fun ModelListSection(
         if (visible.isEmpty()) {
             Text(
                 text = stringResource(Res.string.provider_no_models),
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textTertiary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.subtleForeground,
                 modifier = Modifier.padding(vertical = 8.dp),
             )
         } else {

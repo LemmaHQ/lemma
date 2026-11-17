@@ -17,6 +17,7 @@ import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaTextField
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
+import dev.lemmahq.lemma.ui.components.SaveBar
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_format
 import lemma.mobile.shared.generated.resources.provider_api_format_desc

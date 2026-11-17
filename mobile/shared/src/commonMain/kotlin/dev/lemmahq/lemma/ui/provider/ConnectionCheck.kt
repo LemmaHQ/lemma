@@ -1,6 +1,7 @@
 package dev.lemmahq.lemma.ui.provider
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +46,7 @@ import org.jetbrains.compose.resources.stringResource
  * besides an empty model list and a running check.
  */
 @Composable
-internal fun ConnectionCheckField(
+internal fun ConnectionCheck(
     models: List<String>,
     model: String?,
     result: CheckResult?,
@@ -74,8 +75,9 @@ internal fun ConnectionCheckField(
                     modifier =
                         Modifier.fillMaxWidth()
                             .heightIn(min = 52.dp)
-                            .clip(LemmaTheme.shapes.medium)
-                            .background(LemmaTheme.colors.fill2)
+                            .clip(LemmaTheme.shapes.md)
+                            .background(LemmaTheme.colors.control)
+                            .border(1.dp, LemmaTheme.colors.input, LemmaTheme.shapes.md)
                             .clickable(enabled = models.isNotEmpty(), role = Role.DropdownList) {
                                 picking = true
                             }
@@ -84,10 +86,10 @@ internal fun ConnectionCheckField(
                 ) {
                     Text(
                         text = model ?: stringResource(Res.string.provider_check_no_models),
-                        style = LemmaTheme.typography.bodyLarge,
+                        style = LemmaTheme.typography.reading,
                         color =
-                            if (model == null) LemmaTheme.colors.textTertiary
-                            else LemmaTheme.colors.textPrimary,
+                            if (model == null) LemmaTheme.colors.subtleForeground
+                            else LemmaTheme.colors.foreground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
@@ -95,7 +97,7 @@ internal fun ConnectionCheckField(
                     Icon(
                         painter = painterResource(Res.drawable.icon_chevron_down),
                         contentDescription = null,
-                        tint = LemmaTheme.colors.textSecondary,
+                        tint = LemmaTheme.colors.mutedForeground,
                         modifier = Modifier.size(18.dp),
                     )
                 }

@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -13,8 +13,8 @@ internal fun ProviderErrorText(error: UiText?, modifier: Modifier = Modifier) {
     error?.let {
         Text(
             text = it.text(),
-            style = LemmaTheme.typography.bodyMedium,
-            color = LemmaTheme.colors.danger,
+            style = LemmaTheme.typography.body,
+            color = LemmaTheme.colors.destructive,
             modifier = modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
     }

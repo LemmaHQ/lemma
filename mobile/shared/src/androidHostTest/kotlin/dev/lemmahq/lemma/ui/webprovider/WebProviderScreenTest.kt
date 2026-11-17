@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.webprovider
 
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertCountEquals

@@ -26,6 +26,9 @@ import dev.lemmahq.lemma.ui.components.LemmaDropdownMenuItem
 import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaIconButton
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
+import dev.lemmahq.lemma.ui.components.ProviderEnabledRow
+import dev.lemmahq.lemma.ui.components.ProviderErrorText
+import dev.lemmahq.lemma.ui.components.SaveBar
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_cancel
 import lemma.mobile.shared.generated.resources.common_delete
@@ -124,7 +127,7 @@ internal fun ProviderDetailScreen(
                 apiPath = viewModel.apiPath,
                 onApiPathChange = { viewModel.apiPath = it },
             )
-            ConnectionCheckField(
+            ConnectionCheck(
                 models = custom.models.map { it.id },
                 model = viewModel.checkModel,
                 result = viewModel.checkResult,
@@ -132,7 +135,7 @@ internal fun ProviderDetailScreen(
                 onPickModel = { viewModel.pickedCheckModel = it },
                 onCheck = viewModel::check,
             )
-            ModelListSection(
+            ModelList(
                 models = custom.models,
                 fetching = viewModel.fetching,
                 fetchEnabled = !viewModel.dirty,
@@ -188,7 +191,7 @@ internal fun ProviderDetailScreen(
         onDismiss = { confirmingDiscard = false },
     )
     viewModel.fetched?.let { remote ->
-        ModelPickDialog(
+        FetchModelsDialog(
             remote = remote,
             existing = custom.models.map { it.id },
             onAdd = viewModel::addFetched,

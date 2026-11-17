@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.components
 
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.i18n.UiText

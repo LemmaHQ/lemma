@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.webprovider
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +24,9 @@ import dev.lemmahq.lemma.ui.components.LemmaField
 import dev.lemmahq.lemma.ui.components.LemmaPasswordField
 import dev.lemmahq.lemma.ui.components.LemmaSettingsGroup
 import dev.lemmahq.lemma.ui.components.LemmaTopBar
+import dev.lemmahq.lemma.ui.components.ProviderEnabledRow
+import dev.lemmahq.lemma.ui.components.ProviderErrorText
+import dev.lemmahq.lemma.ui.components.SaveBar
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_api_key
 import lemma.mobile.shared.generated.resources.provider_api_key_desc
@@ -55,7 +58,7 @@ internal fun WebProviderScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = LemmaTheme.colors.primary)
+                CircularProgressIndicator(color = LemmaTheme.colors.brand)
             }
         } else {
             Column(
@@ -72,7 +75,7 @@ internal fun WebProviderScreen(
                     val backends =
                         viewModel.providers.sortedBy { it.kind == ClientWebProviderKind.Native }
                     backends.forEachIndexed { index, provider ->
-                        if (index > 0) HorizontalDivider(color = LemmaTheme.colors.separator)
+                        if (index > 0) HorizontalDivider(color = LemmaTheme.colors.border)
                         WebProviderBackend(
                             provider = provider,
                             apiKey = viewModel.apiKey(provider.id),
@@ -85,7 +88,7 @@ internal fun WebProviderScreen(
                         )
                     }
                 }
-                WebProviderOrderSection(
+                WebProviderOrder(
                     title = stringResource(Res.string.provider_web_search_order),
                     description = stringResource(Res.string.provider_web_search_order_desc),
                     providers = viewModel.searchProviders,
@@ -93,7 +96,7 @@ internal fun WebProviderScreen(
                         viewModel.move(ClientWebFunction.Search, id, direction)
                     },
                 )
-                WebProviderOrderSection(
+                WebProviderOrder(
                     title = stringResource(Res.string.provider_web_fetch_order),
                     description = stringResource(Res.string.provider_web_fetch_order_desc),
                     providers = viewModel.fetchProviders,
@@ -120,8 +123,8 @@ private fun WebProviderBackend(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = provider.name,
-            style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.title,
+            color = LemmaTheme.colors.foreground,
             modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
         )
         ProviderEnabledRow(
@@ -141,8 +144,8 @@ private fun WebProviderBackend(
         if (provider.kind == ClientWebProviderKind.Native) {
             Text(
                 text = stringResource(Res.string.provider_web_native_desc),
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textSecondary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.mutedForeground,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             )
         } else {

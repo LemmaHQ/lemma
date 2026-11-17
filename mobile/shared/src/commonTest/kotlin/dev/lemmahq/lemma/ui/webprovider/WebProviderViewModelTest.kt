@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.webprovider
 
 import dev.lemmahq.lemma.client.ClientWebFunction
 import dev.lemmahq.lemma.client.ClientWebProvider

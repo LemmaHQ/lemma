@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.webprovider
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +22,7 @@ import lemma.mobile.shared.generated.resources.provider_web_move_up
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun WebProviderOrderSection(
+internal fun WebProviderOrder(
     title: String,
     description: String,
     providers: List<ClientWebProvider>,
@@ -30,15 +30,15 @@ internal fun WebProviderOrderSection(
 ) {
     LemmaSettingsGroup(label = title, description = description) {
         providers.forEachIndexed { index, provider ->
-            if (index > 0) HorizontalDivider(color = LemmaTheme.colors.separator)
+            if (index > 0) HorizontalDivider(color = LemmaTheme.colors.border)
             Row(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = provider.name,
-                    style = LemmaTheme.typography.bodyLarge,
-                    color = LemmaTheme.colors.textPrimary,
+                    style = LemmaTheme.typography.body,
+                    color = LemmaTheme.colors.foreground,
                     modifier = Modifier.weight(1f),
                 )
                 LemmaIconButton(
@@ -47,7 +47,7 @@ internal fun WebProviderOrderSection(
                         stringResource(Res.string.provider_web_move_up, provider.name),
                     onClick = { onMove(provider.id, -1) },
                     enabled = index > 0,
-                    tint = LemmaTheme.colors.textSecondary,
+                    tint = LemmaTheme.colors.mutedForeground,
                 )
                 LemmaIconButton(
                     icon = Res.drawable.icon_arrow_down,
@@ -55,7 +55,7 @@ internal fun WebProviderOrderSection(
                         stringResource(Res.string.provider_web_move_down, provider.name),
                     onClick = { onMove(provider.id, 1) },
                     enabled = index < providers.lastIndex,
-                    tint = LemmaTheme.colors.textSecondary,
+                    tint = LemmaTheme.colors.mutedForeground,
                 )
             }
         }

@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.webprovider
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,6 +13,7 @@ import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
+import dev.lemmahq.lemma.ui.components.runOptimistic
 import kotlinx.coroutines.launch
 
 /** Loads web backends and edits their keys, enabled flags, and fallback order. */

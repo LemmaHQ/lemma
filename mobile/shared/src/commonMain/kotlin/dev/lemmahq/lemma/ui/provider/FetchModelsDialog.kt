@@ -31,6 +31,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.lemmahq.lemma.theme.DISABLED_ALPHA
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.components.LemmaButton
 import dev.lemmahq.lemma.ui.components.LemmaTextField
@@ -52,7 +53,7 @@ import org.jetbrains.compose.resources.stringResource
  * as added, and [onAdd] receives the picked ones in their fetched order.
  */
 @Composable
-internal fun ModelPickDialog(
+internal fun FetchModelsDialog(
     remote: List<String>,
     existing: List<String>,
     onAdd: (List<String>) -> Unit,
@@ -71,10 +72,10 @@ internal fun ModelPickDialog(
     val checkboxColors =
         CheckboxDefaults.colors(
             checkedColor = LemmaTheme.colors.primary,
-            uncheckedColor = LemmaTheme.colors.textTertiary,
-            checkmarkColor = LemmaTheme.colors.background,
-            disabledCheckedColor = LemmaTheme.colors.fill3,
-            disabledIndeterminateColor = LemmaTheme.colors.fill3,
+            uncheckedColor = LemmaTheme.colors.input,
+            checkmarkColor = LemmaTheme.colors.primaryForeground,
+            disabledCheckedColor = LemmaTheme.colors.primary.copy(alpha = DISABLED_ALPHA),
+            disabledIndeterminateColor = LemmaTheme.colors.primary.copy(alpha = DISABLED_ALPHA),
         )
 
     Dialog(
@@ -94,8 +95,8 @@ internal fun ModelPickDialog(
                             remote.size,
                             remote.size,
                         ),
-                    style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.textSecondary,
+                    style = LemmaTheme.typography.body,
+                    color = LemmaTheme.colors.mutedForeground,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 LemmaTextField(
@@ -129,15 +130,15 @@ internal fun ModelPickDialog(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = stringResource(Res.string.provider_select_all),
-                        style = LemmaTheme.typography.bodyMedium,
-                        color = LemmaTheme.colors.textSecondary,
+                        style = LemmaTheme.typography.body,
+                        color = LemmaTheme.colors.mutedForeground,
                     )
                 }
                 if (visible.isEmpty()) {
                     Text(
                         text = stringResource(Res.string.provider_no_models),
-                        style = LemmaTheme.typography.bodyMedium,
-                        color = LemmaTheme.colors.textTertiary,
+                        style = LemmaTheme.typography.body,
+                        color = LemmaTheme.colors.subtleForeground,
                         modifier = Modifier.padding(vertical = 12.dp),
                     )
                 }
@@ -167,17 +168,17 @@ internal fun ModelPickDialog(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = model,
-                                style = LemmaTheme.typography.bodyMedium,
+                                style = LemmaTheme.typography.body,
                                 color =
-                                    if (added) LemmaTheme.colors.textTertiary
-                                    else LemmaTheme.colors.textPrimary,
+                                    if (added) LemmaTheme.colors.subtleForeground
+                                    else LemmaTheme.colors.foreground,
                                 modifier = Modifier.weight(1f),
                             )
                             if (added) {
                                 Text(
                                     text = stringResource(Res.string.provider_model_added),
-                                    style = LemmaTheme.typography.labelSmall,
-                                    color = LemmaTheme.colors.textTertiary,
+                                    style = LemmaTheme.typography.caption,
+                                    color = LemmaTheme.colors.subtleForeground,
                                     modifier = Modifier.padding(end = 8.dp),
                                 )
                             }
@@ -185,7 +186,7 @@ internal fun ModelPickDialog(
                     }
                 }
             }
-            HorizontalDivider(color = LemmaTheme.colors.separator)
+            HorizontalDivider(color = LemmaTheme.colors.border)
             LemmaButton(
                 text =
                     pluralStringResource(Res.plurals.provider_add_picked, picked.size, picked.size),

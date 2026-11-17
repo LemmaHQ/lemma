@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -15,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
-import dev.lemmahq.lemma.ui.components.LemmaSwitch
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.provider_enable_provider
 import org.jetbrains.compose.resources.stringResource
@@ -33,8 +32,8 @@ internal fun ProviderEnabledRow(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(LemmaTheme.shapes.medium)
-                .background(LemmaTheme.colors.fill2)
+                .clip(LemmaTheme.shapes.lg)
+                .background(LemmaTheme.colors.selected)
     ) {
         Row(
             modifier =
@@ -51,8 +50,8 @@ internal fun ProviderEnabledRow(
         ) {
             Text(
                 text = label ?: stringResource(Res.string.provider_enable_provider),
-                style = LemmaTheme.typography.bodyLarge,
-                color = LemmaTheme.colors.textPrimary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.foreground,
                 modifier = Modifier.weight(1f),
             )
             LemmaSwitch(
@@ -64,8 +63,8 @@ internal fun ProviderEnabledRow(
         hint?.let {
             Text(
                 text = it,
-                style = LemmaTheme.typography.labelSmall,
-                color = LemmaTheme.colors.textTertiary,
+                style = LemmaTheme.typography.caption,
+                color = LemmaTheme.colors.subtleForeground,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
             )
         }

@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.settings
+package dev.lemmahq.lemma.ui.preferences
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -109,7 +109,7 @@ internal fun AppearanceScreen(
 @Composable
 private fun OptionDivider() {
     HorizontalDivider(
-        color = LemmaTheme.colors.separator,
+        color = LemmaTheme.colors.border,
         thickness = 1.dp,
         modifier = Modifier.padding(start = 16.dp),
     )

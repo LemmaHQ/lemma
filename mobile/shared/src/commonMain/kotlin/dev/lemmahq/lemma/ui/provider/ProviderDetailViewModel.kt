@@ -13,6 +13,7 @@ import dev.lemmahq.lemma.client.LemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.i18n.UiText
 import dev.lemmahq.lemma.i18n.errorText
+import dev.lemmahq.lemma.ui.components.runOptimistic
 import kotlinx.coroutines.launch
 
 /** Edits one custom provider, saving connection fields together and other changes immediately. */

@@ -1,4 +1,4 @@
-package dev.lemmahq.lemma.ui.provider
+package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.theme.LemmaTheme
-import dev.lemmahq.lemma.ui.components.LemmaButton
-import dev.lemmahq.lemma.ui.components.LemmaButtonVariant
 import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_cancel
 import lemma.mobile.shared.generated.resources.common_save
@@ -31,8 +29,8 @@ internal fun SaveBar(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().background(LemmaTheme.colors.backgroundGroup)) {
-        HorizontalDivider(color = LemmaTheme.colors.separator)
+    Column(modifier = modifier.fillMaxWidth().background(LemmaTheme.colors.background)) {
+        HorizontalDivider(color = LemmaTheme.colors.border)
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -40,8 +38,8 @@ internal fun SaveBar(
         ) {
             Text(
                 text = message,
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textSecondary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.mutedForeground,
                 modifier = Modifier.weight(1f),
             )
             LemmaButton(
