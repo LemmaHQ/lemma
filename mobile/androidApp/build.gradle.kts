@@ -80,6 +80,7 @@ tasks.withType<Test>().configureEach {
         "uniffi.component.lemma_mobile.libraryOverride",
         rootProject.file(lemmaHostLibPath).absolutePath,
     )
+    systemProperty("java.library.path", rootProject.file("target/debug").absolutePath)
 }
 
 tasks.register("verifyCoverage") {

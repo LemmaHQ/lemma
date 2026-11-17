@@ -28,7 +28,45 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        exclusiveContent {
+            forRepository {
+                maven(rustlsPlatformVerifierRepository()) {
+                    metadataSources {
+                        mavenPom()
+                        artifact()
+                    }
+                }
+            }
+            filter { includeGroup("rustls") }
+        }
     }
+}
+
+fun rustlsPlatformVerifierRepository(): File {
+    val metadata =
+        providers
+            .exec {
+                workingDir = settingsDir
+                commandLine(
+                    "cargo",
+                    "metadata",
+                    "--format-version",
+                    "1",
+                    "--filter-platform",
+                    "aarch64-linux-android",
+                    "--manifest-path",
+                    "crates/mobile/lemma-mobile/Cargo.toml",
+                )
+            }
+            .standardOutput
+            .asText
+            .get()
+    val packages = (groovy.json.JsonSlurper().parseText(metadata) as Map<*, *>)["packages"]
+    val manifest =
+        (packages as List<*>)
+            .map { it as Map<*, *> }
+            .first { it["name"] == "rustls-platform-verifier-android" }["manifest_path"]
+    return File(manifest as String).resolveSibling("maven")
 }
 
 include(":mobile:androidApp")

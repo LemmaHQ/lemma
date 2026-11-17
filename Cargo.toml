@@ -37,6 +37,7 @@ dunce = "1.0.5"
 futures = "0.3.34"
 hex = "0.4.3"
 http = "1.5.0"
+jni = "0.22.4"
 lemma-adapter = { path = "crates/shared/lemma-adapter" }
 lemma-agent = { path = "crates/shared/lemma-agent" }
 lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
@@ -56,6 +57,7 @@ napi-derive = "3.6.13"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 rust-embed = { version = "8.12.0", features = ["mime-guess"] }
+rustls-platform-verifier = "0.7.0"
 sqlx = { version = "0.9.0", default-features = false, features = [
     "chrono",
     "json",

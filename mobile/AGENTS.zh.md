@@ -30,6 +30,7 @@
 - Gradle 在编译 Kotlin 之前把 Protobuf 与 Connect 的 Kotlin 代码生成到 `shared/build/generated/source/bufgen/`：它运行 `buf`，所用的 `protoc` 与 `protoc-gen-connect-kotlin` 来自 Maven，版本与运行时库相同；这需要 `buf` 与 Java（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 - Gradle 在编译 Kotlin 之前为宿主机构建 `crates/mobile/lemma-mobile`，并把它的 UniFFI Kotlin 绑定生成到 `shared/build/generated/source/uniffi/`。打包 APK 时还会把它的 JNI 库交叉编译到 `shared/src/androidMain/jniLibs/`，这需要 `cargo-ndk` 与 Android NDK。`lemma-mobile` 的公共 API 变更就是 Kotlin API 变更。
 - `engine/LocalEngine.kt` 在应用的数据目录（`filesDir`）上打开 `LemmaEngine`，通过它的 `request`、`read` 与 `cancel` 响应 OkHttp 请求；`network/AndroidConnector.kt` 打开它一次并返回 `ConnectLemmaClient`。
+- `engine/PlatformVerifier.kt` 在进程启动时（`LemmaApplication.onCreate`）把应用 Context 交给 `lemma-mobile`，引擎的 HTTPS 请求由此经 `rustls-platform-verifier` 按 Android 系统信任库校验证书。该 crate 的 Kotlin 组件是其 Cargo 源码里自带的 AAR，`settings.gradle.kts` 通过 `cargo metadata` 找到它。
 - Gradle 在编译前运行 `scripts/design-token/gen-tokens.ts`，把 `LemmaTokens.kt` 写入 `shared/build/generated/source/tokens/`：其中是来自 [design/tokens.json](../design/README.zh.md) 的亮色与暗色 `LemmaColorScheme`、`LemmaTypography` 与 `LemmaShapes`，颜色角色、字体样式与圆角都与 Web 主题相同；这需要 Node。`theme/Theme.kt` 通过 `LemmaTheme` 提供它们。
 - Gradle 的 `generateStrings` 任务在组装 Compose 资源前运行 `scripts/i18n/gen-i18n.ts`，从 [i18n/](../i18n/README.zh.md) 的源文件生成字符串资源；这需要 Node。Kotlin 通过生成的 `Res.string` 与 `Res.plurals` 访问器读取这些资源。
 - 生成代码不手工修改，也不提交。

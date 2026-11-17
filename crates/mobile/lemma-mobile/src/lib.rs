@@ -1,6 +1,8 @@
 //! UniFFI facade for Android local mode: opens the local engine over a data
 //! directory and serves its Connect router through an in-process transport.
 
+mod platform_verifier;
+
 use std::path::Path;
 
 use lemma_host::InProcessEngine;

@@ -124,6 +124,7 @@ kotlin {
                 implementation(libs.protobuf.kotlin.lite)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(project.dependencies.variantOf(libs.jna) { artifactType("aar") })
+                runtimeOnly(libs.rustls.platform.verifier)
             }
         }
         commonMain {

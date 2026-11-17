@@ -15,10 +15,14 @@ required-features = ["bindgen"]
 bindgen = ["uniffi/cli"]
 
 [dependencies]
+jni.workspace = true
 lemma-host.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 uniffi.workspace = true
+
+[target.'cfg(target_os = "android")'.dependencies]
+rustls-platform-verifier.workspace = true
 
 [lints]
 workspace = true
