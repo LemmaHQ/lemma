@@ -34,6 +34,15 @@ export { SettingsIcon } from "./components/icons/settings";
 export { Trash2Icon } from "./components/icons/trash-2";
 export { XIcon } from "./components/icons/x";
 export {
+    SettingsField,
+    SettingsPage,
+    SettingsRow,
+    SettingsSection,
+    SettingsSectionCompact,
+} from "./components/lemma/settings";
+export { ThemePreviewTiles } from "./components/lemma/theme-preview-tiles";
+export { Wordmark } from "./components/lemma/wordmark";
+export {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -93,13 +102,6 @@ export {
     SelectValue,
 } from "./components/primitives/select";
 export {
-    SettingsField,
-    SettingsPage,
-    SettingsRow,
-    SettingsSection,
-    SettingsSectionCompact,
-} from "./components/primitives/settings";
-export {
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -118,14 +120,12 @@ export {
 export { Skeleton } from "./components/primitives/skeleton";
 export { Toaster } from "./components/primitives/sonner";
 export { Switch } from "./components/primitives/switch";
-export { ThemePreviewTiles } from "./components/primitives/theme-preview-tiles";
 export {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "./components/primitives/tooltip";
-export { Wordmark } from "./components/primitives/wordmark";
 export { useSidebar } from "./hooks/use-sidebar";
 export { cn } from "./lib/cn";
 export { formatClockTime, formatDuration } from "./lib/format-duration";

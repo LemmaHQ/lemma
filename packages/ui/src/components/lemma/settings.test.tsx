@@ -1,8 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { expect, it } from "vitest";
 
-import { Button } from "./button";
-import { Input } from "./input";
+import { Button } from "#primitives/button";
+import { Input } from "#primitives/input";
 import {
     SettingsField,
     SettingsPage,
