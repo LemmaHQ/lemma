@@ -7,7 +7,7 @@ export interface TextStyle {
     fontWeight?: number;
 }
 
-const TEXT_STYLE_KEYS = ["fontSize", "lineHeight", "fontWeight"];
+const TEXT_STYLE_KEYS = new Set(["fontSize", "lineHeight", "fontWeight"]);
 
 /** Reads the type styles; throws when a style lacks a pixel `fontSize` or `lineHeight`, has a weight outside 1–1000, or sets another property. */
 export function readTypography(
@@ -22,7 +22,7 @@ export function readTypography(
             throw new Error(`${label} must be a typography object`);
         }
         const extra = Object.keys(value).filter(
-            (key) => !TEXT_STYLE_KEYS.includes(key),
+            (key) => !TEXT_STYLE_KEYS.has(key),
         );
         if (extra.length > 0) {
             throw new Error(
