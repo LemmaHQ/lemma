@@ -75,6 +75,29 @@ async fn assert_outside(env: &LocalExecEnv, path: &Path) {
     );
 }
 
+/// Links `link` to the directory `target`; on Windows a junction, which needs no privilege.
+#[cfg(unix)]
+fn link_dir(target: &Path, link: &Path) -> io::Result<()> {
+    std::os::unix::fs::symlink(target, link)
+}
+
+#[cfg(windows)]
+fn link_dir(target: &Path, link: &Path) -> io::Result<()> {
+    use std::process::{Command, Stdio};
+
+    let status = Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(link)
+        .arg(target)
+        .stdout(Stdio::null())
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::other(format!("mklink /J exited with {status}")))
+    }
+}
+
 #[tokio::test]
 async fn paths_that_leave_the_root_are_rejected() -> Result<(), Box<dyn Error>> {
     let workspace = Workspace::new()?;
@@ -121,23 +144,22 @@ async fn a_root_spelled_in_another_letter_case_is_the_same_root() -> Result<(), 
     Ok(())
 }
 
-#[cfg(unix)]
 #[tokio::test]
 async fn links_that_leave_the_root_are_rejected() -> Result<(), Box<dyn Error>> {
-    use std::os::unix::fs::symlink;
-
     let workspace = Workspace::new()?;
     let outside = Workspace::new()?;
     fs::write(outside.0.join("secret.txt"), "secret")?;
-    symlink(&outside.0, workspace.0.join("out"))?;
-    symlink(outside.0.join("gone.txt"), workspace.0.join("dangling"))?;
+    fs::create_dir(outside.0.join("gone"))?;
+    link_dir(&outside.0, &workspace.0.join("out"))?;
+    link_dir(&outside.0.join("gone"), &workspace.0.join("dangling"))?;
+    fs::remove_dir(outside.0.join("gone"))?;
     let env = workspace.env().await?;
 
     for path in ["out/secret.txt", "out/new.txt", "dangling"] {
         assert_outside(&env, Path::new(path)).await;
     }
     assert!(
-        !outside.0.join("new.txt").exists() && !outside.0.join("gone.txt").exists(),
+        !outside.0.join("new.txt").exists() && !outside.0.join("gone").exists(),
         "nothing is written through a link"
     );
     Ok(())
