@@ -72,6 +72,7 @@ Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml a
 - `target` is a link into mbx's cache directory, `%LOCALAPPDATA%\mbx` on Windows. `cargo check` and `cargo clippy` build in `target/check/`, so they run beside a build or a test.
 - mbx removes the targets of deleted worktrees and keeps the rest within disk budgets that `mbx settings` changes ([managed target directories](https://mr-boxington.jdx.dev/managed-targets)).
 - A build that runs through mbx ends with `mbx[cache]:` summary lines. `mbx doctor` checks the toolchain and the cache directory; its `setup` warning that the Cargo shim is not installed also appears while the mise wrapper runs Cargo through mbx.
+- `just rust-cov` sets `MBX_SHARE_OUT_DIR=0`. With mbx's OUT_DIR sharing on, rustc records generated sources such as `lemma-proto`'s under a `${target}` placeholder, which cargo-llvm-cov does not recognize as the target directory and would report as uncovered.
 - `mbx explain --last` explains the cache results of the last build, and `MBX_DISABLE=1` runs one command without mbx.
 
 ### CI workflows
@@ -80,7 +81,7 @@ Every workflow under [.github/workflows/](../.github/workflows/) except mise-upg
 
 Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, the desktop build and tests, and the Android host tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only.
 
-Cargo runs through mbx in CI too. The Rust clippy and test jobs and setup-mobile restore and save `target/` and Cargo's downloads with [jdx/mr-boxington-action](https://github.com/jdx/mr-boxington-action): a push to `main` saves an entry, and a pull request restores one without saving. The Rust coverage job sets `MBX_DISABLE` and caches with `Swatinem/rust-cache`.
+Cargo runs through mbx in CI too. The Rust clippy, test, and coverage jobs and setup-mobile restore and save `target/` and Cargo's downloads with [jdx/mr-boxington-action](https://github.com/jdx/mr-boxington-action): a push to `main` saves an entry, and a pull request restores one without saving.
 
 Dependabot checks Cargo, npm, Gradle, and GitHub Actions dependencies and the Rust toolchain daily.
 

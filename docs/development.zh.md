@@ -72,6 +72,7 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 - `target` 是指向 mbx 缓存目录的链接，该目录在 Windows 上是 `%LOCALAPPDATA%\mbx`。`cargo check` 与 `cargo clippy` 在 `target/check/` 中构建，因此可以与构建或测试同时运行。
 - mbx 删除已删除 worktree 的 target，并把其余 target 控制在磁盘预算内，预算用 `mbx settings` 修改（[托管的 target 目录](https://mr-boxington.jdx.dev/managed-targets)）。
 - 经由 mbx 运行的构建以 `mbx[cache]:` 汇总行结束。`mbx doctor` 检查 Rust toolchain 与缓存目录；即使 mise wrapper 正让 Cargo 经由 mbx 运行，它的 `setup` 项仍会警告 Cargo shim 未安装。
+- `just rust-cov` 设置 `MBX_SHARE_OUT_DIR=0`。开启 mbx 的 OUT_DIR 共享时，rustc 把 `lemma-proto` 等生成的源文件记录在 `${target}` 占位路径下，cargo-llvm-cov 不把它识别为 target 目录，会把这些文件报告为未覆盖。
 - `mbx explain --last` 解释上一次构建的缓存结果，`MBX_DISABLE=1` 让单条命令不经过 mbx 运行。
 
 ### CI 工作流
@@ -80,7 +81,7 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
-CI 中的 Cargo 同样经由 mbx 运行。Rust 的 clippy 与测试 job 以及 setup-mobile 用 [jdx/mr-boxington-action](https://github.com/jdx/mr-boxington-action) 恢复并保存 `target/` 与 Cargo 的下载内容：推送到 `main` 时保存一条缓存，pull request 只恢复、不保存。Rust 覆盖率 job 设置 `MBX_DISABLE`，并用 `Swatinem/rust-cache` 缓存。
+CI 中的 Cargo 同样经由 mbx 运行。Rust 的 clippy、测试与覆盖率 job 以及 setup-mobile 用 [jdx/mr-boxington-action](https://github.com/jdx/mr-boxington-action) 恢复并保存 `target/` 与 Cargo 的下载内容：推送到 `main` 时保存一条缓存，pull request 只恢复、不保存。
 
 Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖，以及 Rust toolchain。
 

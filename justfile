@@ -61,7 +61,7 @@ rust-test:
 # Coverage under nextest, failing on any uncovered line or function; args replace the terminal summary
 [group('rust')]
 rust-cov *args="--summary-only":
-    cargo llvm-cov nextest --workspace \
+    MBX_SHARE_OUT_DIR=0 cargo llvm-cov nextest --workspace \
         --exclude lemma-proto \
         --exclude lemma-desktop \
         --exclude lemma-mobile \
