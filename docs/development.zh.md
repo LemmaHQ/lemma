@@ -9,7 +9,7 @@
 ### 前置条件
 
 - [mise](https://mise.jdx.dev/) 安装 [mise.toml](../mise.toml) 中固定版本的工具：Node.js、Java、just、buf、protoc，以及 cargo 工具 `cargo-binstall`、`cargo-llvm-cov` 与 `cargo-nextest`。本地 shell 与 CI 读取同一份版本。
-- 通过 rustup 安装 stable 版 Rust；[rust-toolchain.toml](../rust-toolchain.toml) 会加上 `rustfmt`、`clippy` 与 `llvm-tools-preview`。Rust 构建需要 `PATH` 上有 `protoc`，用来编译 `proto/`。
+- 通过 rustup 安装 Rust。[rust-toolchain.toml](../rust-toolchain.toml) 固定 Rust 版本、`rustfmt`、`clippy` 与 `llvm-tools-preview` 组件，以及四个 Android target；每个新版本发布后，Dependabot 会开一个 pull request。Rust 构建需要 `PATH` 上有 `protoc`，用来编译 `proto/`。
 - 仅 Android 需要：Android SDK（通过 `ANDROID_HOME` 或 `local.properties` 中的 `sdk.dir` 找到），并在 `<sdk>/ndk/` 下安装 NDK。Gradle 使用其中最新的 NDK。
 
 ### Windows
@@ -22,10 +22,11 @@
 
 ```sh
 mise install
+rustup toolchain install
 npm ci
 ```
 
-`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`rustup toolchain install` 安装 rust-toolchain.toml 固定的 Rust 版本及其组件与 target。`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
 ### 运行服务端与 Web 客户端
 
@@ -44,11 +45,7 @@ just rust-dev
 
 ### 运行 Android 应用
 
-Android 构建还需要 Rust 的 Android target；`cargo-ndk` 由 mise 安装：
-
-```sh
-rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-```
+Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已经列出 Rust 的 Android target。
 
 `just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
@@ -68,11 +65,11 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI 工作流
 
-[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
+[.github/workflows/](../.github/workflows/) 下除 mise-upgrade 外的每个工作流都在推送到 `main` 与 pull request 时运行；带路径过滤的工作流只在对应路径变化时运行，且每个路径过滤都包含 `justfile` 与 `mise.toml`。Rust CI 与 Mobile CI 的路径过滤还包含 `rust-toolchain.toml`，因此 Rust 版本升级会触发它们。每个工作流也可以不受路径限制地手动运行，例如 `gh workflow run rust-ci.yml --ref main`。工作流步骤调用 `just` recipe，运行 Cargo 的 job 用 `rustup toolchain install` 安装固定的 Rust 版本。Mobile CI、Android 覆盖率 job 与 CodeQL 的 Kotlin 扫描通过 [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml) 安装工具。
 
 结果取决于宿主机操作系统的步骤在 Linux、Windows 与 macOS 上运行：Rust 的 clippy 与测试、桌面端的构建与测试，以及 Android 宿主机测试，后者的 UniFFI 宿主机构建按系统选择库文件。格式检查、clippy 以外的 lint、Web、规范、覆盖率与代码扫描只在 Linux 上运行。
 
-Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖。
+Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖，以及 Rust toolchain。
 
 ### 日常命令
 

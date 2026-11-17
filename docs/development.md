@@ -9,7 +9,7 @@ How to set up a machine for Lemma and run each client. The [root AGENTS.md](../A
 ### Prerequisites
 
 - [mise](https://mise.jdx.dev/) installs the tools pinned in [mise.toml](../mise.toml): Node.js, Java, just, buf, protoc, and the cargo tools `cargo-binstall`, `cargo-llvm-cov`, and `cargo-nextest`. Local shells and CI read the same pins.
-- Rust stable through rustup; [rust-toolchain.toml](../rust-toolchain.toml) adds `rustfmt`, `clippy`, and `llvm-tools-preview`. The Rust build needs `protoc` on `PATH` to compile `proto/`.
+- Rust through rustup. [rust-toolchain.toml](../rust-toolchain.toml) pins the Rust release, the `rustfmt`, `clippy`, and `llvm-tools-preview` components, and the four Android targets; Dependabot opens a pull request for each new release. The Rust build needs `protoc` on `PATH` to compile `proto/`.
 - For Android only: the Android SDK, found through `ANDROID_HOME` or `sdk.dir` in `local.properties`, with an NDK under `<sdk>/ndk/`. Gradle uses the newest NDK there.
 
 ### Windows
@@ -22,10 +22,11 @@ From the repository root:
 
 ```sh
 mise install
+rustup toolchain install
 npm ci
 ```
 
-`npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
+`rustup toolchain install` installs the Rust release that rust-toolchain.toml pins, with its components and targets. `npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
 ### Run the server and the web client
 
@@ -44,11 +45,7 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 ### Run the Android app
 
-Android builds also need the Rust Android targets; mise installs `cargo-ndk`:
-
-```sh
-rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-```
+Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml already lists the Rust Android targets.
 
 `just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process local engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
@@ -68,11 +65,11 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 
 ### CI workflows
 
-Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. Every workflow also runs on demand regardless of paths, for example `gh workflow run rust-ci.yml --ref main`. Workflow steps call `just` recipes. Mobile CI, the Android coverage job, and the CodeQL Kotlin scan install their tools through [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml).
+Every workflow under [.github/workflows/](../.github/workflows/) except mise-upgrade runs on pushes to `main` and on pull requests; the path-filtered ones run only when their paths change, and every path filter also includes `justfile` and `mise.toml`. The Rust CI and Mobile CI filters also include `rust-toolchain.toml`, so a Rust release bump runs them. Every workflow also runs on demand regardless of paths, for example `gh workflow run rust-ci.yml --ref main`. Workflow steps call `just` recipes, and jobs that run Cargo install the pinned Rust release with `rustup toolchain install`. Mobile CI, the Android coverage job, and the CodeQL Kotlin scan install their tools through [.github/actions/setup-mobile](../.github/actions/setup-mobile/action.yml).
 
 Steps whose result depends on the host operating system run on Linux, Windows, and macOS: Rust clippy and tests, the desktop build and tests, and the Android host tests, whose UniFFI host build picks the library file per system. Formatting, lint other than clippy, web, specs, coverage, and code scanning run on Linux only.
 
-Dependabot checks Cargo, npm, Gradle, and GitHub Actions dependencies daily.
+Dependabot checks Cargo, npm, Gradle, and GitHub Actions dependencies and the Rust toolchain daily.
 
 ### Daily commands
 
