@@ -48,7 +48,7 @@ fun LemmaPasswordField(
                     if (visible) Res.string.password_input_hide else Res.string.password_input_show
                 ),
             onClick = { visible = !visible },
-            tint = LemmaTheme.colors.textSecondary,
+            tint = LemmaTheme.colors.mutedForeground,
         )
     }
 }

@@ -64,14 +64,14 @@ internal fun SessionDrawer(
             groupSessions(sessions, Clock.System.todayIn(timeZone), timeZone)
         }
     ModalDrawerSheet(
-        drawerContainerColor = LemmaTheme.colors.backgroundGroup,
+        drawerContainerColor = LemmaTheme.colors.sidebar,
         modifier = Modifier.width(280.dp),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text(
                 text = stringResource(Res.string.session_list_title),
-                style = LemmaTheme.typography.titleLarge,
-                color = LemmaTheme.colors.textPrimary,
+                style = LemmaTheme.typography.display,
+                color = LemmaTheme.colors.sidebarForeground,
             )
             Spacer(modifier = Modifier.height(16.dp))
             LemmaButton(
@@ -89,8 +89,8 @@ internal fun SessionDrawer(
                     item(key = group.period.name) {
                         Text(
                             text = group.period.label(),
-                            style = LemmaTheme.typography.labelSmall,
-                            color = LemmaTheme.colors.textTertiary,
+                            style = LemmaTheme.typography.caption,
+                            color = LemmaTheme.colors.subtleForeground,
                             modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 4.dp),
                         )
                     }

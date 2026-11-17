@@ -20,12 +20,13 @@ fun LemmaDropdownMenuItem(
     icon: DrawableResource? = null,
     destructive: Boolean = false,
 ) {
-    val color = if (destructive) LemmaTheme.colors.danger else LemmaTheme.colors.textPrimary
+    val color =
+        if (destructive) LemmaTheme.colors.destructive else LemmaTheme.colors.popoverForeground
     DropdownMenuItem(
         text = {
             Text(
                 text = title,
-                style = LemmaTheme.typography.bodyLarge,
+                style = LemmaTheme.typography.body,
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.lemmahq.lemma.client.ClientSession
@@ -45,15 +46,15 @@ internal fun SessionRow(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .clip(LemmaTheme.shapes.medium)
-                .background(if (selected) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1)
+                .clip(LemmaTheme.shapes.md)
+                .background(if (selected) LemmaTheme.colors.selected else Color.Transparent)
                 .clickable(onClick = onSelect)
                 .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = session.title.ifBlank { stringResource(Res.string.sidebar_new_session) },
-            style = LemmaTheme.typography.bodyMedium,
+            style = LemmaTheme.typography.body,
             color =
                 if (selected) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textSecondary,
             maxLines = 1,
@@ -65,7 +66,7 @@ internal fun SessionRow(
                 icon = Res.drawable.icon_ellipsis,
                 contentDescription = stringResource(Res.string.session_actions),
                 onClick = { menuExpanded = true },
-                tint = LemmaTheme.colors.textTertiary,
+                tint = LemmaTheme.colors.subtleForeground,
             )
             LemmaDropdownMenu(expanded = menuExpanded, onDismiss = { menuExpanded = false }) {
                 LemmaDropdownMenuItem(

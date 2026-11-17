@@ -39,20 +39,20 @@ fun LemmaSettingsRow(
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = LemmaTheme.colors.textSecondary,
+            tint = LemmaTheme.colors.mutedForeground,
             modifier = Modifier.size(22.dp),
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = title,
-            style = LemmaTheme.typography.bodyLarge,
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.body,
+            color = LemmaTheme.colors.foreground,
             modifier = Modifier.weight(1f),
         )
         Icon(
             painter = painterResource(Res.drawable.icon_chevron_right),
             contentDescription = null,
-            tint = LemmaTheme.colors.textTertiary,
+            tint = LemmaTheme.colors.subtleForeground,
             modifier = Modifier.size(20.dp),
         )
     }

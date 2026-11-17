@@ -70,7 +70,7 @@ fun LemmaCopyButton(
                 painter =
                     painterResource(if (done) Res.drawable.icon_check else Res.drawable.icon_copy),
                 contentDescription = null,
-                tint = LemmaTheme.colors.textSecondary,
+                tint = LemmaTheme.colors.mutedForeground,
                 modifier = Modifier.size(iconSize),
             )
         }

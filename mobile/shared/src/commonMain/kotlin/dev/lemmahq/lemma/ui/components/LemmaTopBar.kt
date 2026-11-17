@@ -38,8 +38,8 @@ fun LemmaTopBar(
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = title,
-            style = LemmaTheme.typography.titleLarge,
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.display,
+            color = LemmaTheme.colors.foreground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),

@@ -1,6 +1,7 @@
 package dev.lemmahq.lemma.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,16 +17,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.theme.DISABLED_ALPHA
 import dev.lemmahq.lemma.theme.LemmaTheme
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * An input on the fill surface; [trailingContent] takes the place of the end and vertical padding.
+ * An input on the control surface; [trailingContent] takes the place of the end and vertical
+ * padding.
  */
 @Composable
 fun LemmaTextField(
@@ -45,8 +49,10 @@ fun LemmaTextField(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp)
-                .clip(LemmaTheme.shapes.medium)
-                .background(LemmaTheme.colors.fill2)
+                .alpha(if (enabled) 1f else DISABLED_ALPHA)
+                .clip(LemmaTheme.shapes.md)
+                .background(LemmaTheme.colors.control)
+                .border(1.dp, LemmaTheme.colors.input, LemmaTheme.shapes.md)
                 .padding(start = 16.dp, end = if (trailingContent == null) 16.dp else 4.dp)
                 .padding(vertical = if (trailingContent == null) 14.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -55,7 +61,7 @@ fun LemmaTextField(
             Icon(
                 painter = painterResource(leadingIcon),
                 contentDescription = null,
-                tint = LemmaTheme.colors.textTertiary,
+                tint = LemmaTheme.colors.subtleForeground,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(10.dp))
@@ -64,8 +70,8 @@ fun LemmaTextField(
             if (value.isEmpty()) {
                 Text(
                     text = placeholder,
-                    color = LemmaTheme.colors.textTertiary,
-                    style = LemmaTheme.typography.bodyLarge,
+                    color = LemmaTheme.colors.subtleForeground,
+                    style = LemmaTheme.typography.reading,
                     maxLines = 1,
                 )
             }
@@ -77,12 +83,8 @@ fun LemmaTextField(
                 visualTransformation = visualTransformation,
                 keyboardOptions = keyboardOptions,
                 textStyle =
-                    LemmaTheme.typography.bodyLarge.copy(
-                        color =
-                            if (enabled) LemmaTheme.colors.textPrimary
-                            else LemmaTheme.colors.textTertiary
-                    ),
-                cursorBrush = SolidColor(LemmaTheme.colors.primary),
+                    LemmaTheme.typography.reading.copy(color = LemmaTheme.colors.foreground),
+                cursorBrush = SolidColor(LemmaTheme.colors.brand),
                 modifier = Modifier.fillMaxWidth(),
             )
         }

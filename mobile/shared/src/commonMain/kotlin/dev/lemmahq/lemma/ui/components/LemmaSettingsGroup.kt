@@ -23,23 +23,23 @@ fun LemmaSettingsGroup(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
-            style = LemmaTheme.typography.titleMedium,
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.title,
+            color = LemmaTheme.colors.foreground,
         )
         if (description != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textSecondary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.mutedForeground,
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .clip(LemmaTheme.shapes.medium)
-                    .background(LemmaTheme.colors.fill2),
+                    .clip(LemmaTheme.shapes.lg)
+                    .background(LemmaTheme.colors.selected),
             content = content,
         )
     }

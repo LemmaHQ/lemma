@@ -136,7 +136,7 @@ private fun AppState.route(): Any =
 @Composable
 private fun LoadingIndicator() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = LemmaTheme.colors.primary)
+        CircularProgressIndicator(color = LemmaTheme.colors.brand)
     }
 }
 
@@ -149,8 +149,8 @@ private fun EngineFailedView(error: String, onRetry: () -> Unit) {
         ) {
             Text(
                 text = error,
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.danger,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.destructive,
                 textAlign = TextAlign.Center,
             )
             LemmaButton(text = stringResource(Res.string.common_retry), onClick = onRetry)

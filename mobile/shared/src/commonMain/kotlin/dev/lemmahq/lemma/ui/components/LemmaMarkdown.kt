@@ -42,11 +42,11 @@ import org.jetbrains.compose.resources.stringResource
 fun LemmaMarkdown(
     content: String,
     modifier: Modifier = Modifier,
-    color: Color = LemmaTheme.colors.textPrimary,
-    style: TextStyle = LemmaTheme.typography.bodyLarge,
+    color: Color = LemmaTheme.colors.foreground,
+    style: TextStyle = LemmaTheme.typography.reading,
 ) {
     val inlineCode =
-        LemmaTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+        LemmaTheme.typography.body.copy(fontFamily = FontFamily.Monospace, fontSize = 13.sp)
     Markdown(
         markdownState = rememberMarkdownState(content, retainState = true),
         colors =
@@ -57,9 +57,9 @@ fun LemmaMarkdown(
             ),
         typography =
             markdownTypography(
-                h1 = LemmaTheme.typography.titleLarge,
-                h2 = LemmaTheme.typography.titleMedium,
-                h3 = LemmaTheme.typography.titleMedium,
+                h1 = LemmaTheme.typography.display,
+                h2 = LemmaTheme.typography.title,
+                h3 = LemmaTheme.typography.title,
                 text = style,
                 paragraph = style,
                 code = inlineCode,
@@ -68,7 +68,7 @@ fun LemmaMarkdown(
                     TextLinkStyles(
                         style =
                             SpanStyle(
-                                color = LemmaTheme.colors.primary,
+                                color = LemmaTheme.colors.brand,
                                 fontWeight = FontWeight.Bold,
                                 textDecoration = TextDecoration.Underline,
                             )
@@ -97,8 +97,8 @@ private fun FencedCode(code: String, language: String?) {
         modifier =
             Modifier.fillMaxWidth()
                 .padding(vertical = 4.dp)
-                .clip(LemmaTheme.shapes.medium)
-                .background(LemmaTheme.colors.fill1)
+                .clip(LemmaTheme.shapes.md)
+                .background(LemmaTheme.colors.muted)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
@@ -106,13 +106,13 @@ private fun FencedCode(code: String, language: String?) {
         ) {
             Text(
                 text = language?.trim().orEmpty(),
-                style = LemmaTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                color = LemmaTheme.colors.textTertiary,
+                style = LemmaTheme.typography.caption.copy(fontFamily = FontFamily.Monospace),
+                color = LemmaTheme.colors.subtleForeground,
                 modifier = Modifier.weight(1f),
             )
             LemmaCopyButton(text = code, label = stringResource(Res.string.common_copy_code))
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(LemmaTheme.colors.separator))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(LemmaTheme.colors.border))
         LemmaCode(code = code, language = language, modifier = Modifier.fillMaxWidth())
     }
 }

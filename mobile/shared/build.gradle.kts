@@ -22,6 +22,8 @@ val generateDesignTokens =
         inputs.dir(rootProject.file("scripts/design-token"))
         inputs.dir(rootProject.file("scripts/shared"))
         outputs.dir(designTokensDir)
+        val outputDir = designTokensDir.get().asFile
+        doFirst { outputDir.deleteRecursively() }
     }
 
 val generateStrings =

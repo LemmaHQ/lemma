@@ -12,10 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import dev.lemmahq.lemma.theme.DISABLED_ALPHA
 import dev.lemmahq.lemma.theme.LemmaTheme
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -29,30 +30,15 @@ fun LemmaButton(
     enabled: Boolean = true,
     icon: DrawableResource? = null,
 ) {
-    val backgroundColor =
-        when (variant) {
-            LemmaButtonVariant.Primary ->
-                if (enabled) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
-            LemmaButtonVariant.Secondary ->
-                if (enabled) LemmaTheme.colors.fill2 else LemmaTheme.colors.fill1
-            LemmaButtonVariant.Destructive ->
-                if (enabled) LemmaTheme.colors.danger else LemmaTheme.colors.fill2
-        }
-
-    val textColor =
-        when (variant) {
-            LemmaButtonVariant.Primary,
-            LemmaButtonVariant.Destructive ->
-                if (enabled) Color.White else LemmaTheme.colors.textQuaternary
-            LemmaButtonVariant.Secondary ->
-                if (enabled) LemmaTheme.colors.textPrimary else LemmaTheme.colors.textQuaternary
-        }
+    val backgroundColor = variant.background(LemmaTheme.colors)
+    val textColor = variant.content(LemmaTheme.colors)
 
     Row(
         modifier =
             modifier
                 .heightIn(min = 44.dp)
-                .clip(LemmaTheme.shapes.full)
+                .alpha(if (enabled) 1f else DISABLED_ALPHA)
+                .clip(LemmaTheme.shapes.md)
                 .background(backgroundColor)
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -67,6 +53,6 @@ fun LemmaButton(
                 modifier = Modifier.size(16.dp),
             )
         }
-        Text(text = text, color = textColor, style = LemmaTheme.typography.bodyMedium)
+        Text(text = text, color = textColor, style = LemmaTheme.typography.body)
     }
 }

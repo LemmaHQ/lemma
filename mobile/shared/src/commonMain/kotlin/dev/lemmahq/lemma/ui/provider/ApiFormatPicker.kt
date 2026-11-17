@@ -1,6 +1,7 @@
 package dev.lemmahq.lemma.ui.provider
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -42,9 +43,12 @@ internal fun ApiFormatPicker(
             Box(
                 modifier =
                     Modifier.heightIn(min = 40.dp)
-                        .clip(LemmaTheme.shapes.full)
-                        .background(
-                            if (selected) LemmaTheme.colors.primary else LemmaTheme.colors.fill2
+                        .clip(LemmaTheme.shapes.md)
+                        .background(if (selected) LemmaTheme.colors.primary else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (selected) Color.Transparent else LemmaTheme.colors.border,
+                            LemmaTheme.shapes.md,
                         )
                         .selectable(
                             selected = selected,
@@ -57,8 +61,10 @@ internal fun ApiFormatPicker(
             ) {
                 Text(
                     text = option.label(),
-                    style = LemmaTheme.typography.bodyMedium,
-                    color = if (selected) Color.White else LemmaTheme.colors.textSecondary,
+                    style = LemmaTheme.typography.body,
+                    color =
+                        if (selected) LemmaTheme.colors.primaryForeground
+                        else LemmaTheme.colors.mutedForeground,
                 )
             }
         }

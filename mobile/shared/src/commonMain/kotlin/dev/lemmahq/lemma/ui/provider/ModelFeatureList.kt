@@ -35,13 +35,13 @@ internal fun ModelFeatureList(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(LemmaTheme.shapes.medium)
-                .background(LemmaTheme.colors.fill2)
+                .clip(LemmaTheme.shapes.lg)
+                .background(LemmaTheme.colors.selected)
     ) {
         models.forEachIndexed { index, model ->
             if (index > 0) {
                 HorizontalDivider(
-                    color = LemmaTheme.colors.separator,
+                    color = LemmaTheme.colors.border,
                     modifier = Modifier.padding(start = 16.dp),
                 )
             }
@@ -54,14 +54,14 @@ internal fun ModelFeatureList(
             ) {
                 Text(
                     text = model.id,
-                    style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.textPrimary,
+                    style = LemmaTheme.typography.body,
+                    color = LemmaTheme.colors.foreground,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
                     text = stringResource(Res.string.provider_tool_calling),
-                    style = LemmaTheme.typography.labelSmall,
-                    color = LemmaTheme.colors.textSecondary,
+                    style = LemmaTheme.typography.caption,
+                    color = LemmaTheme.colors.mutedForeground,
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 LemmaSwitch(
@@ -75,7 +75,7 @@ internal fun ModelFeatureList(
                         icon = Res.drawable.icon_x,
                         contentDescription = stringResource(Res.string.provider_remove_model),
                         onClick = { remove(model.id) },
-                        tint = LemmaTheme.colors.textSecondary,
+                        tint = LemmaTheme.colors.mutedForeground,
                     )
                 }
             }

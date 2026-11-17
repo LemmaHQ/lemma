@@ -20,7 +20,7 @@ internal fun ProviderLoadingScreen(onBack: () -> Unit, modifier: Modifier = Modi
     Column(modifier = modifier.fillMaxSize().background(LemmaTheme.colors.background)) {
         LemmaTopBar(title = stringResource(Res.string.settings_ai_providers), onBack = onBack)
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = LemmaTheme.colors.primary)
+            CircularProgressIndicator(color = LemmaTheme.colors.brand)
         }
     }
 }

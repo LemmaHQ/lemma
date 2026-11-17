@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -78,21 +79,21 @@ internal fun ProviderListScreen(
             viewModel.error?.let { error ->
                 Text(
                     text = error.text(),
-                    style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.danger,
+                    style = LemmaTheme.typography.body,
+                    color = LemmaTheme.colors.destructive,
                 )
             }
             when {
                 viewModel.loading ->
                     CircularProgressIndicator(
-                        color = LemmaTheme.colors.primary,
+                        color = LemmaTheme.colors.brand,
                         modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
                     )
                 viewModel.providers.isEmpty() && viewModel.error == null ->
                     Text(
                         text = stringResource(Res.string.provider_empty_list),
-                        style = LemmaTheme.typography.bodyMedium,
-                        color = LemmaTheme.colors.textTertiary,
+                        style = LemmaTheme.typography.body,
+                        color = LemmaTheme.colors.subtleForeground,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                 else -> {
@@ -128,7 +129,7 @@ private fun ProviderGroup(
         providers.forEachIndexed { index, provider ->
             if (index > 0) {
                 HorizontalDivider(
-                    color = LemmaTheme.colors.separator,
+                    color = LemmaTheme.colors.border,
                     modifier = Modifier.padding(start = 60.dp),
                 )
             }
@@ -148,23 +149,20 @@ private fun ProviderRow(provider: ClientProvider, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier =
-                Modifier.size(32.dp)
-                    .clip(LemmaTheme.shapes.full)
-                    .background(LemmaTheme.colors.fill3),
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(LemmaTheme.colors.card),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = (provider.source.name.firstOrNull() ?: '?').uppercase(),
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.textPrimary,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.cardForeground,
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = provider.source.name,
-            style = LemmaTheme.typography.bodyLarge,
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.body,
+            color = LemmaTheme.colors.foreground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -174,7 +172,7 @@ private fun ProviderRow(provider: ClientProvider, onClick: () -> Unit) {
         Icon(
             painter = painterResource(Res.drawable.icon_chevron_right),
             contentDescription = null,
-            tint = LemmaTheme.colors.textTertiary,
+            tint = LemmaTheme.colors.subtleForeground,
             modifier = Modifier.size(20.dp),
         )
     }

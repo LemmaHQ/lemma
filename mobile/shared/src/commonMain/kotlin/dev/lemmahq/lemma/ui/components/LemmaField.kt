@@ -23,14 +23,14 @@ fun LemmaField(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
-            style = LemmaTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.body.copy(fontWeight = FontWeight.Medium),
+            color = LemmaTheme.colors.foreground,
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = description,
-            style = LemmaTheme.typography.bodyMedium,
-            color = LemmaTheme.colors.textSecondary,
+            style = LemmaTheme.typography.body,
+            color = LemmaTheme.colors.mutedForeground,
         )
         Spacer(modifier = Modifier.height(8.dp))
         content()
@@ -38,8 +38,8 @@ fun LemmaField(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = error,
-                style = LemmaTheme.typography.bodyMedium,
-                color = LemmaTheme.colors.danger,
+                style = LemmaTheme.typography.body,
+                color = LemmaTheme.colors.destructive,
             )
         }
     }

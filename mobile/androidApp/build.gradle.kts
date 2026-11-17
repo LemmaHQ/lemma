@@ -50,7 +50,12 @@ kover {
                     "dev.lemmahq.lemma.uniffi",
                     "lemma.mobile.shared.generated.resources",
                 )
-                classes("dev.lemmahq.lemma.theme.LemmaPalette")
+                classes(
+                    "dev.lemmahq.lemma.theme.LemmaColorScheme",
+                    "dev.lemmahq.lemma.theme.LemmaTypography",
+                    "dev.lemmahq.lemma.theme.LemmaShapes",
+                    "dev.lemmahq.lemma.theme.LemmaTokensKt",
+                )
                 annotatedBy("kotlinx.serialization.Serializable")
             }
         }

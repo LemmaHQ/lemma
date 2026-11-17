@@ -10,6 +10,9 @@ val LocalLemmaColors = staticCompositionLocalOf { LightLemmaColorScheme }
 val LocalLemmaTypography = staticCompositionLocalOf { LemmaTypography() }
 val LocalLemmaShapes = staticCompositionLocalOf { LemmaShapes() }
 
+/** The opacity of a disabled control, matching the web's `disabled:opacity-50`. */
+const val DISABLED_ALPHA = 0.5f
+
 object LemmaTheme {
     val colors: LemmaColorScheme
         @Composable @ReadOnlyComposable get() = LocalLemmaColors.current

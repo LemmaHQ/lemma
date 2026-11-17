@@ -92,8 +92,8 @@ internal fun NewProviderScreen(
             viewModel.error?.let { error ->
                 Text(
                     text = error.text(),
-                    style = LemmaTheme.typography.bodyMedium,
-                    color = LemmaTheme.colors.danger,
+                    style = LemmaTheme.typography.body,
+                    color = LemmaTheme.colors.destructive,
                 )
             }
         }

@@ -42,7 +42,7 @@ fun LemmaDisclosureChevron(
     expanded: Boolean,
     modifier: Modifier = Modifier,
     size: Dp = 14.dp,
-    tint: Color = LemmaTheme.colors.textTertiary,
+    tint: Color = LemmaTheme.colors.subtleForeground,
 ) {
     val rotation by animateFloatAsState(if (expanded) 180f else 0f)
     Icon(

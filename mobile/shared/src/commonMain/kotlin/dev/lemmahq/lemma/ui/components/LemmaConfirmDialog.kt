@@ -31,8 +31,8 @@ fun LemmaConfirmDialog(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = description,
-            style = LemmaTheme.typography.bodyMedium,
-            color = LemmaTheme.colors.textSecondary,
+            style = LemmaTheme.typography.body,
+            color = LemmaTheme.colors.mutedForeground,
         )
     }
 }

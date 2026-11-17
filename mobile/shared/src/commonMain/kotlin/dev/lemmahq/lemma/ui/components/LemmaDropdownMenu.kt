@@ -17,8 +17,8 @@ fun LemmaDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
         modifier = modifier,
-        shape = LemmaTheme.shapes.medium,
-        containerColor = LemmaTheme.colors.backgroundGroup,
+        shape = LemmaTheme.shapes.lg,
+        containerColor = LemmaTheme.colors.popover,
         content = content,
     )
 }

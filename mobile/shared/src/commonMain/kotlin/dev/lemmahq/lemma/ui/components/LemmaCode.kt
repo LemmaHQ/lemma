@@ -38,7 +38,7 @@ fun LemmaCode(code: String, language: String?, modifier: Modifier = Modifier) {
         text = shown,
         color = codeTextColor(dark),
         style =
-            LemmaTheme.typography.bodyMedium.copy(
+            LemmaTheme.typography.body.copy(
                 fontFamily = FontFamily.Monospace,
                 fontSize = 13.sp,
                 lineHeight = 19.sp,

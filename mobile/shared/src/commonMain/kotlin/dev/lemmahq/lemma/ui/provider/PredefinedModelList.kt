@@ -20,13 +20,13 @@ internal fun PredefinedModelList(models: List<ClientModel>, modifier: Modifier =
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(Res.string.provider_model_list),
-            style = LemmaTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            color = LemmaTheme.colors.textPrimary,
+            style = LemmaTheme.typography.body.copy(fontWeight = FontWeight.Medium),
+            color = LemmaTheme.colors.foreground,
         )
         Text(
             text = stringResource(Res.string.provider_models_read_only),
-            style = LemmaTheme.typography.labelSmall,
-            color = LemmaTheme.colors.textTertiary,
+            style = LemmaTheme.typography.caption,
+            color = LemmaTheme.colors.subtleForeground,
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
         )
         ModelFeatureList(models = models)

@@ -34,14 +34,14 @@ fun LemmaDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier =
-                Modifier.clip(LemmaTheme.shapes.large)
-                    .background(LemmaTheme.colors.backgroundGroup)
+                Modifier.clip(LemmaTheme.shapes.lg)
+                    .background(LemmaTheme.colors.popover)
                     .padding(20.dp)
         ) {
             Text(
                 text = title,
-                style = LemmaTheme.typography.titleMedium,
-                color = LemmaTheme.colors.textPrimary,
+                style = LemmaTheme.typography.title,
+                color = LemmaTheme.colors.popoverForeground,
             )
             content()
             Spacer(modifier = Modifier.height(20.dp))

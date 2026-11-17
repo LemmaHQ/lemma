@@ -4,7 +4,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import dev.lemmahq.lemma.theme.DISABLED_ALPHA
 import dev.lemmahq.lemma.theme.LemmaTheme
 
 /** A switch; a null [onCheckedChange] leaves the toggling to an enclosing toggleable row. */
@@ -18,15 +20,20 @@ fun LemmaSwitch(
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
-        modifier = modifier,
+        modifier = modifier.alpha(if (enabled) 1f else DISABLED_ALPHA),
         enabled = enabled,
         colors =
             SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = LemmaTheme.colors.thumb,
                 checkedTrackColor = LemmaTheme.colors.primary,
-                uncheckedThumbColor = LemmaTheme.colors.textTertiary,
-                uncheckedTrackColor = LemmaTheme.colors.fill3,
-                uncheckedBorderColor = LemmaTheme.colors.separator,
+                uncheckedThumbColor = LemmaTheme.colors.thumb,
+                uncheckedTrackColor = LemmaTheme.colors.track,
+                uncheckedBorderColor = Color.Transparent,
+                disabledCheckedThumbColor = LemmaTheme.colors.thumb,
+                disabledCheckedTrackColor = LemmaTheme.colors.primary,
+                disabledUncheckedThumbColor = LemmaTheme.colors.thumb,
+                disabledUncheckedTrackColor = LemmaTheme.colors.track,
+                disabledUncheckedBorderColor = Color.Transparent,
             ),
     )
 }
