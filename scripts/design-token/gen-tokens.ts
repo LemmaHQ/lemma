@@ -20,7 +20,7 @@ const UI_CSS_PATH = path.join(
 const DESKTOP_TS_PATH = path.join(ROOT_DIR, "desktop/src/gen/theme-colors.ts");
 const ANDROID_KT_PATH = path.join(
     ROOT_DIR,
-    "mobile/shared/build/generated/source/tokens/dev/lemmahq/lemma/theme/LemmaTokens.kt",
+    "mobile/shared/build/generated/source/tokens/io/github/mistvesper/lemma/theme/LemmaTokens.kt",
 );
 
 function main(): void {

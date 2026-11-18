@@ -151,7 +151,7 @@ export function generateAndroidKt(
     ];
     return `// ${NOTICE}
 
-package dev.lemmahq.lemma.theme
+package io.github.mistvesper.lemma.theme
 
 ${imports.map((name) => `import ${name}`).join("\n")}
 
