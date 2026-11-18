@@ -89,7 +89,7 @@ The inner `res.content !== undefined` check in "before" guarded a state the type
 
 ## Kotlin: elvis and scope functions over null branches
 
-From `mobile/shared/src/androidMain/kotlin/dev/lemmahq/lemma/engine/LocalEngine.kt`.
+From `mobile/shared/src/androidMain/kotlin/dev/lemmahq/lemma/engine/Engine.kt`.
 
 Before: explicit null branches and a one-use temporary.
 

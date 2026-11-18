@@ -2,13 +2,13 @@
 export function addonFile(): string {
     switch (process.platform) {
         case "win32": {
-            return "lemma_desktop.dll";
+            return "lemma_napi.dll";
         }
         case "darwin": {
-            return "liblemma_desktop.dylib";
+            return "liblemma_napi.dylib";
         }
         default: {
-            return "liblemma_desktop.so";
+            return "liblemma_napi.so";
         }
     }
 }

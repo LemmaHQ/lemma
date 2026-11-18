@@ -20,7 +20,7 @@ import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
 import dev.lemmahq.lemma.client.activePath
 import dev.lemmahq.lemma.engine.ENGINE_BASE_URL
-import dev.lemmahq.lemma.engine.LocalEngine
+import dev.lemmahq.lemma.engine.Engine
 import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -53,7 +53,7 @@ class ConnectLemmaClientTest {
     private val vendor = MockWebServer()
     private val vendorCalled = CountDownLatch(1)
     private val release = CountDownLatch(1)
-    private val engines = mutableListOf<LocalEngine>()
+    private val engines = mutableListOf<Engine>()
     private val vendorUrl
         get() = "http://127.0.0.1:${vendor.port}/v1"
 
@@ -490,7 +490,7 @@ class ConnectLemmaClientTest {
     }
 
     private suspend fun client(): ConnectLemmaClient {
-        val engine = LocalEngine.open(dataDir.newFolder().path).also { engines += it }
+        val engine = Engine.open(dataDir.newFolder().path).also { engines += it }
         return ConnectLemmaClient(LemmaRpcClient(ENGINE_BASE_URL, engine.transport))
     }
 

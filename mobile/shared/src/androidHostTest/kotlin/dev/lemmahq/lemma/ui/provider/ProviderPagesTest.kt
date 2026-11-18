@@ -155,8 +155,7 @@ class ProviderPagesTest {
         inDialog(hasText("p1") and hasSetTextAction() and isEnabled())
             .performTextReplacement("Work")
         inDialog(hasText("Save")).performClick()
-        inDialog(hasText("Can't reach the server, check your connection and try again"))
-            .assertIsDisplayed()
+        inDialog(hasText("Connection failed, try again")).assertIsDisplayed()
         client.onUpdateCustomProvider = update
         inDialog(hasText("Save")).performClick()
 
@@ -217,7 +216,7 @@ class ProviderPagesTest {
     fun theCheckUsesThePickedModelAndFailedRequestsShowTheirReason() {
         client.onCheckProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         openStoredProvider("gpt-4o", "o3")
-        val failure = "Can't reach the server, check your connection and try again"
+        val failure = "Connection failed, try again"
 
         compose
             .onNode(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.DropdownList))
@@ -301,9 +300,7 @@ class ProviderPagesTest {
         client.onListProviders = { throw ServiceException(ServiceFailure.Network) }
         showProviders()
 
-        compose
-            .onNodeWithText("Can't reach the server, check your connection and try again")
-            .assertIsDisplayed()
+        compose.onNodeWithText("Connection failed, try again").assertIsDisplayed()
     }
 
     @Test

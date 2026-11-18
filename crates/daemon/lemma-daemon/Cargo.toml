@@ -1,0 +1,18 @@
+[package]
+name = "lemma-daemon"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum.workspace = true
+dotenvy.workspace = true
+lemma-engine.workspace = true
+rust-embed.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+reqwest.workspace = true
+tower.workspace = true
+
+[lints]
+workspace = true

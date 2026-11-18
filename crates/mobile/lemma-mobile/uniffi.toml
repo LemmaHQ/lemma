@@ -1,3 +1,0 @@
-[crates.lemma_mobile.bindings.kotlin]
-package_name = "dev.lemmahq.lemma.uniffi"
-android = true

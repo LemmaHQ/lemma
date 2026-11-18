@@ -11,7 +11,7 @@ export interface DesktopBridge {
     setTitleBar(state: TitleBarState): void;
     toggleMaximize(): void;
     /**
-     * Asks for a port to the local engine. The preload answers with an
+     * Asks for a port to the engine. The preload answers with an
      * {@link EnginePortHandoff}, or with an {@link EngineExitNotice} when the
      * engine is not running. Each call opens a new port.
      */

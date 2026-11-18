@@ -9,7 +9,7 @@
 - **表达式驱动：** 计算链条保持简短直接；含分支或修改外部状态的链条改写为 `for` 循环。
 - **守卫分支用 `let-else`；** 复杂分支用穷尽的 `match`。
 - **导入：** `use` 分组依次为标准库、外部 crate、workspace 内 crate，每条 `use` 只从一个模块导入。类型与 trait 导入后不加限定直接使用；自由函数通过所在模块调用（`persist::settle()`）；只在一个函数中使用的 trait 在该函数内导入；唯一允许的 glob 导入是测试模块中的 `use super::*`。
-- **模块** 采用 `foo.rs` 与同名 `foo/` 目录并列。含子模块的模块（包括 crate 根）只包含 `mod` 声明、re-export 以及二进制的 `fn main`；叶子文件以其主要条目命名（`LocalEngine` 位于 `local_engine.rs`）。一个类型的方法拆到多个文件时，每个资源一个文件（`session_service/messages.rs`）。
+- **模块** 采用 `foo.rs` 与同名 `foo/` 目录并列。含子模块的模块（包括 crate 根）只包含 `mod` 声明、re-export 以及二进制的 `fn main`；叶子文件以其主要条目命名（`InProcessEngine` 位于 `in_process_engine.rs`）。一个类型的方法拆到多个文件时，每个资源一个文件（`session_service/messages.rs`）。
 - **所有权：** 数据以借用传递（`&str`、`&[T]`、`Option<&T>`），避免拷贝。`Arc` 只持有由派生任务或请求处理器共享的值。参数用泛型而非 `dyn Trait`，取具体类型而非 `impl Into<T>`；`dyn` 只保留给工具注册表这类异构集合以及 UniFFI 边界。
 - **生命周期** 只在推断不足时显式标注，并使用描述性名称（`'conn`，而非 `'a`）。
 - **Workspace lint** 定义在根 `Cargo.toml`；每个 crate 通过 `[lints] workspace = true` 启用。
@@ -23,8 +23,8 @@
 
 ## 布局
 
-- `shared/` 中的 crate 为所有运行时构建，包括 Android；宿主目录（`server/`、`desktop/`、`mobile/`）下的 crate 只编入该宿主。
-- crate 命名为 `lemma-<concept>`。
+- `shared/` 中的 crate 为所有运行时构建，包括 Android；宿主目录（`daemon/`、`napi/`、`uniffi/`）下的 crate 只编入该宿主。
+- crate 命名为 `lemma-<concept>`；绑定层 crate 以其绑定技术命名（`lemma-napi`、`lemma-uniffi`）。
 - `lemma-db` 在 `crates/shared/lemma-db/migrations/` 中维护 SQLite schema 迁移，并在打开文件或内存连接池（`lemma_db::open`、`lemma_db::in_memory`）时应用它们；`lemma-session` 与 `lemma-provider` 通过 `SqlitePool` 执行参数化的 `sqlx` 查询。
 
 ## 命令

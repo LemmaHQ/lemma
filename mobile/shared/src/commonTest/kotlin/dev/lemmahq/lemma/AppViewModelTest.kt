@@ -1,6 +1,6 @@
 package dev.lemmahq.lemma
 
-import dev.lemmahq.lemma.client.FakeConnector
+import dev.lemmahq.lemma.client.FakeEngineOpener
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
@@ -25,7 +25,7 @@ import lemma.mobile.shared.generated.resources.errors_engine_failed
 class AppViewModelTest {
 
     private val client = FakeLemmaClient()
-    private val connector = FakeConnector(client)
+    private val engineOpener = FakeEngineOpener(client)
     private val dispatcher = StandardTestDispatcher()
 
     @BeforeTest
@@ -41,32 +41,32 @@ class AppViewModelTest {
     @Test
     fun opensTheEngineOnStartAndIgnoresRetryUnlessFailed() = runTest {
         val opening = CompletableDeferred<Unit>()
-        connector.onOpen = {
+        engineOpener.onOpen = {
             opening.await()
             client
         }
-        val viewModel = AppViewModel(connector)
+        val viewModel = AppViewModel(engineOpener)
         runCurrent()
 
         assertEquals(AppState.Opening, viewModel.state)
         viewModel.retry()
-        assertEquals(1, connector.openCalls)
+        assertEquals(1, engineOpener.openCalls)
 
         opening.complete(Unit)
         advanceUntilIdle()
         assertEquals(AppState.Ready(client), viewModel.state)
         viewModel.retry()
-        assertEquals(1, connector.openCalls)
+        assertEquals(1, engineOpener.openCalls)
     }
 
     @Test
     fun aFailedEngineStartCanBeRetried() = runTest {
         var fail = true
-        connector.onOpen = {
+        engineOpener.onOpen = {
             if (fail) throw ServiceException(ServiceFailure.Unspecified)
             client
         }
-        val viewModel = AppViewModel(connector)
+        val viewModel = AppViewModel(engineOpener)
         advanceUntilIdle()
 
         assertEquals(
@@ -79,6 +79,6 @@ class AppViewModelTest {
         advanceUntilIdle()
 
         assertEquals(AppState.Ready(client), viewModel.state)
-        assertEquals(2, connector.openCalls)
+        assertEquals(2, engineOpener.openCalls)
     }
 }

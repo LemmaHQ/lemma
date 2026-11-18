@@ -140,12 +140,12 @@ describe("createEngineFetch", () => {
         const h = harness();
         const response = post(h.fetch);
         await h.nextRequest();
-        h.exit("the local engine exited with code 1");
+        h.exit("the engine exited with code 1");
 
         await expect(response).rejects.toThrow(
-            "local engine stopped: the local engine exited with code 1",
+            "engine stopped: the engine exited with code 1",
         );
-        await expect(post(h.fetch)).rejects.toThrow("local engine stopped");
+        await expect(post(h.fetch)).rejects.toThrow("engine stopped");
         expect(h.requests).toHaveLength(1);
     });
 

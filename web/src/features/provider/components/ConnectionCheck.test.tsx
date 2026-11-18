@@ -59,9 +59,7 @@ it("shows a request failure as the check result", async () => {
     await user.click(checkButton());
 
     expect(
-        await screen.findByText(
-            "Can't reach the server, check your connection and try again",
-        ),
+        await screen.findByText("Connection failed, try again"),
     ).toBeDefined();
 });
 

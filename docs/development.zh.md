@@ -30,26 +30,26 @@ npm ci
 
 `rustup toolchain install` 安装 rust-toolchain.toml 固定的 Rust 版本及其组件与 target。`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
-### 运行服务端与 Web 客户端
+### 运行守护进程与 Web 客户端
 
 ```sh
 just web-build
 just rust-dev
 ```
 
-`lemma-server` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `LocalEngine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
+`lemma-daemon` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `Engine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
 
-开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。
+开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的守护进程。
 
 ### 运行桌面应用
 
-`just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
+`just desktop-dev` 以 debug 模式构建 `lemma-napi` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
 
 ### 运行 Android 应用
 
 Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已经列出 Rust 的 Android target。
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
 ## 参考
 
@@ -57,13 +57,13 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 | 变量                   | 读取方                         | 含义                                                                       |
 | ---------------------- | ------------------------------ | -------------------------------------------------------------------------- |
-| `LEMMA_DATA_DIR`       | `lemma-server`，服务端模式     | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
-| `LEMMA_PORT`           | `lemma-server`，服务端模式     | `lemma-server` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
-| `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`          |
+| `LEMMA_DATA_DIR`       | `lemma-daemon`                 | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
+| `LEMMA_PORT`           | `lemma-daemon`                 | `lemma-daemon` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
+| `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-napi` addon 的 Cargo profile，默认 `debug`             |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                     | Chromium 远程调试端口                                                      |
 | `ANDROID_HOME`         | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties`                                |
 
-`lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
+`lemma-daemon` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
 
 ### Worktree
 
@@ -76,8 +76,8 @@ npm ci --prefer-offline
 ```
 
 - 每个 worktree 各自运行 `npm ci`。`node_modules/@lemma/*` 链接到该 worktree 自己的 workspace 包，在 Windows 上是使用绝对路径的 junction，因此从主 worktree 拿来的 `node_modules/` 会把它们解析到主 worktree 的源码。`--prefer-offline` 从 npm 缓存安装。
-- 被 gitignore 的本地文件只留在主 worktree：`lemma-server` 需要其中的设置时复制 `.env`，未设置 `ANDROID_HOME` 时复制 `local.properties`。
-- 新 worktree 没有 `web/dist`，因此在编译 `lemma-server` 的命令之前先运行 `just web-build`。Rust 构建在 worktree 之间复用编译产物（[构建缓存](#构建缓存)）。
+- 被 gitignore 的本地文件只留在主 worktree：`lemma-daemon` 需要其中的设置时复制 `.env`，未设置 `ANDROID_HOME` 时复制 `local.properties`。
+- 新 worktree 没有 `web/dist`，因此在编译 `lemma-daemon` 的命令之前先运行 `just web-build`。Rust 构建在 worktree 之间复用编译产物（[构建缓存](#构建缓存)）。
 - 分支合入后，`git worktree remove ../lemma-<topic>` 删除该 worktree。在 Windows 上，它会留下 `node_modules/@lemma` 中的 junction，其所在目录也因此保留；之后手动删除该目录。
 
 ### 构建缓存

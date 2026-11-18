@@ -4,9 +4,9 @@ import android.app.Application
 import com.russhwolf.settings.SharedPreferencesSettings
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.engine.PlatformVerifier
-import dev.lemmahq.lemma.network.AndroidConnector
+import dev.lemmahq.lemma.network.AndroidEngineOpener
 
-/** Holds the settings and connector that every activity of the process shares. */
+/** Holds the settings and engine opener that every activity of the process shares. */
 class LemmaApplication : Application() {
 
     val settings by lazy {
@@ -17,7 +17,7 @@ class LemmaApplication : Application() {
         )
     }
 
-    val connector by lazy { AndroidConnector(filesDir.absolutePath) }
+    val engineOpener by lazy { AndroidEngineOpener(filesDir.absolutePath) }
 
     override fun onCreate() {
         super.onCreate()

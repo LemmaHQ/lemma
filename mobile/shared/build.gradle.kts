@@ -192,9 +192,9 @@ val lemmaRustProfile = providers.gradleProperty("lemma.rust.profile").orElse("de
 val lemmaHostLibPath =
     "target/debug/" +
         when {
-            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_mobile.dll"
-            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_mobile.dylib"
-            else -> "liblemma_mobile.so"
+            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_uniffi.dll"
+            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_uniffi.dylib"
+            else -> "liblemma_uniffi.so"
         }
 val androidSdkDir =
     System.getenv("ANDROID_HOME")
@@ -213,37 +213,37 @@ val androidNdkDir = androidSdkDir?.let { sdk ->
 val uniffiGeneratedDir = layout.buildDirectory.dir("generated/source/uniffi")
 val lemmaJniLibsDir = layout.projectDirectory.dir("src/androidMain/jniLibs")
 
-val buildLemmaMobileHost =
-    tasks.register<Exec>("buildLemmaMobileHost") {
+val buildLemmaUniffiHost =
+    tasks.register<Exec>("buildLemmaUniffiHost") {
         workingDir = rootProject.projectDir
-        commandLine("cargo", "build", "-p", "lemma-mobile")
-        inputs.dir(rootProject.file("crates/mobile/lemma-mobile/src"))
-        inputs.file(rootProject.file("crates/mobile/lemma-mobile/Cargo.toml"))
+        commandLine("cargo", "build", "-p", "lemma-uniffi")
+        inputs.dir(rootProject.file("crates/uniffi/lemma-uniffi/src"))
+        inputs.file(rootProject.file("crates/uniffi/lemma-uniffi/Cargo.toml"))
         inputs.file(rootProject.file("Cargo.lock"))
         outputs.file(rootProject.file(lemmaHostLibPath))
     }
 
 tasks.withType<Test>().configureEach {
-    dependsOn(buildLemmaMobileHost)
+    dependsOn(buildLemmaUniffiHost)
     jvmArgs(
         "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
         "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
     )
     systemProperty(
-        "uniffi.component.lemma_mobile.libraryOverride",
+        "uniffi.component.lemma_uniffi.libraryOverride",
         rootProject.file(lemmaHostLibPath).absolutePath,
     )
 }
 
 val generateUniffiBindings =
     tasks.register<Exec>("generateUniffiBindings") {
-        dependsOn(buildLemmaMobileHost)
+        dependsOn(buildLemmaUniffiHost)
         workingDir = rootProject.projectDir
         commandLine(
             "cargo",
             "run",
             "-p",
-            "lemma-mobile",
+            "lemma-uniffi",
             "--features",
             "bindgen",
             "--bin",
@@ -256,17 +256,17 @@ val generateUniffiBindings =
             "kotlin",
             "--no-format",
             "--config",
-            "crates/mobile/lemma-mobile/uniffi.toml",
+            "crates/uniffi/lemma-uniffi/uniffi.toml",
             "--out-dir",
             uniffiGeneratedDir.get().asFile.absolutePath,
         )
-        inputs.file(rootProject.file("crates/mobile/lemma-mobile/uniffi.toml"))
+        inputs.file(rootProject.file("crates/uniffi/lemma-uniffi/uniffi.toml"))
         inputs.file(rootProject.file(lemmaHostLibPath))
         outputs.dir(uniffiGeneratedDir)
     }
 
-val buildLemmaMobileJniLibs =
-    tasks.register<Exec>("buildLemmaMobileJniLibs") {
+val buildLemmaUniffiJniLibs =
+    tasks.register<Exec>("buildLemmaUniffiJniLibs") {
         workingDir = rootProject.projectDir
         androidNdkDir?.let { environment("ANDROID_NDK_HOME", it.absolutePath) }
         commandLine(
@@ -277,14 +277,14 @@ val buildLemmaMobileJniLibs =
                 }
                 add("build")
                 add("-p")
-                add("lemma-mobile")
+                add("lemma-uniffi")
                 if (lemmaRustProfile == "release") {
                     add("--release")
                 }
             }
         )
-        inputs.dir(rootProject.file("crates/mobile/lemma-mobile/src"))
-        inputs.file(rootProject.file("crates/mobile/lemma-mobile/Cargo.toml"))
+        inputs.dir(rootProject.file("crates/uniffi/lemma-uniffi/src"))
+        inputs.file(rootProject.file("crates/uniffi/lemma-uniffi/Cargo.toml"))
         inputs.file(rootProject.file("Cargo.lock"))
         outputs.dir(lemmaJniLibsDir)
     }
@@ -300,6 +300,6 @@ tasks.configureEach {
         dependsOn(generateStrings)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
-        dependsOn(buildLemmaMobileJniLibs)
+        dependsOn(buildLemmaUniffiJniLibs)
     }
 }

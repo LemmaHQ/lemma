@@ -1,10 +1,11 @@
 [workspace]
 members = [
-    "crates/server/lemma-server",
+    "crates/daemon/lemma-daemon",
     "crates/shared/lemma-proto",
     "crates/shared/lemma-provider",
     "crates/shared/lemma-session",
-    "crates/shared/lemma-host",
+    "crates/shared/lemma-engine",
+    "crates/shared/lemma-rpc",
     "crates/shared/lemma-crypto",
     "crates/shared/lemma-core",
     "crates/shared/lemma-db",
@@ -13,8 +14,8 @@ members = [
     "crates/shared/lemma-agent-loop",
     "crates/shared/lemma-model",
     "crates/shared/lemma-tool",
-    "crates/mobile/lemma-mobile",
-    "crates/desktop/lemma-desktop",
+    "crates/uniffi/lemma-uniffi",
+    "crates/napi/lemma-napi",
 ]
 resolver = "2"
 
@@ -43,7 +44,8 @@ lemma-agent-loop = { path = "crates/shared/lemma-agent-loop" }
 lemma-db = { path = "crates/shared/lemma-db" }
 lemma-session = { path = "crates/shared/lemma-session" }
 lemma-crypto = { path = "crates/shared/lemma-crypto" }
-lemma-host = { path = "crates/shared/lemma-host" }
+lemma-engine = { path = "crates/shared/lemma-engine" }
+lemma-rpc = { path = "crates/shared/lemma-rpc" }
 lemma-proto = { path = "crates/shared/lemma-proto" }
 lemma-provider = { path = "crates/shared/lemma-provider" }
 lemma-tool = { path = "crates/shared/lemma-tool" }

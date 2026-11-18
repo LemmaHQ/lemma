@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.lemmahq.lemma.client.Connector
+import dev.lemmahq.lemma.client.EngineOpener
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.i18n.UiText
 import kotlinx.coroutines.launch
@@ -13,7 +13,7 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.errors_engine_failed
 
 /** Opens the in-process engine once; [state] decides which part of the app shows. */
-class AppViewModel(private val connector: Connector) : ViewModel() {
+class AppViewModel(private val engineOpener: EngineOpener) : ViewModel() {
 
     var state by mutableStateOf<AppState>(AppState.Opening)
         private set
@@ -33,7 +33,7 @@ class AppViewModel(private val connector: Connector) : ViewModel() {
         viewModelScope.launch {
             state =
                 try {
-                    AppState.Ready(connector.open())
+                    AppState.Ready(engineOpener.open())
                 } catch (_: ServiceException) {
                     AppState.Failed(UiText.Resource(Res.string.errors_engine_failed))
                 }
