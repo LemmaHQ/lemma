@@ -5,7 +5,7 @@ description: Use before pushing Lemma commits or claiming checks pass, to select
 
 # Lemma pre-push checks
 
-Run the relevant local evidence once before a push. Lemma has no Git hooks; CI runs the full workflows on every push to `main`, path-filtered per workflow ([development.md](../../../docs/development.md)). Local checks catch what CI would reject before it costs a round trip.
+Run the relevant local evidence once before a push. Lemma has no Git hooks; CI runs the full workflows on every push to `main` and on pull requests, path-filtered per workflow ([development.md](../../../docs/development.md)). Local checks catch what CI would reject before it costs a round trip.
 
 ## Inspect the outgoing change
 
@@ -19,7 +19,7 @@ The changed directories in that diff decide the checks; uncommitted work is not 
 
 ## Select checks by changed directory
 
-Run the rows the diff reaches, in this order, once each. Every behavior change also needs its narrowest owning test, which may be a focused run instead of the full recipe.
+Run the rows the diff reaches, in this order, once each.
 
 | Changed                                                                     | Run                                                                                                                                                                           |
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -38,12 +38,10 @@ Run the rows the diff reaches, in this order, once each. Every behavior change a
 
 Notes on the rows:
 
-- Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) need the user's consent first. Without it, report those rows as not run; never as passing.
+- Rows that compile the Rust workspace or the Android app (`crates/`, `proto/` through its `crates/` and `mobile/` rows, `mobile/`) fall under the consent rule in [Verification](../../../AGENTS.md#verification).
 - Compiling the Rust workspace compiles `lemma-server`, which embeds `web/dist`; run `just web-build` first when `web/dist` is missing or stale.
 - Generated code is gitignored. The web and desktop npm scripts regenerate the contract code and design token outputs before reading them, and Gradle regenerates the Android palette; run `just design-gen` by hand only to inspect the outputs.
 - Real-provider behavior: when a change can alter what a model sees or does, also exercise it in a local-mode session against a real provider. Never print keys.
-
-Do not repeat a check that already passed on the same content merely because a commit or push follows.
 
 ## Full local run
 
@@ -58,6 +56,6 @@ If a selected check fails, stop and fix it or report the blocker; do not push an
 Push only on the user's explicit request.
 
 1. Run the selected checks once.
-2. Push normally; never `--force` to `main`. Rewriting pushed history needs the user's explicit instruction and `--force-with-lease=main:<observed-oid>`.
-3. Verify the remote matches local `HEAD`: `git rev-parse HEAD origin/main`.
-4. Inspect CI: `gh run list --branch main --limit 5`, then `gh run view <id>` for any failure. Report pending runs as pending, and inspect a failure before attributing it to the change or the environment.
+2. Push the current branch. Never force-push `main`. A feature branch rebased after its last push goes up with `git push --force-with-lease=<branch>:<observed-oid>`, where `<observed-oid>` is the remote branch tip you last fetched; the push then fails instead of overwriting commits someone else pushed.
+3. Verify the remote matches local `HEAD`: `git rev-parse HEAD origin/<branch>`.
+4. Inspect CI. A push to a feature branch starts no workflow; its pull request runs them, and `gh pr checks` shows the results. After a push to `main`, run `gh run list --branch main --limit 5`. Run `gh run view <id>` for any failure. Report pending runs as pending, and inspect a failure before attributing it to the change or the environment.

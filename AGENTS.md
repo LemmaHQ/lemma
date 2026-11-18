@@ -69,10 +69,18 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 - **Verify before agreeing.** Check code, facts, and architecture claims independently first; the answer opens with the finding, never with "Yes", "Exactly", or "No problem".
 - **Lead with the correction.** When a premise is wrong, flawed, or not the best option, the first sentence says so and why; technical accuracy, boundary conditions, and trade-offs come before agreement.
 
+## Verification
+
+- **Run the narrowest check that owns the change, once.** While working, run its test file or `cargo nextest run -p <crate>`; never widen to unrelated subtrees or rerun a check that passed on unchanged content. Before a push, [lemma-pre-push-checks](.agents/skills/lemma-pre-push-checks/SKILL.md) selects checks by changed directory; [docs/testing.md](docs/testing.md) describes the test tiers.
+- **Ask the user before compiling the whole Rust workspace or the Android app:** a Cargo `build`, `check`, `clippy`, or test command without `-p <crate>` or `--package <crate>`, `just rust-lint`, `just rust-lint-check`, `just rust-test`, `just rust-cov`, and the `mobile-android-*` recipes. Report a check skipped for lack of consent as not run, never as passing.
+- **Scope delegated work:** a sub-agent's task names the files it may change and the checks it runs; a sub-agent that needs another file or check stops and reports.
+
 ## Git
 
+- **Work on a branch; never edit or commit on `main` directly** unless the user asks: on `main`, create a `<type>/<topic>` branch before the first edit, with `<type>` from the [lemma-commit types](.agents/skills/lemma-commit/SKILL.md#type-taxonomy).
+- **Use a separate worktree** when another agent or the user changes files in the same worktree at the same time, or when the worktree holds uncommitted changes from other work or runs a process that switching branches would disturb ([setup](docs/development.md#worktrees)).
 - Commit messages follow [lemma-commit](.agents/skills/lemma-commit/SKILL.md), in English.
-- Commit and push only on explicit request.
+- Commit, push, and merge only on explicit request; [lemma-commit](.agents/skills/lemma-commit/SKILL.md#atomicity) defines how a branch lands on `main`.
 - One commit does one complete thing; split independent hunks into separate commits. Only the latest snapshot must build; intermediate commits need not build on their own.
 - Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.
 

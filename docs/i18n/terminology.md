@@ -29,16 +29,21 @@
 | agent | agent | 智能体、代理 | |
 | commit message | commit message | 提交消息 | 指文本本身；动作与提交对象写作"提交" |
 | crate | crate | 包、箱 | |
+| Developer Mode | Developer Mode | 开发者模式 | Windows 的系统设置项，保留首字母大写 |
 | fixture | fixture | | |
 | mock | mock | 模拟 | 指测试替身 |
 | provider | provider | 供应商、提供商 | 文档正文中指用户配置的模型端点；界面文案见下方"界面文案" |
 | recipe | recipe | 配方 | 指 `justfile` 中的命令 |
+| shim | shim | 垫片 | |
 | skill | skill | 技能 | |
 | step | step | 步骤 | agent 循环中的一次模型请求 |
 | token | token | 令牌、标记 | 指设计 token 与模型用量 token |
+| toolchain | toolchain | 工具链 | |
 | trait | trait | 特征、特质 | |
 | turn | turn | 轮次、回合 | 由一条用户消息启动的工作 |
 | workspace | workspace | | 指 Cargo 与 npm 的 workspace；`workspaces/<session id>` 工具目录写作"工作区" |
+| worktree | worktree | 工作树 | |
+| wrapper | wrapper | 包装器、封装器 | 指命令 wrapper |
 
 ## 中文类（中文文本中使用中文）
 
@@ -47,7 +52,7 @@
 | adapter | 适配器 | | |
 | alert dialog | 确认对话框 | 警告框 | `AlertDialog` 组件 |
 | API format | API 格式 | 方言、协议 | `ApiFormat`：一次模型请求使用的线上格式 |
-| branch | 分支 | | 消息树中的分支 |
+| branch | 分支 | | Git 分支与消息树中的分支 |
 | canvas | 画布 | | |
 | composer | 输入框面板 | 编辑器 | 会话页底部的消息输入区 |
 | content block | 内容块 | | `ContentBlock` |

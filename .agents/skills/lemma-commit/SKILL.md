@@ -1,6 +1,6 @@
 ---
 name: lemma-commit
-description: Use when writing or reviewing a git commit message in Lemma — subject format, type and scope, body, footers, atomicity.
+description: Use when writing or reviewing a git commit message in Lemma — subject format, type and scope, body, footers, atomicity — or when merging a branch into `main`.
 ---
 
 # Lemma Commit Standard
@@ -89,8 +89,9 @@ Risk: <if destructive or migration>
 - **Split by scope, not by build state.** Only the branch tip must build and pass checks; intermediate commits need not compile on their own. Order commits so dependencies come first, and spend no effort proving each snapshot builds.
 - **Tests for behavior changes ship in the same commit.** Not a follow-up.
 - **Squash WIP before push.** A 6-commit branch with `wip: testing`, `wip: more`, `oops typo` should land as 1-2 clean commits.
-- **Don't amend a published commit on a shared branch.** Follow up with a new commit instead.
-- **Merge commits stay rare.** Prefer rebase.
+- **Don't rewrite a published commit on `main`.** Follow up with a new commit instead.
+- **A branch lands on `main` through a merge commit, never a squash merge,** so its split commits survive. The merge commit keeps Git's default title (`Merge pull request #N from …` or `Merge branch '…'`), the one exception to the subject format.
+- **A branch catches up with `main` by `git rebase main`,** not by merging `main` into it. Pushing a rebased branch follows [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md#push).
 
 ## Good examples
 

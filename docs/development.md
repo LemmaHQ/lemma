@@ -65,6 +65,21 @@ Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml a
 
 `lemma-server` loads `.env` from its working directory or the nearest parent that has one; variables already set in the environment take precedence.
 
+### Worktrees
+
+A worktree is another working directory of the repository with its own branch; the [root AGENTS.md](../AGENTS.md#git) says when to use one. Create it beside the main worktree and install its npm workspaces:
+
+```sh
+git worktree add ../lemma-<topic> -b <type>/<topic>
+cd ../lemma-<topic>
+npm ci --prefer-offline
+```
+
+- Each worktree runs its own `npm ci`. `node_modules/@lemma/*` link to that worktree's workspace packages, on Windows as junctions with absolute paths, so a `node_modules/` taken from the main worktree would resolve them to the main worktree's sources. `--prefer-offline` installs from the npm cache.
+- Gitignored local files stay in the main worktree: copy `.env` when `lemma-server` needs its settings, and `local.properties` when `ANDROID_HOME` is not set.
+- A new worktree has no `web/dist`, so run `just web-build` before a command that compiles `lemma-server`. Rust builds reuse compiler outputs across worktrees ([Build cache](#build-cache)).
+- After the branch lands, `git worktree remove ../lemma-<topic>` deletes the worktree. On Windows it leaves the `node_modules/@lemma` junctions, and with them the directory, behind; delete that directory afterwards.
+
 ### Build cache
 
 [mbx](https://mr-boxington.jdx.dev/) caches compiler outputs and reuses them across worktrees and CI runs. The `[wrappers.cargo]` entry in [mise.toml](../mise.toml) makes the `cargo` command on `PATH` run through mbx, so the `just` recipes and the Gradle tasks that call Cargo use it too. mbx restores each compilation whose inputs match a cached result and compiles the rest; calling `~/.cargo/bin/cargo` directly bypasses it.
