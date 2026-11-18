@@ -17,21 +17,21 @@
 /development/setup-tutorial/first-time-setup:
   en: 5cf257d6c89a50c3
   zh: 0cea3f0b08ee5a19
-/development/setup-tutorial/run-the-server-and-the-web-client:
-  en: 2ee56075abb86b21
-  zh: d34ae60438fad1cc
+/development/setup-tutorial/run-the-daemon-and-the-web-client:
+  en: a8aa7b183330b86c
+  zh: 043e08a663d4cae8
 /development/setup-tutorial/run-the-desktop-app:
   en: a23196dbfddafbec
   zh: c20b4b8c544a7ea1
 /development/setup-tutorial/run-the-android-app:
-  en: aa4f275af160e45f
-  zh: 5a1ec7ed7d14c70f
+  en: 7800e97312f547dc
+  zh: 4584b3f058890b19
 /development/reference:
   en: e8d198429c35fa10
   zh: fa9493dbf6a94867
 /development/reference/environment-variables:
-  en: 1863db2c576dc20e
-  zh: 62f9a5f6882134e1
+  en: 576fd124b4c7698b
+  zh: 0c7d0e1ba750f40c
 /development/reference/worktrees:
   en: 669748b8181ceb49
   zh: 9ceb12cec81080a0

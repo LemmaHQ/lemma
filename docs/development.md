@@ -30,7 +30,7 @@ npm ci
 
 `rustup toolchain install` installs the Rust release that rust-toolchain.toml pins, with its components and targets. `npm ci` installs the `web`, `desktop`, and `packages/*` workspaces. Generated contract code is not committed; the web npm scripts regenerate it before `dev`, `build`, `lint`, and `test`, and Gradle before compiling Kotlin ([proto/AGENTS.md](../proto/AGENTS.md)).
 
-### Run the server and the web client
+### Run the daemon and the web client
 
 ```sh
 just web-build
@@ -39,7 +39,7 @@ just rust-dev
 
 `lemma-daemon` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `Engine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
 
-For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025.
+For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the daemon on port 1025.
 
 ### Run the desktop app
 
@@ -49,7 +49,7 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml already lists the Rust Android targets.
 
-`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-uniffi` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process local engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-uniffi` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 ## Reference
 
@@ -57,8 +57,8 @@ Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml a
 
 | Variable               | Read by                      | Meaning                                                                             |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
-| `LEMMA_DATA_DIR`       | `lemma-daemon`, server mode  | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
-| `LEMMA_PORT`           | `lemma-daemon`, server mode  | TCP port `lemma-daemon` binds on `127.0.0.1`, default `1025`                        |
+| `LEMMA_DATA_DIR`       | `lemma-daemon`               | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
+| `LEMMA_PORT`           | `lemma-daemon`               | TCP port `lemma-daemon` binds on `127.0.0.1`, default `1025`                        |
 | `LEMMA_ENGINE_PROFILE` | `desktop/`                   | Cargo profile of the `lemma-napi` addon for unpackaged runs, default `debug`        |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                   | Chromium remote-debugging port                                                      |
 | `ANDROID_HOME`         | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative                         |

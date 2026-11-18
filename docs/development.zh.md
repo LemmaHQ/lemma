@@ -30,7 +30,7 @@ npm ci
 
 `rustup toolchain install` 安装 rust-toolchain.toml 固定的 Rust 版本及其组件与 target。`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
 
-### 运行服务端与 Web 客户端
+### 运行守护进程与 Web 客户端
 
 ```sh
 just web-build
@@ -39,7 +39,7 @@ just rust-dev
 
 `lemma-daemon` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `Engine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
 
-开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。
+开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的守护进程。
 
 ### 运行桌面应用
 
@@ -49,7 +49,7 @@ just rust-dev
 
 Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已经列出 Rust 的 Android target。
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
 ## 参考
 
@@ -57,8 +57,8 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 | 变量                   | 读取方                         | 含义                                                                       |
 | ---------------------- | ------------------------------ | -------------------------------------------------------------------------- |
-| `LEMMA_DATA_DIR`       | `lemma-daemon`，服务端模式     | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
-| `LEMMA_PORT`           | `lemma-daemon`，服务端模式     | `lemma-daemon` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
+| `LEMMA_DATA_DIR`       | `lemma-daemon`                 | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
+| `LEMMA_PORT`           | `lemma-daemon`                 | `lemma-daemon` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
 | `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-napi` addon 的 Cargo profile，默认 `debug`             |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                     | Chromium 远程调试端口                                                      |
 | `ANDROID_HOME`         | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties`                                |

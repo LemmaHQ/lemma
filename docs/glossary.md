@@ -48,11 +48,10 @@ Lemma uses one term per concept. Each entry states what the term means in code a
 
 ## Runtimes
 
-- **server mode** — the `lemma-daemon` binary: opens `Engine` over `LEMMA_DATA_DIR` (default `./data`), listens on `127.0.0.1:1025` by default (`LEMMA_PORT`), and serves the Connect router and the embedded web build.
-- **local mode** — the runtimes that keep data in the app's local directory: the desktop local engine and the Android in-process engine.
-- **local engine** — `Engine` in `lemma-engine`: the Connect services over one SQLite database (`lemma.db`), `secrets.json`, and per-session `workspaces/` under one data directory. `lemma-napi` opens it in Electron's engine process over `userData`, `lemma-uniffi` opens it over Android's `filesDir`, and `lemma-daemon` opens it over `LEMMA_DATA_DIR`.
+- **daemon** — the `lemma-daemon` binary: opens `Engine` over `LEMMA_DATA_DIR` (default `./data`), listens on `127.0.0.1:1025` by default (`LEMMA_PORT`), and serves the Connect router and the embedded web build.
+- **engine** — `Engine` in `lemma-engine`: the Connect services over one SQLite database (`lemma.db`), `secrets.json`, and per-session `workspaces/` under one data directory. `lemma-napi` opens it in Electron's engine process over `userData`, `lemma-uniffi` opens it over Android's `filesDir`, and `lemma-daemon` opens it over `LEMMA_DATA_DIR`.
 - **engine port** — the `MessagePort` between the web page and the desktop engine process. Requests, response chunks, and cancellations travel over it; it carries no session messages.
-- **in-process engine** — `LemmaEngine` from `lemma-uniffi`, which serves the Connect router inside the Android app; the app reaches it through UniFFI bindings.
+- **in-process engine** — `InProcessEngine` in `lemma-engine`: an engine whose Connect router the host calls through `InProcessTransport`, with no network listener. `lemma-napi` serves it to Electron's engine process, and `lemma-uniffi` serves it to the Android app as `LemmaEngine` through UniFFI bindings.
 - **sealed key** — a provider API key encrypted with AES-256-GCM by `lemma-crypto` under a key derived from `secret_key` in `secrets.json`. Changing the secret key makes every sealed key unreadable.
 
 ## Errors

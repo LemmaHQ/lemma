@@ -19,7 +19,7 @@ interface Running {
     exited: Promise<"exited">;
 }
 
-/** Lifecycle controller for the Electron utility process hosting the local engine. */
+/** Lifecycle controller for the Electron utility process hosting the engine. */
 export interface EngineProcess {
     /** Calls `listener` when a ready engine exits without being stopped. */
     onExit(listener: (detail: string) => void): void;

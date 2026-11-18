@@ -14,7 +14,7 @@ Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. 
 - **Predefined and custom providers.** DeepSeek is predefined and needs only your API key. A custom provider speaks one of three API formats (OpenAI chat completions and compatible APIs, Anthropic, or Gemini) with your own base URL and API key.
 - **Sessions as message trees.** Each message records its parent; a model request carries the path from the root to the active leaf.
 - **Agent tools.** `read_file`, `write_file`, `bash`, `web_search`, and `web_fetch` run across all three runtimes; file and shell tools run in the session's bound directory or per-session workspace.
-- **Three runtimes.** A server for the browser, a local engine for the desktop app, and an in-process engine for Android run the same Rust core ([architecture](docs/architecture.md#runtimes)).
+- **Three runtimes.** A daemon for the browser and in-process engines for the desktop and Android apps run the same Rust core ([architecture](docs/architecture.md#runtimes)).
 
 ## Quick start
 
@@ -36,7 +36,7 @@ just rust-dev
 | `crates/` | Rust workspace: the core shared by every runtime, and the daemon |
 | `proto/` | Protobuf contracts, package `lemma.v1` |
 | `web/` | React web client, also the desktop renderer |
-| `desktop/` | Electron shell running the local engine in a utility process |
+| `desktop/` | Electron shell running the engine in a utility process |
 | `mobile/` | Android app and Kotlin Multiplatform shared module |
 | `assets/` | Brand assets |
 | `docs/` | Documentation |
