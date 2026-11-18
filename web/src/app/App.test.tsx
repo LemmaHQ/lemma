@@ -419,6 +419,7 @@ it("opens and closes the sidebar sheet across mobile routes", async () => {
         within(settingsSheet).getByRole("link", { name: "App settings" }),
     );
     await atPath("/settings/appearance");
+    await screen.findByRole("heading", { level: 2, name: "Appearance" });
     await waitFor(() => {
         expect(screen.queryByRole("dialog")).toBeNull();
     });
