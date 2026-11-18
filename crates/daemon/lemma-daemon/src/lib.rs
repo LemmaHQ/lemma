@@ -1,4 +1,4 @@
-//! The Lemma server's HTTP application: an API router with the embedded
+//! The Lemma daemon's HTTP application: an API router with the embedded
 //! web build as fallback.
 
 mod http_server;

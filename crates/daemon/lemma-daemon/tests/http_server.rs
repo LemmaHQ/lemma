@@ -19,7 +19,7 @@ fn api() -> Router {
 }
 
 async fn send(request: Request<Body>) -> Result<Response<Body>, Box<dyn Error>> {
-    Ok(lemma_server::app(api()).oneshot(request).await?)
+    Ok(lemma_daemon::app(api()).oneshot(request).await?)
 }
 
 async fn get(uri: &str) -> Result<Response<Body>, Box<dyn Error>> {
@@ -112,7 +112,7 @@ async fn serve_answers_until_shutdown() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let address = listener.local_addr()?;
     let (stop, stopped) = oneshot::channel::<()>();
-    let server = tokio::spawn(lemma_server::serve(listener, api(), async {
+    let server = tokio::spawn(lemma_daemon::serve(listener, api(), async {
         stopped.await.ok();
     }));
 

@@ -48,10 +48,10 @@ rust-fmt-check:
 rust-fmt:
     cargo fmt --all
 
-# Run the dev server
+# Run the daemon
 [group('rust')]
 rust-dev:
-    cargo run --package lemma-server
+    cargo run --package lemma-daemon
 
 # Run tests with nextest
 [group('rust')]
@@ -65,7 +65,7 @@ rust-cov *args="--summary-only":
         --exclude lemma-proto \
         --exclude lemma-desktop \
         --exclude lemma-mobile \
-        --ignore-filename-regex '[/\\\\]lemma-server[/\\\\]src[/\\\\](main|config|server_mode|web_dist)\.rs$' \
+        --ignore-filename-regex '[/\\\\]lemma-daemon[/\\\\]src[/\\\\](main|config|daemon|web_dist)\.rs$' \
         --fail-uncovered-lines 0 \
         --fail-uncovered-functions 0 \
         {{ args }}

@@ -8,8 +8,8 @@ Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. 
 
 ```text
 crates/       Rust workspace (crates/AGENTS.md)
-  shared/     crates linked by the server, the desktop engine, and Android
-  server/     lemma-server, the server binary
+  shared/     crates linked by the daemon, the desktop engine, and Android
+  daemon/     lemma-daemon, the daemon binary
   desktop/    lemma-desktop, the Node-API addon the desktop shell runs the engine in
   mobile/     lemma-mobile, the UniFFI facade for Android
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
@@ -28,7 +28,7 @@ scripts/      repository scripts run by Node: design token and i18n generators, 
 ## Commands
 
 ```sh
-just rust-dev            # run lemma-server
+just rust-dev            # run lemma-daemon
 just web-dev             # Vite dev server
 just desktop-dev         # build the engine addon, then launch Electron
 just design-gen          # regenerate the web theme, desktop window colors, and Android palette from design tokens
@@ -46,7 +46,7 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 
 ## Environment / .env
 
-`lemma-server` reads `.env` when present (`LEMMA_DATA_DIR` and `LEMMA_PORT`). Never commit `.env` or local data directories.
+`lemma-daemon` reads `.env` when present (`LEMMA_DATA_DIR` and `LEMMA_PORT`). Never commit `.env` or local data directories.
 
 ## Conventions
 

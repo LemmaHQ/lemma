@@ -15,11 +15,11 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`             | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                         |
 | Agent     | `lemma-agent`                                                 | Starting, resuming, and aborting turns over a session, a bound provider adapter, and the session directory's tools, with per-turn replayable event logs                                                                                        |
 | RPC       | `lemma-rpc`, `lemma-engine`                                   | The ConnectRPC service handlers (`ProviderService`, `SessionService`, `AgentService`) assembled into one router; `Engine` over a data directory, `InProcessEngine`, and `InProcessTransport`                                                   |
-| Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`               | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
+| Hosts     | `lemma-daemon`, `lemma-desktop`, `lemma-mobile`               | The daemon binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
 
 `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`; `lemma-db` owns the SQLite migrations in `crates/shared/lemma-db/migrations/`. The engine and agent layers reach the data only through those services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/server/`, `crates/desktop/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/daemon/`, `crates/desktop/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 
@@ -27,7 +27,7 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 
 | Runtime      | Host                                                                         | Storage                               | Tools                                    | Stored API keys                            |
 | ------------ | ---------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------- | ------------------------------------------ |
-| Server mode  | `lemma-server`, listening on `127.0.0.1:1025` by default                     | SQLite at `<LEMMA_DATA_DIR>/lemma.db` | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
+| Server mode  | `lemma-daemon`, listening on `127.0.0.1:1025` by default                     | SQLite at `<LEMMA_DATA_DIR>/lemma.db` | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
 | Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`       | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
 | In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`       | per-session workspace                    | sealed with `secret_key` in `secrets.json` |
 

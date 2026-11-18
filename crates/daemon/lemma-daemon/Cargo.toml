@@ -1,5 +1,5 @@
 [package]
-name = "lemma-server"
+name = "lemma-daemon"
 version.workspace = true
 edition.workspace = true
 

@@ -8,8 +8,8 @@ Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM ag
 
 ```text
 crates/       Rust workspace（crates/AGENTS.md）
-  shared/     服务端、桌面引擎与 Android 共同链接的 crate
-  server/     lemma-server：服务端可执行文件
+  shared/     守护进程、桌面引擎与 Android 共同链接的 crate
+  daemon/     lemma-daemon：守护进程可执行文件
   desktop/    lemma-desktop：桌面外壳用来运行引擎的 Node-API addon
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
@@ -28,7 +28,7 @@ scripts/      由 Node 直接运行的仓库脚本：设计 token 与 i18n 生�
 ## 命令
 
 ```sh
-just rust-dev            # 运行 lemma-server
+just rust-dev            # 运行 lemma-daemon
 just web-dev             # Vite 开发服务器
 just desktop-dev         # 构建引擎 addon，再启动 Electron
 just design-gen          # 根据设计 token 重新生成 Web 主题、桌面端窗口颜色与 Android 色板
@@ -46,7 +46,7 @@ Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后
 
 ## 环境变量 / .env
 
-`lemma-server` 会在存在时读取 `.env`（`LEMMA_DATA_DIR` 与 `LEMMA_PORT`）。绝不提交 `.env` 或本地数据目录。
+`lemma-daemon` 会在存在时读取 `.env`（`LEMMA_DATA_DIR` 与 `LEMMA_PORT`）。绝不提交 `.env` 或本地数据目录。
 
 ## 约定
 

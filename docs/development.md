@@ -37,7 +37,7 @@ just web-build
 just rust-dev
 ```
 
-`lemma-server` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `Engine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
+`lemma-daemon` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `Engine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
 
 For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025.
 
@@ -57,13 +57,13 @@ Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml a
 
 | Variable               | Read by                      | Meaning                                                                             |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
-| `LEMMA_DATA_DIR`       | `lemma-server`, server mode  | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
-| `LEMMA_PORT`           | `lemma-server`, server mode  | TCP port `lemma-server` binds on `127.0.0.1`, default `1025`                        |
+| `LEMMA_DATA_DIR`       | `lemma-daemon`, server mode  | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
+| `LEMMA_PORT`           | `lemma-daemon`, server mode  | TCP port `lemma-daemon` binds on `127.0.0.1`, default `1025`                        |
 | `LEMMA_ENGINE_PROFILE` | `desktop/`                   | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug`     |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                   | Chromium remote-debugging port                                                      |
 | `ANDROID_HOME`         | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative                         |
 
-`lemma-server` loads `.env` from its working directory or the nearest parent that has one; variables already set in the environment take precedence.
+`lemma-daemon` loads `.env` from its working directory or the nearest parent that has one; variables already set in the environment take precedence.
 
 ### Worktrees
 
@@ -76,8 +76,8 @@ npm ci --prefer-offline
 ```
 
 - Each worktree runs its own `npm ci`. `node_modules/@lemma/*` link to that worktree's workspace packages, on Windows as junctions with absolute paths, so a `node_modules/` taken from the main worktree would resolve them to the main worktree's sources. `--prefer-offline` installs from the npm cache.
-- Gitignored local files stay in the main worktree: copy `.env` when `lemma-server` needs its settings, and `local.properties` when `ANDROID_HOME` is not set.
-- A new worktree has no `web/dist`, so run `just web-build` before a command that compiles `lemma-server`. Rust builds reuse compiler outputs across worktrees ([Build cache](#build-cache)).
+- Gitignored local files stay in the main worktree: copy `.env` when `lemma-daemon` needs its settings, and `local.properties` when `ANDROID_HOME` is not set.
+- A new worktree has no `web/dist`, so run `just web-build` before a command that compiles `lemma-daemon`. Rust builds reuse compiler outputs across worktrees ([Build cache](#build-cache)).
 - After the branch lands, `git worktree remove ../lemma-<topic>` deletes the worktree. On Windows it leaves the `node_modules/@lemma` junctions, and with them the directory, behind; delete that directory afterwards.
 
 ### Build cache

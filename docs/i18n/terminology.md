@@ -59,6 +59,7 @@
 | context path | 上下文路径 | | 从根到叶子的消息 |
 | control | 控件 | | |
 | custom provider | 自定义 provider | | |
+| daemon | 守护进程 | | `lemma-daemon` |
 | elevation | 层级 | 海拔、高度 | |
 | endpoint | 端点 | | `Endpoint` |
 | engine port | 引擎端口 | | |

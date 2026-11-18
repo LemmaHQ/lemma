@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/server/lemma-server",
+    "crates/daemon/lemma-daemon",
     "crates/shared/lemma-proto",
     "crates/shared/lemma-provider",
     "crates/shared/lemma-session",

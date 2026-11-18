@@ -1686,6 +1686,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-daemon"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "dotenvy",
+ "lemma-engine",
+ "reqwest",
+ "rust-embed",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "lemma-db"
 version = "0.1.0"
 dependencies = [
@@ -1795,19 +1808,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "uuid",
-]
-
-[[package]]
-name = "lemma-server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "dotenvy",
- "lemma-engine",
- "reqwest",
- "rust-embed",
- "tokio",
- "tower",
 ]
 
 [[package]]

@@ -37,7 +37,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # lemma-server embeds web/dist (a gitignored build artifact) via RustEmbed,
+  # lemma-daemon embeds web/dist (a gitignored build artifact) via RustEmbed,
   # so the real frontend is built first; clippy/test fetch it via artifact.
   web-dist:
     name: Web dist

@@ -27,13 +27,13 @@ just web-build
 just rust-dev
 ```
 
-`lemma-server` opens its data directory (`./data` by default) and serves the web client at <http://127.0.0.1:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and environment variables.
+`lemma-daemon` opens its data directory (`./data` by default) and serves the web client at <http://127.0.0.1:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and environment variables.
 
 ## Repository
 
 | Path | Contents |
 | --- | --- |
-| `crates/` | Rust workspace: the core shared by every runtime, and the server |
+| `crates/` | Rust workspace: the core shared by every runtime, and the daemon |
 | `proto/` | Protobuf contracts, package `lemma.v1` |
 | `web/` | React web client, also the desktop renderer |
 | `desktop/` | Electron shell running the local engine in a utility process |
