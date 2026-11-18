@@ -7,7 +7,7 @@ object PlatformVerifier {
 
     /** Hands the application context to the engine; call it before the engine's first request. */
     fun install(context: Context) {
-        System.loadLibrary("lemma_mobile")
+        System.loadLibrary("lemma_uniffi")
         init(context.applicationContext)
     }
 

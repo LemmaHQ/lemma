@@ -527,7 +527,7 @@ describe("send", () => {
 
         expect(state().items.at(-1)).toMatchObject({
             status: "error",
-            error: "Can't reach the server, check your connection and try again",
+            error: "Connection failed, try again",
         });
         expect(rpc.resumeStream).not.toHaveBeenCalled();
     });

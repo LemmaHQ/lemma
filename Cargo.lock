@@ -1686,6 +1686,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-daemon"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "dotenvy",
+ "lemma-engine",
+ "reqwest",
+ "rust-embed",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "lemma-db"
 version = "0.1.0"
 dependencies = [
@@ -1694,36 +1707,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-desktop"
-version = "0.1.0"
-dependencies = [
- "lemma-host",
- "napi",
- "napi-build",
- "napi-derive",
- "tokio",
-]
-
-[[package]]
-name = "lemma-host"
+name = "lemma-engine"
 version = "0.1.0"
 dependencies = [
  "axum",
- "buffa",
- "buffa-types",
- "chrono",
- "connectrpc",
  "dunce",
  "futures",
  "hex",
- "lemma-adapter",
- "lemma-agent",
- "lemma-core",
  "lemma-db",
- "lemma-model",
  "lemma-proto",
- "lemma-provider",
- "lemma-session",
+ "lemma-rpc",
  "rand",
  "serde",
  "serde_json",
@@ -1735,24 +1728,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-mobile"
-version = "0.1.0"
-dependencies = [
- "jni",
- "lemma-host",
- "rustls-platform-verifier",
- "thiserror",
- "tokio",
- "uniffi",
-]
-
-[[package]]
 name = "lemma-model"
 version = "0.1.0"
 dependencies = [
  "futures",
  "lemma-core",
  "thiserror",
+]
+
+[[package]]
+name = "lemma-napi"
+version = "0.1.0"
+dependencies = [
+ "lemma-engine",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "tokio",
 ]
 
 [[package]]
@@ -1786,16 +1778,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-server"
+name = "lemma-rpc"
 version = "0.1.0"
 dependencies = [
  "axum",
- "dotenvy",
- "lemma-host",
- "reqwest",
- "rust-embed",
- "tokio",
- "tower",
+ "buffa",
+ "buffa-types",
+ "connectrpc",
+ "futures",
+ "lemma-adapter",
+ "lemma-agent",
+ "lemma-core",
+ "lemma-model",
+ "lemma-proto",
+ "lemma-provider",
+ "lemma-session",
+ "serde_json",
+ "sqlx",
+ "uuid",
 ]
 
 [[package]]
@@ -1829,6 +1829,18 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "lemma-uniffi"
+version = "0.1.0"
+dependencies = [
+ "jni",
+ "lemma-engine",
+ "rustls-platform-verifier",
+ "thiserror",
+ "tokio",
+ "uniffi",
 ]
 
 [[package]]

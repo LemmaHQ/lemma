@@ -314,9 +314,7 @@ it("reports a failed rename", async () => {
     await user.type(input, "!{Enter}");
 
     expect(
-        await screen.findByText(
-            "Can't reach the server, check your connection and try again",
-        ),
+        await screen.findByText("Connection failed, try again"),
     ).toBeDefined();
 });
 

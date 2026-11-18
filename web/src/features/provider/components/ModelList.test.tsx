@@ -157,9 +157,7 @@ it("shows why the model list could not be fetched", async () => {
     await user.click(screen.getByRole("button", { name: "Fetch model list" }));
 
     expect(
-        await screen.findByText(
-            "Can't reach the server, check your connection and try again",
-        ),
+        await screen.findByText("Connection failed, try again"),
     ).toBeDefined();
 });
 

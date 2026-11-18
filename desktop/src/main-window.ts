@@ -12,7 +12,7 @@ export const loadFatalPage = (window: BrowserWindow | null, detail: string) => {
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lemma</title></head>
 <body style="margin:0;font-family:system-ui;background:#151615;color:#e6e6e4">
 <main style="display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;height:100vh">
-<h1 style="font-size:18px;margin:0">Cannot start the local engine</h1>
+<h1 style="font-size:18px;margin:0">Cannot start the engine</h1>
 <p style="opacity:0.7;margin:0">${detail}</p>
 </main></body></html>`;
     window

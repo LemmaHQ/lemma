@@ -1,0 +1,43 @@
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use lemma_adapter::{HttpConnector, ReqwestTransport};
+use lemma_agent::Agent;
+use lemma_provider::ProviderService;
+use lemma_session::SessionService;
+use sqlx::SqlitePool;
+
+use crate::agent_rpc::AgentRpc;
+use crate::provider_rpc::ProviderRpc;
+use crate::session_rpc::SessionRpc;
+
+type HostConnector = HttpConnector<ReqwestTransport>;
+
+/// The Connect services wired over one database.
+#[derive(Debug)]
+pub(crate) struct AppState {
+    pub(crate) providers: ProviderRpc<HostConnector>,
+    pub(crate) sessions: SessionRpc,
+    pub(crate) agent: AgentRpc<HostConnector>,
+}
+
+impl AppState {
+    #[must_use]
+    pub(crate) fn new(db: SqlitePool, secret_key: &str, workspaces_dir: PathBuf) -> Self {
+        let transport = ReqwestTransport::new();
+        let connector = HttpConnector::new(transport.clone());
+        let provider_service = Arc::new(ProviderService::new(db.clone(), secret_key, connector));
+        let session_service = SessionService::new(db);
+        let agent = Arc::new(Agent::new(
+            session_service.clone(),
+            Arc::clone(&provider_service),
+            workspaces_dir,
+            Some(transport),
+        ));
+        Self {
+            providers: ProviderRpc::new(provider_service),
+            sessions: SessionRpc::new(session_service, agent.active_turns()),
+            agent: AgentRpc::new(agent),
+        }
+    }
+}

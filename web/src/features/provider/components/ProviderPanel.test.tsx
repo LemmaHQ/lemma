@@ -126,8 +126,7 @@ const offline = () => new ConnectError("down", Code.Unavailable);
 const check = () => screen.getByRole("button", { name: "Check" });
 const fetchModels = () =>
     screen.getByRole("button", { name: "Fetch model list" });
-const OFFLINE_TEXT =
-    "Can't reach the server, check your connection and try again";
+const OFFLINE_TEXT = "Connection failed, try again";
 
 beforeEach(() => {
     vi.resetAllMocks();

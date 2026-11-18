@@ -171,11 +171,11 @@ it("tells a window that connects after a crash that the engine stopped", async (
 
     engine.connect(target);
 
-    expect(exits).toEqual(["the local engine exited with code 9"]);
+    expect(exits).toEqual(["the engine exited with code 9"]);
     expect(supersededExit).not.toHaveBeenCalled();
     expect(target.send).toHaveBeenCalledWith(
         "engine-exit",
-        "the local engine exited with code 9",
+        "the engine exited with code 9",
     );
     expect(proc.postMessage).not.toHaveBeenCalledWith(
         { type: "connect" },
@@ -229,7 +229,7 @@ it("tells a window that connects before the engine is ready that it is not runni
 
     expect(target.send).toHaveBeenCalledWith(
         "engine-exit",
-        "the local engine is not running",
+        "the engine is not running",
     );
     proc.emit("exit", 0);
     return expect(started).rejects.toThrow("exited before ready");

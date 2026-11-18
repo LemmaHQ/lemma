@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.russhwolf.settings.MapSettings
-import dev.lemmahq.lemma.client.FakeConnector
+import dev.lemmahq.lemma.client.FakeEngineOpener
 import dev.lemmahq.lemma.client.FakeLemmaClient
 import dev.lemmahq.lemma.client.ServiceException
 import dev.lemmahq.lemma.client.ServiceFailure
@@ -35,14 +35,14 @@ class AppTest {
     @Test
     fun opensIntoSessionAndNavigatesSettings() {
         val opening = CompletableDeferred<Unit>()
-        val connector =
-            FakeConnector(client).apply {
+        val engineOpener =
+            FakeEngineOpener(client).apply {
                 onOpen = {
                     opening.await()
                     client
                 }
             }
-        compose.setContent { App(settings, connector) }
+        compose.setContent { App(settings, engineOpener) }
 
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertExists()
         opening.complete(Unit)
@@ -78,16 +78,16 @@ class AppTest {
     @Test
     fun aFailedEngineStartShowsRetryAndRecovers() {
         var fail = true
-        val connector =
-            FakeConnector(client).apply {
+        val engineOpener =
+            FakeEngineOpener(client).apply {
                 onOpen = {
                     if (fail) throw ServiceException(ServiceFailure.Unspecified)
                     client
                 }
             }
-        compose.setContent { App(settings, connector) }
+        compose.setContent { App(settings, engineOpener) }
 
-        compose.onNodeWithText("The local engine could not start.").assertIsDisplayed()
+        compose.onNodeWithText("The engine could not start.").assertIsDisplayed()
         fail = false
         compose.onNodeWithText("Retry").performClick()
 

@@ -1,0 +1,24 @@
+[package]
+name = "lemma-rpc"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+axum.workspace = true
+buffa.workspace = true
+buffa-types.workspace = true
+connectrpc.workspace = true
+futures.workspace = true
+lemma-adapter.workspace = true
+lemma-agent.workspace = true
+lemma-core.workspace = true
+lemma-model.workspace = true
+lemma-proto.workspace = true
+lemma-provider.workspace = true
+lemma-session.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -19,7 +19,7 @@ interface Running {
     exited: Promise<"exited">;
 }
 
-/** Lifecycle controller for the Electron utility process hosting the local engine. */
+/** Lifecycle controller for the Electron utility process hosting the engine. */
 export interface EngineProcess {
     /** Calls `listener` when a ready engine exits without being stopped. */
     onExit(listener: (detail: string) => void): void;
@@ -59,7 +59,7 @@ const post = (
 export function createEngineProcess(): EngineProcess {
     let running: Running | null = null;
     let ready = false;
-    let exitDetail = "the local engine is not running";
+    let exitDetail = "the engine is not running";
     let exitListener: ((detail: string) => void) | null = null;
 
     return {
@@ -103,7 +103,7 @@ export function createEngineProcess(): EngineProcess {
                 const wasReady = ready;
                 running = null;
                 ready = false;
-                exitDetail = `the local engine exited with code ${code}`;
+                exitDetail = `the engine exited with code ${code}`;
                 exit.resolve("exited");
                 readiness.reject(
                     new Error(`engine exited before ready (code ${code})`),

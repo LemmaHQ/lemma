@@ -8,7 +8,7 @@ on:
     paths:
       - "mobile/**"
       - "crates/shared/**"
-      - "crates/mobile/**"
+      - "crates/uniffi/**"
       - "proto/**"
       - "design/**"
       - "i18n/**"
@@ -30,7 +30,7 @@ on:
     paths:
       - "mobile/**"
       - "crates/shared/**"
-      - "crates/mobile/**"
+      - "crates/uniffi/**"
       - "proto/**"
       - "design/**"
       - "i18n/**"

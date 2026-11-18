@@ -72,7 +72,7 @@ class SessionStageTest {
     private val client =
         FakeLemmaClient().apply { onListProviders = { listOf(sampleProvider("openai", "gpt-4o")) } }
     private var providerRequests = 0
-    private val unreachable = "Can't reach the server, check your connection and try again"
+    private val unreachable = "Connection failed, try again"
     private val elapsedTime =
         SemanticsMatcher("shows the elapsed time") { node ->
             node.config

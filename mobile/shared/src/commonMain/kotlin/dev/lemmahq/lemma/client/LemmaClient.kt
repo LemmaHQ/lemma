@@ -3,8 +3,7 @@ package dev.lemmahq.lemma.client
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Lemma services, answered by the local engine. Every call throws [ServiceException] when it
- * fails.
+ * The Lemma services, answered by the engine. Every call throws [ServiceException] when it fails.
  */
 interface LemmaClient {
 
