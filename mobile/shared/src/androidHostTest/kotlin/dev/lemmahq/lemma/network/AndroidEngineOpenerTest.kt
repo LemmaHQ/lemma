@@ -9,16 +9,16 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
-class AndroidConnectorTest {
+class AndroidEngineOpenerTest {
 
     @get:Rule val dataDir = TemporaryFolder()
 
     @Test
-    fun theLocalEngineOpensOnceForEveryClient() = runTest {
-        val connector = AndroidConnector(dataDir.newFolder().path)
+    fun theEngineOpensOnceForEveryClient() = runTest {
+        val engineOpener = AndroidEngineOpener(dataDir.newFolder().path)
 
-        val first = connector.open()
-        val second = connector.open()
+        val first = engineOpener.open()
+        val second = engineOpener.open()
 
         assertEquals(emptyList(), first.listSessions())
         assertEquals(emptyList(), second.listSessions())
@@ -26,9 +26,9 @@ class AndroidConnectorTest {
 
     @Test
     fun anEngineThatCannotOpenFailsUnspecified() = runTest {
-        val connector = AndroidConnector(dataDir.newFile().path)
+        val engineOpener = AndroidEngineOpener(dataDir.newFile().path)
 
-        val failure = assertFailsWith<ServiceException> { connector.open() }
+        val failure = assertFailsWith<ServiceException> { engineOpener.open() }
 
         assertEquals(ServiceFailure.Unspecified, failure.failure)
     }

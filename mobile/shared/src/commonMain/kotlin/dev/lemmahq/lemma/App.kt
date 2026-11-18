@@ -28,7 +28,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.lemmahq.lemma.client.Connector
+import dev.lemmahq.lemma.client.EngineOpener
 import dev.lemmahq.lemma.data.SettingsRepository
 import dev.lemmahq.lemma.theme.LemmaTheme
 import dev.lemmahq.lemma.ui.agent.AgentViewModel
@@ -47,15 +47,15 @@ import lemma.mobile.shared.generated.resources.Res
 import lemma.mobile.shared.generated.resources.common_retry
 import org.jetbrains.compose.resources.stringResource
 
-/** The app over one [settings] store and one [connector] for the whole process. */
+/** The app over one [settings] store and one [engineOpener] for the whole process. */
 @Composable
 @Suppress("ViewModelInjection")
 fun App(
     settings: SettingsRepository,
-    connector: Connector,
+    engineOpener: EngineOpener,
     modifier: Modifier = Modifier,
 ) {
-    val appViewModel = viewModel { AppViewModel(connector) }
+    val appViewModel = viewModel { AppViewModel(engineOpener) }
     val gate = appViewModel.state.route()
     val navController = rememberNavController()
     val startRoute = remember { gate }

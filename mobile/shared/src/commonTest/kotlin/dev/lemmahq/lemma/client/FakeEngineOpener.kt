@@ -1,7 +1,7 @@
 package dev.lemmahq.lemma.client
 
-/** A [Connector] that counts open calls and answers with [onOpen]. */
-class FakeConnector(client: LemmaClient) : Connector {
+/** An [EngineOpener] that counts open calls and answers with [onOpen]. */
+class FakeEngineOpener(client: LemmaClient) : EngineOpener {
 
     var openCalls = 0
         private set

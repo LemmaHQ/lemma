@@ -16,16 +16,16 @@ import okio.Timeout
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
-class LocalEngineTest {
+class EngineTest {
 
     @get:Rule val dataDir: TemporaryFolder = TemporaryFolder.builder().assureDeletion().build()
 
-    private lateinit var engine: LocalEngine
+    private lateinit var engine: Engine
     private lateinit var client: OkHttpClient
 
     @BeforeTest
     fun setUp() {
-        engine = runBlocking { LocalEngine.open(dataDir.newFolder().path) }
+        engine = runBlocking { Engine.open(dataDir.newFolder().path) }
         client = OkHttpClient.Builder().addInterceptor(engine.transport).build()
     }
 

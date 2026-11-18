@@ -17,11 +17,11 @@ import okio.Source
 import okio.Timeout
 import okio.buffer
 
-/** Base URL of the local engine; its requests never reach the network. */
+/** Base URL of the engine; its requests never reach the network. */
 const val ENGINE_BASE_URL = "http://engine.lemma.invalid"
 
 /** The in-process engine over one data directory, answering OkHttp requests through [transport]. */
-class LocalEngine private constructor(private val engine: LemmaEngine) {
+class Engine private constructor(private val engine: LemmaEngine) {
 
     /** Answers every request of an OkHttp client from the engine instead of the network. */
     val transport: Interceptor = EngineInterceptor(engine)
@@ -34,7 +34,7 @@ class LocalEngine private constructor(private val engine: LemmaEngine) {
          * Opens the engine over [dataDir], creating and migrating its database; throws
          * [EngineException] when the engine cannot start.
          */
-        suspend fun open(dataDir: String): LocalEngine = LocalEngine(LemmaEngine.open(dataDir))
+        suspend fun open(dataDir: String): Engine = Engine(LemmaEngine.open(dataDir))
     }
 }
 

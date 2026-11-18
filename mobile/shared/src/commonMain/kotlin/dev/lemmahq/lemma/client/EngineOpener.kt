@@ -1,7 +1,7 @@
 package dev.lemmahq.lemma.client
 
 /** Opens a [LemmaClient] against the in-process engine. */
-interface Connector {
+interface EngineOpener {
 
     /**
      * Opens the in-process engine, migrating its database on first use; throws [ServiceException]
