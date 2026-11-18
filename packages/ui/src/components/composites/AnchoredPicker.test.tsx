@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { expect, it, vi } from "vitest";
 
-import { AnchoredPicker, type AnchoredPickerGroup } from "./anchored-picker";
-import { Button } from "./button";
+import { Button } from "#primitives/button";
+import { AnchoredPicker, type AnchoredPickerGroup } from "./AnchoredPicker";
 
 function PickerHarness({
     groups,

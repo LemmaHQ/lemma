@@ -22,6 +22,22 @@ export {
     type StepTimelineRow,
 } from "./components/ai/step-timeline";
 export { TurnCard } from "./components/ai/turn-card";
+export {
+    AnchoredPicker,
+    type AnchoredPickerGroup,
+    type AnchoredPickerItem,
+} from "./components/composites/AnchoredPicker";
+export { PasswordInput } from "./components/composites/PasswordInput";
+export {
+    SettingsField,
+    SettingsRow,
+} from "./components/composites/SettingsField";
+export { SettingsPage } from "./components/composites/SettingsPage";
+export {
+    SettingsSection,
+    SettingsSectionCompact,
+} from "./components/composites/SettingsSection";
+export { Wordmark } from "./components/composites/Wordmark";
 export { CheckIcon } from "./components/icons/check";
 export { ChevronDownIcon } from "./components/icons/chevron-down";
 export { ChevronRightIcon } from "./components/icons/chevron-right";
@@ -33,15 +49,7 @@ export { SearchIcon } from "./components/icons/search";
 export { SettingsIcon } from "./components/icons/settings";
 export { Trash2Icon } from "./components/icons/trash-2";
 export { XIcon } from "./components/icons/x";
-export {
-    SettingsField,
-    SettingsPage,
-    SettingsRow,
-    SettingsSection,
-    SettingsSectionCompact,
-} from "./components/lemma/settings";
 export { ThemePreviewTiles } from "./components/lemma/theme-preview-tiles";
-export { Wordmark } from "./components/lemma/wordmark";
 export {
     AlertDialog,
     AlertDialogAction,
@@ -52,11 +60,6 @@ export {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "./components/primitives/alert-dialog";
-export {
-    AnchoredPicker,
-    type AnchoredPickerGroup,
-    type AnchoredPickerItem,
-} from "./components/primitives/anchored-picker";
 export { Button } from "./components/primitives/button";
 export { Checkbox } from "./components/primitives/checkbox";
 export {
@@ -93,7 +96,6 @@ export {
     InputGroupButton,
     InputGroupInput,
 } from "./components/primitives/input-group";
-export { PasswordInput } from "./components/primitives/password-input";
 export {
     Select,
     SelectContent,

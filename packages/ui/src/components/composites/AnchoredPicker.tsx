@@ -5,7 +5,7 @@ import {
     type AnchoredPickerGroup,
     AnchoredPickerGroupView,
     type AnchoredPickerItem,
-} from "#primitives/anchored-picker-group";
+} from "./AnchoredPickerGroupView";
 import {
     isValidElement,
     type KeyboardEvent,
@@ -19,7 +19,7 @@ import {
 export type {
     AnchoredPickerGroup,
     AnchoredPickerItem,
-} from "#primitives/anchored-picker-group";
+} from "./AnchoredPickerGroupView";
 
 type AnchoredPickerFooterAction = {
     label: string;

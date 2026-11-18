@@ -28,7 +28,7 @@ export function Wordmark({
                     "ml-0.5 inline-block rounded-full bg-brand",
                     size === "splash"
                         ? "relative bottom-3 size-1.5"
-                        : "size-[5px] align-[0.72em]",
+                        : "size-1.25 align-[0.72em]",
                 )}
             />
         </span>

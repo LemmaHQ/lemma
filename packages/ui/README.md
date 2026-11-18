@@ -6,7 +6,7 @@ English | [中文](README.zh.md)
 
 `@lemma/ui` exports Lemma's shared shadcn/ui controls and session components as TypeScript source. The package has two entries: `@lemma/ui` exports every consumed component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds four directories: `primitives/` for the domain-free shadcn and generic controls and layout parts, `lemma/` for Lemma's product components (the settings page parts, theme preview tiles, and wordmark), `ai/` for the visual session components, and `icons/` for Animate UI's Lucide set.
+`src/components/` holds five directories. `primitives/` holds the shadcn controls and layout parts the shadcn CLI writes, and `icons/` holds Animate UI's Lucide set; both keep their upstream layout and kebab-case file names. `composites/` holds the components Lemma composes from them, one `PascalCase.tsx` file per component, which `just source-check` holds to the repository's source file rules. `lemma/` holds the theme preview tiles and `ai/` the visual session components. [packages/AGENTS.md](../AGENTS.md#packages) decides which components belong in the package.
 
 <a id="component-catalog"></a>
 
@@ -23,12 +23,15 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `ai/session-tree-pane`       | Branch tree drawer with 52 px header, combobox search, filter pills, and 16 px rails    |
 | `ai/step-timeline`           | Collapsible step summary bar expanding into tool-execution rows                         |
 | `ai/turn-card`               | Conversation turn with sticky question card and hover timestamp                         |
-| `lemma/settings`             | The page, sections, field, and row of a [settings page](#settings-pages)                |
+| `composites/AnchoredPicker`  | 340 px anchored searchable popover with grouped options and keyboard nav                |
+| `composites/PasswordInput`   | Password input group with a labeled show and hide toggle                                |
+| `composites/SettingsField`   | The field and row of a [settings page](#settings-pages)                                 |
+| `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                                |
+| `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                             |
+| `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot      |
 | `lemma/theme-preview-tiles`  | Three pure-CSS 92×58 px radio preview tiles for light, dark, and system modes           |
-| `lemma/wordmark`             | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot      |
-| `primitives/anchored-picker` | 340 px anchored searchable popover with grouped options and keyboard nav                |
 
-`button`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `collapsible`, `empty`, and `skeleton`, and the form controls `checkbox`, `input`, `input-group`, `password-input`, `select`, and `switch` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state, `formatDuration` and `formatClockTime` format durations and local `HH:mm` timestamps, and `isShortcutIgnored` guards global keyboard shortcuts when an editable control or IME is active. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
+`button`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `collapsible`, `empty`, and `skeleton`, and the form controls `checkbox`, `input`, `input-group`, `select`, and `switch` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state, `formatDuration` and `formatClockTime` format durations and local `HH:mm` timestamps, and `isShortcutIgnored` guards global keyboard shortcuts when an editable control or IME is active. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
 Two pairs are easy to confuse:
 
@@ -59,7 +62,7 @@ Components and feature code style through the theme's utilities. The color roles
 
 ## Settings pages
 
-Every settings page is composed from the five parts of `lemma/settings`. The parts fix the page's geometry: feature code passes them text and controls and adds no spacing, border, or width around them.
+Every settings page is composed from the five parts in `composites/SettingsPage`, `composites/SettingsSection`, and `composites/SettingsField`. The parts fix the page's geometry: feature code passes them text and controls and adds no spacing, border, or width around them.
 
 | Part                     | Role                                                                                                                                                               |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -110,10 +113,10 @@ View transition classes, which the app passes to a React `<ViewTransition>` as i
 ## Conventions
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
-- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases. Public consumers import from `@lemma/ui`. Components import `cn` from `#lib/cn`, whose configuration counts the type roles as font sizes, so merging `text-small` with `text-muted-foreground` keeps both.
+- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases, and files in `composites/` import each other through relative paths. Public consumers import from `@lemma/ui`. Components import `cn` from `#lib/cn`, whose configuration counts the type roles as font sizes, so merging `text-small` with `text-muted-foreground` keeps both.
 - Components hold no text: every visible string and accessible name arrives through a required prop, such as `closeLabel`, `label`, or a typed `labels` object (`SessionTreePaneLabels`). Colors come from theme roles, never the Tailwind palette.
 - The `src/components/**` override in [`.oxlintrc.json`](.oxlintrc.json) lets components restyle composed controls, use arbitrary values for geometry, build classes with `cva`, and set ARIA roles directly.
 
 ## Adding a component
 
-Run `npx shadcn add <name>` from `packages/ui/`; the CLI writes into `src/components/primitives/`. Bring the new file under the rules above: import `cn` from `#lib/cn`, drop `"use client"`, delete the parts Lemma does not use, turn its strings into props, replace palette colors with theme roles, and move its type sizes and radii onto the scales in [Styling](#styling). Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory and move the generated file into `src/components/icons/`. Color, radius, type, and motion values shared with the desktop and Android clients belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`; tokens only the web uses belong in `src/styles/tokens.css`. Then export the consumed symbols explicitly from `src/index.ts` and add the module to the catalog above. Existing components are changed by editing them directly; the CLI does not overwrite them.
+Run `npx shadcn add <name>` from `packages/ui/`; the CLI writes into `src/components/primitives/`. Bring the new file under the rules above: import `cn` from `#lib/cn`, drop `"use client"`, delete the parts Lemma does not use, turn its strings into props, replace palette colors with theme roles, and move its type sizes and radii onto the scales in [Styling](#styling). Add an Animate UI Lucide icon with `npx shadcn add @animate-ui/icons-lucide-<name>` from the same directory and move the generated file into `src/components/icons/`. A component Lemma writes goes into `src/components/composites/` as `PascalCase.tsx` with its test beside it, and a hook it needs sits beside it as `useThing.ts`; `src/hooks/` is for the hooks the shadcn CLI writes. Color, radius, type, and motion values shared with the desktop and Android clients belong in [`design/tokens.json`](../../design/README.md), followed by `just design-gen`; tokens only the web uses belong in `src/styles/tokens.css`. Then export the consumed symbols explicitly from `src/index.ts` and add the module to the catalog above. Existing components are changed by editing them directly; the CLI does not overwrite them.

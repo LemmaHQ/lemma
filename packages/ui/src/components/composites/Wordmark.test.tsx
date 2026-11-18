@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 
-import { Wordmark } from "./wordmark";
+import { Wordmark } from "./Wordmark";
 
 it("renders default and splash wordmark scales with trailing brand dot", () => {
     const { rerender } = render(

@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
 
-import { InputGroupAddon } from "./input-group";
-import { PasswordInput } from "./password-input";
-import { TooltipProvider } from "./tooltip";
+import { InputGroupAddon } from "#primitives/input-group";
+import { TooltipProvider } from "#primitives/tooltip";
+import { PasswordInput } from "./PasswordInput";
 
 it("shows and hides the password from its labeled toggle", async () => {
     const user = userEvent.setup();
