@@ -20,7 +20,7 @@ interface Pending {
 }
 
 const exitError = (detail: string): TypeError =>
-    new TypeError(`local engine stopped: ${detail}`);
+    new TypeError(`engine stopped: ${detail}`);
 
 /** Asks the desktop preload for an engine port and listens for its answer. */
 export function connectEngine(

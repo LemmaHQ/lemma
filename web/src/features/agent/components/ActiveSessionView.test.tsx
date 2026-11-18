@@ -375,9 +375,7 @@ it("retries failed turns with or without selected model and handles retry errors
         );
     });
     expect(
-        await screen.findByText(
-            "Can't reach the server, check your connection and try again",
-        ),
+        await screen.findByText("Connection failed, try again"),
     ).toBeDefined();
 
     rerender(

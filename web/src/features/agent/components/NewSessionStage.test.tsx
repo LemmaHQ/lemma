@@ -132,9 +132,7 @@ it("creates a new session without pre-send listMessages, preserves draft on fail
     await user.type(failedComposer, "keep on failure");
     await user.click(screen.getByRole("button", { name: "Send" }));
     expect(
-        await screen.findByText(
-            "Can't reach the server, check your connection and try again",
-        ),
+        await screen.findByText("Connection failed, try again"),
     ).toBeDefined();
     expect(failedComposer).toHaveProperty("value", "keep on failure");
 

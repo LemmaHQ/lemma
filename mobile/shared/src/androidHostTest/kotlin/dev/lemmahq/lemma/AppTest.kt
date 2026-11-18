@@ -87,7 +87,7 @@ class AppTest {
             }
         compose.setContent { App(settings, engineOpener) }
 
-        compose.onNodeWithText("The local engine could not start.").assertIsDisplayed()
+        compose.onNodeWithText("The engine could not start.").assertIsDisplayed()
         fail = false
         compose.onNodeWithText("Retry").performClick()
 

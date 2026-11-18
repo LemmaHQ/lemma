@@ -142,7 +142,7 @@ it("shows why the provider could not be created", async () => {
     await save(user);
 
     expect((await screen.findByRole("alert")).textContent).toBe(
-        "Can't reach the server, check your connection and try again",
+        "Connection failed, try again",
     );
     expect(
         screen.getByRole("button", { name: "Save and create" }),

@@ -134,9 +134,7 @@ class WebProviderScreenTest {
         client.onListWebProviders = { throw ServiceException(ServiceFailure.Network) }
         val viewModel = WebProviderViewModel(client)
         compose.setContent { LemmaTheme { WebProviderScreen(viewModel, onBack = {}) } }
-        compose
-            .onNodeWithText("Can't reach the server, check your connection and try again")
-            .assertIsDisplayed()
+        compose.onNodeWithText("Connection failed, try again").assertIsDisplayed()
     }
 
     @Test
@@ -144,9 +142,7 @@ class WebProviderScreenTest {
         showScreen()
         client.onUpdateWebProvider = { _, _ -> throw ServiceException(ServiceFailure.Network) }
         compose.onNodeWithText("Enable Exa").performScrollTo().performClick()
-        compose
-            .onNodeWithText("Can't reach the server, check your connection and try again")
-            .assertIsDisplayed()
+        compose.onNodeWithText("Connection failed, try again").assertIsDisplayed()
     }
 }
 

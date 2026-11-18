@@ -284,7 +284,7 @@ it("reports save, clear, toggle, and reorder failures via toast and keeps draft"
     await user.type(deepseek.getByLabelText("API key"), "sk-fail");
     await user.click(deepseek.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText(/Can't reach the server/u)).toBeDefined();
+    expect(await screen.findByText(/Connection failed/u)).toBeDefined();
     expect(deepseek.getByLabelText("API key")).toHaveProperty(
         "value",
         "sk-fail",
