@@ -1,42 +1,21 @@
-import { cn } from "#lib/cn";
+import { cn } from "@lemma/ui";
+import { useTranslation } from "react-i18next";
 
-export type TreeRailSegment = "tee" | "bar" | "empty";
+import type { SessionTreeRow } from "../session-tree";
 
-export type TreePaneRow = {
-    id: string;
-    kind: "question" | "answer";
-    title: string;
-    label?: string | undefined;
-    meta?: string | undefined;
-    rails: TreeRailSegment[];
-    hasTopSpine: boolean;
-    hasBottomSpine: boolean;
-    onPath: boolean;
-    isLeaf: boolean;
-};
-
-export type TreePaneRowLabels = {
-    addLabel: string;
-    editLabel: string;
-    labelPlaceholder: string;
-};
-
-function TreeRowRail({ row }: { row: TreePaneRow }) {
-    const railItems = row.rails.map((segment, depth) => ({
-        slotKey: `${row.id}-${depth}`,
+function TreeRowRail({ row }: { row: SessionTreeRow }) {
+    const rails = row.rails.map((segment, depth) => ({
+        key: `${row.id}-${depth}`,
         segment,
     }));
     return (
         <span aria-hidden="true" className="flex shrink-0 self-stretch">
-            {railItems.map((item) => (
-                <span
-                    key={item.slotKey}
-                    className="relative w-4 shrink-0 self-stretch"
-                >
-                    {item.segment !== "empty" && (
+            {rails.map(({ key, segment }) => (
+                <span key={key} className="relative w-4 shrink-0 self-stretch">
+                    {segment !== "empty" && (
                         <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
                     )}
-                    {item.segment === "tee" && (
+                    {segment === "tee" && (
                         <span className="absolute top-1/2 right-0 left-1/2 h-px -translate-y-1/2 bg-border" />
                     )}
                 </span>
@@ -59,7 +38,7 @@ function TreeRowRail({ row }: { row: TreePaneRow }) {
                     />
                 )}
                 {row.isLeaf ? (
-                    <span className="relative z-10 size-[7px] bg-completion" />
+                    <span className="relative z-10 size-1.75 bg-completion" />
                 ) : (
                     <span
                         className={cn(
@@ -73,30 +52,29 @@ function TreeRowRail({ row }: { row: TreePaneRow }) {
     );
 }
 
-/** Single row in `SessionTreePane` with 16px fork rails and optional inline label editing. */
-export function TreePaneRowView({
+/** One row of the session tree drawer with 16px fork rails and optional inline label editing. */
+export function TreePaneRow({
     row,
     active,
     isEditing,
     draft,
-    labels,
     onSelect,
     onStartEdit,
     onDraftChange,
     onCommitEdit,
     onCancelEdit,
 }: {
-    row: TreePaneRow;
+    row: SessionTreeRow;
     active: boolean;
     isEditing: boolean;
     draft: string;
-    labels: TreePaneRowLabels;
     onSelect: () => void;
-    onStartEdit?: (() => void) | undefined;
+    onStartEdit: () => void;
     onDraftChange: (value: string) => void;
     onCommitEdit: () => void;
     onCancelEdit: () => void;
 }) {
+    const { t } = useTranslation();
     const hasLabel = row.label !== undefined && row.label !== "";
 
     return (
@@ -131,38 +109,39 @@ export function TreePaneRowView({
                     </span>
                 )}
             </button>
-            {onStartEdit !== undefined &&
-                (isEditing ? (
-                    <input
-                        type="text"
-                        value={draft}
-                        onChange={(event) =>
-                            onDraftChange(event.currentTarget.value)
+            {isEditing ? (
+                <input
+                    type="text"
+                    value={draft}
+                    onChange={(event) =>
+                        onDraftChange(event.currentTarget.value)
+                    }
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onCommitEdit();
+                        } else if (event.key === "Escape") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onCancelEdit();
                         }
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                onCommitEdit();
-                            } else if (event.key === "Escape") {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                onCancelEdit();
-                            }
-                        }}
-                        placeholder={labels.labelPlaceholder}
-                        aria-label={labels.labelPlaceholder}
-                        className="w-28 shrink-0 rounded-sm border border-input bg-control px-1.5 py-0.5 text-caption text-foreground outline-none focus:border-ring"
-                    />
-                ) : (
-                    <button
-                        type="button"
-                        onClick={onStartEdit}
-                        className="shrink-0 cursor-pointer text-caption text-subtle-foreground opacity-0 transition-opacity duration-base group-focus-within:opacity-100 group-hover:opacity-100 hover:text-foreground"
-                    >
-                        {hasLabel ? labels.editLabel : labels.addLabel}
-                    </button>
-                ))}
+                    }}
+                    placeholder={t("session.treeLabelPlaceholder")}
+                    aria-label={t("session.treeLabelPlaceholder")}
+                    className="w-28 shrink-0 rounded-sm border border-input bg-control px-1.5 py-0.5 text-caption text-foreground outline-none focus:border-ring"
+                />
+            ) : (
+                <button
+                    type="button"
+                    onClick={onStartEdit}
+                    className="shrink-0 cursor-pointer text-caption text-subtle-foreground opacity-0 transition-opacity duration-base group-focus-within:opacity-100 group-hover:opacity-100 hover:text-foreground"
+                >
+                    {hasLabel
+                        ? t("session.treeEditLabel")
+                        : t("session.treeAddLabel")}
+                </button>
+            )}
         </div>
     );
 }

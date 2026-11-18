@@ -4,9 +4,9 @@
 
 ## 概要
 
-`@lemma/ui` 以 TypeScript 源码导出 Lemma 的共享 shadcn/ui 控件与会话组件。包有两个入口：`@lemma/ui` 导出全部在用的组件、图标、hook 与辅助函数，包自己的 `cn`，以及底层库的 `AnimateIcon` 与 `toast`；`@lemma/ui/styles.css` 加载主题与全部组件样式。功能代码不从包里导入其他路径，也不直接导入这些底层库。该包拥有语义主题以及 Streamdown 样式与插件；它不含界面文字，组件显示或播报的每段文字都由使用方应用翻译后通过属性传入。
+`@lemma/ui` 以 TypeScript 源码导出 Lemma 的共享 shadcn/ui 控件，以及 Lemma 用它们组合出的组件。包有两个入口：`@lemma/ui` 导出全部在用的组件、图标、hook 与辅助函数，包自己的 `cn`，以及底层库的 `AnimateIcon` 与 `toast`；`@lemma/ui/styles.css` 加载主题与全部组件样式。功能代码不从包里导入其他路径，也不直接导入这些底层库。该包拥有语义主题以及 Streamdown 样式与插件；它不含界面文字，组件显示或播报的每段文字都由使用方应用翻译后通过属性传入。
 
-`src/components/` 下有四个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者保留上游布局与 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，每个组件一个 `PascalCase.tsx` 文件，由 `just source-check` 按仓库的源文件规则检查。`ai/` 存放会话场景的视觉组件。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
+`src/components/` 下有三个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者保留上游布局与 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，`PascalCase.tsx` 文件以其导出的主组件命名，由 `just source-check` 按仓库的源文件规则检查。`src/hooks/` 存放 shadcn CLI 生成的 hook。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
 
 <a id="component-catalog"></a>
 
@@ -14,19 +14,19 @@
 
 在功能代码中编写控件之前先查看此列表，复用合适的控件。
 
-| 模块                         | 用途                                                                   |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `ai/detail-pane`             | 52 px 顶栏的滑入详情抽屉，展示正文、语法高亮代码、网页结果与命令输出   |
-| `ai/session-stage`           | 居中 680 px 阅读舞台，带滚动自动跟随、turn 大纲刻度与右侧抽屉槽位      |
-| `ai/session-tree-pane`       | 52 px 顶栏的分支树抽屉，带组合框搜索、过滤胶囊与 16 px 分支轨道        |
-| `composites/AnchoredPicker`  | 340 px 锚定可搜索弹出选择器，带分组选项与键盘导航                      |
-| `composites/CopyButton`      | 复制文字的幽灵图标按钮，复制后画出对勾，提示改为已复制                 |
-| `composites/Markdown`        | 流式渲染的 Markdown，带语法高亮代码、行内结尾标记插槽与代码块操作插槽  |
-| `composites/PasswordInput`   | 带有无障碍名称的显示与隐藏切换按钮的密码输入组                         |
-| `composites/SettingsField`   | [设置页](#设置页)的字段与行                                            |
-| `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                            |
-| `composites/SettingsSection` | [设置页](#设置页)的两类分区                                            |
-| `composites/Wordmark`        | 使用 `NewCM` 字体的品牌词标（`default` 19 px 或 `splash` 24 px）与圆点 |
+| 模块                         | 用途                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `composites/AnchoredPicker`  | 340 px 锚定可搜索弹出选择器，带分组选项与键盘导航                                |
+| `composites/CodeBlock`       | Markdown 之外的语法高亮代码块，带行号，顶栏有操作插槽                            |
+| `composites/CopyButton`      | 复制文字的幽灵图标按钮，复制后画出对勾，提示改为已复制                           |
+| `composites/DrawerLayout`    | 主栏与右侧 480 px 滑入抽屉（管理焦点），以及抽屉的 52 px 顶栏 `DrawerHeader`     |
+| `composites/FollowScroll`    | 跟随新内容滚动的实时日志，带回到底部按钮、吸顶阴影、浮层插槽与 `useFollowScroll` |
+| `composites/Markdown`        | 流式渲染的 Markdown，带语法高亮代码、行内结尾标记插槽与代码块操作插槽            |
+| `composites/PasswordInput`   | 带有无障碍名称的显示与隐藏切换按钮的密码输入组                                   |
+| `composites/SettingsField`   | [设置页](#设置页)的字段与行                                                      |
+| `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                                      |
+| `composites/SettingsSection` | [设置页](#设置页)的两类分区                                                      |
+| `composites/Wordmark`        | 使用 `NewCM` 字体的品牌词标（`default` 19 px 或 `splash` 24 px）与圆点           |
 
 共享控件还包括 `primitives/` 下的 `button`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `collapsible`、`empty` 与 `skeleton`，以及表单控件 `checkbox`、`input`、`input-group`、`select` 与 `switch`。`useSidebar` 读取侧边栏状态，`formatDuration` 与 `formatClockTime` 格式化耗时与本地 `HH:mm` 时间，`isShortcutIgnored` 在可编辑控件或输入法组合态下屏蔽全局快捷键。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。
 
@@ -110,8 +110,8 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 ## 约定
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
-- 包内导入使用 `#primitives/`、`#ai/`、`#icons/`、`#hooks/` 与 `#lib/` 别名，`composites/` 中的文件之间用相对路径互相导入。外部使用方从 `@lemma/ui` 导入。组件从 `#lib/cn` 导入 `cn`，其配置把字体角色计为字号，因此合并 `text-small` 与 `text-muted-foreground` 时两者都会保留。
-- 组件不含文字：每段可见文字与无障碍名称都通过必填属性传入，例如 `closeLabel`、`label` 或有类型的 `labels` 对象（`SessionTreePaneLabels`）。颜色取自主题角色，不使用 Tailwind 色板。
+- 包内导入使用 `#primitives/`、`#icons/`、`#hooks/` 与 `#lib/` 别名，`composites/` 中的文件之间用相对路径互相导入。外部使用方从 `@lemma/ui` 导入。组件从 `#lib/cn` 导入 `cn`，其配置把字体角色计为字号，因此合并 `text-small` 与 `text-muted-foreground` 时两者都会保留。
+- 组件不含文字：每段可见文字与无障碍名称都通过必填属性传入，例如 `closeLabel` 或 `label`；回复末尾的标记这类领域元素通过插槽传入。颜色取自主题角色，不使用 Tailwind 色板。
 - [`.oxlintrc.json`](.oxlintrc.json) 中针对 `src/components/**` 的覆盖项允许组件改写所组合控件的样式、为几何尺寸使用任意值、用 `cva` 构造类名，以及直接设置 ARIA 角色。
 
 ## 添加组件

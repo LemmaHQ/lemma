@@ -19,7 +19,7 @@ Without a concrete answer to the first question, the effect goes.
 ## Scope and context
 
 - Read [web/AGENTS.md](../../../web/AGENTS.md) before changing web code: only a feature's `store.ts` calls RPC, and components take their building blocks from `@lemma/ui`.
-- The primary scope is `web/src`. `packages/ui/src/components/` and `packages/ui/src/hooks/` hold both upstream shadcn ports, which keep their upstream effects, and Lemma-authored shared components and hooks, whose effects follow the same external-synchronization and symmetric-cleanup rules as `web/src`; audit an upstream port only when a local change touches its effects.
+- The primary scope is `web/src`. In `packages/ui/src/`, the upstream ports in `components/primitives/`, `components/icons/`, and `hooks/` keep their upstream effects, while the Lemma-authored components and hooks in `components/composites/` follow the same external-synchronization and symmetric-cleanup rules as `web/src`; audit an upstream port only when a local change touches its effects.
 - Read [the refactoring patterns](references/refactoring-patterns.md) before implementing a refactor; they show each rule on Lemma code.
 
 ## Decision rules

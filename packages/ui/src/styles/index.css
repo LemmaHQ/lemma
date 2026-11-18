@@ -4,6 +4,7 @@
 @import "streamdown/styles.css";
 @import "./tokens.css";
 @import "./motion.css";
+@import "./components/CodeBlock.css";
 @import "./components/Markdown.css";
 
 @source "../";

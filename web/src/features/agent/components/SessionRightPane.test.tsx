@@ -1,8 +1,8 @@
-import type { TreePaneRow } from "@lemma/ui";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
+import type { SessionTreeRow } from "../session-tree";
 import type { TurnStep } from "../step-details";
 import { ComposerDock } from "./ComposerDock";
 import { SessionRightPane } from "./SessionRightPane";
@@ -164,7 +164,7 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
         screen.getByRole("heading", { level: 2, name: "Code" }),
     ).toBeDefined();
 
-    const rows: TreePaneRow[] = [
+    const rows: SessionTreeRow[] = [
         {
             id: "u1",
             kind: "question",

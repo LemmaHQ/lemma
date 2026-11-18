@@ -1,21 +1,15 @@
 export {
-    DetailPane,
-    type DetailPaneBody,
-    type DetailPaneProps,
-} from "./components/ai/detail-pane";
-export { SessionStage } from "./components/ai/session-stage";
-export {
-    SessionTreePane,
-    type SessionTreePaneLabels,
-    type TreePaneRow,
-    type TreeRailSegment,
-} from "./components/ai/session-tree-pane";
-export {
     AnchoredPicker,
     type AnchoredPickerGroup,
     type AnchoredPickerItem,
 } from "./components/composites/AnchoredPicker";
+export { CodeBlock } from "./components/composites/CodeBlock";
 export { CopyButton } from "./components/composites/CopyButton";
+export {
+    DrawerHeader,
+    DrawerLayout,
+} from "./components/composites/DrawerLayout";
+export { FollowScroll } from "./components/composites/FollowScroll";
 export { Markdown } from "./components/composites/Markdown";
 export { PasswordInput } from "./components/composites/PasswordInput";
 export {
@@ -28,6 +22,7 @@ export {
     SettingsSectionCompact,
 } from "./components/composites/SettingsSection";
 export { Wordmark } from "./components/composites/Wordmark";
+export { useFollowScroll } from "./components/composites/useFollowScroll";
 export { CheckIcon } from "./components/icons/check";
 export { ChevronDownIcon } from "./components/icons/chevron-down";
 export { ChevronRightIcon } from "./components/icons/chevron-right";

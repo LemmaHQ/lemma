@@ -142,7 +142,7 @@ export function TurnView({
     return (
         <div data-turn-id={turn.id} className="group/turn flex flex-col">
             <div
-                data-say-card=""
+                data-follow-sticky=""
                 className="sticky top-2.5 z-10 -mx-4 mb-3.5 flex items-baseline gap-4 rounded-lg bg-selected px-4 py-2.5 text-reading font-normal text-foreground"
             >
                 <div className="min-w-0 flex-1 wrap-break-word">

@@ -11,6 +11,7 @@ import {
     type SessionDirectoryControl,
     SessionDirectoryPicker,
 } from "./SessionDirectoryPicker";
+import { StageComposer } from "./SessionStage";
 
 export interface NewSessionStageProps {
     directoryControl: SessionDirectoryControl;
@@ -57,26 +58,24 @@ export function NewSessionStage({
     return (
         <div className="flex min-h-0 flex-1 flex-col bg-background">
             <div className="flex-1" />
-            <div className="shrink-0 px-4 pb-4 md:px-6">
-                <div className="mx-auto w-full max-w-170">
-                    <SessionComposer
-                        sessionKey=""
-                        onSubmit={handleSubmit}
-                        streaming={creating}
-                        model={model}
-                        providers={providers}
-                        modelPickerOpen={modelPickerOpen}
-                        onModelPickerOpenChange={setModelPickerOpen}
-                        onSelectModel={selectModel}
-                        onOpenProviders={onOpenProviders}
-                        directorySlot={
-                            <SessionDirectoryPicker
-                                directoryControl={directoryControl}
-                            />
-                        }
-                    />
-                </div>
-            </div>
+            <StageComposer>
+                <SessionComposer
+                    sessionKey=""
+                    onSubmit={handleSubmit}
+                    streaming={creating}
+                    model={model}
+                    providers={providers}
+                    modelPickerOpen={modelPickerOpen}
+                    onModelPickerOpenChange={setModelPickerOpen}
+                    onSelectModel={selectModel}
+                    onOpenProviders={onOpenProviders}
+                    directorySlot={
+                        <SessionDirectoryPicker
+                            directoryControl={directoryControl}
+                        />
+                    }
+                />
+            </StageComposer>
         </div>
     );
 }

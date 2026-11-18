@@ -4,9 +4,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@lemma/ui` exports Lemma's shared shadcn/ui controls and session components as TypeScript source. The package has two entries: `@lemma/ui` exports every consumed component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
+`@lemma/ui` exports Lemma's shared shadcn/ui controls and the components Lemma composes from them as TypeScript source. The package has two entries: `@lemma/ui` exports every consumed component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds four directories. `primitives/` holds the shadcn controls and layout parts the shadcn CLI writes, and `icons/` holds Animate UI's Lucide set; both keep their upstream layout and kebab-case file names. `composites/` holds the components Lemma composes from them, one `PascalCase.tsx` file per component, which `just source-check` holds to the repository's source file rules. `ai/` holds the visual session components. [packages/AGENTS.md](../AGENTS.md#packages) decides which components belong in the package.
+`src/components/` holds three directories. `primitives/` holds the shadcn controls and layout parts the shadcn CLI writes, and `icons/` holds Animate UI's Lucide set; both keep their upstream layout and kebab-case file names. `composites/` holds the components Lemma composes from them in `PascalCase.tsx` files named after the main component they export, which `just source-check` holds to the repository's source file rules. `src/hooks/` holds the hooks the shadcn CLI writes. [packages/AGENTS.md](../AGENTS.md#packages) decides which components belong in the package.
 
 <a id="component-catalog"></a>
 
@@ -14,19 +14,19 @@ English | [中文](README.zh.md)
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module                       | Use                                                                                      |
-| ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `ai/detail-pane`             | Slide-in 52 px header detail drawer for prose, highlighted code, web hits, and output    |
-| `ai/session-stage`           | Centered 680 px reading stage with scroll following, turn outline, and drawer slot       |
-| `ai/session-tree-pane`       | Branch tree drawer with 52 px header, combobox search, filter pills, and 16 px rails     |
-| `composites/AnchoredPicker`  | 340 px anchored searchable popover with grouped options and keyboard nav                 |
-| `composites/CopyButton`      | Ghost icon button that copies text and draws a check while the tooltip reads copied      |
-| `composites/Markdown`        | Streamed Markdown with highlighted code, an inline end mark slot, and code block actions |
-| `composites/PasswordInput`   | Password input group with a labeled show and hide toggle                                 |
-| `composites/SettingsField`   | The field and row of a [settings page](#settings-pages)                                  |
-| `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                                 |
-| `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                              |
-| `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot       |
+| Module                       | Use                                                                                                                              |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `composites/AnchoredPicker`  | 340 px anchored searchable popover with grouped options and keyboard nav                                                         |
+| `composites/CodeBlock`       | Highlighted, line-numbered code outside Markdown with an actions slot in its header                                              |
+| `composites/CopyButton`      | Ghost icon button that copies text and draws a check while the tooltip reads copied                                              |
+| `composites/DrawerLayout`    | Main column beside a focus-managed 480 px slide-in drawer, and the drawer's 52 px `DrawerHeader`                                 |
+| `composites/FollowScroll`    | Live log that follows new content, with a scroll-to-bottom button, a sticky-header shade, an overlay slot, and `useFollowScroll` |
+| `composites/Markdown`        | Streamed Markdown with highlighted code, an inline end mark slot, and code block actions                                         |
+| `composites/PasswordInput`   | Password input group with a labeled show and hide toggle                                                                         |
+| `composites/SettingsField`   | The field and row of a [settings page](#settings-pages)                                                                          |
+| `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                                                                         |
+| `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                                                                      |
+| `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot                                               |
 
 `button`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `collapsible`, `empty`, and `skeleton`, and the form controls `checkbox`, `input`, `input-group`, `select`, and `switch` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state, `formatDuration` and `formatClockTime` format durations and local `HH:mm` timestamps, and `isShortcutIgnored` guards global keyboard shortcuts when an editable control or IME is active. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
@@ -110,8 +110,8 @@ View transition classes, which the app passes to a React `<ViewTransition>` as i
 ## Conventions
 
 - Base UI composes through the `render` prop, not `asChild`: `<TooltipTrigger render={<Button size="icon" />}>`. Triggers render a `button` themselves, so a plain trigger takes its classes directly.
-- Package-internal imports use the `#primitives/`, `#ai/`, `#icons/`, `#hooks/`, and `#lib/` aliases, and files in `composites/` import each other through relative paths. Public consumers import from `@lemma/ui`. Components import `cn` from `#lib/cn`, whose configuration counts the type roles as font sizes, so merging `text-small` with `text-muted-foreground` keeps both.
-- Components hold no text: every visible string and accessible name arrives through a required prop, such as `closeLabel`, `label`, or a typed `labels` object (`SessionTreePaneLabels`). Colors come from theme roles, never the Tailwind palette.
+- Package-internal imports use the `#primitives/`, `#icons/`, `#hooks/`, and `#lib/` aliases, and files in `composites/` import each other through relative paths. Public consumers import from `@lemma/ui`. Components import `cn` from `#lib/cn`, whose configuration counts the type roles as font sizes, so merging `text-small` with `text-muted-foreground` keeps both.
+- Components hold no text: every visible string and accessible name arrives through a required prop, such as `closeLabel` or `label`, and domain elements, such as the mark that ends a reply, arrive through slots. Colors come from theme roles, never the Tailwind palette.
 - The `src/components/**` override in [`.oxlintrc.json`](.oxlintrc.json) lets components restyle composed controls, use arbitrary values for geometry, build classes with `cva`, and set ARIA roles directly.
 
 ## Adding a component
