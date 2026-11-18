@@ -1,5 +1,4 @@
-import { ChevronRightIcon } from "#icons/chevron-right";
-import { cn } from "#lib/cn";
+import { ChevronRightIcon, cn } from "@lemma/ui";
 import { useId } from "react";
 
 export type StepTimelineRow = {
@@ -20,7 +19,6 @@ type StepTimelineProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     rows: StepTimelineRow[];
-    className?: string | undefined;
 };
 
 /** Collapsible step summary bar expanding into compact tool-execution rows. */
@@ -30,7 +28,6 @@ export function StepTimeline({
     open,
     onOpenChange,
     rows,
-    className,
 }: StepTimelineProps) {
     const listId = useId();
 
@@ -38,7 +35,7 @@ export function StepTimeline({
         <div
             data-slot="step-timeline"
             data-open={open}
-            className={cn("flex flex-col", className)}
+            className="flex flex-col"
         >
             <button
                 type="button"
@@ -47,13 +44,14 @@ export function StepTimeline({
                 onClick={() => onOpenChange(!open)}
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-small text-muted-foreground transition-colors duration-base hover:bg-accent hover:text-foreground"
             >
-                <ChevronRightIcon
-                    aria-hidden="true"
+                <span
                     className={cn(
-                        "size-3.5 shrink-0 transition-transform duration-base ease-enter motion-reduce:transition-none",
+                        "inline-flex shrink-0 transition-transform duration-base ease-enter motion-reduce:transition-none",
                         open && "rotate-90",
                     )}
-                />
+                >
+                    <ChevronRightIcon aria-hidden="true" className="size-3.5" />
+                </span>
                 <span className="min-w-0 flex-1 truncate font-medium">
                     {summary}
                 </span>

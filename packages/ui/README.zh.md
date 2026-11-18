@@ -17,12 +17,11 @@
 | 模块                         | 用途                                                                   |
 | ---------------------------- | ---------------------------------------------------------------------- |
 | `ai/detail-pane`             | 52 px 顶栏的滑入详情抽屉，展示正文、语法高亮代码、网页结果与命令输出   |
-| `ai/message`                 | Markdown 回复、完成方块标记与已完成回复操作栏                          |
 | `ai/session-stage`           | 居中 680 px 阅读舞台，带滚动自动跟随、turn 大纲刻度与右侧抽屉槽位      |
 | `ai/session-tree-pane`       | 52 px 顶栏的分支树抽屉，带组合框搜索、过滤胶囊与 16 px 分支轨道        |
-| `ai/step-timeline`           | 可折叠的步骤汇总栏，展开为紧凑的工具执行行                             |
-| `ai/turn-card`               | turn 卡片，带粘性提问栏与悬停时间戳                                    |
 | `composites/AnchoredPicker`  | 340 px 锚定可搜索弹出选择器，带分组选项与键盘导航                      |
+| `composites/CopyButton`      | 复制文字的幽灵图标按钮，复制后画出对勾，提示改为已复制                 |
+| `composites/Markdown`        | 流式渲染的 Markdown，带语法高亮代码、行内结尾标记插槽与代码块操作插槽  |
 | `composites/PasswordInput`   | 带有无障碍名称的显示与隐藏切换按钮的密码输入组                         |
 | `composites/SettingsField`   | [设置页](#设置页)的字段与行                                            |
 | `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                            |

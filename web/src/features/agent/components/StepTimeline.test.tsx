@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { expect, it, vi } from "vitest";
 
-import { StepTimeline } from "./step-timeline";
+import { StepTimeline } from "./StepTimeline";
 
 it("toggles open state and renders interactive and static step rows", async () => {
     const user = userEvent.setup();

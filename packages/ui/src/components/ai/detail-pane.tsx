@@ -1,5 +1,5 @@
 import { code } from "@streamdown/code";
-import { useCopyText } from "#hooks/use-copy-text";
+import { useCopyText } from "../composites/useCopyText";
 import { DrawerHeadingContext } from "#hooks/use-drawer-heading";
 import { CheckIcon } from "#icons/check";
 import { CopyIcon } from "#icons/copy";

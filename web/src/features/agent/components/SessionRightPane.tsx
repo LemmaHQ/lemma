@@ -2,7 +2,7 @@ import {
     DetailPane,
     type DetailPaneBody,
     type DetailPaneProps,
-    MessageResponse,
+    Markdown,
     SessionTreePane,
     type SessionTreePaneLabels,
     type TreePaneRow,
@@ -28,7 +28,7 @@ function stepDetailBody(step: TurnStep, t: TFunction): DetailPaneBody {
         case "prose":
             return {
                 kind: "prose",
-                content: <MessageResponse>{step.detail.text}</MessageResponse>,
+                content: <Markdown>{step.detail.text}</Markdown>,
             };
         case "code":
             return {

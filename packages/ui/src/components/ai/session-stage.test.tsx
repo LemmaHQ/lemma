@@ -13,7 +13,23 @@ import { afterEach, expect, it, vi } from "vitest";
 
 import { DetailPane } from "./detail-pane";
 import { SessionStage } from "./session-stage";
-import { TurnCard } from "./turn-card";
+
+function TurnCard({
+    turnId,
+    question,
+    children,
+}: {
+    turnId: string;
+    question: string;
+    children?: ReactNode;
+}) {
+    return (
+        <div data-turn-id={turnId}>
+            <div data-say-card="">{question}</div>
+            {children}
+        </div>
+    );
+}
 
 interface MockStickContextValue {
     scrollRef: RefObject<HTMLDivElement | null>;
