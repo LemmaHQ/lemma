@@ -49,7 +49,6 @@ export { SearchIcon } from "./components/icons/search";
 export { SettingsIcon } from "./components/icons/settings";
 export { Trash2Icon } from "./components/icons/trash-2";
 export { XIcon } from "./components/icons/x";
-export { ThemePreviewTiles } from "./components/lemma/theme-preview-tiles";
 export {
     AlertDialog,
     AlertDialogAction,

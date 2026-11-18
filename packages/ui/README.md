@@ -6,7 +6,7 @@ English | [中文](README.zh.md)
 
 `@lemma/ui` exports Lemma's shared shadcn/ui controls and session components as TypeScript source. The package has two entries: `@lemma/ui` exports every consumed component, icon, hook, and helper, the package's `cn`, and `AnimateIcon` and `toast` from the libraries underneath, and `@lemma/ui/styles.css` loads the theme and all component styles. Feature code imports nothing else from the package and none of those libraries directly. The package owns the semantic theme and the Streamdown styles and plugins; it holds no interface text, so the consuming application translates every string a component shows or announces and passes it as a prop.
 
-`src/components/` holds five directories. `primitives/` holds the shadcn controls and layout parts the shadcn CLI writes, and `icons/` holds Animate UI's Lucide set; both keep their upstream layout and kebab-case file names. `composites/` holds the components Lemma composes from them, one `PascalCase.tsx` file per component, which `just source-check` holds to the repository's source file rules. `lemma/` holds the theme preview tiles and `ai/` the visual session components. [packages/AGENTS.md](../AGENTS.md#packages) decides which components belong in the package.
+`src/components/` holds four directories. `primitives/` holds the shadcn controls and layout parts the shadcn CLI writes, and `icons/` holds Animate UI's Lucide set; both keep their upstream layout and kebab-case file names. `composites/` holds the components Lemma composes from them, one `PascalCase.tsx` file per component, which `just source-check` holds to the repository's source file rules. `ai/` holds the visual session components. [packages/AGENTS.md](../AGENTS.md#packages) decides which components belong in the package.
 
 <a id="component-catalog"></a>
 
@@ -29,7 +29,6 @@ Check this list before writing a control in feature code, and reuse what fits.
 | `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                                |
 | `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                             |
 | `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot      |
-| `lemma/theme-preview-tiles`  | Three pure-CSS 92×58 px radio preview tiles for light, dark, and system modes           |
 
 `button`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `collapsible`, `empty`, and `skeleton`, and the form controls `checkbox`, `input`, `input-group`, `select`, and `switch` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state, `formatDuration` and `formatClockTime` format durations and local `HH:mm` timestamps, and `isShortcutIgnored` guards global keyboard shortcuts when an editable control or IME is active. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 
@@ -74,7 +73,7 @@ Every settings page is composed from the five parts in `composites/SettingsPage`
 
 - **Alignment:** the page heading, section titles or descriptions, and every row share the 760 px column edge with hairline dividers between rows and sections.
 - **Rhythm:** sections are separated by top hairlines and `py-7` spacing (the first section omits its top hairline and top padding). Fields use `py-3.5`, one-line rows use `py-2.5`.
-- **Controls:** theme selection uses `ThemePreviewTiles`, a longer choice uses `Select`, and an on/off setting uses `Switch`. Inputs and selects fill the control column; other controls keep their width and sit at its end.
+- **Controls:** theme selection uses radio preview tiles, a longer choice uses `Select`, and an on/off setting uses `Switch`. Inputs and selects fill the control column; other controls keep their width and sit at its end.
 - **Feedback:** a field's validation error replaces its description through the `error` prop. A section's `error` and its `footer`, the bar holding the section's pending changes, follow the rows at 12 px.
 - **Narrow widths:** a 2-column section stacks to one column below `lg`, a section subhead's actions wrap when needed, and a page title truncates before its actions.
 - **Index and detail:** a page that lists entities, such as the providers, passes a 220 px `index` directory to `SettingsPage`.

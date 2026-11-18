@@ -7,13 +7,13 @@ import {
     SettingsField,
     SettingsPage,
     SettingsSection,
-    ThemePreviewTiles,
 } from "@lemma/ui";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isThemePreference, type ThemePreference } from "../theme";
+import { ThemePreviewTiles } from "./ThemePreviewTiles";
 
 const LANGUAGES = [
     { value: "zh", label: "中文" },
@@ -58,12 +58,6 @@ export function AppearancePanel() {
                     <ThemePreviewTiles
                         value={isThemePreference(theme) ? theme : "system"}
                         onValueChange={handleThemeChange}
-                        label={t("settings.themeLabel")}
-                        labels={{
-                            light: t("theme.light"),
-                            dark: t("theme.dark"),
-                            system: t("theme.system"),
-                        }}
                     />
                 </SettingsField>
                 <SettingsField

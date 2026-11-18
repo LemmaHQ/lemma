@@ -6,7 +6,7 @@
 
 `@lemma/ui` 以 TypeScript 源码导出 Lemma 的共享 shadcn/ui 控件与会话组件。包有两个入口：`@lemma/ui` 导出全部在用的组件、图标、hook 与辅助函数，包自己的 `cn`，以及底层库的 `AnimateIcon` 与 `toast`；`@lemma/ui/styles.css` 加载主题与全部组件样式。功能代码不从包里导入其他路径，也不直接导入这些底层库。该包拥有语义主题以及 Streamdown 样式与插件；它不含界面文字，组件显示或播报的每段文字都由使用方应用翻译后通过属性传入。
 
-`src/components/` 下有五个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者保留上游布局与 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，每个组件一个 `PascalCase.tsx` 文件，由 `just source-check` 按仓库的源文件规则检查。`lemma/` 存放主题预览块，`ai/` 存放会话场景的视觉组件。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
+`src/components/` 下有四个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者保留上游布局与 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，每个组件一个 `PascalCase.tsx` 文件，由 `just source-check` 按仓库的源文件规则检查。`ai/` 存放会话场景的视觉组件。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
 
 <a id="component-catalog"></a>
 
@@ -29,7 +29,6 @@
 | `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                             |
 | `composites/SettingsSection` | [设置页](#设置页)的两类分区                                             |
 | `composites/Wordmark`        | 使用 `NewCM` 字体的品牌词标（`default` 19 px 或 `splash` 24 px）与圆点  |
-| `lemma/theme-preview-tiles`  | 三个纯 CSS 绘制的 92×58 px 主题单选预览块（浅色、深色、跟随系统）       |
 
 共享控件还包括 `primitives/` 下的 `button`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `collapsible`、`empty` 与 `skeleton`，以及表单控件 `checkbox`、`input`、`input-group`、`select` 与 `switch`。`useSidebar` 读取侧边栏状态，`formatDuration` 与 `formatClockTime` 格式化耗时与本地 `HH:mm` 时间，`isShortcutIgnored` 在可编辑控件或输入法组合态下屏蔽全局快捷键。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。
 
@@ -74,7 +73,7 @@
 
 - **对齐：** 页面标题、分区标题或说明以及每一行的文字共用 760 px 列边距，行与分区之间使用细线分隔。
 - **节奏：** 分区之间以顶部细线和 `py-7` 间距分隔（首组省略顶部细线与顶部内边距）。字段使用 `py-3.5`，单行条目使用 `py-2.5`。
-- **控件：** 主题选择用 `ThemePreviewTiles`，更长的选择用 `Select`，开关类设置用 `Switch`。输入框与选择框填满控件列；其他控件保持自身宽度并靠列尾。
+- **控件：** 主题选择用单选预览块，更长的选择用 `Select`，开关类设置用 `Switch`。输入框与选择框填满控件列；其他控件保持自身宽度并靠列尾。
 - **反馈：** 字段的校验错误通过 `error` 属性替换其说明。分区的 `error` 与 `footer`（承载该分区未保存更改的操作条）跟在行列表之后，相距 12 px。
 - **窄宽度：** 两列分区在 `lg` 以下堆叠为单列，紧凑小标题的操作在需要时换行，页面标题先于其操作被截断。
 - **索引与详情：** 列出实体的页面（例如 provider）把 220 px 宽的目录栏通过 `index` 属性传给 `SettingsPage`。
