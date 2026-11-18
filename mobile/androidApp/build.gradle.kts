@@ -46,15 +46,15 @@ kover {
         filters {
             excludes {
                 packages(
-                    "dev.lemmahq.gen",
-                    "dev.lemmahq.lemma.uniffi",
+                    "io.github.mistvesper.gen",
+                    "io.github.mistvesper.lemma.uniffi",
                     "lemma.mobile.shared.generated.resources",
                 )
                 classes(
-                    "dev.lemmahq.lemma.theme.LemmaColorScheme",
-                    "dev.lemmahq.lemma.theme.LemmaTypography",
-                    "dev.lemmahq.lemma.theme.LemmaShapes",
-                    "dev.lemmahq.lemma.theme.LemmaTokensKt",
+                    "io.github.mistvesper.lemma.theme.LemmaColorScheme",
+                    "io.github.mistvesper.lemma.theme.LemmaTypography",
+                    "io.github.mistvesper.lemma.theme.LemmaShapes",
+                    "io.github.mistvesper.lemma.theme.LemmaTokensKt",
                 )
                 annotatedBy("kotlinx.serialization.Serializable")
             }
@@ -148,11 +148,11 @@ tasks.register("verifyCoverage") {
 }
 
 android {
-    namespace = "dev.lemmahq.lemma"
+    namespace = "io.github.mistvesper.lemma"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "dev.lemmahq.lemma"
+        applicationId = "io.github.mistvesper.lemma"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

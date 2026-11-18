@@ -95,7 +95,7 @@ kotlin {
     }
 
     android {
-        namespace = "dev.lemmahq.lemma.shared"
+        namespace = "io.github.mistvesper.lemma.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 

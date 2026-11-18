@@ -2,12 +2,12 @@ use jni::errors::{Error, ThrowRuntimeExAndDefault};
 use jni::objects::{JClass, JObject};
 use jni::{Env, EnvUnowned};
 
-/// Native side of `PlatformVerifier.init` in `dev.lemmahq.lemma.engine`:
+/// Native side of `PlatformVerifier.init` in `io.github.mistvesper.lemma.engine`:
 /// hands the Android application context to `rustls-platform-verifier`, which
 /// checks the engine's TLS certificates against the system trust store.
 /// Throws `RuntimeException` when the JNI calls fail.
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_dev_lemmahq_lemma_engine_PlatformVerifier_init<'caller>(
+pub extern "system" fn Java_io_github_mistvesper_lemma_engine_PlatformVerifier_init<'caller>(
     mut env: EnvUnowned<'caller>,
     _class: JClass<'caller>,
     context: JObject<'caller>,

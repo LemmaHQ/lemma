@@ -15,7 +15,7 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 
 ## Layout
 
-`:mobile:shared` code lives under `dev.lemmahq.lemma`, one package per responsibility:
+`:mobile:shared` code lives under `io.github.mistvesper.lemma`, one package per responsibility:
 
 - The root package holds the navigation host `App` and its `AppViewModel`.
 - `client/` holds the `LemmaClient` and `EngineOpener` interfaces with their types; `network/` implements them over Connect; `data/` holds `SettingsRepository` and the preference and model-selection types.

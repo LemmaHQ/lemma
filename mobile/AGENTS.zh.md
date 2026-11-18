@@ -15,7 +15,7 @@
 
 ## 目录结构
 
-`:mobile:shared` 的代码位于 `dev.lemmahq.lemma` 下，按职责分包：
+`:mobile:shared` 的代码位于 `io.github.mistvesper.lemma` 下，按职责分包：
 
 - 根包存放承载导航的 `App` 及其 `AppViewModel`。
 - `client/` 存放 `LemmaClient` 与 `EngineOpener` 接口及其类型；`network/` 基于 Connect 实现它们；`data/` 存放 `SettingsRepository` 以及偏好与模型选择类型。
