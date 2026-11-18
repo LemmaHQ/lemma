@@ -110,7 +110,7 @@ Tailwind 工具类，可与 `before:` 等变体组合：
 ## 约定
 
 - Base UI 通过 `render` 属性组合，而不是 `asChild`：`<TooltipTrigger render={<Button size="icon" />}>`。触发器自身渲染 `button`，因此普通触发器直接接收类名。
-- 包内导入使用 `#primitives/`、`#lemma/`、`#ai/`、`#icons/`、`#hooks/` 与 `#lib/` 别名。外部使用方从 `@lemma/ui` 导入。组件从 `#lib/cn` 导入 `cn`，其配置把字体角色计为字号，因此合并 `text-small` 与 `text-muted-foreground` 时两者都会保留。
+- 包内导入使用 `#primitives/`、`#ai/`、`#icons/`、`#hooks/` 与 `#lib/` 别名。外部使用方从 `@lemma/ui` 导入。组件从 `#lib/cn` 导入 `cn`，其配置把字体角色计为字号，因此合并 `text-small` 与 `text-muted-foreground` 时两者都会保留。
 - 组件不含文字：每段可见文字与无障碍名称都通过必填属性传入，例如 `closeLabel`、`label` 或有类型的 `labels` 对象（`SessionTreePaneLabels`）。颜色取自主题角色，不使用 Tailwind 色板。
 - [`.oxlintrc.json`](.oxlintrc.json) 中针对 `src/components/**` 的覆盖项允许组件改写所组合控件的样式、为几何尺寸使用任意值、用 `cva` 构造类名，以及直接设置 ARIA 角色。
 

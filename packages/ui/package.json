@@ -9,7 +9,6 @@
     ],
     "imports": {
         "#primitives/*": "./src/components/primitives/*.tsx",
-        "#lemma/*": "./src/components/lemma/*.tsx",
         "#ai/*": "./src/components/ai/*.tsx",
         "#icons/*": "./src/components/icons/*.tsx",
         "#hooks/*": "./src/hooks/*.ts",
