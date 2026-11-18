@@ -16,7 +16,7 @@ Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何�
 
 `just web-cov`、`just desktop-cov` 与 `just packages-cov` 在语句、分支、函数与行覆盖率低于 100% 时失败；`just rust-cov` 在存在未覆盖的行或函数时失败，只报告 region 覆盖率；`just mobile-android-cov` 在存在未覆盖的行、从未调用的方法或 Composable 函数之外未走到的分支时失败。
 
-- **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-proto`、Node-API addon `lemma-napi`、UniFFI facade `lemma-mobile`、`lemma-daemon` 的二进制文件 `main.rs`、`config.rs` 与 `daemon.rs`，以及 `lemma-daemon` 中只含 `rust-embed` derive 的 `web_dist.rs`。
+- **Rust**：`just rust-cov` 打印 `cargo llvm-cov nextest` 摘要，`just rust-cov --html --open` 打开 HTML 报告。它排除 `lemma-proto`、Node-API addon `lemma-napi`、UniFFI facade `lemma-uniffi`、`lemma-daemon` 的二进制文件 `main.rs`、`config.rs` 与 `daemon.rs`，以及 `lemma-daemon` 中只含 `rust-embed` derive 的 `web_dist.rs`。
 - **Web**：`just web-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、`src/i18n/locales/` 与入口 `src/main.tsx`。
 - **桌面端**：`just desktop-cov` 以 v8 覆盖率对 `src/` 下的所有文件运行 vitest，排除 `src/gen/`、Electron 入口 `src/main.ts`、`src/preload.ts`、`src/engine-host.ts`、Electron 窗口装配 `src/main-window.ts` 与常量文件 `src/titlebar.ts`。
 - **Packages**：`just packages-cov` 以 v8 覆盖率对 `packages/ui/src/` 下的所有文件运行 vitest。
@@ -36,5 +36,5 @@ Coverage 工作流运行这些 recipe，把报告以 `rust`、`web`、`desktop`�
 
 - provider 适配器测试把写在测试中的厂商 SSE 载荷以字节流形式送入适配器的解析器，并比对完整的 `StreamEvent` 序列。
 - Android 设置测试在 `MapSettings` 上运行 `SettingsRepository`。
-- Android 客户端测试在临时数据目录上打开 `lemma-mobile` 宿主机构建的本地引擎，通过 `ConnectLemmaClient` 调用它；本机回环地址上的 MockWebServer 作为 OpenAI 兼容的厂商应答模型调用。
+- Android 客户端测试在临时数据目录上打开 `lemma-uniffi` 宿主机构建的本地引擎，通过 `ConnectLemmaClient` 调用它；本机回环地址上的 MockWebServer 作为 OpenAI 兼容的厂商应答模型调用。
 - 依赖时间的 Web 逻辑用 vitest 的 fake timers 固定时钟。

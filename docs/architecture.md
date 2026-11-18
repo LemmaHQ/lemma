@@ -15,11 +15,11 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`             | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                         |
 | Agent     | `lemma-agent`                                                 | Starting, resuming, and aborting turns over a session, a bound provider adapter, and the session directory's tools, with per-turn replayable event logs                                                                                        |
 | RPC       | `lemma-rpc`, `lemma-engine`                                   | The ConnectRPC service handlers (`ProviderService`, `SessionService`, `AgentService`) assembled into one router; `Engine` over a data directory, `InProcessEngine`, and `InProcessTransport`                                                   |
-| Hosts     | `lemma-daemon`, `lemma-napi`, `lemma-mobile`                  | The daemon binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
+| Hosts     | `lemma-daemon`, `lemma-napi`, `lemma-uniffi`                  | The daemon binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
 
 `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`; `lemma-db` owns the SQLite migrations in `crates/shared/lemma-db/migrations/`. The engine and agent layers reach the data only through those services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
 
-Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/daemon/`, `crates/napi/`, and `crates/mobile/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+Crates under `crates/shared/` build for every runtime, including Android; crates under `crates/daemon/`, `crates/napi/`, and `crates/uniffi/` build only into their host ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 ## Runtimes
 
@@ -29,13 +29,13 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 | ------------ | ---------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------- | ------------------------------------------ |
 | Server mode  | `lemma-daemon`, listening on `127.0.0.1:1025` by default                     | SQLite at `<LEMMA_DATA_DIR>/lemma.db` | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
 | Local engine | `lemma-napi` in the Electron engine process, reached over a `MessagePort`    | SQLite at `<userData>/lemma.db`       | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
-| In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`       | per-session workspace                    | sealed with `secret_key` in `secrets.json` |
+| In-process   | `lemma-uniffi` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`       | per-session workspace                    | sealed with `secret_key` in `secrets.json` |
 
 **Server mode** reads `LEMMA_DATA_DIR` (default `./data`) and `LEMMA_PORT` (default `1025`) from the environment, opens `Engine` over that data directory, listens on `127.0.0.1:<port>`, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP.
 
 **The local engine** is the desktop runtime. Electron runs the `lemma-napi` addon in a utility process; the addon opens `Engine` over Electron's `userData` directory. The renderer is the same web client; its requests travel over a `MessagePort` to the engine process, which serves them on the Connect router in-process, with no network listener ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
 
-**In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; it opens `Engine` over the app's `filesDir` and serves the Connect router in-process. The app talks to it through an OkHttp interceptor that hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+**In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-uniffi` through generated UniFFI bindings; it opens `Engine` over the app's `filesDir` and serves the Connect router in-process. The app talks to it through an OkHttp interceptor that hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 All three hosts share one data-directory layout: `lemma.db` (SQLite in WAL mode with foreign keys), `secrets.json` (generated on first run with `secret_key` for AES-256-GCM sealing), and `workspaces/`. Both clients read sessions and messages directly from the engine; backups keep `lemma.db` and `secrets.json` together, because sealed keys in the database open only with `secret_key` in `secrets.json`.
 

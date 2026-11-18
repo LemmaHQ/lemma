@@ -11,7 +11,7 @@ crates/       Rust workspace (crates/AGENTS.md)
   shared/     crates linked by the daemon, the desktop engine, and Android
   daemon/     lemma-daemon, the daemon binary
   napi/       lemma-napi, the Node-API addon the desktop shell runs the engine in
-  mobile/     lemma-mobile, the UniFFI facade for Android
+  uniffi/     lemma-uniffi, the UniFFI facade for Android
 proto/        Protobuf contracts, package lemma.v1 (proto/AGENTS.md)
 web/          React web client, also the desktop renderer (web/AGENTS.md)
 desktop/      Electron shell running the engine in a utility process (desktop/AGENTS.md)

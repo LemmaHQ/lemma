@@ -64,7 +64,7 @@ rust-cov *args="--summary-only":
     MBX_SHARE_OUT_DIR=0 cargo llvm-cov nextest --workspace \
         --exclude lemma-proto \
         --exclude lemma-napi \
-        --exclude lemma-mobile \
+        --exclude lemma-uniffi \
         --ignore-filename-regex '[/\\\\]lemma-daemon[/\\\\]src[/\\\\](main|config|daemon|web_dist)\.rs$' \
         --fail-uncovered-lines 0 \
         --fail-uncovered-functions 0 \

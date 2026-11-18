@@ -2,7 +2,7 @@
 
 [English](agent.md) | 中文
 
-agent 子系统把一条用户请求变成一个正在运行的 turn，并报告它的进度。`lemma-agent` 通过统一的运行中 turn 注册表启动、恢复与中止 turn；`lemma-agent-loop` 运行各个 step；`lemma-rpc` 与 `lemma-mobile` 把它暴露给客户端。turn 内部的工作顺序见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)；本页负责类型、事件与保证。
+agent 子系统把一条用户请求变成一个正在运行的 turn，并报告它的进度。`lemma-agent` 通过统一的运行中 turn 注册表启动、恢复与中止 turn；`lemma-agent-loop` 运行各个 step；`lemma-rpc` 与 `lemma-uniffi` 把它暴露给客户端。turn 内部的工作顺序见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)；本页负责类型、事件与保证。
 
 ## Turn 启动
 

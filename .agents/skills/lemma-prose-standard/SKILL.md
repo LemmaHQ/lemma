@@ -21,7 +21,7 @@ Accept `mode: automatic | interactive`; default to `automatic`. Enter interactiv
 
 Always exclude gitignored files from discovery, review, and edits: generated output, build directories, and dependencies. Search tracked files only, with `git ls-files` or a search that respects `.gitignore`. Also exclude the upstream style guides under `.agents/skills/lemma-code-style/references/`; they are quoted sources, not Lemma prose.
 
-Treat generated files as derivative. Edit the owning source, then regenerate: the [proto contract](../../../proto/AGENTS.md) for the generated RPC code, the [design tokens](../../../design/README.md) for the token outputs, and `lemma-mobile`'s public API for the [UniFFI bindings](../../../mobile/AGENTS.md#modules-and-generated-code). Bilingual pairs have no permanent owner: either language may be the authored side for an update. Follow the [pairs rule](../../../docs/AGENTS.md#writing-rules), update the counterpart minimally, and re-record the pair.
+Treat generated files as derivative. Edit the owning source, then regenerate: the [proto contract](../../../proto/AGENTS.md) for the generated RPC code, the [design tokens](../../../design/README.md) for the token outputs, and `lemma-uniffi`'s public API for the [UniFFI bindings](../../../mobile/AGENTS.md#modules-and-generated-code). Bilingual pairs have no permanent owner: either language may be the authored side for an update. Follow the [pairs rule](../../../docs/AGENTS.md#writing-rules), update the counterpart minimally, and re-record the pair.
 
 ## Preserve the complete proposition
 

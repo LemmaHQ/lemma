@@ -3,8 +3,8 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/subsystems/agent.md
 /agent:
-  en: 7888874a7f2de05a
-  zh: 63c5d7407666d86c
+  en: e17a1f0d81770c19
+  zh: 0de19906eae9c9a7
 /agent/turn-startup:
   en: e02e7ed0e8991986
   zh: 6f2ca5268ca7d45b

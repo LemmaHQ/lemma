@@ -2,7 +2,7 @@
 
 English | [中文](agent.zh.md)
 
-The agent subsystem turns one user request into a running turn and reports its progress. `lemma-agent` starts, resumes, and aborts turns over a unified running-turn registry; `lemma-agent-loop` runs the steps; `lemma-rpc` and `lemma-mobile` expose it to clients. The order of work inside a turn is described in [architecture.md](../architecture.md#the-path-of-one-turn); this page owns the types, events, and guarantees.
+The agent subsystem turns one user request into a running turn and reports its progress. `lemma-agent` starts, resumes, and aborts turns over a unified running-turn registry; `lemma-agent-loop` runs the steps; `lemma-rpc` and `lemma-uniffi` expose it to clients. The order of work inside a turn is described in [architecture.md](../architecture.md#the-path-of-one-turn); this page owns the types, events, and guarantees.
 
 ## Turn startup
 

@@ -49,7 +49,7 @@ just rust-dev
 
 Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已经列出 Rust 的 Android target。
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-mobile` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内本地引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
 ## 参考
 

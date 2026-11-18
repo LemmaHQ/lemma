@@ -65,19 +65,19 @@ kover {
 val lemmaHostLibPath =
     "target/debug/" +
         when {
-            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_mobile.dll"
-            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_mobile.dylib"
-            else -> "liblemma_mobile.so"
+            org.gradle.internal.os.OperatingSystem.current().isWindows -> "lemma_uniffi.dll"
+            org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "liblemma_uniffi.dylib"
+            else -> "liblemma_uniffi.so"
         }
 
 tasks.withType<Test>().configureEach {
-    dependsOn(":mobile:shared:buildLemmaMobileHost")
+    dependsOn(":mobile:shared:buildLemmaUniffiHost")
     jvmArgs(
         "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
         "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
     )
     systemProperty(
-        "uniffi.component.lemma_mobile.libraryOverride",
+        "uniffi.component.lemma_uniffi.libraryOverride",
         rootProject.file(lemmaHostLibPath).absolutePath,
     )
     systemProperty("java.library.path", rootProject.file("target/debug").absolutePath)

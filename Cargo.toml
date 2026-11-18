@@ -14,7 +14,7 @@ members = [
     "crates/shared/lemma-agent-loop",
     "crates/shared/lemma-model",
     "crates/shared/lemma-tool",
-    "crates/mobile/lemma-mobile",
+    "crates/uniffi/lemma-uniffi",
     "crates/napi/lemma-napi",
 ]
 resolver = "2"

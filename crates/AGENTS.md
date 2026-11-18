@@ -23,8 +23,8 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Layout
 
-- `shared/` crates build for every runtime, Android included; crates under a host directory (`daemon/`, `napi/`, `mobile/`) build only into that host.
-- Crates are named `lemma-<concept>`; a binding crate is named after its binding technology (`lemma-napi`).
+- `shared/` crates build for every runtime, Android included; crates under a host directory (`daemon/`, `napi/`, `uniffi/`) build only into that host.
+- Crates are named `lemma-<concept>`; a binding crate is named after its binding technology (`lemma-napi`, `lemma-uniffi`).
 - `lemma-db` owns the SQLite schema migrations in `crates/shared/lemma-db/migrations/` and applies them when opening a file-backed or in-memory pool (`lemma_db::open`, `lemma_db::in_memory`); `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`.
 
 ## Commands

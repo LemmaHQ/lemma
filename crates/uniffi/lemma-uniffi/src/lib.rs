@@ -1,5 +1,5 @@
-//! UniFFI facade for Android local mode: opens the local engine over a data
-//! directory and serves its Connect router through an in-process transport.
+//! UniFFI facade for Android: opens the engine over a data directory and
+//! serves its Connect router through an in-process transport.
 
 mod platform_verifier;
 
@@ -44,7 +44,7 @@ pub struct ResponseHead {
     pub headers: Vec<Header>,
 }
 
-/// The open local engine.
+/// The open engine.
 #[derive(Debug, uniffi::Object)]
 pub struct LemmaEngine {
     engine: InProcessEngine,
@@ -52,7 +52,7 @@ pub struct LemmaEngine {
 
 #[uniffi::export(async_runtime = "tokio")]
 impl LemmaEngine {
-    /// Opens the local engine over `data_dir`.
+    /// Opens the engine over `data_dir`.
     ///
     /// # Errors
     ///

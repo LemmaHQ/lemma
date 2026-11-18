@@ -49,7 +49,7 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml already lists the Rust Android targets.
 
-`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-mobile` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process local engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+`just mobile-android-build` assembles the debug APK. Before compiling Kotlin, Gradle builds `lemma-uniffi` for the host to generate the UniFFI Kotlin bindings; before packaging, it cross-compiles the library for the four ABIs with `cargo-ndk`. `-Plemma.rust.profile=release` builds those libraries in release mode. The app runs the in-process local engine directly over `filesDir` ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 ## Reference
 

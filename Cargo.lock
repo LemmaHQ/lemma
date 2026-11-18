@@ -1728,18 +1728,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-mobile"
-version = "0.1.0"
-dependencies = [
- "jni",
- "lemma-engine",
- "rustls-platform-verifier",
- "thiserror",
- "tokio",
- "uniffi",
-]
-
-[[package]]
 name = "lemma-model"
 version = "0.1.0"
 dependencies = [
@@ -1841,6 +1829,18 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "lemma-uniffi"
+version = "0.1.0"
+dependencies = [
+ "jni",
+ "lemma-engine",
+ "rustls-platform-verifier",
+ "thiserror",
+ "tokio",
+ "uniffi",
 ]
 
 [[package]]
