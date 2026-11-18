@@ -14,21 +14,20 @@ English | [中文](README.zh.md)
 
 Check this list before writing a control in feature code, and reuse what fits.
 
-| Module                       | Use                                                                                     |
-| ---------------------------- | --------------------------------------------------------------------------------------- |
-| `ai/composer-box`            | 680 px message composer with top dock, live running bar, auto-sizing input, and actions |
-| `ai/detail-pane`             | Slide-in 52 px header detail drawer for prose, highlighted code, web hits, and output   |
-| `ai/message`                 | Markdown response, completion mark, and settled reply actions                           |
-| `ai/session-stage`           | Centered 680 px reading stage with scroll following, turn outline, and drawer slot      |
-| `ai/session-tree-pane`       | Branch tree drawer with 52 px header, combobox search, filter pills, and 16 px rails    |
-| `ai/step-timeline`           | Collapsible step summary bar expanding into tool-execution rows                         |
-| `ai/turn-card`               | Conversation turn with sticky question card and hover timestamp                         |
-| `composites/AnchoredPicker`  | 340 px anchored searchable popover with grouped options and keyboard nav                |
-| `composites/PasswordInput`   | Password input group with a labeled show and hide toggle                                |
-| `composites/SettingsField`   | The field and row of a [settings page](#settings-pages)                                 |
-| `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                                |
-| `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                             |
-| `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot      |
+| Module                       | Use                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `ai/detail-pane`             | Slide-in 52 px header detail drawer for prose, highlighted code, web hits, and output |
+| `ai/message`                 | Markdown response, completion mark, and settled reply actions                         |
+| `ai/session-stage`           | Centered 680 px reading stage with scroll following, turn outline, and drawer slot    |
+| `ai/session-tree-pane`       | Branch tree drawer with 52 px header, combobox search, filter pills, and 16 px rails  |
+| `ai/step-timeline`           | Collapsible step summary bar expanding into tool-execution rows                       |
+| `ai/turn-card`               | Conversation turn with sticky question card and hover timestamp                       |
+| `composites/AnchoredPicker`  | 340 px anchored searchable popover with grouped options and keyboard nav              |
+| `composites/PasswordInput`   | Password input group with a labeled show and hide toggle                              |
+| `composites/SettingsField`   | The field and row of a [settings page](#settings-pages)                               |
+| `composites/SettingsPage`    | The scrolling page of a [settings page](#settings-pages)                              |
+| `composites/SettingsSection` | The two section kinds of a [settings page](#settings-pages)                           |
+| `composites/Wordmark`        | Brand wordmark set in `NewCM` (`default` 19 px or `splash` 24 px) with a brand dot    |
 
 `button`, `tooltip`, the sidebar and its sheet, `dropdown-menu`, the overlays `dialog` and `alert-dialog`, the toast container `sonner`, the layout parts `collapsible`, `empty`, and `skeleton`, and the form controls `checkbox`, `input`, `input-group`, `select`, and `switch` are also shared controls under `primitives/`. `useSidebar` reads the sidebar state, `formatDuration` and `formatClockTime` format durations and local `HH:mm` timestamps, and `isShortcutIgnored` guards global keyboard shortcuts when an editable control or IME is active. The [shadcn docs](https://ui.shadcn.com/docs/components) describe the underlying props and composition.
 

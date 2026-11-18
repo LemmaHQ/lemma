@@ -1,4 +1,3 @@
-export { ComposerBox } from "./components/ai/composer-box";
 export {
     DetailPane,
     type DetailPaneBody,
@@ -42,6 +41,7 @@ export { CheckIcon } from "./components/icons/check";
 export { ChevronDownIcon } from "./components/icons/chevron-down";
 export { ChevronRightIcon } from "./components/icons/chevron-right";
 export { ChevronUpIcon } from "./components/icons/chevron-up";
+export { CornerDownLeftIcon } from "./components/icons/corner-down-left";
 export { EllipsisIcon } from "./components/icons/ellipsis";
 export { PencilIcon } from "./components/icons/pencil";
 export { PlusIcon } from "./components/icons/plus";

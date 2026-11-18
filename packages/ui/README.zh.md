@@ -14,21 +14,20 @@
 
 在功能代码中编写控件之前先查看此列表，复用合适的控件。
 
-| 模块                         | 用途                                                                    |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `ai/composer-box`            | 680 px 消息输入框面板，带顶部插槽、实时运行状态栏、自适应高度与底部操作 |
-| `ai/detail-pane`             | 52 px 顶栏的滑入详情抽屉，展示正文、语法高亮代码、网页结果与命令输出    |
-| `ai/message`                 | Markdown 回复、完成方块标记与已完成回复操作栏                           |
-| `ai/session-stage`           | 居中 680 px 阅读舞台，带滚动自动跟随、turn 大纲刻度与右侧抽屉槽位       |
-| `ai/session-tree-pane`       | 52 px 顶栏的分支树抽屉，带组合框搜索、过滤胶囊与 16 px 分支轨道         |
-| `ai/step-timeline`           | 可折叠的步骤汇总栏，展开为紧凑的工具执行行                              |
-| `ai/turn-card`               | turn 卡片，带粘性提问栏与悬停时间戳                                     |
-| `composites/AnchoredPicker`  | 340 px 锚定可搜索弹出选择器，带分组选项与键盘导航                       |
-| `composites/PasswordInput`   | 带有无障碍名称的显示与隐藏切换按钮的密码输入组                          |
-| `composites/SettingsField`   | [设置页](#设置页)的字段与行                                             |
-| `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                             |
-| `composites/SettingsSection` | [设置页](#设置页)的两类分区                                             |
-| `composites/Wordmark`        | 使用 `NewCM` 字体的品牌词标（`default` 19 px 或 `splash` 24 px）与圆点  |
+| 模块                         | 用途                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `ai/detail-pane`             | 52 px 顶栏的滑入详情抽屉，展示正文、语法高亮代码、网页结果与命令输出   |
+| `ai/message`                 | Markdown 回复、完成方块标记与已完成回复操作栏                          |
+| `ai/session-stage`           | 居中 680 px 阅读舞台，带滚动自动跟随、turn 大纲刻度与右侧抽屉槽位      |
+| `ai/session-tree-pane`       | 52 px 顶栏的分支树抽屉，带组合框搜索、过滤胶囊与 16 px 分支轨道        |
+| `ai/step-timeline`           | 可折叠的步骤汇总栏，展开为紧凑的工具执行行                             |
+| `ai/turn-card`               | turn 卡片，带粘性提问栏与悬停时间戳                                    |
+| `composites/AnchoredPicker`  | 340 px 锚定可搜索弹出选择器，带分组选项与键盘导航                      |
+| `composites/PasswordInput`   | 带有无障碍名称的显示与隐藏切换按钮的密码输入组                         |
+| `composites/SettingsField`   | [设置页](#设置页)的字段与行                                            |
+| `composites/SettingsPage`    | [设置页](#设置页)的滚动页面                                            |
+| `composites/SettingsSection` | [设置页](#设置页)的两类分区                                            |
+| `composites/Wordmark`        | 使用 `NewCM` 字体的品牌词标（`default` 19 px 或 `splash` 24 px）与圆点 |
 
 共享控件还包括 `primitives/` 下的 `button`、`tooltip`、侧边栏及其抽屉、`dropdown-menu`，浮层 `dialog` 与 `alert-dialog`，提示消息容器 `sonner`，布局部件 `collapsible`、`empty` 与 `skeleton`，以及表单控件 `checkbox`、`input`、`input-group`、`select` 与 `switch`。`useSidebar` 读取侧边栏状态，`formatDuration` 与 `formatClockTime` 格式化耗时与本地 `HH:mm` 时间，`isShortcutIgnored` 在可编辑控件或输入法组合态下屏蔽全局快捷键。底层属性与组合方式见 [shadcn 文档](https://ui.shadcn.com/docs/components)。
 

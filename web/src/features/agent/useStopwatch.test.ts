@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { useStopwatch } from "./use-stopwatch";
+import { useStopwatch } from "./useStopwatch";
 
 const START = 1_000_000;
 
