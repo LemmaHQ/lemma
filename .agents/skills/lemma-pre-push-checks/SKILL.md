@@ -5,7 +5,7 @@ description: Use before pushing Lemma commits or claiming checks pass, to select
 
 # Lemma pre-push checks
 
-Run the relevant local evidence once before a push. Lemma has no Git hooks; CI runs the full workflows on every push to `main`, path-filtered per workflow ([development.md](../../../docs/development.md)). Local checks catch what CI would reject before it costs a round trip.
+Run the relevant local evidence once before a push. Lemma has no Git hooks; CI runs the full workflows on every push to `main` and on pull requests, path-filtered per workflow ([development.md](../../../docs/development.md)). Local checks catch what CI would reject before it costs a round trip.
 
 ## Inspect the outgoing change
 
@@ -58,6 +58,6 @@ If a selected check fails, stop and fix it or report the blocker; do not push an
 Push only on the user's explicit request.
 
 1. Run the selected checks once.
-2. Push normally; never `--force` to `main`. Rewriting pushed history needs the user's explicit instruction and `--force-with-lease=main:<observed-oid>`.
-3. Verify the remote matches local `HEAD`: `git rev-parse HEAD origin/main`.
-4. Inspect CI: `gh run list --branch main --limit 5`, then `gh run view <id>` for any failure. Report pending runs as pending, and inspect a failure before attributing it to the change or the environment.
+2. Push the current branch. Never force-push `main`. A feature branch rebased after its last push goes up with `git push --force-with-lease=<branch>:<observed-oid>`, where `<observed-oid>` is the remote branch tip you last fetched; the push then fails instead of overwriting commits someone else pushed.
+3. Verify the remote matches local `HEAD`: `git rev-parse HEAD origin/<branch>`.
+4. Inspect CI. A push to a feature branch starts no workflow; its pull request runs them, and `gh pr checks` shows the results. After a push to `main`, run `gh run list --branch main --limit 5`. Run `gh run view <id>` for any failure. Report pending runs as pending, and inspect a failure before attributing it to the change or the environment.

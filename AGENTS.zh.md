@@ -71,8 +71,10 @@ Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后
 
 ## Git
 
+- **在分支上工作，不直接在 `main` 上修改或提交，** 用户要求时除外：当前在 `main` 上时，第一次修改前先切出 `<type>/<topic>` 分支，`<type>` 取自 [lemma-commit 的类型表](.agents/skills/lemma-commit/SKILL.md#type-taxonomy)。
+- **以下情况使用独立的 worktree：** 另一个 agent 或用户同时在同一个 worktree 中修改文件；或该 worktree 中有其他工作的未提交改动，或运行着切换分支会打断的进程（[准备步骤](docs/development.zh.md#worktree)）。
 - 提交信息遵循 [lemma-commit](.agents/skills/lemma-commit/SKILL.md)，使用英语。
-- 只在明确要求时提交与推送。
+- 只在明确要求时提交、推送与合并；分支合入 `main` 的方式见 [lemma-commit](.agents/skills/lemma-commit/SKILL.md#atomicity)。
 - 一笔提交只做一件完整的事；相互独立的 hunk 分成不同的提交。只要求最新快照能构建，中间提交不要求单独构建。
 - 用 `git add <file>` 逐个显式暂存文件。提交前核对磁盘上的实际改动，保留用户在此期间做的修改。
 

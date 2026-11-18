@@ -65,6 +65,21 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 `lemma-server` 从工作目录或最近的含 `.env` 的上级目录加载 `.env`；环境中已设置的变量优先。
 
+### Worktree
+
+Worktree 是同一仓库的另一个工作目录，有自己的分支；何时使用见[根目录 AGENTS.md](../AGENTS.zh.md#git)。在主 worktree 旁创建它，并安装其中的 npm workspace：
+
+```sh
+git worktree add ../lemma-<topic> -b <type>/<topic>
+cd ../lemma-<topic>
+npm ci --prefer-offline
+```
+
+- 每个 worktree 各自运行 `npm ci`。`node_modules/@lemma/*` 链接到该 worktree 自己的 workspace 包，在 Windows 上是使用绝对路径的 junction，因此从主 worktree 拿来的 `node_modules/` 会把它们解析到主 worktree 的源码。`--prefer-offline` 从 npm 缓存安装。
+- 被 gitignore 的本地文件只留在主 worktree：`lemma-server` 需要其中的设置时复制 `.env`，未设置 `ANDROID_HOME` 时复制 `local.properties`。
+- 新 worktree 没有 `web/dist`，因此在编译 `lemma-server` 的命令之前先运行 `just web-build`。Rust 构建在 worktree 之间复用编译产物（[构建缓存](#构建缓存)）。
+- 分支合入后，`git worktree remove ../lemma-<topic>` 删除该 worktree。在 Windows 上，它会留下 `node_modules/@lemma` 中的 junction，其所在目录也因此保留；之后手动删除该目录。
+
 ### 构建缓存
 
 [mbx](https://mr-boxington.jdx.dev/) 缓存编译产物，并在 worktree 之间与 CI 运行之间复用。[mise.toml](../mise.toml) 中的 `[wrappers.cargo]` 让 `PATH` 上的 `cargo` 命令经由 mbx 运行，因此 `just` recipe 与调用 Cargo 的 Gradle 任务也会使用它。mbx 恢复输入与缓存结果一致的编译，其余照常编译；直接调用 `~/.cargo/bin/cargo` 会绕过 mbx。

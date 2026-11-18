@@ -71,8 +71,10 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 
 ## Git
 
+- **Work on a branch; never edit or commit on `main` directly** unless the user asks: on `main`, create a `<type>/<topic>` branch before the first edit, with `<type>` from the [lemma-commit types](.agents/skills/lemma-commit/SKILL.md#type-taxonomy).
+- **Use a separate worktree** when another agent or the user changes files in the same worktree at the same time, or when the worktree holds uncommitted changes from other work or runs a process that switching branches would disturb ([setup](docs/development.md#worktrees)).
 - Commit messages follow [lemma-commit](.agents/skills/lemma-commit/SKILL.md), in English.
-- Commit and push only on explicit request.
+- Commit, push, and merge only on explicit request; [lemma-commit](.agents/skills/lemma-commit/SKILL.md#atomicity) defines how a branch lands on `main`.
 - One commit does one complete thing; split independent hunks into separate commits. Only the latest snapshot must build; intermediate commits need not build on their own.
 - Stage each file explicitly with `git add <file>`. Before committing, check the changes on disk and keep edits the user made in the meantime.
 
