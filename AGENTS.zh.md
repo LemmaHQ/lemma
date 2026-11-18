@@ -69,6 +69,12 @@ Recipe 按 `<区域>-<动作>` 命名。`-check` recipe 只做检查；去掉后
 - **先验证再同意。** 先独立核对代码、事实与架构判断；回答以结论开头，不以"是的"、"完全正确"或"没问题"开头。
 - **第一句指出前提问题。** 前提有错误、漏洞或并非最优时，第一句直接指出并说明原因；技术准确性、边界条件与权衡优先于附和。
 
+## 验证
+
+- **只运行改动所属的最小检查，且只运行一次。** 工作中运行对应的测试文件或 `cargo nextest run -p <crate>`；不扩大到无关的子树，也不对未变的内容重跑已通过的检查。推送前由 [lemma-pre-push-checks](.agents/skills/lemma-pre-push-checks/SKILL.md) 按改动目录选取检查；测试分层见 [docs/testing.zh.md](docs/testing.zh.md)。
+- **编译整个 Rust workspace 或 Android 应用之前先征得用户同意：** 包括不带 `-p <crate>` 或 `--package <crate>` 的 Cargo `build`、`check`、`clippy` 与测试命令，`just rust-lint`、`just rust-lint-check`、`just rust-test`、`just rust-cov`，以及 `mobile-android-*` 系列 recipe。因未获同意而跳过的检查报告为未运行，绝不报告为通过。
+- **限定委派范围：** 交给子 agent 的任务写明它可以修改的文件与需要运行的检查；子 agent 需要其他文件或检查时，停下并回报。
+
 ## Git
 
 - **在分支上工作，不直接在 `main` 上修改或提交，** 用户要求时除外：当前在 `main` 上时，第一次修改前先切出 `<type>/<topic>` 分支，`<type>` 取自 [lemma-commit 的类型表](.agents/skills/lemma-commit/SKILL.md#type-taxonomy)。
