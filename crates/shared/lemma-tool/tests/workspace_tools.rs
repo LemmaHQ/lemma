@@ -78,7 +78,9 @@ async fn assert_outside(env: &LocalExecEnv, path: &Path) {
 /// Links `link` to the directory `target`; on Windows a junction, which needs no privilege.
 #[cfg(unix)]
 fn link_dir(target: &Path, link: &Path) -> io::Result<()> {
-    std::os::unix::fs::symlink(target, link)
+    use std::os::unix::fs::symlink;
+
+    symlink(target, link)
 }
 
 #[cfg(windows)]
