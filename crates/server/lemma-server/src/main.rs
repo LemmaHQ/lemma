@@ -1,4 +1,4 @@
-//! The Lemma server binary: serves the Connect router from `lemma-host`
+//! The Lemma server binary: serves the Connect router from `lemma-engine`
 //! and the embedded web build.
 
 use std::error::Error;

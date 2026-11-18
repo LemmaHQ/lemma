@@ -37,7 +37,7 @@ just web-build
 just rust-dev
 ```
 
-`lemma-server` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `LocalEngine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
+`lemma-server` 在编译时嵌入 `web/dist`，因此 Rust workspace 编译前要先构建一次 Web 客户端。随后 `just rust-dev` 在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `Engine`，并在 `127.0.0.1:1025` 上提供 API 与这份构建产物。
 
 开发 Web 时，`just web-dev` 启动带热更新的 Vite，并把 `/lemma.v1.*` 请求代理到 1025 端口的服务端。
 

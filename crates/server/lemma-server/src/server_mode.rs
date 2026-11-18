@@ -4,7 +4,7 @@
 use std::error::Error;
 use std::io;
 
-use lemma_host::LocalEngine;
+use lemma_engine::Engine;
 use tokio::net::TcpListener;
 use tokio::signal;
 
@@ -13,7 +13,7 @@ use crate::config::Config;
 /// Runs the server until Ctrl-C or SIGTERM, then closes the engine.
 pub async fn run() -> Result<(), Box<dyn Error>> {
     let config = Config::from_env()?;
-    let engine = LocalEngine::open(&config.data_dir).await?;
+    let engine = Engine::open(&config.data_dir).await?;
     let listener = TcpListener::bind(("127.0.0.1", config.port)).await?;
     println!("listening on {}", listener.local_addr()?);
     lemma_server::serve(listener, engine.router(), async {

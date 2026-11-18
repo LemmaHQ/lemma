@@ -1,5 +1,5 @@
 [package]
-name = "lemma-host"
+name = "lemma-rpc"
 edition.workspace = true
 version.workspace = true
 
@@ -7,29 +7,18 @@ version.workspace = true
 axum.workspace = true
 buffa.workspace = true
 buffa-types.workspace = true
-chrono.workspace = true
 connectrpc.workspace = true
 futures.workspace = true
-hex.workspace = true
 lemma-adapter.workspace = true
 lemma-agent.workspace = true
 lemma-core.workspace = true
-lemma-db.workspace = true
 lemma-model.workspace = true
 lemma-proto.workspace = true
 lemma-provider.workspace = true
 lemma-session.workspace = true
-rand.workspace = true
-serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
-thiserror.workspace = true
-tokio.workspace = true
-tower.workspace = true
 uuid.workspace = true
-
-[dev-dependencies]
-dunce.workspace = true
 
 [lints]
 workspace = true

@@ -3,8 +3,8 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/subsystems/agent.md
 /agent:
-  en: 573f9bd5098c836a
-  zh: f29f69809745ab92
+  en: 7888874a7f2de05a
+  zh: 63c5d7407666d86c
 /agent/turn-startup:
   en: e02e7ed0e8991986
   zh: 6f2ca5268ca7d45b
@@ -12,8 +12,8 @@
   en: 3150a1ca8176d89b
   zh: 87ec2ddaa83d59a7
 /agent/turn-events:
-  en: ecdf3a61a8efd606
-  zh: 5a31b7bd28589883
+  en: 3694a169c10b2251
+  zh: 68513e2d9598d5e2
 /agent/abort:
   en: 7e0151a94910f90c
   zh: 0ec74928da9eac3a

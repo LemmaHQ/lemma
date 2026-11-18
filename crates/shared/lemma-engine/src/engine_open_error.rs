@@ -3,10 +3,9 @@ use sqlx::Error as SqlxError;
 use sqlx::migrate::MigrateError;
 use thiserror::Error;
 
-/// Failures of [`LocalEngine::open`](crate::LocalEngine::open), by startup
-/// step.
+/// Failures of [`Engine::open`](crate::Engine::open), by startup step.
 #[derive(Debug, Error)]
-pub enum LocalEngineError {
+pub enum EngineOpenError {
     /// The data directory could not be created or `secrets.json` written.
     #[error("{0}")]
     Secrets(String),

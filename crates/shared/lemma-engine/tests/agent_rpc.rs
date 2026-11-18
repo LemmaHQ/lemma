@@ -1,4 +1,4 @@
-//! `AgentService` over Connect on a local engine: turns against an
+//! `AgentService` over Connect on an engine: turns against an
 //! OpenAI-compatible vendor served on the loopback interface, their event
 //! streams, workspace tools, and the messages they persist.
 
@@ -13,7 +13,7 @@ use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
-use common::{DataDir, Engine, Frame, Frames, assert_reason, assert_stream_reason, serve};
+use common::{DataDir, Frame, Frames, TestEngine, assert_reason, assert_stream_reason, serve};
 use futures::{StreamExt, stream};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
@@ -114,13 +114,13 @@ async fn completions(axum::Json(request): axum::Json<Value>) -> Response {
 }
 
 struct Setup {
-    engine: Engine,
+    engine: TestEngine,
     provider_id: String,
     session_id: String,
 }
 
 async fn setup() -> Result<Setup, Box<dyn Error>> {
-    let engine = Engine::open().await?;
+    let engine = TestEngine::open().await?;
     let base_url = serve(Router::new().route("/v1/chat/completions", post(completions))).await?;
     let provider = engine
         .call(

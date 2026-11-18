@@ -37,7 +37,7 @@ just web-build
 just rust-dev
 ```
 
-`lemma-server` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `LocalEngine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
+`lemma-server` embeds `web/dist` at compile time, so the web client is built once before the Rust workspace compiles. `just rust-dev` then opens `Engine` over `LEMMA_DATA_DIR` (default `./data`) and serves the API and that build on `127.0.0.1:1025`.
 
 For web development, `just web-dev` starts Vite with hot reload and proxies `/lemma.v1.*` requests to the server on port 1025.
 

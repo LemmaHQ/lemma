@@ -4,40 +4,36 @@ use std::path::Path;
 use axum::Router;
 use sqlx::SqlitePool;
 
-use crate::app_state::AppState;
-use crate::local_engine_error::LocalEngineError;
-use crate::router;
+use crate::engine_open_error::EngineOpenError;
 use crate::secrets::Secrets;
 
-/// The local engine: the Connect services over one SQLite database, with
-/// the secrets, the database, and the workspaces under one data directory.
+/// The Connect services over one SQLite database, with the secrets, the
+/// database, and the workspaces under one data directory.
 #[derive(Debug)]
-pub struct LocalEngine {
+pub struct Engine {
     router: Router,
     db: SqlitePool,
 }
 
-impl LocalEngine {
+impl Engine {
     /// Opens the engine over `data_dir`: loads `secrets.json`, generating it
     /// on first run, and opens and migrates `lemma.db`. Turns run tools in
     /// the session's directory, or else in its workspace under `workspaces/`.
     ///
     /// # Errors
     ///
-    /// [`LocalEngineError`] naming the startup step that failed.
-    pub async fn open(data_dir: &Path) -> Result<Self, LocalEngineError> {
+    /// [`EngineOpenError`] naming the startup step that failed.
+    pub async fn open(data_dir: &Path) -> Result<Self, EngineOpenError> {
         let secrets = load_or_create_secrets(data_dir)?;
         let db = lemma_db::open(&data_dir.join("lemma.db"))
             .await
             .map_err(|e| match e {
-                sqlx::Error::Migrate(migrate) => LocalEngineError::Migration(*migrate),
-                other => LocalEngineError::Database(other),
+                sqlx::Error::Migrate(migrate) => EngineOpenError::Migration(*migrate),
+                other => EngineOpenError::Database(other),
             })?;
-        let state = AppState::new(db.clone(), &secrets, data_dir.join("workspaces"));
-        Ok(Self {
-            router: router::router(state),
-            db,
-        })
+        let router =
+            lemma_rpc::router(db.clone(), &secrets.secret_key, data_dir.join("workspaces"));
+        Ok(Self { router, db })
     }
 
     /// The Connect router serving the engine's services.
@@ -51,22 +47,22 @@ impl LocalEngine {
     }
 }
 
-fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, LocalEngineError> {
+fn load_or_create_secrets(data_dir: &Path) -> Result<Secrets, EngineOpenError> {
     use rand::RngExt;
 
     let path = data_dir.join("secrets.json");
     match fs::read_to_string(&path) {
-        Ok(raw) => serde_json::from_str(&raw).map_err(LocalEngineError::SecretsJson),
+        Ok(raw) => serde_json::from_str(&raw).map_err(EngineOpenError::SecretsJson),
         Err(_) => {
             let secrets = Secrets {
                 secret_key: hex::encode(rand::rng().random::<[u8; 32]>()),
             };
             fs::create_dir_all(data_dir).map_err(|e| {
-                LocalEngineError::Secrets(format!("create {}: {e}", data_dir.display()))
+                EngineOpenError::Secrets(format!("create {}: {e}", data_dir.display()))
             })?;
-            let json = serde_json::to_string(&secrets).map_err(LocalEngineError::SecretsJson)?;
+            let json = serde_json::to_string(&secrets).map_err(EngineOpenError::SecretsJson)?;
             fs::write(&path, json)
-                .map_err(|e| LocalEngineError::Secrets(format!("write {}: {e}", path.display())))?;
+                .map_err(|e| EngineOpenError::Secrets(format!("write {}: {e}", path.display())))?;
             Ok(secrets)
         }
     }

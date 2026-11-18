@@ -14,7 +14,7 @@ Lemma is one Rust workspace. A crate depends only on crates in its own layer or 
 | Domains   | `lemma-db`, `lemma-session`, `lemma-provider`, `lemma-crypto` | SQLite pool setup and schema migrations; sessions, the message tree, and `SessionService`; predefined, custom, and web providers, model lists, and `ProviderService`; API-key sealing                                                          |
 | Engine    | `lemma-adapter`, `lemma-tool`, `lemma-agent-loop`             | Vendor wire formats, model lists, and web backend clients; the tool registry, execution environment, and web tools; the turn loop and its cancellation                                                                                         |
 | Agent     | `lemma-agent`                                                 | Starting, resuming, and aborting turns over a session, a bound provider adapter, and the session directory's tools, with per-turn replayable event logs                                                                                        |
-| RPC       | `lemma-host`                                                  | The ConnectRPC service handlers (`ProviderService`, `SessionService`, `AgentService`) assembled into one router, `LocalEngine` over a data directory, and `InProcessTransport`                                                                 |
+| RPC       | `lemma-rpc`, `lemma-engine`                                   | The ConnectRPC service handlers (`ProviderService`, `SessionService`, `AgentService`) assembled into one router; `Engine` over a data directory, `InProcessEngine`, and `InProcessTransport`                                                   |
 | Hosts     | `lemma-server`, `lemma-desktop`, `lemma-mobile`               | The server binary; the Node-API addon for the desktop engine; the UniFFI facade for Android                                                                                                                                                    |
 
 `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`; `lemma-db` owns the SQLite migrations in `crates/shared/lemma-db/migrations/`. The engine and agent layers reach the data only through those services. `lemma-agent-loop` and `lemma-provider` reach models only through the `lemma-model` traits; `HttpConnector` in `lemma-adapter` implements them and sends HTTP through the injectable `HttpTransport` trait, with `ReqwestTransport` as the default.
@@ -31,11 +31,11 @@ The same domain services and turn loop run in three hosts. Clients choose a host
 | Local engine | `lemma-desktop` in the Electron engine process, reached over a `MessagePort` | SQLite at `<userData>/lemma.db`       | bound directory or per-session workspace | sealed with `secret_key` in `secrets.json` |
 | In-process   | `lemma-mobile` in the Android app process                                    | SQLite at `<filesDir>/lemma.db`       | per-session workspace                    | sealed with `secret_key` in `secrets.json` |
 
-**Server mode** reads `LEMMA_DATA_DIR` (default `./data`) and `LEMMA_PORT` (default `1025`) from the environment, opens `LocalEngine` over that data directory, listens on `127.0.0.1:<port>`, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP.
+**Server mode** reads `LEMMA_DATA_DIR` (default `./data`) and `LEMMA_PORT` (default `1025`) from the environment, opens `Engine` over that data directory, listens on `127.0.0.1:<port>`, and serves the ConnectRPC services plus the web build embedded from `web/dist` at compile time. The browser client reaches it over HTTP.
 
-**The local engine** is the desktop runtime. Electron runs the `lemma-desktop` addon in a utility process; the addon opens `LocalEngine` over Electron's `userData` directory. The renderer is the same web client; its requests travel over a `MessagePort` to the engine process, which serves them on the Connect router in-process, with no network listener ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
+**The local engine** is the desktop runtime. Electron runs the `lemma-desktop` addon in a utility process; the addon opens `Engine` over Electron's `userData` directory. The renderer is the same web client; its requests travel over a `MessagePort` to the engine process, which serves them on the Connect router in-process, with no network listener ([desktop/AGENTS.md](../desktop/AGENTS.md#engine-and-renderer)).
 
-**In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; it opens `LocalEngine` over the app's `filesDir` and serves the Connect router in-process. The app talks to it through an OkHttp interceptor that hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
+**In-process** is the Android local mode. Kotlin opens `LemmaEngine` from `lemma-mobile` through generated UniFFI bindings; it opens `Engine` over the app's `filesDir` and serves the Connect router in-process. The app talks to it through an OkHttp interceptor that hands each request to the engine instead of the network ([mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)).
 
 All three hosts share one data-directory layout: `lemma.db` (SQLite in WAL mode with foreign keys), `secrets.json` (generated on first run with `secret_key` for AES-256-GCM sealing), and `workspaces/`. Both clients read sessions and messages directly from the engine; backups keep `lemma.db` and `secrets.json` together, because sealed keys in the database open only with `secret_key` in `secrets.json`.
 
@@ -49,7 +49,7 @@ Lemma runs as a single-owner local node with no user accounts or authentication 
 
 ## The path of one turn
 
-A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` starts, resumes, and aborts turns, running `AgentLoop::run_turn` in `lemma-agent-loop` in a background task; `lemma-host` calls only `Agent` and maps its `TurnEvent`s onto `AgentEvent` messages.
+A **turn** starts from one user message and ends when the model stops without requesting tools, its stream fails, or the turn is aborted. A **step** is one model request; a turn with tool calls runs several steps. `Agent` in `lemma-agent` starts, resumes, and aborts turns, running `AgentLoop::run_turn` in `lemma-agent-loop` in a background task; `lemma-rpc` calls only `Agent` and maps its `TurnEvent`s onto `AgentEvent` messages.
 
 ```text
 AgentService.SendMessage(session, provider, model, content, parent_id?)
@@ -90,7 +90,7 @@ A turn runs to its end whether or not a client reads its stream. `Agent` in `lem
 
 ## Persistence
 
-`lemma-db` owns the SQLite schema in `crates/shared/lemma-db/migrations/` and runs pending migrations when opening a pool (`LocalEngine` calls `lemma_db::open`): `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
+`lemma-db` owns the SQLite schema in `crates/shared/lemma-db/migrations/` and runs pending migrations when opening a pool (`Engine` calls `lemma_db::open`): `sessions` and `messages` for `lemma-session`, and `providers` and `web_providers` for `lemma-provider` ([crates/AGENTS.md](../crates/AGENTS.md#layout)).
 
 A session is a tree of messages. Each message row stores its `parent_id`, optional user `label`, the canonical message with its token usage as a JSON body, its status (`streaming`, `done`, `aborted`, `error`), and the provider, model, and API format that produced it; the provider id is a plain id without a foreign key, so deleting a provider changes no message or session. The session row stores the active `leaf_id` and the last model selection. `SessionService` in `lemma-session` is the only code over these tables; the turn loop appends, settles, and moves the leaf through it, and it also creates, renames, and deletes sessions, reads the full message tree, validates and switches `leaf_id`, and sets message labels.
 
@@ -110,8 +110,8 @@ New behavior attaches to one of these points. Changing the turn loop itself upda
 | Add a model-facing tool                        | implement `Tool` in `lemma-tool` and register it where `Agent` builds its `ToolRegistry` (`lemma-agent`)                                      |
 | Run tools somewhere else                       | implement `ExecEnv`                                                                                                                           |
 | Send provider traffic through another stack    | implement `HttpTransport` and construct the `HttpConnector` with it                                                                           |
-| Add an RPC                                     | change the `.proto`, implement it in the matching RPC module of `crates/shared/lemma-host`, and regenerate the clients                        |
-| Add an RPC service                             | add a `.proto`, list it in `lemma-proto/build.rs`, implement its handler in `crates/shared/lemma-host`, and mount it in `router`              |
+| Add an RPC                                     | change the `.proto`, implement it in the matching RPC module of `crates/shared/lemma-rpc`, and regenerate the clients                         |
+| Add an RPC service                             | add a `.proto`, list it in `lemma-proto/build.rs`, implement its handler in `crates/shared/lemma-rpc`, and mount it in `router`               |
 | Add a user-facing error                        | add an `ErrorReason`, map it in `lemma-proto/src/error.rs`, and add its locale key in `i18n/errors.yaml` followed by `just i18n-gen`          |
 | Change the schema                              | add a SQL migration to `crates/shared/lemma-db/migrations/`; `lemma_db::open` and `lemma_db::in_memory` run it when opening the pool          |
 | Reach a desktop capability from the web client | extend `desktop/src/desktop-bridge.ts`, the preload bridge, and the adapter in `web/src/platform/` ([web/AGENTS.md](../web/AGENTS.md#layout)) |

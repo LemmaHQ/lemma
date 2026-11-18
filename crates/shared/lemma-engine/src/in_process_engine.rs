@@ -2,31 +2,31 @@ use std::path::Path;
 
 use tokio::sync::Mutex;
 
+use crate::engine::Engine;
+use crate::engine_open_error::EngineOpenError;
 use crate::in_process_transport::{InProcessTransport, ResponseHead};
 use crate::in_process_transport_error::InProcessTransportError;
-use crate::local_engine::LocalEngine;
-use crate::local_engine_error::LocalEngineError;
 
-/// Owns a [`LocalEngine`] and an [`InProcessTransport`] for hosts that call
-/// the Connect router in process without a network listener.
+/// Owns an [`Engine`] and an [`InProcessTransport`] for hosts that call the
+/// Connect router in process without a network listener.
 #[derive(Debug)]
 pub struct InProcessEngine {
     transport: InProcessTransport,
-    local: Mutex<Option<LocalEngine>>,
+    engine: Mutex<Option<Engine>>,
 }
 
 impl InProcessEngine {
-    /// Opens the local engine over `data_dir` and wraps its router in an
+    /// Opens the engine over `data_dir` and wraps its router in an
     /// in-process transport.
     ///
     /// # Errors
     ///
-    /// [`LocalEngineError`] naming the startup step that failed.
-    pub async fn open(data_dir: &Path) -> Result<Self, LocalEngineError> {
-        let local = LocalEngine::open(data_dir).await?;
+    /// [`EngineOpenError`] naming the startup step that failed.
+    pub async fn open(data_dir: &Path) -> Result<Self, EngineOpenError> {
+        let engine = Engine::open(data_dir).await?;
         Ok(Self {
-            transport: InProcessTransport::new(local.router()),
-            local: Mutex::new(Some(local)),
+            transport: InProcessTransport::new(engine.router()),
+            engine: Mutex::new(Some(engine)),
         })
     }
 
@@ -69,8 +69,8 @@ impl InProcessEngine {
 
     /// Closes the engine's database; safe to call more than once.
     pub async fn close(&self) {
-        if let Some(local) = self.local.lock().await.take() {
-            local.close().await;
+        if let Some(engine) = self.engine.lock().await.take() {
+            engine.close().await;
         }
     }
 }

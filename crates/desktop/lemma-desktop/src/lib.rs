@@ -4,7 +4,7 @@
 
 use std::path::Path;
 
-use lemma_host::InProcessEngine;
+use lemma_engine::InProcessEngine;
 use napi::bindgen_prelude::Buffer;
 use napi::{Error, Result};
 use napi_derive::napi;

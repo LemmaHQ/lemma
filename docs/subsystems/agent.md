@@ -2,7 +2,7 @@
 
 English | [中文](agent.zh.md)
 
-The agent subsystem turns one user request into a running turn and reports its progress. `lemma-agent` starts, resumes, and aborts turns over a unified running-turn registry; `lemma-agent-loop` runs the steps; `lemma-host` and `lemma-mobile` expose it to clients. The order of work inside a turn is described in [architecture.md](../architecture.md#the-path-of-one-turn); this page owns the types, events, and guarantees.
+The agent subsystem turns one user request into a running turn and reports its progress. `lemma-agent` starts, resumes, and aborts turns over a unified running-turn registry; `lemma-agent-loop` runs the steps; `lemma-rpc` and `lemma-mobile` expose it to clients. The order of work inside a turn is described in [architecture.md](../architecture.md#the-path-of-one-turn); this page owns the types, events, and guarantees.
 
 ## Turn startup
 
@@ -38,9 +38,9 @@ The turn gets the `read_file`, `write_file`, and `bash` tools over a `LocalExecE
 
 ## Turn events
 
-The loop reports timestamped `TurnEvent`s to its observer in the order they happen, and `Agent` appends a terminal `TurnEvent::TurnFailed` if the loop exits with a non-model error. `lemma-host` maps each `TurnEvent` onto `AgentEvent`:
+The loop reports timestamped `TurnEvent`s to its observer in the order they happen, and `Agent` appends a terminal `TurnEvent::TurnFailed` if the loop exits with a non-model error. `lemma-rpc` maps each `TurnEvent` onto `AgentEvent`:
 
-| Source | `AgentEvent` (`lemma-host`) | Meaning |
+| Source | `AgentEvent` (`lemma-rpc`) | Meaning |
 | --- | --- | --- |
 | `UserAppended` | `started` | The user message is stored; carries its id and optional `parent_id`. |
 | `AssistantStarted` | `turn_started` | A step's placeholder is stored; carries the assistant message id and `parent_id`. |

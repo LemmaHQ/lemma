@@ -1,4 +1,4 @@
-//! `ProviderService` over Connect on a local engine, against an
+//! `ProviderService` over Connect on an engine, against an
 //! OpenAI-compatible vendor served on the loopback interface.
 
 mod common;
@@ -8,7 +8,7 @@ use std::error::Error;
 use axum::Router;
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
-use common::{Engine, assert_internal, assert_reason, serve};
+use common::{TestEngine, assert_internal, assert_reason, serve};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 
@@ -69,7 +69,7 @@ fn provider(base_url: &str) -> Value {
     })
 }
 
-async fn create(engine: &Engine, body: &Value) -> Result<String, Box<dyn Error>> {
+async fn create(engine: &TestEngine, body: &Value) -> Result<String, Box<dyn Error>> {
     let reply = engine.call(CREATE, body).await?;
     reply.body["provider"]["id"]
         .as_str()
@@ -89,7 +89,7 @@ fn web_id(body: &Value, kind: &str) -> Result<String, Box<dyn Error>> {
 #[tokio::test]
 async fn providers_round_trip_through_create_list_update_and_delete() -> Result<(), Box<dyn Error>>
 {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
 
     let created = engine
         .call(CREATE, &provider("https://api.example.com/v1/"))
@@ -167,7 +167,7 @@ async fn providers_round_trip_through_create_list_update_and_delete() -> Result<
 
 #[tokio::test]
 async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let listed = engine.call(LIST, &json!({})).await?;
     let id = listed.body["providers"][0]["id"]
         .as_str()
@@ -223,7 +223,7 @@ async fn predefined_provider_updates_use_the_dedicated_rpc() -> Result<(), Box<d
 
 #[tokio::test]
 async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let listed = engine.call(LIST_WEB, &json!({})).await?;
     let native = web_id(&listed.body, "KIND_NATIVE")?;
     let exa = web_id(&listed.body, "KIND_EXA")?;
@@ -312,7 +312,7 @@ async fn web_providers_round_trip_through_update_and_reorder() -> Result<(), Box
 
 #[tokio::test]
 async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let listed = engine.call(LIST_WEB, &json!({})).await?;
     let native = web_id(&listed.body, "KIND_NATIVE")?;
     let exa = web_id(&listed.body, "KIND_EXA")?;
@@ -385,7 +385,7 @@ async fn invalid_web_requests_carry_their_reasons() -> Result<(), Box<dyn Error>
 
 #[tokio::test]
 async fn each_api_format_maps_to_its_proto_value() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
 
     for (index, kind) in [
         "API_FORMAT_OPENAI",
@@ -410,7 +410,7 @@ async fn each_api_format_maps_to_its_proto_value() -> Result<(), Box<dyn Error>>
 
 #[tokio::test]
 async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let _id = create(&engine, &provider("https://api.example.com")).await?;
     let unknown = "00000000-0000-4000-8000-000000000000";
     let mut no_kind = provider("https://api.example.com");
@@ -503,7 +503,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn models_are_fetched_with_the_stored_key() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let base_url = vendor().await?;
     let id = create(&engine, &provider(&base_url)).await?;
     let mut bad = provider(&base_url);
@@ -526,7 +526,7 @@ async fn models_are_fetched_with_the_stored_key() -> Result<(), Box<dyn Error>> 
 
 #[tokio::test]
 async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let base_url = vendor().await?;
     let id = create(&engine, &provider(&base_url)).await?;
 
@@ -554,7 +554,7 @@ async fn a_check_reports_the_upstream_failure_in_its_response() -> Result<(), Bo
 #[tokio::test]
 async fn keys_sealed_under_a_rotated_secret_fail_as_internal_errors() -> Result<(), Box<dyn Error>>
 {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let id = create(&engine, &provider("https://api.example.com")).await?;
 
     engine.reopen_with_secret_key("rotated").await?;
@@ -567,7 +567,7 @@ async fn keys_sealed_under_a_rotated_secret_fail_as_internal_errors() -> Result<
 
 #[tokio::test]
 async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     engine.close().await;
 
     let reply = engine.call(LIST, &json!({})).await?;

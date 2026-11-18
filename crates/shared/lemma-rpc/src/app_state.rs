@@ -9,7 +9,6 @@ use sqlx::SqlitePool;
 
 use crate::agent_rpc::AgentRpc;
 use crate::provider_rpc::ProviderRpc;
-use crate::secrets::Secrets;
 use crate::session_rpc::SessionRpc;
 
 type HostConnector = HttpConnector<ReqwestTransport>;
@@ -24,14 +23,10 @@ pub(crate) struct AppState {
 
 impl AppState {
     #[must_use]
-    pub(crate) fn new(db: SqlitePool, secrets: &Secrets, workspaces_dir: PathBuf) -> Self {
+    pub(crate) fn new(db: SqlitePool, secret_key: &str, workspaces_dir: PathBuf) -> Self {
         let transport = ReqwestTransport::new();
         let connector = HttpConnector::new(transport.clone());
-        let provider_service = Arc::new(ProviderService::new(
-            db.clone(),
-            &secrets.secret_key,
-            connector,
-        ));
+        let provider_service = Arc::new(ProviderService::new(db.clone(), secret_key, connector));
         let session_service = SessionService::new(db);
         let agent = Arc::new(Agent::new(
             session_service.clone(),

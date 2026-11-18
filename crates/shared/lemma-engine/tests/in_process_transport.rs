@@ -1,4 +1,4 @@
-//! Requests through `InProcessTransport` against a real local engine, and
+//! Requests through `InProcessTransport` against a real engine, and
 //! response bodies that fail while streaming.
 
 use std::env;
@@ -12,14 +12,14 @@ use axum::body::{Body, Bytes};
 use axum::http::Method;
 use axum::routing::get;
 use futures::stream;
-use lemma_host::{InProcessTransport, InProcessTransportError, LocalEngine};
+use lemma_engine::{Engine, InProcessTransport, InProcessTransportError};
 use uuid::Uuid;
 
 struct DataDir(PathBuf);
 
 impl DataDir {
     fn new() -> Self {
-        Self(env::temp_dir().join(format!("lemma-host-test-{}", Uuid::new_v4())))
+        Self(env::temp_dir().join(format!("lemma-engine-test-{}", Uuid::new_v4())))
     }
 }
 
@@ -48,7 +48,7 @@ async fn read_to_end(
 async fn create_session_returns_the_response_and_closes_the_body_at_its_end()
 -> Result<(), Box<dyn Error>> {
     let dir = DataDir::new();
-    let engine = LocalEngine::open(&dir.0).await?;
+    let engine = Engine::open(&dir.0).await?;
     let transport = InProcessTransport::new(engine.router());
 
     let head = transport
@@ -88,7 +88,7 @@ async fn create_session_returns_the_response_and_closes_the_body_at_its_end()
 #[tokio::test]
 async fn cancel_closes_an_unread_body() -> Result<(), Box<dyn Error>> {
     let dir = DataDir::new();
-    let engine = LocalEngine::open(&dir.0).await?;
+    let engine = Engine::open(&dir.0).await?;
     let transport = InProcessTransport::new(engine.router());
 
     let head = transport
@@ -114,7 +114,7 @@ async fn cancel_closes_an_unread_body() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 async fn an_invalid_method_fails_before_reaching_the_router() -> Result<(), Box<dyn Error>> {
     let dir = DataDir::new();
-    let engine = LocalEngine::open(&dir.0).await?;
+    let engine = Engine::open(&dir.0).await?;
     let transport = InProcessTransport::new(engine.router());
 
     let result = transport

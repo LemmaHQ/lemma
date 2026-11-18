@@ -7,7 +7,7 @@ use std::error::Error;
 use std::fs;
 
 use common::DataDir;
-use lemma_host::{InProcessEngine, InProcessTransportError, LocalEngineError};
+use lemma_engine::{EngineOpenError, InProcessEngine, InProcessTransportError};
 use serde_json::Value;
 
 fn json_headers() -> Vec<(String, String)> {
@@ -103,7 +103,7 @@ async fn in_process_engine_open_surfaces_startup_errors() -> Result<(), Box<dyn 
     fs::remove_file(&dir.0)?;
 
     assert!(
-        matches!(err, Some(LocalEngineError::Secrets(_))),
+        matches!(err, Some(EngineOpenError::Secrets(_))),
         "expected secrets error, got {err:?}"
     );
     Ok(())

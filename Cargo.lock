@@ -1697,7 +1697,7 @@ dependencies = [
 name = "lemma-desktop"
 version = "0.1.0"
 dependencies = [
- "lemma-host",
+ "lemma-engine",
  "napi",
  "napi-build",
  "napi-derive",
@@ -1705,25 +1705,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-host"
+name = "lemma-engine"
 version = "0.1.0"
 dependencies = [
  "axum",
- "buffa",
- "buffa-types",
- "chrono",
- "connectrpc",
  "dunce",
  "futures",
  "hex",
- "lemma-adapter",
- "lemma-agent",
- "lemma-core",
  "lemma-db",
- "lemma-model",
  "lemma-proto",
- "lemma-provider",
- "lemma-session",
+ "lemma-rpc",
  "rand",
  "serde",
  "serde_json",
@@ -1739,7 +1730,7 @@ name = "lemma-mobile"
 version = "0.1.0"
 dependencies = [
  "jni",
- "lemma-host",
+ "lemma-engine",
  "rustls-platform-verifier",
  "thiserror",
  "tokio",
@@ -1786,12 +1777,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "lemma-rpc"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "buffa",
+ "buffa-types",
+ "connectrpc",
+ "futures",
+ "lemma-adapter",
+ "lemma-agent",
+ "lemma-core",
+ "lemma-model",
+ "lemma-proto",
+ "lemma-provider",
+ "lemma-session",
+ "serde_json",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
 name = "lemma-server"
 version = "0.1.0"
 dependencies = [
  "axum",
  "dotenvy",
- "lemma-host",
+ "lemma-engine",
  "reqwest",
  "rust-embed",
  "tokio",

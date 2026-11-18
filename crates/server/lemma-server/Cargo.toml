@@ -6,7 +6,7 @@ edition.workspace = true
 [dependencies]
 axum.workspace = true
 dotenvy.workspace = true
-lemma-host.workspace = true
+lemma-engine.workspace = true
 rust-embed.workspace = true
 tokio.workspace = true
 

@@ -2,7 +2,7 @@
 
 [English](agent.md) | 中文
 
-agent 子系统把一条用户请求变成一个正在运行的 turn，并报告它的进度。`lemma-agent` 通过统一的运行中 turn 注册表启动、恢复与中止 turn；`lemma-agent-loop` 运行各个 step；`lemma-host` 与 `lemma-mobile` 把它暴露给客户端。turn 内部的工作顺序见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)；本页负责类型、事件与保证。
+agent 子系统把一条用户请求变成一个正在运行的 turn，并报告它的进度。`lemma-agent` 通过统一的运行中 turn 注册表启动、恢复与中止 turn；`lemma-agent-loop` 运行各个 step；`lemma-rpc` 与 `lemma-mobile` 把它暴露给客户端。turn 内部的工作顺序见 [architecture.zh.md](../architecture.zh.md#一次-turn-的完整链路)；本页负责类型、事件与保证。
 
 ## Turn 启动
 
@@ -38,9 +38,9 @@ turn 获得 `read_file`、`write_file` 与 `bash` 工具，它们基于以会话
 
 ## Turn 事件
 
-循环按发生顺序向观察者报告带时间戳的 `TurnEvent`；循环因模型流之外的错误退出时，`Agent` 会追加一条终态 `TurnEvent::TurnFailed`。`lemma-host` 把每个 `TurnEvent` 映射为 `AgentEvent`：
+循环按发生顺序向观察者报告带时间戳的 `TurnEvent`；循环因模型流之外的错误退出时，`Agent` 会追加一条终态 `TurnEvent::TurnFailed`。`lemma-rpc` 把每个 `TurnEvent` 映射为 `AgentEvent`：
 
-| 来源 | `AgentEvent`（`lemma-host`） | 含义 |
+| 来源 | `AgentEvent`（`lemma-rpc`） | 含义 |
 | --- | --- | --- |
 | `UserAppended` | `started` | 用户消息已存储；携带它的 id 与可选的 `parent_id`。 |
 | `AssistantStarted` | `turn_started` | 某个 step 的占位消息已存储；携带 assistant 消息 id 与 `parent_id`。 |

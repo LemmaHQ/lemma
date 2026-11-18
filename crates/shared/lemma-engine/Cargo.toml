@@ -1,0 +1,26 @@
+[package]
+name = "lemma-engine"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+axum.workspace = true
+futures.workspace = true
+hex.workspace = true
+lemma-db.workspace = true
+lemma-rpc.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower.workspace = true
+
+[dev-dependencies]
+dunce.workspace = true
+lemma-proto.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

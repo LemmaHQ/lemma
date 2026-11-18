@@ -1,11 +1,11 @@
-//! `SessionService` over Connect on a local engine: session lifecycle and
+//! `SessionService` over Connect on an engine: session lifecycle and
 //! the error reasons clients receive.
 mod common;
 
 use std::error::Error;
 use std::fs;
 
-use common::{DataDir, Engine, Reply, assert_internal, assert_reason};
+use common::{DataDir, Reply, TestEngine, assert_internal, assert_reason};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 
@@ -26,7 +26,7 @@ fn session_id(reply: &Reply) -> Result<String, Box<dyn Error>> {
 
 #[tokio::test]
 async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
 
     let created = engine.call(CREATE, &json!({})).await?;
     let id = session_id(&created)?;
@@ -79,7 +79,7 @@ async fn sessions_are_created_renamed_listed_and_deleted() -> Result<(), Box<dyn
 
 #[tokio::test]
 async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     let id = session_id(&engine.call(CREATE, &json!({})).await?)?;
     let unknown = "00000000-0000-4000-8000-000000000000";
     let calls: [(&str, Value, ErrorReason); 14] = [
@@ -167,7 +167,7 @@ async fn invalid_requests_carry_their_reasons() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+    let mut engine = TestEngine::open().await?;
     engine.close().await;
 
     let list = engine.call(LIST, &json!({})).await?;
@@ -179,8 +179,8 @@ async fn a_database_failure_is_an_internal_error() -> Result<(), Box<dyn Error>>
 }
 
 #[tokio::test]
-async fn the_local_engine_binds_a_session_to_an_existing_directory() -> Result<(), Box<dyn Error>> {
-    let mut engine = Engine::open().await?;
+async fn the_engine_binds_a_session_to_an_existing_directory() -> Result<(), Box<dyn Error>> {
+    let mut engine = TestEngine::open().await?;
     let dir = DataDir::new();
     fs::create_dir_all(&dir.0)?;
     let canonical = dunce::canonicalize(&dir.0)?;

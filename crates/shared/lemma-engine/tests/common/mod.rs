@@ -1,4 +1,4 @@
-//! A local engine over a temporary data directory, called through
+//! An engine over a temporary data directory, called through
 //! `InProcessTransport` with Connect JSON requests.
 
 #![allow(dead_code)]
@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use axum::Router;
-use lemma_host::{InProcessTransport, LocalEngine};
+use lemma_engine::{Engine, InProcessTransport};
 use lemma_proto::lemma::v1::ErrorReason;
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -26,7 +26,7 @@ pub(crate) struct DataDir(pub(crate) PathBuf);
 
 impl DataDir {
     pub(crate) fn new() -> Self {
-        Self(env::temp_dir().join(format!("lemma-host-test-{}", Uuid::new_v4())))
+        Self(env::temp_dir().join(format!("lemma-engine-test-{}", Uuid::new_v4())))
     }
 }
 
@@ -42,27 +42,27 @@ pub(crate) struct Reply {
     pub(crate) body: Value,
 }
 
-pub(crate) struct Engine {
-    local: Option<LocalEngine>,
+pub(crate) struct TestEngine {
+    engine: Option<Engine>,
     transport: InProcessTransport,
     dir: DataDir,
 }
 
-impl Engine {
+impl TestEngine {
     pub(crate) async fn open() -> Result<Self, Box<dyn Error>> {
         let dir = DataDir::new();
-        let local = LocalEngine::open(&dir.0).await?;
-        let transport = InProcessTransport::new(local.router());
+        let engine = Engine::open(&dir.0).await?;
+        let transport = InProcessTransport::new(engine.router());
         Ok(Self {
-            local: Some(local),
+            engine: Some(engine),
             transport,
             dir,
         })
     }
 
     pub(crate) async fn close(&mut self) {
-        if let Some(local) = self.local.take() {
-            local.close().await;
+        if let Some(engine) = self.engine.take() {
+            engine.close().await;
         }
     }
 
@@ -72,9 +72,9 @@ impl Engine {
         let mut secrets: Value = serde_json::from_str(&fs::read_to_string(&path)?)?;
         secrets["secret_key"] = json!(key);
         fs::write(&path, serde_json::to_string(&secrets)?)?;
-        let local = LocalEngine::open(&self.dir.0).await?;
-        self.transport = InProcessTransport::new(local.router());
-        self.local = Some(local);
+        let engine = Engine::open(&self.dir.0).await?;
+        self.transport = InProcessTransport::new(engine.router());
+        self.engine = Some(engine);
         Ok(())
     }
 

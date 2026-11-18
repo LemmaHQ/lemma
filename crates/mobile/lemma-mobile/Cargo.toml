@@ -16,7 +16,7 @@ bindgen = ["uniffi/cli"]
 
 [dependencies]
 jni.workspace = true
-lemma-host.workspace = true
+lemma-engine.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 uniffi.workspace = true

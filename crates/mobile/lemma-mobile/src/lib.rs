@@ -5,7 +5,7 @@ mod platform_verifier;
 
 use std::path::Path;
 
-use lemma_host::InProcessEngine;
+use lemma_engine::InProcessEngine;
 use thiserror::Error;
 
 uniffi::setup_scaffolding!();
