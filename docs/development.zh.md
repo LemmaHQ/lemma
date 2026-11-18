@@ -43,7 +43,7 @@ just rust-dev
 
 ### 运行桌面应用
 
-`just desktop-dev` 以 debug 模式构建 `lemma-desktop` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
+`just desktop-dev` 以 debug 模式构建 `lemma-napi` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
 
 ### 运行 Android 应用
 
@@ -59,7 +59,7 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 | ---------------------- | ------------------------------ | -------------------------------------------------------------------------- |
 | `LEMMA_DATA_DIR`       | `lemma-daemon`，服务端模式     | 存放 `lemma.db`、`secrets.json` 与 `workspaces/` 的数据目录，默认 `./data` |
 | `LEMMA_PORT`           | `lemma-daemon`，服务端模式     | `lemma-daemon` 在 `127.0.0.1` 上绑定的 TCP 端口，默认 `1025`               |
-| `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-desktop` addon 的 Cargo profile，默认 `debug`          |
+| `LEMMA_ENGINE_PROFILE` | `desktop/`                     | 未打包运行时 `lemma-napi` addon 的 Cargo profile，默认 `debug`             |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                     | Chromium 远程调试端口                                                      |
 | `ANDROID_HOME`         | `mobile/shared` 的 Gradle 构建 | Android SDK 位置；也可用 `local.properties`                                |
 

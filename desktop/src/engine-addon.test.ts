@@ -13,9 +13,9 @@ afterEach(() => {
 });
 
 it.each([
-    ["win32", "lemma_desktop.dll"],
-    ["darwin", "liblemma_desktop.dylib"],
-    ["linux", "liblemma_desktop.so"],
+    ["win32", "lemma_napi.dll"],
+    ["darwin", "liblemma_napi.dylib"],
+    ["linux", "liblemma_napi.so"],
 ] as const)("names the %s addon %s", (os, file) => {
     setPlatform(os);
 

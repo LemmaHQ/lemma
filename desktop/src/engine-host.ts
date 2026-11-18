@@ -16,7 +16,7 @@ const post = (event: HostEvent): void => {
 const loadAddon = (file: string): Addon => {
     const module = { exports: {} };
     process.dlopen(module, file);
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the addon's exports are declared by lemma-desktop, which this build loads
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the addon's exports are declared by lemma-napi, which this build loads
     return module.exports as Addon;
 };
 

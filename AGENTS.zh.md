@@ -10,7 +10,7 @@ Lemma 用同一套 Rust 核心为 Web、桌面与 Android 客户端运行 LLM ag
 crates/       Rust workspace（crates/AGENTS.md）
   shared/     守护进程、桌面引擎与 Android 共同链接的 crate
   daemon/     lemma-daemon：守护进程可执行文件
-  desktop/    lemma-desktop：桌面外壳用来运行引擎的 Node-API addon
+  napi/       lemma-napi：桌面外壳用来运行引擎的 Node-API addon
   mobile/     lemma-mobile：面向 Android 的 UniFFI 门面
 proto/        Protobuf 契约，package lemma.v1（proto/AGENTS.md）
 web/          React Web 客户端，同时是桌面端的渲染层（web/AGENTS.md）

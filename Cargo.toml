@@ -15,7 +15,7 @@ members = [
     "crates/shared/lemma-model",
     "crates/shared/lemma-tool",
     "crates/mobile/lemma-mobile",
-    "crates/desktop/lemma-desktop",
+    "crates/napi/lemma-napi",
 ]
 resolver = "2"
 

@@ -50,7 +50,7 @@ Lemma 中每个概念只用一个术语。每个条目说明该术语在代码�
 
 - **服务端模式（server mode）** — `lemma-daemon` 可执行文件：在 `LEMMA_DATA_DIR`（默认 `./data`）上打开 `Engine`，默认监听 `127.0.0.1:1025`（`LEMMA_PORT`），提供 Connect 路由与嵌入的 Web 构建产物。
 - **本地模式（local mode）** — 将数据留在应用本地目录中的运行时：桌面端的本地引擎与 Android 的进程内引擎。
-- **本地引擎（local engine）** — `lemma-engine` 中的 `Engine`：同一数据目录下、基于一个 SQLite 数据库（`lemma.db`）、`secrets.json` 与按会话隔离的 `workspaces/` 运行的 Connect 服务。`lemma-desktop` 在 Electron 引擎进程中基于 `userData` 打开它，`lemma-mobile` 基于 Android 的 `filesDir` 打开它，`lemma-daemon` 基于 `LEMMA_DATA_DIR` 打开它。
+- **本地引擎（local engine）** — `lemma-engine` 中的 `Engine`：同一数据目录下、基于一个 SQLite 数据库（`lemma.db`）、`secrets.json` 与按会话隔离的 `workspaces/` 运行的 Connect 服务。`lemma-napi` 在 Electron 引擎进程中基于 `userData` 打开它，`lemma-mobile` 基于 Android 的 `filesDir` 打开它，`lemma-daemon` 基于 `LEMMA_DATA_DIR` 打开它。
 - **引擎端口（engine port）** — 网页与桌面引擎进程之间的 `MessagePort`。请求、响应数据块与取消都经它传递；它不传递会话消息。
 - **进程内引擎（in-process engine）** — `lemma-mobile` 中的 `LemmaEngine`，在 Android 应用内提供 Connect 路由；应用通过 UniFFI 绑定访问它。
 - **加密 key（sealed key）** — 由 `lemma-crypto` 以 AES-256-GCM、用从 `secrets.json` 中 `secret_key` 派生的密钥加密的 provider API key。更换主密钥后，所有已加密的 key 都无法读取。

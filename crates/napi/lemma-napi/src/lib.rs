@@ -1,4 +1,4 @@
-//! Node-API addon that runs the local engine inside the Electron engine
+//! Node-API addon that runs the engine inside the Electron engine
 //! process: it opens the engine over a data directory and serves its
 //! Connect router through an in-process transport.
 
@@ -32,14 +32,14 @@ pub struct ResponseHead {
     pub headers: Vec<Header>,
 }
 
-/// The open local engine.
+/// The open engine.
 #[napi]
 #[derive(Debug)]
 pub struct Engine {
     engine: InProcessEngine,
 }
 
-/// Opens the local engine over `data_dir`.
+/// Opens the engine over `data_dir`.
 ///
 /// # Errors
 ///

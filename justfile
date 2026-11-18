@@ -63,7 +63,7 @@ rust-test:
 rust-cov *args="--summary-only":
     MBX_SHARE_OUT_DIR=0 cargo llvm-cov nextest --workspace \
         --exclude lemma-proto \
-        --exclude lemma-desktop \
+        --exclude lemma-napi \
         --exclude lemma-mobile \
         --ignore-filename-regex '[/\\\\]lemma-daemon[/\\\\]src[/\\\\](main|config|daemon|web_dist)\.rs$' \
         --fail-uncovered-lines 0 \
@@ -151,7 +151,7 @@ desktop-build:
 # Build the engine addon, then run the dev shell
 [group('desktop')]
 desktop-dev:
-    cargo build -p lemma-desktop
+    cargo build -p lemma-napi
     npm --workspace=@lemma/desktop run start
 
 # Run tests
@@ -170,7 +170,7 @@ desktop-cov *args:
 [group('desktop')]
 [working-directory('desktop')]
 desktop-package:
-    cargo build --release -p lemma-desktop
+    cargo build --release -p lemma-napi
     just desktop-build
     npm run package
 

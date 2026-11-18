@@ -1,5 +1,5 @@
 [package]
-name = "lemma-desktop"
+name = "lemma-napi"
 edition.workspace = true
 version.workspace = true
 

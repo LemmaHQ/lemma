@@ -43,7 +43,7 @@ For web development, `just web-dev` starts Vite with hot reload and proxies `/le
 
 ### Run the desktop app
 
-`just desktop-dev` builds the `lemma-desktop` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database, secrets, and workspaces in Electron's `userData` directory. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
+`just desktop-dev` builds the `lemma-napi` addon in debug, builds the web client into `desktop/web-dist/`, and starts Electron, which runs the engine from the addon in a utility process. The engine keeps its database, secrets, and workspaces in Electron's `userData` directory. [desktop/AGENTS.md](../desktop/AGENTS.md) describes the engine process and its port.
 
 ### Run the Android app
 
@@ -59,7 +59,7 @@ Android builds also need `cargo-ndk`, which mise installs; rust-toolchain.toml a
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
 | `LEMMA_DATA_DIR`       | `lemma-daemon`, server mode  | data directory for `lemma.db`, `secrets.json`, and `workspaces/`, default `./data`  |
 | `LEMMA_PORT`           | `lemma-daemon`, server mode  | TCP port `lemma-daemon` binds on `127.0.0.1`, default `1025`                        |
-| `LEMMA_ENGINE_PROFILE` | `desktop/`                   | Cargo profile of the `lemma-desktop` addon for unpackaged runs, default `debug`     |
+| `LEMMA_ENGINE_PROFILE` | `desktop/`                   | Cargo profile of the `lemma-napi` addon for unpackaged runs, default `debug`        |
 | `LEMMA_DEBUG_PORT`     | `desktop/`                   | Chromium remote-debugging port                                                      |
 | `ANDROID_HOME`         | `mobile/shared` Gradle build | Android SDK location; `local.properties` is the alternative                         |
 

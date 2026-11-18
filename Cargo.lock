@@ -1707,17 +1707,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lemma-desktop"
-version = "0.1.0"
-dependencies = [
- "lemma-engine",
- "napi",
- "napi-build",
- "napi-derive",
- "tokio",
-]
-
-[[package]]
 name = "lemma-engine"
 version = "0.1.0"
 dependencies = [
@@ -1757,6 +1746,17 @@ dependencies = [
  "futures",
  "lemma-core",
  "thiserror",
+]
+
+[[package]]
+name = "lemma-napi"
+version = "0.1.0"
+dependencies = [
+ "lemma-engine",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "tokio",
 ]
 
 [[package]]

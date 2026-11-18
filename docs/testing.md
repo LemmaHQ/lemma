@@ -16,7 +16,7 @@ How Lemma tests each part of the repository, how the suites run locally and in C
 
 `just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line or function and only reports region coverage; `just mobile-android-cov` fails on any uncovered line, any method never called, or any missed branch outside Composable functions.
 
-- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-desktop`, the UniFFI facade `lemma-mobile`, the `lemma-daemon` binary files `main.rs`, `config.rs`, and `daemon.rs`, and `lemma-daemon`'s `web_dist.rs`, which holds only the `rust-embed` derive.
+- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-napi`, the UniFFI facade `lemma-mobile`, the `lemma-daemon` binary files `main.rs`, `config.rs`, and `daemon.rs`, and `lemma-daemon`'s `web_dist.rs`, which holds only the `rust-embed` derive.
 - **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
 - **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, the Electron window wiring `src/main-window.ts`, and the `src/titlebar.ts` constant.
 - **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.

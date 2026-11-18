@@ -15,11 +15,11 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 引擎  | `lemma-adapter`、`lemma-tool`、`lemma-agent-loop`             | 厂商协议格式、模型列表与 Web 后端客户端；工具注册表、执行环境与 Web 工具；turn 循环及其取消                                                                                                                          |
 | Agent | `lemma-agent`                                                 | 基于会话、绑定的 provider 适配器与会话目录中的工具启动、恢复与中止 turn，并为每个运行中的 turn 维护可重放的事件日志                                                                                                  |
 | RPC   | `lemma-rpc`、`lemma-engine`                                   | 组装进同一路由的 ConnectRPC 服务处理器（`ProviderService`、`SessionService`、`AgentService`）；基于数据目录的 `Engine`、`InProcessEngine` 与 `InProcessTransport`                                                    |
-| 宿主  | `lemma-daemon`、`lemma-desktop`、`lemma-mobile`               | 守护进程可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                           |
+| 宿主  | `lemma-daemon`、`lemma-napi`、`lemma-mobile`                  | 守护进程可执行文件；桌面引擎的 Node-API addon；面向 Android 的 UniFFI 门面                                                                                                                                           |
 
 `lemma-session` 与 `lemma-provider` 通过 `SqlitePool` 执行参数化的 `sqlx` 查询；`lemma-db` 在 `crates/shared/lemma-db/migrations/` 中维护 SQLite 迁移。引擎层与 agent 层只通过这些服务访问数据。`lemma-agent-loop` 与 `lemma-provider` 只通过 `lemma-model` 的 trait 访问模型；`lemma-adapter` 中的 `HttpConnector` 实现这些 trait，并通过可注入的 `HttpTransport` trait 发送 HTTP，默认实现是 `ReqwestTransport`。
 
-`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/daemon/`、`crates/desktop/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
+`crates/shared/` 下的 crate 为所有运行时构建，包括 Android；`crates/daemon/`、`crates/napi/` 与 `crates/mobile/` 下的 crate 只编入各自的宿主（[crates/AGENTS.zh.md](../crates/AGENTS.zh.md#布局)）。
 
 ## 运行时
 
@@ -28,12 +28,12 @@ Lemma 是一个 Rust workspace。每个 crate 只依赖本层或表中位于其�
 | 运行时     | 宿主                                                         | 存储                                    | 工具                           | 已存储的 API key                         |
 | ---------- | ------------------------------------------------------------ | --------------------------------------- | ------------------------------ | ---------------------------------------- |
 | 服务端模式 | `lemma-daemon`，默认监听 `127.0.0.1:1025`                    | `<LEMMA_DATA_DIR>/lemma.db` 中的 SQLite | 绑定的目录或每个会话一个工作区 | 用 `secrets.json` 中的 `secret_key` 加密 |
-| 本地引擎   | Electron 引擎进程中的 `lemma-desktop`，经 `MessagePort` 访问 | `<userData>/lemma.db` 中的 SQLite       | 绑定的目录或每个会话一个工作区 | 用 `secrets.json` 中的 `secret_key` 加密 |
+| 本地引擎   | Electron 引擎进程中的 `lemma-napi`，经 `MessagePort` 访问    | `<userData>/lemma.db` 中的 SQLite       | 绑定的目录或每个会话一个工作区 | 用 `secrets.json` 中的 `secret_key` 加密 |
 | 进程内     | Android 应用进程中的 `lemma-mobile`                          | `<filesDir>/lemma.db` 中的 SQLite       | 每个会话一个工作区             | 用 `secrets.json` 中的 `secret_key` 加密 |
 
 **服务端模式**从环境变量读取 `LEMMA_DATA_DIR`（默认 `./data`）与 `LEMMA_PORT`（默认 `1025`），在该数据目录上打开 `Engine`，监听 `127.0.0.1:<port>`，对外提供 ConnectRPC 服务以及编译时从 `web/dist` 嵌入的 Web 构建产物。浏览器客户端通过 HTTP 访问它。
 
-**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-desktop` addon；addon 在 Electron 的 `userData` 目录上打开 `Engine`。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
+**本地引擎**是桌面端的运行时。Electron 在 utility process 中运行 `lemma-napi` addon；addon 在 Electron 的 `userData` 目录上打开 `Engine`。渲染层是同一个 Web 客户端；它的请求经 `MessagePort` 送到引擎进程，由引擎在进程内交给 Connect 路由处理，不监听网络端口（[desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md#引擎与渲染层)）。
 
 **进程内**是 Android 的本地模式。Kotlin 通过生成的 UniFFI 绑定打开 `lemma-mobile` 中的 `LemmaEngine`；它在应用的 `filesDir` 上打开 `Engine`，并在进程内提供 Connect 路由。应用通过 OkHttp 拦截器把每个请求交给引擎，而不是发到网络（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
 
