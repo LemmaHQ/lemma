@@ -51,15 +51,7 @@ A finding of one kind met during another pass waits for its own pass, so each ch
 
 ## Review each pass
 
-When a pass is done, pass its diff, plan, tool output before and after, and the checks you ran to a reviewer with a fresh context that edits nothing: a subagent when the environment provides one, otherwise a separate pass that only reads. The reviewer checks:
-
-- every planned candidate was applied or explicitly skipped with a reason, and nothing outside the pass's kind changed;
-- behavior is unchanged: no test was modified except tests that only covered deleted code, and no error handling, validation, or cancellation path was weakened;
-- no leftovers: orphaned imports, helpers, exports, or files, and call sites the tool did not report but the change should have covered;
-- consolidations have precise names and placement by lemma-code-style, and no duplicate the pass targeted was left half-merged;
-- the re-run uses the same flags as the first run and its numbers match the report.
-
-The reviewer returns approval or required follow-ups. Follow-ups go back to a writing pass; the pass that wrote a change never approves it.
+When a pass is done, hand its diff, plan, before/after tool outputs, and executed checks to a fresh read-only pass (a subagent when available) to verify behavior preservation, complete call-site updates, clean placement, and matching re-run flags. Route any follow-ups back to a writing pass rather than self-approving.
 
 ## Confirm and report
 

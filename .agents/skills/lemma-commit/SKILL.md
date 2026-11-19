@@ -5,11 +5,9 @@ description: Use when writing or reviewing a git commit message in Lemma — sub
 
 # Lemma Commit Standard
 
-Discipline for git commit messages. Apply to every commit written. The Lemma Commit Standard (LCS) v1.0 — takes durable parts of established conventions, drops the parts that conflict with substance-over-style.
+Write signal-dense commit messages in English that record why changes exist and what invariants they maintain.
 
-**Tradeoff**: bias toward signal-dense messages. For one-line fixes to typos in private branches, use judgment.
-
-## The shape
+## Format
 
 ```
 <type>(<scope>): <imperative summary, ≤72 chars, no trailing period>
@@ -25,153 +23,60 @@ Fixes: #789
 Risk: <if destructive or migration>
 ```
 
-## Subject line — `<type>(<scope>): <imperative>`
+## Subject line
 
-| Rule              | Detail                                                                                                                                   |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `<type>`          | One of `feat fix refactor perf docs test style chore build ci revert`. Lowercase.                                                        |
-| `(<scope>)`       | Required unless the change is genuinely repo-wide. Lowercase, kebab-case. Closest meaningful unit — file basename, module, feature area. |
-| `:`               | Colon + single space.                                                                                                                    |
-| Summary           | Imperative mood (`add`, not `added`): it completes "If applied, this commit will …". Lowercase first letter. No trailing period.         |
-| Length            | ≤ 72 chars total, prefix included. Aim for ≤ 50. Hard limit 72 (GitHub truncation).                                                      |
-| Banned in subject | Emoji, AI footers, past tense                                                                                                            |
-| One concern       | Names one change. " and ", commas, or slashes joining separable changes mean split; " and " within one change is fine.                   |
+- **`<type>`:** lowercase, one of the types below.
+- **`(<scope>)`:** lowercase kebab-case, closest meaningful unit (crate, package, feature, module); omit only when genuinely repo-wide.
+- **Summary:** imperative mood completing "If applied, this commit will …", lowercase first letter, no trailing period, ≤ 72 chars total (aim for ≤ 50).
+- **One concern:** split separable changes instead of joining them with "and", commas, or slashes.
+- **Banned anywhere:** emoji prefixes, AI tool footers (`Generated with …`, `Co-Authored-By: <AI>` unless explicitly requested), marketing fluff, bare catch-all `chore: misc`, and WIP commits on shared branches.
 
 ## Type taxonomy
 
-| Type       | Use when                                                   | Triggers (semver) |
-| ---------- | ---------------------------------------------------------- | ----------------- |
-| `feat`     | New behavior, capability, surface visible to a user/caller | minor             |
-| `fix`      | Bug fix — observable wrong behavior is now right           | patch             |
-| `refactor` | Internal restructure with **no behavior change**           | none              |
-| `perf`     | Performance improvement, no behavior change                | patch             |
-| `docs`     | Documentation only                                         | none              |
-| `test`     | Tests only                                                 | none              |
-| `style`    | Formatting, whitespace, lint. **No logic change.**         | none              |
-| `chore`    | Maintenance — deps, config, repo plumbing                  | none              |
-| `build`    | Build system, packaging                                    | none              |
-| `ci`       | CI pipeline only                                           | none              |
-| `revert`   | Reverts a previous commit; body references SHA             | depends           |
+| Type       | Use when                                                   |
+| ---------- | ---------------------------------------------------------- |
+| `feat`     | New behavior, capability, surface visible to a user/caller |
+| `fix`      | Bug fix — observable wrong behavior is now right           |
+| `refactor` | Internal restructure with **no behavior change**           |
+| `perf`     | Performance improvement, no behavior change                |
+| `docs`     | Documentation only                                         |
+| `test`     | Tests only                                                 |
+| `style`    | Formatting, whitespace, lint. **No logic change.**         |
+| `chore`    | Maintenance — deps, config, repo plumbing                  |
+| `build`    | Build system, packaging                                    |
+| `ci`       | CI pipeline only                                           |
+| `revert`   | Reverts a previous commit; body references SHA             |
 
-## Body — optional, recommended for non-trivial changes
+## Body and footers
 
-- Blank line after subject.
-- Wrap at 72 chars (allow up to 100 for URLs / paths).
-- **Lead with why.** Motivation in 1-2 sentences before describing what: how things worked before the change and what was wrong with that.
-- Then _what_ changed at a level the diff doesn't show — how things work now, invariants, why this approach over the alternatives considered.
-- Then _notes/risks/follow-ups_ if any.
-- 2-4 short paragraphs max. More = the change is too big for one commit.
-- Don't restate the diff. Reviewers can read the diff.
-- No AI flourishes, no hype, no apologies, no self-references.
+Recommended for non-trivial changes; wrap at 72 chars (up to 100 for URLs/paths), 2–4 short paragraphs max:
 
-## Footers — optional, machine-parseable
-
-| Footer             | Use when                                                                                      | Example                                               |
-| ------------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `Refs`             | Related but not closed                                                                        | `Refs: #123, #456`                                    |
-| `Fixes` / `Closes` | Closes an issue                                                                               | `Fixes: #789`                                         |
-| `BREAKING CHANGE`  | Promotes major bump                                                                           | `BREAKING CHANGE: removed deprecated v1 client`       |
-| `Risk`             | Destructive ops, migrations, perf-regression-possible. State risk + mitigation.               | `Risk: 30min lock on user_events; window coordinated` |
-| `Verified`         | How verified beyond test suite — for ops/deploy/infra                                         | `Verified: 4-check deploy verify on backoffice-api`   |
-| `Co-Authored-By`   | Authentic collaboration only. Never AI tool unless user explicitly requested for that commit. | `Co-Authored-By: Alex Doe <alex@example.com>`         |
-
-## Banned
-
-- Emoji prefixes: `🐛 fix: ...`, `🎉 feat: ...`, etc. The type-as-keyword carries the same signal.
-- AI tool footers: `Generated with Claude Code`, `Co-Authored-By: Claude <noreply@anthropic.com>`. The work is yours unless you explicitly opt in.
-- Marketing body language: "powerful", "stunning", "best-in-class", "winning approach". Pragmatic, fact-based.
-- Bare `chore: misc` or scope-less catch-all commits.
-- WIP commits on shared branches. Squash before push.
+- Lead with **why** (what was wrong before), then **what** the diff does not show (invariants, alternatives considered), then notes/risks if any. Do not restate the diff.
+- Machine-parseable footers when applicable: `Refs: #123`, `Fixes: #789` / `Closes: #789`, `BREAKING CHANGE: <summary>`, `Risk: <risk + mitigation>`, `Verified: <extra verification>`, `Co-Authored-By: <human>`.
 
 ## Atomicity
 
-- **One concern per commit.** Two changes are separate concerns when each has its own reason to exist and could be reviewed or reverted as a unit; split them. A conjunction in the subject is the usual sign, not the rule.
-- **Split by scope, not by build state.** Only the branch tip must build and pass checks; intermediate commits need not compile on their own. Order commits so dependencies come first, and spend no effort proving each snapshot builds.
-- **Tests for behavior changes ship in the same commit.** Not a follow-up.
-- **Squash WIP before push.** A 6-commit branch with `wip: testing`, `wip: more`, `oops typo` should land as 1-2 clean commits.
-- **Don't rewrite a published commit on `main`.** Follow up with a new commit instead.
-- **A branch lands on `main` through a merge commit, never a squash merge,** so its split commits survive. The merge commit keeps Git's default title (`Merge pull request #N from …` or `Merge branch '…'`), the one exception to the subject format.
-- **A branch catches up with `main` by `git rebase main`,** not by merging `main` into it. Pushing a rebased branch follows [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md#push).
+- **One concern per commit.** Split changes that can be reviewed or reverted independently.
+- **Split by scope, not by build state.** Only the branch tip must build and pass checks; order commits so dependencies come first.
+- **Tests for behavior changes ship in the same commit.**
+- **Squash WIP before push.** Never rewrite a published commit on `main`; follow up with a new commit instead.
+- **Land on `main` through a merge commit, never a squash merge,** so split commits survive. The merge commit keeps Git's default title (`Merge pull request #N from …` or `Merge branch '…'`).
+- **Catch up with `main` via `git rebase main`,** never by merging `main` into a feature branch. Pushing a rebased branch follows [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md#push).
 
-## Good examples
+## Examples
 
 ```
-fix(screenshot): honor --output paths with a directory component
+fix(agent): escape turn ids in the outline scroll selector
 
-Bare basenames still land in the configured screenshotDir. Paths with a
-separator (./foo, /abs/foo, sub/foo) are honored as written; the CLI
-resolves relatives against its own cwd before sending so they don't
-silently bind to the daemon's cwd.
+Turn ids can contain characters outside CSS identifier syntax, which
+threw SyntaxError in querySelector when jumping from the outline. Wrap
+the id in CSS.escape before building the attribute selector.
 ```
 
 ```
-refactor(auth): extract token-refresh into its own service
+refactor(adapter): drop unparsed web_search ToolSpec parameters
 
-Pulled the refresh loop out of `Session.acquire()` so the same logic
-covers the worker pool and the CLI. No behavior change; the worker
-inherits the same retry/backoff that the CLI had.
-
-Refs: #412
+ExaSearchResult only parses highlights and DeepSeekSearchResult only
+parses summary, so advertising contents.text and need_content in
+web_search tool specs invited arguments whose responses were discarded.
 ```
-
-```
-feat(orders): add bulk-cancel endpoint
-
-Front-of-house wanted to cancel up to 500 orders in one call after a
-warehouse mis-pick. The endpoint takes a list of order IDs and a
-required reason code; cancellation is best-effort with a per-ID result
-list, not transactional.
-
-Risk: partial failure can leave orders mixed; the response reports
-  per-ID outcomes and the worker requeues retryable IDs.
-
-Refs: #1820
-```
-
-## Bad examples
-
-```
-🐛 fix: small fix to screenshot 🚀
-
-Generated with Claude Code
-Co-Authored-By: Claude <noreply@anthropic.com>
-
-This is a great improvement that makes the tool way better!
-```
-
-_Banned: emoji, AI footer, hype, no scope, no why, no what._
-
-```
-update files
-```
-
-_No type, no scope, no signal, no description._
-
-```
-feat(api): add login endpoint and refactor auth and update docs
-```
-
-_Each " and " joins a change that could be reverted alone: three commits hiding as one._
-
-```
-fix: corrected the issue where the user was unable to login
-```
-
-_Past tense ("corrected" not "fix"), no scope, and it restates the symptom instead of naming the change._
-
-## Pre-commit checklist
-
-1. **Subject ≤ 72?** Aim for 50.
-2. **Imperative mood?** "add", not "added" or "adds"; the subject completes "If applied, this commit will …".
-3. **Lowercase first letter, no trailing period?**
-4. **Type chosen deliberately?** Not `chore` because you're lazy.
-5. **Scope present and meaningful?** Or genuinely repo-wide.
-6. **Body leads with why?** (For non-trivial changes.)
-7. **No emoji anywhere?**
-8. **No AI footers?**
-9. **One concern?** Could any part be reverted alone?
-10. **Diff matches the message?** No drive-by changes that aren't named.
-
-## When upstream conventions differ
-
-When contributing to a repo with its own style (Linux kernel, Rust, Chromium, etc.), **follow theirs.** LCS is the default for personal repos and contributions where no upstream style is specified.

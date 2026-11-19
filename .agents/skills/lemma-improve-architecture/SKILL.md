@@ -18,7 +18,7 @@ Read [references/vocabulary.md](references/vocabulary.md) before exploring and u
 - If the user named a direction (a module, a crate, a feature, a pain point), take it.
 - Otherwise run `git log --oneline` over a long stretch and let the files and areas that keep changing pull attention first. Deepening pays off where future changes land. With no clear hot spot, widen the net.
 - Read the root `AGENTS.md`, [architecture.md](../../../docs/architecture.md), the subtree `AGENTS.md` for the area, and [testing.md](../../../docs/testing.md).
-- Treat the designs architecture.md maps as settled: the three runtimes, the storage backends behind shared store traits, the provider adapters, the wire contract in `proto/lemma/v1`. Decisions and their rationale live in commit bodies; read `git log` on the files involved before calling a shape accidental. Surface a candidate that contradicts a settled design only when the friction is real enough to reopen it, and mark it as such.
+- Treat the designs architecture.md maps as settled: the three runtimes, the engine and SQLite schema, the provider adapters, and the wire contract in `proto/lemma/v1`. Decisions and their rationale live in commit bodies; read `git log` on the files involved before calling a shape accidental. Surface a candidate that contradicts a settled design only when the friction is real enough to reopen it, and mark it as such.
 
 ## 2. Explore
 
@@ -41,7 +41,7 @@ Do not propose interfaces yet. After writing the file, give the user its absolut
 
 ## 4. Grill
 
-Once the user picks a candidate, walk its decision tree with [grill-me](../grill-me/SKILL.md): constraints, dependencies, the shape of the deepened module, what sits behind the seam, which tests survive. To compare alternative interfaces, follow [references/design-it-twice.md](references/design-it-twice.md).
+Once the user picks a candidate, interview the user through its decision tree until each choice is settled: constraints, dependencies, the shape of the deepened module, what sits behind the seam, and which tests survive. To compare alternative interfaces, follow [references/design-it-twice.md](references/design-it-twice.md).
 
 Place decisions as they settle, after the user approves each write:
 
@@ -55,12 +55,4 @@ Implementation is a separate request. Before the first edit, write the plan in t
 
 Then replace the shallow modules' tests with tests at the new interface (see [references/deepening.md](references/deepening.md#testing-replace-dont-layer)), update affected docs and doc comments in the same change, and select checks through [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md).
 
-When done, pass the diff, the plan, and the checks you ran to a reviewer with a fresh context that edits nothing: a subagent when the environment provides one, otherwise a separate pass that only reads. The reviewer checks:
-
-- the interface matches the agreed one, and behavior changed only where the user agreed;
-- every caller moved to the new interface, and no pass-through module or old entry point remains;
-- the absorbed modules' tests are gone and the new tests cross the interface without reaching past it;
-- docs, doc comments, and `docs/glossary.md` reflect the new module;
-- each check claimed was actually run.
-
-The reviewer returns approval or required follow-ups. Follow-ups go back to a writing pass; the pass that wrote a change never approves it.
+When done, hand the diff, plan, and executed checks to a fresh read-only pass (a subagent when available) to verify the agreed interface, complete caller migration, replaced tests, and updated docs and `docs/glossary.md`. Route any follow-ups back to a writing pass rather than self-approving.
