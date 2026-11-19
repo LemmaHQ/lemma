@@ -99,7 +99,7 @@ export const Markdown = memo(function Markdown({
     const body = (
         <Streamdown
             className={cn(
-                "streaming-caret [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+                "markdown [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
                 endMark === undefined
                     ? "size-full"
                     : "[&>p:last-child]:inline has-[>p:last-child]:inline",

@@ -1,4 +1,4 @@
-:is(.streaming-caret, [data-slot="code-block"]) {
+:is(.markdown, [data-slot="code-block"]) {
     & [data-streamdown="code-block"] {
         gap: 0;
         border-color: var(--border);
