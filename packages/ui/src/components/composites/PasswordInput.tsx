@@ -1,6 +1,8 @@
 import { AnimateIcon } from "@animate-ui/react/icons";
 import { useState, type ComponentProps, type ReactNode } from "react";
 
+import { EyeIcon } from "#icons/eye";
+import { EyeOffIcon } from "#icons/eye-off";
 import {
     InputGroup,
     InputGroupAddon,
@@ -8,8 +10,6 @@ import {
     InputGroupInput,
 } from "#primitives/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
-import { EyeIcon } from "#icons/eye";
-import { EyeOffIcon } from "#icons/eye-off";
 
 type PasswordInputFieldProps = Pick<
     ComponentProps<typeof InputGroupInput>,

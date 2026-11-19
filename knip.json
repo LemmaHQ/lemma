@@ -22,12 +22,17 @@
             "ignoreBinaries": ["buf"],
             "ignoreDependencies": [
                 "@bufbuild/protoc-gen-es",
+                "@ianvs/prettier-plugin-sort-imports",
                 "prettier-plugin-tailwindcss"
             ]
         },
+        "desktop": {
+            "ignoreDependencies": ["@ianvs/prettier-plugin-sort-imports"]
+        },
         "packages/ui": {
             "project": ["src/**/*.{ts,tsx}"],
-            "includeEntryExports": true
+            "includeEntryExports": true,
+            "ignoreDependencies": ["@ianvs/prettier-plugin-sort-imports"]
         }
     }
 }

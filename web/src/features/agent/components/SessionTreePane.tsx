@@ -1,5 +1,5 @@
 import { cn, DrawerHeader, SearchIcon } from "@lemma/ui";
-import { type KeyboardEvent, useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { SessionTreeRow } from "../session-tree";

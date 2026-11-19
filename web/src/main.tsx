@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { getPlatform } from "@/platform/platform";
 
 import { App } from "./app/App.tsx";
+
 import "./i18n";
 import "./index.css";
 

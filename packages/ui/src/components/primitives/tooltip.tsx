@@ -1,6 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { cn } from "#lib/cn";
 import * as React from "react";
+
+import { cn } from "#lib/cn";
 
 type CollisionPadding = NonNullable<
     TooltipPrimitive.Positioner.Props["collisionPadding"]

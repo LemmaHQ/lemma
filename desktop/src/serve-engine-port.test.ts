@@ -1,7 +1,7 @@
-import type { EngineResponse } from "./desktop-bridge";
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
 
+import type { EngineResponse } from "./desktop-bridge";
 import {
     serveEnginePort,
     type EnginePort,

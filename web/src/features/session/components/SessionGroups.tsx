@@ -14,14 +14,14 @@ import {
     TooltipTrigger,
     useSidebar,
 } from "@lemma/ui";
-import { type Dispatch, type SetStateAction, useId, useState } from "react";
+import { useId, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
     directoryBasename,
     groupSessions,
-    type SessionSummary,
     visibleDirectorySessions,
+    type SessionSummary,
 } from "../grouping";
 import { useSessions } from "../useSessions";
 import { SessionItem } from "./SessionItem";

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { type StoreApi, useStore } from "zustand";
+import { useStore, type StoreApi } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 export interface LoadedHook<S> {

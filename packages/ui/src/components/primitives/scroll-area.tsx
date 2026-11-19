@@ -1,6 +1,7 @@
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
-import { cn } from "#lib/cn";
 import type { Ref } from "react";
+
+import { cn } from "#lib/cn";
 
 type ScrollAreaProps = ScrollAreaPrimitive.Root.Props & {
     viewportRef?: Ref<HTMLDivElement>;

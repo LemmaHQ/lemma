@@ -1,11 +1,10 @@
-import { motion, type Variants } from "motion/react";
-
 import {
     getVariants,
     IconWrapper,
     useAnimateIconContext,
     type IconProps,
 } from "@animate-ui/react/icons";
+import { motion, type Variants } from "motion/react";
 
 type ChevronUpProps = IconProps<keyof typeof animations>;
 

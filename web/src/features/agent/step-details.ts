@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 
 import {
-    type DetailPayload,
     nonEmptyString,
     parseJsonObject,
     parseToolOutput,
+    type DetailPayload,
 } from "./tool-output";
 import type { UiMessage } from "./ui-message";
 

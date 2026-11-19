@@ -1,7 +1,8 @@
-import type { TitleBarState } from "./desktop-bridge";
-import { BrowserWindow, nativeTheme, shell } from "electron";
 import path from "node:path";
+import { BrowserWindow, nativeTheme, shell } from "electron";
+
 import { APP_ORIGIN, isAppUrl } from "./app-protocol";
+import type { TitleBarState } from "./desktop-bridge";
 import { themeColors } from "./gen/theme-colors";
 import { TITLEBAR_HEIGHT } from "./titlebar";
 

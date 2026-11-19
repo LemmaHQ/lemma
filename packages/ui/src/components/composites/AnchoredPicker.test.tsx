@@ -4,6 +4,7 @@ import { useState } from "react";
 import { expect, it, vi } from "vitest";
 
 import { Button } from "#primitives/button";
+
 import { AnchoredPicker, type AnchoredPickerGroup } from "./AnchoredPicker";
 
 function PickerHarness({

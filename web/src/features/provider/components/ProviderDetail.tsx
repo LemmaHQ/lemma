@@ -1,4 +1,4 @@
-import { Input, SettingsField, SettingsSectionCompact, cn } from "@lemma/ui";
+import { cn, Input, SettingsField, SettingsSectionCompact } from "@lemma/ui";
 import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 

@@ -8,6 +8,7 @@ import { providerClient } from "@/rpc/clients";
 import { singleFlight } from "@/store/loaded-hook";
 
 import type { ApiFormat } from "./api-format";
+
 export interface Model {
     id: string;
     toolCalling: boolean;

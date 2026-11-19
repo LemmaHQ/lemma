@@ -7,11 +7,11 @@ import { errorText } from "@/i18n/error-text";
 import { groupTurns } from "../active-path";
 import { buildSessionTree } from "../session-tree";
 import { useActiveSession } from "../useActiveSession";
-import { type ModelOption, useModelSelection } from "../useModelSelection";
+import { useModelSelection, type ModelOption } from "../useModelSelection";
 import { ComposerDock, type ComposerDockState } from "./ComposerDock";
 import { SessionComposer, type SessionProviderGroup } from "./SessionComposer";
 import { SessionDirectoryBadge } from "./SessionDirectoryBadge";
-import { type ActiveRightPane, SessionRightPane } from "./SessionRightPane";
+import { SessionRightPane, type ActiveRightPane } from "./SessionRightPane";
 import { SessionStage } from "./SessionStage";
 import { TurnView } from "./TurnView";
 

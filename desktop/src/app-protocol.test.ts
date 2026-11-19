@@ -1,6 +1,6 @@
-import type { CustomScheme } from "electron";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import type { CustomScheme } from "electron";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import {

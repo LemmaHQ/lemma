@@ -1,18 +1,19 @@
-import { ArrowDownIcon } from "#icons/arrow-down";
-import { cn } from "#lib/cn";
-import { Button } from "#primitives/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 import { useReducedMotion } from "motion/react";
 import {
-    type ReactNode,
-    type UIEvent,
     useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
+    type ReactNode,
+    type UIEvent,
 } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
+
+import { ArrowDownIcon } from "#icons/arrow-down";
+import { cn } from "#lib/cn";
+import { Button } from "#primitives/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 
 import { FollowScrollContext } from "./useFollowScroll";
 

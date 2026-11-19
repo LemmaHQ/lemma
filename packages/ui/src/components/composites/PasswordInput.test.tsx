@@ -4,6 +4,7 @@ import { expect, it } from "vitest";
 
 import { InputGroupAddon } from "#primitives/input-group";
 import { TooltipProvider } from "#primitives/tooltip";
+
 import { PasswordInput } from "./PasswordInput";
 
 it("shows and hides the password from its labeled toggle", async () => {

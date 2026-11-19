@@ -1,4 +1,4 @@
-import { type StoredCodec, useStoredValue } from "@/store/useStoredValue";
+import { useStoredValue, type StoredCodec } from "@/store/useStoredValue";
 
 export interface ModelSelection {
     providerId: string;

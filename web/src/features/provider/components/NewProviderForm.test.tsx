@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
-import { type NewProviderData, NewProviderForm } from "./NewProviderForm";
+import { NewProviderForm, type NewProviderData } from "./NewProviderForm";
 
 const renderForm = (
     onSave = vi.fn<(data: NewProviderData) => Promise<void>>(() =>

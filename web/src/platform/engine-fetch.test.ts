@@ -1,10 +1,10 @@
+import { describe, expect, it, vi } from "vitest";
+
 import type {
     DesktopBridge,
     EngineRequest,
     EngineResponse,
 } from "../../../desktop/src/desktop-bridge";
-import { describe, expect, it, vi } from "vitest";
-
 import {
     connectEngine,
     createEngineFetch,

@@ -6,6 +6,7 @@ import { sessionClient } from "@/rpc/clients";
 import { singleFlight } from "@/store/loaded-hook";
 
 import type { SessionSummary } from "./grouping";
+
 export interface SessionState {
     list: SessionSummary[];
     loaded: boolean;

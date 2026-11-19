@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
 
 import { TooltipProvider } from "#primitives/tooltip";
+
 import { CopyButton } from "./CopyButton";
 
 it("copies its text and names itself copied for a moment", async () => {

@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { type StoredCodec, useStoredValue } from "./useStoredValue";
+import { useStoredValue, type StoredCodec } from "./useStoredValue";
 
 const listCodec: StoredCodec<string[]> = {
     parse: (raw) => {

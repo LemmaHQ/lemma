@@ -1,21 +1,22 @@
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { cn } from "#lib/cn";
 import {
-    type ComponentProps,
     createContext,
     memo,
-    type ReactNode,
     useContext,
+    type ComponentProps,
+    type ReactNode,
 } from "react";
 import {
-    CodeBlock as StreamdownCodeBlock,
     CodeBlockCopyButton,
     defaultComponents,
     Streamdown,
+    CodeBlock as StreamdownCodeBlock,
     StreamdownContext,
     useIsCodeFenceIncomplete,
 } from "streamdown";
+
+import { cn } from "#lib/cn";
 
 type CodeActions = (block: { code: string; language: string }) => ReactNode;
 

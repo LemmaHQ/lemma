@@ -1,4 +1,4 @@
-import { type BrowserWindow, dialog } from "electron";
+import { dialog, type BrowserWindow } from "electron";
 
 export const pickDirectory = async (
     window: BrowserWindow,

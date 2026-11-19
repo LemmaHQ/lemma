@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
+import { cn } from "#lib/cn";
 import { FieldDescription, FieldError } from "#primitives/field";
 import { Label } from "#primitives/label";
-import { cn } from "#lib/cn";
 
 /**
  * One setting row with a wide control beside `label` and `description`.

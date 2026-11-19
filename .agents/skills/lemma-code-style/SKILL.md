@@ -46,7 +46,7 @@ These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, an
 Higher-level code comes first, details below it.
 
 - **Rust:** `//!` where allowed, `mod` declarations, `use` groups, constants and statics, the primary item and its `impl` blocks, other public items, private items in order of first use, `#[cfg(test)] mod tests` last.
-- **TypeScript:** imports (packages, then `@/` aliases, then relative paths), module-level constants and types, the primary export, then the private functions and components it uses in order of first use.
+- **TypeScript:** imports (packages, then `#` and `@/` aliases, then relative paths, a blank line between the groups), module-level constants and types, the primary export, then the private functions and components it uses in order of first use. Prettier's import sort plugin writes the import order and sorts the names inside braces.
 - **Kotlin:** `package`, imports, private top-level constants, the primary declaration, then private helpers in order of first use.
 - **Python:** imports, constants, public functions, private helpers, the `if __name__ == "__main__":` block last.
 

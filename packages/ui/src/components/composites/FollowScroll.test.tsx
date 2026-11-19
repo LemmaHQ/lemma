@@ -1,17 +1,18 @@
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
-    type ComponentProps,
     createContext,
-    type ReactNode,
-    type RefObject,
     useContext,
     useMemo,
     useRef,
+    type ComponentProps,
+    type ReactNode,
+    type RefObject,
 } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "#primitives/tooltip";
+
 import { FollowScroll } from "./FollowScroll";
 import { useFollowScroll } from "./useFollowScroll";
 

@@ -1,5 +1,5 @@
 import { code as codePlugin } from "@streamdown/code";
-import { type ReactNode, useContext, useMemo } from "react";
+import { useContext, useMemo, type ReactNode } from "react";
 import {
     CodeBlock as StreamdownCodeBlock,
     StreamdownContext,

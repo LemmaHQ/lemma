@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { expect, it } from "vitest";
 
 import { Button } from "#primitives/button";
+
 import { SettingsRow } from "./SettingsField";
 import { SettingsPage } from "./SettingsPage";
 import { SettingsSection, SettingsSectionCompact } from "./SettingsSection";

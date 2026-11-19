@@ -1,6 +1,5 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import type { DesktopBridge } from "../../../desktop/src/desktop-bridge";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Window as HappyWindow } from "happy-dom";
@@ -8,18 +7,20 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
 import {
-    type Session,
-    SessionSchema,
-    ListMessagesResponseSchema,
-} from "@/gen/lemma/v1/session_pb";
-import {
     ApiFormat,
-    type Provider,
     ProviderSchema,
-    type WebProvider,
     WebProvider_Kind,
     WebProviderSchema,
+    type Provider,
+    type WebProvider,
 } from "@/gen/lemma/v1/provider_pb";
+import {
+    ListMessagesResponseSchema,
+    SessionSchema,
+    type Session,
+} from "@/gen/lemma/v1/session_pb";
+
+import type { DesktopBridge } from "../../../desktop/src/desktop-bridge";
 
 const rpc = vi.hoisted(() => ({
     listSessions: vi.fn<(req: object) => Promise<{ sessions: Session[] }>>(),

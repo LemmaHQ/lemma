@@ -1,19 +1,21 @@
 import { Popover } from "@base-ui/react/popover";
-import { SearchIcon } from "#icons/search";
-import {
-    type AnchoredPickerGroup,
-    AnchoredPickerGroupView,
-    type AnchoredPickerItem,
-} from "./AnchoredPickerGroupView";
 import {
     isValidElement,
-    type KeyboardEvent,
-    type ReactNode,
     useId,
     useMemo,
     useRef,
     useState,
+    type KeyboardEvent,
+    type ReactNode,
 } from "react";
+
+import { SearchIcon } from "#icons/search";
+
+import {
+    AnchoredPickerGroupView,
+    type AnchoredPickerGroup,
+    type AnchoredPickerItem,
+} from "./AnchoredPickerGroupView";
 
 export type {
     AnchoredPickerGroup,

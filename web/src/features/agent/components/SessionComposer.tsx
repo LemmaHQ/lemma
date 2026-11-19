@@ -5,11 +5,11 @@ import {
     formatDuration,
 } from "@lemma/ui";
 import {
-    type KeyboardEvent,
-    type ReactNode,
     useEffect,
     useRef,
     useState,
+    type KeyboardEvent,
+    type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
 

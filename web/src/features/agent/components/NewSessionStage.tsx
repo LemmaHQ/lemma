@@ -5,11 +5,11 @@ import { useTranslation } from "react-i18next";
 import { errorText } from "@/i18n/error-text";
 
 import { useActiveSessionStore } from "../store";
-import { type ModelOption, useModelSelection } from "../useModelSelection";
+import { useModelSelection, type ModelOption } from "../useModelSelection";
 import { SessionComposer, type SessionProviderGroup } from "./SessionComposer";
 import {
-    type SessionDirectoryControl,
     SessionDirectoryPicker,
+    type SessionDirectoryControl,
 } from "./SessionDirectoryPicker";
 import { StageComposer } from "./SessionStage";
 

@@ -1,5 +1,5 @@
 import { Sidebar, SidebarInset, useSidebar } from "@lemma/ui";
-import { type ReactNode, ViewTransition } from "react";
+import { ViewTransition, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SidebarToggleButton } from "./SidebarToggleButton";
