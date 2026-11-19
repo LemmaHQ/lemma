@@ -1,15 +1,12 @@
 use chrono::{DateTime, Utc};
 use lemma_core::{ContentBlock, StopReason, TextContent, Usage};
 
-/// How one model stream ended.
 pub(crate) enum StepEnd {
     Completed,
     Failed(String),
     Aborted,
 }
 
-/// Settled result of one model stream: accumulated blocks and terminal
-/// state.
 pub(crate) struct StepOutcome {
     pub(crate) blocks: Vec<ContentBlock>,
     pub(crate) stop_reason: StopReason,

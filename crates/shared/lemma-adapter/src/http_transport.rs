@@ -11,14 +11,9 @@ use crate::error;
 /// Raw response body as a byte stream.
 pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Vec<u8>, ModelError>> + Send>>;
 
-/// Time limit of a GET call.
 const GET_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Pluggable HTTP layer for provider calls.
-///
-/// Hosts inject their own networking stack (reqwest on server/desktop,
-/// platform networking on mobile); adapters rely exclusively on injected
-/// client implementations. Clones share one underlying client.
+/// Pluggable HTTP layer for provider calls; clones share one underlying client.
 pub trait HttpTransport: Clone + Send + Sync + 'static {
     /// Sends a POST with a JSON body and returns the response as a byte
     /// stream.

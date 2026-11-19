@@ -240,7 +240,6 @@ impl<A: Adapter, E: ExecEnv> AgentLoop<A, E> {
     }
 }
 
-/// Loads `session_id` or fails with [`LoopError::NotFound`].
 async fn find_session(sessions: &SessionService, session_id: Uuid) -> Result<(), LoopError> {
     if sessions.find(session_id).await?.is_none() {
         return Err(LoopError::NotFound(format!(
