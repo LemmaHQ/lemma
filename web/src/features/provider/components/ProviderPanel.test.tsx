@@ -9,8 +9,8 @@ import {
     ApiFormat,
     CustomProviderSchema,
     PredefinedProviderSchema,
-    type Provider,
     ProviderSchema,
+    type Provider,
 } from "@/gen/lemma/v1/provider_pb";
 
 import { useProviderStore } from "../store";

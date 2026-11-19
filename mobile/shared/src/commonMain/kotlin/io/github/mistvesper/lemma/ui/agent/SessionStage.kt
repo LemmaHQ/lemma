@@ -199,10 +199,6 @@ internal fun SessionStage(
         }
 }
 
-/**
- * The notice atop the composer: a rewind with its restore action, or else the failed turn [failure]
- * with actions that open the model picker and retry with [model].
- */
 @Composable
 private fun ComposerNotice(
     rewinding: Boolean,
@@ -246,7 +242,6 @@ private fun ComposerNotice(
     }
 }
 
-/** Rewinds to the question [row] and focuses the composer, or shows the path to the reply [row]. */
 private fun AgentViewModel.openTreeRow(row: TreeRow, composerFocus: FocusRequester) {
     if (row.question) {
         rewind(row.id)

@@ -51,7 +51,6 @@ private fun StepDetailBody(step: TurnStep) {
     detailContent(step)()
 }
 
-/** The composable that shows [step]'s detail for its kind. */
 private fun detailContent(step: TurnStep): @Composable () -> Unit =
     when (val detail = step.detail) {
         is StepDetail.Prose -> {

@@ -1,11 +1,11 @@
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { cn } from "#lib/cn";
 import * as React from "react";
 
 import { CheckIcon } from "#icons/check";
 import { ChevronDownIcon } from "#icons/chevron-down";
 import { ChevronUpIcon } from "#icons/chevron-up";
 import { ChevronUpDownIcon } from "#icons/chevron-up-down";
+import { cn } from "#lib/cn";
 
 const Select = SelectPrimitive.Root;
 

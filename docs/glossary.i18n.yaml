@@ -3,23 +3,20 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/glossary.md
 /glossary:
-  en: 8dfafa2bac90e244
-  zh: 3984e5f07bcb3eca
+  en: 190f9a3f83316a88
+  zh: aec881ada11dd15c
 /glossary/session-tree:
-  en: f8d411b1f8605621
-  zh: 6dcac826694ae510
+  en: 49e4805ce13be9bb
+  zh: fdaf3bf45a210836
 /glossary/agent-loop:
-  en: 134acb149e2698a0
-  zh: b75faee41ca97432
+  en: a77bbbe3d348e831
+  zh: 7ec9250a67d5f561
 /glossary/providers-and-adapters:
-  en: 7139c4e05c331e5c
-  zh: 69c9c9e0e8ae260c
+  en: 420ee8ed5c0f6181
+  zh: 5cc1d20b55041cea
 /glossary/tools:
-  en: a4c43493e71671cd
-  zh: 265ac6a05fc195da
-/glossary/runtimes:
-  en: 05d226da670b6dca
-  zh: f5d6eb22c63a8dcf
-/glossary/errors:
-  en: 4d556714dfe2d666
-  zh: dc8413600fdd2415
+  en: 8eff8b408ef6655c
+  zh: f0a1576ce14776c0
+/glossary/runtimes-and-errors:
+  en: 8e36d100d687d3a5
+  zh: 8ba09ec16294f9cf

@@ -1,6 +1,6 @@
-import { net, protocol } from "electron";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { net, protocol } from "electron";
 
 export const APP_ORIGIN = "app://lemma";
 

@@ -1,15 +1,4 @@
-import {
-    cn,
-    formatClockTime,
-    formatDuration,
-    MessageActions,
-    MessageCopyAction,
-    MessageRegenerateAction,
-    MessageResponse,
-    StepTimeline,
-    type StepTimelineRow,
-    TurnCard,
-} from "@lemma/ui";
+import { cn, formatClockTime, formatDuration, Markdown } from "@lemma/ui";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +7,8 @@ import type { ConversationTurn } from "../active-path";
 import { stepVerb, type TurnStep } from "../step-details";
 import { lastPathSegment } from "../tool-output";
 import type { UiMessage } from "../ui-message";
+import { StepTimeline, type StepTimelineRow } from "./StepTimeline";
+import { TurnReplyActions } from "./TurnReplyActions";
 
 interface TurnViewProps {
     turn: ConversationTurn;
@@ -149,11 +140,20 @@ export function TurnView({
     });
 
     return (
-        <TurnCard
-            turnId={turn.id}
-            question={turn.userMessage.content}
-            timeLabel={timeLabel}
-        >
+        <div data-turn-id={turn.id} className="group/turn flex flex-col">
+            <div
+                data-follow-sticky=""
+                className="sticky top-2.5 z-10 -mx-4 mb-3.5 flex items-baseline gap-4 rounded-lg bg-selected px-4 py-2.5 text-reading font-normal text-foreground"
+            >
+                <div className="min-w-0 flex-1 wrap-break-word">
+                    {turn.userMessage.content}
+                </div>
+                {timeLabel !== undefined && (
+                    <time className="shrink-0 text-caption text-subtle-foreground tabular-nums opacity-0 transition-opacity duration-base group-focus-within/turn:opacity-100 group-hover/turn:opacity-100">
+                        {timeLabel}
+                    </time>
+                )}
+            </div>
             {turn.steps.length > 0 && (
                 <div className={cn((showReply || showAborted) && "mb-3")}>
                     <StepTimeline
@@ -168,44 +168,48 @@ export function TurnView({
                 </div>
             )}
             {showReply && (
-                <MessageResponse
-                    isAnimating={reply.status === "streaming"}
-                    openCodeLabel={t("session.openInPane")}
-                    onOpenCode={onInspectCode}
-                    completionMark={reply.status === "done"}
+                <Markdown
+                    streaming={reply.status === "streaming"}
+                    endMark={
+                        reply.status === "done" ? (
+                            <span aria-hidden="true" className="qed-mark" />
+                        ) : undefined
+                    }
+                    renderCodeActions={(block) => (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onInspectCode(block.code, block.language)
+                            }
+                            className="cursor-pointer rounded-sm px-1.5 py-0.5 text-caption font-medium text-muted-foreground transition-colors duration-base hover:text-foreground"
+                        >
+                            {t("session.openInPane")}
+                        </button>
+                    )}
                 >
                     {reply.content}
-                </MessageResponse>
+                </Markdown>
             )}
             {settledReply !== undefined && (
-                <MessageActions className="mt-2">
-                    {settledReply.content !== "" && (
-                        <MessageCopyAction
-                            text={settledReply.content}
-                            label={t("common.copy")}
-                            copiedLabel={t("common.copied")}
-                        />
-                    )}
-                    {onRegenerate !== undefined && (
-                        <MessageRegenerateAction
-                            label={t("session.regenerate")}
-                            disabled={streaming}
-                            onRegenerate={() =>
-                                onRegenerate(turn, settledReply)
-                            }
-                        />
-                    )}
-                    {footerMeta !== undefined && (
-                        <span className="ml-1 tabular-nums">{footerMeta}</span>
-                    )}
-                </MessageActions>
+                <div className="mt-2">
+                    <TurnReplyActions
+                        text={settledReply.content}
+                        meta={footerMeta}
+                        regenerateDisabled={streaming}
+                        onRegenerate={
+                            onRegenerate === undefined
+                                ? undefined
+                                : () => onRegenerate(turn, settledReply)
+                        }
+                    />
+                </div>
             )}
             {showAborted && (
                 <p className="mt-1.5 text-small text-subtle-foreground">
                     {t("agent.abortedNotice")}
                 </p>
             )}
-        </TurnCard>
+        </div>
     );
 }
 

@@ -2,9 +2,6 @@ use std::collections::HashSet;
 
 use lemma_core::{ContentBlock, Message};
 
-/// Filters and sanitizes conversation history before sending it to the
-/// model: strips tool calls without a matching tool result, drops empty
-/// assistant nodes, and omits tool history when `tool_calling` is `false`.
 pub(crate) fn for_model(messages: Vec<Message>, tool_calling: bool) -> Vec<Message> {
     let answered: HashSet<String> = if tool_calling {
         messages

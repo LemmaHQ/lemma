@@ -7,14 +7,7 @@ English | [中文](README.zh.md)
     <img alt="Lemma" src="assets/brand/svg/lockup_workspace_light.svg" width="440">
 </picture>
 
-Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. You configure your own model providers, and the agent reads files, writes files, and runs shell commands in a workspace per session.
-
-## Features
-
-- **Predefined and custom providers.** DeepSeek is predefined and needs only your API key. A custom provider speaks one of three API formats (OpenAI chat completions and compatible APIs, Anthropic, or Gemini) with your own base URL and API key.
-- **Sessions as message trees.** Each message records its parent; a model request carries the path from the root to the active leaf.
-- **Agent tools.** `read_file`, `write_file`, `bash`, `web_search`, and `web_fetch` run across all three runtimes; file and shell tools run in the session's bound directory or per-session workspace.
-- **Three runtimes.** A daemon for the browser and in-process engines for the desktop and Android apps run the same Rust core ([architecture](docs/architecture.md#runtimes)).
+Lemma runs LLM agents for web, desktop, and Android clients from one Rust core, with message-tree sessions, configurable model and web providers, and local file/shell tools.
 
 ## Quick start
 
@@ -22,29 +15,18 @@ With [mise](https://mise.jdx.dev/) and Rust installed:
 
 ```sh
 mise install
+rustup toolchain install
 npm ci
 just web-build
 just rust-dev
 ```
 
-`lemma-daemon` opens its data directory (`./data` by default) and serves the web client at <http://127.0.0.1:1025>. [Development](docs/development.md) covers the desktop and Android apps, Windows, and environment variables.
-
-## Repository
-
-| Path | Contents |
-| --- | --- |
-| `crates/` | Rust workspace: the core shared by every runtime, and the daemon |
-| `proto/` | Protobuf contracts, package `lemma.v1` |
-| `web/` | React web client, also the desktop renderer |
-| `desktop/` | Electron shell running the engine in a utility process |
-| `mobile/` | Android app and Kotlin Multiplatform shared module |
-| `assets/` | Brand assets |
-| `docs/` | Documentation |
+`lemma-daemon` opens `./data` by default and serves the web client at <http://127.0.0.1:1025>.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md): crate layers, runtimes, and the path of one turn.
-- [Glossary](docs/glossary.md): the terms code and docs share.
-- [Development](docs/development.md): setup and running each client.
+- [Glossary](docs/glossary.md): shared domain terms.
+- [Development](docs/development.md): setup, desktop and Android builds, Windows notes, and environment variables.
 - [Testing](docs/testing.md): test tiers and coverage.
-- [AGENTS.md](AGENTS.md): conventions for working in this repository.
+- [AGENTS.md](AGENTS.md): repository layout and engineering conventions.

@@ -20,7 +20,6 @@ internal enum class SessionMarker {
     Finished,
     Failed;
 
-    /** What screen readers announce for this marker. */
     val description: StringResource
         get() =
             when (this) {
@@ -32,11 +31,9 @@ internal enum class SessionMarker {
     val shape: Shape
         get() = if (this == Running) CircleShape else RectangleShape
 
-    /** Whether the marker draws only its outline. */
     val outlined: Boolean
         get() = this == Failed
 
-    /** The marker's color in [colors]. */
     fun color(colors: LemmaColorScheme): Color =
         if (this == Running) colors.brand else colors.completion
 }

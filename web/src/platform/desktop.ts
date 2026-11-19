@@ -2,7 +2,6 @@ import type {
     DesktopBridge,
     TitleBarState,
 } from "../../../desktop/src/desktop-bridge";
-
 import {
     connectEngine,
     createEngineFetch,

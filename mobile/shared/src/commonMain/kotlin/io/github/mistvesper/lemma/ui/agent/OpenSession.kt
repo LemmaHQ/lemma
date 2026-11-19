@@ -195,11 +195,6 @@ internal class OpenSession(
         }
     }
 
-    /**
-     * Applies the events of [turn] from [stream] to the tree and shows the path to its reply; after
-     * the stream breaks, resumes it from the events received so far. Once the turn has ended,
-     * reloads the tree the service stored, unless the stream failed for good.
-     */
     private suspend fun follow(
         turn: Turn,
         reducer: TurnEventReducer,
@@ -279,16 +274,8 @@ internal class OpenSession(
             parentId = parentId,
         )
 
-    /**
-     * A turn of this session started at [startedAt], known by its user message [messageId] once the
-     * service started it.
-     */
     private class Turn(var messageId: String?, val startedAt: Long)
 
-    /**
-     * A rewind that left the path ending at [backupLeafId] and the composer at [previousDraft]; the
-     * next turn goes under [parentId], null for a new root branch.
-     */
     private data class Rewind(
         val backupLeafId: String?,
         val parentId: String?,

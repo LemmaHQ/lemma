@@ -1,47 +1,41 @@
-export { ComposerBox } from "./components/ai/composer-box";
 export {
-    DetailPane,
-    type DetailPaneBody,
-    type DetailPaneProps,
-} from "./components/ai/detail-pane";
+    AnchoredPicker,
+    type AnchoredPickerGroup,
+    type AnchoredPickerItem,
+} from "./components/composites/AnchoredPicker";
+export { CodeBlock } from "./components/composites/CodeBlock";
+export { CopyButton } from "./components/composites/CopyButton";
 export {
-    MessageActions,
-    MessageCopyAction,
-    MessageRegenerateAction,
-    MessageResponse,
-} from "./components/ai/message";
-export { SessionStage } from "./components/ai/session-stage";
+    DrawerHeader,
+    DrawerLayout,
+} from "./components/composites/DrawerLayout";
+export { FollowScroll } from "./components/composites/FollowScroll";
+export { Markdown } from "./components/composites/Markdown";
+export { PasswordInput } from "./components/composites/PasswordInput";
 export {
-    SessionTreePane,
-    type SessionTreePaneLabels,
-    type TreePaneRow,
-    type TreeRailSegment,
-} from "./components/ai/session-tree-pane";
+    SettingsField,
+    SettingsRow,
+} from "./components/composites/SettingsField";
+export { SettingsPage } from "./components/composites/SettingsPage";
 export {
-    StepTimeline,
-    type StepTimelineRow,
-} from "./components/ai/step-timeline";
-export { TurnCard } from "./components/ai/turn-card";
+    SettingsSection,
+    SettingsSectionCompact,
+} from "./components/composites/SettingsSection";
+export { Wordmark } from "./components/composites/Wordmark";
+export { useFollowScroll } from "./components/composites/useFollowScroll";
 export { CheckIcon } from "./components/icons/check";
 export { ChevronDownIcon } from "./components/icons/chevron-down";
 export { ChevronRightIcon } from "./components/icons/chevron-right";
 export { ChevronUpIcon } from "./components/icons/chevron-up";
+export { CornerDownLeftIcon } from "./components/icons/corner-down-left";
 export { EllipsisIcon } from "./components/icons/ellipsis";
 export { PencilIcon } from "./components/icons/pencil";
 export { PlusIcon } from "./components/icons/plus";
+export { RefreshCwIcon } from "./components/icons/refresh-cw";
 export { SearchIcon } from "./components/icons/search";
 export { SettingsIcon } from "./components/icons/settings";
 export { Trash2Icon } from "./components/icons/trash-2";
 export { XIcon } from "./components/icons/x";
-export {
-    SettingsField,
-    SettingsPage,
-    SettingsRow,
-    SettingsSection,
-    SettingsSectionCompact,
-} from "./components/lemma/settings";
-export { ThemePreviewTiles } from "./components/lemma/theme-preview-tiles";
-export { Wordmark } from "./components/lemma/wordmark";
 export {
     AlertDialog,
     AlertDialogAction,
@@ -52,11 +46,6 @@ export {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "./components/primitives/alert-dialog";
-export {
-    AnchoredPicker,
-    type AnchoredPickerGroup,
-    type AnchoredPickerItem,
-} from "./components/primitives/anchored-picker";
 export { Button } from "./components/primitives/button";
 export { Checkbox } from "./components/primitives/checkbox";
 export {
@@ -93,7 +82,6 @@ export {
     InputGroupButton,
     InputGroupInput,
 } from "./components/primitives/input-group";
-export { PasswordInput } from "./components/primitives/password-input";
 export {
     Select,
     SelectContent,
@@ -105,18 +93,20 @@ export {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarHeader,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "./components/primitives/sidebar";
+export {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
     SidebarMenu,
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-} from "./components/primitives/sidebar";
+} from "./components/primitives/sidebar-menu";
 export { Skeleton } from "./components/primitives/skeleton";
 export { Toaster } from "./components/primitives/sonner";
 export { Switch } from "./components/primitives/switch";

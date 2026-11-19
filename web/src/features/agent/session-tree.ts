@@ -1,11 +1,23 @@
-import {
-    formatClockTime,
-    type TreePaneRow,
-    type TreeRailSegment,
-} from "@lemma/ui";
+import { formatClockTime } from "@lemma/ui";
 
 import { resolveActivePath } from "./active-path";
 import type { UiMessage } from "./ui-message";
+
+type TreeRailSegment = "tee" | "bar" | "empty";
+
+/** One node of the session branch tree with its rail geometry. */
+export interface SessionTreeRow {
+    id: string;
+    kind: "question" | "answer";
+    title: string;
+    label?: string | undefined;
+    meta?: string | undefined;
+    rails: TreeRailSegment[];
+    hasTopSpine: boolean;
+    hasBottomSpine: boolean;
+    onPath: boolean;
+    isLeaf: boolean;
+}
 
 interface TreeNode {
     id: string;
@@ -24,11 +36,11 @@ interface BuildContext {
     visited: Set<string>;
 }
 
-/** Builds the collapsed, active-first, rail-annotated rows for `SessionTreePane`. */
+/** Builds the collapsed, active-first, rail-annotated rows of the session branch tree. */
 export function buildSessionTree(
     allMessages: UiMessage[],
     activeLeafId: string | undefined,
-): { rows: TreePaneRow[]; pathCount: number } {
+): { rows: SessionTreeRow[]; pathCount: number } {
     if (allMessages.length === 0) {
         return { rows: [], pathCount: 0 };
     }
@@ -37,7 +49,7 @@ export function buildSessionTree(
     );
     const roots = buildCollapsedRoots(allMessages, activeAncestors);
     const pathCount = countLeaves(roots);
-    const rows: TreePaneRow[] = [];
+    const rows: SessionTreeRow[] = [];
 
     const emitList = (
         nodes: TreeNode[],

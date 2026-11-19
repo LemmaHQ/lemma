@@ -1,85 +1,49 @@
 ---
 name: lemma-code-style
-description: Use when writing or reviewing Rust, TypeScript, or Kotlin code in Lemma and a style question goes beyond the standing rules in AGENTS.md — formatting, naming, language-feature choice, doc-comment form — or when creating, splitting, naming, or placing source and test files.
+description: Use when writing or reviewing Rust, TypeScript, or Kotlin code in Lemma and a style question goes beyond the standing rules in AGENTS.md — naming, language-feature choice, doc-comment form — or when creating, splitting, naming, or placing source and test files.
 ---
 
 # Lemma Code Style
 
-Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language rules live in [crates/AGENTS.md](../../../crates/AGENTS.md) (Rust), [web/AGENTS.md](../../../web/AGENTS.md) (TypeScript, also for `desktop/`), and [mobile/AGENTS.md](../../../mobile/AGENTS.md) (Kotlin). This skill holds the source file rules, the upstream style guides behind the per-language rules, and the order in which they apply.
+Repo-wide rules live in the root [AGENTS.md](../../../AGENTS.md); per-language rules live in [crates/AGENTS.md](../../../crates/AGENTS.md) (Rust), [web/AGENTS.md](../../../web/AGENTS.md) (TypeScript, also for `desktop/`), and [mobile/AGENTS.md](../../../mobile/AGENTS.md) (Kotlin). Formatting is owned by `rustfmt`, `.prettierrc.json`, `.oxlintrc.json`, `.editorconfig`, and Spotless (`ktfmt`). This skill holds source-file organization rules, upstream style guides, and precedence.
 
 ## Precedence
 
-1. The root `AGENTS.md` and the subtree `AGENTS.md` of the code being changed.
-2. Repository formatter and linter configuration: `rustfmt` defaults and the workspace lints in the root `Cargo.toml`, `.prettierrc.json`, the `.oxlintrc.json` files, and ktfmt in kotlinlang style through Spotless in the root `build.gradle.kts`.
+1. Root `AGENTS.md` and the subtree `AGENTS.md` for the code being changed.
+2. Repository formatter and linter configs (`Cargo.toml` workspace lints, `rustfmt`, `.prettierrc.json`, `.oxlintrc.json`, Spotless/Detekt in `build.gradle.kts`).
 3. The upstream guide under `references/`.
-4. The style of the surrounding code.
+4. Surrounding code.
 
-A higher source wins every conflict. Known conflicts:
+Known overrides over the upstream guides:
 
-- **Comments.** Delivered code carries no comments by default; doc comments take only the forms the per-language `AGENTS.md` defines. Upstream requirements for file overviews, implementation comments, or KDoc on every public member do not apply, and neither does the Rust guide's encouragement of `//` implementation comments and TODO lines.
-- **Rust documentation.** `missing_docs` is denied, so every public item carries a doc comment, including the trivial ones the Rust guide lets you omit.
-- **Rust API design.** All Rust code counts as library code, so the Rust guide's API design rules are binding everywhere; its relaxations for application code do not apply.
-- **`#[non_exhaustive]`.** Lemma crates have no consumers outside the workspace, so the Rust guide's `#[non_exhaustive]` rules do not apply, and every `match` stays exhaustive.
-- **Indentation.** Four spaces in every language; YAML and `.proto` use two.
-- **TypeScript toolchain.** The Google-internal tooling in the TypeScript guide's "Toolchain requirements" section does not apply; Prettier and oxlint as configured in the repository are the formatter and linter.
-- **Naming.** Identifiers use plain, standard terms; the Kotlin private backing property `_prop` is the one underscore prefix allowed.
+- **Comments:** delivered code carries no comments by default; doc comments use only the per-language `AGENTS.md` forms. Upstream requirements for file overviews, implementation comments, KDoc on every public member, and `TODO` lines do not apply.
+- **Rust docs & API rules:** `missing_docs` is denied workspace-wide (narrow internal items to `pub(crate)` instead of writing filler docs); all Rust crates follow the guide's library API rules; `#[non_exhaustive]` rules do not apply because Lemma crates have no external consumers.
+- **TypeScript toolchain:** Prettier and oxlint replace the guide's Google-internal tooling.
+- **Naming:** plain standard terms; Kotlin's private backing property `_prop` is the only allowed underscore prefix.
 
 ## Source files
 
-These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf file. Files under `.agents/` and the shadcn-owned directories (`packages/ui/src/components/`, `packages/ui/src/hooks/`) keep their upstream layout. `just source-check` (`scripts/repo-check/verify-source-files.ts`) enforces the length limit, file names, the re-export ban, TypeScript test placement, and the Rust test module position.
+Applies to tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf files (including `packages/ui/src/components/primitives/` and `icons/`, which keep kebab-case filenames; `.agents/` and `packages/ui/src/hooks/` keep upstream layout). `just source-check` (`scripts/repo-check/verify-source-files.ts`) enforces the 300-line limit (tests and `*.config.*`/`*.gradle.kts`/`build.rs` exempt), filename conventions (`snake_case` for Rust/Python/Proto, `PascalCase.kt` for Kotlin, `PascalCase.tsx` for React components, `useThing.ts` for hooks, `kebab-case.ts` for other TS modules), the TypeScript re-export-only ban (except `package.json` `exports` entries and web feature `index.ts`), TypeScript sibling test placement (`<name>.test.ts(x)`), and Rust `#[cfg(test)] mod tests` at file end.
 
-### Length
+Rules `just source-check` cannot enforce mechanically:
 
-- A source file stays within **300 lines**, counting every physical line, blank lines and comments included. A Rust `#[cfg(test)] mod tests` counts toward its file.
-- Tests (Rust `tests/` directories, `*.test.ts`, `*.test.tsx`, Kotlin test source sets) and build configuration (`*.gradle.kts`, `*.config.ts`, `*.config.mts`, `build.rs`) have no limit.
-- Split an oversized file by responsibility into files named after their content; `utils`, `helpers`, `misc`, and `common` are not names.
-
-### One primary item per file
-
-- **Rust:** a leaf file is named after its primary item; a module with submodules holds only `mod` declarations and re-exports ([crates/AGENTS.md](../../../crates/AGENTS.md#code)).
-- **TypeScript:** a file exports one primary component, hook, store, or closely related type group. Types used by one module stay in it.
-- **Kotlin:** a file holding one top-level class, object, interface, or Composable is named after it; a file of several top-level declarations takes a PascalCase name that describes them. A data type used by several files gets its own file.
-- **No re-export-only modules** in TypeScript: import from the defining module. A package entry named in `package.json` `exports` or a web feature's public `index.ts` is the exception.
-
-### Order inside a file
-
-Higher-level code comes first, details below it.
-
-- **Rust:** `//!` where allowed, `mod` declarations, `use` groups, constants and statics, the primary item and its `impl` blocks, other public items, private items in order of first use, `#[cfg(test)] mod tests` last.
-- **TypeScript:** imports (packages, then `@/` aliases, then relative paths), module-level constants and types, the primary export, then the private functions and components it uses in order of first use.
-- **Kotlin:** `package`, imports, private top-level constants, the primary declaration, then private helpers in order of first use.
-- **Python:** imports, constants, public functions, private helpers, the `if __name__ == "__main__":` block last.
-
-### File names
-
-| Language                 | Name                                                                             |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| Rust, Python, Protobuf   | `snake_case`; a Cargo binary under `src/bin/` takes the binary's kebab-case name |
-| Kotlin                   | `PascalCase.kt`                                                                  |
-| TypeScript component     | `PascalCase.tsx`, exporting the component of that name                           |
-| TypeScript hook          | `useThing.ts`                                                                    |
-| Other TypeScript modules | `kebab-case.ts`                                                                  |
-
-### Test placement
-
-- **Rust:** unit tests live in one `#[cfg(test)] mod tests`, the last item of the file whose code they test; tests that go through a crate's public API live in its `tests/` directory.
-- **TypeScript:** `<name>.test.ts` sits beside `<name>.ts`, `<name>.tsx`, or the `<name>/` directory it tests; a test that renders JSX is `<name>.test.tsx` and keeps its subject's name, PascalCase for a component.
-- **Kotlin:** tests live in a test source set (`commonTest`, `androidHostTest`, or the app module's unit test set) under the package of the code they test, named `<Subject>Test.kt`.
+- **Splitting:** split oversized files by responsibility named after content; never create `utils`, `helpers`, `misc`, or `common`.
+- **One primary item per file:** Rust leaf files name their primary item and parent modules hold only `mod` declarations and re-exports; TypeScript files export one primary component, hook, store, or closely related type group (file-local types stay in the file); Kotlin files holding one top-level declaration match its name and shared data types get their own file.
+- **Top-down order:** higher-level code comes first, private helpers below in order of first use (imports and constants at top; Python `if __name__ == "__main__":` and Rust `#[cfg(test)] mod tests` last).
+- **Test placement:** Rust public-API integration tests live in `tests/`; Kotlin unit tests live in `commonTest`, `androidHostTest`, or the app unit test set named `<Subject>Test.kt`.
 
 ## Singular and plural
 
-- **Singular:** names for one concept — crates, modules, packages, feature directories, proto files and messages, i18n namespaces — and a noun that modifies another noun: `lemma-provider`, `features/provider/`, `provider.proto`, `ProviderPanel`, `useProviderStore`.
-- **Plural:** names for a collection — a directory of entries of one kind, a value or field holding several items, a `repeated` field, a function returning several items, a database table, a URL segment naming a collection: `crates/`, `components/`, `messages: Vec<Message>`, `list_messages`, the `messages` table, `/sessions/:id`.
-- **Upstream form:** names a framework or tool fixes (`tests/`, sqlx `migrations/`, `.github/workflows/`, Android `res/values/`), vendor and RPC names (`AnthropicMessages`, `FetchModels`), and words used only in the plural (`settings`, `preferences`).
+- **Singular:** names for one concept — crates, modules, packages, feature directories, proto files and messages, i18n namespaces — and noun modifiers: `lemma-provider`, `features/provider/`, `provider.proto`, `ProviderPanel`, `useProviderStore`.
+- **Plural:** names for a collection — directories of entries of one kind, collection values/fields, `repeated` fields, multi-item functions, database tables, collection URL segments: `crates/`, `components/`, `messages: Vec<Message>`, `list_messages`, `messages` table, `/sessions/:id`.
+- **Upstream form:** framework/tool-fixed names (`tests/`, `migrations/`, `.github/workflows/`, `res/values/`), vendor/RPC names (`AnthropicMessages`, `FetchModels`), and plural-only words (`settings`, `preferences`).
 
 ## References
 
-Read only the section the question needs.
+Read only the section a question needs:
 
 | Language   | Reference                                   | Sections                                                                                                                                                                          |
 | ---------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rust       | [rustguide.md](references/rustguide.md)     | Code organization; Ownership and borrowing; Function inputs and outputs; Types; Traits; Naming; When and how to write documentation; Other Rust features; Implementation concerns |
 | TypeScript | [tsguide.md](references/tsguide.md)         | Source file structure; Language features; Naming; Type system; Comments and documentation; Policies                                                                               |
 | Kotlin     | [kotlinguide.md](references/kotlinguide.md) | Source files; Formatting; Naming; Documentation                                                                                                                                   |
-
-Rust and Kotlin formatting is mechanical: run `just rust-fmt` or `just mobile-fmt` instead of applying the guide by hand, and consult the guide for questions the formatter leaves open. The Rust guide builds on the [official Rust Style Guide](https://doc.rust-lang.org/nightly/style-guide/), which `rustfmt` implements and which also covers `Cargo.toml` layout.

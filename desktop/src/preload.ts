@@ -1,10 +1,11 @@
+import { contextBridge, ipcRenderer } from "electron";
+
 import type {
     DesktopBridge,
     EngineExitNotice,
     EnginePortHandoff,
     TitleBarState,
 } from "./desktop-bridge";
-import { contextBridge, ipcRenderer } from "electron";
 import { TITLEBAR_HEIGHT } from "./titlebar";
 
 ipcRenderer.on("engine-port", (event) => {

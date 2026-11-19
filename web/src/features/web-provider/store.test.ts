@@ -4,11 +4,12 @@ import { beforeEach, expect, it, vi } from "vitest";
 import {
     SetWebProviderOrderRequest_Function as WebFunction,
     WebProvider_Kind,
-    type WebProvider,
     WebProviderSchema,
+    type WebProvider,
 } from "@/gen/lemma/v1/provider_pb";
 
 import { isWebProviderActive, useWebProviderStore } from "./store";
+
 type Reply = { provider?: WebProvider | undefined };
 
 const rpc = vi.hoisted(() => ({

@@ -2,7 +2,7 @@ import { timestampDate } from "@bufbuild/protobuf/wkt";
 
 import type { AgentEvent } from "@/gen/lemma/v1/agent_pb";
 
-import { type UiMessage, isBlankReply } from "./ui-message";
+import { isBlankReply, type UiMessage } from "./ui-message";
 
 /** Live execution phase shown while an assistant turn is streaming. */
 export type LiveStep =

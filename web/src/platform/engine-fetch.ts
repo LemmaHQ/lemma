@@ -1,8 +1,8 @@
 import {
+    isEngineResponse,
     type DesktopBridge,
     type EngineRequest,
     type EngineResponse,
-    isEngineResponse,
 } from "../../../desktop/src/desktop-bridge";
 
 /** Base URL of the desktop engine; its requests never reach the network. */

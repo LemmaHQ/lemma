@@ -31,7 +31,6 @@ export interface EngineExitNotice {
     detail: string;
 }
 
-/** A header name and value. */
 export type EngineHeader = [name: string, value: string];
 
 /** Messages the web client posts on the engine port. */
@@ -74,7 +73,6 @@ const hasEnvelope = (
     typeof value.id === "number" &&
     "type" in value;
 
-/** Returns whether `value` is a valid {@link EngineRequest}. */
 export const isEngineRequest = (value: unknown): value is EngineRequest => {
     if (!hasEnvelope(value)) {
         return false;
@@ -91,7 +89,6 @@ export const isEngineRequest = (value: unknown): value is EngineRequest => {
     );
 };
 
-/** Returns whether `value` is a valid {@link EngineResponse}. */
 export const isEngineResponse = (value: unknown): value is EngineResponse => {
     if (!hasEnvelope(value)) {
         return false;

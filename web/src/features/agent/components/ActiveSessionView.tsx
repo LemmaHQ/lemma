@@ -1,4 +1,4 @@
-import { isShortcutIgnored, SessionStage, toast } from "@lemma/ui";
+import { isShortcutIgnored, toast } from "@lemma/ui";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,11 +7,12 @@ import { errorText } from "@/i18n/error-text";
 import { groupTurns } from "../active-path";
 import { buildSessionTree } from "../session-tree";
 import { useActiveSession } from "../useActiveSession";
-import { type ModelOption, useModelSelection } from "../useModelSelection";
+import { useModelSelection, type ModelOption } from "../useModelSelection";
 import { ComposerDock, type ComposerDockState } from "./ComposerDock";
 import { SessionComposer, type SessionProviderGroup } from "./SessionComposer";
 import { SessionDirectoryBadge } from "./SessionDirectoryBadge";
-import { type ActiveRightPane, SessionRightPane } from "./SessionRightPane";
+import { SessionRightPane, type ActiveRightPane } from "./SessionRightPane";
+import { SessionStage } from "./SessionStage";
 import { TurnView } from "./TurnView";
 
 export interface ActiveSessionViewProps {
@@ -161,25 +162,20 @@ export function ActiveSessionView({
                         }),
               startedAtMs: session.turnStartedAtMs ?? undefined,
               warn: session.reconnectingOffset !== null,
-              stopLabel: t("agent.stopShort"),
               onStop: () => void session.abort(),
           }
         : undefined;
 
     return (
         <SessionStage
-            paned={activePane !== undefined}
-            drawerId={drawerId}
-            turns={turns.map((turn, index) => ({
+            turns={turns.map((turn) => ({
                 id: turn.id,
                 label: turn.userMessage.content,
-                ariaLabel: t("session.jumpToTurn", { index: index + 1 }),
             }))}
-            outlineLabel={t("session.outlineLabel")}
-            scrollToBottomLabel={t("session.scrollToBottom")}
             followTrigger={lastTurn?.id ?? null}
-            onClosePane={() => setPane({ mode: "closed" })}
-            rightPane={
+            drawerId={drawerId}
+            onCloseDrawer={() => setPane({ mode: "closed" })}
+            drawer={
                 activePane === undefined ? undefined : (
                     <SessionRightPane
                         pane={activePane}

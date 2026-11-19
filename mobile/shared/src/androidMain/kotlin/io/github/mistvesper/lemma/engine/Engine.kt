@@ -38,7 +38,6 @@ class Engine private constructor(private val engine: LemmaEngine) {
     }
 }
 
-/** Answers every request of an OkHttp client from [engine] instead of the network. */
 private class EngineInterceptor(private val engine: LemmaEngine) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -69,7 +68,6 @@ private class EngineInterceptor(private val engine: LemmaEngine) : Interceptor {
     }
 }
 
-/** A response body read chunk by chunk from the engine; closing it early cancels the body. */
 private class EngineSource(
     private val engine: LemmaEngine,
     private val body: UInt,

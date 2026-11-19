@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { expect, it } from "vitest";
 
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
+
 import { errorText } from "./error-text";
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mock t only needs the call signature

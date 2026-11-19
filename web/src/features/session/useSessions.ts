@@ -1,6 +1,7 @@
 import { createLoadedHook } from "@/store/loaded-hook";
 
 import { useSessionStore } from "./store";
+
 export function refreshSessions(): Promise<void> {
     return useSessionStore.getState().refresh();
 }

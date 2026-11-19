@@ -19,9 +19,10 @@ const renderPanel = () =>
         </ThemeProvider>,
     );
 
-const tile = (name: string) => screen.getByRole("radio", { name });
+const tile = (name: string) =>
+    screen.getByRole<HTMLInputElement>("radio", { name });
 
-const checked = (name: string) => tile(name).getAttribute("aria-checked");
+const checked = (name: string) => tile(name).checked;
 
 beforeEach(() => {
     localStorage.clear();
@@ -44,17 +45,14 @@ it("renders the appearance section, all three theme tiles, and the language sele
     expect(
         within(section).getByRole("heading", { level: 2, name: "Appearance" }),
     ).toBeDefined();
-    const group = within(section).getByRole("radiogroup", { name: "Theme" });
+    const group = within(section).getByRole("group", { name: "Theme" });
     expect(
-        within(group)
-            .getAllByRole("radio")
-            .map((radio) => radio.textContent),
-    ).toEqual(["Light", "Dark", "System"]);
-    expect(["Light", "Dark", "System"].map(checked)).toEqual([
-        "false",
-        "false",
-        "true",
-    ]);
+        ["Light", "Dark", "System"].map(
+            (name) =>
+                within(group).getByRole<HTMLInputElement>("radio", { name })
+                    .checked,
+        ),
+    ).toEqual([false, false, true]);
     expect(
         within(section).getByRole("combobox", { name: "Language" }).textContent,
     ).toBe("English");
@@ -66,9 +64,9 @@ it("falls back to system when the theme preference is unknown or undefined", () 
     renderPanel();
 
     expect(["Light", "Dark", "System"].map(checked)).toEqual([
-        "false",
-        "false",
-        "true",
+        false,
+        false,
+        true,
     ]);
 });
 
@@ -77,16 +75,16 @@ it("selects a theme by click and by keyboard", async () => {
     renderPanel();
 
     await user.click(tile("Light"));
-    expect(checked("Light")).toBe("true");
+    expect(checked("Light")).toBe(true);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
 
     tile("Light").focus();
     await user.keyboard("{ArrowRight}");
-    expect(checked("Dark")).toBe("true");
+    expect(checked("Dark")).toBe(true);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
 
     await user.keyboard("{ArrowRight}");
-    expect(checked("System")).toBe("true");
+    expect(checked("System")).toBe(true);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("system");
 });
 

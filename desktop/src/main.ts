@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, type WebContents } from "electron";
 import started from "electron-squirrel-startup";
+
 import { registerAppScheme, serveApp } from "./app-protocol";
 import { createEngineProcess } from "./engine";
 import {

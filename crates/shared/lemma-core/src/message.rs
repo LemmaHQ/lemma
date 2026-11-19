@@ -59,8 +59,8 @@ impl Message {
         }
     }
 
-    /// Visible text of the message: text blocks joined by spaces. Lossy
-    /// projection for flat-text consumers (search index, legacy contracts).
+    /// Concatenates text blocks separated by spaces, omitting thinking and
+    /// tool-call blocks.
     #[must_use]
     pub fn visible_text(&self) -> String {
         self.content()

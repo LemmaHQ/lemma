@@ -6,7 +6,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { type Session, SessionSchema } from "@/gen/lemma/v1/session_pb";
+import { SessionSchema, type Session } from "@/gen/lemma/v1/session_pb";
 
 import { useSessionStore } from "../store";
 import { SessionList, type SessionListProps } from "./SessionList";

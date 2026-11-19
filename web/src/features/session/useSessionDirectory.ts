@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { getPlatform } from "@/platform/platform";
-import { type StoredCodec, useStoredValue } from "@/store/useStoredValue";
+import { useStoredValue, type StoredCodec } from "@/store/useStoredValue";
 
 import type { SessionSummary } from "./grouping";
 import { useSessionStore } from "./store";

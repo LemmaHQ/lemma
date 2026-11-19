@@ -4,7 +4,6 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// Agent execution: send message (server stream), abort, and stream resumption.
 service AgentService {
   rpc SendMessage(SendMessageRequest) returns (stream SendMessageResponse);
   rpc AbortMessage(AbortMessageRequest) returns (AbortMessageResponse);
@@ -25,7 +24,6 @@ message ThinkingDelta {
   string content = 1;
 }
 
-// Structured stream delta: yields one part per event for client-side accumulation by part type.
 message AgentDelta {
   oneof part {
     TextDelta text = 1;
@@ -57,12 +55,10 @@ message ToolCallStarted {
 
 message ToolCallFinished {
   string call_id = 1;
-  // Tool execution output text.
   string content = 3;
   bool is_error = 4;
 }
 
-// Unified stream event.
 message AgentEvent {
   oneof kind {
     AgentStarted started = 1;

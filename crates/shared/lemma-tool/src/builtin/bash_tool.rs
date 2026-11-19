@@ -8,10 +8,7 @@ use crate::exec_env::ExecEnv;
 use crate::tool::{BoxToolFuture, Tool};
 use crate::tool_error::ToolError;
 
-/// Seconds a command runs before it is stopped when the call sets no
-/// timeout.
 const DEFAULT_TIMEOUT_SECS: u64 = 300;
-/// The longest timeout a call may set, in seconds.
 const MAX_TIMEOUT_SECS: u64 = 3600;
 
 #[derive(Deserialize)]

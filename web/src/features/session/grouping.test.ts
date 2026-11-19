@@ -4,9 +4,9 @@ import {
     directoryBasename,
     formatSessionTime,
     groupSessions,
-    type SessionSummary,
     VISIBLE_SESSION_LIMIT,
     visibleDirectorySessions,
+    type SessionSummary,
 } from "./grouping";
 
 const mk = (

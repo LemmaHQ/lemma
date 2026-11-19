@@ -14,11 +14,11 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 import { AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
 import {
-    type ListMessagesResponse,
     ListMessagesResponseSchema,
-    type MessageSchema,
     MessageStatus,
     SetMessageLabelResponseSchema,
+    type ListMessagesResponse,
+    type MessageSchema,
 } from "@/gen/lemma/v1/session_pb";
 
 import { useActiveSessionStore } from "../store";
@@ -28,6 +28,7 @@ import {
     type ActiveSessionViewProps,
 } from "./ActiveSessionView";
 import type { SessionProviderGroup } from "./SessionComposer";
+
 type MessageInit = MessageInitShape<typeof MessageSchema>;
 type MessageExtra = Omit<
     Extract<MessageInit, { $typeName?: never }>,

@@ -7,6 +7,7 @@ import {
 } from "@/gen/lemma/v1/provider_pb";
 import { providerClient } from "@/rpc/clients";
 import { singleFlight } from "@/store/loaded-hook";
+
 export type WebProviderKind = "native" | "exa" | "deepseek";
 export type WebFunction = "search" | "fetch";
 

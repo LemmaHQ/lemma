@@ -1,11 +1,10 @@
-import { motion, type Variants } from "motion/react";
-
 import {
     getVariants,
-    useAnimateIconContext,
     IconWrapper,
+    useAnimateIconContext,
     type IconProps,
 } from "@animate-ui/react/icons";
+import { motion, type Variants } from "motion/react";
 
 type EllipsisProps = IconProps<keyof typeof animations>;
 

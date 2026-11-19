@@ -23,7 +23,6 @@ fn install(env: &mut Env<'_>, context: JObject<'_>) -> Result<(), Error> {
     android::init_with_env(env, context)
 }
 
-/// Desktop platforms read their trust store without setup.
 #[cfg(not(target_os = "android"))]
 fn install(_env: &mut Env<'_>, _context: JObject<'_>) -> Result<(), Error> {
     Ok(())

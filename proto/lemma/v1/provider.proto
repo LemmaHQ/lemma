@@ -10,14 +10,12 @@ enum ApiFormat {
   API_FORMAT_GEMINI = 3; // Gemini generateContent
 }
 
-// One model a provider offers, with the features requests depend on.
 message Model {
   string id = 1;
   // Requests to the model carry tool definitions and earlier tool calls only when true.
   bool tool_calling = 2;
 }
 
-// One configured model provider.
 message Provider {
   string id = 1;
   bool enabled = 2;
@@ -33,13 +31,12 @@ message Provider {
 message PredefinedProvider {
   string identifier = 1; // Predefined type, such as deepseek
   string name = 2;
-  repeated ApiFormat api_formats = 3; // Formats the provider serves
+  repeated ApiFormat api_formats = 3;
   // Format for a turn whose session has no previous reply in a format the provider serves.
   ApiFormat default_api_format = 4;
   repeated Model models = 5;
 }
 
-// Provider the user configures with one format, one address, and a model list.
 message CustomProvider {
   // Machine identifier visible to users; restricted to ASCII, immutable after creation.
   string identifier = 1;
@@ -130,7 +127,6 @@ message CheckProviderResponse {
   string error = 1;
 }
 
-// A web service account: a search or fetch backend with its own key.
 message WebProvider {
   enum Kind {
     KIND_UNSPECIFIED = 0;
@@ -194,11 +190,9 @@ service ProviderService {
   // Enabling requires a saved API key; the default format must be one the provider serves.
   rpc UpdatePredefinedProvider(UpdatePredefinedProviderRequest) returns (UpdatePredefinedProviderResponse);
   rpc DeleteCustomProvider(DeleteCustomProviderRequest) returns (DeleteCustomProviderResponse);
-  // Fetches remote model list from the provider endpoint.
   rpc FetchModels(FetchModelsRequest) returns (FetchModelsResponse);
   // Sends a minimal generation request to confirm the provider answers; a predefined provider uses its default format.
   rpc CheckProvider(CheckProviderRequest) returns (CheckProviderResponse);
-  // Web search and fetch backend accounts and their call order.
   rpc ListWebProviders(ListWebProvidersRequest) returns (ListWebProvidersResponse);
   rpc UpdateWebProvider(UpdateWebProviderRequest) returns (UpdateWebProviderResponse);
   rpc SetWebProviderOrder(SetWebProviderOrderRequest) returns (SetWebProviderOrderResponse);

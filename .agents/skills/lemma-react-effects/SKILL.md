@@ -5,105 +5,37 @@ description: Use when adding, reviewing, or removing `useEffect`, `useLayoutEffe
 
 # React effects in Lemma
 
-An effect synchronizes a component with a system outside React: the DOM, a browser API, the desktop bridge, a timer, a subscription, or the server. Derived values, state seeded from data, and responses to user events belong in render, in a component boundary, or in an event handler. This skill holds the decision rules and the audit workflow for `web/src`; it is guidance, not a script.
+An effect synchronizes a component with a system outside React: the DOM, a browser API, the desktop bridge, a timer, a subscription, or the daemon. Derived values, state seeded from data, and responses to user events belong in render, in a component boundary, or in an event handler. This skill is guidance, not a script.
 
-Before adding or keeping an effect, answer all four:
-
-1. Which external system does it synchronize?
-2. What starts or updates the synchronization?
-3. What cleanup prevents leaks or duplicate subscriptions?
-4. Why can an event handler, a store action, a render-time derivation, a conditional mount, or the feature's data hook not own the behavior?
-
-Without a concrete answer to the first question, the effect goes.
+Before adding or keeping an effect, confirm: (1) which external system it synchronizes, (2) what starts or updates it, (3) what cleanup prevents leaks or duplicate subscriptions, and (4) why a render derivation, conditional mount, event handler, store action, or data hook cannot own it. Without a concrete external system, remove the effect.
 
 ## Scope and context
 
-- Read [web/AGENTS.md](../../../web/AGENTS.md) before changing web code: only a feature's `store.ts` calls RPC, and components take their building blocks from `@lemma/ui`.
-- The primary scope is `web/src`. `packages/ui/src/components/` and `packages/ui/src/hooks/` hold both upstream shadcn ports, which keep their upstream effects, and Lemma-authored shared components and hooks, whose effects follow the same external-synchronization and symmetric-cleanup rules as `web/src`; audit an upstream port only when a local change touches its effects.
-- Read [the refactoring patterns](references/refactoring-patterns.md) before implementing a refactor; they show each rule on Lemma code.
+- Read [web/AGENTS.md](../../../web/AGENTS.md) before changing web code: only a feature's `store.ts` calls RPC, and components take building blocks from `@lemma/ui`.
+- Primary scope is `web/src` plus Lemma-authored modules in `packages/ui/src/components/composites/`. Upstream ports in `packages/ui/src/components/primitives/`, `icons/`, and `hooks/` keep their upstream effects unless a local change touches them.
+- Read [references/refactoring-patterns.md](references/refactoring-patterns.md) before refactoring.
 
 ## Decision rules
 
-Apply these in order:
+Apply in order:
 
-1. **Derive during render.** Compute values from props, store state, and local state instead of storing a synchronized copy.
-2. **Load server data through the feature store.** The feature's zustand store in `store.ts` holds the data and a `loaded` flag, and `createLoadedHook` in `src/store/loaded-hook.ts` starts the first load in its one effect, as `useProviders` and `useSessions` do. Components read that hook; they never fetch in their own effect and mirror loading, error, or data into local state.
-3. **Mount after the data is ready.** When a form or panel cannot initialize without store data, the parent checks `loaded`, renders a `Skeleton` from `@lemma/ui` shaped like the final layout until then, and mounts the child with complete initial values for `useState`. Replacing a half-ready form with a skeleton is an intended behavior change.
-4. **Make reset semantics explicit.** A `key` remounts the child for a new entity only when discarding the old draft is intended. When a draft must survive a refetch, keep it, compute dirty state from the draft and the saved value, and reset only from a user action.
-5. **Run actions from events.** Submits, RPC calls, navigation, toasts, and multi-step async workflows run in event handlers that call the feature's store actions. A store action is a plain async function on the zustand store: it calls no hooks, and code outside React reaches it through `getState()`, as `refreshSessions` does.
-6. **Keep real integration effects.** DOM writes, browser event listeners, observers, timers, subscriptions, and desktop bridge calls may need an effect. Setup and cleanup are symmetric, each effect has one concern, and it lives in the component or hook that owns the integration. A subscription that produces a rendered value uses `useSyncExternalStore`. Never add a wrapper hook only to hide `useEffect`.
+1. **Derive during render.** Compute values from props, store state, and local state instead of mirroring them via `useEffect`.
+2. **Load daemon data through the feature store.** The feature's zustand store in `store.ts` holds data and a `loaded` flag; `createLoadedHook` in `src/store/loaded-hook.ts` owns the initial load effect (`useProviders`, `useSessions`). Components never fetch in their own effect.
+3. **Mount after data is ready.** When a form or panel needs store data to initialize `useState`, the parent checks `loaded`, renders a `Skeleton` from `@lemma/ui` until ready, and mounts the child with complete initial values.
+4. **Make reset semantics explicit.** Use `key` remounts only when discarding an old draft is intended. When drafts must survive refetches, keep the draft, derive dirty state, and reset only on user action.
+5. **Run actions from events.** Submits, RPC calls, navigation, toasts, and multi-step workflows run in event handlers calling plain async store actions (callable outside React via `getState()`, e.g. `refreshSessions`).
+6. **Keep real integration effects.** DOM writes, browser listeners, observers, timers, subscriptions, and desktop bridge calls may use an effect with symmetric setup/cleanup and one concern per effect, living in the owning component or hook (use `useSyncExternalStore` for rendered subscriptions; never hide `useEffect` behind a wrapper hook).
 
-`useMemo` and `useCallback` are not defaults. Add one only for a measured performance problem or when referential stability is a correctness requirement: the value is a dependency of a retained effect, or it is a callback ref whose rerun has a side effect. Fix render cost by splitting components or moving state down; hoist a function that closes over nothing to module scope instead of memoizing it.
+Use `useMemo` / `useCallback` only for a measured performance problem or required referential stability (dependency of a retained effect, or a callback ref with side effects); hoist pure helpers to module scope instead. Never move a removable effect to `useLayoutEffect`, hide it in a custom hook, or suppress `react/exhaustive-deps` (`error` in `web/.oxlintrc.json`) with `oxlint-disable`.
 
-An effect that writes React or zustand state from props or store data is presumed removable. Switching it to `useLayoutEffect`, moving it into a custom hook, or suppressing `react/exhaustive-deps`, which `web/.oxlintrc.json` sets to `error`, leaves the problem in place; an `oxlint-disable` comment never keeps a removable effect.
+## Audit and refactor workflow
 
-## Quick identification
+1. **Inventory:** search the target directory for `\buse(Layout)?Effect\b` (and `\buse(Memo|Callback)\b` when auditing memoization). Classify each hit (render derivation, store-to-local seeding, client/daemon sync, user event/workflow, mount-time data load, or external-system integration) with its trigger, target, and replacement.
+2. **Refactor one change at a time** in order: (a) redundant state → derivation, (b) split data-owning parent from stateful child, (c) event-driven work → handlers and store actions, (d) keep unavoidable integrations in their owners, (e) delete dead state, guards, deps, imports, and memoization. Keep file moves, visual tweaks, and store restructures separate.
+3. **Test behavior, not hook absence:** cover real risks (draft preservation, entity change, refetch, submit) with `*.test.ts(x)` beside the module ([testing.md](../../../docs/testing.md)); never inspect source text to assert a hook is gone.
+4. **Verify:**
+   - Re-run the inventory and confirm every original effect is accounted for, no effect moved behind a wrapper hook, refetches preserve local edits, and retained effects are recorded in the audit report or commit body (Lemma code carries no comments).
+   - Run the `web/` row from [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md).
+   - For browser verification, `just web-dev` proxies RPC to `lemma-daemon` (`just rust-dev`), and title-bar or `platform` effects also need `just desktop-dev`. Both `rust-dev` and `desktop-dev` compile Rust and require user consent; otherwise hand the steps to the user.
 
-Refactor when any of these appear:
-
-- `useEffect(() => setX(derive(y)), [y])`;
-- a fetch in a component effect whose result goes into `setState` instead of the feature store;
-- a flag set by a handler, acted on by an effect, then cleared;
-- effect chains, where one state write triggers the next effect;
-- local state reset because an ID or prop changed;
-- a child reporting its state to a parent from an effect;
-- an integration guarded inside an effect when the component could mount only after the precondition holds;
-- `useMemo` or `useCallback` around a cheap computation with no stability requirement.
-
-## Workflow
-
-### 1. Establish the behavior boundary
-
-Identify the state owner (store or component), the store action that loads the data, the user events, the external systems, and the loading and error states.
-
-Web tests are `src/**/*.test.ts` and `src/**/*.test.tsx` files beside the module they cover, run in vitest's `happy-dom` environment with Testing Library for component behavior ([testing.md](../../../docs/testing.md)). When logic moves out of a component into a pure module, cover a real risk such as draft preservation, an entity change, a refetch, or a submit with a `*.test.ts` beside the module; for a bug in such a module, write the failing test first. Never write tests that inspect source text or assert that a hook is absent; the inventory proves that.
-
-### 2. Inventory every effect
-
-Search the target directory (such as `web/src/features/<domain>/` and `web/src/store/`) for `\buse(Layout)?Effect\b`, and for `\buse(Memo|Callback)\b` when the audit covers memoization. Classify each result as:
-
-- render derivation;
-- store data seeding local state;
-- client and server state synchronization;
-- user event or async workflow;
-- mount-time load in the feature's data hook;
-- external-system integration.
-
-Record what triggers each one, what it writes or controls, and the replacement. A raw count alone never justifies a refactor.
-
-### 3. Refactor one change at a time
-
-Work in this order:
-
-1. replace redundant state with a derivation;
-2. split the data-owning parent from the stateful child;
-3. move event-driven work into handlers and store actions;
-4. keep each unavoidable integration in the component or hook that owns it;
-5. remove dead state, guards, dependencies, imports, and memoization.
-
-Keep user-visible behavior stable apart from intended loading states. Keep file moves, visual changes, and store restructuring out of the same change.
-
-### 4. Complete a directory
-
-Repeat the inventory after each change. Before calling a directory clean:
-
-- every original effect is accounted for;
-- no effect moved behind a wrapper hook;
-- a refetch leaves local edits intact;
-- an entity change has a deliberate preserve or reset behavior;
-- complex actions are store actions callable without rendering the feature;
-- each retained integration effect has its external system recorded in the audit report or the commit message body; Lemma code carries no comments.
-
-Adding or changing oxlint rules or checks for effects is separate work, done only on request.
-
-### 5. Verify
-
-- Select checks through [lemma-pre-push-checks](../lemma-pre-push-checks/SKILL.md); its `web/` row includes `just web-build`, which type-checks with `tsc -b`.
-- Review user-visible flows in a real browser: `just web-dev` proxies RPC to the server that `just rust-dev` runs. Effects that touch the title bar or `platform` also need `just desktop-dev`. Both server and desktop recipes compile the Rust workspace, which needs the user's consent; without it, hand the steps to the user.
-- Run the inventory again to show the target directory is clean.
-
-Report the exact summary line of each command and every retained effect with its external system.
-
-## Output format
-
-Return valid Markdown. A directory audit includes a compact table: effect location, classification, replacement, and status.
+Report the exact command summary lines and, for directory audits, a compact Markdown table: effect location, classification, replacement, and status.

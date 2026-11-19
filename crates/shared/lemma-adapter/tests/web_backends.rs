@@ -172,7 +172,7 @@ async fn exa_search_applies_defaults_and_normalizes_highlights() -> Result<(), B
         100
     );
     assert_eq!(
-        backend.fallback_args(&json!({"query": "lemma", "count": 4, "need_content": true})),
+        backend.fallback_args(&json!({"query": "lemma", "count": 4, "localization": "en-US"})),
         json!({"query": "lemma", "numResults": 4})
     );
     assert_eq!(
@@ -232,8 +232,7 @@ async fn deepseek_search_forwards_its_full_parameters() -> Result<(), Box<dyn Er
         "query": "lemma",
         "count": 7,
         "ori_question": "What is Lemma?",
-        "localization": "en-US",
-        "need_content": true
+        "localization": "en-US"
     });
 
     let result = backend.search(args.clone()).await?;

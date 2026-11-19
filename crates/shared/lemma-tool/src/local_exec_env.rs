@@ -11,12 +11,9 @@ use crate::exec_env::{CommandStop, ExecCommandResult, ExecEnv};
 use crate::output_capture::OutputCapture;
 use crate::tool_error::ToolError;
 
-/// How long a stopped command may take to exit after `SIGTERM` before it
-/// receives `SIGKILL`.
 #[cfg(not(windows))]
 const STOP_GRACE: Duration = Duration::from_secs(2);
 
-/// What a finished command leaves: its output streams and exit status.
 type Finished = (OutputCapture, OutputCapture, io::Result<ExitStatus>);
 
 /// Host execution environment confined to a root directory.
@@ -174,7 +171,6 @@ fn shell(command: &str) -> process::Command {
     cmd
 }
 
-/// Ends the process tree of the command `pid` leads and waits for `run`.
 #[cfg(windows)]
 async fn stop_tree(pid: u32, run: Pin<&mut impl Future<Output = Finished>>) -> Finished {
     let _ = process::Command::new("taskkill")
@@ -184,8 +180,6 @@ async fn stop_tree(pid: u32, run: Pin<&mut impl Future<Output = Finished>>) -> F
     run.await
 }
 
-/// Sends `SIGTERM` to the process group `pid` leads, and `SIGKILL` when
-/// `run` has not finished [`STOP_GRACE`] later.
 #[cfg(not(windows))]
 async fn stop_tree(pid: u32, mut run: Pin<&mut impl Future<Output = Finished>>) -> Finished {
     signal_group(pid, libc::SIGTERM);

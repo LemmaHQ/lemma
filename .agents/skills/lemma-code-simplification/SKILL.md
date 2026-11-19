@@ -25,23 +25,7 @@ For each block, answer: what is its responsibility, what calls it and what does 
 
 ### 2. Find opportunities
 
-| Signal | Simplification |
-| --- | --- |
-| Nesting three or more levels deep | Guard clauses and early returns; in Rust `?` and `let ... else` |
-| A function over about 50 lines doing several things | One function per responsibility, named for what it does |
-| Nested ternaries | `if` chain, `switch` on a union, or `match` |
-| Boolean flag parameters (`load(true, false)`) | Separate functions or an enum |
-| The same condition in several places | One named predicate |
-| A wrapper that only forwards a call | Call the target directly |
-| A trait, interface, or factory with one implementation and no second one coming | The concrete type |
-| A check for a state the types or callers already exclude | Delete the check |
-| A redundant assertion or conversion (`as`, `!!`, `.clone()` where a borrow works) | Remove it, or fix the type |
-| Generic names (`data`, `result`, `item`, `tmp`) | Name the content |
-| A comment that restates the code | Delete it; Lemma code carries no comments by default |
-| Unused imports, variables, unreachable branches left by the change | Delete them |
-| Hand-written loops building a collection | `filter`, `map`, iterator adaptors, when the result reads clearer |
-
-Real before-and-after cases from the repository are in [references/examples.md](references/examples.md). React components and effects follow [lemma-react-components](../lemma-react-components/SKILL.md) and [lemma-react-effects](../lemma-react-effects/SKILL.md).
+Look for deep nesting, multi-responsibility functions, boolean flags, forwarding wrappers, single-implementation abstractions, redundant checks or conversions, generic names, and leftover dead code. Real before-and-after cases from the repository are in [references/examples.md](references/examples.md). React components and effects follow [lemma-react-components](../lemma-react-components/SKILL.md) and [lemma-react-effects](../lemma-react-effects/SKILL.md).
 
 ### 3. Plan before editing
 
@@ -53,16 +37,7 @@ Make one simplification, then run the narrowest check that covers it, chosen thr
 
 ### 5. Hand off to a read-only review
 
-Compare before and after yourself first: is the result genuinely easier to follow, consistent with neighboring code, and a clean diff? If not, revert it.
-
-Then pass the diff, the plan, and the checks you ran to a reviewer with a fresh context that edits nothing: a subagent when the environment provides one, otherwise a separate pass that only reads. The reviewer checks:
-
-- every planned step was applied or explicitly dropped, and nothing outside the plan changed;
-- behavior is unchanged: no test was modified, and no error handling, validation, or cancellation path was weakened;
-- nothing the change orphaned remains: imports, helpers, branches;
-- each check claimed was actually run and covers the touched code.
-
-The reviewer returns approval or required follow-ups. Follow-ups go back to a writing pass; the pass that wrote a change never approves it.
+Compare before and after yourself first and revert anything that is not genuinely clearer. Then hand the diff, plan, and executed checks to a fresh read-only pass (a subagent when available) to verify that every planned step preserved behavior without modifying tests, weakening guards, or leaving orphaned code, and route any follow-up back to a writing pass.
 
 ## Red flags
 

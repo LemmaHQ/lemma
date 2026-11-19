@@ -1,10 +1,10 @@
 import { AnimateIcon } from "@animate-ui/react/icons";
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
-import { cn } from "#lib/cn";
 import * as React from "react";
 
-import { Button } from "#primitives/button";
 import { XIcon } from "#icons/x";
+import { cn } from "#lib/cn";
+import { Button } from "#primitives/button";
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
     return <SheetPrimitive.Root data-slot="sheet" {...props} />;
