@@ -23,8 +23,6 @@ async fn drain<O: Fn(TurnEvent)>(
     Ok(())
 }
 
-/// Runs one model stream to completion or cancellation, accumulating
-/// content blocks and forwarding deltas to `observer`.
 pub(crate) async fn run_stream<A: Adapter, O: Fn(TurnEvent)>(
     adapter: &A,
     req: ModelRequest,

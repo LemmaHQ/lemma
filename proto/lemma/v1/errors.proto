@@ -8,11 +8,11 @@ enum ErrorReason {
   ERROR_REASON_UNSPECIFIED = 0;
 
   // Provider
-  ERROR_REASON_PROVIDER_FIELDS_REQUIRED = 10; // Required provider configuration fields missing
+  ERROR_REASON_PROVIDER_FIELDS_REQUIRED = 10;
   ERROR_REASON_API_FORMAT_INVALID = 11; // API format unspecified, or not served by the predefined provider
   ERROR_REASON_PROVIDER_NOT_FOUND = 12;
   ERROR_REASON_PROVIDER_IDENTIFIER_INVALID = 14; // Identifier must contain valid non-empty ASCII characters
-  ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15; // Provider identifier already exists
+  ERROR_REASON_PROVIDER_IDENTIFIER_TAKEN = 15;
   ERROR_REASON_PROVIDER_KEY_REQUIRED = 16; // Enabling a predefined provider requires a saved API key
 
   // Session and messages
@@ -27,7 +27,7 @@ enum ErrorReason {
 
   // Agent
   ERROR_REASON_TURN_NOT_RUNNING = 30; // No running turn for the message: it ended or never started
-  ERROR_REASON_SESSION_BUSY = 31; // Session already has a running turn
+  ERROR_REASON_SESSION_BUSY = 31;
 }
 
 // Structured error details carried on ConnectError; rendered by client i18n based on reason.

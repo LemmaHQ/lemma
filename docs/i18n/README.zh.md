@@ -41,10 +41,11 @@ Lemma 的文档以英文与简体中文两种语言维护。本页定义配对�
 
 ## 范围与例外
 
-**范围**：所有维护中的 Markdown 文档，包括 `README.md` 与 `AGENTS.md` 文件。
+**范围**：面向人类读者的 Markdown 文档——`README.md`（`.agents/skills/` 除外）与 `docs/`。
 
 **例外**（不配对；检查会拒绝它们的 `.zh.md` 或 `.i18n.yaml`）：
 
-- `SKILL.md` 文件及各 skill 下的参考资料，它们只有英文，因为工具会原样读取。
+- 全部 `AGENTS.md` 文件（根目录与子目录），它们是纯英文的 agent 指令。
+- `.agents/skills/` 下的全部文件（`README.md`、`SKILL.md` 及 `references/`），工具与 agent 按英文原样读取。
 - 生成文件。
 - [terminology.md](terminology.md)，它本身就是双语的。

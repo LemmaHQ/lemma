@@ -47,8 +47,6 @@ export default defineConfig({
         react(),
         tailwindcss(),
         themeBootScript(),
-        // Uploads bundle stats to Codecov during `vite build` when provided
-        // with an upload token.
         codecovVitePlugin({
             enableBundleAnalysis: codecovToken !== undefined,
             bundleName: "lemma-web",

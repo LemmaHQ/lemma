@@ -1,6 +1,5 @@
 use lemma_core::{ContentBlock, Message};
 
-/// Joins the text blocks of a content list into one string.
 pub(crate) fn text_of(content: &[ContentBlock]) -> String {
     content
         .iter()
@@ -11,12 +10,10 @@ pub(crate) fn text_of(content: &[ContentBlock]) -> String {
         .collect()
 }
 
-/// Parses a string into JSON, falling back to `fallback` on parse failures.
 pub(crate) fn parse_args(arguments: &str, fallback: serde_json::Value) -> serde_json::Value {
     serde_json::from_str(arguments).unwrap_or(fallback)
 }
 
-/// Encodes history for the OpenAI chat-completions wire format.
 pub(crate) fn openai_messages(messages: &[Message]) -> Vec<serde_json::Value> {
     messages
         .iter()
@@ -59,9 +56,6 @@ pub(crate) fn openai_messages(messages: &[Message]) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// Encodes history for the Anthropic Messages wire format. Pure-text
-/// messages keep the plain string content form; assistant turns with
-/// thinking or tool calls switch to content-block arrays.
 pub(crate) fn anthropic_messages(messages: &[Message]) -> Vec<serde_json::Value> {
     messages
         .iter()
@@ -123,7 +117,6 @@ pub(crate) fn anthropic_messages(messages: &[Message]) -> Vec<serde_json::Value>
         .collect()
 }
 
-/// Encodes history for the Gemini generateContent wire format.
 pub(crate) fn gemini_contents(messages: &[Message]) -> Vec<serde_json::Value> {
     messages
         .iter()

@@ -56,6 +56,7 @@ kover {
                     "io.github.mistvesper.lemma.theme.LemmaShapes",
                     "io.github.mistvesper.lemma.theme.LemmaTokensKt",
                 )
+                // Serialization plugin generates synthetic constructor code unreachable in tests.
                 annotatedBy("kotlinx.serialization.Serializable")
             }
         }
@@ -120,6 +121,7 @@ tasks.register("verifyCoverage") {
                 for (method in cls.children("method")) {
                     val where = "$name.${method.getAttribute("name")}"
                     val missedBranches = method.count("BRANCH", "missed")
+                    // Compose compiler inserts unreachable branches inside Composable functions.
                     val composable =
                         "Landroidx/compose/runtime/Composer;" in method.getAttribute("desc")
                     if (method.count("INSTRUCTION", "covered") == 0) {

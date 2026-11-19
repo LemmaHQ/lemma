@@ -1,7 +1,5 @@
 # AGENTS.md
 
-English | [中文](AGENTS.zh.md)
-
 Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. Read [docs/architecture.md](docs/architecture.md) before changing `crates/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
 ## Repository layout
@@ -20,37 +18,21 @@ mobile/       Android app and Kotlin Multiplatform shared module (mobile/AGENTS.
 assets/       brand assets
 design/       design tokens for all clients (tokens.json)
 i18n/         platform-neutral UI strings (i18n/README.md)
-.agents/      skills
+.agents/      skills (.agents/skills/README.md)
 docs/         documentation (docs/AGENTS.md)
-scripts/      repository scripts run by Node: design token and i18n generators, documentation checks, the issue translator, source checks
+scripts/      repository automation scripts run by Node
 ```
 
 ## Commands
 
-```sh
-just rust-dev            # run lemma-daemon
-just web-dev             # Vite dev server
-just desktop-dev         # build the engine addon, then launch Electron
-just design-gen          # regenerate the web theme, desktop window colors, and Android palette from design tokens
-just i18n-gen            # regenerate client strings from the platform-neutral sources
-just scripts-test        # test the repository scripts in scripts/
-just docs-lint-check     # markdownlint and autocorrect on tracked Markdown
-just docs-pairing-check  # check bilingual pairs; docs-pairing <file> records one
-just docs-refs-check     # check recipe names and repository paths cited in Markdown
-just dup-check           # report copy-pasted code (jscpd, .jscpd.json)
-just deadcode-check      # report unused files, exports, and dependencies (knip, knip.json)
-just source-check        # check source file length, names, re-export modules, and test placement
-```
-
-Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name without the suffix applies the fixes. CI steps call recipes instead of repeating their commands, so a local run reproduces a CI step. Each subtree `AGENTS.md` lists its own recipes; `just --list` shows all of them.
+[justfile](justfile) (`just --list`) is the single source of truth for workspace commands. Recipes follow `just <area>-<action>` (such as `dev`, `build`, `test`, `cov`, `lint-check`, `fmt-check`); a `-check` recipe only reads, while the same name without `-check` applies fixes. CI steps call recipes directly so local runs reproduce CI.
 
 ## Environment / .env
 
-`lemma-daemon` reads `.env` when present (`LEMMA_DATA_DIR` and `LEMMA_PORT`). Never commit `.env` or local data directories.
+Never commit `.env` or local data directories; see [environment variables](docs/development.md#environment-variables) for configuration.
 
 ## Conventions
 
-- **Formatting:** 4-space indentation (YAML and `.proto` use 2), no trailing whitespace, exactly one trailing newline, UTF-8.
 - **Scaffold with generators.** Initialize configuration files and project skeletons with their tool's generator (`cargo new`, `buf init`, `npm create`).
 - **Dependency versions** are compatible-update ranges written to every component the release has (`^44.8.0`, not `^44`; `0.64` for a release numbered `0.64`). npm writes the `^`, Cargo's bare version (`"1.53.1"`) means the same range, and Gradle catalogs and `mise.toml` write the plain version. Action tags, container image tags, and Android SDK levels follow their publisher's scheme.
 - **Names:** types use `PascalCase`; constants and environment variables use `UPPER_SNAKE_CASE`; identifiers use plain, standard terms, one term per concept as the [glossary](docs/glossary.md) defines. Names for one concept are singular and names for a collection are plural ([rules](.agents/skills/lemma-code-style/SKILL.md#singular-and-plural)).
@@ -86,8 +68,8 @@ Recipes are named `<area>-<action>`. A `-check` recipe only reads; the same name
 
 ## Documentation
 
-Docs accompany every code change: update the affected README and doc comments together. [docs/AGENTS.md](docs/AGENTS.md) owns tiers, writing rules, and word budgets; the [bilingual contract](docs/i18n/README.md) owns English and Chinese pairs.
+Docs accompany every code change: update the affected README and doc comments together. [docs/AGENTS.md](docs/AGENTS.md) owns tiers and writing rules; the [bilingual contract](docs/i18n/README.md) owns English and Chinese pairs.
 
 ## Editing these instructions
 
-`AGENTS.md` and `AGENTS.zh.md` are one English–Chinese pair; update both in the same change. Keep each rule self-contained and link its home.
+Keep each rule self-contained and link its home.

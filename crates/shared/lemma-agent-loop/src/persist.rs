@@ -7,8 +7,6 @@ use uuid::Uuid;
 use crate::stream::{StepEnd, StepOutcome};
 use crate::tool_runtime::ToolOutcome;
 
-/// A settled message without model attribution: the user message or a
-/// tool result.
 pub(crate) fn settled(
     id: Uuid,
     session_id: Uuid,
@@ -32,8 +30,6 @@ pub(crate) fn settled(
     }
 }
 
-/// The streaming assistant placeholder a step appends before calling the
-/// model.
 pub(crate) fn placeholder(
     id: Uuid,
     session_id: Uuid,
@@ -65,7 +61,6 @@ pub(crate) fn placeholder(
     }
 }
 
-/// The final state of a placeholder once its stream has settled.
 pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
     let (status, error) = match &outcome.end {
         StepEnd::Completed => (MessageStatus::Done, None),
@@ -83,7 +78,6 @@ pub(crate) fn settle(outcome: &StepOutcome) -> MessageUpdate {
     }
 }
 
-/// The tool result message answering `call`.
 pub(crate) fn tool_result(call: &ToolCall, outcome: ToolOutcome) -> Message {
     Message::ToolResult {
         tool_call_id: call.id.clone(),

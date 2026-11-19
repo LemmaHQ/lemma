@@ -62,10 +62,6 @@ impl<T: HttpTransport + Debug> WebSearchBackend for ExaWebBackend<T> {
                             "highlights": {
                                 "oneOf": [{"type": "boolean"}, {"type": "object", "properties": {"query": {"type": "string", "description": "Optional highlight-ranking query; Exa's default applies when omitted."}}}],
                                 "description": "Boolean or query object controlling highlights; enabled by default when contents is omitted."
-                            },
-                            "text": {
-                                "oneOf": [{"type": "boolean"}, {"type": "object", "properties": {"maxCharacters": {"type": "integer", "description": "Optional maximum returned text characters; Exa's default applies when omitted."}}}],
-                                "description": "Boolean or settings object controlling full text; disabled by default."
                             }
                         }
                     }

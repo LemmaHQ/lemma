@@ -9,7 +9,8 @@ export interface Pair {
 }
 
 const EXCLUDED = [
-    /^\.agents\/skills\/[^/]+\//u,
+    /^\.agents\/skills\//u,
+    /(^|\/)AGENTS\.md$/u,
     /^docs\/i18n\/terminology\.md$/u,
 ];
 

@@ -4,7 +4,6 @@ package lemma.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// Message lifecycle status.
 enum MessageStatus {
   MESSAGE_STATUS_UNSPECIFIED = 0;
   MESSAGE_STATUS_STREAMING = 1;
@@ -25,13 +24,12 @@ message Session {
   optional string active_message_id = 9;
 }
 
-// Tool call block within an assistant message.
 message ToolCall {
   string id = 1;
   string name = 2;
   // Invocation arguments formatted as serialized JSON text.
   string arguments = 3;
-  // Server instant at which tool execution started; absent in older rows.
+  // Server instant at which tool execution started; absent when unrecorded.
   google.protobuf.Timestamp started_at = 4;
   // Server instant at which the tool result arrived; absent while running.
   google.protobuf.Timestamp finished_at = 5;
@@ -47,7 +45,7 @@ message Message {
   string id = 1;
   // Parent message id in the session tree; absent for root messages.
   optional string parent_id = 2;
-  string role = 3; // user | assistant | system | tool
+  string role = 3; // user | assistant | tool
   string content = 4;
   // Originating provider and model for assistant messages.
   string provider_id = 5;
@@ -60,15 +58,12 @@ message Message {
   string thinking = 11;
   // Error description populated when status is set to error.
   string error = 12;
-  // Tool call requests issued within an assistant message.
   repeated ToolCall tool_calls = 13;
-  // Tool execution result metadata present on tool-role messages.
   ToolResultMeta tool_result = 14;
-  // Server instant of the first thinking delta; absent in older rows.
+  // Server instant of the first thinking delta; absent when unrecorded.
   google.protobuf.Timestamp thinking_started_at = 15;
   // Server instant of the first non-thinking event after thinking began.
   google.protobuf.Timestamp thinking_finished_at = 16;
-  // Optional short user label attached to this tree node.
   optional string label = 17;
 }
 

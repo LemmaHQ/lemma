@@ -25,14 +25,6 @@ struct NameOnly {
     name: String,
 }
 
-/// Lists the models an endpoint exposes, using the auth scheme of its
-/// API format: bearer token for OpenAI-compatible APIs, `x-api-key` plus a
-/// pinned `anthropic-version` for Anthropic, `x-goog-api-key` for Gemini.
-///
-/// An empty `models_path` selects the format's default under the base URL
-/// that generation uses: `/models` for OpenAI-compatible APIs,
-/// `/v1/models` for Anthropic, `/v1beta/models` for Gemini. Gemini returns
-/// names as `models/<id>`; the prefix is stripped.
 pub(crate) async fn list_models<T: HttpTransport>(
     transport: &T,
     endpoint: Endpoint,

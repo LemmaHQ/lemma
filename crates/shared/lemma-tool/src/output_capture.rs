@@ -2,11 +2,8 @@ use std::collections::VecDeque;
 
 use tokio::io::{AsyncRead, AsyncReadExt};
 
-/// Bytes kept from each end of a stream.
 const KEPT_BYTES: usize = 16 * 1024;
 
-/// The first and last [`KEPT_BYTES`] of a stream, and how many bytes
-/// between them were dropped.
 #[derive(Debug, Default)]
 pub(crate) struct OutputCapture {
     head: Vec<u8>,
@@ -15,7 +12,6 @@ pub(crate) struct OutputCapture {
 }
 
 impl OutputCapture {
-    /// Reads `stream` to its end; a read error ends the capture.
     pub(crate) async fn read<R: AsyncRead + Unpin>(mut stream: Option<R>) -> Self {
         let mut capture = Self::default();
         let mut buf = [0u8; 8192];
@@ -37,8 +33,6 @@ impl OutputCapture {
         self.omitted += excess;
     }
 
-    /// The captured text, with the number of omitted bytes between the
-    /// head and the tail.
     pub(crate) fn into_text(self) -> String {
         let head = String::from_utf8_lossy(&self.head);
         let tail = Vec::from(self.tail);

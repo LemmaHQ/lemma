@@ -5,55 +5,34 @@ description: Use when translating a Lemma document into its counterpart language
 
 # Translating Lemma docs
 
-## What this skill is
-
-**This skill is guidance, not a translation memory.** It is the workflow for keeping `foo.md` and `foo.zh.md` consistent and natural in both languages. Both languages carry equal authority: a change is authored in either one, and that side is the source for that update. You are the translator. The rules below say what must hold, not how to phrase any sentence; phrasing judgment is yours, terminology is not.
-
-## Sources of truth (read, don't re-summarize)
-
-- **[docs/i18n/README.md](../../../docs/i18n/README.md):** the pairing contract (`foo.md`, `foo.zh.md`, `foo.i18n.yaml`), the language switcher, the check, scope, and exclusions.
-- **[docs/i18n/terminology.md](../../../docs/i18n/terminology.md):** the terminology table, binding in both directions. Load it before translating, not when a term feels uncertain; the terms you don't notice are the ones that drift.
-- **[lemma-prose-standard](../lemma-prose-standard/SKILL.md):** required prose coverage and editorial judgment. Apply it to both sides without adding or dropping source propositions.
+**This skill is guidance, not a translation memory.** [docs/i18n/README.md](../../../docs/i18n/README.md) owns the pairing contract, consistency records, language switcher, scope, and exclusions; [docs/i18n/terminology.md](../../../docs/i18n/terminology.md) owns binding terminology in both directions (load it before translating, not when a term feels uncertain); [lemma-doc](../lemma-doc/SKILL.md) owns prose coverage and editorial judgment.
 
 ## Triage by change type
 
-- **Update** (pair exists, one side edited): follow [the update path](#the-update-path). It is brief-driven and cheap: no corpus reading, no git archaeology, the smallest counterpart edit. Never re-translate a whole document to apply an update; a minimal update preserves the reviewed wording of everything that did not change.
+- **Update** (pair exists, one side edited): follow [the update path](#the-update-path). Never re-translate an entire document for a targeted update; preserve reviewed wording untouched by the change.
 - **New pair** (no counterpart yet): follow [the whole-document path](#the-whole-document-path).
-- **Both sides changed:** reconcile by hand. Carry each side's change to the other, keep the wording neither change touched, then record.
-- **Deleted or renamed document:** delete or rename the counterpart and the `.i18n.yaml` with it, and repair inbound links on both sides in the same change.
+- **Both sides changed:** reconcile by hand, carry each side's change to the other while preserving untouched wording, then record.
+- **Deleted or renamed document:** delete or rename the counterpart and `.i18n.yaml` together, and repair inbound links on both sides.
 
 ## The update path
 
-1. **Generate the brief:** `just docs-brief <any file of the pair>`; with no arguments it briefs every out-of-sync pair. A section brief holds each changed section's last committed source that matched the record, its current source, the current counterpart with line numbers, and the terminology rows the change touches.
-2. **Translate from the brief.** The brief is the working set: do not re-read the corpus or re-derive the diff. Escalate to the sources of truth only when the brief leaves a decision unanswerable, such as an unlisted term with no precedent in the surrounding text.
-3. **Make the smallest edit that covers the change.** Keep the reviewed wording of everything the change does not touch, then verify the changed sections clause by clause against the source: nothing added, nothing dropped, terminology per the rows, code spans verbatim.
-4. **Record and check the named pair:** `just docs-pairing <file>`, then `just docs-pairing-check <file>`. Use `just docs-pairing --all` only when you confirmed every pair.
-
-The brief's confirmed source comes from git history, so a source edited twice without a commit in between shows no confirmed text. Compare against `git diff` in that case.
+1. **Generate the brief:** `just docs-brief <file>` (or with no arguments for all out-of-sync pairs). The brief gives the last confirmed source, current source, current counterpart with line numbers, and touched terminology rows.
+2. **Translate from the brief.** Escalate to full files only when the brief cannot answer a decision (such as an unlisted term with no local precedent). If a source was edited twice without an intermediate commit, compare against `git diff`.
+3. **Make the smallest edit that covers the change.** Verify changed sections clause by clause against the source: nothing added, nothing dropped, terminology exact, code spans verbatim.
+4. **Record and check:** `just docs-pairing <file>`, then `just docs-pairing-check <file>` (use `--all` only after confirming every pair).
 
 ## The whole-document path
 
-Translate the whole file section by section, keeping each section's structure locked to the source as you go rather than fixing structure at the end.
+Translate section by section, keeping each section's structure aligned to the source as you go:
 
-- **Pass 1: write, don't transpose.** Read a semantic unit, then restate it as a native technical author would. Keep the structure; do not force sentence-by-sentence correspondence.
-- **Pass 2: verify against the source, clause by clause.** Confirm nothing was added or dropped, every term follows the table, and each code span survived verbatim. Fix by rewriting the sentence natively, not by patching words into it.
-- **Read the counterpart alone.** After the comparison, read the translated file without the source and rewrite phrasing whose awkwardness only shows in isolation.
-- Write only the final text to the file, never drafts or notes.
+- **Pass 1: write natively.** Restate each semantic unit as a native technical author would without forcing sentence-by-sentence correspondence.
+- **Pass 2: verify clause by clause.** Confirm nothing was added or dropped, every term follows [terminology.md](../../../docs/i18n/terminology.md), and every code span survived verbatim. Fix mismatches by rewriting natively.
+- **Read in isolation.** Re-read the finished counterpart alone and smooth phrasing that reads awkwardly without the source. Write only final text, never drafts or notes.
 
-## Translation rules
+## Authoring conventions
 
-- **Terminology:** every listed term renders exactly as the table specifies. An unlisted term follows the rendering already used in the surrounding documents; with no precedent it stays English, and the commit body lists it for addition to the table. Never invent a rendering inline.
-- **Code:** code blocks match line for line; only comments may be translated. Inline code, paths, commands, and identifiers stay verbatim.
-- **Links:** each link keeps the same target and fragment. Links to paired documents use `.md` on the English side and `.zh.md` on the Chinese side; Chinese fragments use the Chinese heading slug. The switcher is the only cross-language link.
-- **Structure:** heading levels and order, list kinds and item counts, and table rows and columns match. The script checks headings only; check lists, tables, and links by reading both sides.
-- **Chinese typography:** full-width punctuation in Chinese prose; `just docs-lint` (autocorrect) owns spacing between Chinese and Latin text.
-- **Paragraphs:** one physical line per paragraph on both sides.
+- **Unlisted terms:** follow precedent in surrounding documents; with no precedent, keep the English term and note it in the commit body for addition to `terminology.md`. Never invent a rendering inline.
+- **Chinese links and typography:** links to paired documents target `.zh.md` with the Chinese heading slug; use full-width punctuation in Chinese prose (`just docs-lint` owns CJK-Latin spacing); keep one physical line per paragraph.
+- **Verify and report:** run `just docs-pairing-check <file>` and `just docs-lint-check` after recording. State in the report and commit body which pairs are new or minimally updated and any unlisted terms kept in English.
 
-## Finish the pair
-
-1. Switcher: `English | [中文](foo.zh.md)` after the English H1, `[English](foo.md) | 中文` after the Chinese H1; add both for a new pair.
-2. Record the pair with `just docs-pairing <file>` only after you confirmed the two sides say the same thing; the record diff states that confirmation.
-3. Run `just docs-pairing-check <file>` and `just docs-lint-check` for the touched pairs.
-4. In the report and the commit body, state which pairs are new and which were minimally updated, and list any unlisted terms kept in English.
-
-When the user corrects a rendering, apply the decision to [terminology.md](../../../docs/i18n/terminology.md) and every affected document, not only to one file.
+When the user corrects a rendering, update [terminology.md](../../../docs/i18n/terminology.md) and every affected document, not just one file.

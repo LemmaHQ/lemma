@@ -10,7 +10,6 @@ pub struct ToolRuntime<E> {
     pub env: E,
 }
 
-/// Result text of one tool call.
 pub(crate) struct ToolOutcome {
     pub(crate) text: String,
     pub(crate) is_error: bool,
@@ -26,12 +25,11 @@ impl ToolOutcome {
 }
 
 impl<E: ExecEnv> ToolRuntime<E> {
-    /// Creates a runtime executing turns autonomously.
+    /// Creates a tool runtime pairing `registry` with `env`.
     pub fn new(registry: ToolRegistry<E>, env: E) -> Self {
         Self { registry, env }
     }
 
-    /// Executes one tool call through the registry.
     pub(crate) async fn run(&self, call: &ToolCall) -> ToolOutcome {
         let Some(tool) = self.registry.get(&call.name) else {
             return ToolOutcome::error(format!("tool not found: {}", call.name));

@@ -54,8 +54,7 @@ impl<T: HttpTransport + Debug> WebSearchBackend for DeepSeekWebBackend<T> {
                     "query": {"type": "string", "description": "Required nonempty search query."},
                     "count": {"type": "integer", "minimum": 1, "maximum": 50, "description": "Optional result count from 1 to 50; defaults to 10 when omitted."},
                     "ori_question": {"type": "string", "description": "Optional original user question for search context; omitted by default."},
-                    "localization": {"type": "string", "description": "Optional localization setting for search; the backend default applies when omitted."},
-                    "need_content": {"type": "boolean", "description": "Optional flag to include page content; defaults to false when omitted."}
+                    "localization": {"type": "string", "description": "Optional localization setting for search; the backend default applies when omitted."}
                 },
                 "required": ["query"]
             }),

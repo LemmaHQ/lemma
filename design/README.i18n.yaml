@@ -6,14 +6,11 @@
   en: bcdc20a24db54d92
   zh: 84648d1e25cb3b0c
 /design-tokens/summary:
-  en: b38e26a02f5fae16
-  zh: cfaaa5818b936989
-/design-tokens/token-file:
-  en: b13129d6a7969b16
-  zh: 301bcb2f2a0a2a4f
-/design-tokens/output:
-  en: 269c899c032949bb
-  zh: cbbf5dfdc0b744cb
-/design-tokens/checks:
-  en: bcad6c2a205bb043
-  zh: 1a182bc82a9edc7f
+  en: 06c6b2cedae89011
+  zh: 6d342b9bb4b98e51
+/design-tokens/format-and-color-roles:
+  en: bf47d4aa84e2e781
+  zh: 48bd785f5ffaabde
+/design-tokens/outputs:
+  en: 587ad06fc562f24b
+  zh: efad393aa779273c

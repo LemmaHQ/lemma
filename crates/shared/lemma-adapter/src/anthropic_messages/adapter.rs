@@ -6,11 +6,8 @@ use crate::{connection, request, sse};
 
 use super::parser::{Block, Parser};
 
-/// Required by the API; acts as a fixed response-length ceiling.
 const MAX_TOKENS: u32 = 8192;
 
-/// Streams via `POST <base_url>/v1/messages`, or the endpoint's `api_path`
-/// in place of the path, with an `x-api-key` header.
 #[derive(Debug)]
 pub(crate) struct AnthropicMessages<T> {
     transport: T,

@@ -1,5 +1,3 @@
-//! Serves the web build embedded at compile time.
-
 use axum::{
     body::Body,
     http::{Response, StatusCode, Uri, header},
@@ -8,7 +6,7 @@ use axum::{
 
 use crate::web_dist::WebDist;
 
-pub async fn handler(uri: Uri) -> Response<Body> {
+pub(crate) async fn handler(uri: Uri) -> Response<Body> {
     let path = uri.path().trim_start_matches('/');
     serve(if path.is_empty() { "index.html" } else { path })
 }

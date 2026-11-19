@@ -4,9 +4,21 @@
 //! translating [`ModelRequest`](lemma_model::ModelRequest) values into
 //! vendor payloads and vendor streams back into `StreamEvent`s.
 //! [`HttpConnector`] implements `lemma_model::Connector`, binding endpoints
-//! to adapters and listing their models. HTTP goes through the injectable
-//! [`HttpTransport`] so hosts (server, desktop engine, mobile) can supply
-//! their own networking stack.
+//! to adapters and listing their models over an injectable [`HttpTransport`].
+//!
+//! # Adapter invariants
+//!
+//! - **Base URLs and paths:** the API version segment belongs to `base_url`
+//!   for OpenAI-compatible endpoints (default `/v1`) and to the default path
+//!   for Anthropic (`/v1/messages`) and Gemini (`/v1beta/models/...`). A
+//!   Gemini path override may include `{model}`, which is substituted with the
+//!   model id; Gemini model list ids strip the `models/` prefix.
+//! - **SSE stream order:** only `data:` lines are parsed. An open text block
+//!   always closes with `TextEnd` before a thinking block, a tool call, or
+//!   `Done`. If the upstream body closes without a terminal chunk, the shared
+//!   SSE layer emits a final `Done` from what was observed.
+//! - **No retries:** adapters never retry failed requests; every transport,
+//!   non-2xx upstream, or parse failure surfaces as `ModelError`.
 
 mod anthropic_messages;
 mod connection;
