@@ -7,7 +7,6 @@ import { checkSourceFile, matches } from "./source-file-rules.ts";
 const SOURCE = /\.(?:rs|py|proto|kt|kts|[cm]?[jt]s|[jt]sx)$/u;
 const UNCHECKED = [
     /^\.agents\//u,
-    /^packages\/ui\/src\/components\/(?:primitives|icons)\//u,
     /^packages\/ui\/src\/hooks\//u,
 ];
 const TEST = [

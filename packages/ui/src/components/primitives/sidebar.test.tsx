@@ -10,18 +10,20 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarHeader,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "./sidebar";
+import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
     SidebarMenu,
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-} from "./sidebar";
+} from "./sidebar-menu";
 
 const setViewportWidth = (width: number) => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- vitest's happy-dom environment adds the happyDOM API to window without typing it

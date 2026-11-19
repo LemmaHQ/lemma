@@ -26,7 +26,7 @@ A higher source wins every conflict. Known conflicts:
 
 ## Source files
 
-These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf file. Files under `.agents/` and the CLI-generated directories of `@lemma/ui` (`packages/ui/src/components/primitives/`, `packages/ui/src/components/icons/`, `packages/ui/src/hooks/`) keep their upstream layout. `just source-check` (`scripts/repo-check/verify-source-files.ts`) enforces the length limit, file names, the re-export ban, TypeScript test placement, and the Rust test module position.
+These rules cover every tracked Rust, TypeScript, JavaScript, Kotlin, Python, and Protobuf file, including `@lemma/ui`'s `packages/ui/src/components/primitives/` and `packages/ui/src/components/icons/`, whose component files keep kebab-case names. Files under `.agents/` and the hooks the shadcn CLI writes into `packages/ui/src/hooks/` keep their upstream layout. `just source-check` (`scripts/repo-check/verify-source-files.ts`) enforces the length limit, file names, the re-export ban, TypeScript test placement, and the Rust test module position.
 
 ### Length
 

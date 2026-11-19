@@ -6,7 +6,7 @@
 
 `@lemma/ui` 以 TypeScript 源码导出 Lemma 的共享 shadcn/ui 控件，以及 Lemma 用它们组合出的组件。包有两个入口：`@lemma/ui` 导出全部在用的组件、图标、hook 与辅助函数，包自己的 `cn`，以及底层库的 `AnimateIcon` 与 `toast`；`@lemma/ui/styles.css` 加载主题与全部组件样式。功能代码不从包里导入其他路径，也不直接导入这些底层库。该包拥有语义主题以及 Streamdown 样式与插件；它不含界面文字，组件显示或播报的每段文字都由使用方应用翻译后通过属性传入。
 
-`src/components/` 下有三个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者保留上游布局与 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，`PascalCase.tsx` 文件以其导出的主组件命名，由 `just source-check` 按仓库的源文件规则检查。`src/hooks/` 存放 shadcn CLI 生成的 hook。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
+`src/components/` 下有三个目录。`primitives/` 存放 shadcn CLI 生成的控件与布局部件，`icons/` 存放 Animate UI 的 Lucide 图标集，两者使用 kebab-case 文件名。`composites/` 存放 Lemma 用它们组合出的组件，`PascalCase.tsx` 文件以其导出的主组件命名。`just source-check` 按仓库的源文件规则检查这三个目录，因此超过 300 行的生成文件要拆分，例如 `sidebar.tsx` 与 `sidebar-menu.tsx`。`src/hooks/` 存放 shadcn CLI 生成的 hook，保留上游文件名。哪些组件应放进本包由 [packages/AGENTS.md](../AGENTS.zh.md#包) 决定。
 
 <a id="component-catalog"></a>
 

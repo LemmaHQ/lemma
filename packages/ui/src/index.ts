@@ -93,18 +93,20 @@ export {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarHeader,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "./components/primitives/sidebar";
+export {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
     SidebarMenu,
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-} from "./components/primitives/sidebar";
+} from "./components/primitives/sidebar-menu";
 export { Skeleton } from "./components/primitives/skeleton";
 export { Toaster } from "./components/primitives/sonner";
 export { Switch } from "./components/primitives/switch";
