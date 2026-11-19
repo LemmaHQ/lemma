@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import type { SessionTreeRow } from "../session-tree";
 import type { TurnStep } from "../step-details";
@@ -19,6 +19,10 @@ const makeStep = (patch: Partial<TurnStep>): TurnStep => ({
     state: "done",
     detail: { kind: "output", text: "ok" },
     ...patch,
+});
+
+afterEach(() => {
+    vi.restoreAllMocks();
 });
 
 it("renders SessionRightPane localized verbs, code/web/output bodies, and ComposerDock fallbacks", async () => {
@@ -101,11 +105,6 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
                                 url: "https://h.test",
                                 snippet: "",
                             },
-                            {
-                                title: "Hit 2",
-                                url: "https://h.test",
-                                snippet: "Second excerpt",
-                            },
                         ],
                     },
                 }),
@@ -117,7 +116,6 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
     );
     expect(screen.getByText("ddg")).toBeDefined();
     expect(screen.getByText("Search summary")).toBeDefined();
-    expect(screen.getByText("Second excerpt")).toBeDefined();
 
     rerender(
         <SessionRightPane
@@ -220,4 +218,40 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
         />,
     );
     expect(screen.getByText("The model request failed")).toBeDefined();
+});
+
+it("renders web hits that share a URL without a duplicate key warning", () => {
+    const consoleError = vi.spyOn(console, "error");
+
+    render(
+        <SessionRightPane
+            pane={{
+                mode: "step",
+                step: makeStep({
+                    detail: {
+                        kind: "web",
+                        hits: [
+                            {
+                                title: "First excerpt",
+                                url: "https://h.test",
+                                snippet: "",
+                            },
+                            {
+                                title: "Second excerpt",
+                                url: "https://h.test",
+                                snippet: "",
+                            },
+                        ],
+                    },
+                }),
+            }}
+            onSelectTreeRow={vi.fn<(id: string) => void>()}
+            onSaveLabel={vi.fn<(id: string, label: string) => void>()}
+            onClose={vi.fn<() => void>()}
+        />,
+    );
+
+    expect(screen.getByText("First excerpt")).toBeDefined();
+    expect(screen.getByText("Second excerpt")).toBeDefined();
+    expect(consoleError).not.toHaveBeenCalled();
 });
