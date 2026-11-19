@@ -42,7 +42,11 @@ function DetailBody({
                     }
                 />
             );
-        case "web":
+        case "web": {
+            const hits = detail.hits.map((hit, index) => ({
+                key: `${index}:${hit.url}`,
+                hit,
+            }));
             return (
                 <div className="flex flex-col gap-2">
                     {detail.note !== undefined && (
@@ -50,9 +54,9 @@ function DetailBody({
                             {detail.note}
                         </p>
                     )}
-                    {detail.hits.map((hit) => (
+                    {hits.map(({ key, hit }) => (
                         <a
-                            key={hit.url}
+                            key={key}
                             href={hit.url}
                             target="_blank"
                             rel="noreferrer"
@@ -73,6 +77,7 @@ function DetailBody({
                     ))}
                 </div>
             );
+        }
         case "output":
             return (
                 <pre

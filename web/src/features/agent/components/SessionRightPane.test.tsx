@@ -101,6 +101,11 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
                                 url: "https://h.test",
                                 snippet: "",
                             },
+                            {
+                                title: "Hit 2",
+                                url: "https://h.test",
+                                snippet: "Second excerpt",
+                            },
                         ],
                     },
                 }),
@@ -112,6 +117,7 @@ it("renders SessionRightPane localized verbs, code/web/output bodies, and Compos
     );
     expect(screen.getByText("ddg")).toBeDefined();
     expect(screen.getByText("Search summary")).toBeDefined();
+    expect(screen.getByText("Second excerpt")).toBeDefined();
 
     rerender(
         <SessionRightPane
