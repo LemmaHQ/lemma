@@ -1,7 +1,5 @@
 # AGENTS.md — Rust workspace
 
-English | [中文](AGENTS.zh.md)
-
 These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and follow the Google Rust Style Guide in [lemma-code-style](../.agents/skills/lemma-code-style/SKILL.md), which treats all Rust code as library code.
 
 ## Code

@@ -41,10 +41,11 @@ The check compares hashes and heading structure only. A recorded pair can still 
 
 ## Scope and exclusions
 
-**Scope**: every maintained Markdown document, including `README.md` and `AGENTS.md` files.
+**Scope**: human-facing Markdown documentation — `README.md` files (outside `.agents/skills/`) and `docs/`.
 
 **Excluded** (never paired; the check rejects a `.zh.md` or `.i18n.yaml` for them):
 
-- `SKILL.md` files and the references under each skill, which are English only because tools consume them verbatim.
+- All `AGENTS.md` files (root and subtree), which are English-only agent instructions.
+- Everything under `.agents/skills/` (`README.md`, `SKILL.md`, and `references/`), which tools and agents consume verbatim in English.
 - Generated files.
 - [terminology.md](terminology.md), which is bilingual by construction.

@@ -47,4 +47,4 @@ just rust-dev
 - [术语表](docs/glossary.zh.md)：代码与文档共用的术语。
 - [开发指南](docs/development.zh.md)：环境搭建与各客户端的运行。
 - [测试](docs/testing.zh.md)：测试分层与覆盖率。
-- [AGENTS.md](AGENTS.zh.md)：在本仓库中工作的约定。
+- [AGENTS.md](AGENTS.md)：在本仓库中工作的约定。

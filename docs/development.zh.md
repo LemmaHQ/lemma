@@ -2,7 +2,7 @@
 
 [English](development.md) | 中文
 
-如何为 Lemma 配置开发环境，以及如何运行各个客户端。[根目录 AGENTS.zh.md](../AGENTS.zh.md#命令) 列出日常命令；[justfile](../justfile) 是完整的 recipe 列表。
+如何为 Lemma 配置开发环境，以及如何运行各个客户端。[根目录 AGENTS.md](../AGENTS.md#commands) 列出日常命令；[justfile](../justfile) 是完整的 recipe 列表。
 
 ## 环境搭建教程
 
@@ -28,7 +28,7 @@ rustup toolchain install
 npm ci
 ```
 
-`rustup toolchain install` 安装 rust-toolchain.toml 固定的 Rust 版本及其组件与 target。`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.zh.md](../proto/AGENTS.zh.md)）。
+`rustup toolchain install` 安装 rust-toolchain.toml 固定的 Rust 版本及其组件与 target。`npm ci` 安装 `web`、`desktop` 与 `packages/*` 这些 workspace。生成的契约代码不提交；Web 的 npm 脚本在 `dev`、`build`、`lint` 与 `test` 之前重新生成它，Gradle 在编译 Kotlin 之前重新生成它（[proto/AGENTS.md](../proto/AGENTS.md)）。
 
 ### 运行守护进程与 Web 客户端
 
@@ -43,13 +43,13 @@ just rust-dev
 
 ### 运行桌面应用
 
-`just desktop-dev` 以 debug 模式构建 `lemma-napi` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.zh.md](../desktop/AGENTS.zh.md)。
+`just desktop-dev` 以 debug 模式构建 `lemma-napi` addon，把 Web 客户端构建到 `desktop/web-dist/`，再启动 Electron；Electron 在 utility process 中用这个 addon 运行引擎。引擎把数据库、密钥与工作区保存在 Electron 的 `userData` 目录中。引擎进程及其端口见 [desktop/AGENTS.md](../desktop/AGENTS.md)。
 
 ### 运行 Android 应用
 
 Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已经列出 Rust 的 Android target。
 
-`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内引擎（[mobile/AGENTS.zh.md](../mobile/AGENTS.zh.md#模块与生成代码)）。
+`just mobile-android-build` 构建 debug APK。编译 Kotlin 之前，Gradle 为宿主机构建 `lemma-uniffi` 以生成 UniFFI Kotlin 绑定；打包之前，再用 `cargo-ndk` 为四种 ABI 交叉编译这个库。`-Plemma.rust.profile=release` 以 release 模式构建这些库。应用直接在 `filesDir` 上运行进程内引擎（[mobile/AGENTS.md](../mobile/AGENTS.md#modules-and-generated-code)）。
 
 ## 参考
 
@@ -67,7 +67,7 @@ Android 构建还需要由 mise 安装的 `cargo-ndk`；rust-toolchain.toml 已�
 
 ### Worktree
 
-Worktree 是同一仓库的另一个工作目录，有自己的分支；何时使用见[根目录 AGENTS.md](../AGENTS.zh.md#git)。在主 worktree 旁创建它，并安装其中的 npm workspace：
+Worktree 是同一仓库的另一个工作目录，有自己的分支；何时使用见[根目录 AGENTS.md](../AGENTS.md#git)。在主 worktree 旁创建它，并安装其中的 npm workspace：
 
 ```sh
 git worktree add ../lemma-<topic> -b <type>/<topic>
@@ -102,4 +102,4 @@ Dependabot 每天检查 Cargo、npm、Gradle 与 GitHub Actions 依赖，以及 
 
 ### 日常命令
 
-根目录的[命令](../AGENTS.zh.md#命令)一节列出 workspace 级 recipe 及其命名方式，各子目录的 `AGENTS.zh.md` 列出各自的 recipe；`just --list` 打印每个 recipe 及其说明。测试分层见 [testing.zh.md](testing.zh.md)。
+根目录的[命令](../AGENTS.md#commands)一节列出 workspace 级 recipe 及其命名方式，各子目录的 `AGENTS.md` 列出各自的 recipe；`just --list` 打印每个 recipe 及其说明。测试分层见 [testing.zh.md](testing.zh.md)。

@@ -1,7 +1,5 @@
 # AGENTS.md — Android client
 
-English | [中文](AGENTS.zh.md)
-
 These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 
 ## Kotlin

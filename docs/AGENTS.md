@@ -1,7 +1,5 @@
 # AGENTS.md — The documentation standard
 
-English | [中文](AGENTS.zh.md)
-
 This file defines document structure, Markdown tiers, writing rules, and word budgets for Lemma. Use [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) for placement, coverage, editorial judgment, and validation. The [bilingual contract](i18n/README.md) defines how English and Chinese pairs are maintained.
 
 ## Document structure

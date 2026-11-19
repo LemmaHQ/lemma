@@ -4,7 +4,7 @@
 #   just docs-pairing docs/development.md
 /development:
   en: 7cc1820db7ceecdd
-  zh: 93d7f6dc107d3f45
+  zh: 68cf0392afbb5158
 /development/setup-tutorial:
   en: 5207d17725c07a27
   zh: bbb030802b1260c5
@@ -16,16 +16,16 @@
   zh: 740f8c0cbae15063
 /development/setup-tutorial/first-time-setup:
   en: 5cf257d6c89a50c3
-  zh: 0cea3f0b08ee5a19
+  zh: bd9f386710bcd6fe
 /development/setup-tutorial/run-the-daemon-and-the-web-client:
   en: a8aa7b183330b86c
   zh: 043e08a663d4cae8
 /development/setup-tutorial/run-the-desktop-app:
   en: a23196dbfddafbec
-  zh: c20b4b8c544a7ea1
+  zh: 558e696827ac510a
 /development/setup-tutorial/run-the-android-app:
   en: 7800e97312f547dc
-  zh: 4584b3f058890b19
+  zh: 13890d2569730a03
 /development/reference:
   en: e8d198429c35fa10
   zh: fa9493dbf6a94867
@@ -34,7 +34,7 @@
   zh: 0c7d0e1ba750f40c
 /development/reference/worktrees:
   en: 669748b8181ceb49
-  zh: 9ceb12cec81080a0
+  zh: c1bb6e866625da6f
 /development/reference/build-cache:
   en: 6ad69a6e54275ba3
   zh: 46f5e4310bcf5749
@@ -43,4 +43,4 @@
   zh: 43d6aa2768cf6e06
 /development/reference/daily-commands:
   en: beaf5dfb8765b16c
-  zh: 7ae2b8e60e080694
+  zh: 86770652e360d55e

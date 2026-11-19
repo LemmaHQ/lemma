@@ -1,7 +1,5 @@
 # AGENTS.md
 
-English | [中文](AGENTS.zh.md)
-
 Lemma runs LLM agents for web, desktop, and Android clients from one Rust core. Read [docs/architecture.md](docs/architecture.md) before changing `crates/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
 ## Repository layout
@@ -90,4 +88,4 @@ Docs accompany every code change: update the affected README and doc comments to
 
 ## Editing these instructions
 
-`AGENTS.md` and `AGENTS.zh.md` are one English–Chinese pair; update both in the same change. Keep each rule self-contained and link its home.
+Keep each rule self-contained and link its home.

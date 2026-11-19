@@ -9,4 +9,4 @@ Lemma 的每个子系统一页：它是什么、它传递的数据结构，以�
 | [agent.zh.md](agent.zh.md) | `lemma-agent` 中的 agent 与 `lemma-agent-loop` 中的 turn 循环，及其 `AgentService` 暴露：turn 组装、有序流事件、中止与恢复 |
 | [adapter.zh.md](adapter.zh.md) | `lemma-model` 中的模型接口与 `lemma-adapter` 中的适配器：请求组装、connector、传输、模型列表，以及 OpenAI、Anthropic、Gemini 的 SSE 解析 |
 
-这些页面上的类型声明与源码中的声明一致。改动调整了已文档化的类型时，所属页面在同一次改动中更新（[写作规则](../AGENTS.zh.md#写作规则)）。
+这些页面上的类型声明与源码中的声明一致。改动调整了已文档化的类型时，所属页面在同一次改动中更新（[写作规则](../AGENTS.md#writing-rules)）。

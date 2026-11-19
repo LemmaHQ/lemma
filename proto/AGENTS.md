@@ -1,7 +1,5 @@
 # AGENTS.md — Protobuf contracts
 
-English | [中文](AGENTS.zh.md)
-
 These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 
 - **Contracts live in `lemma/v1/`** under package `lemma.v1`. Spec CI runs `buf lint`, `buf format`, and `buf build` on them.

@@ -1,7 +1,5 @@
 # AGENTS.md — Web client
 
-English | [中文](AGENTS.zh.md)
-
 These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). The TypeScript rules also govern [desktop/](../desktop/AGENTS.md) and [packages/](../packages/AGENTS.md).
 
 ## TypeScript

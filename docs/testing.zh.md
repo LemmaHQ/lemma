@@ -2,7 +2,7 @@
 
 [English](testing.md) | 中文
 
-Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何运行，以及覆盖率如何度量。命令见根目录 [AGENTS.zh.md](../AGENTS.zh.md#命令) 与各子目录的 `AGENTS.zh.md`；CI 概要见 [development.zh.md](development.zh.md#ci-工作流)。
+Lemma 如何测试仓库的各个部分、测试套件在本地与 CI 中如何运行，以及覆盖率如何度量。命令见根目录 [AGENTS.md](../AGENTS.md#commands) 与各子目录的 `AGENTS.md`；CI 概要见 [development.zh.md](development.zh.md#ci-工作流)。
 
 ## 分层
 

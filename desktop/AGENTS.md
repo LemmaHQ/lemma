@@ -1,7 +1,5 @@
 # AGENTS.md — Desktop shell
 
-English | [中文](AGENTS.zh.md)
-
 These rules supplement the repo-wide [conventions](../AGENTS.md#conventions); the [TypeScript rules](../web/AGENTS.md#typescript) apply here.
 
 ## Engine and renderer
