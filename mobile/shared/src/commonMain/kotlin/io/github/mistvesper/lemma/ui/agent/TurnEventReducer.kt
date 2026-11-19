@@ -69,10 +69,6 @@ internal class TurnEventReducer(
         it.copy(status = MessageStatus.Error, error = error)
     }
 
-    /**
-     * Moves the reply to the step [messageId]: the empty placeholder takes its id, while a reply
-     * that already shows content is settled, since the service settles a step before the next.
-     */
     private fun startStep(messages: List<UiMessage>, messageId: String): List<UiMessage> {
         val empty = messages.any {
             it.id == replyId &&
@@ -117,7 +113,6 @@ internal class TurnEventReducer(
     ): List<UiMessage> = map { if (it.id == replyId) update(it) else it }
 }
 
-/** When the reply's thinking ended: kept once set, [at] for thinking that is still open. */
 private fun UiMessage.thinkingEnd(at: Long?): Long? =
     if (thinkingStartedAt == null) null else thinkingFinishedAt ?: at
 

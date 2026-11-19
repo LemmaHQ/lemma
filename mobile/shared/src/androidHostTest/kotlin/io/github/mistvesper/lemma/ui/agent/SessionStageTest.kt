@@ -122,7 +122,6 @@ class SessionStageTest {
         }
     }
 
-    /** Answers the reload after a turn with [messages], the last one as the leaf. */
     private fun store(vararg messages: ClientMessage) {
         val tree = ClientMessageTree(messages.toList(), leafId = messages.last().id)
         client.onListMessages = { tree }

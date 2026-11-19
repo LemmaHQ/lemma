@@ -35,7 +35,6 @@ const EXT_LANGUAGE: Readonly<Record<string, string>> = {
     sql: "sql",
 };
 
-/** Parses a JSON string into an unknown value, returning undefined on invalid JSON. */
 function parseJsonValue(raw: string): unknown {
     try {
         return JSON.parse(raw);
@@ -57,7 +56,6 @@ export function parseJsonObject(raw: string): Record<string, unknown> | null {
     return Object.fromEntries(Object.entries(parsed));
 }
 
-/** Returns the value when it is a non-empty string. */
 export function nonEmptyString(value: unknown): string | undefined {
     return typeof value === "string" && value !== "" ? value : undefined;
 }

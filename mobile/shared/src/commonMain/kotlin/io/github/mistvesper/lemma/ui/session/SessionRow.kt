@@ -111,7 +111,6 @@ internal fun SessionRow(
     }
 }
 
-/** The 6 dp [marker] with its description for screen readers. */
 @Composable
 private fun SessionMarkerIcon(marker: SessionMarker, modifier: Modifier = Modifier) {
     val description = stringResource(marker.description)
