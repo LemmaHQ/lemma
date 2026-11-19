@@ -3,14 +3,14 @@ import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type AgentEvent, AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
+import { AgentEventSchema, type AgentEvent } from "@/gen/lemma/v1/agent_pb";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import {
-    type ListMessagesResponse,
     ListMessagesResponseSchema,
     MessageSchema,
     MessageStatus,
     SetMessageLabelResponseSchema,
+    type ListMessagesResponse,
 } from "@/gen/lemma/v1/session_pb";
 
 import {

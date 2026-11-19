@@ -1,10 +1,10 @@
 import { AnimateIcon } from "@animate-ui/react/icons";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { cn } from "#lib/cn";
 import * as React from "react";
 
-import { Button } from "#primitives/button";
 import { XIcon } from "#icons/x";
+import { cn } from "#lib/cn";
+import { Button } from "#primitives/button";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
     return <DialogPrimitive.Root data-slot="dialog" {...props} />;

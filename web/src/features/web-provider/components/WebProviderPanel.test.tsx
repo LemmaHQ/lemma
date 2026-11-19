@@ -8,8 +8,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 import {
     SetWebProviderOrderRequest_Function as WebFunction,
     WebProvider_Kind,
-    type WebProvider,
     WebProviderSchema,
+    type WebProvider,
 } from "@/gen/lemma/v1/provider_pb";
 
 import { useWebProviderStore } from "../store";

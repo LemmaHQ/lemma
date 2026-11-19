@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 
-import { type ActiveSessionState, useActiveSessionStore } from "./store";
+import { useActiveSessionStore, type ActiveSessionState } from "./store";
 
 const selectActiveSession = (s: ActiveSessionState) => ({
     treeMessages: s.treeMessages,

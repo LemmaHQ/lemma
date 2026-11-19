@@ -1,7 +1,7 @@
 import {
+    isEngineRequest,
     type EngineRequest,
     type EngineResponse,
-    isEngineRequest,
 } from "./desktop-bridge";
 
 /** The addon's engine, as far as a port needs it. */

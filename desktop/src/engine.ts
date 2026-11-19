@@ -1,15 +1,15 @@
+import path from "node:path";
 import {
     app,
     MessageChannelMain,
-    type MessagePortMain,
     utilityProcess,
+    type MessagePortMain,
     type UtilityProcess,
     type WebContents,
 } from "electron";
-import path from "node:path";
 
 import { addonFile } from "./engine-addon";
-import { type HostCommand, isHostEvent } from "./engine-host-protocol";
+import { isHostEvent, type HostCommand } from "./engine-host-protocol";
 
 const READY_TIMEOUT_MS = 10_000;
 const STOP_GRACE_MS = 3_000;

@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type AgentEvent, AgentEventSchema } from "@/gen/lemma/v1/agent_pb";
+import { AgentEventSchema, type AgentEvent } from "@/gen/lemma/v1/agent_pb";
 import { ErrorInfoSchema, ErrorReason } from "@/gen/lemma/v1/errors_pb";
 
 import { EMPTY_SESSION_SLICE, type TurnStoreSlice } from "./active-path";

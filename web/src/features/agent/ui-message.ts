@@ -1,6 +1,6 @@
-import { type Timestamp, timestampDate } from "@bufbuild/protobuf/wkt";
+import { timestampDate, type Timestamp } from "@bufbuild/protobuf/wkt";
 
-import { type Message, MessageStatus } from "@/gen/lemma/v1/session_pb";
+import { MessageStatus, type Message } from "@/gen/lemma/v1/session_pb";
 
 export interface UiToolCall {
     id: string;

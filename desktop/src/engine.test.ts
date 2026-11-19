@@ -1,10 +1,10 @@
-import type { WebContents } from "electron";
 import { EventEmitter } from "node:events";
 import path from "node:path";
+import type { WebContents } from "electron";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { addonFile } from "./engine-addon";
 import { createEngineProcess, type EngineProcess } from "./engine";
+import { addonFile } from "./engine-addon";
 
 type FakeUtility = EventEmitter & {
     postMessage: ReturnType<

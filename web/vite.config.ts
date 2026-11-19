@@ -1,7 +1,7 @@
+import { fileURLToPath } from "node:url";
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 

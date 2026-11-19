@@ -2,9 +2,9 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import {
+    useProviderStore,
     type CustomProvider,
     type PredefinedProvider,
-    useProviderStore,
 } from "./store";
 import { useModelOptions } from "./useModelOptions";
 

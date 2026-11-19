@@ -1,5 +1,6 @@
-import type { DesktopBridge } from "../../../desktop/src/desktop-bridge";
 import { afterEach, expect, it, vi } from "vitest";
+
+import type { DesktopBridge } from "../../../desktop/src/desktop-bridge";
 
 const loadPlatform = () => {
     vi.resetModules();

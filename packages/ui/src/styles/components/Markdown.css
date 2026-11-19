@@ -1,0 +1,90 @@
+.markdown {
+    font-size: var(--text-reading);
+    line-height: var(--text-reading--line-height);
+
+    & p {
+        max-width: 72ch;
+    }
+
+    & [data-streamdown="blockquote"] {
+        border-left: 2px solid var(--input);
+        padding: 2px 0 2px 14px;
+        color: var(--muted-foreground);
+        font-style: normal;
+    }
+
+    & [data-streamdown="heading-1"] {
+        font-size: var(--text-display);
+        font-weight: 600;
+        line-height: var(--text-display--line-height);
+    }
+
+    & [data-streamdown="heading-2"] {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.75rem;
+    }
+
+    & [data-streamdown="heading-3"] {
+        font-size: var(--text-title);
+        font-weight: 600;
+        line-height: var(--text-title--line-height);
+    }
+
+    & [data-streamdown="inline-code"] {
+        border-radius: var(--radius-sm);
+        background: var(--muted);
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+    }
+
+    & [data-streamdown="table-wrapper"] {
+        border: 0;
+        background: transparent;
+        padding: 0;
+    }
+
+    & [data-streamdown="table-wrapper"] > div:has(> table) {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+    }
+
+    & [data-streamdown="table"] {
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+        font-variant-numeric: tabular-nums;
+    }
+
+    & [data-streamdown="table-header"],
+    & [data-streamdown="table-header-cell"] {
+        background: var(--selected);
+        color: var(--muted-foreground);
+        font-weight: 600;
+    }
+
+    & [data-streamdown="link"] {
+        color: var(--brand);
+    }
+}
+
+.markdown[style*="--streamdown-caret"]
+    > *:last-child:not([data-sd-caret-hidden])::after {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--foreground);
+    vertical-align: 0.05em;
+    content: "";
+    animation: ui-pulse 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .markdown[style*="--streamdown-caret"]
+        > *:last-child:not([data-sd-caret-hidden])::after,
+    .markdown [data-sd-animate],
+    .markdown [data-sd-animate-marker]::marker {
+        animation: none !important;
+    }
+}

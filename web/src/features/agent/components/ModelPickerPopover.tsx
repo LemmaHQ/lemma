@@ -1,7 +1,7 @@
 import {
     AnchoredPicker,
-    type AnchoredPickerGroup,
     ChevronDownIcon,
+    type AnchoredPickerGroup,
 } from "@lemma/ui";
 import { useTranslation } from "react-i18next";
 

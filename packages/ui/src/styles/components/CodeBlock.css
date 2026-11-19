@@ -1,0 +1,43 @@
+:is(.markdown, [data-slot="code-block"]) {
+    & [data-streamdown="code-block"] {
+        gap: 0;
+        border-color: var(--border);
+        border-radius: var(--radius-md);
+        background: var(--muted);
+        padding: 0;
+    }
+
+    & [data-streamdown="code-block-header"] {
+        height: 2rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--sidebar);
+        padding-inline: 0.75rem;
+        color: var(--subtle-foreground);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption--line-height);
+    }
+
+    & [data-streamdown="code-block-body"] {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        padding: 0.75rem;
+        font-size: var(--text-small);
+        line-height: var(--text-small--line-height);
+    }
+
+    &
+        [data-streamdown="code-block"]
+        > div:has(> [data-streamdown="code-block-actions"]) {
+        top: 0;
+        right: 0.25rem;
+        height: 2rem;
+    }
+
+    & [data-streamdown="code-block-actions"] {
+        border-color: transparent;
+        background: transparent;
+        padding-block: 0;
+        backdrop-filter: none;
+    }
+}

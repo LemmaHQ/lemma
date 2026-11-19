@@ -24,7 +24,7 @@
 - `src/features/<domain>/` 采用同一布局：`index.ts` 导出该功能公开的组件与 hook，`store.ts` 是唯一调用 RPC 并把 proto 消息转换成视图类型的模块，逻辑模块及其测试与它并列，所有组件放在 `components/` 中。功能之外的代码通过 `@/features/<domain>` 导入它。
 - `src/app/` 在 `router.tsx` 中存放路由表，在 `route-paths.ts` 中存放路径，并为每个布局路由设一个目录：`session/` 与 `settings/`，各自包含只负责编排功能组件的页面。`shell/` 存放 `AppLayout`、`ShellFrame` 与应用级外框组件：`AppLayout` 持有侧边栏状态，`ShellFrame` 由两个布局填入各自的侧边栏，外框组件为 `TitleBar`、`SplashScreen`、`AppBrand`、`AppToaster` 与 `AppTooltipProvider`。功能组件以属性接收路径，不直接引用路由。
 - oxlint 负责守住边界：在 `src/app/` 与 `src/features/` 中，越过功能 `index.ts` 的导入、在 `store.ts` 之外导入 `src/rpc/` 中 `errors.ts` 以外的模块、导入 `@lemma/ui` 底层的库，都会让 `just web-lint-check` 失败。
-- 共享 shadcn 控件与 AI Elements 聊天组件位于 `@lemma/ui`；功能代码只从 `@lemma/ui` 导入它们、图标以及 `AnimateIcon`、`cn` 与 `toast`（[组件 README](../packages/ui/README.zh.md)）。
+- 共享 shadcn 控件与 Lemma 用它们组合出的组件位于 `@lemma/ui`；功能代码只从 `@lemma/ui` 导入它们、图标以及 `AnimateIcon`、`cn` 与 `toast`（[组件 README](../packages/ui/README.zh.md)）。
 - 面向用户的文本经由 i18next，包括 `@lemma/ui` 组件以属性接收的文字；[i18n/README.md](../i18n/README.zh.md) 定义源条目，其生成器要求每个条目都有两种语言，因此生成的 `src/i18n/locales/en.json` 与 `zh.json` 拥有相同的键。
 
 ## 样式

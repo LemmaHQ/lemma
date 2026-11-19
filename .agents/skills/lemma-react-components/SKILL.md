@@ -11,7 +11,7 @@ A component is an encapsulated unit, and its props are its whole interface: it e
 
 - The rules govern the components in `web/src/features/` and `web/src/app/`, on top of the layout and styling rules in [web/AGENTS.md](../../../web/AGENTS.md).
 - `packages/ui/src/components/` holds two kinds of code. The upstream shadcn ports in `primitives/` keep their upstream interfaces: they take `className`, compose through Base UI's `render` prop, and export their parts, and a visual difference several features need becomes a variant there, per the [styling rules](../../../web/AGENTS.md#styling).
-- The Lemma-authored presentation components in `ai/`, `lemma/`, and `primitives/` are shared package primitives: they take `className` and pre-translated label props, because the package calls no translation hook, and they otherwise follow Minimal interface, Composition, and Explicit states.
+- The Lemma-authored components in `composites/` take pre-translated label props, because the package calls no translation hook, and slots for domain content; they otherwise follow Minimal interface, Composition, and Explicit states.
 
 ## Minimal interface
 

@@ -3,9 +3,9 @@ import { ErrorReason } from "@/gen/lemma/v1/errors_pb";
 import { errorReason } from "@/rpc/errors";
 
 import {
-    type PreparedTurn,
     prepareNewTurn,
     prepareResumedTurn,
+    type PreparedTurn,
     type TurnStoreSlice,
 } from "./active-path";
 import { createTurnEventReducer } from "./turn-event-reducer";
