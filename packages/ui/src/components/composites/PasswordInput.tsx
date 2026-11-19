@@ -11,14 +11,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "#primitives/tooltip";
 import { EyeIcon } from "#icons/eye";
 import { EyeOffIcon } from "#icons/eye-off";
 
+type PasswordInputFieldProps = Pick<
+    ComponentProps<typeof InputGroupInput>,
+    | "id"
+    | "value"
+    | "onChange"
+    | "placeholder"
+    | "autoComplete"
+    | "disabled"
+    | "aria-label"
+    | "aria-invalid"
+>;
+
 /** Password field with a show/hide toggle named by `showLabel` and `hideLabel`; `children` adds leading addons. */
-function PasswordInput({
-    className,
+export function PasswordInput({
     children,
     showLabel,
     hideLabel,
     ...props
-}: Omit<ComponentProps<typeof InputGroupInput>, "type" | "children"> & {
+}: PasswordInputFieldProps & {
     children?: ReactNode;
     showLabel: string;
     hideLabel: string;
@@ -27,7 +38,7 @@ function PasswordInput({
     const label = visible ? hideLabel : showLabel;
 
     return (
-        <InputGroup className={className}>
+        <InputGroup>
             {children}
             <InputGroupInput type={visible ? "text" : "password"} {...props} />
             <InputGroupAddon align="inline-end">
@@ -51,5 +62,3 @@ function PasswordInput({
         </InputGroup>
     );
 }
-
-export { PasswordInput };

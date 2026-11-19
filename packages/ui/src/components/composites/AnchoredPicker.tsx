@@ -1,6 +1,5 @@
 import { Popover } from "@base-ui/react/popover";
 import { SearchIcon } from "#icons/search";
-import { cn } from "#lib/cn";
 import {
     type AnchoredPickerGroup,
     AnchoredPickerGroupView,
@@ -35,7 +34,6 @@ type AnchoredPickerProps = {
     groups: AnchoredPickerGroup[];
     footerAction?: AnchoredPickerFooterAction | undefined;
     side?: "top" | "bottom" | undefined;
-    className?: string | undefined;
 };
 
 /** 340px anchored searchable picker popover with grouped options and keyboard navigation. */
@@ -48,7 +46,6 @@ export function AnchoredPicker({
     groups,
     footerAction,
     side = "bottom",
-    className,
 }: AnchoredPickerProps) {
     const baseId = useId();
     const [query, setQuery] = useState("");
@@ -146,10 +143,7 @@ export function AnchoredPicker({
                     <Popover.Popup
                         initialFocus={searchInputRef}
                         onKeyDown={handleKeyDown}
-                        className={cn(
-                            "w-85 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-overlay outline-none",
-                            className,
-                        )}
+                        className="w-85 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-overlay outline-none"
                     >
                         <div className="flex items-center gap-2 border-b border-border px-3 py-2">
                             <SearchIcon

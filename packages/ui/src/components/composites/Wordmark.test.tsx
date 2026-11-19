@@ -4,14 +4,11 @@ import { expect, it } from "vitest";
 import { Wordmark } from "./Wordmark";
 
 it("renders default and splash wordmark scales with trailing brand dot", () => {
-    const { rerender } = render(
-        <Wordmark label="Lemma" className="tracking-tight" />,
-    );
+    const { rerender } = render(<Wordmark label="Lemma" />);
 
     const wordmark = screen.getByText("Lemma");
     expect(wordmark.dataset.slot).toBe("wordmark");
     expect(wordmark.className).toContain("text-wordmark");
-    expect(wordmark.className).toContain("tracking-tight");
     const dot = wordmark.querySelector('[aria-hidden="true"]');
     expect(dot?.className).toContain("bg-brand");
 

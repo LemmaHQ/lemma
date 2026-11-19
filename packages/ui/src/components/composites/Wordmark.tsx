@@ -3,22 +3,16 @@ import { cn } from "#lib/cn";
 type WordmarkProps = {
     label: string;
     size?: "default" | "splash" | undefined;
-    className?: string | undefined;
 };
 
 /** Brand wordmark set in NewCM (19px sidebar default or 24px splash scale) with a trailing brand dot. */
-export function Wordmark({
-    label,
-    size = "default",
-    className,
-}: WordmarkProps) {
+export function Wordmark({ label, size = "default" }: WordmarkProps) {
     return (
         <span
             data-slot="wordmark"
             className={cn(
                 "font-brand text-foreground select-none",
                 size === "splash" ? "text-wordmark-splash" : "text-wordmark",
-                className,
             )}
         >
             {label}
