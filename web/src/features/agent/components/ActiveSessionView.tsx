@@ -162,7 +162,6 @@ export function ActiveSessionView({
                         }),
               startedAtMs: session.turnStartedAtMs ?? undefined,
               warn: session.reconnectingOffset !== null,
-              stopLabel: t("agent.stopShort"),
               onStop: () => void session.abort(),
           }
         : undefined;

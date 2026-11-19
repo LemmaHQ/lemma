@@ -45,7 +45,6 @@ interface SessionComposerProps {
               stepLabel: string;
               startedAtMs?: number | undefined;
               warn: boolean;
-              stopLabel: string;
               onStop: () => void;
           }
         | undefined;
@@ -159,7 +158,7 @@ export function SessionComposer({
                                 variant="ghost"
                                 onClick={running.onStop}
                             >
-                                {running.stopLabel}
+                                {t("agent.stopShort")}
                             </Button>
                         </div>
                     )}

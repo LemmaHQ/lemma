@@ -92,7 +92,6 @@ it("focuses the input when the focus trigger changes and shows the dock and runn
             stepLabel: "Thinking",
             startedAtMs: Date.now() - 1500,
             warn: false,
-            stopLabel: "Stop",
             onStop,
         },
     });
@@ -108,7 +107,6 @@ it("focuses the input when the focus trigger changes and shows the dock and runn
         running: {
             stepLabel: "Reconnecting",
             warn: true,
-            stopLabel: "Stop",
             onStop,
         },
     });
