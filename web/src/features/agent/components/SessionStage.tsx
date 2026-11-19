@@ -34,7 +34,7 @@ function TurnOutline({ turns }: { turns: StageTurn[] }) {
                                 })}
                                 onClick={() =>
                                     scrollIntoView(
-                                        `[data-turn-id="${turn.id}"]`,
+                                        `[data-turn-id="${CSS.escape(turn.id)}"]`,
                                     )
                                 }
                                 className="group pointer-events-auto flex cursor-pointer items-center gap-2 py-0.5 outline-none"
