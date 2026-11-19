@@ -3,35 +3,11 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing assets/brand/README.md
 /lemma-brand-assets:
-  en: a118c3b34f1fb8fb
-  zh: cf6a803b27122533
-/lemma-brand-assets/directory-layout:
-  en: f8493e6268d915a4
-  zh: 93a9b8fcc05aba10
-/lemma-brand-assets/asset-roster-and-roles:
-  en: af07a0aab427be38
-  zh: 0c892caabf7d4719
-/lemma-brand-assets/asset-roster-and-roles/base-elements-never-appear-in-the-ui-alone-composition-ingredients-only:
-  en: b4f987671f95fa3f
-  zh: f52fa15f697756b3
-/lemma-brand-assets/asset-roster-and-roles/app-icons-the-face-of-the-software-for-the-operating-system:
-  en: 39ce085e41a835d0
-  zh: 278fa74a5a1b5f93
-/lemma-brand-assets/asset-roster-and-roles/lockups-brand-titles-for-documents-and-marketing:
-  en: ca53f7a1c9ece09a
-  zh: 360c08bd0880fc33
-/lemma-brand-assets/asset-roster-and-roles/qed-proof-seals-semantic-stamps-designating-proof-closure:
-  en: 47ac78471126ccf8
-  zh: 9c8a07dadf1e22aa
-/lemma-brand-assets/color-discipline:
-  en: 76816dc2e614ea52
-  zh: bf26961afc31a587
-/lemma-brand-assets/usage-conventions:
-  en: 254ffa43e085a50f
-  zh: 27bb4f76d1a3f96c
+  en: 8948dcdaa4468bc9
+  zh: 56c4013f83f22ec8
+/lemma-brand-assets/usage-rules:
+  en: a35ae48da0b9995a
+  zh: 26c481a025fd27c8
 /lemma-brand-assets/regeneration:
-  en: 6fb6fa4d4863819b
-  zh: 60dce71476e1318b
-/lemma-brand-assets/repository-invariants:
-  en: f3f9ce62205cd570
-  zh: 51758f8cce79431e
+  en: 9915001300bdfe99
+  zh: 76b4ce7f4197c530

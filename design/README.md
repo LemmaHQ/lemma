@@ -4,56 +4,32 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`design/` holds the colors, corner radii, type scale, and motion values of the three clients. [`tokens.json`](tokens.json) lists the palette, the color roles of the light and dark themes, the corner radii, the type styles, and the motion durations and easings, and the generator [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) writes them into the web theme, the desktop window colors, and the Android theme.
+`design/` is the single source of truth for colors, corner radii, typography scale, and motion tokens across web, desktop, and Android. [`tokens.json`](tokens.json) defines the values and [`gen-tokens.ts`](../scripts/design-token/gen-tokens.ts) (`just design-gen`) generates the three platform outputs.
 
-## Token file
+## Format and color roles
 
-`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/): a token is an object with `$value`, and a group sets `$type` for its descendants. It has six groups:
+`tokens.json` follows the [W3C Design Tokens Community Group format](https://www.designtokens.org/tr/drafts/format/) (`$value` on tokens, `$type` inherited from groups):
 
-- `palette` holds static colors as `#rrggbb` or `#rrggbbaa` strings: white, a neutral gray ramp, blue, rose, red, green, and amber steps, and alpha tiers of red and black. Palette names describe the color, not its use.
-- `light` and `dark` hold the same color roles, each referencing a palette entry such as `{palette.gray.925}`.
-- `radius` holds `dimension` tokens as `{ "value": <pixels>, "unit": "px" }`: `sm`, `md`, and `lg`.
-- `typography` holds one `typography` token per type style: `caption`, `small`, `body`, `reading`, `title`, `display`, `wordmark`, and `wordmark-splash`. Each `$value` sets `fontSize` and `lineHeight` as `{ "value": <pixels>, "unit": "px" }` and an optional numeric `fontWeight`; a style without `fontWeight` keeps the inherited weight. `lineHeight` is a pixel dimension rather than the format's unitless multiplier. Font families stay with each client.
-- `motion` holds `duration` tokens as `{ "value": <milliseconds>, "unit": "ms" }` and `easing` tokens as cubic Bézier control points `[x1, y1, x2, y2]`.
+- Palette colors are static `#rrggbb` or `#rrggbbaa` values; `light` and `dark` define matching semantic color roles referencing palette entries.
+- `radius` and `typography` dimensions use pixel units (`lineHeight` is a pixel dimension, not a unitless multiplier); font families stay with each client.
+- `motion` holds millisecond durations and cubic Bézier `[x1, y1, x2, y2]` easings (consumed by web only).
 
-The color roles fall into five families:
+Color roles fall into five families:
 
-- Surfaces: `background`, `card`, `popover`, `muted`, `sidebar`, and `control` for inputs and outline buttons.
-- Text, in three levels: `foreground`, `muted-foreground` for descriptions, and `subtle-foreground` for timestamps, labels, and placeholders.
-- Interaction: `primary` with `primary-hover`, `secondary` with `secondary-hover`, `accent` as the hover tint, `selected` as the tint of the current item, and `ring` for focus.
-- Status: `destructive` with its `-border`, `-ring`, `-subtle`, and `-subtle-hover` tints, `completion` for turn-completion marks, `success`, and `warning`.
-- The rest: `border`, `input`, `track`, `thumb`, `brand` for the logo, running indicators, and links, `scrim`, and `shadow`, the color of the elevation shadows.
+- **Surfaces:** `background`, `card`, `popover`, `muted`, `sidebar`, `control`.
+- **Text:** `foreground`, `muted-foreground`, `subtle-foreground`.
+- **Interaction:** `primary`/`primary-hover`, `secondary`/`secondary-hover`, `accent`, `selected`, `ring`.
+- **Status:** `destructive` (and its `-border`, `-ring`, `-subtle`, `-subtle-hover` tints), `completion`, `success`, `warning`.
+- **Other:** `border`, `input`, `track`, `thumb`, `brand`, `scrim`, `shadow`.
 
-Every text role, `primary`, and the text status roles (`destructive`, `success`, `warning`) reach a 4.5:1 contrast ratio on `background`, `card`, `popover`, `muted`, `sidebar`, `accent`, and `selected` in both themes; `completion` colors non-text markers. `primary-foreground` reaches 4.5:1 on `primary` and `primary-hover`.
+**Contrast standard:** every text role, `primary`, and text status roles (`destructive`, `success`, `warning`) must reach at least a **4.5:1** contrast ratio on `background`, `card`, `popover`, `muted`, `sidebar`, `accent`, and `selected` in both themes (`completion` is for non-text markers); `primary-foreground` must reach 4.5:1 on `primary` and `primary-hover`.
 
-## Output
+## Outputs
 
-The generator writes three files, all ignored by Git:
+`just design-gen` validates `tokens.json` before writing three Git-ignored files (client build/lint/test scripts run it automatically; `web/vite.config.ts` also reads `tokens.json` directly for first-paint colors):
 
-| File                                                           | Content                                                                                                                                                                                                                                                                                                                        | Consumer                                                            |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| `packages/ui/src/styles/tokens.gen.css`                        | A Tailwind `@theme` block with one `--radius-*` variable per radius token and `--text-*` size, line-height, and font-weight variables per type style in `rem` at 16 px, one CSS variable per motion token in `:root`, and one per color role in `:root, [data-theme-preview="light"]` and `.dark, [data-theme-preview="dark"]` | `packages/ui/src/styles/tokens.css` imports it                      |
-| `desktop/src/gen/theme-colors.ts`                              | The background, sidebar, and foreground of each theme                                                                                                                                                                                                                                                                          | `desktop/src/main-window.ts` colors the titlebar and window from it |
-| `mobile/shared/build/generated/source/tokens/…/LemmaTokens.kt` | `LemmaColorScheme` with one Compose `Color` per color role and its light and dark values, `LemmaTypography` with one `TextStyle` per type style in `sp`, and `LemmaShapes` with one `RoundedCornerShape` per radius in `dp`                                                                                                    | `theme/Theme.kt` provides them through `LemmaTheme`                 |
-
-The web theme and the Android app read every color role, type style, and radius; only the web theme reads the motion tokens. Each consumer runs the generator before reading the output:
-
-- The web npm scripts run it before `dev`, `build`, `build:desktop`, `lint`, `test`, `test:cov`, `format`, and `format:check`; the `@lemma/ui` npm scripts run it before `lint`.
-- The desktop npm scripts run it before `lint`, `test`, and `test:cov`; the desktop `build` runs the web `build:desktop` first.
-- The Gradle task `generateDesignTokens` runs it before Kotlin compiles.
-
-`just design-gen` runs it by hand. `web/vite.config.ts` also reads `tokens.json` through the same reader, taking the `background` and `foreground` roles to color the web client's first paint.
-
-## Checks
-
-The generator exits with an error, writing nothing, when:
-
-- `tokens.json` lacks the `palette`, `light`, `dark`, `radius`, `typography`, or `motion` group, or `motion` lacks `duration` or `easing`;
-- a palette entry is neither a group nor a `#rrggbb` or `#rrggbbaa` color;
-- a theme role does not reference an existing palette entry;
-- `light` and `dark` define different roles, or lack `background`, `sidebar`, or `foreground`;
-- a radius is not a non-negative number of pixels;
-- a type style lacks a non-negative pixel `fontSize` or `lineHeight`, has a `fontWeight` that is not an integer from 1 to 1000, or sets another property;
-- a duration is not a non-negative number of milliseconds, or an easing is not four numbers with `x1` and `x2` between 0 and 1.
-
-Spec CI runs it on every change under `design/` or `scripts/design-token/`, and the Web and Desktop CI workflows run on those changes too.
+| File                                                           | Consumer                                                                                                                                  |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/ui/src/styles/tokens.gen.css`                        | Imported by `packages/ui/src/styles/tokens.css` (Tailwind `@theme` radii/typography in `rem`, motion vars, light/dark/preview color vars) |
+| `desktop/src/gen/theme-colors.ts`                              | Read by `desktop/src/main-window.ts` (`background`, `sidebar`, `foreground` per theme)                                                    |
+| `mobile/shared/build/generated/source/tokens/…/LemmaTokens.kt` | Provided through `LemmaTheme` (`LemmaColorScheme`, `LemmaTypography` in `sp`, `LemmaShapes` in `dp`)                                      |

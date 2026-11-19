@@ -3,17 +3,14 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/testing.md
 /testing:
-  en: 656397c5c8c42926
-  zh: e05ca792750fdaab
+  en: 44c9bfc057fc11e9
+  zh: 0a1a299b0bffdd5c
 /testing/tiers:
-  en: 543d690605167582
-  zh: cd64d8861bc47100
+  en: 79ec1d87f0fd2218
+  zh: 952d3ab7bc044f75
 /testing/coverage:
-  en: 6feb5d2621098a5f
-  zh: f0895994dc5e0975
-/testing/how-tests-run:
-  en: 396bb20032bb7e79
-  zh: 7d9984845897be64
+  en: 0ff7e1bb92ec4198
+  zh: 7a676c5d754d0734
 /testing/real-implementations-over-mocks:
-  en: c29a389c9a48ad54
-  zh: 7a3218a0a6c2d0a9
+  en: fda39812faa5bc80
+  zh: ab3c690866b3cd41

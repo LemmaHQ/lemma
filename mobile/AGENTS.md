@@ -4,41 +4,22 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions).
 
 ## Kotlin
 
-- **Statements omit semicolons.** A single-expression function uses `= expr` and omits the return type.
-- **Braces follow K&R:** the opening brace ends the line.
-- **Nullable values use `?.`, `?:`, and `let`.**
-- **Properties use `camelCase`;** the one exception is a private backing property `_prop` paired with a public `prop`.
-- **Package names are all lowercase with words concatenated;** each file has one `package` statement.
+- **Properties use `camelCase`;** a private backing property `_prop` paired with a public `prop` is the only underscore prefix allowed.
+- **Package names are lowercase with concatenated words;** one `package` statement per file.
 - **KDoc** is a compact contract on public APIs whose first sentence is a complete summary phrase; self-explanatory properties and methods omit it.
 
 ## Layout
 
-`:mobile:shared` code lives under `io.github.mistvesper.lemma`, one package per responsibility:
+`:mobile:shared` lives under `io.github.mistvesper.lemma`, one package per responsibility:
 
-- The root package holds the navigation host `App` and its `AppViewModel`.
-- `client/` holds the `LemmaClient` and `EngineOpener` interfaces with their types; `network/` implements them over Connect; `data/` holds `SettingsRepository` and the preference and model-selection types.
-- `ui/<feature>/` holds each feature's ViewModel, screen, and private Composables, matching the web feature of the same name: `ui/agent/` the open session (`AgentViewModel`, `SessionStage`, messages, composer, model picker, the code sheet that shows a reply's code block in full, and the session tree sheet that switches branches, rewinds to a question, and labels messages), `ui/session/` the session list (`SessionListViewModel`, drawer, and the `SessionScreen` shell that hosts the stage), `ui/provider/` AI providers, `ui/webprovider/` web providers, `ui/preferences/` appearance, and `ui/settings/` the settings menu. A feature imports no other feature, except that `ui/session/` drives `ui/agent/`: its shell hosts the stage, and its list opens and closes sessions there, shows its failures there, and marks running, finished, and failed turns from the agent's `turns`. The Android session list groups sessions by recency because Android sessions have no session directory, while the web groups them by directory.
-- `ui/components/` holds the shared `Lemma*` components and the widgets several features share (`SaveBar`, `ProviderEnabledRow`, `ProviderErrorText`, `runOptimistic`); `theme/` holds `LemmaTheme`, which provides the generated colors, typography, and shapes.
-- `i18n/` holds `UiText` and `errorText`; user-facing text comes from the platform-neutral sources in [i18n/](../i18n/README.md), which generate the Git-ignored `composeResources/values/strings.xml` and `values-zh/strings.xml`.
-- `commonMain` uses no JVM-only library: Connect, OkHttp, and the engine live under `androidMain`, in the matching package or `engine/`.
+- Root package: navigation host `App` and `AppViewModel`.
+- `client/` defines `LemmaClient` and `EngineOpener`; `network/` implements them over Connect; `data/` holds `SettingsRepository` and preference/model-selection types; `ui/components/`, `theme/`, and `i18n/` hold shared widgets, `LemmaTheme`, and `UiText`/`errorText`.
+- `ui/<feature>/` holds each feature's ViewModel, screen, and private Composables (`agent`, `session`, `provider`, `webprovider`, `preferences`, `settings`). Features never import each other except that `ui/session/` drives `ui/agent/` (hosting the stage, opening/closing sessions, displaying failures, and marking turn state). The Android session list groups sessions by recency because Android sessions have no session directory, whereas web groups by directory.
+- `commonMain` uses no JVM-only libraries: Connect, OkHttp, and the engine live in `androidMain`.
 
 ## Modules and generated code
 
-- `:mobile:androidApp` is the Android application; `:mobile:shared` is the Kotlin Multiplatform module that holds the UI and both generated binding sets.
-- Gradle generates the Protobuf and Connect Kotlin code into `shared/build/generated/source/bufgen/` before compiling Kotlin, running `buf` with `protoc` and `protoc-gen-connect-kotlin` from Maven at the runtime libraries' versions; this needs `buf` and Java ([proto/AGENTS.md](../proto/AGENTS.md)).
-- Gradle builds `crates/uniffi/lemma-uniffi` for the host and generates its UniFFI Kotlin bindings into `shared/build/generated/source/uniffi/` before compiling Kotlin. Packaging the APK also cross-compiles its JNI libraries into `shared/src/androidMain/jniLibs/`, which needs `cargo-ndk` and an Android NDK. A public API change in `lemma-uniffi` is a Kotlin API change.
-- `engine/Engine.kt` opens `LemmaEngine` over the app's data directory (`filesDir`) and answers OkHttp requests through its `request`, `read`, and `cancel` calls; `network/AndroidEngineOpener.kt` opens it once and returns `ConnectLemmaClient`.
-- `engine/PlatformVerifier.kt` hands the application context to `lemma-uniffi` at process start (`LemmaApplication.onCreate`), so the engine's HTTPS requests check certificates against Android's system trust store through `rustls-platform-verifier`. That crate's Kotlin component is an AAR in the upstream Maven repository on GitHub; `settings.gradle.kts` declares that repository and resolves the AAR at the `rustls-platform-verifier-android` version in `Cargo.lock`, since the two must match.
-- Gradle runs `scripts/design-token/gen-tokens.ts` before compiling, which writes `LemmaTokens.kt` into `shared/build/generated/source/tokens/`: the light and dark `LemmaColorScheme`, `LemmaTypography`, and `LemmaShapes` from [design/tokens.json](../design/README.md), holding the same color roles, type styles, and radii as the web theme; this needs Node. `theme/Theme.kt` provides them through `LemmaTheme`.
-- Gradle's `generateStrings` task runs `scripts/i18n/gen-i18n.ts` before assembling Compose resources, writing the string resources from [i18n/](../i18n/README.md); this needs Node. Kotlin reads them through the generated `Res.string` and `Res.plurals` accessors.
-- Generated code is never edited or committed.
-
-## Commands
-
-```sh
-just mobile-android-build       # assemble the debug APK
-just mobile-android-test        # androidApp unit tests and shared host tests
-just mobile-android-lint-check  # Android Lint on androidApp and shared, then Detekt with detekt.yml; mobile-android-lint applies Lint fixes
-just mobile-android-cov         # Kover reports for androidApp and shared; fails on an uncovered line, an uncalled method, or a missed branch outside Composable functions
-just mobile-fmt-check           # ktfmt in kotlinlang style through Spotless; mobile-fmt formats
-```
+- `:mobile:androidApp` is the Android app; `:mobile:shared` is the KMP module holding the UI and generated bindings.
+- Gradle builds `crates/uniffi/lemma-uniffi` for the host to generate UniFFI bindings before compiling Kotlin, and cross-compiles JNI libraries with `cargo-ndk` when packaging the APK. **A public API change in `lemma-uniffi` is a Kotlin API change.**
+- `engine/Engine.kt` opens `LemmaEngine` over `filesDir` and answers OkHttp requests in-process; `engine/PlatformVerifier.kt` passes the application context to `lemma-uniffi` at `LemmaApplication.onCreate` for `rustls-platform-verifier`. `settings.gradle.kts` resolves the `rustls-platform-verifier-android` AAR from GitHub Maven at the **exact version in `Cargo.lock`**.
+- Protobuf/Connect ([proto/AGENTS.md](../proto/AGENTS.md)), design tokens ([design/README.md](../design/README.md)), and string resources ([i18n/README.md](../i18n/README.md)) are generated by Gradle before compiling and never edited or committed.

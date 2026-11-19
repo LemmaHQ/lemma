@@ -1,7 +1,0 @@
-# Translation-pairing record for README.md (docs/i18n/README.md): one
-# entry per heading section, holding a hash of its English and Chinese text.
-# After bringing both sides to the same meaning, re-record with:
-#   just docs-pairing docs/subsystems/README.md
-/subsystems:
-  en: 836028e556b1b2d2
-  zh: 3463de310813f7cf

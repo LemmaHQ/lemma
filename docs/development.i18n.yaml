@@ -3,44 +3,35 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing docs/development.md
 /development:
-  en: 7cc1820db7ceecdd
-  zh: 68cf0392afbb5158
-/development/setup-tutorial:
-  en: 5207d17725c07a27
-  zh: bbb030802b1260c5
-/development/setup-tutorial/prerequisites:
-  en: b5ced5098adee74d
-  zh: 828b857e430fb85f
-/development/setup-tutorial/windows:
-  en: da53d06ba8617ef7
-  zh: 740f8c0cbae15063
-/development/setup-tutorial/first-time-setup:
-  en: 5cf257d6c89a50c3
-  zh: bd9f386710bcd6fe
-/development/setup-tutorial/run-the-daemon-and-the-web-client:
-  en: a8aa7b183330b86c
-  zh: 043e08a663d4cae8
-/development/setup-tutorial/run-the-desktop-app:
-  en: a23196dbfddafbec
-  zh: 558e696827ac510a
-/development/setup-tutorial/run-the-android-app:
-  en: 7800e97312f547dc
-  zh: 13890d2569730a03
+  en: f310313631605e2e
+  zh: 70390df7163015a6
+/development/setup:
+  en: 0ecddf15e1aff85f
+  zh: 0f31faf4c68f60d7
+/development/setup/prerequisites:
+  en: 872f27397a8df9c1
+  zh: cb524d78007e4ace
+/development/setup/windows:
+  en: c878731c8735a5c7
+  zh: 0b3e8cf88f72dfcd
+/development/setup/first-time-setup:
+  en: 19bbc4b9ffa0e192
+  zh: 23abafeb2d11377c
+/development/setup/run-the-clients:
+  en: 10d3519801be5eea
+  zh: a84577ff4460ba4a
 /development/reference:
   en: e8d198429c35fa10
   zh: fa9493dbf6a94867
 /development/reference/environment-variables:
-  en: 576fd124b4c7698b
-  zh: 0c7d0e1ba750f40c
+  en: 5a8d8477af049d95
+  zh: 06bd8e9bf0c2ee1c
 /development/reference/worktrees:
-  en: 669748b8181ceb49
-  zh: c1bb6e866625da6f
+  en: be6e4b8dc51a78ce
+  zh: f9a8fb4da6463927
 /development/reference/build-cache:
-  en: 6ad69a6e54275ba3
-  zh: 46f5e4310bcf5749
+  en: 5bbdf4154a6fdf54
+  zh: 2f66dcb3f156d269
 /development/reference/ci-workflows:
-  en: 17f880e0501f99aa
-  zh: 43d6aa2768cf6e06
-/development/reference/daily-commands:
-  en: beaf5dfb8765b16c
-  zh: 86770652e360d55e
+  en: b756bdfe58658a65
+  zh: 65ee9220900179f7

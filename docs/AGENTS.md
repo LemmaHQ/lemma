@@ -1,70 +1,48 @@
 # AGENTS.md — The documentation standard
 
-This file defines document structure, Markdown tiers, writing rules, and word budgets for Lemma. Use [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) for placement, coverage, editorial judgment, and validation. The [bilingual contract](i18n/README.md) defines how English and Chinese pairs are maintained.
+This file defines document structure, Markdown tiers, and writing rules for Lemma. Use [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) for placement, coverage, editorial judgment, and validation. The [bilingual contract](i18n/README.md) defines how English and Chinese pairs are maintained.
 
 ## Document structure
 
-These rules apply to human-facing documentation. A document's subject and tree position fix its scope: describe its own subject at appropriate detail and direct children only by purpose, responsibility, and high-level behavior; link to the owning descendant for lower-level detail. Document type does not widen that scope. A reference may be exhaustive only about its own subject. Testing mechanisms, fixtures, and harnesses belong at the lowest owning level; higher documents link there.
+These rules apply to human-facing documentation. A document's subject and tree position fix its scope: describe its own subject at appropriate detail and direct children only by purpose, responsibility, and high-level behavior; link to the owning descendant for lower-level detail. Testing mechanisms, fixtures, and harnesses belong at the lowest owning level; higher documents link there.
 
-Classify every in-scope document as a tutorial or reference. Tutorials follow an ordered path to an outcome and introduce only what each step needs. References define a lookup scope and current behavior without a teaching sequence. Separate substantial tutorial and reference content; label a section when either part is small.
-
-Before writing a tutorial, privately classify the reader's starting knowledge and each concept as beginner, intermediate, or advanced. Establish prerequisites before dependent concepts, increase difficulty gradually, and move unnecessary advanced material to a later tutorial or reference.
-
-Author in this order: locate the document in the tree; set its permitted detail; choose tutorial or reference; for a tutorial, order concepts by prerequisite and difficulty; relocate descendant-owned detail; replace lower-level explanations with links to their owners.
+Classify each document as tutorial (an ordered path introducing prerequisites step by step) or reference (current behavior for lookup without a teaching sequence), separate substantial mixed content, and replace descendant-owned detail with links to its owner.
 
 ## The tier taxonomy: one home per fact
 
 Each fact has one home: the tier whose job it is; elsewhere, link there.
 
-| Tier                                                                              | Job                                                                                                                       | Does NOT belong there                                                                                                                          |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Root `AGENTS.md`                                                                  | Standing orders: rules an agent needs in context in every task, one to three lines each, linking its home                 | Stories, worked examples, situational procedures, anything restated from a linked home                                                         |
-| Subtree `AGENTS.md` (`crates/`, `web/`, `desktop/`, `mobile/`, `proto/`, `docs/`) | Orders specific to that subtree                                                                                           | Repo-wide rules the root file already carries                                                                                                  |
-| [architecture.md](architecture.md)                                                | Ordered map: crate layers, runtimes, the path of one turn, extension points; read before changing `crates/`               | Type definitions (→ subsystems), per-crate detail (→ crate READMEs), decision rationale (→ commit messages), implementation-status annotations |
-| [glossary.md](glossary.md)                                                        | Terms with a precise meaning in code, one definition each                                                                 | Behavior narration (→ architecture.md), type definitions (→ subsystems)                                                                        |
-| `subsystems/`                                                                     | One reference page per subsystem: type definitions, semantics, invariants                                                 | Behavior narration across subsystems (→ architecture.md)                                                                                       |
-| Crate and package README                                                          | The per-crate contract: config, semantics, limitations, extension points                                                  | Doc-comment restatement, other crates' concerns                                                                                                |
-| [development.md](development.md)                                                  | Environment setup, daily workflow, and a summary of CI                                                                    | Runtime/version rationale (→ commit messages), check-by-check lists that drift from the `justfile`                                             |
-| [testing.md](testing.md)                                                          | Test tiers: what each covers, where tests live, how they run                                                              | Individual test walkthroughs, fixture detail owned by a crate or package                                                                       |
-| [design/README.md](../design/README.md) and `tokens.json`                         | The colors, radii, type scale, and motion values of all clients and their format; the generator's outputs and checks      | The uses of the type roles, shadow levels, and Tailwind mappings (→ [packages/ui/README.md](../packages/ui/README.md#styling))                 |
-| Skills (`.agents/skills/`)                                                        | Reusable workflows and specialized decision standards, including per-language code style                                  | Product and runtime contracts (→ docs or source)                                                                                               |
-
-Placement: rationale → commit messages; type definitions → subsystems; term definitions → glossary; crate contracts → READMEs; code style and workflows → skills; standing orders → root `AGENTS.md`.
+| Tier                                                                                           | Job                                                                                         | Does NOT belong there                                                                                                      |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Root `AGENTS.md`                                                                               | Standing orders needed in every task, linking their authoritative homes                     | Worked examples, situational procedures, duplicated `just` or formatter rules                                              |
+| Subtree `AGENTS.md` (`crates/`, `web/`, `desktop/`, `mobile/`, `packages/`, `proto/`, `docs/`) | Orders and invariants specific to that subtree                                              | Repo-wide rules, routine `just` command tables                                                                             |
+| [architecture.md](architecture.md)                                                             | Cross-crate map: crate layers, runtimes, wire boundaries, turn flow, persistence invariants | Source type catalogs (→ Rust `//!`/`///`), decision rationale (→ commit bodies), status annotations                        |
+| [glossary.md](glossary.md)                                                                     | Cross-boundary domain terms, one definition each                                            | Single-struct restatements, runtime defaults or volatile lists                                                             |
+| Rust `//!` and `///`                                                                           | Single-crate invariants and public API contracts                                            | Cross-crate architecture narration (→ architecture.md)                                                                     |
+| Subsystem / package README                                                                     | Consumer contract: conventions, constraints, extension points                               | Hand-written file/component catalogs, doc-comment or config restatements                                                   |
+| [development.md](development.md)                                                               | First-time setup, platform traps, worktrees, environment variables                          | Tool/workflow inventories duplicating `mise.toml`, `rust-toolchain.toml`, or `.github/workflows/`                          |
+| [testing.md](testing.md)                                                                       | Test layout, coverage thresholds, and core testing principles                               | Test inventories or file-by-file exclusion lists duplicating configs                                                       |
+| [design/README.md](../design/README.md) and `tokens.json`                                      | Token format, color role families, generator outputs, contrast standard                     | Component usage of type roles, shadows, and Tailwind classes (→ [packages/ui/README.md](../packages/ui/README.md#styling)) |
+| Skills (`.agents/skills/`)                                                                     | Reusable workflows and specialized decision standards, including per-language style guides  | Product and runtime contracts (→ docs or source)                                                                           |
 
 ## Writing rules
 
-- **Document current state.** Keep history in commits. Other prose names live mechanisms, not changes or stack positions.
-- **One physical line per paragraph**: use editor soft-wrap. Code blocks, tables, and list structure keep their formatting.
-- **The owning subsystems page updates in the same change** that reshapes a documented type.
-- **Pairs update together**: a change to either language updates its counterpart and re-records the pair in the same commit, with [terminology.md](i18n/terminology.md) loaded first ([bilingual contract](i18n/README.md#updating-a-pair)).
-- **Doc comments state complete contracts, not reasoning transcripts.** `//!`, `///`, JSDoc, and KDoc preserve behavior, failure, timing, ownership, and consequences; delete narration, test walkthroughs, review analysis, and code restatement. Keep the local contract and link its rationale. Use [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) for details.
-- **Write directly**: name actors and facts. Name the exact check, type, API, operation, or behavior instead of metaphorical "gate", "vocabulary", or "surface".
-
-## Wordcount budgets
-
-Targets: root `AGENTS.md` ≤ 1,500; this file ≤ 1,200; other subtree `AGENTS.md` ≤ 500; [architecture.md](architecture.md) ≤ 2,400. Budgets count words in the English file. Other tiers have no budget.
-
-When a document exceeds its budget:
-
-1. **Relocate** content that belongs in another tier; leave a one-line link if needed.
-2. **Condense** content that belongs here but can be shorter.
-3. **Raise** the budget only when the words need the space; justify it in the commit message. A too-low budget is a budget bug.
-
-Budgets are guardrails, not reduction targets.
+- **Document current state.** Keep history in commits; prose describes live behavior, not changes or stack positions.
+- **One physical line per paragraph:** use editor soft-wrap; code blocks, tables, and lists keep their formatting.
+- **Pairs update together:** for human-facing Markdown in scope of [docs/i18n/README.md](i18n/README.md#scope-and-exclusions), update the counterpart with [terminology.md](i18n/terminology.md) loaded and re-record the pair in the same commit.
+- **Doc comments state complete contracts, not reasoning transcripts.** `//!`, `///`, JSDoc, and KDoc preserve behavior, failure, timing, ownership, and consequences; delete narration, walkthroughs, and code restatement ([lemma-doc](../.agents/skills/lemma-doc/SKILL.md)).
+- **Write directly:** name the exact check, type, API, operation, or behavior instead of vague labels.
 
 ## The slop checklist
 
 Hunt these in any doc; [lemma-doc](../.agents/skills/lemma-doc/SKILL.md) runs this list as an audit:
 
-- Duplicated rules: search a distinctive phrase; keep one home and link the rest.
-- History outside its permitted tier: state current facts and link the historical owner.
-- Implementation-status annotations in prose or diagrams ("implemented!", "future: …"). Status rots; issues and the project board carry it.
-- Hand-restated catalogs, doc comments, or inventories of tests, crates, and status when source or a generator is authoritative.
-- Reasoning transcripts: step-by-step implementation narration, proof of obvious branches, test walkthroughs, or rejected local alternatives. Keep the resulting contract or durable rationale; delete the path used to derive it.
-- Rationale repeated beside sibling functions instead of once at the owning capability or helper.
-- Paragraph walls: one paragraph carrying several rules and parenthetical asides. Split it or demote the detail to its home.
-- Emphasis inflation: bold, CAPS, or "critically" everywhere means nothing stands out. Reserve emphasis for the clause that changes behavior.
+- Duplicated rules: keep one home and link the rest.
+- History or implementation-status annotations ("implemented!", "future: …") outside commit bodies or issues.
+- Hand-restated catalogs, inventories, or config transcriptions where source or a generator is authoritative.
+- Reasoning transcripts: step-by-step narration, proofs of obvious branches, test walkthroughs, or rejected local alternatives.
+- Paragraph walls and emphasis inflation: reserve bold for clauses that change behavior.
 
 ## Repository references
 
-Link files with relative Markdown links. A code-formatted path names a tracked or gitignored location; `just docs-refs-check` fails on any other, and on any `just` recipe that does not exist. When a path moves or is removed, search the repository for the old path and update every reference in the same change. Historical references use tags, never commit identifiers.
+Link files with relative Markdown links. A code-formatted path names a tracked or gitignored location; `just docs-refs-check` fails on any other, and on any `just` recipe that does not exist. When a path moves or is removed, search the repository and update every reference in the same change. Historical references use tags, never commit identifiers.

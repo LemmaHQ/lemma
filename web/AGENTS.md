@@ -4,46 +4,29 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions). Th
 
 ## TypeScript
 
-- **`const` by default;** `let` only for a variable that is reassigned. One variable per declaration.
-- **Statements end with an explicit semicolon.**
-- **Equality uses `===` and `!==`.**
-- **Every control-flow body (`if`, `for`, `while`) takes braces.**
 - **Modules use ES named exports;** types move through `import type` and `export type`.
 - **Unknown input is typed `unknown`** and narrowed to a concrete type.
 - **JSDoc** is a compact contract on exported public interfaces, without JSDoc type annotations. A call passing several arguments of one type may label them inline: `/* paramName= */`.
-- **Compiler options shared by every TypeScript project live in the root `tsconfig.base.json`;** a project's `tsconfig` extends it and adds only what its runtime needs: DOM, JSX, module resolution, `types`, path aliases. Repository scripts in `scripts/` are `.ts` files that Node runs directly, type-checked by `just scripts-type-check`.
-- **oxlint is the linter, with type-aware rules.** The root `.oxlintrc.json` holds the rules shared by every TypeScript project, and `just scripts-lint-check` applies it to `scripts/`. `web/.oxlintrc.json`, `desktop/.oxlintrc.json`, and each package's `.oxlintrc.json` extend it, adding their runtime's plugins. A suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
+- **Compiler options** shared across TypeScript projects live in the root `tsconfig.base.json`; each project extends it with only runtime-specific settings. Scripts under `scripts/` run directly on Node.
+- **oxlint** (type-aware) uses the root `.oxlintrc.json` extended by per-project `.oxlintrc.json`. Any suppression names one rule and a reason: `// oxlint-disable-next-line <rule> -- <reason>`.
 
 ## Layout
 
-- Dependencies point one way: `src/platform/` → `src/rpc/` → `src/store/` → `src/features/` → `src/app/`. `src/i18n/` holds the locale files and `error-text.ts`, which turns a failed request into localized text.
-- `src/platform/` exports the `platform` adapter for the browser or the desktop engine; code outside it reaches desktop capabilities only through that adapter.
-- `src/rpc/` holds the transport, the ConnectRPC clients, and `errors.ts`, which reads the `ErrorReason` of a failure. `src/store/` holds `loaded-hook.ts`, which builds first-load hooks with shallow zustand selectors across feature list stores, and `useStoredValue.ts`, which reads and writes a typed `localStorage` value and notifies every mounted reader.
-- `src/features/<domain>/` follows one layout: `index.ts` exports the feature's public components and hooks, `store.ts` is the only module that calls RPC and turns proto messages into view types, logic modules and their tests sit beside it, and every component lives in `components/`. Code outside a feature imports it through `@/features/<domain>`.
-- `src/app/` holds the route table in `router.tsx`, the paths in `route-paths.ts`, and one directory per layout route: `session/` and `settings/`, each with pages that arrange feature components. `shell/` holds `AppLayout`, which owns the sidebar state, `ShellFrame`, which both layouts fill with their sidebar, and the app-wide chrome: `TitleBar`, `SplashScreen`, `AppBrand`, `AppToaster`, and `AppTooltipProvider`. Features take paths as props instead of naming routes.
-- oxlint enforces the boundaries: in `src/app/` and `src/features/`, an import past a feature's `index.ts`, an import of `src/rpc/` other than `errors.ts` outside a `store.ts`, and any import of the libraries beneath `@lemma/ui` fail `just web-lint-check`.
-- Shared shadcn controls and the components Lemma composes from them live in `@lemma/ui`; feature code imports them, the icons, and `AnimateIcon`, `cn`, and `toast` from `@lemma/ui` alone ([component README](../packages/ui/README.md)).
-- User-facing text goes through i18next, including the labels `@lemma/ui` components take as props; [i18n/README.md](../i18n/README.md) defines the source entries, and its generator requires both languages for every entry, so the generated `src/i18n/locales/en.json` and `zh.json` carry the same keys.
+- Dependencies point one way: `src/platform/` → `src/rpc/` → `src/store/` → `src/features/` → `src/app/`. `src/i18n/` holds generated locales and `error-text.ts`.
+- `src/platform/` exports the `platform` adapter for browser or desktop; code outside it reaches desktop capabilities only through that adapter.
+- `src/features/<domain>/` keeps one layout: `index.ts` exports public components and hooks, `store.ts` is the sole RPC caller and proto-to-view mapper, logic modules and tests sit beside it, and components live in `components/`. Outside code imports features only via `@/features/<domain>`. Features take route paths as props instead of naming routes.
+- `src/app/` owns the router, layout shells, and pages assembling feature components.
+- oxlint enforces feature boundaries, `store.ts`-only RPC access (other than `src/rpc/errors.ts`), and `@lemma/ui`-only imports of underlying UI libraries.
+- Shared controls, icons, `AnimateIcon`, `cn`, and `toast` come from `@lemma/ui` ([packages/ui/README.md](../packages/ui/README.md)). User-facing text goes through i18next from [i18n/](../i18n/README.md).
 
 ## Styling
 
-- **Feature code uses only the semantic utilities of the shadcn theme,** with no hex color, no arbitrary value, and no `dark:` variant; the theme's roles and scales are listed in the [styling rules](../packages/ui/README.md#styling).
-- **Tooling enforces the class rules:** Prettier sorts Tailwind classes; oxlint-tailwindcss rejects conflicting, contradicting, duplicate, and deprecated classes, and across `src/` also `dark:` variants, Tailwind's type sizes, radii from `rounded-xl` up, arbitrary radii, numeric durations, default easings, shadow scale, and black and white colors; `@shadcn/lint` rejects unknown classes, raw colors, arbitrary values, inline styles, and dynamic class strings, and restyling a shadcn component's color, spacing, typography, or shape. Layout classes such as width, flex, and margin stay allowed on components.
-- **Controls reuse `@lemma/ui`;** check the [component catalog](../packages/ui/README.md#component-catalog) first. A visual difference that several features need becomes a variant of the shared component, not a restyled copy.
-- **Settings pages compose `SettingsPage`, `SettingsSection`, `SettingsSectionCompact`, `SettingsField`, and `SettingsRow`** and add no layout around them; the [settings rules](../packages/ui/README.md#settings-pages) fix the geometry and the control for each kind of choice.
+- **Feature code uses only semantic theme utilities** — no hex colors, arbitrary values, or `dark:` variants; oxlint and `@shadcn/lint` enforce the rules in `.oxlintrc.json` ([packages/ui/README.md](../packages/ui/README.md#styling)).
+- **Reuse `@lemma/ui` controls** before writing new ones (`packages/ui/src/index.ts`); promote shared visual differences to a variant instead of restyling a copy.
+- **Settings pages** compose `SettingsPage`, `SettingsSection`, `SettingsSectionCompact`, `SettingsField`, and `SettingsRow` without adding outer layout ([settings rules](../packages/ui/README.md#settings-pages)).
 
-## Generated files
+## Boot sync and generated files
 
-`src/gen/` comes from `proto/` through `gen:proto`, `gen:tokens` writes the theme variables of [design/tokens.json](../design/README.md) into `@lemma/ui`, and `gen:i18n` writes `src/i18n/locales/en.json` and `zh.json` from the [i18n sources](../i18n/README.md). `src/index.css` loads the tokens through `@lemma/ui/styles.css`. The `gen` script runs all three generators, and `dev`, `build`, `lint`, and `test` run it first; `format` runs `gen:tokens` first. Git ignores all outputs; edit `proto/`, `design/tokens.json`, or `i18n/`.
+`src/gen/`, `src/i18n/locales/`, and `@lemma/ui`'s generated tokens are Git-ignored and regenerated automatically by npm scripts; edit `proto/`, `design/tokens.json`, or `i18n/` instead.
 
-`vite.config.ts` injects into `index.html` the inline script that applies the stored theme before the first paint, built from `THEME_STORAGE_KEY` and `DEFAULT_THEME` in `src/features/preferences/theme.ts`, the constants `ThemeProvider` also reads; change the theme storage there. It also injects the page background and text colors of both themes, read from [design/tokens.json](../design/README.md), so the boot markup in `index.html` paints before any stylesheet loads; that markup repeats `src/app/shell/SplashScreen.tsx` with inline styles and changes together with it.
-
-## Commands
-
-```sh
-just web-dev            # Vite dev server
-just web-test           # vitest
-just web-lint-check     # oxlint; web-lint applies fixes
-just web-fmt-check      # prettier --check; web-fmt formats
-just web-cov            # vitest coverage
-```
+`vite.config.ts` injects the pre-first-paint theme script (using `THEME_STORAGE_KEY` and `DEFAULT_THEME` from `src/features/preferences/theme.ts`) and theme colors (from `design/tokens.json`) into `index.html`. The boot markup in `index.html` mirrors `src/app/shell/SplashScreen.tsx` with inline styles and must change together with it.

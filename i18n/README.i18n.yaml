@@ -3,17 +3,17 @@
 # After bringing both sides to the same meaning, re-record with:
 #   just docs-pairing i18n/README.md
 /interface-strings:
-  en: e27f3bfb39d09b64
-  zh: 4b2e805ba06ae063
+  en: a30c5cc7bb2e99f7
+  zh: 396b8fe5a8f9bd83
 /interface-strings/source-files:
-  en: 2d28c3d45d26b34c
-  zh: f9b15222cc401dd8
+  en: 5ceffb0e89838eeb
+  zh: 863b0640ec738cdd
 /interface-strings/literal-braces:
-  en: 560e5be2b15c1bc6
-  zh: 8acc35f0442b971f
+  en: 52a640bfab1292a7
+  zh: de648d5edf2982bf
 /interface-strings/adding-a-string:
-  en: a552997e17e5be08
-  zh: d3c481597a97e71c
+  en: 4decc2186f3ee104
+  zh: 146720188b2e3f13
 /interface-strings/outputs:
-  en: 5689daaefd3a9c35
-  zh: d421fd6cbf017ef4
+  en: 35bfe67941270522
+  zh: 73d574c31d70bf25

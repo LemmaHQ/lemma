@@ -14,22 +14,12 @@ These rules supplement the repo-wide [conventions](../AGENTS.md#conventions) and
 
 ## Doc comments
 
-- `//!` appears only at a crate root or a top-level public module, as a compact statement of its role.
-- `///` is a compact contract on public APIs and traits.
-- A public function returning `Result` adds an `# Errors` section that lists the errors it raises itself; a function that only propagates another call's error names that source in one line. A public function that can panic adds a `# Panics` section.
+- `//!` appears only at a crate root or a top-level public module, as a compact statement of its role and crate-level invariants.
+- `///` is a compact contract on `pub` APIs and traits. Keep crate-internal items `pub(crate)` instead of writing filler docs.
+- A public function returning `Result` adds an `# Errors` section listing the errors it raises itself; a function that only propagates another call's error names that source in one line. A public function that can panic adds a `# Panics` section.
 - An `unsafe` block carries only a compact `// SAFETY: <proof of the preconditions>`.
 
 ## Layout
 
 - `shared/` crates build for every runtime, Android included; crates under a host directory (`daemon/`, `napi/`, `uniffi/`) build only into that host.
 - Crates are named `lemma-<concept>`; a binding crate is named after its binding technology (`lemma-napi`, `lemma-uniffi`).
-- `lemma-db` owns the SQLite schema migrations in `crates/shared/lemma-db/migrations/` and applies them when opening a file-backed or in-memory pool (`lemma_db::open`, `lemma_db::in_memory`); `lemma-session` and `lemma-provider` run parameterized `sqlx` queries over `SqlitePool`.
-
-## Commands
-
-```sh
-just rust-lint-check    # clippy over all targets, warnings denied; rust-lint applies fixes
-just rust-fmt-check     # cargo fmt --check; rust-fmt formats
-just rust-test          # cargo nextest run --workspace
-just rust-cov           # llvm-cov summary, fails on any uncovered line or function
-```

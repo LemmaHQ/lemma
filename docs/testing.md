@@ -2,39 +2,32 @@
 
 English | [中文](testing.zh.md)
 
-How Lemma tests each part of the repository, how the suites run locally and in CI, and how coverage is measured. Commands live in the root [AGENTS.md](../AGENTS.md#commands) and the subtree `AGENTS.md` files; CI is summarized in [development.md](development.md#ci-workflows).
+How Lemma organizes, runs, and measures tests across the repository.
 
 ## Tiers
 
-- **Rust** (`just rust-test`, which runs `cargo nextest run --workspace` locally and in CI): the tier covers the provider adapters' request encoding and stream parsers; `ReqwestTransport` against an HTTP server on the loopback interface; the workspace tools against a temporary directory; credential sealing in `lemma-crypto`; file-backed and in-memory SQLite pool creation and migration in `lemma-db`; and the provider service in `lemma-provider`, the session service in `lemma-session`, the turn loop in `lemma-agent-loop`, and `lemma-agent`, which run on in-memory SQLite through `lemma_db::in_memory`. The Connect services run end to end in `lemma-engine`'s `tests/`: each test opens an engine over a temporary data directory, sends Connect requests through `InProcessTransport`, and serves a scripted vendor on the loopback interface when a turn calls a model. `lemma-daemon`'s `tests/` run its HTTP application against the web build in `web/dist`. Unit tests live in a `#[cfg(test)] mod tests` at the bottom of the source file they cover; an integration test goes in the crate's `tests/` directory and uses only its public API.
-- **Web** (`just web-test`, which runs `vitest run` in `web/`): tests are `src/**/*.test.ts` and `src/**/*.test.tsx` files beside the module they cover, run in vitest's `happy-dom` environment with English interface text. The tier covers data, cache, and logic modules, the feature stores against mocked RPC clients, and the feature components rendered with Testing Library and driven with `user-event`. `src/app/App.test.tsx` renders the whole app on the browser router against mocked RPC clients, through the app shell, sessions, the settings pages, and the desktop title bar.
-- **Desktop** (`just desktop-test`, which runs `vitest run` in `desktop/`): tests are `src/**/*.test.ts` files beside the modules they cover. The tier covers the engine process lifecycle, the addon file name, directory picking, the `app://` protocol, and request forwarding on the engine port, with `electron` mocked.
-- **Packages** (`just packages-test`, which runs `vitest run` in each package that has tests): `packages/ui` runs `src/**/*.test.{ts,tsx}` in `happy-dom`, covering the components Lemma composes, the primitives through compositions an app would render, and every icon in one table-driven test.
-- **Android** (`just mobile-android-test`): the `androidApp` debug unit tests plus the `:mobile:shared` host tests, which include the `commonTest` source set. These run on the JVM with no device, locally and in Mobile CI. The host tests cover the ViewModels and their logic against a fake `LemmaClient`, the settings repository, the conversion of Connect errors into localized text, and `ConnectLemmaClient` against the engine, plus a check that the English and Chinese string resources hold the same keys and format arguments. `AppTest` renders the whole app under Robolectric against a fake `LemmaClient`, through startup, the session screen, and the settings and provider pages; the screen tests render the session and provider pages the same way.
+| Area     | Command                                            | Placement and runtime                                                                                                                                                                                                                                                                                                                                  |
+| -------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Rust     | `just rust-test` (`cargo nextest run --workspace`) | Unit tests in `#[cfg(test)] mod tests` at the bottom of the source file; public-API integration tests in `<crate>/tests/`. `nextest` runs each test in its own process and skips doctests; `NEXTEST_PROFILE=ci` writes JUnit XML per [.config/nextest.toml](../.config/nextest.toml). Compiling `lemma-daemon` requires `web/dist` (`just web-build`). |
+| Web      | `just web-test` (`vitest run`)                     | Sibling `src/**/*.test.{ts,tsx}` files in `happy-dom` with Testing Library and English locales.                                                                                                                                                                                                                                                        |
+| Desktop  | `just desktop-test` (`vitest run`)                 | Sibling `src/**/*.test.ts` files with `electron` mocked.                                                                                                                                                                                                                                                                                               |
+| Packages | `just packages-test` (`vitest run`)                | Sibling `src/**/*.test.{ts,tsx}` files in `happy-dom`.                                                                                                                                                                                                                                                                                                 |
+| Android  | `just mobile-android-test`                         | `:mobile:androidApp` Robolectric unit tests and `:mobile:shared` JVM host tests (`commonTest` + `androidHostTest`), running without a device.                                                                                                                                                                                                          |
 
 ## Coverage
 
-`just web-cov`, `just desktop-cov`, and `just packages-cov` fail below 100% statement, branch, function, and line coverage; `just rust-cov` fails on any uncovered line or function and only reports region coverage; `just mobile-android-cov` fails on any uncovered line, any method never called, or any missed branch outside Composable functions.
+All five areas enforce strict coverage checks (`just rust-cov`, `just web-cov`, `just desktop-cov`, `just packages-cov`, `just mobile-android-cov`):
 
-- **Rust**: `just rust-cov` prints a `cargo llvm-cov nextest` summary, and `just rust-cov --html --open` opens the HTML report. It excludes `lemma-proto`, the Node-API addon `lemma-napi`, the UniFFI facade `lemma-uniffi`, the `lemma-daemon` binary files `main.rs`, `config.rs`, and `daemon.rs`, and `lemma-daemon`'s `web_dist.rs`, which holds only the `rust-embed` derive.
-- **Web**: `just web-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, `src/i18n/locales/`, and the `src/main.tsx` entry.
-- **Desktop**: `just desktop-cov` runs vitest with v8 coverage over every file in `src/`, excluding `src/gen/`, the Electron entries `src/main.ts`, `src/preload.ts`, and `src/engine-host.ts`, the Electron window wiring `src/main-window.ts`, and the `src/titlebar.ts` constant.
-- **Packages**: `just packages-cov` runs vitest with v8 coverage over every file in `packages/ui/src/`.
-- **Android**: `just mobile-android-cov` writes Kover HTML and XML reports for `androidApp` and `shared`, excluding generated code: the contract code, UniFFI bindings, Compose resources, the theme classes in `LemmaTokens.kt`, and the `@Serializable` declarations, whose constructors hold the code the serialization plugin adds. Its `verifyCoverage` task then checks the XML report; branches in Composable functions stay out of that check, since the Compose compiler adds branches that tests cannot reach.
+- **Web, Desktop, Packages:** fail below 100% statement, branch, function, and line coverage (configured in each package's `vitest.config.*`).
+- **Rust:** fails on any uncovered line or function via `cargo llvm-cov nextest` (exclusions live in [justfile](../justfile)).
+- **Android:** fails on any uncovered line, uncalled method, or missed branch outside Composable functions via Kover and `verifyCoverage` (exclusions live in `mobile/androidApp/build.gradle.kts`).
 
-The Coverage workflow runs these recipes and uploads their reports to Codecov under the `rust`, `web`, `desktop`, `packages`, and `mobile` flags, plus JUnit results for Rust, web, desktop, and packages. [codecov.yml](../codecov.yml) fails the project status when total coverage drops more than 1% from the base commit and disables the patch status.
-
-## How tests run
-
-`cargo nextest` runs each Rust test in its own process and does not run doctests. Its `ci` profile in [.config/nextest.toml](../.config/nextest.toml) writes JUnit XML to `target/nextest/ci/junit.xml`; the Coverage workflow selects it with `NEXTEST_PROFILE=ci`.
-
-Compiling the workspace includes `lemma-daemon`, which embeds `web/dist`; Rust CI and the Coverage workflow's Rust job therefore build the web client first.
+[codecov.yml](../codecov.yml) fails project status if total coverage drops more than 1% from base and disables patch status.
 
 ## Real implementations over mocks
 
-Tests replace only the model boundary, with vendor output written into the test; everything behind it runs the shipping code, on an in-memory backend where the code needs storage:
+Prefer shipping implementations and fake only the model network boundary:
 
-- Provider adapter tests feed a vendor SSE payload written in the test through the adapter's parser as a byte stream and compare the complete `StreamEvent` sequence.
-- The Android settings tests run `SettingsRepository` over `MapSettings`.
-- The Android client tests open the engine from the host build of `lemma-uniffi` over a temporary data directory and call it through `ConnectLemmaClient`; MockWebServer on the loopback interface answers the model calls as an OpenAI-compatible vendor.
-- Time-dependent web logic fixes the clock with vitest fake timers.
+- Use in-memory SQLite (`lemma_db::in_memory`) or temporary directories for Rust storage and tools, and feed scripted vendor SSE or loopback HTTP responses into real adapters and `InProcessEngine`.
+- On Android, run `SettingsRepository` over `MapSettings` and test `ConnectLemmaClient` against the host `lemma-uniffi` engine with a loopback mock model server.
+- Use vitest fake timers for time-dependent web logic.
